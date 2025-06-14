@@ -641,6 +641,90 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test OnProcessRelease API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceOnProcessRelease_002
+ * @tc.desc  : Test OnProcessRelease interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_002, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    int32_t floatRet = 0;
+    bool muteFlag = true;
+    uint32_t sessionId = 0;
+
+    AudioService::GetInstance()->FilterAllFastProcess();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->ResetAudioEndpoint();
+    AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
+    floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
+    EXPECT_EQ(0, floatRet);
+
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.rendererInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    audioprocess->Start();
+    AudioService::GetInstance()->GetAudioProcess(config);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+
+    AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
+
+    int32_t ret = 0;
+    ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+
+/**
+ * @tc.name  : Test OnProcessRelease API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceOnProcessRelease_003
+ * @tc.desc  : Test OnProcessRelease interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
+{
+    bool isSwitchStream = false;
+    int32_t floatRet = 0;
+    bool muteFlag = true;
+    uint32_t sessionId = 0;
+
+    AudioService::GetInstance()->FilterAllFastProcess();
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->ResetAudioEndpoint();
+    AudioService::GetInstance()->SetNonInterruptMute(sessionId, muteFlag);
+    floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
+    EXPECT_EQ(0, floatRet);
+
+    AudioProcessConfig config = {};
+    config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    audioprocess->Start();
+    AudioService::GetInstance()->GetAudioProcess(config);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+
+    AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
+    AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->OnUpdateInnerCapList(1);
+
+    int32_t ret = 0;
+    ret = AudioService::GetInstance()->OnProcessRelease(audioprocess, isSwitchStream);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @tc.name  : Test DelayCallReleaseEndpoint API
  * @tc.type  : FUNC
  * @tc.number: DelayCallReleaseEndpoint_001
@@ -1827,6 +1911,32 @@ HWTEST(AudioServiceUnitTest, AudioServiceSetSessionMuteState_002, TestSize.Level
     EXPECT_TRUE(service->muteStateMap_.count(sessionId) != 0);
     service->SetSessionMuteState(sessionId, false, muteFlag);
     EXPECT_TRUE(service->muteStateMap_.count(sessionId) == 0);
+}
+
+/**
+ * @tc.name  : Test GetCurrentLoopbackStreamCnt API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServiceLoopbackStreamCnt_001,
+ * @tc.desc  : Test GetCurrentLoopbackStreamCnt interface.
+ */
+HWTEST(AudioServiceUnitTest, AudioServiceLoopbackStreamCnt_001, TestSize.Level1)
+{
+    int32_t rendererCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_PLAYBACK);
+    int32_t capturerCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_RECORD);
+    EXPECT_EQ(rendererCnt, 0);
+    EXPECT_EQ(capturerCnt, 0);
+    AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(AUDIO_MODE_PLAYBACK);
+    AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(AUDIO_MODE_RECORD);
+    rendererCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_PLAYBACK);
+    capturerCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_RECORD);
+    EXPECT_EQ(rendererCnt, 1);
+    EXPECT_EQ(capturerCnt, 1);
+    AudioService::GetInstance()->SetDecMaxLoopbackStreamCnt(AUDIO_MODE_PLAYBACK);
+    AudioService::GetInstance()->SetDecMaxLoopbackStreamCnt(AUDIO_MODE_RECORD);
+    rendererCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_PLAYBACK);
+    capturerCnt = AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(AUDIO_MODE_RECORD);
+    EXPECT_EQ(rendererCnt, 0);
+    EXPECT_EQ(capturerCnt, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

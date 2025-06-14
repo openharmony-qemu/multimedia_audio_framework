@@ -33,10 +33,7 @@ namespace {
 std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackMode mode, const AppInfo &appInfo)
 {
     Security::AccessToken::AccessTokenID tokenId = appInfo.appTokenId;
-    if (tokenId == Security::AccessToken::INVALID_TOKENID) {
-        tokenId = IPCSkeleton::GetCallingTokenID();
-    }
-
+    tokenId = (tokenId == Security::AccessToken::INVALID_TOKENID) ? IPCSkeleton::GetCallingTokenID() : tokenId;
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
         nullptr, "Permission denied [tid:%{public}d]", tokenId);
@@ -157,37 +154,21 @@ int32_t AudioLoopbackPrivate::RemoveAudioLoopbackCallback()
 bool AudioLoopbackPrivate::CreateAudioLoopback()
 {
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
-    if (audioRenderer_ == nullptr || !audioRenderer_->IsFastRenderer()) {
-        AUDIO_ERR_LOG("CreateRenderer failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "CreateRenderer failed");
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_->IsFastRenderer(), false, "CreateFastRenderer failed");
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
-    if (audioCapturer_ == nullptr) {
-        AUDIO_ERR_LOG("CreateCapturer failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "CreateCapturer failed");
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
-    if (capturerInfo.capturerFlags != STREAM_FLAG_FAST) {
-        AUDIO_ERR_LOG("CreateCapturer failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, false, "CreateCapturer failed");
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
-    bool ret = audioRenderer_->Start();
-    if (!ret) {
-        AUDIO_ERR_LOG("audioRenderer Start failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_->Start(), false, "audioRenderer Start failed");
     rendererState_ = RENDERER_RUNNING;
-    ret = audioCapturer_->Start();
-    if (!ret) {
-        AUDIO_ERR_LOG("audioCapturer Start failed");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturer_->Start(), false, "audioCapturer Start failed");
     capturerState_ = CAPTURER_RUNNING;
     return true;
 }
@@ -210,28 +191,18 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
     currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
     if (audioCapturer_) {
         ret = audioCapturer_->Stop();
-        if (!ret) {
-            AUDIO_ERR_LOG("audioCapturer Stop failed");
-        }
+        CHECK_AND_RETURN_LOG(ret, "audioCapturer Stop failed");
         ret = audioCapturer_->Release();
-        if (!ret) {
-            AUDIO_ERR_LOG("audioCapturer Release failed");
-        }
-        AUDIO_INFO_LOG("audioCapturer Release success");
+        CHECK_AND_RETURN_LOG(ret, "audioCapturer Release failed");
         audioCapturer_ = nullptr;
     } else {
         AUDIO_ERR_LOG("audioCapturer is nullptr");
     }
     if (audioRenderer_) {
         ret = audioRenderer_->Stop();
-        if (!ret) {
-            AUDIO_ERR_LOG("audioRenderer Stop failed");
-        }
+        CHECK_AND_RETURN_LOG(ret, "audioRenderer Stop failed");
         ret = audioRenderer_->Release();
-        if (!ret) {
-            AUDIO_ERR_LOG("audioRenderer Release failed");
-        }
-        AUDIO_INFO_LOG("audioRenderer Release success");
+        CHECK_AND_RETURN_LOG(ret, "audioRenderer Release failed");
         audioRenderer_ = nullptr;
     } else {
         AUDIO_ERR_LOG("audioRenderer is nullptr");

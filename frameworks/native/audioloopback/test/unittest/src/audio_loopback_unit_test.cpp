@@ -28,6 +28,14 @@ void AudioLoopbackUnitTest::TearDown(void) {}
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize.Level0)
 {
+    AppInfo appInfo = AppInfo();
+    appInfo.appTokenId = 1;
+    auto audioLoopback = AudioLoopback::CreateAudioLoopback(LOOPBACK_HARDWARE, AppInfo());
+    EXPECT_EQ(audioLoopback, nullptr);
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level0)
+{
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
     EXPECT_EQ(audioLoopback->Enable(true), false);
@@ -35,7 +43,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize.L
     EXPECT_EQ(audioLoopback->Enable(false), true);
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->CreateAudioLoopback();
@@ -47,7 +55,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.L
     audioLoopback2->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_004, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->isRendererUsb_ = true;
@@ -56,7 +64,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_004, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->isCapturerUsb_ = true;
@@ -65,7 +73,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_004, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->isRendererUsb_ = true;
@@ -81,27 +89,29 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize.Level1)
-{
-    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->CreateAudioLoopback();
-    EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
-    audioLoopback->audioCapturer_->Release();
-    audioLoopback->audioCapturer_ = nullptr;
-    audioLoopback->DestroyAudioLoopback();
-}
-
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_007, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
+    ASSERT_NE(audioLoopback->audioCapturer_, nullptr);
+    audioLoopback->audioCapturer_->Release();
+    audioLoopback->audioCapturer_ = nullptr;
+    audioLoopback->DestroyAudioLoopback();
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->CreateAudioLoopback();
+    EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
+    ASSERT_NE(audioLoopback->audioRenderer_, nullptr);
     audioLoopback->audioRenderer_->Release();
     audioLoopback->audioRenderer_ = nullptr;
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_009, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->rendererOptions_.rendererInfo.contentType = ContentType::CONTENT_TYPE_ULTRASONIC;
@@ -111,7 +121,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_009, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_010, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->rendererOptions_.rendererInfo.rendererFlags = 0;
@@ -120,7 +130,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_009, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_010, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->capturerOptions_.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
@@ -129,7 +139,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_010, TestSize.L
     audioLoopback->DestroyAudioLoopback();
 }
 
-HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.Level1)
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_012, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->capturerOptions_.capturerInfo.capturerFlags = 0;
@@ -137,6 +147,15 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_011, TestSize.L
     audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
     EXPECT_EQ(audioLoopback->capturerFastStatus_, FASTSTATUS_NORMAL);
     audioLoopback->DestroyAudioLoopback();
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_013, TestSize.Level1)
+{
+    AppInfo appInfo = AppInfo();
+    appInfo.appPid = -1;
+    appInfo.appUid = 1;
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, appInfo);
+    EXPECT_NE(audioLoopback, nullptr);
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
@@ -171,5 +190,48 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_004, TestSize.Level1)
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_GetStatus_001, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    EXPECT_EQ(audioLoopback->GetStatus(), LOOPBACK_AVAILABLE_RUNNING);
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_001, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->isRendererUsb_ = true;
+    audioLoopback->isCapturerUsb_ = true;
+    audioLoopback->isStarted_ = true;
+    audioLoopback->UpdateStatus();
+    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_UNAVAILABLE_SCENE);
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_002, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->rendererState_ = RENDERER_RUNNING;
+    audioLoopback->isRendererUsb_ = true;
+    audioLoopback->rendererFastStatus_ = FASTSTATUS_FAST;
+
+    audioLoopback->capturerState_ = CAPTURER_RUNNING;
+    audioLoopback->isCapturerUsb_ = true;
+    audioLoopback->capturerFastStatus_ = FASTSTATUS_FAST;
+    audioLoopback->isStarted_ = true;
+    audioLoopback->UpdateStatus();
+    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_AVAILABLE_RUNNING);
+}
+
+HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_003, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+
+    audioLoopback->currentStatus_ = LOOPBACK_UNAVAILABLE_DEVICE;
+    audioLoopback->isStarted_ = true;
+    audioLoopback->UpdateStatus();
+    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_UNAVAILABLE_DEVICE);
+}
 } // namespace AudioStandard
 } // namespace OHOS
