@@ -27,7 +27,7 @@ namespace HPAE {
 // need full audio channel layouts to cover all cases during setting up downmix table -- first part
 constexpr static AudioChannelLayout FIRST_PART_CH_LAYOUTS = static_cast<AudioChannelLayout> (
     FRONT_LEFT | FRONT_RIGHT | FRONT_CENTER | LOW_FREQUENCY |
-    BACK_LEFT | BACK_RIGHT | 
+    BACK_LEFT | BACK_RIGHT |
     FRONT_LEFT_OF_CENTER | FRONT_RIGHT_OF_CENTER |
     BACK_CENTER | SIDE_LEFT | SIDE_RIGHT |
     TOP_CENTER | TOP_FRONT_LEFT | TOP_FRONT_CENTER | TOP_FRONT_RIGHT | TOP_BACK_LEFT
@@ -244,7 +244,6 @@ TEST_F(DownMixerTest, ProcesTest)
     EXPECT_EQ(downMixer.SetParam(inChannelInfo, outChannelInfo, TEST_FORMAT_SIZE, MIX_FLE), DMIX_ERR_SUCCESS);
     EXPECT_EQ(downMixer.Process(TEST_BUFFER_LEN, in.data(), testInBufferSize, out.data(), testOutBufferSize),
         DMIX_ERR_SUCCESS);
-
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

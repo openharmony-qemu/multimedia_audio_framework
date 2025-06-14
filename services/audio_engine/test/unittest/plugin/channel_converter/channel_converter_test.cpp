@@ -49,7 +49,6 @@ TEST_F(ChannelConverterTest, ChannelConverterTestProcessTest)
     EXPECT_EQ(channelConverter.Process(TEST_BUFFER_LEN, in.data(), in.size() * sizeof(float), out.data(),
         out.size() * sizeof(float)), DMIX_ERR_SUCCESS);
     
-
     // test downmix
     inChannelInfo.numChannels = CHANNEL_6;
     inChannelInfo.channelLayout = CH_LAYOUT_5POINT1;
