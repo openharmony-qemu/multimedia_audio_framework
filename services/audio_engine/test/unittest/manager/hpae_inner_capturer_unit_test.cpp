@@ -453,9 +453,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001)
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001)
 {
-    auto request = []()
-    {
-    };
+    auto request = [](){};
     hpaeInnerCapturerManager_->SendRequestInner(request);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
