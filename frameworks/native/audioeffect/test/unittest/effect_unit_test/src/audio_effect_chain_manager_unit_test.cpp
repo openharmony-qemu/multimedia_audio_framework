@@ -2698,14 +2698,14 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 0;
+    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 2;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
+    EXPECT_EQ(ret, ERROR);
+
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
     EXPECT_EQ(ret, SUCCESS);
-
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 5;
-    ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
-    EXPECT_EQ(ret, ERROR);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
@@ -2726,14 +2726,9 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_005, Te
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, nullptr});
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, nullptr});
 
-    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 2;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
     auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
-    auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(ret, ERROR);
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
