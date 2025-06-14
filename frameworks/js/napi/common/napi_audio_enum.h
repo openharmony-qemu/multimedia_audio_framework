@@ -94,6 +94,10 @@ public:
         CALLBACK_RESULT_VALID = 0,
     };
 
+    enum AudioLoopbackModeNapi {
+        LOOPBACK_MODE_HARDWARE = 0
+    };
+
     static napi_value Init(napi_env env, napi_value exports);
     static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
     static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
@@ -122,6 +126,7 @@ public:
     static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
     static AudioScene GetJsAudioScene(AudioScene audioScene);
     static bool IsLegalCapturerState(int32_t state);
+    static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -206,6 +211,8 @@ private:
     static napi_ref audioDataCallbackResult_;
     static napi_ref concurrencyMode_;
     static napi_ref reason_;
+    static napi_ref audioLoopbackMode_;
+    static napi_ref audioLoopbackStatus_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -255,6 +262,8 @@ private:
     static const std::map<std::string, int32_t> audioDataCallbackResultMap;
     static const std::map<std::string, int32_t> concurrencyModeMap;
     static const std::map<std::string, int32_t> reasonMap;
+    static const std::map<std::string, int32_t> audioLoopbackModeMap;
+    static const std::map<std::string, int32_t> audioLoopbackStatusMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

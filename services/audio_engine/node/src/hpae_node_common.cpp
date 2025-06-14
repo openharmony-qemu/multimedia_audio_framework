@@ -46,7 +46,8 @@ static std::map<AudioEffectScene, HpaeProcessorType> g_effectSceneToProcessorTyp
     {SCENE_GAME, HPAE_SCENE_GAME},
     {SCENE_SPEECH, HPAE_SCENE_SPEECH},
     {SCENE_RING, HPAE_SCENE_RING},
-    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN}
+    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN},
+    {SCENE_COLLABORATIVE, HPAE_SCENE_COLLABORATIVE}
 };
 
 static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneTypeMap = {
@@ -147,6 +148,21 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
+{
+    if (isCollaborationEnabled) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+            nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
+            nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+            nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+            AUDIO_INFO_LOG("collaboration enabled, effectScene from %{public}d, sceneType changed to %{public}d",
+                nodeInfo.effectInfo.lastEffectScene, nodeInfo.sceneType);
+        }
+    } else {
+        RecoverNodeInfoForCollaboration(nodeInfo);
+    }
+}
+
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType)
 {
     if (g_sourceTypeToSceneTypeMap.find(sourceType) == g_sourceTypeToSceneTypeMap.end()) {
@@ -174,7 +190,8 @@ static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffec
     {HPAE_SCENE_MOVIE, "SCENE_MOVIE"},
     {HPAE_SCENE_SPEECH, "SCENE_SPEECH"},
     {HPAE_SCENE_RING, "SCENE_RING"},
-    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"}};
+    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
+    {HPAE_SCENE_COLLABORATIVE, "SCENE_COLLABORATIVE"}};
 
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)
 {
@@ -365,6 +382,16 @@ std::string TransFormatFromEnumToString(AudioSampleFormat format)
     CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
         "", "error param format");
     return g_formatFromParserEnumToStr[format];
+}
+
+void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
+{
+    if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+        nodeInfo.effectInfo.effectScene = nodeInfo.effectInfo.lastEffectScene;
+        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
+        AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
+            nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

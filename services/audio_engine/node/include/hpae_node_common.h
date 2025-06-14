@@ -41,6 +41,8 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
 int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
 AudioSampleFormat TransFormatFromStringToEnum(std::string format);
 std::string TransFormatFromEnumToString(AudioSampleFormat format);
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled);
+void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
 
 // for hidumper device info trans, param should be HpaeSinkInfo or HpaeSourceInfo
 template <typename T>

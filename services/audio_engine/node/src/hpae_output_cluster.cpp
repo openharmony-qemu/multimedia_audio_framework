@@ -258,6 +258,11 @@ int32_t HpaeOutputCluster::SetPriPaPower(void)
 {
     return hpaeSinkOutputNode_->RenderSinkSetPriPaPower();
 }
+
+uint32_t HpaeOutputCluster::GetLatency()
+{
+    return hpaeSinkOutputNode_->GetLatency();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

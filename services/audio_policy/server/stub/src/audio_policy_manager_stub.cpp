@@ -240,6 +240,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_CALLBACK_STREAM_USAGE_INFO",
     "UPDATE_DEVICE_INFO",
     "SET_SLE_AUDIO_OPERATION_CALLBACK",
+    "SET_KARAOKE_PARAMETERS",
+    "IS_AUDIO_LOOPBACK_SUPPORTED",
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1315,6 +1317,12 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_CAPTURER_FOCUS_AVAILABLE):
             IsCapturerFocusAvailableInternal(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_KARAOKE_PARAMETERS):
+            SetKaraokeParametersInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED):
+            IsAudioLoopbackSupportedInternal(data, reply);
+            break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
             IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -2373,9 +2381,23 @@ void AudioPolicyManagerStub::ForceStopAudioStreamInternal(MessageParcel &data, M
 
 void AudioPolicyManagerStub::IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply)
 {
-    AudioCapturerChangeInfo capturerInfo = {};
+    AudioCapturerInfo capturerInfo = {};
     capturerInfo.Unmarshalling(data);
     bool result = IsCapturerFocusAvailable(capturerInfo);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::SetKaraokeParametersInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string parameters = data.ReadString();
+    bool result = SetKaraokeParameters(parameters);
+    reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::IsAudioLoopbackSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(data.ReadInt32());
+    bool result = IsAudioLoopbackSupported(mode);
     reply.WriteBool(result);
 }
 

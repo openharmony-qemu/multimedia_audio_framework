@@ -2260,10 +2260,14 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == UID_AUDIO) {
+        return true;
+    }
+
     if (!isRecording) {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
-        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == ROOT_UID) {
             return true;
         }
@@ -4121,7 +4125,7 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
         "SetVirtualCall callerUid is error: not meetservice");
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
-    return audioDeviceCommon_.SetVirtualCall(isVirtual);
+    return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -4222,7 +4226,7 @@ int32_t AudioPolicyServer::ForceStopAudioStream(StopAudioType audioType)
     return AudioServerProxy::GetInstance().ForceStopAudioStreamProxy(audioType);
 }
 
-bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
@@ -4240,9 +4244,21 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioDeviceLock_.TriggerFetchDevice();
 }
+
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+}
+
+
+bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
+{
+    return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+}
+
+bool AudioPolicyServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
 }
 
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

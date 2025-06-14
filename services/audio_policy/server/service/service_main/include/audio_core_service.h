@@ -249,7 +249,6 @@ private:
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t ScoInputDeviceFetchedForRecongnition(
         bool handleFlag, const std::string &address, ConnectState connectState);
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);

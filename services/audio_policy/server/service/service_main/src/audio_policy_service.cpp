@@ -1740,6 +1740,5 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
     }
     return true;
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
