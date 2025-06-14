@@ -73,6 +73,7 @@ TEST_F(HpaeRenderEffectNodeTest, testCreate_001)
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
+    EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
 TEST_F(HpaeRenderEffectNodeTest, testCreate_002)
@@ -152,6 +153,38 @@ TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003)
     inputs.emplace_back(&hpaePcmBuffer);
     EXPECT_NE(hpaeRenderEffectNode->SignalProcess(inputs), nullptr);
     hpaeRenderEffectNode->ReconfigOutputBuffer();
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+TEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    ModifyAudioEffectChainInfoReason testReason = static_cast<ModifyAudioEffectChainInfoReason>(2);
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
+    nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
+    hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
+}
+
+TEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
+    hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
+    nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
+    hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
