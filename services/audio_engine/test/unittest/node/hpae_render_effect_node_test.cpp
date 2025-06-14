@@ -165,7 +165,7 @@ TEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    EXPECT_NE(HpaeRenderEffectNode, nullptr);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
     ModifyAudioEffectChainInfoReason testReason = static_cast<ModifyAudioEffectChainInfoReason>(2);
     hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
@@ -181,7 +181,7 @@ TEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001)
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
-    EXPECT_NE(HpaeRenderEffectNode, nullptr);
+    EXPECT_NE(hpaeRenderEffectNode, nullptr);
     hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     hpaeRenderEffectNode->UpdateAudioEffectChainInfo(nodeInfo);
