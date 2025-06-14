@@ -1145,7 +1145,7 @@ std::string AudioRenderSink::GetRouting(void) const
         default:
             break;
     }
-    return "-100";
+    return "0";
 }
 
 void AudioRenderSink::WriteSmartPAStatusSysEvent(int32_t status)
