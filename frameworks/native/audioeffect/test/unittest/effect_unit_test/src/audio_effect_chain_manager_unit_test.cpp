@@ -2674,6 +2674,7 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_003, Te
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, nullptr});
     auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
     EXPECT_EQ(ret, ERROR);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
@@ -2692,8 +2693,10 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
     std::string deviceTypeName = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
     std::string effectChain0 = scene + "_&_" + deviceTypeName;
     std::string effectChain1 = sceneType + "_&_" + deviceTypeName;
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, nullptr});
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, nullptr});
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, audioEffectChain});
 
     AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 0;
     AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
@@ -2876,6 +2879,7 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBufferInner_001, TestSize.Leve
     string sessionID2 = "111111";
     result = AudioEffectChainManager::GetInstance()->InitEffectBufferInner(sessionID2);
     EXPECT_NE(ERROR, result);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
 /**
