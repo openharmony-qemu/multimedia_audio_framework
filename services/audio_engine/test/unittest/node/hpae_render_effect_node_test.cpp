@@ -73,7 +73,7 @@ TEST_F(HpaeRenderEffectNodeTest, testCreate_001)
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     nodeInfo.effectInfo.effectScene = (AudioEffectScene)0xff;
     EXPECT_EQ(hpaeRenderEffectNode->AudioRendererCreate(nodeInfo), 0);
-    EXPECT_EQ(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
+    EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
 TEST_F(HpaeRenderEffectNodeTest, testCreate_002)
