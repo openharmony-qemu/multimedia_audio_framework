@@ -432,6 +432,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(true), SUCCESS);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.effectInfo.effectMode = EFFECT_DEFAULT;
     TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
     EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
@@ -487,6 +489,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.effectInfo.effectMode = EFFECT_DEFAULT;
     TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
     EXPECT_EQ(hpaeRendererManager->RegisterWriteCallback(streamInfo.sessionId, writeIncDataCb), SUCCESS);
