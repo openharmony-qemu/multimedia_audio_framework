@@ -248,7 +248,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002)
  * @tc.number: StreamStartPauseChange_001
  * @tc.desc  : Test StartRendererStream when config in vaild.
  */
-TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseChange_001)
+TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -271,14 +271,21 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseChange_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(recordStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Flush(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Flush(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo), SUCCESS);
     EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
 }
 
@@ -288,7 +295,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseChange_001)
  * @tc.number: StreamStartStopChange_001
  * @tc.desc  : Test StartCapturerStream when config in vaild.
  */
-TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopChange_001)
+TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -316,16 +323,187 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopChange_001)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
 
+    EXPECT_EQ(hpaeInnerCapturerManager_->Drain(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Drain(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo), SUCCESS);
     EXPECT_EQ(sourceOutoputInfo.capturerSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : Test AddNodeToSink_001
+ * @tc.type  : FUNC
+ * @tc.number: AddNodeToSink_001
+ * @tc.desc  : Test AddNodeToSink when config in vaild.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo playSencondStreamInfo = GetInCapPlayStreamInfo();
+    ++playSencondStreamInfo.sessionId;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playSencondStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playSencondStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeNodeInfo playSencondNodeInfo;
+    playSencondNodeInfo.sessionId = playSencondStreamInfo.sessionId + 1;
+    playSencondNodeInfo.channels = STEREO;
+    playSencondNodeInfo.format = streamInfo.format;
+    playSencondNodeInfo.frameLen = SAMPLE_RATE_44100 * FRAME_LENGTH_IN_SECOND;
+    playSencondNodeInfo.samplingRate = SAMPLE_RATE_44100;
+    playSencondNodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    playSencondNodeInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    playSencondNodeInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    std::shared_ptr<HpaeSinkInputNode>> HpaeSinkInputSencondNode =
+        std::make_shared<HpaeSinkInputNode>(playSencondNodeInfo);
+    EXPECT_EQ(HpaeSinkInputSencondNode != nullptr, true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->AddSingleNodeToSinkInner(HpaeSinkInputSencondNode, false);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SuspendStreamManager(true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->AddNodeToSink(HpaeSinkInputSencondNode), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SuspendStreamManager(false), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playSencondNodeInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(playSencondStreamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DestroyStream(recordStreamInfo.sessionId) == SUCCESS, true);
+}
+
+/**
+ * @tc.name  : Test SetMute_001
+ * @tc.type  : FUNC
+ * @tc.number: SetMute_001
+ * @tc.desc  : Test SetMute when config in vaild.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(false), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OnFadeDone_001
+ * @tc.type  : FUNC
+ * @tc.number: OnFadeDone_001
+ * @tc.desc  : Test OnFadeDone when config in vaild.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->OnFadeDone(playStreamInfo.sessionId, OPERATION_STOPPED);
+}
+
+/**
+ * @tc.name  : Test SendRequestInner_001
+ * @tc.type  : FUNC
+ * @tc.number: SendRequestInner_001
+ * @tc.desc  : Test SendRequestInner when config in vaild.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001)
+{
+    auto request = [](){ 
+    };
+    hpaeInnerCapturerManager_->SendRequestInner(request);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->SendRequestInner(request);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+}
+
+/**
+ * @tc.name  : Test Other_001
+ * @tc.type  : FUNC
+ * @tc.number: Other_001
+ * @tc.desc  : Test Other when config in vaild.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, Other_001)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(recordStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(recordStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::shared_ptr<WriteFixedDataCb> writeInPlayDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
+    EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    
+    std::vector<SinkInput> sinkInputs;
+    sinkInputs = hpaeInnerCapturerManager_->GetAllSinkInputsInfo();
+    std::vector<SourceOutput> sourceOutputs;
+    sourceOutputs = hpaeInnerCapturerManager_->GetAllSourceOutputsInfo();
+    std::string config;
+    config = hpaeInnerCapturerManager_->GetDeviceHDFDumpInfo();
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    int32_t testVariable = 1;
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetClientVolume(playStreamInfo.sessionId, 1.0f), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetRate(playStreamInfo.sessionId, testVariable), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetAudioEffectMode(playStreamInfo.sessionId, testVariable), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->GetAudioEffectMode(playStreamInfo.sessionId, testVariable), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetPrivacyType(playStreamInfo.sessionId, testVariable), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->GetPrivacyType(playStreamInfo.sessionId, testVariable), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->GetWritableSize(playStreamInfo.sessionId), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->UpdateSpatializationState(playStreamInfo.sessionId, true, true), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->UpdateMaxLength(playStreamInfo.sessionId, testVariable), SUCCESS);
 }
 };
 }  // namespace OHOS::AudioStandard
