@@ -154,7 +154,7 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     size_t index = 0;
     if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
         index >= IPolicyProvider::GetVolumeVectorSize()) {
-        AUDIO_INFO_LOG("Don't find and Set Shared Volume failed");
+        AUDIO_INFO_LOG("not find device %{public}d, stream %{public}d", deviceType, streamType);
         return false;
     }
     if (deviceType == DEVICE_TYPE_NEARLINK && streamType == STREAM_VOICE_CALL) {
@@ -206,7 +206,6 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
 
 int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
 {
-    Trace trace("AudioVolumeManager::GetSystemVolumeLevel");
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -229,7 +228,10 @@ int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
         (volumeType == STREAM_MUSIC || volumeType == STREAM_VOICE_CALL)) {
         return SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(volumeType, deviceDesc);
     }
-    return audioPolicyManager_.GetSystemVolumeLevel(streamType);
+    int32_t volume = audioPolicyManager_.GetSystemVolumeLevel(streamType);
+    Trace trace("AudioVolumeManager::GetSystemVolumeLevel device" + std::to_string(deviceDesc.deviceType_) + " stream "
+        + std::to_string(streamType) + " volume " + std::to_string(volume));
+    return volume;
 }
 
 int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType streamType)
