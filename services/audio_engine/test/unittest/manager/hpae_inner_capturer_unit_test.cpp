@@ -453,7 +453,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001)
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001)
 {
-    auto request = [](){ 
+    auto request = [](){
     };
     hpaeInnerCapturerManager_->SendRequestInner(request);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -491,8 +491,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, Other_001)
     sinkInputs = hpaeInnerCapturerManager_->GetAllSinkInputsInfo();
     std::vector<SourceOutput> sourceOutputs;
     sourceOutputs = hpaeInnerCapturerManager_->GetAllSourceOutputsInfo();
-    std::string config;
-    config = hpaeInnerCapturerManager_->GetDeviceHDFDumpInfo();
+    std::string config = hpaeInnerCapturerManager_->GetDeviceHDFDumpInfo();
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     int32_t testVariable = 1;
     EXPECT_EQ(hpaeInnerCapturerManager_->SetClientVolume(playStreamInfo.sessionId, 1.0f), SUCCESS);
