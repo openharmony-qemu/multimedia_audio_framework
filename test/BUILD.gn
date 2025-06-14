@@ -72,6 +72,7 @@ group("audio_unit_test") {
     "../frameworks/native/audioclock:audioclock_unit_test",
     "../frameworks/native/audioschedule:audioschedule_unit_test",
     "../services/audio_engine/test/unittest:audio_engine_unit_test",
+    "../services/audio_engine/test/unittest:hpae_plugins_unit_test",
     "../services/audio_policy/test:audio_policy_unittest_packages",
     "../services/audio_service/test/unittest:audio_balance_unit_test",
     "../services/audio_service/test/unittest:audio_dump_pcm_unit_test",
