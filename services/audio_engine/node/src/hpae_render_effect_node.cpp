@@ -247,6 +247,9 @@ int32_t HpaeRenderEffectNode::CreateAudioEffectChain(HpaeNodeInfo &nodeInfo)
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, ADD_SCENE_TYPE);
     // todo: should be considered
+    if (audioEffectChainManager->GetOffloadEnabled()) {
+        return SUCCESS;
+    }
     int32_t ret = audioEffectChainManager->CreateAudioEffectChainDynamic(sceneType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "create effect chain fail");
     AUDIO_INFO_LOG("Create Audio Effect Chain Success, sessionID is %{public}u, sceneType is %{public}d",
@@ -274,6 +277,9 @@ int32_t HpaeRenderEffectNode::ReleaseAudioEffectChain(HpaeNodeInfo &nodeInfo)
     }
     audioEffectChainManager->UpdateSceneTypeList(sceneType, REMOVE_SCENE_TYPE);
     // todo: should be considered
+    if (audioEffectChainManager->GetOffloadEnabled()) {
+        return SUCCESS;
+    }
     int32_t ret = audioEffectChainManager->ReleaseAudioEffectChainDynamic(sceneType);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "release effect chain fail");
     AUDIO_INFO_LOG("Release Audio Effect Chain Success, sessionID is %{public}u, sceneType is %{public}d",
