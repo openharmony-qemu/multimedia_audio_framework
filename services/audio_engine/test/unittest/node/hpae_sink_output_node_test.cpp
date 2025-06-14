@@ -238,7 +238,7 @@ TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = g_rootPath;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
