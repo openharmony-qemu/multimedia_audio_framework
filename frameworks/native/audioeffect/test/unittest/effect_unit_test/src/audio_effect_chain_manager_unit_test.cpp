@@ -2711,6 +2711,34 @@ HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_004, Te
 }
 
 /**
+* @tc.name   : Test CheckAndReleaseCommonEffectChain API
+* @tc.number : CheckAndReleaseCommonEffectChain_005
+* @tc.desc   : Test CheckAndReleaseCommonEffectChain interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, CheckAndReleaseCommonEffectChain_005, TestSize.Level1)
+{
+    std::string sceneType = "test";
+    std::string  scene = "SCENE_DEFAULT";
+
+    std::string deviceTypeName = AudioEffectChainManager::GetInstance()->GetDeviceTypeName();
+    std::string effectChain0 = scene + "_&_" + deviceTypeName;
+    std::string effectChain1 = sceneType + "_&_" + deviceTypeName;
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain0, nullptr});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({effectChain1, nullptr});
+
+    AudioEffectChainManager::GetInstance()->defaultEffectChainCount_ = 2;
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioEffectChainManager::GetInstance()->isDefaultEffectChainExisted_ = true;
+    auto ret = AudioEffectChainManager::GetInstance()->CheckAndReleaseCommonEffectChain(sceneType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
+
+/**
 * @tc.name   : Test GetSceneTypeToChainCount API
 * @tc.number : GetSceneTypeToChainCount_003
 * @tc.desc   : Test GetSceneTypeToChainCount interface.
