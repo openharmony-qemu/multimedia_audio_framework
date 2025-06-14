@@ -430,7 +430,7 @@ private:
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
-    bool isDpReCinnect_ = false;
+    bool isDpReConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
