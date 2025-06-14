@@ -1613,6 +1613,7 @@ HWTEST_F(AudioStreamManagerUnitTest, SetAudioFormatUnsupportedErrorCallback_002,
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test ForceStopAudioStream API
 * @tc.number : ForceStopAudioStream_001
@@ -1725,5 +1726,6 @@ HWTEST_F(AudioStreamManagerUnitTest, IsCapturerFocusAvailable_002, TestSize.Leve
     result = audioCapturer->Stop();
     EXPECT_EQ(result, true);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

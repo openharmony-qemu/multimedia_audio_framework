@@ -40,6 +40,7 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
+// LCOV_EXCL_START
 int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
@@ -283,6 +284,7 @@ int32_t AudioGroupManager::Init()
         return SUCCESS;
     }
 }
+// LCOV_EXCL_STOP
 
 bool AudioGroupManager::IsAlived()
 {

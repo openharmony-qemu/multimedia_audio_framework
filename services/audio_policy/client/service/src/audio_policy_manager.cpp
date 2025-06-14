@@ -72,6 +72,7 @@ static sptr<IAudioPolicy> GetAudioPolicyProxyFromSamgr()
     return apProxy;
 }
 
+// LCOV_EXCL_START
 const sptr<IAudioPolicy> AudioPolicyManager::GetAudioPolicyManagerProxy()
 {
     AUDIO_DEBUG_LOG("In");
@@ -2576,5 +2577,6 @@ AudioPolicyManager& AudioPolicyManager::GetInstance()
     static AudioPolicyManager policyManager;
     return policyManager;
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

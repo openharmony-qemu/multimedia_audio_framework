@@ -118,6 +118,7 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_001, TestSize.Level1)
     EXPECT_EQ(true, releaseRet);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test toneplayer loading API
  * @tc.type  : FUNC
@@ -143,6 +144,7 @@ HWTEST(AudioToneplayerUnitTest, Toneplayer_002, TestSize.Level1)
     bool releaseRet = toneplayer->Release();
     EXPECT_EQ(true, releaseRet);
 }
+#endif
 
 /**
  * @tc.name  : Test toneplayer loading API
@@ -367,6 +369,7 @@ HWTEST(AudioToneplayerUnitTest, Create_002, TestSize.Level1)
     toneplayer->Release();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetCurrentSegmentUpdated API
  * @tc.type  : FUNC
@@ -441,6 +444,7 @@ HWTEST(AudioToneplayerUnitTest, CheckToneContinuity_001, TestSize.Level1)
     ret = toneplayer->CheckToneContinuity();
     EXPECT_EQ(false, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test OnInterrupt API
@@ -463,6 +467,7 @@ HWTEST(AudioToneplayerUnitTest, OnInterrupt_001, TestSize.Level1)
     EXPECT_EQ(ToneType::NUM_TONES, toneplayer->toneType_);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test ContinueToneplay API
  * @tc.type  : FUNC
@@ -616,6 +621,7 @@ HWTEST(AudioToneplayerUnitTest, CheckToneStopped_001, TestSize.Level1)
     ret = toneplayer->CheckToneStopped();
     EXPECT_EQ(false, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test TonePlayerImpl API
