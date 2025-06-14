@@ -243,10 +243,10 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002)
 }
 
 /**
- * @tc.name  : Test StreamStartPauseChange_001
+ * @tc.name  : Test StreamStartPauseFlushChange_001
  * @tc.type  : FUNC
- * @tc.number: StreamStartPauseChange_001
- * @tc.desc  : Test StartRendererStream when config in vaild.
+ * @tc.number: StreamStartPauseFlushChange_001
+ * @tc.desc  : Test StreamStartPauseFlushChange when config in vaild.
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001)
 {
@@ -290,10 +290,10 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001)
 }
 
 /**
- * @tc.name  : Test StreamStartStopChange_001
+ * @tc.name  : Test StreamStartStopDrainChange_001
  * @tc.type  : FUNC
- * @tc.number: StreamStartStopChange_001
- * @tc.desc  : Test StartCapturerStream when config in vaild.
+ * @tc.number: StreamStartStopDrainChange_001
+ * @tc.desc  : Test StreamStartStopDrainChange when config in vaild.
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001)
 {
