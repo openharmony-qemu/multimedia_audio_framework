@@ -72,6 +72,7 @@ AudioSystemManager::~AudioSystemManager()
         AUDIO_DEBUG_LOG("UnregisterVolumeKeyEventCallback");
         (void)UnregisterVolumeKeyEventCallback(volumeChangeClientPid_);
         (void)UnregisterStreamVolumeChangeCallback(volumeChangeClientPid_);
+        (void)UnregisterSystemVolumeChangeCallback(volumeChangeClientPid_);
     }
 }
 
@@ -224,7 +225,7 @@ int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTrans
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
 
     int32_t ret = SUCCESS;
-    
+
     lock_guard<mutex> lock(g_audioListenerMutex);
     if (g_audioListener == nullptr) {
         g_audioListener = new(std::nothrow) AudioManagerListenerStub();
@@ -243,7 +244,7 @@ int32_t AudioSystemManager::RegisterRendererDataTransferCallback(const DataTrans
         ret = gasp->RegisterDataTransferCallback(object);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "ret: %{public}d", ret);
     }
-    
+
     auto callbackId = g_audioListener->AddDataTransferStateChangeCallback(param, callback);
     CHECK_AND_RETURN_RET_LOG(callbackId != -1, ERROR_SYSTEM, "out of max register count");
     ret = gasp->RegisterDataTransferMonitorParam(callbackId, param);
@@ -259,7 +260,7 @@ int32_t AudioSystemManager::UnregisterRendererDataTransferCallback(
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERROR_INVALID_PARAM, "callback is null");
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERROR, "Audio service unavailable.");
-    
+
     lock_guard<mutex> lock(g_audioListenerMutex);
     CHECK_AND_RETURN_RET_LOG(g_audioListener != nullptr, ERROR_INVALID_PARAM, "audio listener is null");
     auto callbackIds = g_audioListener->RemoveDataTransferStateChangeCallback(callback);
@@ -267,7 +268,7 @@ int32_t AudioSystemManager::UnregisterRendererDataTransferCallback(
     for (auto callbackId : callbackIds) {
         gasp->UnregisterDataTransferMonitorParam(callbackId);
     }
-    
+
     return SUCCESS;
 }
 
@@ -329,7 +330,7 @@ AudioScene AudioSystemManager::GetAudioScene() const
 
         case AUDIO_SCENE_VOICE_RINGING:
             return AUDIO_SCENE_RINGING;
-    
+
         default:
             return audioScene;
     }
@@ -801,6 +802,12 @@ bool AudioSystemManager::IsStreamMute(AudioVolumeType volumeType) const
     return AudioPolicyManager::GetInstance().GetStreamMute(volumeType);
 }
 
+float AudioSystemManager::GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device)
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetVolumeInUnitOfDb");
+    return AudioPolicyManager::GetInstance().GetSystemVolumeInDb(volumeType, volumeLevel, device);
+}
+
 int32_t AudioSystemManager::SetDeviceChangeCallback(const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback>& callback)
 {
@@ -1180,6 +1187,29 @@ int32_t AudioSystemManager::UnregisterVolumeKeyEventCallback(const int32_t clien
     int32_t ret = AudioPolicyManager::GetInstance().UnsetVolumeKeyEventCallback(callback);
     if (!ret) {
         AUDIO_DEBUG_LOG("UnsetVolumeKeyEventCallback success");
+    }
+    return ret;
+}
+
+int32_t AudioSystemManager::RegisterSystemVolumeChangeCallback(const int32_t clientPid,
+    const std::shared_ptr<SystemVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("AudioSystemManager RegisterSystemVolumeChangeCallback");
+
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM,
+        "RegisterSystemVolumeChangeCallback callback is nullptr");
+    volumeChangeClientPid_ = clientPid;
+
+    return AudioPolicyManager::GetInstance().SetSystemVolumeChangeCallback(clientPid, callback);
+}
+
+int32_t AudioSystemManager::UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
+    const std::shared_ptr<SystemVolumeChangeCallback> &callback)
+{
+    AUDIO_DEBUG_LOG("UnregisterSystemVolumeChangeCallback");
+    int32_t ret = AudioPolicyManager::GetInstance().UnsetSystemVolumeChangeCallback(callback);
+    if (!ret) {
+        AUDIO_DEBUG_LOG("UnsetSystemVolumeChangeCallback success");
     }
     return ret;
 }
@@ -1980,6 +2010,30 @@ int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &i
     return SUCCESS;
 }
 
+float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetVolumeInDbByStream");
+    return AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+}
+
+std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetSupportedAudioVolumeTypes");
+    return AudioPolicyManager::GetInstance().GetSupportedAudioVolumeTypes();
+}
+
+AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumeTypeByStreamUsage");
+    return AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
+}
+
+std::vector<StreamUsage> AudioSystemManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    AUDIO_INFO_LOG("enter AudioSystemManager::GetStreamUsagesByVolumeType");
+    return AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(audioVolumeType);
+}
+
 
 int32_t AudioSystemManager::RegisterStreamVolumeChangeCallback(const int32_t clientPid,
     const std::set<StreamUsage> &streamUsages, const std::shared_ptr<StreamVolumeChangeCallback> &callback)
@@ -2103,7 +2157,7 @@ void AudioSystemManager::InitWorkgroupState()
             std::make_shared<AudioStandard::AudioRendererChangeInfo>();
         info->rendererState = RendererState::RENDERER_INVALID;
         SetAudioRendererChangeInfo(t, info);
- 
+
         VolumeEvent e(t, GetVolume(t), false);
         SetVolumeEvent(t, e);
     }
@@ -2133,13 +2187,13 @@ void AudioSystemManager::AttachVolumeKeyEventListener()
     if (volumeKeyEventCallback_ != nullptr) {
         return;
     }
- 
+
     volumeKeyEventCallback_ = std::make_shared<VolumeKeyEventCallbackImpl>();
     if (volumeKeyEventCallback_ == nullptr) {
         AUDIO_ERR_LOG("[WorkgroupInClient]volumeKeyEventCallback_ Allocation Failed");
         return;
     }
- 
+
     int32_t ret = RegisterVolumeKeyEventCallback(getpid(), volumeKeyEventCallback_);
     if (ret != 0) {
         AUDIO_ERR_LOG("[WorkgroupInClient]RegisterVolumeKeyEventCallback Failed");
@@ -2152,7 +2206,7 @@ void AudioSystemManager::DetachVolumeKeyEventListener()
     if (volumeKeyEventCallback_ == nullptr) {
         return;
     }
- 
+
     int32_t ret = UnregisterVolumeKeyEventCallback(getpid(), volumeKeyEventCallback_);
     if (ret != 0) {
         AUDIO_ERR_LOG("[WorkgroupInClient]UnregisterVolumeKeyEventCallback Failed");
@@ -2164,7 +2218,7 @@ void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateCh
     const std::vector<std::shared_ptr<AudioStandard::AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
     std::unordered_map<AudioStreamType, bool> typeMap;
- 
+
     for (const auto &info : audioRendererChangeInfos) {
         if (info == nullptr) {
             continue;
@@ -2172,7 +2226,7 @@ void AudioSystemManager::AudioRendererStateChangeCallbackImpl::OnRendererStateCh
         if (info->clientUID != (int32_t)getuid()) {
             continue;
         }
- 
+
         AudioStreamType streamType = GetStreamType(info->rendererInfo.contentType, info->rendererInfo.streamUsage);
         if (AudioSystemManager::GetInstance()->IsValidStreamType(streamType)) {
             if (info->rendererState == RendererState::RENDERER_RUNNING) {
@@ -2192,13 +2246,13 @@ void AudioSystemManager::AttachAudioRendererEventListener()
     if (audioRendererStateChangeCallback_ != nullptr) {
         return;
     }
- 
+
     audioRendererStateChangeCallback_ = std::make_shared<AudioRendererStateChangeCallbackImpl>();
     if (audioRendererStateChangeCallback_ == nullptr) {
         AUDIO_ERR_LOG("[WorkgroupInClient]audioRendererStateChangeCallback_ Allocation Failed");
         return;
     }
- 
+
     int32_t ret =
         AudioPolicyManager::GetInstance().RegisterAudioRendererEventListener(audioRendererStateChangeCallback_);
     if (ret != 0) {
@@ -2212,7 +2266,7 @@ void AudioSystemManager::DetachAudioRendererEventListener()
     if (audioRendererStateChangeCallback_ == nullptr) {
         return;
     }
- 
+
     int32_t ret =
         AudioPolicyManager::GetInstance().UnregisterAudioRendererEventListener(audioRendererStateChangeCallback_);
     if (ret != 0) {

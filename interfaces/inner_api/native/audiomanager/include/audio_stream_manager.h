@@ -288,6 +288,15 @@ public:
     bool IsStreamActive(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Is stream active.
+     *
+     * @param streamUsage stream usage.
+     * @return Returns <b>true</b> if the stream is active; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) const;
+
+    /**
      * @brief Is fast playback supported.
      *
      * @param streamInfo audio stream info.

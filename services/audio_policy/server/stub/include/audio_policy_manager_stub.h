@@ -46,6 +46,7 @@ private:
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void IsStreamActiveByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
     void IsFastPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsFastRecordingSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
@@ -240,6 +241,10 @@ private:
     void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetVolumeInDbByStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioVolumeTypesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioVolumeTypeByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetStreamUsagesByVolumeTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
