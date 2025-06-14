@@ -1162,8 +1162,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
     } else {
         UpdatePrimaryInstance(sink, source);
-        if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
-            deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             deviceTypes[0] = DEVICE_TYPE_NONE;
         }
     }
