@@ -287,7 +287,6 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     Volume vol;
     AudioVolumeType streamType = GetData<AudioVolumeType>();
     DeviceType deviceType = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
 
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
