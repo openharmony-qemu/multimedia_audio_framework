@@ -149,8 +149,6 @@ public:
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
-    void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
     void OnDeviceStatusUpdated(DeviceType devType, bool isConnected,
@@ -169,13 +167,6 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
-
-    void OnMonoAudioConfigChanged(bool audioMono);
-
-    void OnAudioBalanceChanged(float audioBalance);
-
-    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
-        doNotDisturbStatusWhiteList);
 
     void LoadEffectLibrary();
 

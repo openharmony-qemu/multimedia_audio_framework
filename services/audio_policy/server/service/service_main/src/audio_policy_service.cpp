@@ -53,18 +53,9 @@ using namespace std;
 
 namespace {
 static const char* CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
-static const char* PREDICATES_STRING = "settings.general.device_name";
-static const char* SETTINGS_DATA_BASE_URI =
-    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
-static const char* SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 }
 
-
-static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
-static const char* CONFIG_AUDIO_MONO_KEY = "master_mono";
-static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
-static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
 const int32_t UID_AUDIO = 1041;
 
 mutex g_dataShareHelperMutex;
@@ -517,11 +508,6 @@ void AudioPolicyService::OnDeviceConfigurationChanged(DeviceType deviceType, con
     const std::string &deviceName, const AudioStreamInfo &streamInfo)
 {
     audioDeviceLock_.OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
-}
-
-void AudioPolicyService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
-{
-    audioDeviceLock_.SetDisplayName(deviceName, isLocalDevice);
 }
 
 void AudioPolicyService::RegisterRemoteDevStatusCallback()
@@ -1022,7 +1008,7 @@ void AudioPolicyService::RegisterDataObserver()
     std::string devicesName = "";
     int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
-    SetDisplayName(devicesName, true);
+    audioConnectedDevice_.SetDisplayName(devicesName, true);
     audioConnectedDevice_.RegisterNameMonitorHelper();
     audioPolicyManager_.RegisterDoNotDisturbStatus();
     audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();

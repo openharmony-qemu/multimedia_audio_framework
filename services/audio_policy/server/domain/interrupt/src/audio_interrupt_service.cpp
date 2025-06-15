@@ -35,6 +35,7 @@ constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
+const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -2245,12 +2246,11 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
 void AudioInterruptService::RegisterDefaultVolumeTypeListener()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncMono = [this](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t currentVauleType = STREAM_MUSIC;
-        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentVauleType, "system");
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this, &settingProvider](const std::string &key) {
+        int32_t currentValueType = STREAM_MUSIC;
+        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentValueType, "system");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
-        if (currentVauleType == STREAM_RING) {
+        if (currentValueType == STREAM_RING) {
             defaultVolumeType_ = STREAM_RING;
         } else {
             defaultVolumeType_ = STREAM_MUSIC;

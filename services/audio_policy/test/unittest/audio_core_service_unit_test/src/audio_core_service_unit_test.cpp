@@ -523,10 +523,10 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     GetServerPtr()->coreService_->audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor3);
 
     bool isLocalDevice = true;
-    GetServerPtr()->coreService_->SetDisplayName("deviceX", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceX", isLocalDevice);
     isLocalDevice = false;
-    GetServerPtr()->coreService_->SetDisplayName("deviceY", isLocalDevice);
-    GetServerPtr()->coreService_->SetDisplayName("deviceZ", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceY", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceZ", isLocalDevice);
 }
 
 /**

@@ -18,11 +18,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioPolicyDataShareListener
-{
+class AudioPolicyDataShareListener {
 public:
-    AudioPolicyDataShareListener(/* args */);
-    ~AudioPolicyDataShareListener();
     static void RegisterAccessiblilityBalance();
     static void RegisterAccessiblilityMono();
 };

@@ -32,6 +32,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
+static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+
 static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
@@ -2865,13 +2868,12 @@ void AudioAdapterManager::RegisterDoNotDisturbStatus()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         int32_t isDoNotDisturb = 0;
         int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
         AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
         auto audioVolume = AudioVolume::GetInstance();
-        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, set DoNotDisturbStatus failed");
         audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
     };
     sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
@@ -2887,15 +2889,15 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
         std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
         int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
             doNotDisturbWhiteList, "secure");
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
         AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
         auto audioVolume = AudioVolume::GetInstance();
-        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null");
-        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, \
+            set doNotDisturbStatusWhiteList failed");
+        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbWhiteList);
     };
     sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
         updateFuncDoNotDisturbWhiteList);

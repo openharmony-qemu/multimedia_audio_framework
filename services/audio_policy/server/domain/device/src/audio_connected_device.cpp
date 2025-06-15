@@ -33,17 +33,18 @@
 namespace OHOS {
 namespace AudioStandard {
 
-class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub
-{
+static const char *SETTINGS_DATA_BASE_URI =
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/SETTINGSDATA?Proxy=true";
+static const char *PREDICATES_STRING = "settings.general.device_name";
+
+class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub {
 public:
-    explicit DataShareObserverCallBack();
-    ~DataShareObserverCallBack() override {};
     void OnChange() override
     {
-        std::string devicesName = "";
-        int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
+        std::string deviceName = "";
+        int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(deviceName);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
-        AudioConnectedDevice::GetInstance().SetDisplayName(devicesName, true);
+        AudioConnectedDevice::GetInstance().SetDisplayName(deviceName, true);
     }
 };
 

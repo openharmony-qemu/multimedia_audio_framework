@@ -2362,10 +2362,10 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor3);
 
     bool isLocalDevice = true;
-    GetServerPtr()->audioPolicyService_.SetDisplayName("deviceX", isLocalDevice);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.SetDisplayName("deviceX", isLocalDevice);
     isLocalDevice = false;
-    GetServerPtr()->audioPolicyService_.SetDisplayName("deviceY", isLocalDevice);
-    GetServerPtr()->audioPolicyService_.SetDisplayName("deviceZ", isLocalDevice);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.SetDisplayName("deviceY", isLocalDevice);
+    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.SetDisplayName("deviceZ", isLocalDevice);
 
     DmDevice dmDev = {
         "HiCar",
