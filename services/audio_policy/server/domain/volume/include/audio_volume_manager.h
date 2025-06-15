@@ -78,7 +78,6 @@ public:
     void InitKVStore();
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
-    bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
@@ -150,7 +149,6 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
-    void UpdateVolumeForLowLatency();
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();

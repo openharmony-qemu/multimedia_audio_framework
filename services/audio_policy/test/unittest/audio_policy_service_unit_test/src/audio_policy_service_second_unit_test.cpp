@@ -705,22 +705,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test GetSharedVolume.
- * @tc.number: GetSharedVolume_001
- * @tc.desc  : Test GetSharedVolume interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetSharedVolume_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioVolumeType streamType = AudioStreamType::STREAM_RING;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    Volume vol;
-
-    bool ret = server->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(ret, true);
-}
-
-/**
  * @tc.name  : Test UpdateAudioCapturerMicrophoneDescriptor.
  * @tc.number: UpdateAudioCapturerMicrophoneDescriptor_001
  * @tc.desc  : Test UpdateAudioCapturerMicrophoneDescriptor interfaces.

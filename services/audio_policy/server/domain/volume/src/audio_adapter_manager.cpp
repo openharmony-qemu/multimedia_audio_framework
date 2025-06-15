@@ -243,6 +243,8 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         SetVolumeDb(*iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -994,6 +996,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
@@ -2843,6 +2847,21 @@ bool AudioAdapterManager::IsVgsVolumeSupported() const
 std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(AdjustStreamVolume volumeType)
 {
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
+}
+
+void AudioAdapterManager::UpdateVolumeForLowLatency()
+{
+    Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
+    // update volumes for low latency streams when loading volumes from the database.
+    Volume vol = {false, 1.0f, 0};
+    DeviceType curOutputDeviceType = currentActiveDevice_.deviceType_;
+    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+        vol.isMute = GetStreamMute(*iter);
+        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
+        vol.volumeFloat = GetSystemVolumeInDb(*iter, (vol.isMute ? 0 : vol.volumeInt), curOutputDeviceType);
+        AudioVolumeManager::GetInstance().SetSharedVolume(*iter, curOutputDeviceType, vol);
+    }
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
 
 // LCOV_EXCL_STOP
