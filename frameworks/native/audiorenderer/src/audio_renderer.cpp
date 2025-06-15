@@ -116,7 +116,6 @@ AudioRenderer::~AudioRenderer() = default;
 AudioRendererPrivate::~AudioRendererPrivate()
 {
     AUDIO_INFO_LOG("Destruct in");
-    abortRestore_ = true;
 
     std::shared_ptr<OutputDeviceChangeWithInfoCallbackImpl> outputDeviceChangeCallback = outputDeviceChangeCallback_;
     if (outputDeviceChangeCallback != nullptr) {
@@ -887,6 +886,10 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
+
+    if (abortRestore_) {
+        return SUCCESS;
+    }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
     RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
@@ -1228,7 +1231,7 @@ bool AudioRendererPrivate::Release()
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
-
+    abortRestore_ = true;
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
