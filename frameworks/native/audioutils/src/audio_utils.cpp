@@ -1927,7 +1927,7 @@ std::vector<AudioVolumeType> VolumeUtils::GetSupportedAudioVolumeTypes()
 {
     std::vector<AudioVolumeType> result = {};
     std::unordered_set<AudioVolumeType> volumeTypeSet = audioVolumeTypeSet_;
-    for (std::unordered_set<AudioVolumeType>::iterator it = volumeTypeSet.begin(); it != volumeTypeSet.end(); ++it) {
+    for (auto it = volumeTypeSet.begin(); it != volumeTypeSet.end(); ++it) {
         result.push_back(*it);
     }
     return result;
@@ -1937,12 +1937,11 @@ std::vector<StreamUsage> VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeTyp
 {
     std::vector<StreamUsage> result = {};
     std::set<StreamUsage> streamUsageSet = GetStreamUsageSetForVolumeType(audioVolumeType);
-    for (std::set<StreamUsage>::iterator it = streamUsageSet.begin(); it != streamUsageSet.end(); ++it) {
+    for (auto it = streamUsageSet.begin(); it != streamUsageSet.end(); ++it) {
         result.push_back(*it);
     }
     return result;
 }
-
 
 std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeType volumeType)
 {

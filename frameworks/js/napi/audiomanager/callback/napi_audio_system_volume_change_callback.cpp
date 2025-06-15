@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -43,7 +43,7 @@ void NapiAudioSystemVolumeChangeCallback::CreateSystemVolumeChangeTsfn(napi_env 
     napi_value cbName;
     std::string callbackName = "systemVolumeChange";
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
-    napi_add_env_cleanup_hook(env, Cleanup, this);
+    napi_add_env_cleanup_hook(env, CleanUp, this);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, this,
         SystemVolumeChangeTsfnFinalize, nullptr, SafeJsCallbackSystemVolumeChangeWork, &amVolEntTsfn_);
 }
@@ -112,7 +112,6 @@ void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("SafeJsCallbackSystemVolumeChangeWork: safe js callback working.");
 
     do {
         napi_value jsCallback = nullptr;
@@ -135,23 +134,23 @@ void NapiAudioSystemVolumeChangeCallback::SafeJsCallbackSystemVolumeChangeWork(
 
 void NapiAudioSystemVolumeChangeCallback::SystemVolumeChangeTsfnFinalize(napi_env env, void *data, void *hint)
 {
-    AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: Cleanup is removed.");
+    AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: CleanUp is removed.");
     NapiAudioSystemVolumeChangeCallback *context = reinterpret_cast<NapiAudioSystemVolumeChangeCallback*>(data);
-    napi_remove_env_cleanup_hook(env, NapiAudioSystemVolumeChangeCallback::Cleanup, context);
+    napi_remove_env_cleanup_hook(env, NapiAudioSystemVolumeChangeCallback::CleanUp, context);
     if (context->GetTsfn() != nullptr) {
         AUDIO_INFO_LOG("SystemVolumeChangeTsfnFinalize: context is released.");
         delete context;
     }
 }
 
-void NapiAudioSystemVolumeChangeCallback::Cleanup(void *data)
+void NapiAudioSystemVolumeChangeCallback::CleanUp(void *data)
 {
     NapiAudioSystemVolumeChangeCallback *context = reinterpret_cast<NapiAudioSystemVolumeChangeCallback*>(data);
     napi_threadsafe_function tsfn = context->GetTsfn();
     std::unique_lock<std::mutex> lock(context->mutex_);
     context->amVolEntTsfn_ = nullptr;
     lock.unlock();
-    AUDIO_INFO_LOG("Cleanup: safe thread resource release.");
+    AUDIO_INFO_LOG("CleanUp: safe thread resource release.");
     napi_release_threadsafe_function(tsfn, napi_tsfn_abort);
 }
 

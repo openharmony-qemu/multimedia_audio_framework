@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -46,7 +46,7 @@ private:
     };
 
     void OnJsCallbackStreamVolumeChange(std::unique_ptr<AudioStreamVolumeChangeJsCallback> &jsCb);
-    static void Cleanup(void *data);
+    static void CleanUp(void *data);
     static void SafeJsCallbackStreamVolumeChangeWork(napi_env env, napi_value js_cb, void *context, void *data);
     static void StreamVolumeChangeTsfnFinalize(napi_env env, void *data, void *hint);
 
