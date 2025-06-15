@@ -661,6 +661,10 @@ private:
     std::vector<AudioRendererInfo> rendererInfos_;
     std::vector<AudioCapturerInfo> capturerInfos_;
 
+    std::mutex handleAvailableDeviceChangeCbsMapMutex_;
+    std::map<std::pair<int32_t, AudioDeviceUsage>,
+        sptr<IRemoteObject>> availableDeviceChangeCbsMap_;
+
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
 };

@@ -188,6 +188,11 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
             gsp->SetClientCallbacksEnable(enumIndex, true);
         }
     }
+
+    std::lock_guard<std::mutex> lock(handleAvailableDeviceChangeCbsMapMutex_);
+    for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end();) {
+        gsp->SetAvailableDeviceChangeCallback(it->first.first, it->first.second, it->second);
+    }
 }
 
 int32_t AudioPolicyManager::SetCallbackStreamInfo(const CallbackChange &callbackChange)
