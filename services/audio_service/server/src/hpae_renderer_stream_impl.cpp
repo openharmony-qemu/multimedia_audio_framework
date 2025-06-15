@@ -24,6 +24,7 @@
 #include "sink/i_audio_render_sink.h"
 #include "manager/hdi_adapter_manager.h"
 #include <chrono>
+#include <thread>
 #include "safe_map.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
@@ -142,6 +143,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Pause is error");
         return ERR_INVALID_PARAM;
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
     return SUCCESS;
 }
 
