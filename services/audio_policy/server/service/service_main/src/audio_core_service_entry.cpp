@@ -48,7 +48,7 @@ static const char *SessionOperationMsgToString(SessionOperationMsg opMsg)
     switch (opMsg) {
         case SESSION_OP_MSG_DEFAULT:
             return "MSG_DEFAULT";
-        case SESSION_OP_MSG_REMOVE_REC_PIPE:
+        case SESSION_OP_MSG_REMOVE_PIPE:
             return "MSG_REMOVE_REC_PIPE";
         default:
             return "MSG_UNKNOWN";

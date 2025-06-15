@@ -27,7 +27,7 @@ enum SessionOperation : uint32_t {
 
 enum SessionOperationMsg : uint32_t {
     SESSION_OP_MSG_DEFAULT = 0,
-    SESSION_OP_MSG_REMOVE_REC_PIPE = 1,
+    SESSION_OP_MSG_REMOVE_PIPE = 1,
 };
 } // namespace AudioStandard
 } // namespace OHOS
