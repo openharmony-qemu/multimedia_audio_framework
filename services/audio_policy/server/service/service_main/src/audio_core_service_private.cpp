@@ -742,12 +742,24 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
 void AudioCoreService::RemoveUnusedPipe()
 {
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
-    for (auto &pipeInfo : pipeInfos) {
+    for (auto pipeInfo : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) {
             DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_);
             continue;
         }
+        audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
+        pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+    }
+}
+
+void AudioCoreService::RemoveUnusedRecordPipe()
+{
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedRecordPipe();
+    for (auto pipeInfo : pipeInfos) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
     }

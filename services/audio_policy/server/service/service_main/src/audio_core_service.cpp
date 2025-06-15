@@ -451,7 +451,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -464,6 +464,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
+        RemoveUnusedRecordPipe();
+    }
     DeleteSessionId(sessionId);
 
     return SUCCESS;

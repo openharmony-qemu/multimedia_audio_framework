@@ -258,7 +258,8 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
 PipeInfoGuard::~PipeInfoGuard()
 {
     if (releaseFlag_) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
+            SESSION_OP_MSG_REMOVE_PIPE);
     }
 }
 

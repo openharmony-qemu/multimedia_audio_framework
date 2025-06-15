@@ -195,7 +195,8 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
         pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     } else {
         pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
-        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->routeFlag_ = moduleInfo.sourceType == std::to_string(SourceType::SOURCE_TYPE_WAKEUP) ?
+            AUDIO_INPUT_FLAG_WAKEUP : AUDIO_INPUT_FLAG_NORMAL;
     }
     pipeInfo->adapterName_ = moduleInfo.adapterName;
     pipeInfo->moduleInfo_ = moduleInfo;
