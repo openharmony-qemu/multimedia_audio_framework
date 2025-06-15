@@ -201,6 +201,8 @@ public:
 
     void HandleDpConnection();
 
+    void RefreshVolumeWhenDpReConnect();
+
     int32_t GetStreamVolume(AudioStreamType streamType);
 
     void NotifyAccountsChanged(const int &id);
@@ -428,6 +430,7 @@ private:
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
+    bool isDpReConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {
