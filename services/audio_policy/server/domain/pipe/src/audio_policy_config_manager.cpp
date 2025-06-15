@@ -436,16 +436,27 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
-void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
-    std::shared_ptr<AudioStreamDescriptor> &desc, std::shared_ptr<AdapterPipeInfo> &pipeInfo,
+void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
+    std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
 {
-    //if not match, choose first
-    info = pipeInfo->streamPropInfos_.front();
+    CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
+    CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
+    if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
+        info = GetStreamPropInfoFromPipe(
+            adapterPipeInfo, desc->streamInfo_.format, desc->streamInfo_.samplingRate, tempChannel);
+        CHECK_AND_RETURN(info == nullptr);
+        AUDIO_WARNING_LOG("Find streamPropInfo %{public}s failed, choose normal route", adapterPipeInfo->name_.c_str());
+        desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        adapterPipeInfo = GetNormalRecordAdapterInfo(desc);
+        CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "Get adapter info for normal capture failed");
+    }
+
+    info = adapterPipeInfo->streamPropInfos_.front();
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
     if (useMatchingPropInfo) {
-        auto streamProp = GetStreamPropInfoFromPipe(pipeInfo, desc->streamInfo_.format,
+        auto streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, desc->streamInfo_.format,
             desc->streamInfo_.samplingRate, tempChannel);
         if (streamProp != nullptr) {
             info = streamProp;
@@ -472,6 +483,25 @@ void AudioPolicyConfigManager::HandleGetStreamPropInfoForRecord(
 #endif
 }
 
+std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapterInfo(
+    std::shared_ptr<AudioStreamDescriptor> desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+        desc->newDeviceDescs_.front() != nullptr, nullptr, "Invalid device desc");
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = desc->newDeviceDescs_.front();
+
+    // Get adapter info for device
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(deviceDesc->deviceType_,
+        deviceDesc->deviceRole_, deviceDesc->networkId_, AUDIO_INPUT_FLAG_NORMAL, deviceDesc->a2dpOffloadFlag_);
+    CHECK_AND_RETURN_RET_LOG(deviceInfo != nullptr, nullptr, "Find device failed, none streamProp");
+
+    // Get support pipes for normal stream
+    auto pipeIt = deviceInfo->supportPipeMap_.find(AUDIO_INPUT_FLAG_NORMAL);
+    CHECK_AND_RETURN_RET_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), nullptr, "Flag not supported");
+
+    return pipeIt->second;
+}
+
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
@@ -490,7 +520,7 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
-        HandleGetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
+        GetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
         return;
     }
 
