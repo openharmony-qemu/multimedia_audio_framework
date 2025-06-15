@@ -753,6 +753,16 @@ void AudioCoreService::RemoveUnusedPipe()
     }
 }
 
+void AudioCoreService::RemoveUnusedRecordPipe()
+{
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedRecordPipe();
+    for (auto &pipeInfo : pipeInfos) {
+        AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
+        audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
+        pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+    }
+}
+
 std::string AudioCoreService::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);

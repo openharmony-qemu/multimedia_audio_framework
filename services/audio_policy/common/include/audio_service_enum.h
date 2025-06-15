@@ -24,6 +24,11 @@ enum SessionOperation : uint32_t {
     SESSION_OPERATION_STOP,
     SESSION_OPERATION_RELEASE,
 };
+
+enum SessionOperationMsg : uint32_t {
+    SESSION_OP_MSG_DEFAULT = 0,
+    SESSION_OP_MSG_REMOVE_REC_PIPE = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SERVICE_ENUM_H
