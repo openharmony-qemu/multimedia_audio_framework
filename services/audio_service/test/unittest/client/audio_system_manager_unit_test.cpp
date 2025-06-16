@@ -631,12 +631,18 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeEvent_001, TestSize.Level1)
  
     auto actualVolumeEventMap = AudioSystemManager::GetInstance()->GetVolumeEvent();
  
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volumeType, expectedVolumeEventMap[AudioStreamType::STREAM_RING].volumeType);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volume, expectedVolumeEventMap[AudioStreamType::STREAM_RING].volume);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].updateUi, expectedVolumeEventMap[AudioStreamType::STREAM_RING].updateUi);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].updateUi);
 }
  
 /**
@@ -771,7 +777,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest StartGroup_001 start");
     bool needUpdatePrio = true;
     std::unordered_map<int32_t, bool> threads = {
-        {101, true}, 
+        {101, true},
         {102, true}
     };
     int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 500, threads, needUpdatePrio);
@@ -788,7 +794,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest StartGroup_002 start");
     bool needUpdatePrio = true;
     std::unordered_map<int32_t, bool> threads = {
-        {101, true}, 
+        {101, true},
         {102, true}
     };
     int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 2000, threads, needUpdatePrio);
