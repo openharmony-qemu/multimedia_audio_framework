@@ -224,6 +224,17 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
         }
     }
 }
+
+bool HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
+{
+    isOutputClusterConnected_ = isConnect;
+    AUDIO_INFO_LOG("HpaeCoBufferNode output cluster connected status: %{public}d", isConnect);
+}
+
+bool HpaeCoBufferNode::IsOutputClusterConnected()
+{
+    return isOutputClusterConnected_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
