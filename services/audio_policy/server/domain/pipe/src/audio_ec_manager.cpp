@@ -531,7 +531,7 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
 {
     AUDIO_INFO_LOG("address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
     string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_RET(address != activeArmAddr,);
+    CHECK_AND_RETURN_LOG(address != activeArmAddr, "usb device addr already active");
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
@@ -569,7 +569,7 @@ void AudioEcManager::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
     AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
         GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
     string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_RET(device.macAddress_ == activeArmAddr,);
+    CHECK_AND_RETURN_LOG(device.macAddress_ == activeArmAddr, "usb device addr not match");
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType Failed");

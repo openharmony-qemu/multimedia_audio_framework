@@ -142,7 +142,8 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
-      audioActiveDevice_(AudioActiveDevice::GetInstance())
+      audioActiveDevice_(AudioActiveDevice::GetInstance()),
+      usbManager_(AudioUsbManager::GetInstance())
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -280,7 +281,7 @@ void AudioPolicyServer::OnStop()
     audioPolicyService_.Deinit();
     coreService_->DeInit();
 #ifdef USB_ENABLE
-    AudioUsbManager::GetInstance().Deinit();
+    usbManager_.Deinit();
 #endif
     UnRegisterPowerStateListener();
     UnRegisterSyncHibernateListener();
@@ -325,7 +326,7 @@ void AudioPolicyServer::OnAddSystemAbility(int32_t systemAbilityId, const std::s
             break;
 #ifdef USB_ENABLE
         case USB_SYSTEM_ABILITY_ID:
-            AudioUsbManager::GetInstance().Init();
+            usbManager_.Init(eventEntry_);
             break;
 #endif
         default:
@@ -736,7 +737,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
     SubscribeCommonEvent("usual.event.SCREEN_UNLOCKED");
 #ifdef USB_ENABLE
-    AudioUsbManager::GetInstance().SubscribeEvent();
+    usbManager_.SubscribeEvent();
 #endif
     SubscribeSafeVolumeEvent();
 }

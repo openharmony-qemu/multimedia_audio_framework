@@ -16,14 +16,17 @@
 #define LOG_TAG "AudioUsbManager"
 #endif
 
+#include "audio_usb_manager.h"
+
 #include <sstream>
 #include <dirent.h>
 #include <fstream>
+
 #include "common_event_manager.h"
 #include "common_event_support.h"
 #include "usb_srv_client.h"
-#include "audio_usb_manager.h"
-#include "audio_policy_service.h"
+
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -165,13 +168,13 @@ string EncUsbAddr(const string &src)
     return string("c**") + num + "**";
 }
 
-AudioUsbManager& AudioUsbManager::GetInstance()
+AudioUsbManager &AudioUsbManager::GetInstance()
 {
-    static AudioUsbManager sAudioUsbManager(AudioPolicyService::GetAudioPolicyService());
-    return sAudioUsbManager;
+    static AudioUsbManager sManager;
+    return sManager;
 }
 
-void AudioUsbManager::Init()
+void AudioUsbManager::Init(std::shared_ptr<IDeviceStatusObserver> observer)
 {
     lock_guard<mutex> lock(mutex_);
     if (!initialized_) {
@@ -180,6 +183,7 @@ void AudioUsbManager::Init()
 #else
         AUDIO_INFO_LOG("Entry. DETECT_SOUNDBOX=false");
 #endif
+        observer_ = observer;
         RefreshUsbAudioDevices();
         initialized_ = true;
     }
@@ -238,17 +242,19 @@ void AudioUsbManager::NotifyDevice(const UsbAudioDevice &device, const bool isCo
     AudioStreamInfo streamInfo{};
     string deviceName = device.name_ + "-" + to_string(device.cardNum_);
     if (device.isPlayer_) {
-        AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
+        AUDIO_INFO_LOG("Usb out, devType=%{public}d, isConnected=%{public}d, "
             "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::OUTPUT_DEVICE);
-        observer_.OnDeviceStatusUpdated(devType, isConnected, macAddress,
+        CHECK_AND_RETURN_LOG(observer_ != nullptr, "observer is null");
+        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
             deviceName, streamInfo, OUTPUT_DEVICE, device.isCapturer_);
     }
     if (device.isCapturer_) {
-        AUDIO_INFO_LOG("Call observer_->OnDeviceStatusUpdated. devType=%{public}d, isConnected=%{public}d, "
+        AUDIO_INFO_LOG("Usb in, devType=%{public}d, isConnected=%{public}d, "
             "macAddress=%{public}s, deviceName=%{public}s, role=%{public}d", devType, isConnected,
             EncUsbAddr(macAddress).c_str(), deviceName.c_str(), DeviceRole::INPUT_DEVICE);
-        observer_.OnDeviceStatusUpdated(devType, isConnected, macAddress,
+        CHECK_AND_RETURN_LOG(observer_ != nullptr, "observer is null");
+        observer_->OnDeviceStatusUpdated(devType, isConnected, macAddress,
             deviceName, streamInfo, INPUT_DEVICE, device.isPlayer_);
     }
 }

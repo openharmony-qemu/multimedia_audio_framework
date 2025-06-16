@@ -202,9 +202,6 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     int32_t ret = coreService_->OnServiceConnected(serviceIndex);
     serviceLock.unlock();
     if (ret == SUCCESS) {
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init();
-#endif
         coreService_->audioEffectService_.SetMasterSinkAvailable();
     }
     // RegisterBluetoothListener() will be called when bluetooth_host is online
