@@ -40,6 +40,7 @@ private:
     AudioSampleFormat workFormat_ = INVALID_WIDTH;  // work format, for now only supports float
     uint32_t workSize_ = 0; // work format, for now only supports float
     bool mixLfe_ = true;
+    bool isInitialized_ = false;
 };
 } // HPAE
 } // AudioStandard
