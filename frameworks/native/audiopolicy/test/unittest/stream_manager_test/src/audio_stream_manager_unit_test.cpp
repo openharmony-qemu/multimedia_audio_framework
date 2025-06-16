@@ -39,12 +39,12 @@ namespace AudioStandard {
 namespace {
     AudioStreamManager *g_audioManagerInstance = nullptr;
     int g_isCallbackReceived = false;
-    constexpr uint32_t MIN_DEVICE_ID = 1;
+//    constexpr uint32_t MIN_DEVICE_ID = 1;
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
     constexpr int32_t CAPTURER_FLAG = 0;
     constexpr int32_t WAIT_TIME = 3;
-    constexpr int32_t VALUE_HUNDRED = 100;
+//    constexpr int32_t VALUE_HUNDRED = 100;
     std::string g_callbackName("");
     std::mutex g_mutex;
     std::condition_variable g_condVar;
