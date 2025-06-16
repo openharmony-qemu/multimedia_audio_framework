@@ -30,6 +30,8 @@ public:
     static AudioVolumeType GetVolumeTypeFromStreamUsage(StreamUsage streamUsage);
     static std::set<StreamUsage> GetOverlapStreamUsageSet(const std::set<StreamUsage>& streamUsages,
         AudioVolumeType volumeType);
+    static std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
+    static std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
 
 private:
     static std::set<StreamUsage>& GetStreamUsageSetForVolumeType(AudioVolumeType volumeType);
@@ -41,6 +43,7 @@ private:
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> defaultVolumeToStreamUsageMap_;
     static std::unordered_map<AudioVolumeType, std::set<StreamUsage>> pcVolumeToStreamUsageMap_;
     static std::unordered_map<StreamUsage, AudioStreamType> streamUsageMap_;
+    static std::unordered_set<AudioVolumeType> audioVolumeTypeSet_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

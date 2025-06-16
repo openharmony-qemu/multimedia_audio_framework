@@ -101,18 +101,6 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void AudioVolumeManagerGetSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
-    AudioVolumeType streamType = g_testStreamTypes[index];
-    index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    DeviceType deviceType = g_testDeviceTypes[index];
-    Volume vol;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
-}
-
 void AudioVolumeManagerInitSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
@@ -379,7 +367,6 @@ void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest(const uint8_t *rawData, si
 } // namesapce OHOS
 
 OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioVolumeManagerGetSharedVolumeFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitSharedVolumeFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest,

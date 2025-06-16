@@ -28,7 +28,7 @@ void AudioToneParserUnitTest::TearDown(void) {}
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioToneParserUnitTest_001
- * @tc.desc  : Test GetSharedVolume interface.
+ * @tc.desc  : Test LoadConfig interface.
  */
 HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_001, TestSize.Level1)
 {
@@ -42,7 +42,7 @@ HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_001, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioToneParserUnitTest_002
- * @tc.desc  : Test GetSharedVolume interface.
+ * @tc.desc  : Test LoadNewConfig interface.
  */
 HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_002, TestSize.Level1)
 {
@@ -60,7 +60,7 @@ HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_002, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioToneParserUnitTest_003
- * @tc.desc  : Test GetSharedVolume interface.
+ * @tc.desc  : Test ParseCustom interface.
  */
 HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_003, TestSize.Level1)
 {
@@ -79,7 +79,7 @@ HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_003, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioToneParserUnitTest_004
- * @tc.desc  : Test GetSharedVolume interface.
+ * @tc.desc  : Test ParseToneInfoAttribute interface.
  */
 HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_004, TestSize.Level1)
 {
@@ -95,7 +95,7 @@ HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_004, TestSize.Level1)
 /**
  * @tc.name  : Test AudioVolumeManager.
  * @tc.number: AudioToneParserUnitTest_005
- * @tc.desc  : Test GetSharedVolume interface.
+ * @tc.desc  : Test ParseToneInfo interface.
  */
 HWTEST_F(AudioToneParserUnitTest, AudioToneParserUnitTest_005, TestSize.Level1)
 {

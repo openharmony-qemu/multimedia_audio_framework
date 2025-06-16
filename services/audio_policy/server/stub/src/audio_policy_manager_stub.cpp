@@ -46,6 +46,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_STREAM_MUTE",
     "GET_STREAM_MUTE",
     "IS_STREAM_ACTIVE",
+    "IS_STREAM_ACTIVE_BY_STREAM_USAGE",
     "SET_DEVICE_ACTIVE",
     "IS_DEVICE_ACTIVE",
     "GET_ACTIVE_OUTPUT_DEVICE",
@@ -237,6 +238,10 @@ const char *g_audioPolicyCodeStrs[] = {
     "GET_MIN_VOLUME_LEVEL_BY_USAGE",
     "GET_VOLUME_LEVEL_BY_USAGE",
     "GET_STREAM_MUTE_BY_USAGE",
+    "GET_VOLUME_IN_DB_BY_STREAM",
+    "GET_SUPPORTED_AUDIO_VOLUME_TYPES",
+    "GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE",
+    "GET_STREAM_USAGES_BY_VOLUME_TYPE",
     "SET_CALLBACK_STREAM_USAGE_INFO",
     "UPDATE_DEVICE_INFO",
     "SET_SLE_AUDIO_OPERATION_CALLBACK",
@@ -503,6 +508,13 @@ void AudioPolicyManagerStub::IsStreamActiveInternal(MessageParcel &data, Message
 {
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool isActive = IsStreamActive(volumeType);
+    reply.WriteBool(isActive);
+}
+
+void AudioPolicyManagerStub::IsStreamActiveByStreamUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    bool isActive = IsStreamActiveByStreamUsage(streamUsage);
     reply.WriteBool(isActive);
 }
 
@@ -1322,6 +1334,21 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED):
             IsAudioLoopbackSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_STREAM_ACTIVE_BY_STREAM_USAGE):
+            IsStreamActiveByStreamUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_VOLUME_IN_DB_BY_STREAM):
+            GetVolumeInDbByStreamInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SUPPORTED_AUDIO_VOLUME_TYPES):
+            GetSupportedAudioVolumeTypesInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE):
+            GetAudioVolumeTypeByStreamUsageInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
+            GetStreamUsagesByVolumeTypeInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -2427,6 +2454,43 @@ void AudioPolicyManagerStub::GetStreamMuteByUsageInternal(MessageParcel &data, M
     StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
     bool result = GetStreamMuteByUsage(streamUsage);
     reply.WriteBool(result);
+}
+
+void AudioPolicyManagerStub::GetVolumeInDbByStreamInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    int32_t volumeLevel = data.ReadInt32();
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    float result = GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+    reply.WriteFloat(result);
+}
+
+void AudioPolicyManagerStub::GetSupportedAudioVolumeTypesInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::vector<AudioVolumeType> volumeTypes = GetSupportedAudioVolumeTypes();
+    size_t size = volumeTypes.size();
+    reply.WriteInt32(size);
+    for (size_t idx = 0; idx < size; idx++) {
+        reply.WriteInt32(volumeTypes[idx]);
+    }
+}
+
+void AudioPolicyManagerStub::GetAudioVolumeTypeByStreamUsageInternal(MessageParcel &data, MessageParcel &reply)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(data.ReadInt32());
+    AudioVolumeType volumeType = GetAudioVolumeTypeByStreamUsage(streamUsage);
+    reply.WriteInt32(volumeType);
+}
+
+void AudioPolicyManagerStub::GetStreamUsagesByVolumeTypeInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioVolumeType audioVolumeType = static_cast<AudioVolumeType>(data.ReadInt32());
+    std::vector<StreamUsage> streamUsages = GetStreamUsagesByVolumeType(audioVolumeType);
+    size_t size = streamUsages.size();
+    reply.WriteInt32(size);
+    for (size_t idx = 0; idx < size; idx++) {
+        reply.WriteInt32(streamUsages[idx]);
+    }
 }
 
 void AudioPolicyManagerStub::SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply)

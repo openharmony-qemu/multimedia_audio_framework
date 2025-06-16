@@ -49,8 +49,33 @@ public:
         SYSTEM = 6,
         VOICE_ASSISTANT = 9,
         ULTRASONIC = 10,
+        NOTIFICATION = 11,
+        NAVIGATION = 12,
         VOLUMETYPE_MAX,
         ALL = 100
+    };
+
+    enum AudioJsStreamUsage {
+        USAGE_UNKNOW = 0,
+        USAGE_MEDIA = 1,
+        USAGE_VOICE_COMMUNICATION = 2,
+        USAGE_VOICE_ASSISTANT = 3,
+        USAGE_ALARM = 4,
+        USAGE_VOICE_MESSAGE = 5,
+        USAGE_RINGTONE = 6,
+        USAGE_NOTIFICATION = 7,
+        USAGE_ACCESSIBILITY = 8,
+        USAGE_SYSTEM = 9,
+        USAGE_MOVIE = 10,
+        USAGE_GAME = 11,
+        USAGE_AUDIOBOOK = 12,
+        USAGE_NAVIGATION = 13,
+        USAGE_DTMF = 14,
+        USAGE_ENFORCED_TONE = 15,
+        USAGE_ULTRASONIC = 16,
+        USAGE_VIDEO_COMMUNICATION = 17,
+        USAGE_VOICE_CALL_ASSISTANT = 21,
+        USAGE_MAX = 100
     };
 
     enum AudioJsVolumeMode {
@@ -112,6 +137,8 @@ public:
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
     static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
     static int32_t GetJsAudioVolumeType(AudioStreamType volumeType);
+    static int32_t GetJsStreamUsage(StreamUsage streamUsage);
+    static int32_t GetJsStreamUsageFir(StreamUsage streamUsage);
     static int32_t GetJsAudioVolumeMode(AudioVolumeMode volumeMode);
     static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
     static bool IsValidSourceType(int32_t intValue);
@@ -119,6 +146,8 @@ public:
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsLegalOutputDeviceType(int32_t deviceType);
     static AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
+    static StreamUsage GetNativeStreamUsage(int32_t streamUsage);
+    static StreamUsage GetNativeStreamUsageFir(int32_t streamUsage);
     static AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
     static AudioRingMode GetJsAudioRingMode(int32_t ringerMode);
     static AudioStandard::FocusType GetNativeFocusType(int32_t focusType);

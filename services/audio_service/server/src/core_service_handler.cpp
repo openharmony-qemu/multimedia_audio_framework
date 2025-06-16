@@ -55,10 +55,11 @@ int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServicePro
     return ERR_INVALID_OPERATION;
 }
 
-int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
+int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+    SessionOperationMsg opMsg)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation);
+    return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,

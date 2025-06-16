@@ -191,6 +191,8 @@ public:
 
     const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& GetPreOutputMap();
 
+    bool CheckIfDisConnected(OutputPort<T>* output);
+
     InputPort(const InputPort &that) = delete;
 
     void AddPreOutput(const std::shared_ptr<HpaeNode> &node, OutputPort<T>* output);
@@ -262,6 +264,12 @@ template <class T>
 const std::unordered_map<OutputPort<T> *, std::shared_ptr<HpaeNode>>& InputPort<T>::GetPreOutputMap()
 {
     return outputPorts_;
+}
+
+template <class T>
+bool InputPort<T>::CheckIfDisConnected(OutputPort<T>* output)
+{
+    return outputPorts_.find(output) == outputPorts_.end();
 }
 
 template <class T>

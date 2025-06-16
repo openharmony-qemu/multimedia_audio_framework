@@ -376,6 +376,24 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
 }
 
+void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()),
+        "current output device is same as new device");
+    audioActiveDevice_.SetCurrentOutputDevice(*(desc));
+    OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+}
+
+void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice()),
+        "current input device is same as new device");
+    audioActiveDevice_.SetCurrentInputDevice(*(desc));
+    OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
@@ -401,8 +419,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
-
-        audioActiveDevice_.SetCurrentOutputDevice(*(streamDesc->newDeviceDescs_.front()));
+        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front());
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
             streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
@@ -413,8 +430,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-
-        audioActiveDevice_.SetCurrentInputDevice(*(streamDesc->newDeviceDescs_.front()));
+        CheckAndSetCurrentInputDevice(streamDesc->newDeviceDescs_.front());
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
@@ -435,7 +451,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -448,6 +464,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
+        RemoveUnusedRecordPipe();
+    }
     DeleteSessionId(sessionId);
 
     return SUCCESS;

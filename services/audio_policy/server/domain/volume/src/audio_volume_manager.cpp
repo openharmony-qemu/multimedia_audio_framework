@@ -134,20 +134,6 @@ int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType) const
     return audioPolicyManager_.GetMinVolumeLevel(volumeType);
 }
 
-bool AudioVolumeManager::GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol)
-{
-    CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Get shared memory failed!");
-    size_t index = 0;
-    if (!IPolicyProvider::GetVolumeIndex(streamType, GetVolumeGroupForDevice(deviceType), index) ||
-        index >= IPolicyProvider::GetVolumeVectorSize()) {
-        return false;
-    }
-    vol.isMute = volumeVector_[index].isMute;
-    vol.volumeFloat = volumeVector_[index].volumeFloat;
-    vol.volumeInt = volumeVector_[index].volumeInt;
-    return true;
-}
-
 bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol)
 {
     CHECK_AND_RETURN_RET_LOG(volumeVector_ != nullptr, false, "Set shared memory failed!");
@@ -250,8 +236,6 @@ void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDe
     if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
-
-    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioVolumeManager::SetVoiceRingtoneMute(bool isMute)
@@ -277,26 +261,9 @@ void AudioVolumeManager::SetVoiceCallVolume(int32_t volumeLevel)
     AUDIO_INFO_LOG("%{public}f", volumeDb);
 }
 
-void AudioVolumeManager::UpdateVolumeForLowLatency()
-{
-    Trace trace("AudioVolumeManager::UpdateVolumeForLowLatency");
-    // update volumes for low latency streams when loading volumes from the database.
-    Volume vol = {false, 1.0f, 0};
-    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
-        vol.isMute = GetStreamMute(*iter);
-        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
-        vol.volumeFloat = audioPolicyManager_.GetSystemVolumeInDb(*iter,
-            (vol.isMute ? 0 : vol.volumeInt), curOutputDeviceType);
-        SetSharedVolume(*iter, curOutputDeviceType, vol);
-    }
-    SetSharedAbsVolumeScene(audioPolicyManager_.IsAbsVolumeScene());
-}
-
 void AudioVolumeManager::InitKVStore()
 {
     audioPolicyManager_.InitKVStore();
-    UpdateVolumeForLowLatency();
     AudioSpatializationService::GetAudioSpatializationService().InitSpatializationState();
 }
 

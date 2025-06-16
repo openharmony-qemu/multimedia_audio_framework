@@ -167,9 +167,9 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
             audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
-            // normal source is not opened before
-            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
-            audioEcManager_.SetOpenedNormalSourceSessionId(sessionID);
+            // normal source is not opened before -- it should not be happen!!
+            AUDIO_ERR_LOG("Record route should not be opened here!");
+            return ERROR_ILLEGAL_STATE;
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
             audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);

@@ -1096,11 +1096,6 @@ int32_t AudioPolicyService::InitSharedVolume(std::shared_ptr<AudioSharedMemory> 
     return audioVolumeManager_.InitSharedVolume(buffer);
 }
 
-bool AudioPolicyService::GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol)
-{
-    return audioVolumeManager_.GetSharedVolume(streamType, deviceType, vol);
-}
-
 void AudioPolicyService::SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback)
 {
     AUDIO_INFO_LOG("Start");
