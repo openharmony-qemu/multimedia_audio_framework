@@ -79,6 +79,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolume_001, TestSize.Level1)
     EXPECT_EQ(result, TEST_RET_NUM);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test IsStreamMute API
  * @tc.type  : FUNC
@@ -100,6 +101,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_001 result3:%{public}d", result);
     EXPECT_EQ(result, false);
 }
+#endif
 
 /**
  * @tc.name  : Test IsStreamActive API

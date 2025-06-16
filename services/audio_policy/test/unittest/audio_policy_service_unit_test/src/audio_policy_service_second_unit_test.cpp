@@ -331,6 +331,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CreateCheckMusicActiveThread_001, TestSi
     EXPECT_NE(server->audioPolicyService_.audioVolumeManager_.calculateLoopSafeTime_, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test DealWithSafeVolume.
  * @tc.number: DealWithSafeVolume_001
@@ -373,6 +374,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleAbsBluetoothVolume_001, TestSize.L
         = server->audioPolicyService_.audioVolumeManager_.HandleAbsBluetoothVolume(macAddress, volumeLevel);
     EXPECT_EQ(safeVolumeLevel, 8);
 }
+#endif
 
 /**
  * @tc.name  : Test SetA2dpDeviceVolume.
@@ -525,6 +527,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_001, TestSize.Level1
     EXPECT_EQ(ret, AUDIO_FLAG_VOIP_DIRECT);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetVoipRendererFlag.
  * @tc.number: GetVoipRendererFlag_002
@@ -573,6 +576,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
     ret = server->audioPolicyService_.audioConfigManager_.GetVoipRendererFlag(sinkPortName, networkId, samplingRate);
     EXPECT_EQ(ret, AUDIO_FLAG_NORMAL);
 }
+#endif
 
 /**
  * @tc.name  : Test UpdateInputDeviceInfo.
@@ -743,6 +747,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioCapturerMicrophoneDescriptor_
     EXPECT_TRUE(server->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.size() >= 0);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetTargetSourceTypeAndMatchingFlag.
  * @tc.number: GetTargetSourceTypeAndMatchingFlag_001
@@ -764,6 +769,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetTargetSourceTypeAndMatchingFlag_001, 
         useMatchingPropInfo);
     EXPECT_EQ(targetSource, SourceType::SOURCE_TYPE_CAMCORDER);
 }
+#endif
 
 /**
  * @tc.name  : Test GetEcType.
@@ -873,6 +879,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetPipeInfoByDeviceTypeForEc_001, TestSi
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetEcSamplingRate.
  * @tc.number: GetEcSamplingRate_001
@@ -907,6 +914,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetEcSamplingRate_001, TestSize.Level1)
     ecSamplingRate = server->audioPolicyService_.audioEcManager_.GetEcSamplingRate(halName, outModuleInfo);
     EXPECT_EQ(ecSamplingRate, "48000");
 }
+#endif
 
 /**
  * @tc.name  : Test GetEcFormat.

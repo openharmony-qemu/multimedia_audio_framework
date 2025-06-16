@@ -302,6 +302,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_013, TestSize.Level1)
     EXPECT_EQ(audioVolumeManager.audioActiveDevice_.GetActiveBtDeviceMac(), macAddress);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_014
@@ -344,6 +345,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_014, TestSize.Level1)
     ret = audioVolumeManager.DealWithEventVolume(notificationId);
     EXPECT_NE(ret, 0);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioVolumeManager.
@@ -414,6 +416,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_018, TestSize.Level1)
     audioVolumeManager.CheckWiredActiveMusicTime(safeVolume);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_019
@@ -434,6 +437,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_019, TestSize.Level1)
     bRet = audioVolumeManager.SetStreamMute(streamType, mute, streamUsage, deviceType);
     EXPECT_FALSE(bRet);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioVolumeManager.

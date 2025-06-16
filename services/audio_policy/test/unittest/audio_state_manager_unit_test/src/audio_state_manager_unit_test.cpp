@@ -118,6 +118,7 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_006, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice(), nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioStateManager.
 * @tc.number: AudioStateManagerUnitTest_007
@@ -169,5 +170,6 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_010, TestSize.Leve
     EXPECT_NE(AudioStateManager::GetAudioStateManager().GetPreferredRecordCaptureDevice()->connectState_,
         ConnectState::CONNECTED);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

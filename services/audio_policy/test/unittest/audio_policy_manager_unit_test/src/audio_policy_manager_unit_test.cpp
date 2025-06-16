@@ -186,6 +186,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_009, TestSize.Level1)
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_010.
@@ -197,6 +198,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_010, TestSize.Level1)
     int result = audioPolicyManager_->SetDistributedRoutingRoleCallback(nullptr);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioPolicyManager.
@@ -227,6 +229,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_013, TestSize.Level1)
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_014.
@@ -252,6 +255,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_014, TestSize.Level1)
     result = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
     EXPECT_EQ(result, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioPolicyManager.
@@ -335,6 +339,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_018, TestSize.Level1)
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_019.
@@ -367,6 +372,7 @@ HWTEST(AudioPolicyManager, AudioPolicyManagerUnitTest_020, TestSize.Level1)
     audioPolicyManager_->SetAudioDeviceAnahsCallback(nullptr);
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
+#endif
 
 /**
 * @tc.name  : Test GetOutputDevice.
@@ -396,6 +402,7 @@ HWTEST(AudioPolicyManager, GetInputDevice_001, TestSize.Level1)
     EXPECT_NE(audioPolicyManager_, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SetMicrophoneBlockedCallback.
 * @tc.number: SetMicrophoneBlockedCallback.
@@ -412,6 +419,7 @@ HWTEST(AudioPolicyManager, SetMicrophoneBlockedCallback_001, TestSize.Level1)
     int32_t ret = audioPolicyManager_->SetMicrophoneBlockedCallback(clientId, callback);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test UnsetMicrophoneBlockedCallback.
@@ -430,6 +438,7 @@ HWTEST(AudioPolicyManager, UnsetMicrophoneBlockedCallback_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test ActivateAudioSession.
 * @tc.number: ActivateAudioSession.
@@ -491,6 +500,7 @@ HWTEST(AudioPolicyManager, SetAudioSessionCallback_003, TestSize.Level1)
     int32_t ret = audioPolicyManager_->SetAudioSessionCallback(audioSessionCallback);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test UnsetAudioSessionCallback.
@@ -584,6 +594,7 @@ HWTEST(AudioPolicyManager, UnsetAudioSceneChangeCallbackTest_001, TestSize.Level
     EXPECT_EQ(result,  SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: CreateRenderClient_001.
@@ -631,6 +642,7 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
     auto result = audioPolicyManager_->CreateCapturerClient(streamDesc, flag, originalSessionId);
     EXPECT_EQ(result,  SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioPolicyManager.

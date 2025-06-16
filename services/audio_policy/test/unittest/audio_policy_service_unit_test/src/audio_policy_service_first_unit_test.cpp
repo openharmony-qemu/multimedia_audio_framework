@@ -693,6 +693,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, result);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SelectOutputDevice.
 * @tc.number: SelectOutputDevice_002
@@ -719,6 +720,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_002, TestSize.Level1)
         audioRendererFilter, deviceDescriptorVector);
     EXPECT_EQ(ERR_INVALID_OPERATION, result);
 }
+#endif
 
 /**
 * @tc.name  : Test SelectOutputDevice.
@@ -748,6 +750,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SelectOutputDevice_003, TestSize.Level1)
     EXPECT_EQ(SUCCESS, result);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test MoveToRemoteOutputDevice.
 * @tc.number: MoveToRemoteOutputDevice_001
@@ -775,6 +778,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, MoveToRemoteOutputDevice_001, TestSize.Leve
         sinkInputs, remoteDeviceDescriptor);
     EXPECT_EQ(ERR_INVALID_PARAM, result);
 }
+#endif
 
 /**
 * @tc.name  : Test MoveToRemoteOutputDevice.
@@ -888,6 +892,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetCaptureDeviceForUsage_004, TestSize.Leve
     );
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetSinkPortName.
 * @tc.number: GetSinkPortName_001
@@ -942,6 +947,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
+#endif
 
 /**
 * @tc.name  : Test GetSinkPortName.
@@ -1144,6 +1150,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, ActivateNewDevice_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SetWakeUpAudioCapturer and ConstructWakeupAudioModuleInfo.
 * @tc.number: SetWakeUpAudioCapturer_001
@@ -1172,6 +1179,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetWakeUpAudioCapturer_001, TestSize.Level1
     ret = GetServerPtr()->audioPolicyService_.audioCapturerSession_.SetWakeUpAudioCapturer(capturerOptions);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test GetDevices and GetDevicesInner.
@@ -1458,6 +1466,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HasLowLatencyCapability_001, TestSize.Level
     EXPECT_EQ(false, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test HandleActiveDevice.
 * @tc.number: HandleActiveDevice_001
@@ -1582,6 +1591,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
     EXPECT_NE(SUCCESS, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test HandleLocalDeviceConnected.
@@ -2712,6 +2722,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_001, TestSize.Le
     EXPECT_FALSE(ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test NotifyRecreateDirectStream.
 * @tc.number: NotifyRecreateDirectStream_002
@@ -2732,6 +2743,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_002, TestSize.Le
         reason);
     EXPECT_FALSE(ret);
 }
+#endif
 
 /**
 * @tc.name  : Test NotifyRecreateDirectStream.

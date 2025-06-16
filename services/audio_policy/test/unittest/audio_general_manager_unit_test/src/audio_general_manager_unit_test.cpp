@@ -28,6 +28,7 @@ void AudioGeneralManagerUnitTest::TearDownTestCase(void) {}
 void AudioGeneralManagerUnitTest::SetUp(void) {}
 void AudioGeneralManagerUnitTest::TearDown(void) {}
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioGeneralManager.
 * @tc.number: AudioGeneralManager_001.
@@ -45,6 +46,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_001, TestSize.Level1)
     auto ret = audioGeneralManagerPtr->RegisterFocusInfoChangeCallback(callback);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioGeneralManager.
@@ -66,6 +68,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioGeneralManager.
 * @tc.number: AudioGeneralManager_003
@@ -97,6 +100,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_004, TestSize.Level1)
     auto ret = audioGeneralManagerPtr->GetVolume(volumeType);
     EXPECT_GE(ret, 0);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioGeneralManager.

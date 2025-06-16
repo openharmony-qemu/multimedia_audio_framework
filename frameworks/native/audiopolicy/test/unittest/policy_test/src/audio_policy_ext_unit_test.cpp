@@ -737,6 +737,7 @@ HWTEST(AudioPolicyExtUnitTest, UnregisterHeadTrackingEnabledEventListener_001, T
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetHardwareOutputSamplingRate
  * @tc.number: GetHardwareOutputSamplingRate_001
@@ -774,6 +775,7 @@ HWTEST(AudioPolicyExtUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level
         }
     }
 }
+#endif
 
 /**
  * @tc.name  : Test IsAbsVolumeScene

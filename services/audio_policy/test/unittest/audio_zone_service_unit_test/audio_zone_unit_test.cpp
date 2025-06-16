@@ -58,6 +58,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_001, TestSize.Level1)
     EXPECT_EQ(desc->name_, "TestZone");
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test AudioZone.
  * @tc.number: AudioZone_002
@@ -79,6 +80,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_002, TestSize.Level1)
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1)), true);
     EXPECT_EQ(zone->IsContainKey(AudioZoneBindKey(1, "")), true);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioZone.

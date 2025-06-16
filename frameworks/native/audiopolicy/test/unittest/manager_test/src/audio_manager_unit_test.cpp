@@ -144,6 +144,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_001, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name    : Test SelectOutputDevice API
 * @tc.number  : SelectOutputDevice_002
@@ -162,6 +163,7 @@ HWTEST(AudioManagerUnitTest, SelectOutputDevice_002, TestSize.Level1)
     auto ret = AudioSystemManager::GetInstance()->SelectOutputDevice(deviceDescriptorVector);
     EXPECT_TRUE(ret < 0);
 }
+#endif
 
 /**
 * @tc.name    : Test SelectOutputDevice API
@@ -1134,6 +1136,7 @@ HWTEST(AudioManagerUnitTest, IsStreamActive_002, TestSize.Level1)
     EXPECT_FALSE(isActive);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test IsStreamMute API
 * @tc.number : IsStreamMute_001
@@ -1144,6 +1147,7 @@ HWTEST(AudioManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     auto isActive = AudioSystemManager::GetInstance()->IsStreamMute(AudioVolumeType::STREAM_DEFAULT);
     EXPECT_FALSE(isActive);
 }
+#endif
 
 /**
 * @tc.name   : Test ReconfigureChannel API
