@@ -183,6 +183,8 @@ void TestIRendererManagerCreateDestoryStream()
     WaitForMsgProcessing(hpaeRendererManager);
     ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
     EXPECT_EQ(ret == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 template <class RenderManagerType>
@@ -234,6 +236,8 @@ static void TestIRendererManagerStartPuaseStream()
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(
         hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 TEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest)
@@ -309,6 +313,8 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
@@ -348,6 +354,10 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManagerNew);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManagerNew->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManagerNew);
 }
 
@@ -404,6 +414,8 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(
         hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 /**
@@ -462,6 +474,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
     EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 /**
@@ -519,6 +533,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 /**
@@ -557,6 +573,8 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     ret = hpaeRendererManager->DisConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
 }  // namespace

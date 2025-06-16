@@ -127,7 +127,9 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest)
     
     std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 
 TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
@@ -165,6 +167,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 
 static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerManager, HpaeStreamInfo &streamInfo,
@@ -240,6 +243,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 
 static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceInfo)
@@ -292,6 +296,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
 }
 } // namespace HPAE
 } // namespace AudioStandard
