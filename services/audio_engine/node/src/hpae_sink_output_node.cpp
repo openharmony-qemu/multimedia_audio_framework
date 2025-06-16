@@ -336,7 +336,8 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
             AUDIO_INFO_LOG("Timing begins, will close speaker after [%{public}" PRId64 "]s", WAIT_CLOSE_PA_TIME);
             isDisplayPaPowerState_ = true;
         }
-        silenceDataUs_ += static_cast<int64_t>(pcmBuffer->GetFrameLen()) * TIME_IN_US / pcmBuffer->GetSampleRate();
+        silenceDataUs_ += static_cast<int64_t>(pcmBuffer->GetFrameLen()) * TIME_IN_US /
+            static_cast<int64_t>(pcmBuffer->GetSampleRate());
         if (isOpenPaPower_ && silenceDataUs_ >= WAIT_CLOSE_PA_TIME * TIME_IN_US) {
             int32_t ret = audioRendererSink_->SetPaPower(false);
             isOpenPaPower_ = false;

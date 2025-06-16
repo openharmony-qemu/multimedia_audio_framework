@@ -45,7 +45,7 @@ private:
     ~AudioCollaborativeService();
     // outputDeviceChange differentiate if updation is caused by output device change
     int32_t UpdateCollaborativeStateReal();
-    bool isCollaborativePlaybackSupported_ = false;
+    bool isCollaborativePlaybackSupported_ = true;
     // same with current device in map
     bool isCollaborativeStateEnabled_ = false;
     std::string curDeviceAddress_;
