@@ -4321,14 +4321,14 @@ int32_t AudioPolicyServer::SetCollaborativePlaybackEnabledForDevice(
 
 bool AudioPolicyServer::IsCollaborativePlaybackSupported()
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false, "No system permission");
     return audioCollaborativeService_.IsCollaborativePlaybackSupported();
 }
 
 bool AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
     const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false, "No system permission");
     return audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
 }
 } // namespace AudioStandard

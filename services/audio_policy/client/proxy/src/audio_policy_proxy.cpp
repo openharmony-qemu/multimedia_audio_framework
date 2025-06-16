@@ -2830,7 +2830,7 @@ bool AudioPolicyProxy::IsCollaborativePlaybackEnabledForDevice(
     CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
 
     bool result = selectedAudioDevice->Marshalling(data);
-    CHECK_AND_RETURN_RET_LOG(result, -1, "SelectedAudioDevice Marshalling() failed");
+    CHECK_AND_RETURN_RET_LOG(result, false, "SelectedAudioDevice Marshalling() failed");
 
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE),
