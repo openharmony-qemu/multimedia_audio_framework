@@ -1021,8 +1021,7 @@ int32_t RendererInServer::Pause()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
-    DataTransferStateChangeType type = isStandbyTmp ? DATA_TRANS_STOP : AUDIO_STREAM_PAUSE;
-    audioStreamChecker_->MonitorOnAllCallback(type, isStandbyTmp);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
