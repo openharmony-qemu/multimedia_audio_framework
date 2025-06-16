@@ -904,7 +904,6 @@ HWTEST(AudioSystemManagerUnitTest, RegisterRendererDataTransfer_001, TestSize.Le
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterRendererDataTransfer_001 end result:%{public}d", result);
     EXPECT_EQ(result, SUCCESS);
 }
-
 #endif
 } // namespace AudioStandard
 } // namespace OHOS
