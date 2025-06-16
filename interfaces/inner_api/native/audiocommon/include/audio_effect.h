@@ -298,6 +298,23 @@ struct AudioEffectPropertyArray {
     std::vector<AudioEffectProperty> property;
 };
 
+enum AudioEffectChainSetParamIndex {
+    COMMAND_CODE_INDEX = 0,
+    SCENE_TYPE_INDEX = 1,
+    EFFECT_MODE_INDEX = 2,
+    ROTATION_INDEX = 3,
+    VOLUME_INDEX = 4,
+    EXTRA_SCENE_TYPE_INDEX = 5,
+    SPATIAL_DEVICE_TYPE_INDEX = 6,
+    SPATIALIZATION_SCENE_TYPE_INDEX = 7,
+    SPATIALIZATION_ENABLED_INDEX = 8,
+    STREAM_USAGE_INDEX = 9,
+    FOLD_STATE_INDEX = 10,
+    LID_STATE_INDEX = 11,
+    LOUDNESS_GAIN_INDEX = 12,
+    MAX_PARAM_INDEX,
+};
+
 enum AudioEffectCommandCode {
     EFFECT_CMD_INIT = 0,
     EFFECT_CMD_SET_CONFIG = 1,
