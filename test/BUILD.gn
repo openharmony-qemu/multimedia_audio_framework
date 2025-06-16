@@ -163,6 +163,7 @@ group("audio_fuzz_test") {
 
   deps = [
     "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
+    "fuzztest/audioadaptermanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
@@ -199,6 +200,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioservicecommonenhance_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
+    "fuzztest/audiostatemanager_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
     "fuzztest/audiovolumemanager_fuzzer:fuzztest",
@@ -206,6 +208,8 @@ group("audio_fuzz_test") {
     "fuzztest/hpaepolicymanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/audiostreamcollector_fuzzer:fuzztest",
+    "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/streamfilterrouter_fuzzer:fuzztest",
   ]
 }
 
