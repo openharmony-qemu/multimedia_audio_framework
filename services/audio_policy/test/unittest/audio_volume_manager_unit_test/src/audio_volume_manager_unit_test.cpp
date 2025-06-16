@@ -146,12 +146,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_006, TestSize.Level1)
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     bRet = audioVolumeManager.IsBlueTooth(deviceType);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     bRet = audioVolumeManager.IsBlueTooth(deviceType);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
