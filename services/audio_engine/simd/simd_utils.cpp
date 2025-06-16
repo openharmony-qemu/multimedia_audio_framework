@@ -16,6 +16,7 @@
 #include "simd_utils.h"
 #include <algorithm>
 #include <limits>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
