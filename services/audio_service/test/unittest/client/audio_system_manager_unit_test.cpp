@@ -789,7 +789,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
         {101, true}, 
         {102, true}
     };
-    int32_t result = manager.StartGroup(1, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
     EXPECT_EQ(result, AUDIO_OK);
 }
 
