@@ -27,7 +27,7 @@ static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
-static constexpr int32_t ENQUEUE_SECOND_FRAME = 2;
+static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -57,9 +57,9 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     ProcessInputFrameInner(buffer);
     
     // process enqueue flag
-    if (enqueueCount_ < ENQUEUE_SECOND_FRAME) {
+    if (enqueueCount_ < ENQUEUE_DONE_FRAME) {
         enqueueCount_++;
-    } else if (enqueueCount_ == ENQUEUE_SECOND_FRAME) {
+    } else if (enqueueCount_ == ENQUEUE_DONE_FRAME) {
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frames for latency adjustment
