@@ -45,14 +45,6 @@ const float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
 const float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
 const int32_t DURATIONMS = 40; // 40:fade out latency ms
 
-static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
-    void* userData,
-    void* buffer,
-    int32_t bufferLen)
-{
-    return 0;
-}
-
 static void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData)
 {
     g_flag = samplePos;
