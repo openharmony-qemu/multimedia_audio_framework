@@ -24,6 +24,7 @@
 #include "sink/i_audio_render_sink.h"
 #include "manager/hdi_adapter_manager.h"
 #include <chrono>
+#include <thread>
 #include "safe_map.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
@@ -42,6 +43,7 @@ const uint64_t FRAME_LEN_10MS = 10;
 const uint64_t FRAME_LEN_20MS = 20;
 const uint64_t FRAME_LEN_40MS = 40;
 const int32_t MS_PER_SEC = 1000;
+const int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
@@ -142,6 +144,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Pause is error");
         return ERR_INVALID_PARAM;
     }
+    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
     return SUCCESS;
 }
 
