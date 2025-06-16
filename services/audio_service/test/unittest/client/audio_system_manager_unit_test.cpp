@@ -780,7 +780,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
         {101, true},
         {102, true}
     };
-    int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 500, threads, needUpdatePrio);
+    int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 500);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
  
@@ -797,7 +797,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
         {101, true},
         {102, true}
     };
-    int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 2000, threads, needUpdatePrio);
+    int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 2000);
     EXPECT_EQ(result, AUDIO_OK);
 }
 
