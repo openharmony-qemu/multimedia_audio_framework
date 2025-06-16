@@ -162,7 +162,7 @@ bool AudioLoopbackPrivate::CreateAudioLoopback()
     CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "CreateCapturer failed");
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
-    CHECK_AND_RETURN_RET_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, false, "CreateCapturer failed");
+    CHECK_AND_RETURN_RET_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, false, "CreateFastCapturer failed");
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
