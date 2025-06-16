@@ -775,11 +775,6 @@ HWTEST(AudioSystemManagerUnitTest, IsValidStreamType_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest StartGroup_001 start");
-    bool needUpdatePrio = true;
-    std::unordered_map<int32_t, bool> threads = {
-        {101, true},
-        {102, true}
-    };
     int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 500);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
@@ -792,11 +787,6 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
 HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest StartGroup_002 start");
-    bool needUpdatePrio = true;
-    std::unordered_map<int32_t, bool> threads = {
-        {101, true},
-        {102, true}
-    };
     int32_t result = AudioSystemManager::GetInstance()->StartGroup(1, 1000, 2000);
     EXPECT_EQ(result, AUDIO_OK);
 }
