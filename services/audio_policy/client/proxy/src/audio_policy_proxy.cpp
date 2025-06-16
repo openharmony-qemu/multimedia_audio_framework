@@ -2781,5 +2781,62 @@ bool AudioPolicyProxy::IsCapturerFocusAvailable(const AudioCapturerInfo &capture
 
     return reply.ReadBool();
 }
+
+int32_t AudioPolicyProxy::SetCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool enable)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    bool result = selectedAudioDevice->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "SelectedAudioDevice Marshalling() failed");
+
+    data.WriteBool(enable);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
+bool AudioPolicyProxy::IsCollaborativePlaybackSupported()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PALYBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
+bool AudioPolicyProxy::IsCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+
+    bool result = selectedAudioDevice->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, false, "SelectedAudioDevice Marshalling() failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE),
+        data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "SendRequest failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -277,6 +277,7 @@ public:
         doNotDisturbStatusWhiteList);
 
     int32_t SetDoNotDisturbStatus(bool isDoNotDisturb);
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
 private:
     friend class PolicyCallbackImpl;

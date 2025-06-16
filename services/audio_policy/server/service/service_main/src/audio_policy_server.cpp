@@ -139,6 +139,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioPolicyUtils_(AudioPolicyUtils::GetInstance()),
       audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
       audioSpatializationService_(AudioSpatializationService::GetAudioSpatializationService()),
+      audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
       audioActiveDevice_(AudioActiveDevice::GetInstance())
@@ -4309,6 +4310,26 @@ int32_t AudioPolicyServer::SetSleAudioOperationCallback(const sptr<IRemoteObject
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "Uid Check Failed");
 
     return audioPolicyService_.SetSleAudioOperationCallback(object);
+}
+
+int32_t AudioPolicyServer::SetCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+    return audioCollaborativeService_.SetCollaborativePlaybackEnabledForDevice(selectedAudioDevice, enabled);
+}
+
+bool AudioPolicyServer::IsCollaborativePlaybackSupported()
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false, "No system permission");
+    return audioCollaborativeService_.IsCollaborativePlaybackSupported();
+}
+
+bool AudioPolicyServer::IsCollaborativePlaybackEnabledForDevice(
+    const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false, "No system permission");
+    return audioCollaborativeService_.IsCollaborativePlaybackEnabledForDevice(selectedAudioDevice);
 }
 } // namespace AudioStandard
 } // namespace OHOS

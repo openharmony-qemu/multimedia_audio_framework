@@ -247,6 +247,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_SLE_AUDIO_OPERATION_CALLBACK",
     "SET_KARAOKE_PARAMETERS",
     "IS_AUDIO_LOOPBACK_SUPPORTED",
+    "SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE",
+    "IS_COLLABORATIVE_PALYBACK_SUPPORTED",
+    "IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE"
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1323,6 +1326,15 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
+            SetCollaborativePlayBackEnabledForDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PALYBACK_SUPPORTED):
+            IsCollaborativePlaybackSupportedInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE):
+            IsCollaborativePlaybackEnabledForDeviceInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::FORCE_STOP_AUDIO_STREAM):
             ForceStopAudioStreamInternal(data, reply);
             break;
@@ -2506,6 +2518,29 @@ void AudioPolicyManagerStub::SetCallbackStreamUsageInfoInternal(MessageParcel &d
     }
     int32_t result = SetCallbackStreamUsageInfo(streamUsages);
     reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    bool enable = data.ReadBool();
+    int32_t result = SetCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor, enable);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply)
+{
+    bool supported = IsCollaborativePlaybackSupported();
+    reply.WriteBool(supported);
+}
+
+void AudioPolicyManagerStub::IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "Unmarshalling fail.");
+    bool result = IsCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor);
+    reply.WriteBool(result);
 }
 } // namespace audio_policy
 } // namespace OHOS

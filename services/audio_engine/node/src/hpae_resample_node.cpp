@@ -30,7 +30,6 @@ namespace AudioStandard {
 namespace HPAE {
 constexpr int REASAMPLE_QUAILTY = 5;
 static inline uint32_t Min(const uint32_t a, const uint32_t b) {return a > b ? b : a;}
-static inline uint32_t MAX(const uint32_t a, const uint32_t b) {return a > b ? a : b;}
 HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo, ResamplerType type)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate),
@@ -120,7 +119,6 @@ HpaePcmBuffer *HpaeResampleNode::SignalProcess(const std::vector<HpaePcmBuffer *
 void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, float *dstData, uint32_t outputFrameLen)
 {
     resampler_->Process(srcData, inputFrameLen, dstData, outputFrameLen);
-    uint32_t addZeroLen = MAX(GetFrameLen() - outputFrameLen, 0);
 
     if (preNodeInfo_.channels == GetChannelCount()) {
 #ifdef ENABLE_HOOK_PCM
@@ -138,12 +136,8 @@ void HpaeResampleNode::ResampleProcess(float *srcData, uint32_t inputFrameLen, f
     for (uint32_t i = 0; i < outputFrameLen; ++i) {
         for (uint32_t ch = 0; ch < targetChannels; ++ch) {
             uint32_t leftChIndex = Min(ch, (preNodeInfo_.channels - 1));
-            if (i < addZeroLen) {
-                targetData[i * targetChannels + ch] = 0;
-            } else {
-                targetData[i * targetChannels + ch] =
-                    dstData[(i - addZeroLen) * preNodeInfo_.channels + leftChIndex];
-            }
+            targetData[i * targetChannels + ch] =
+                dstData[i * preNodeInfo_.channels + leftChIndex];
         }
     }
 

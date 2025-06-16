@@ -66,6 +66,7 @@ ohos_shared_library("audio") {
       "audiomanager/callback/napi_audio_volume_key_event.cpp",
       "audiomanager/callback/napi_audio_stream_volume_change_callback.cpp",
       "audiomanager/callback/napi_audio_system_volume_change_callback.cpp",
+      "audiomanager/napi_audio_collaborative_manager.cpp",
       "audiomanager/napi_audio_effect_manager.cpp",
       "audiomanager/napi_audio_interrupt_manager.cpp",
       "audiomanager/napi_audio_manager.cpp",

@@ -271,6 +271,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/session/src/audio_session.cpp",
     "server/domain/session/src/audio_session_service.cpp",
     "server/domain/session/src/audio_session_state_monitor.cpp",
+    "server/domain/effect/src/audio_collaborative_service.cpp",
     "server/domain/effect/src/audio_spatialization_service.cpp",
     "server/domain/zone/src/audio_zone.cpp",
     "server/domain/zone/src/audio_zone_client_manager.cpp",

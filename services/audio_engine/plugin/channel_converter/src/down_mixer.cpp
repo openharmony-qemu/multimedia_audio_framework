@@ -100,7 +100,7 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
     CHECK_AND_RETURN_RET_LOG((inChannels_ >= 0) && (inChannels_ <= MAX_CHANNELS), DMIX_ERR_INVALID_ARG,
         "invalid input channels");
     CHECK_AND_RETURN_RET_LOG((outChannels_ >= 0) && (outChannels_ <= MAX_CHANNELS), DMIX_ERR_INVALID_ARG,
-        "invalid input channels");
+        "invalid output channels");
     
     formatSize_ = formatSize;
     int32_t ret = SetupDownMixTable();
