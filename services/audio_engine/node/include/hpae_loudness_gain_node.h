@@ -21,6 +21,7 @@
 #include "audio_limiter.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
+#include "audio_effect.h"
 #endif
 
 namespace OHOS {

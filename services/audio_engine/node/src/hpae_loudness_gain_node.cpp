@@ -21,13 +21,14 @@
 #include "audio_utils.h"
 #include "cinttypes"
 #include "audio_errors.h"
+#include "hpae_loudness_gain_node.h"
+#include "hpae_msg_channel.h"
 
 #include <cmath>
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
 constexpr std::string_view PATH = "system/lib64/libaudio_integration_loudness.z.so";
 static constexpr float EPSILON = 1e-6f;
 static constexpr uint32_t SAMPLE_RATE = 48000;
@@ -39,7 +40,7 @@ static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
 
 HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
-    loudnessGainOutput_(pcmBufferInfo_);
+    loudnessGainOutput_(pcmBufferInfo_)
 {
     dlHandle_ = dlopen(PATH.c_str(), 1);
     if (!dlHandle_) {
@@ -116,14 +117,14 @@ HpaePcmBuffer* HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
     return &loudnessGainOutput_;
 }
 
-void HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer *input)
+void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
 {
     CHECK_AND_RETURN(pcmBufferInfo_.ch != input->GetChannelCount() ||
         pcmBufferInfo_.frameLen != input->GetFrameLen() ||
         pcmBufferInfo_.rate != input->GetSampleRate() ||
         pcmBufferInfo_.channelLayout != input->GetChannelLayout());
 
-    AUDIO_INFO_LOG("Update pcmBufferInfo_: channel count: %{public}d, frame len: %{public}d,
+    AUDIO_INFO_LOG("Update pcmBufferInfo_: channel count: %{public}d, frame len: %{public}d,\
                     sample rate: %{public}d, channel layout: %{public}", 
                     input->GetChannelCount(), input->GetFrameLen(), input->GetSampleRate(), input->GetChannelLayout);
     pcmBufferInfo_.ch = input->GetChannelCount();

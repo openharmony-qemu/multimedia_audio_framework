@@ -162,6 +162,7 @@ ohos_shared_library("audio_engine_node") {
     "node/src/hpae_capture_effect_node.cpp",
     "node/src/hpae_gain_node.cpp",
     "node/src/hpae_inner_cap_sink_node.cpp",
+    "node/src/hpae_loudness_gain_node.cpp",
     "node/src/hpae_mixer_node.cpp",
     "node/src/hpae_node_common.cpp",
     "node/src/hpae_offload_sinkoutput_node.cpp",
