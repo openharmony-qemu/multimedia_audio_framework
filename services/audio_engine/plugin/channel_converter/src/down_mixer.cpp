@@ -115,21 +115,14 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
     CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(frameLen <= MAX_FRAME_LENGTH, DMIX_ERR_INVALID_ARG, "invalid frameSize");
-    if (!isInitialized_) {
-        AUDIO_DEBUG_LOG("Downmixe table has not been initialized!");
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, DMIX_ERR_ALLOC_FAILED, "Downmixe table has not been initialized!");
+    
     uint32_t expectInLen = frameLen * inChannels_ * formatSize_;
     uint32_t expectOutLen = frameLen * outChannels_ * formatSize_;
     if ((expectInLen > inLen) || (expectOutLen > outLen)) {
+        AUDIO_ERR_LOG("unexpected inLen %{public}d or outLen %{public}d", inLen, outLen);
         int32_t ret = memcpy_s(out, outLen, in, inLen);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("memcpy failed when down-mixer process");
-            return DMIX_ERR_ALLOC_FAILED;
-        }
-        AUDIO_ERR_LOG("expect Input Len: %{public}d, inLen: %{public}d,"
-            "expected output len: %{public}d, outLen %{public}d",
-            expectInLen, inLen, expectOutLen, outLen);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, DMIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
         return DMIX_ERR_ALLOC_FAILED;
     }
     // For HOA, copy the first channel into all output channels
@@ -1079,9 +1072,8 @@ static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
 
 AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
 {
-    if (channels < MONO || channels > CHANNEL_16) {
-        return CH_LAYOUT_UNKNOWN;
-    }
+    CHECK_AND_RETURN_RET_LOG((channels >= MONO) && (channels <= CHANNEL_16), CH_LAYOUT_UNKNOWN,
+        "invalid channel count");
     switch (channels) {
         case MONO:
             return CH_LAYOUT_MONO;
