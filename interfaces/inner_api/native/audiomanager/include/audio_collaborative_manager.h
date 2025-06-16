@@ -40,7 +40,8 @@ public:
      * @return Returns success or not
      * @since 20
      */
-    int32_t SetCollaborativePlaybackEnabledForDevice(const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
+    int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
 
     /**
      * @brief Check whether the collaborative is supported for some device

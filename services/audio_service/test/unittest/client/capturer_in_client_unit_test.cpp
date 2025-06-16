@@ -839,6 +839,25 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_004, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
+    capturerInClientInner_->state_ = State::PREPARED;
+    capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
+    capturerInClientInner_->spanSizeInFrame_ = 1;
+    int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test SetCaptureMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetCaptureMode_005
+ * @tc.desc  : Test SetCaptureMode interface.
+ */
+HWTEST(CapturerInClientUnitTest, SetCaptureMode_005, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
+    AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
     capturerInClientInner_->state_ = State::NEW;
     capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
     capturerInClientInner_->cbThreadReleased_ = true;

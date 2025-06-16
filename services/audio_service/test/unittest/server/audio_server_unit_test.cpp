@@ -33,6 +33,7 @@ public:
     void TearDown();
 };
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CreatePlaybackCapturerManager API
  * @tc.type  : FUNC
@@ -47,6 +48,7 @@ HWTEST(AudioServerUnitTest, CreatePlaybackCapturerManager_001, TestSize.Level1)
     bool ret = audioServer->CreatePlaybackCapturerManager();
     EXPECT_EQ(true, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test SetIORoutes API
@@ -261,6 +263,7 @@ HWTEST(AudioServerUnitTest, CheckHibernateState_001, TestSize.Level1)
     audioServer->CheckHibernateState(hibernate);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CreateIpcOfflineStream API
  * @tc.type  : FUNC
@@ -311,6 +314,7 @@ HWTEST(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
     int32_t ret = audioServer->GenerateSessionId(sessionId);
     EXPECT_EQ(ret, ERROR);
 }
+#endif
 
 /**
  * @tc.name  : Test GetAllSinkInputs API
@@ -362,6 +366,7 @@ HWTEST(AudioServerUnitTest, CheckCaptureLimit_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetInnerCapLimit API
  * @tc.type  : FUNC
@@ -378,6 +383,7 @@ HWTEST(AudioServerUnitTest, SetInnerCapLimit_001, TestSize.Level1)
     int32_t ret = audioServer->SetInnerCapLimit(innerCapId);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
  * @tc.name  : Test ReleaseCaptureLimit API

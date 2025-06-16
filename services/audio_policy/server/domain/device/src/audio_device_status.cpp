@@ -1137,7 +1137,6 @@ void AudioDeviceStatus::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const D
         desc.deviceType_, command, desc.deviceCategory_, desc.connectState_, desc.isEnable_);
     std::string portNeedClose = "";
     uint32_t oldPaIndex = OPEN_PORT_FAILURE;
-    DeviceUpdateClearRecongnitionStatus(desc);
     if (command == ENABLE_UPDATE && desc.isEnable_ == true) {
         if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
             AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(desc.macAddress_);
@@ -1228,9 +1227,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
                 desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
                 Bluetooth::AudioA2dpManager::SetActiveA2dpDevice("");
-            } else if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-                desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-                Bluetooth::AudioHfpManager::DisconnectSco();
             }
 #endif
             // Handle Nearlink Device
@@ -1255,10 +1251,6 @@ void AudioDeviceStatus::OnPreferredStateUpdated(AudioDeviceDescriptor &desc,
             }
         }
     } else if (updateCommand == ENABLE_UPDATE) {
-        if (!desc.isEnable_ && desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            desc.IsSameDeviceDesc(audioActiveDevice_.GetCurrentOutputDevice())) {
-            Bluetooth::AudioHfpManager::DisconnectSco();
-        }
         UpdateAllUserSelectDevice(userSelectDeviceMap, desc, std::make_shared<AudioDeviceDescriptor>(desc));
         reason = desc.isEnable_ ? AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
             AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
@@ -1301,15 +1293,6 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
         } else {
             audioStateManager_.UpdatePreferredRecordCaptureDeviceConnectState(desc.connectState_);
         }
-    }
-}
-
-void AudioDeviceStatus::DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc)
-{
-    if (desc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && (desc.deviceCategory_ == BT_UNWEAR_HEADPHONE ||
-        desc.connectState_ == DEACTIVE_CONNECTED || desc.connectState_ == SUSPEND_CONNECTED || !desc.isEnable_)) {
-        audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
     }
 }
 

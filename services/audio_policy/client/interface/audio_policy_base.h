@@ -79,6 +79,8 @@ public:
 
     virtual bool IsStreamActive(AudioVolumeType volumeType) = 0;
 
+    virtual bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) = 0;
+
     virtual bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage) = 0;
     virtual bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source) = 0;
 
@@ -372,7 +374,7 @@ public:
 
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
-    
+
     virtual int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) = 0;
 
@@ -471,12 +473,16 @@ public:
 
     virtual DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) = 0;
-    
+
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
 
     virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
 
-    virtual bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) = 0;
+    virtual bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) = 0;
+
+    virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
 
     virtual int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) = 0;
 
@@ -485,6 +491,14 @@ public:
     virtual int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) = 0;
 
     virtual bool GetStreamMuteByUsage(StreamUsage streamUsage) = 0;
+
+    virtual float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) = 0;
+
+    virtual std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() = 0;
+
+    virtual AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) = 0;
+
+    virtual std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) = 0;
 
     virtual int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) = 0;
 

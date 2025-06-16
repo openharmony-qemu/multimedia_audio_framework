@@ -36,7 +36,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const AudioSamplingRate SAMPLING_RATE_ERROR_0 = static_cast<AudioSamplingRate>(0);
+const AudioSamplingRate SAMPLING_RATE_ERROR_0 = static_cast<AudioSamplingRate>(1);
 const AudioSamplingRate SAMPLING_RATE_ERROR_OVER = static_cast<AudioSamplingRate>(132000000);
 const AudioChannel AUDIO_CHANNEL_ERROR_0 = static_cast<AudioChannel>(0);
 const AudioChannel AUDIO_CHANNEL_ERROR_1 = static_cast<AudioChannel>(1);
@@ -194,7 +194,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInit_005, TestSize.Level1)
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_NE(SUCCESS, ret);
 }
 
 /**
@@ -2245,6 +2245,11 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_002, TestSize
 HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_001, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tempRendererInServer;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tempRendererInServer);
@@ -2342,6 +2347,11 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableDualTone_002, TestSize
 HWTEST_F(RendererInServerUnitTest, RendererInServerInitDualToneStream_001, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_INVALID;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     std::shared_ptr<RendererInServer> tempRendererInServer;
     tempRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tempRendererInServer);

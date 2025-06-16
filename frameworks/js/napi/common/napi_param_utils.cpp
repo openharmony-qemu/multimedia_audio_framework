@@ -795,6 +795,50 @@ napi_status NapiParamUtils::SetValueVolumeEvent(const napi_env& env, const Volum
     return napi_ok;
 }
 
+napi_status NapiParamUtils::SetValueStreamVolumeEvent(const napi_env& env,
+    const StreamVolumeEvent &volumeEvent, napi_value &result)
+{
+    napi_status status = napi_ok;
+    napi_create_object(env, &result);
+    SetValueInt32(env, "streamUsage",
+        NapiAudioEnum::GetJsStreamUsage(volumeEvent.streamUsage), result);
+    SetValueInt32(env, "volume", volumeEvent.volume, result);
+    SetValueBoolean(env, "updateUi", volumeEvent.updateUi, result);
+    return status;
+}
+
+napi_status NapiParamUtils::SetValueStreamUsageArray(const napi_env& env,
+    const std::vector<StreamUsage> streamUsageArray, napi_value &result)
+{
+    size_t streamUsageNum = streamUsageArray.size();
+    napi_create_array(env, &result);
+    napi_status status = napi_ok;
+    for (size_t idx = 0; idx < streamUsageNum; idx++) {
+        napi_value jsValue;
+        status = napi_create_int32(env, NapiAudioEnum::GetJsStreamUsage(streamUsageArray[idx]), &jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueStreamUsageArray napi_create_int32 failed");
+        status = napi_set_element(env, result, idx, jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueStreamUsageArray napi_set_element failed");
+    }
+    return status;
+}
+
+napi_status NapiParamUtils::SetValueAudioVolumeTypeArray(const napi_env& env,
+    const std::vector<AudioVolumeType> volumeTypeArray, napi_value &result)
+{
+    size_t volumeTypeNum = volumeTypeArray.size();
+    napi_create_array(env, &result);
+    napi_status status = napi_ok;
+    for (size_t idx = 0; idx < volumeTypeNum; idx++) {
+        napi_value jsValue;
+        status = napi_create_int32(env, NapiAudioEnum::GetJsAudioVolumeType(volumeTypeArray[idx]), &jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueAudioVolumeTypeArray napi_create_int32 failed");
+        status = napi_set_element(env, result, idx, jsValue);
+        CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "SetValueAudioVolumeTypeArray napi_set_element failed");
+    }
+    return status;
+}
+
 napi_status NapiParamUtils::GetAudioDeviceDescriptor(const napi_env &env,
     std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool &argTransFlag, napi_value in)
 {

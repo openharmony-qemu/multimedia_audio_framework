@@ -508,7 +508,8 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     }
     int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus);
     if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
-        AUDIO_ERR_LOG("volumelevel[%{public}d] invalid", volumeLevelInInt);
+        AUDIO_ERR_LOG("device %{public}d, stream %{public}d, volumelevel %{public}d invalid",
+            audioActiveDevice_.GetCurrentOutputDeviceType(), streamInFocus, volumeLevelInInt);
         return ERROR_INVALID_PARAM;
     }
 
@@ -623,6 +624,7 @@ bool AudioPolicyServer::IsVolumeTypeValid(AudioStreamType streamType)
         case STREAM_SYSTEM:
         case STREAM_ACCESSIBILITY:
         case STREAM_ULTRASONIC:
+        case STREAM_NAVIGATION:
         case STREAM_ALL:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
@@ -1320,7 +1322,7 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
 int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi)
 {
-    AUDIO_INFO_LOG("SetSystemVolumeLevelInternal streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
+    AUDIO_INFO_LOG("streamType: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         streamType, volumeLevel, isUpdateUi);
     if (IsVolumeUnadjustable()) {
         AUDIO_ERR_LOG("Unadjustable device, not allow set volume");
@@ -1720,6 +1722,11 @@ int32_t AudioPolicyServer::SetCallbackCapturerInfo(const AudioCapturerInfo &capt
 bool AudioPolicyServer::IsStreamActive(AudioStreamType streamType)
 {
     return audioSceneManager_.IsStreamActive(streamType);
+}
+
+bool AudioPolicyServer::IsStreamActiveByStreamUsage(StreamUsage streamUsage)
+{
+    return IsStreamActive(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
 }
 
 bool AudioPolicyServer::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
@@ -2261,10 +2268,14 @@ bool AudioPolicyServer::VerifyPermission(const std::string &permissionName, uint
 {
     AUDIO_DEBUG_LOG("Verify permission [%{public}s]", permissionName.c_str());
 
+    uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
+    if (callingUid == UID_AUDIO) {
+        return true;
+    }
+
     if (!isRecording) {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
         // root user case for auto test
-        uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
         if (callingUid == ROOT_UID) {
             return true;
         }
@@ -3527,7 +3538,7 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
 {
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener object is nullptr");
-    
+
     sptr<IStandardAudioZoneClient> client = iface_cast<IStandardAudioZoneClient>(object);
     CHECK_AND_RETURN_RET_LOG(client != nullptr, ERR_INVALID_PARAM,
         "RegisterAudioZoneClient listener obj cast failed");
@@ -4122,7 +4133,7 @@ int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)
     CHECK_AND_RETURN_RET_LOG(callerUid == meetServiceUid, ERROR,
         "SetVirtualCall callerUid is error: not meetservice");
     AUDIO_INFO_LOG("Set VirtualCall is %{public}d", isVirtual);
-    return audioDeviceCommon_.SetVirtualCall(isVirtual);
+    return audioDeviceCommon_.SetVirtualCall(callerUid, isVirtual);
 }
 
 int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -4196,6 +4207,26 @@ bool AudioPolicyServer::GetStreamMuteByUsage(StreamUsage streamUsage)
     return GetStreamMute(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
 }
 
+float AudioPolicyServer::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
+{
+    return GetSystemVolumeInDb(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage), volumeLevel, deviceType);
+}
+
+std::vector<AudioVolumeType> AudioPolicyServer::GetSupportedAudioVolumeTypes()
+{
+    return VolumeUtils::GetSupportedAudioVolumeTypes();
+}
+
+AudioVolumeType AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
+{
+    return VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage);
+}
+
+std::vector<StreamUsage> AudioPolicyServer::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    return VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
+}
+
 int32_t AudioPolicyServer::SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages)
 {
     if (audioPolicyServerHandler_ != nullptr) {
@@ -4223,7 +4254,7 @@ int32_t AudioPolicyServer::ForceStopAudioStream(StopAudioType audioType)
     return AudioServerProxy::GetInstance().ForceStopAudioStreamProxy(audioType);
 }
 
-bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo)
+bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, false, "interruptService_ is nullptr");
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
@@ -4241,9 +4272,21 @@ void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t ses
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
     audioDeviceLock_.TriggerFetchDevice();
 }
+
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioServerProxy::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+}
+
+
+bool AudioPolicyServer::SetKaraokeParameters(const std::string &parameters)
+{
+    return AudioServerProxy::GetInstance().SetKaraokeParameters(parameters);
+}
+
+bool AudioPolicyServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return AudioServerProxy::GetInstance().IsAudioLoopbackSupported(mode);
 }
 
 int32_t AudioPolicyServer::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

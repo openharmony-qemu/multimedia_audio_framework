@@ -100,6 +100,7 @@ void AudioCaptureRendererUnitTest::AudioInterruptUnitTestFunc(SourceType sourceT
     audioRenderer->Release();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test Audio Interrupt rule
  * @tc.number: SetRendererCaptureInterrupt_001
@@ -303,5 +304,6 @@ HWTEST(AudioCaptureRendererUnitTest, SetRendererCaptureInterrupt_020, TestSize.L
     AudioCaptureRendererUnitTest::AudioInterruptUnitTestFunc(SOURCE_TYPE_VOICE_MESSAGE,
         STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

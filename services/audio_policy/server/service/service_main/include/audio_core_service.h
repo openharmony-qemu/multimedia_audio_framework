@@ -60,7 +60,8 @@ public:
             std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
 
         // ICoreServiceProvider
-        int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation) override;
+        int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+            SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
@@ -156,7 +157,7 @@ private:
     int32_t StartClient(uint32_t sessionId);
     int32_t PauseClient(uint32_t sessionId);
     int32_t StopClient(uint32_t sessionId);
-    int32_t ReleaseClient(uint32_t sessionId);
+    int32_t ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
 
     // ICoreServiceProvider from EventEntry
     int32_t SetDefaultOutputDevice(
@@ -249,7 +250,6 @@ private:
     int32_t FetchRendererPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t FetchCapturerPipesAndExecute(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    int32_t HandleScoInputDeviceFetched(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t ScoInputDeviceFetchedForRecongnition(
         bool handleFlag, const std::string &address, ConnectState connectState);
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
@@ -291,6 +291,7 @@ private:
     void ProcessInputPipeNew(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &flag);
     void RemoveUnusedPipe();
+    void RemoveUnusedRecordPipe();
     void MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> streamDesc,
         std::shared_ptr<AudioPipeInfo> pipeInfo, const AudioStreamDeviceChangeReasonExt reason);
     void MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -397,6 +398,8 @@ private:
     bool IsNoRunningStream(std::vector<std::shared_ptr<AudioStreamDescriptor>> outputStreamDescs);
     void UpdateActiveDeviceAndVolumeBeforeMoveSession(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

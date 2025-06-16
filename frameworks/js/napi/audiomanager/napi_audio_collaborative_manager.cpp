@@ -127,11 +127,11 @@ napi_value NapiAudioCollaborativeManager::CreateCollaborativeManagerWrapper(napi
     };
     status = napi_get_reference_value(env, g_collaborativeManagerConstructor, &constructor);
     CHECK_AND_RETURN_RET(status == napi_ok,
-       HandleNapiError("napi_get_reference_value fail!", status, result));
+        HandleNapiError("napi_get_reference_value fail!", status, result));
     
     status = napi_new_instance(env, constructor, 0, nullptr, &result);
     CHECK_AND_RETURN_RET(status == napi_ok,
-       HandleNapiError("napi_new_instance fail!", status, result));
+        HandleNapiError("napi_new_instance fail!", status, result));
 
     return result;
 }
@@ -291,8 +291,7 @@ napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env en
         
         context->intValue =
             napiAudioCollaborativeManager->audioCollaborativeMngr_->SetCollaborativePlaybackEnabledForDevice(
-            context->deviceDescriptor, context->collaborativeEnable);
-
+                context->deviceDescriptor, context->collaborativeEnable);
 
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);

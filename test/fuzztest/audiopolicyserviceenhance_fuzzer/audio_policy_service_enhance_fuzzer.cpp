@@ -146,8 +146,6 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
 
 void AudioPolicyServiceEnhanceTwoFuzzTest()
 {
-    GetServerPtr()->audioPolicyService_.audioDeviceCommon_.BluetoothScoDisconectForRecongnition();
-
     AudioStreamInfo audioStreamInfo;
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.LoadA2dpModule(DEVICE_TYPE_BLUETOOTH_A2DP,
         audioStreamInfo, "", "", SOURCE_TYPE_VOICE_RECOGNITION);
@@ -289,7 +287,6 @@ void AudioPolicyServiceEnhanceFiveFuzzTest()
     Volume vol;
     AudioVolumeType streamType = GetData<AudioVolumeType>();
     DeviceType deviceType = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
 
     uint64_t sessionID = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.audioCapturerSession_.OnCapturerSessionRemoved(sessionID);

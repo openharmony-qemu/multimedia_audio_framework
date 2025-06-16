@@ -79,7 +79,7 @@ public:
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
-    
+
     int32_t GetSelfAppVolumeLevel(int32_t &volumeLevel);
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume);
@@ -94,6 +94,8 @@ public:
     bool GetStreamMute(AudioVolumeType volumeType);
 
     bool IsStreamActive(AudioVolumeType volumeType);
+
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage);
 
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage);
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source);
@@ -177,7 +179,7 @@ public:
 
     int32_t UnsetAppVolumeCallbackForUid(
         const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
-    
+
     int32_t SetSelfAppVolumeChangeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
 
     int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback);
@@ -245,6 +247,11 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
 
     int32_t UnsetVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &callback);
+
+    int32_t SetSystemVolumeChangeCallback(const int32_t clientPid,
+        const std::shared_ptr<SystemVolumeChangeCallback> &callback);
+
+    int32_t UnsetSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &callback);
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
 
@@ -481,7 +488,7 @@ public:
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
-    
+
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts);
 
@@ -605,13 +612,19 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool SetKaraokeParameters(const std::string &parameters);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo);
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage);
     int32_t GetVolumeLevelByUsage(StreamUsage streamUsage);
     bool GetStreamMuteByUsage(StreamUsage streamUsage);
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType);
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes();
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage);
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
     int32_t SetStreamVolumeChangeCallback(const int32_t clientPid, const std::set<StreamUsage> &streamUsages,
         const std::shared_ptr<StreamVolumeChangeCallback> &callback);
     int32_t UnsetStreamVolumeChangeCallback(const std::shared_ptr<StreamVolumeChangeCallback> &callback);
@@ -652,6 +665,10 @@ private:
     std::array<CallbackChangeInfo, CALLBACK_MAX> callbackChangeInfos_ = {};
     std::vector<AudioRendererInfo> rendererInfos_;
     std::vector<AudioCapturerInfo> capturerInfos_;
+
+    std::mutex handleAvailableDeviceChangeCbsMapMutex_;
+    std::map<std::pair<int32_t, AudioDeviceUsage>,
+        sptr<IRemoteObject>> availableDeviceChangeCbsMap_;
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;

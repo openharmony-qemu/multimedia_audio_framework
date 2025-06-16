@@ -876,6 +876,9 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t RendererInServer::Start()
 {
+    AudioXCollie audioXCollie(
+        "RendererInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t ret = StartInner();
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
@@ -970,11 +973,11 @@ void RendererInServer::dualToneStreamInStart()
 int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
+    AudioXCollie audioXCollie("RendererInServer::Pause", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(status_ == I_STATUS_STARTED, ERR_ILLEGAL_STATE,
+        "RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
     status_ = I_STATUS_PAUSING;
     bool isStandbyTmp = false;
     if (standByEnable_) {
@@ -1025,6 +1028,9 @@ int32_t RendererInServer::Pause()
 int32_t RendererInServer::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Flush.");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Flush", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -1081,6 +1087,9 @@ int32_t RendererInServer::DrainAudioBuffer()
 
 int32_t RendererInServer::Drain(bool stopFlag)
 {
+    AudioXCollie audioXCollie(
+        "RendererInServer::Drain", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED) {
@@ -1120,6 +1129,9 @@ int32_t RendererInServer::Drain(bool stopFlag)
 int32_t RendererInServer::Stop()
 {
     AUDIO_INFO_LOG("Stop.");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Stop", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
