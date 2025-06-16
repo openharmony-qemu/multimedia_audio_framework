@@ -822,8 +822,8 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
     }
     size_t targetSize = isDrain ? std::min(result.size, clientSpanSizeInByte_) : clientSpanSizeInByte_;
 
-    int32_t sizeInFrame = clientBuffer_->GetAvailableDataFrames();
-    CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetAvailableDataFrames invalid, %{public}d", sizeInFrame);
+    int32_t sizeInFrame = clientBuffer_->GetWritableDataFrames();
+    CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetWritableDataFrames invalid, %{public}d", sizeInFrame);
 
     FutexCode futexRes = FUTEX_OPERATION_FAILED;
     if (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_) {
@@ -831,15 +831,15 @@ int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
         futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
             [this] () {
                 return (state_ != RUNNING) ||
-                    (static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) >= spanSizeInFrame_);
+                    (static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) >= spanSizeInFrame_);
             });
         CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
         CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
             "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
-        sizeInFrame = clientBuffer_->GetAvailableDataFrames();
+        sizeInFrame = clientBuffer_->GetWritableDataFrames();
     }
 
-    if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetAvailableDataFrames()) < spanSizeInFrame_) {
+    if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) < spanSizeInFrame_) {
         AUDIO_ERR_LOG("failed: sizeInFrame is:%{public}d, futexRes:%{public}d", sizeInFrame, futexRes);
         return ERROR;
     }

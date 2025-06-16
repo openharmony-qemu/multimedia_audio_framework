@@ -981,14 +981,14 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_038, TestSize.Level1
     uint32_t byteSizePerFrame = 0;
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     ptr->processBufferList_.push_back(processBuffer);
     ret = ptr->IsAnyProcessRunning();
     EXPECT_EQ(ret, false);
 
     ptr->processBufferList_.clear();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     ptr->processBufferList_.push_back(processBuffer);
     ret = ptr->IsAnyProcessRunning();
     EXPECT_EQ(ret, true);
@@ -1044,8 +1044,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_040, TestSize.Level1
     uint32_t byteSizePerFrame = 0;
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     ptr->processBufferList_.push_back(processBuffer);
 
     struct BufferDesc readBuf;
@@ -1071,8 +1071,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_041, TestSize.Level1
     uint32_t byteSizePerFrame = 0;
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     ptr->processBufferList_.push_back(processBuffer);
 
     struct BufferDesc readBuf;
@@ -1337,8 +1337,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_053, TestSize.Level1
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
 
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     processStream->isBufferConfiged_ = true;
     processStream->processBuffer_ = processBuffer;
     ptr->processList_.push_back(processStream);
@@ -1351,19 +1351,19 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_053, TestSize.Level1
     ret = ptr->LinkProcessStream(processStream, startWhenLinking);
     EXPECT_EQ(ret, SUCCESS);
 
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     ptr->isDeviceRunningInIdel_ = true;
     ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
     ret = ptr->LinkProcessStream(processStream, startWhenLinking);
     EXPECT_EQ(ret, SUCCESS);
 
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     ptr->isDeviceRunningInIdel_ = false;
     ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
     ret = ptr->LinkProcessStream(processStream, startWhenLinking);
     EXPECT_EQ(ret, SUCCESS);
 
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     ptr->isDeviceRunningInIdel_ = false;
     ptr->endpointStatus_ = AudioEndpoint::EndpointStatus::INVALID;
     ret = ptr->LinkProcessStream(processStream, startWhenLinking);
@@ -1394,8 +1394,8 @@ HWTEST(AudioEndpointSeparateUnitTest, AudioEndpointSeparate_054, TestSize.Level1
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
 
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     processStream->isBufferConfiged_ = true;
     processStream->processBuffer_ = processBuffer;
     ptr->processList_.push_back(processStream);

@@ -178,14 +178,14 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_004, TestSize.Level1)
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     BasicBufferInfo basicBufferInfo;
-    processBuffer->basicBufferInfo_ = &basicBufferInfo;
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_RUNNING);
     uint64_t readFrame = 0;
     processBuffer->SetCurReadFrame(readFrame);
     int64_t lastTime = 0;
     processBuffer->SetLastWrittenTime(lastTime);
     uint64_t pos = 0;
-    processBuffer->basicBufferInfo_->basePosInFrame.store(pos);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->basePosInFrame.store(pos);
     AudioProcessConfig config = {};
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     sptr<AudioProcessInServer> audioProcess = AudioProcessInServer::Create(config, AudioService::GetInstance());
@@ -222,8 +222,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_005, TestSize.Level1)
     std::shared_ptr<OHAudioBuffer> processBuffer = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     BasicBufferInfo basicBufferInfo;
-    processBuffer->basicBufferInfo_ = &basicBufferInfo;
-    processBuffer->basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_->streamStatus.store(StreamStatus::STREAM_STARTING);
     audioEndpointInner->processBufferList_.push_back(processBuffer);
     AudioService *g_audioServicePtr = AudioService::GetInstance();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(clientConfig, g_audioServicePtr);
@@ -986,7 +986,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_034, TestSize.Level1)
     uint32_t byteSizePerFrame = 0;
     const std::shared_ptr<OHAudioBuffer> procBuf = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    procBuf->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    procBuf->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
 
     EXPECT_NE(nullptr, procBuf);
 
@@ -1022,7 +1022,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_035, TestSize.Level1)
     uint32_t byteSizePerFrame = 0;
     audioEndpointInner->dstAudioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    audioEndpointInner->dstAudioBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    audioEndpointInner->dstAudioBuffer_->ohAudioBufferBase_.basicBufferInfo_ =
+        std::make_shared<BasicBufferInfo>().get();
 
     auto result = audioEndpointInner->PrepareNextLoop(curWritePos, wakeUpTime);
     EXPECT_EQ(result, false);
@@ -1126,8 +1127,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_039, TestSize.Level1)
         spanSizeInFrame, byteSizePerFrame);
     EXPECT_NE(processBuffer, nullptr);
 
-    processBuffer->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
+    processBuffer->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(processBuffer->ohAudioBufferBase_.basicBufferInfo_, nullptr);
 
     audioEndpointInner->processBufferList_.push_back(processBuffer);
 
@@ -1176,8 +1177,9 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_041, TestSize.Level1)
         spanSizeInFrame, byteSizePerFrame);
     EXPECT_NE(audioEndpointInner->dstAudioBuffer_, nullptr);
 
-    audioEndpointInner->dstAudioBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    EXPECT_NE(audioEndpointInner->dstAudioBuffer_->basicBufferInfo_, nullptr);
+    audioEndpointInner->dstAudioBuffer_->ohAudioBufferBase_.basicBufferInfo_ =
+        std::make_shared<BasicBufferInfo>().get();
+    EXPECT_NE(audioEndpointInner->dstAudioBuffer_->ohAudioBufferBase_.basicBufferInfo_, nullptr);
 
     uint64_t curWritePos = 0;
     auto result = audioEndpointInner->ProcessToEndpointDataHandle(curWritePos);

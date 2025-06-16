@@ -372,9 +372,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_002, TestSi
 
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(0);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(0);
-    rendererInServer->audioServerBuffer_->totalSizeInFrame_ = 4;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(0);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(0);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.totalSizeInFrame_ = 4;
     rendererInServer->spanSizeInFrame_ = 1;
     rendererInServer->OnStatusUpdateSub(OPERATION_UNDERRUN);
     EXPECT_EQ(0, rendererInServer->needForceWrite_);
@@ -396,10 +396,10 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerOnStatusUpdateSub_003, TestSi
 
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(0);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(4);
-    rendererInServer->audioServerBuffer_->totalSizeInFrame_ = 8;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(0);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->basePosInFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.totalSizeInFrame_ = 8;
     rendererInServer->spanSizeInFrame_ = 1;
 
     rendererInServer->standByCounter_ = 1;
@@ -769,7 +769,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_002, TestSize.Le
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->lowPowerVolume_ = 0.0f;
-    rendererInServer->audioServerBuffer_-> basicBufferInfo_->duckFactor.store(0.0f);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->duckFactor.store(0.0f);
     rendererInServer->silentModeAndMixWithOthers_ = 0;
 
     rendererInServer->VolumeHandle(bufferDesc);
@@ -836,8 +836,8 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_001, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(0);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(0);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
     rendererInServer->spanSizeInFrame_ = 4;
 
     ret = rendererInServer->WriteData();
@@ -859,9 +859,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_002, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(8);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(8);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
 
     ret = rendererInServer->WriteData();
@@ -883,9 +883,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_003, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(12);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(12);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
 
     ret = rendererInServer->WriteData();
@@ -907,9 +907,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_004, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(8);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(8);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
 
     ret = rendererInServer->WriteData();
@@ -932,9 +932,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_005, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(8);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(8);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
     ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
@@ -959,9 +959,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_006, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(8);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(8);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
     ret = rendererInServer->InitDupStream(1);
     ret = rendererInServer->InitDualToneStream();
@@ -991,9 +991,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerWriteData_007, TestSize.Level
     EXPECT_NE(nullptr, rendererInServer);
 
     int32_t ret = rendererInServer->Init();
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(8);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(4);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->totalSizeInFrame = 16;
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(8);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(4);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->totalSizeInFrame = 16;
     rendererInServer->spanSizeInFrame_ = 4;
     rendererInServer->silentModeAndMixWithOthers_ = true;
 
@@ -1538,9 +1538,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_007, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(10);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(5);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(5);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(10);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(5);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->basePosInFrame.store(5);
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(SUCCESS, ret);
@@ -1562,9 +1562,9 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_008, TestSize.Level1)
 
     int32_t ret = rendererInServer->Init();
     rendererInServer->OnStatusUpdate(OPERATION_STARTED);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(10);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(5);
-    rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(10);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(10);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(5);
+    rendererInServer->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->basePosInFrame.store(10);
 
     ret = rendererInServer->Flush();
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);

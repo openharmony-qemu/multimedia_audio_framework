@@ -821,7 +821,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_030, TestSize.Level1)
         TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
-    audioProcessInServer->processBuffer_->basicBufferInfo_ = nullptr;
+    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = nullptr;
     auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
@@ -849,9 +849,9 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_031, TestSize.Level1)
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
     BasicBufferInfo basicBufferInfo;
-    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
-    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
-    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_STAND_BY;
+    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_STAND_BY;
 
     audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
 
@@ -883,9 +883,9 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_032, TestSize.Level1)
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
     BasicBufferInfo basicBufferInfo;
-    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
-    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
-    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
 
     audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
 

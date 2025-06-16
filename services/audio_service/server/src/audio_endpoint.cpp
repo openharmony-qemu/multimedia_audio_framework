@@ -710,7 +710,7 @@ int32_t AudioEndpointInner::PrepareDeviceBuffer(const AudioDeviceDescriptor &dev
         ERR_INVALID_PARAM, "mmap span info error, spanDuration %{public}" PRIu64".", spanDuration_);
     AudioBufferHolder holder = syncInfoSize_ != 0 ? AUDIO_SERVER_ONLY_WITH_SYNC : AUDIO_SERVER_ONLY;
     dstAudioBuffer_ = OHAudioBuffer::CreateFromRemote(dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_,
-        holder, dstBufferFd_, OHAudioBuffer::INVALID_BUFFER_FD);
+        holder, dstBufferFd_, INVALID_BUFFER_FD);
     CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr && dstAudioBuffer_->GetBufferHolder() == holder,
         ERR_ILLEGAL_STATE, "create buffer from remote fail.");
 
@@ -1814,7 +1814,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     uint64_t curWritePos = procBuf->GetCurWriteFrame();
     Trace trace("AudioEndpoint::WriteProcessData-<" + std::to_string(curWritePos));
 
-    int32_t writeAbleSize = procBuf->GetAvailableDataFrames();
+    int32_t writeAbleSize = procBuf->GetWritableDataFrames();
     if (writeAbleSize <= 0 || static_cast<uint32_t>(writeAbleSize) <= dstSpanSizeInframe_) {
         AUDIO_WARNING_LOG("client read too slow: curWritePos:%{public}" PRIu64" writeAbleSize:%{public}d",
             curWritePos, writeAbleSize);

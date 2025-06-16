@@ -1179,9 +1179,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_045, TestSize.Level1
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
 
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(1000000);
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handleTime.store(0);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handlePos.store(1000000);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handleTime.store(0);
 
     auto ret = ptrRendererInClientInner->GetAudioTime(timestamp, base);
     EXPECT_TRUE(ret);
@@ -1218,9 +1218,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_046, TestSize.Level1
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
 
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(0);
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handleTime.store(0);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handlePos.store(0);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handleTime.store(0);
 
     auto ret = ptrRendererInClientInner->GetAudioTime(timestamp, base);
     EXPECT_TRUE(ret);
@@ -1257,9 +1257,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_047, TestSize.Level1
     ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
 
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(0);
-    ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handleTime.store(0);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handlePos.store(0);
+    ptrRendererInClientInner->clientBuffer_->ohAudioBufferBase_.basicBufferInfo_->handleTime.store(0);
 
     auto ret = ptrRendererInClientInner->GetAudioTime(timestamp, base);
     EXPECT_TRUE(ret);

@@ -295,8 +295,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1
     server->playerDfx_ = nullptr;
     server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
         byteSizePerFrame);
-    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
     auto ret = server->Pause();
     EXPECT_EQ(SUCCESS, ret);
@@ -323,8 +323,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_002, TestSize.Level1
     server->standByEnable_ = true;
     server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
         byteSizePerFrame);
-    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
 
     AppInfo appInfo;
@@ -740,7 +740,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
     auto ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, RESTORE_ERROR);
 
-    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, NO_NEED_FOR_RESTORE);
 }

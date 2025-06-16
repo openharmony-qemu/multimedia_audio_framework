@@ -240,7 +240,7 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
 {
-    if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
+    if (audioServerBuffer_->GetWritableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
         } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
@@ -449,8 +449,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
-    AUDIO_DEBUG_LOG("audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
-        audioServerBuffer_->GetAvailableDataFrames(), needStart);
+    AUDIO_DEBUG_LOG("audioServerBuffer_->GetWritableDataFrames(): %{public}d, needStart: %{public}d",
+        audioServerBuffer_->GetWritableDataFrames(), needStart);
     return SUCCESS;
 }
 
