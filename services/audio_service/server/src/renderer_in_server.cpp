@@ -706,6 +706,8 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
                 DoFadingOut(bufferDesc);
             }
         }
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(inputData, requestDataLen, bufferDesc.buffer, bufferDesc.bufLength) == 0,
+            ERROR, "memcpy error");
         memcpy_s(inputData, requestDataLen, bufferDesc.buffer, bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
@@ -1932,7 +1934,8 @@ std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 {
     // todo dynamic
-    if (innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
+    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
         innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr) {
         AUDIO_INFO_LOG("dup buffer already configed!");
         return SUCCESS;
@@ -1968,7 +1971,9 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId)
 {
     size_t targetSize = bufferDesc.bufLength;
-    if (innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
+    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
         AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
         return ERROR;
     }
