@@ -33,6 +33,7 @@
 #include "audio_dump_pcm.h"
 #include "volume_tools.h"
 #include "core_service_handler.h"
+#include "stream_dfx_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -367,6 +368,7 @@ int32_t CapturerInServer::OnReadData(size_t length)
 
 int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 {
+    CHECK_AND_RETURN_RET_LOG(status_.load() == I_STATUS_STARTED, ERR_READ_FAILED, "CapturerInServer is not started");
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -441,10 +443,29 @@ int32_t CapturerInServer::GetSessionId(uint32_t &sessionId)
     return SUCCESS;
 }
 
-bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool CapturerInServer::CheckBGCapture()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+
+    if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        return true;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Check failed");
+
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
+    bool res = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
+    AUDIO_INFO_LOG("Retry result:%{public}s", (res ? "success" : "fail"));
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, false);
+
+    return res;
+}
+
+bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
         streamIndex_,
         processConfig_.callerUid,
@@ -454,8 +475,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
         capturerState,
     };
     if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-            false, "VerifyBackgroundCapture failed!");
+        CHECK_AND_RETURN_RET_LOG(CheckBGCapture(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
@@ -465,7 +485,7 @@ bool CapturerInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, streamIndex_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", streamIndex_);
         isMicIndicatorOn_ = true;
     }
@@ -502,6 +522,9 @@ int32_t CapturerInServer::Start()
     CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
         recorderDfx_->WriteDfxStartMsg(streamIndex_, stage, processConfig_);
+    }
+    if (ret == SUCCESS) {
+        StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
     return ret;
 }
@@ -557,6 +580,7 @@ int32_t CapturerInServer::Pause()
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     if (capturerClock_ != nullptr) {
         capturerClock_->Stop();
     }
@@ -607,15 +631,15 @@ int32_t CapturerInServer::DrainAudioBuffer()
 int32_t CapturerInServer::Stop()
 {
     std::unique_lock<std::mutex> lock(statusLock_);
-    if (capturerClock_ != nullptr) {
-        capturerClock_->Stop();
-    }
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STOPPING;
 
+    if (capturerClock_ != nullptr) {
+        capturerClock_->Stop();
+    }
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
@@ -623,6 +647,7 @@ int32_t CapturerInServer::Stop()
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
 
@@ -642,6 +667,7 @@ int32_t CapturerInServer::Release()
             CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_RELEASE);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Policy remove client failed, reason: %{public}d", result);
     }
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     int32_t ret = IStreamManager::GetRecorderManager().ReleaseCapturer(streamIndex_);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
@@ -801,5 +827,11 @@ int64_t CapturerInServer::GetLastAudioDuration()
     return ret < 0 ? -1 : ret;
 }
 
+int32_t CapturerInServer::StopSession()
+{
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
+    audioServerBuffer_->SetStopFlag(true);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

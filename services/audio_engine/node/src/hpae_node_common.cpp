@@ -46,7 +46,8 @@ static std::map<AudioEffectScene, HpaeProcessorType> g_effectSceneToProcessorTyp
     {SCENE_GAME, HPAE_SCENE_GAME},
     {SCENE_SPEECH, HPAE_SCENE_SPEECH},
     {SCENE_RING, HPAE_SCENE_RING},
-    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN}
+    {SCENE_VOIP_DOWN, HPAE_SCENE_VOIP_DOWN},
+    {SCENE_COLLABORATIVE, HPAE_SCENE_COLLABORATIVE}
 };
 
 static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneTypeMap = {
@@ -95,7 +96,7 @@ static std::unordered_map<StreamManagerState, std::string> g_streamMgrStateToStr
     {STREAM_MANAGER_RELEASED, "RELEASED"}
 };
 
-static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
+static std::map<std::string, uint32_t> g_formatFromParserStrToEnum = {
     {"s16", SAMPLE_S16LE},
     {"s16le", SAMPLE_S16LE},
     {"s24", SAMPLE_S24LE},
@@ -104,6 +105,13 @@ static std::map<std::string, uint32_t> formatFromParserStrToEnum = {
     {"s32le", SAMPLE_S32LE},
     {"f32", SAMPLE_F32LE},
     {"f32le", SAMPLE_F32LE},
+};
+
+static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
+    {SAMPLE_S16LE, "s16le"},
+    {SAMPLE_S24LE, "s24le"},
+    {SAMPLE_S32LE, "s32le"},
+    {SAMPLE_F32LE, "f32le"},
 };
 
 std::string ConvertSessionState2Str(HpaeSessionState state)
@@ -140,6 +148,21 @@ HpaeProcessorType TransEffectSceneToSceneType(AudioEffectScene effectScene)
     }
 }
 
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled)
+{
+    if (isCollaborationEnabled) {
+        if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
+            nodeInfo.effectInfo.lastEffectScene = nodeInfo.effectInfo.effectScene;
+            nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
+            nodeInfo.sceneType = HPAE_SCENE_COLLABORATIVE;
+            AUDIO_INFO_LOG("collaboration enabled, effectScene from %{public}d, sceneType changed to %{public}d",
+                nodeInfo.effectInfo.lastEffectScene, nodeInfo.sceneType);
+        }
+    } else {
+        RecoverNodeInfoForCollaboration(nodeInfo);
+    }
+}
+
 HpaeProcessorType TransSourceTypeToSceneType(SourceType sourceType)
 {
     if (g_sourceTypeToSceneTypeMap.find(sourceType) == g_sourceTypeToSceneTypeMap.end()) {
@@ -167,7 +190,8 @@ static std::unordered_map<HpaeProcessorType, std::string> g_processorTypeToEffec
     {HPAE_SCENE_MOVIE, "SCENE_MOVIE"},
     {HPAE_SCENE_SPEECH, "SCENE_SPEECH"},
     {HPAE_SCENE_RING, "SCENE_RING"},
-    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"}};
+    {HPAE_SCENE_VOIP_DOWN, "SCENE_VOIP_DOWN"},
+    {HPAE_SCENE_COLLABORATIVE, "SCENE_COLLABORATIVE"}};
 
 std::string TransProcessorTypeToSceneType(HpaeProcessorType processorType)
 {
@@ -206,7 +230,7 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
     return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
+        (nodeInfo.frameLen * nodeInfo.channels * static_cast<uint32_t>(GetSizeFromFormat(nodeInfo.format)));
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
@@ -226,7 +250,7 @@ uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
 
 AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 {
-    return static_cast<AudioSampleFormat>(formatFromParserStrToEnum[format]);
+    return static_cast<AudioSampleFormat>(g_formatFromParserStrToEnum[format]);
 }
 
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
@@ -248,7 +272,7 @@ void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sin
 
 int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
-    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+    if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
         AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
@@ -266,9 +290,10 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.format = static_cast<AudioSampleFormat>(TransFormatFromStringToEnum(audioModuleInfo.format));
     sinkInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
-    sinkInfo.frameLen = bufferSize / (sinkInfo.channels * GetSizeFromFormat(sinkInfo.format));
+    sinkInfo.frameLen = static_cast<size_t>(bufferSize) / (sinkInfo.channels *
+                                static_cast<size_t>(GetSizeFromFormat(sinkInfo.format)));
     sinkInfo.channelLayout = 0ULL;
-    sinkInfo.deviceType = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
+    sinkInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.volume = static_cast<uint32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
     sinkInfo.openMicSpeaker = static_cast<uint32_t>(std::atol(audioModuleInfo.OpenMicSpeaker.c_str()));
     sinkInfo.renderInIdleState = static_cast<uint32_t>(std::atol(audioModuleInfo.renderInIdleState.c_str()));
@@ -282,7 +307,7 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
 
 int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo)
 {
-    if (formatFromParserStrToEnum.find(audioModuleInfo.format) == formatFromParserStrToEnum.end()) {
+    if (g_formatFromParserStrToEnum.find(audioModuleInfo.format) == g_formatFromParserStrToEnum.end()) {
         AUDIO_ERR_LOG("openaudioport failed,format:%{public}s not supported", audioModuleInfo.format.c_str());
         return ERROR;
     }
@@ -296,7 +321,8 @@ int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, 
     int32_t bufferSize = static_cast<int32_t>(std::atol(audioModuleInfo.bufferSize.c_str()));
     sourceInfo.channels = static_cast<AudioChannel>(std::atol(audioModuleInfo.channels.c_str()));
     sourceInfo.format = TransFormatFromStringToEnum(audioModuleInfo.format);
-    sourceInfo.frameLen = bufferSize / (sourceInfo.channels * GetSizeFromFormat(sourceInfo.format));
+    sourceInfo.frameLen = static_cast<size_t>(bufferSize) / (sourceInfo.channels *
+                                static_cast<size_t>(GetSizeFromFormat(sourceInfo.format)));
     sourceInfo.samplingRate = static_cast<AudioSamplingRate>(std::atol(audioModuleInfo.rate.c_str()));
     sourceInfo.channelLayout = 0ULL;
     sourceInfo.deviceType = static_cast<int32_t>(std::atol(audioModuleInfo.deviceType.c_str()));
@@ -351,6 +377,22 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
     return getKey(info) != getKey(oldInfo);
 }
 
+std::string TransFormatFromEnumToString(AudioSampleFormat format)
+{
+    CHECK_AND_RETURN_RET_LOG(g_formatFromParserEnumToStr.find(format) != g_formatFromParserEnumToStr.end(),
+        "", "error param format");
+    return g_formatFromParserEnumToStr[format];
+}
+
+void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
+{
+    if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
+        nodeInfo.effectInfo.effectScene = nodeInfo.effectInfo.lastEffectScene;
+        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
+        AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
+            nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -288,6 +288,15 @@ public:
     bool IsStreamActive(AudioVolumeType volumeType) const;
 
     /**
+     * @brief Is stream active.
+     *
+     * @param streamUsage stream usage.
+     * @return Returns <b>true</b> if the stream is active; returns <b>false</b> otherwise.
+     * @since 20
+     */
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) const;
+
+    /**
      * @brief Is fast playback supported.
      *
      * @param streamInfo audio stream info.
@@ -354,6 +363,33 @@ public:
      * @since 20
      */
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+
+    /**
+     * @brief Force Stop the audio stream.
+     *
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t ForceStopAudioStream(StopAudioType audioType);
+
+    /**
+     * Checks whether it is possible to obtain the recording focus.
+     * @param { AudioCapturerInfo } AudioCapturerInfo.
+     * @returns { bool } Indicating whether obtaining the recording focus is possible.
+     *
+     * @since 20
+     */
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
+
+    /**
+     * Checks whether the audio loopback is supported.
+     * @param   { AudioLoopbackMode } mode - The audio loopback mode.
+     * @returns { bool } The value true means that the audio loopback is supported,
+     *          and false means the opposite.
+     * @since 20
+     */
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
 private:
     std::mutex rendererStateChangeCallbacksMutex_;
     std::vector<std::shared_ptr<AudioRendererStateChangeCallback>> rendererStateChangeCallbacks_;

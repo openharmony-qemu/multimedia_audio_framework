@@ -68,6 +68,14 @@ public:
         int32_t innerCapId) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
 
+    void SaveForegroundList(std::vector<std::string> list);
+    // if match, keep uid for speed up, used in create process.
+    bool MatchForegroundList(const std::string &bundleName, uint32_t uid);
+    // used in start process.
+    bool InForegroundList(uint32_t uid);
+    bool UpdateForegroundState(uint32_t appTokenId, bool isActive);
+    void DumpForegroundList(std::string &dumpString);
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime);
     sptr<IpcStreamInServer> GetIpcStream(const AudioProcessConfig &config, int32_t &ret);
     int32_t NotifyStreamVolumeChanged(AudioStreamType streamType, float volume);
@@ -109,6 +117,10 @@ public:
     void SetIncMaxRendererStreamCnt(AudioMode audioMode);
     int32_t GetCurrentRendererStreamCnt();
     void SetDecMaxRendererStreamCnt();
+    int32_t GetCurrentLoopbackStreamCnt(AudioMode audioMode);
+    void SetIncMaxLoopbackStreamCnt(AudioMode audioMode);
+    void SetDecMaxLoopbackStreamCnt(AudioMode audioMode);
+    void DisableLoopback();
     bool IsExceedingMaxStreamCntPerUid(int32_t callingUid, int32_t appUid, int32_t maxStreamCntPerUid);
     void GetCreatedAudioStreamMostUid(int32_t &mostAppUid, int32_t &mostAppNum);
     void CleanAppUseNumMap(int32_t appUid);
@@ -117,6 +129,7 @@ public:
     void SetDefaultAdapterEnable(bool isEnable);
     bool GetDefaultAdapterEnable();
     RestoreStatus RestoreSession(uint32_t sessionId, RestoreInfo restoreInfo);
+    int32_t ForceStopAudioStream(StopAudioType audioType);
     void SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime, uint32_t code);
     void RegisterMuteStateChangeCallback(uint32_t sessionId, const MuteStateChangeCallbck &callback);
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag);
@@ -163,6 +176,9 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
 
 private:
+    std::mutex foregroundSetMutex_;
+    std::set<std::string> foregroundSet_;
+    std::set<uint32_t> foregroundUidSet_;
     std::mutex processListMutex_;
     std::mutex releaseEndpointMutex_;
     std::condition_variable releaseEndpointCV_;
@@ -193,6 +209,8 @@ private:
     std::mutex mutedSessionsMutex_;
     std::set<uint32_t> mutedSessions_ = {};
     int32_t currentRendererStreamCnt_ = 0;
+    int32_t currentLoopbackRendererStreamCnt_ = 0;
+    int32_t currentLoopbackCapturerStreamCnt_ = 0;
     std::mutex streamLifeCycleMutex_ {};
     std::map<int32_t, std::int32_t> appUseNumMap_;
     std::mutex allRunningSinksMutex_;

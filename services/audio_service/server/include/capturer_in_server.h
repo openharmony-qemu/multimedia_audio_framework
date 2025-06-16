@@ -61,11 +61,13 @@ public:
 #endif
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
+    int32_t StopSession();
 
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
 
 private:
+    bool CheckBGCapture();
     int32_t InitCacheBuffer(size_t targetSize);
     bool IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
         std::shared_ptr<IStreamListener> stateListener);

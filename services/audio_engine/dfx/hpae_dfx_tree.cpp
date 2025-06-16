@@ -119,9 +119,9 @@ std::vector<std::vector<HpaeDfxNodeInfo>> HpaeDfxTree::LevelOrderTraversal()
     std::queue<DfxTreeNode *> q;
     q.push(root_);
     while (!q.empty()) {
-        int32_t levelSize = q.size();
+        size_t levelSize = q.size();
         std::vector<HpaeDfxNodeInfo> curLevelResult;
-        for (int32_t i = 0; i < levelSize; ++i) {
+        for (size_t i = 0; i < levelSize; ++i) {
             DfxTreeNode *node = q.front();
             q.pop();
             curLevelResult.push_back(node->nodeInfo_);
@@ -136,7 +136,8 @@ std::vector<std::vector<HpaeDfxNodeInfo>> HpaeDfxTree::LevelOrderTraversal()
 
 void HpaeDfxTree::PrintNodeInfo(std::string &outStr, HpaeDfxNodeInfo &nodeInfo)
 {
-    outStr = outStr + nodeInfo.nodeName + ": " + "id[" + std::to_string(nodeInfo.sessionId) + "],";
+    outStr = outStr + nodeInfo.nodeName + ": " + "sessionId[" + std::to_string(nodeInfo.sessionId) + "],";
+    outStr = outStr + "nodeId[" + std::to_string(nodeInfo.nodeId) + "],";
     outStr = outStr + "rate[" + std::to_string(nodeInfo.samplingRate) + "],";
     outStr = outStr + "ch[" + std::to_string(nodeInfo.channels) + "],";
     outStr = outStr + "bw[" + std::to_string(nodeInfo.format) + "],";

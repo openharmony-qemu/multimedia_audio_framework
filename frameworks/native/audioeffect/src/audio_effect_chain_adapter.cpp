@@ -244,7 +244,7 @@ int32_t EffectChainManagerAddSessionInfo(const char *sceneType, const char *sess
     std::string sessionIDString = "";
     std::string sceneModeString = "";
 
-    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.streamUsage) {
+    if (sceneType && pack.channelLayout && sessionID && pack.sceneMode && pack.streamUsage && pack.systemVolumeType) {
         sceneTypeString = sceneType;
         channelLayoutNum = std::strtoull(pack.channelLayout, nullptr, BASE_TEN);
         sessionIDString = sessionID;

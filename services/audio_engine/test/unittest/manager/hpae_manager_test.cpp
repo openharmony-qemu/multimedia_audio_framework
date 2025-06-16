@@ -613,9 +613,8 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002)
 TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     bool result = hpaeManager_->IsAcousticEchoCancelerSupported(SOURCE_TYPE_VOICE_COMMUNICATION);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, true);
 }
 
 TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
@@ -635,7 +634,6 @@ TEST_F(HpaeManagerUnitTest, IsAcousticEchoCancelerSupported002)
 TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     std::vector<std::pair<std::string, std::string>> params;
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
@@ -673,11 +671,10 @@ TEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003)
 TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->hpaePolicyManager_ = nullptr;
     std::vector<std::string> subKeys;
     std::vector<std::pair<std::string, std::string>> result;
     bool res = hpaeManager_->GetEffectLiveParameter(subKeys, result);
-    EXPECT_EQ(res, false);
+    EXPECT_EQ(res, true);
 }
 
 TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter002)
@@ -707,5 +704,23 @@ TEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003)
     EXPECT_EQ(res, true);
     EXPECT_EQ(subKeys[0], result[0].first);
     EXPECT_EQ("NoSupport", result[0].second);
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
+ */
+TEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    EXPECT_EQ(ret, true);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(false);
+    EXPECT_EQ(ret, true);
 }
 }  // namespace

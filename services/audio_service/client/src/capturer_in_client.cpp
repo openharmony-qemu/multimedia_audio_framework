@@ -229,6 +229,7 @@ public:
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
+    bool GetStopFlag() const override;
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
     void UpdateTracker(const std::string &updateCase);
@@ -242,6 +243,7 @@ private:
     int32_t InitCacheBuffer(size_t targetSize);
     int32_t InitSharedBuffer();
     int32_t FlushRingCache();
+    int32_t FlushCbBuffer();
 
     void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
 
@@ -257,6 +259,7 @@ private:
     int32_t RegisterCapturerInClientPolicyServerDiedCb();
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
+    bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -878,7 +881,8 @@ State CapturerInClientInner::GetState()
     return state_;
 }
 
-bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+bool CapturerInClientInner::GetAudioTimeInner(
+    Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency)
 {
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
@@ -894,15 +898,20 @@ bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
     }
 
     int64_t deltaPos = writePos >= currentReadPos ? static_cast<int64_t>(writePos - currentReadPos) : 0;
-    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
     int64_t deltaTime = deltaPos * AUDIO_MS_PER_SECOND /
         static_cast<int64_t>(streamParams_.samplingRate) * AUDIO_US_PER_S;
+    handleTime = handleTime + deltaTime + latency;
 
-    handleTime = handleTime + deltaTime + tempLatency;
     timestamp.time.tv_sec = static_cast<time_t>(handleTime / AUDIO_NS_PER_SECOND);
     timestamp.time.tv_nsec = static_cast<time_t>(handleTime % AUDIO_NS_PER_SECOND);
 
     return true;
+}
+
+bool CapturerInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base)
+{
+    int64_t tempLatency = 25000000; // 25000000 -> 25 ms
+    return GetAudioTimeInner(timestamp, base, tempLatency);
 }
 
 bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
@@ -910,6 +919,10 @@ bool CapturerInClientInner::GetTimeStampInfo(Timestamp &timestamp, Timestamp::Ti
     CHECK_AND_RETURN_RET_LOG(paramsIsSet_ == true, false, "Params is not set");
     CHECK_AND_RETURN_RET_LOG(state_ != STOPPED, false, "Invalid status:%{public}d", state_.load());
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "invalid buffer status");
+
+    if (capturerInfo_.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        return GetAudioTimeInner(timestamp, base, 0);
+    }
 
     uint64_t writePos = 0;
     uint64_t writeTimeStamp = 0;
@@ -1502,6 +1515,7 @@ bool CapturerInClientInner::StopAudioStream()
 
     if (capturerMode_ == CAPTURE_MODE_CALLBACK) {
         state_ = STOPPING;
+        readDataCV_.notify_all();
         AUDIO_INFO_LOG("Stop begin in callback mode sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     }
 
@@ -1592,7 +1606,8 @@ bool CapturerInClientInner::FlushAudioStream()
         AUDIO_ERR_LOG("Flush failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
+    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush ringCache failed");
+    CHECK_AND_RETURN_RET_LOG(FlushCbBuffer() == SUCCESS, false, "Flush cbBuffer failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
@@ -1620,6 +1635,19 @@ bool CapturerInClientInner::FlushAudioStream()
 int32_t CapturerInClientInner::FlushRingCache()
 {
     ringCache_->ResetBuffer();
+    return SUCCESS;
+}
+
+int32_t CapturerInClientInner::FlushCbBuffer()
+{
+    Trace trace("CapturerInClientInner::FlushCbBuffer");
+    if (cbBuffer_ != nullptr && capturerMode_ == CAPTURE_MODE_CALLBACK) {
+        std::lock_guard<std::mutex> lock(cbBufferMutex_);
+        int32_t ret = memset_s(cbBuffer_.get(), cbBufferSize_, 0, cbBufferSize_);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+        AUDIO_INFO_LOG("Flush cbBuffer_ for sessionId:%{public}d uid:%{public}d, ret:%{public}d",
+            sessionId_, clientUid_, ret);
+    }
     return SUCCESS;
 }
 
@@ -2129,6 +2157,12 @@ void CapturerInClientInner::ResetCallbackLoopTid()
 {
     AUDIO_INFO_LOG("Reset callback loop tid to -1");
     callbackLoopTid_ = -1;
+}
+
+bool CapturerInClientInner::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
+    return clientBuffer_->GetStopFlag();
 }
 } // namespace AudioStandard
 } // namespace OHOS

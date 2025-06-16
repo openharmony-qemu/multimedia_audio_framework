@@ -36,9 +36,11 @@
     *ProcessCbProxy*;
     *GetCapturerBySessionID*;
     *GetCurrentRendererStreamCnt*;
+    *GetCurrentLoopbackStreamCnt*;
     *GetCreatedAudioStreamMostUid*;
     *GetAudioProcess*;
     *SetIncMaxRendererStreamCnt*;
+    *SetIncMaxLoopbackStreamCnt*;
     *GetIpcStream*;
     *SetActiveOutputDevice*;
     *GetActiveOutPutDevice*;
@@ -52,6 +54,10 @@
     *GetOfflineStream*;
     *GetOfflineAudioEffectChains*;
     *GetStandbyStatus*;
+    *SaveForegroundList*;
+    *MatchForegroundList*;
+    *InForegroundList*;
+    *UpdateForegroundState*;
     *GenerateSessionId*;
     *LoadModernInnerCapSink*;
     *UnloadModernInnerCapSink*;
@@ -59,6 +65,7 @@
     *UpdateSessionOperation*;
     *SetSessionMuteState*;
     *SetLatestMuteState*;
+    *ForceStopAudioStream*;
   local:
     *;
 };

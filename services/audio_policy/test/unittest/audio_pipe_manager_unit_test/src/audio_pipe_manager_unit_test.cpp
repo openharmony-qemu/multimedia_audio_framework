@@ -1027,6 +1027,39 @@ HWTEST_F(AudioPipeManagerUnitTest, RemoveModemCommunicationId_002, TestSize.Leve
 }
 
 /**
+ * @tc.name: GetModemCommunicationStreamDescById_001
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is within the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_001, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet != nullptr, true);
+}
+
+/**
+ * @tc.name: GetModemCommunicationStreamDescById_002
+ * @tc.desc: Test GetModemCommunicationStreamDescById when sessionId is without the valid range.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetModemCommunicationStreamDescById_002, TestSize.Level1)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    uint32_t sessionId = 100000;
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    auto streamDescRet = audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    EXPECT_EQ(streamDescRet == nullptr, true);
+}
+
+/**
  * @tc.name: GetNormalSourceInfo_001
  * @tc.desc: Test GetNormalSourceInfo when isEcFeatureEnable is true.
  * @tc.type: FUNC
@@ -1135,6 +1168,47 @@ HWTEST_F(AudioPipeManagerUnitTest, GetPipeByModuleAndFlag_003, TestSize.Level1)
     auto result = audioPipeManager->GetPipeByModuleAndFlag(targetModuleName, targetRouteFlag);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->moduleInfo_.name, "EXISTING_MODULE");
+}
+
+/**
+ * @tc.name: AudioPipeInfo_ToString_001
+ * @tc.desc: Test AudioPipeInfo ToString.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_ToString_001, TestSize.Level2)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::string out = pipeInfo->ToString();
+    EXPECT_NE(out, "");
+}
+
+/**
+ * @tc.name: AudioPipeInfo_Dump_001
+ * @tc.desc: Test AudioPipeInfo ToString.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioPipeInfo_Dump_001, TestSize.Level2)
+{
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::string dumpString = "";
+    pipeInfo->Dump(dumpString);
+    EXPECT_NE(dumpString, "");
+}
+
+/**
+ * @tc.name: AudioStreamDescriptor_GetNewDevicesTypeString_001
+ * @tc.desc: Test AudioStreamDescriptor GetNewDevicesTypeString.
+ * @tc.type: FUNC
+ */
+HWTEST_F(AudioPipeManagerUnitTest, AudioStreamDescriptor_GetNewDevicesTypeString_001, TestSize.Level2)
+{
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = 1;
+    desc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    std::string out = desc->GetNewDevicesTypeString();
+    EXPECT_NE(out, "");
 }
 } // namespace AudioStandard
 } // namespace OHOS

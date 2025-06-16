@@ -39,12 +39,12 @@ public:
     virtual bool IsEnableProcess();
     HpaePluginNode(const HpaePluginNode& others) = delete;
 private:
-    OutputPort<HpaePcmBuffer *> outputStream_;
-    bool enableProcess_;
     PcmBufferInfo pcmBufferInfo_;
 protected:
     virtual HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*>& inputs) = 0;
+    OutputPort<HpaePcmBuffer *> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
+    bool enableProcess_;
     HpaePcmBuffer silenceData_;
 };
 }  // namespace HPAE

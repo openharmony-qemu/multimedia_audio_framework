@@ -55,6 +55,18 @@ static void TestCheckSourceOutputInfo(HpaeSourceOutputInfo& sourceOutputInfo, co
     EXPECT_EQ(sourceOutputInfo.nodeInfo.streamType == streamInfo.streamType, true);
 }
 
+static void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
+{
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_S16LE;
+    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    streamInfo.sessionId = DEFAULT_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    streamInfo.deviceName = "Built_in_mic";
+}
+
 static void WaitForMsgProcessing(std::shared_ptr<IHpaeCapturerManager> &capturerManager)
 {
     int waitCount = 0;
@@ -115,6 +127,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest)
     
     std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_EQ(capturerManager->Init() == SUCCESS, true);
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
 }
 
 TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
@@ -137,14 +150,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    streamInfo.sessionId = DEFAULT_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
-    streamInfo.deviceName = "Built_in_mic";
+    InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager.use_count() == 1, true);
@@ -156,6 +162,9 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(
         capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(capturerManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
 }
 
 static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerManager, HpaeStreamInfo &streamInfo,
@@ -213,14 +222,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
     EXPECT_EQ(capturerManager->IsInit(), true);
 
     HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    streamInfo.sessionId = DEFAULT_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
-    streamInfo.deviceName = "Built_in_mic";
+    InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager.use_count() == 1, true);
@@ -237,6 +239,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
     EXPECT_EQ(readDataCb.use_count() == 1, true);
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
 }
 
 static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &newSourceInfo)
@@ -266,18 +269,6 @@ static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &new
     newSourceInfo.micRef = HPAE_REF_OFF;
 }
 
-static void InitReloadStreamInfo(HpaeStreamInfo &streamInfo)
-{
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_S16LE;
-    streamInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    streamInfo.sessionId = DEFAULT_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
-    streamInfo.deviceName = "Built_in_mic";
-}
-
 TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
 {
     HpaeSourceInfo sourceInfo;
@@ -300,6 +291,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
     EXPECT_EQ(capturerManager->ReloadCaptureManager(newSourceInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
+    EXPECT_EQ(capturerManager->DeInit() == SUCCESS, true);
 }
 } // namespace HPAE
 } // namespace AudioStandard

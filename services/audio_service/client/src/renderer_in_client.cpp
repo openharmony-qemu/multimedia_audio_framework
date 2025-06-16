@@ -375,7 +375,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         } else {
             if (sleepCount_++ == LOG_COUNT_LIMIT) {
                 sleepCount_ = 0;
-                AUDIO_WARNING_LOG("OnWriteData Process 1st or 500 times INVALID buffer");
+                AUDIO_WARNING_LOG("OnWriteData Process 1st or 200 times INVALID buffer");
             }
             usleep(WAIT_FOR_NEXT_CB);
         }
@@ -421,12 +421,15 @@ bool RendererInClientInner::WriteCallbackFunc()
         return true;
     }
     // call client write
-    std::unique_lock<std::mutex> lockCb(writeCbMutex_);
-    if (writeCb_ != nullptr) {
-        Trace traceCb("RendererInClientInner::OnWriteData");
-        writeCb_->OnWriteData(cbBufferSize_);
+    std::shared_ptr<AudioRendererWriteCallback> cb = nullptr;
+    {
+        std::unique_lock<std::mutex> lockCb(writeCbMutex_);
+        cb = writeCb_;
     }
-    lockCb.unlock();
+    if (cb != nullptr) {
+        Trace traceCb("RendererInClientInner::OnWriteData");
+        cb->OnWriteData(cbBufferSize_);
+    }
 
     Trace traceQueuePush("RendererInClientInner::QueueWaitPush");
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
@@ -653,12 +656,16 @@ void RendererInClientInner::ResetFramePosition()
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency);
+    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency,
+        Timestamp::Timestampbase::MONOTONIC);
     if (ret != SUCCESS) {
         AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
         return;
     }
-    lastFramePosition_ = 0;
+    // no need to reset timestamp, only reset frameposition
+    for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
+        lastFramePosition_[base].first = 0;
+    }
     lastReadIdx_ = 0;
     lastLatency_ = latency;
     lastLatencyPosition_ = latency * speed_;

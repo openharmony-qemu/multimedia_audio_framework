@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #include "multimedia_audio_stream_manager_impl.h"
-#include "cj_lambda.h"
+
 #include "audio_manager_log.h"
+#include "cj_lambda.h"
 #include "multimedia_audio_common.h"
 #include "multimedia_audio_error.h"
 
@@ -39,16 +40,16 @@ bool MMAAudioStreamManagerImpl::IsActive(int32_t volumeType)
     return streamMgr_->IsStreamActive(GetNativeAudioVolumeType(volumeType));
 }
 
-CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_t *errorCode)
+CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_t* errorCode)
 {
-    AudioSceneEffectInfo audioSceneEffectInfo{};
+    AudioSceneEffectInfo audioSceneEffectInfo {};
     int32_t ret = streamMgr_->GetEffectInfoArray(audioSceneEffectInfo, static_cast<StreamUsage>(usage));
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetEffectInfoArray failure!");
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
-    CArrI32 arr{};
+    CArrI32 arr {};
     arr.size = static_cast<int64_t>(audioSceneEffectInfo.mode.size());
     if (arr.size == 0) {
         return CArrI32();
@@ -58,7 +59,7 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
         *errorCode = CJ_ERR_SYSTEM;
         return CArrI32();
     }
-    auto head = static_cast<int32_t *>(malloc(mallocSize));
+    auto head = static_cast<int32_t*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrI32();
@@ -76,16 +77,16 @@ CArrI32 MMAAudioStreamManagerImpl::GetAudioEffectInfoArray(int32_t usage, int32_
     return arr;
 }
 
-CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeInfos(int32_t *errorCode)
+CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeInfos(int32_t* errorCode)
 {
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos{};
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos {};
     int32_t ret = streamMgr_->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetCurrentRendererChangeInfos failure!");
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
-    CArrAudioRendererChangeInfo arrInfo{};
+    CArrAudioRendererChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioRendererChangeInfos.size());
     if (arrInfo.size == 0) {
         return CArrAudioRendererChangeInfo();
@@ -95,7 +96,7 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioRendererChangeInfo();
     }
-    auto head = static_cast<CAudioRendererChangeInfo *>(malloc(mallocSize));
+    auto head = static_cast<CAudioRendererChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioRendererChangeInfo();
@@ -117,16 +118,16 @@ CArrAudioRendererChangeInfo MMAAudioStreamManagerImpl::GetCurrentRendererChangeI
     return arrInfo;
 }
 
-CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray(int32_t *errorCode)
+CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray(int32_t* errorCode)
 {
-    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos{};
+    std::vector<std::shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos {};
     int32_t ret = streamMgr_->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
     if (ret != AUDIO_OK) {
         AUDIO_ERR_LOG("GetCurrentCapturerChangeInfos failure!");
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
-    CArrAudioCapturerChangeInfo arrInfo{};
+    CArrAudioCapturerChangeInfo arrInfo {};
     arrInfo.size = static_cast<int64_t>(audioCapturerChangeInfos.size());
     if (arrInfo.size == 0) {
         return CArrAudioCapturerChangeInfo();
@@ -136,7 +137,7 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
         *errorCode = CJ_ERR_SYSTEM;
         return CArrAudioCapturerChangeInfo();
     }
-    auto head = static_cast<CAudioCapturerChangeInfo *>(malloc(mallocSize));
+    auto head = static_cast<CAudioCapturerChangeInfo*>(malloc(mallocSize));
     if (head == nullptr) {
         *errorCode = CJ_ERR_NO_MEMORY;
         return CArrAudioCapturerChangeInfo();
@@ -158,7 +159,7 @@ CArrAudioCapturerChangeInfo MMAAudioStreamManagerImpl::GetAudioCapturerInfoArray
     return arrInfo;
 }
 
-void MMAAudioStreamManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode)
+void MMAAudioStreamManagerImpl::RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode)
 {
     if (callbackType == AudioStreamManagerCallbackType::CAPTURER_CHANGE) {
         auto func = CJLambda::Create(reinterpret_cast<void (*)(CArrAudioCapturerChangeInfo)>(callback));

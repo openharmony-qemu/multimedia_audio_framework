@@ -29,22 +29,18 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static constexpr int32_t DEFAULT_BUFFER_MICROSECOND = 20000000;
-static constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
-
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
-      inputAudioBuffer_(pcmBufferInfo_), outputStream_(this),
+      emptyBufferInfo_(nodeInfo.channels, 0, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
+      inputAudioBuffer_(pcmBufferInfo_), emptyAudioBuffer_(emptyBufferInfo_), outputStream_(this),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)), framesWritten_(0),
       totalFrames_(0)
 {
     AUDIO_INFO_LOG("sinkinput sessionId %{public}d, channelcount %{public}d, channelLayout %{public}" PRIu64 ", "
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
-    
-    handleTimeModel_ = std::make_unique<LinearPosTimeModel>();
-    handleTimeModel_->ConfigSampleRate(nodeInfo.samplingRate);
+
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeSinkInputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
@@ -58,6 +54,9 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
     } else {
         historyBuffer_ = nullptr;
+    }
+    if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
+        pullDataFlag_ = true;
     }
 }
 
@@ -84,49 +83,70 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 
 int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 {
-    streamInfo_ = {.framesWritten = framesWritten_.load(),
+    streamInfo_ = {.framesWritten = framesWritten_,
         .inputData = interleveData_.data(),
         .requestDataLen = interleveData_.size(),
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
-    if (writeCallback_.lock() != nullptr) {
-        return writeCallback_.lock()->OnStreamData(streamInfo_);
+    auto writeCallback = writeCallback_.lock();
+    if (writeCallback != nullptr) {
+        return writeCallback->OnStreamData(streamInfo_);
     }
     AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
     return SUCCESS;
 }
 
-void HpaeSinkInputNode::DoProcess()
+bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " +
-    GetTraceInfo());
-    CHECK_AND_RETURN_LOG(
-        writeCallback_.lock(), "HpaeSinkInputNode writeCallback_ is nullptr, SessionId:%{public}d", GetSessionId());
-
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-
-    int32_t ret = GetDataFromSharedBuffer();
-    // if historyBuffer has enough data, write to outputStream
-    if (!streamInfo_.needData && historyBuffer_) {
-        historyBuffer_->GetFrameData(inputAudioBuffer_);
-        outputStream_.WriteDataToOutput(&inputAudioBuffer_);
-        return;
-    }
-    CheckAndDestroyHistoryBuffer();
-    if (nodeCallback && ret) {
-        nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
-        if (isDrain_) {
-            AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
-            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
-            isDrain_ = false;
+    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+        ret = ERR_OPERATION_FAILED;
+        AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
+    } else {
+        ret = GetDataFromSharedBuffer();
+        if (GetSampleRate() == SAMPLE_RATE_11025) { // for 11025, skip pull data next time
+            pullDataFlag_ = false;
+        }
+        // if historyBuffer has enough data, write to outputStream
+        if (!streamInfo_.needData && historyBuffer_) {
+            historyBuffer_->GetFrameData(inputAudioBuffer_);
+            outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            return false; // do not continue in DoProcess!
+        }
+        CheckAndDestroyHistoryBuffer();
+        if (nodeCallback && ret) {
+            nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_UNDERFLOW);
+            if (isDrain_) {
+                AUDIO_INFO_LOG("OnNodeStatusUpdate Drain sessionId:%{public}u", GetSessionId());
+                nodeCallback->OnNodeStatusUpdate(GetSessionId(), OPERATION_DRAINED);
+                isDrain_ = false;
+            }
         }
     }
     inputAudioBuffer_.SetBufferValid(ret ? false : true);
+    return true; // continue in DoProcess!
+}
+
+void HpaeSinkInputNode::DoProcess()
+{
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess " + GetTraceInfo());
+    if (GetSampleRate() == SAMPLE_RATE_11025 && !pullDataFlag_) {
+        // for 11025 input sample rate, pull 40ms data at a time, so pull once each two DoProcess()
+        pullDataFlag_ = true;
+        outputStream_.WriteDataToOutput(&emptyAudioBuffer_);
+        return;
+    }
+
+    int32_t ret = SUCCESS;
+
+    if (!ReadToAudioBuffer(ret)) {
+        return;
+    }
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
@@ -143,7 +163,7 @@ void HpaeSinkInputNode::DoProcess()
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
         totalFrames_ = totalFrames_ + GetFrameLen();
-        framesWritten_.store(totalFrames_);
+        framesWritten_ = totalFrames_;
         if (historyBuffer_) {
             historyBuffer_->StoreFrameData(inputAudioBuffer_);
         }
@@ -224,35 +244,18 @@ int32_t HpaeSinkInputNode::GetAppUid()
 
 uint64_t HpaeSinkInputNode::GetFramesWritten()
 {
-    return framesWritten_.load();
+    return framesWritten_;
 }
 
-bool HpaeSinkInputNode::GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec)
+int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp)
 {
-    framePos = GetFramesWritten();
-    int64_t time = handleTimeModel_->GetTimeOfPos(framePos);
-    int64_t deltaTime = DEFAULT_BUFFER_MICROSECOND;  // note: 20ms
-    time += deltaTime;
-    CHECK_AND_RETURN_RET_LOG(time >= 0, false, "get time error");
-    sec = static_cast<uint64_t>(time) / AUDIO_NS_PER_S;
-    nanoSec = static_cast<uint64_t>(time) % AUDIO_NS_PER_S;
-    return true;
-}
-
-int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp)
-{
-    int64_t timeSec = 0;
-    int64_t timeNsec = 0;
-    bool ret = GetAudioTime(framePosition, timeSec, timeNsec);
+    framePosition = GetFramesWritten();
     if (historyBuffer_) {
-        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
-                            ? framePosition - historyBuffer_->GetCurFrames() * GetNodeInfo().frameLen
+        framePosition = framePosition > historyBuffer_->GetCurFrames() * GetFrameLen()
+                            ? framePosition - historyBuffer_->GetCurFrames() * GetFrameLen()
                             : 0;
     }
-    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "GetAudioTime error");
-    timespec tm{};
-    clock_gettime(CLOCK_MONOTONIC, &tm);
-    timestamp = static_cast<uint64_t>(tm.tv_sec) * AUDIO_NS_PER_S + static_cast<uint64_t>(tm.tv_nsec);
+    ClockTime::GetAllTimeStamp(timestamp);
     return SUCCESS;
 }
 

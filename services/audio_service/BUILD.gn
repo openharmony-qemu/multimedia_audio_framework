@@ -70,6 +70,7 @@ ohos_shared_library("audio_common") {
     "common/src/dfx/dfx_msg_manager.cpp",
     "common/src/dfx/player_dfx_writer.cpp",
     "common/src/dfx/recorder_dfx_writer.cpp",
+    "common/src/dfx/stream_dfx_manager.cpp",
     "common/src/format_converter.cpp",
     "common/src/futex_tool.cpp",
     "common/src/limiter/audio_limiter.cpp",
@@ -187,7 +188,7 @@ ohos_shared_library("audio_client") {
   branch_protector_ret = "pac_ret"
   install_enable = true
   sources = [
-    "../audio_policy/util/src/audio_manager_util.cpp",
+    "client/src/audio_manager_util.cpp",
     "client/src/audio_combine_denoising_manager.cpp",
     "client/src/audio_effect_manager.cpp",
     "client/src/audio_group_manager.cpp",
@@ -318,6 +319,7 @@ config("audio_service_config") {
     "../audio_engine/manager/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/common/definitions/include",
+    "../audio_policy/common/include",
     "../audio_policy/server/include/service/common",
     "../audio_policy/server/include/service/effect",
     "../audio_policy/services/pipe/include",
@@ -422,6 +424,9 @@ audio_ohos_library("audio_process_service") {
   ]
 
   external_deps = [
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
     "c_utils:utils",
     "drivers_interface_audio:libeffect_proxy_1.0",
     "eventhandler:libeventhandler",

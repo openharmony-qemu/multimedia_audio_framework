@@ -86,7 +86,6 @@ private:
 
     InputPort<HpaePcmBuffer*> inputStream_;
     std::vector<char> renderFrameData_;
-    std::vector<float> interleveData_;
     std::shared_ptr<IAudioRenderSink> audioRendererSink_ = nullptr;
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;
@@ -99,7 +98,7 @@ private:
     AudioOffloadType hdiPolicyState_ = OFFLOAD_ACTIVE_FOREGROUND;
     struct OffloadPolicyTask {
         bool flag = false; // indicate if task exsit
-        AudioOffloadType state;
+        AudioOffloadType state = OFFLOAD_DEFAULT;
         TimePoint time;
     } setPolicyStateTask_;
 

@@ -15,12 +15,12 @@
 
 #ifndef MULTIMEDIA_AUDIO_VOLUME_GROUP_MANAGER_IMPL_H
 #define MULTIMEDIA_AUDIO_VOLUME_GROUP_MANAGER_IMPL_H
-#include "cj_common_ffi.h"
-#include "native/ffi_remote_data.h"
 #include "audio_group_manager.h"
 #include "audio_system_manager.h"
+#include "cj_common_ffi.h"
 #include "multimedia_audio_ffi.h"
 #include "multimedia_audio_volume_group_manager_callback.h"
+#include "native/ffi_remote_data.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,9 +42,10 @@ public:
     bool IsVolumeUnadjustable();
     float GetMaxAmplitudeForOutputDevice(const int32_t deviceId);
     float GetMaxAmplitudeForInputDevice(const int32_t deviceId);
-    void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t *errorCode);
+    void RegisterCallback(int32_t callbackType, void (*callback)(), int32_t* errorCode);
+
 private:
-    AudioSystemManager *audioMngr_ = nullptr;
+    AudioSystemManager* audioMngr_ = nullptr;
     int32_t cachedClientId_ = -1;
     std::shared_ptr<AudioGroupManager> audioGroupMngr_ = nullptr;
     std::shared_ptr<CjAudioRingerModeCallback> audioRingerModeCallback_ = nullptr;

@@ -306,6 +306,7 @@ enum CallbackChange : int32_t {
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -348,6 +349,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -357,9 +359,14 @@ struct VolumeEvent {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
-    int32_t volumeGroupId;
-    std::string networkId;
+    int32_t volumeGroupId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+
+    VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
+        volume(volLevel), updateUi(isUiUpdated) {}
+    VolumeEvent() = default;
+
     bool Marshalling(Parcel &parcel) const
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
@@ -453,6 +460,22 @@ enum RecorderType : int32_t {
     RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
+enum AudioLoopbackMode {
+    /** The hardware mode of audio loopback.*/
+    LOOPBACK_HARDWARE = 0,
+};
+
+enum AudioLoopbackStatus {
+    /** Audio loopback unavailable by the output or input device. For example, the device change.*/
+    LOOPBACK_UNAVAILABLE_DEVICE = -2,
+    /** Audio loopback unavailable by the audio scene. For example, the audio interrupt.*/
+    LOOPBACK_UNAVAILABLE_SCENE = -1,
+    /** Audio loopback available and idle.*/
+    LOOPBACK_AVAILABLE_IDLE = 0,
+    /** Audio loopback available and running.*/
+    LOOPBACK_AVAILABLE_RUNNING = 1,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -475,6 +498,8 @@ struct AudioRendererInfo {
     // 0 is the default value, it is considered that no
     uint64_t expectedPlaybackDurationBytes = 0;
     int32_t effectMode = 1;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -494,7 +519,9 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes)
             && parcel.WriteInt32(effectMode)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteBool(isLoopback)
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -515,6 +542,8 @@ struct AudioRendererInfo {
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -529,6 +558,8 @@ public:
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -548,7 +579,9 @@ public:
             parcel.WriteUint8(encodingType) &&
             parcel.WriteUint64(channelLayout) &&
             parcel.WriteString(sceneType) &&
-            parcel.WriteInt32(static_cast<int32_t>(recorderType));
+            parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
+            parcel.WriteBool(isLoopback) &&
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -561,6 +594,8 @@ public:
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -898,6 +933,17 @@ enum AudioMode {
     AUDIO_MODE_RECORD
 };
 
+enum StopAudioType {
+    STOP_ALL,
+    STOP_RENDER,
+    STOP_RECORD
+};
+
+enum RecordErrorCode {
+    RECORD_ERROR_GET_FOCUS_FAIL = 0,
+    RECORD_ERROR_NO_FOCUS_CFG = 1,
+};
+
 // LEGACY_INNER_CAP: Called from hap build with api < 12, work normally.
 // LEGACY_MUTE_CAP: Called from hap build with api >= 12, will cap mute data.
 // MODERN_INNER_CAP: Called from SA with inner-cap right, work with filter.
@@ -1196,6 +1242,7 @@ static inline DeviceGroup GetVolumeGroupForDevice(DeviceType deviceType)
         {DEVICE_TYPE_USB_ARM_HEADSET, DEVICE_GROUP_WIRED}, {DEVICE_TYPE_BLUETOOTH_A2DP, DEVICE_GROUP_WIRELESS},
         {DEVICE_TYPE_BLUETOOTH_SCO, DEVICE_GROUP_WIRELESS}, {DEVICE_TYPE_REMOTE_CAST, DEVICE_GROUP_REMOTE_CAST},
         {DEVICE_TYPE_HDMI, DEVICE_GROUP_BUILT_IN}, {DEVICE_TYPE_ACCESSORY, DEVICE_GROUP_WIRELESS},
+        {DEVICE_TYPE_NEARLINK, DEVICE_GROUP_WIRELESS},
     };
     auto it = DEVICE_GROUP_FOR_VOLUME.find(deviceType);
     return it == DEVICE_GROUP_FOR_VOLUME.end() ? DEVICE_GROUP_INVALID : it->second;
@@ -1413,7 +1460,6 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_WRITE_OR_READ,
     METHOD_MAX
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

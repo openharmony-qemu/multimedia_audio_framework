@@ -1397,6 +1397,12 @@ void AudioManagerProxy::CheckHibernateState(bool onHibernate)
     return;
 }
 
+int32_t AudioManagerProxy::SetForegroundList(std::vector<std::string> list)
+{
+    AUDIO_WARNING_LOG("Called in %{public}d", getuid());
+    return ERR_INVALID_OPERATION;
+}
+
 int32_t AudioManagerProxy::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
 {
     MessageParcel data;
@@ -1796,6 +1802,40 @@ bool AudioManagerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return reply.ReadBool();
 }
 
+bool AudioManagerProxy::SetKaraokeParameters(const std::string &parameters)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteString(parameters);
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::SET_KARAOKE_PARAMETERS), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    return reply.ReadBool();
+}
+
+bool AudioManagerProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, false, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(mode));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, false, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "failed,error:%d", error);
+    return reply.ReadBool();
+}
+
 void AudioManagerProxy::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     MessageParcel data;
@@ -1827,6 +1867,23 @@ void AudioManagerProxy::SetSessionMuteState(const uint32_t sessionId, const bool
     int32_t error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::SET_SESSION_MUTE_STATE), data, reply, option);
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "failed, error:%{public}d", error);
+}
+
+int32_t AudioManagerProxy::ForceStopAudioStream(StopAudioType audioType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioType));
+
+    CHECK_AND_RETURN_RET_LOG(Remote() != nullptr, AUDIO_ERR, "Remote() is nullptr");
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioServerInterfaceCode::FORCE_STOP_AUDIO_STREAM), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "failed, error:%d", error);
+    return reply.ReadInt32();
 }
 
 int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid)

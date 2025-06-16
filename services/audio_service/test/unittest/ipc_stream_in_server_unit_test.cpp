@@ -218,7 +218,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_008, TestSize.Level1)
     uint64_t framePosRet = 0;
     uint64_t timestampRet = 0;
     uint64_t latency = 0;
-    auto ret1 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet, latency);
+    auto ret1 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
 
     modeRet = AUDIO_MODE_RECORD;
@@ -226,7 +226,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_008, TestSize.Level1)
     ipcStreamInServerRet2.rendererInServer_ = std::make_shared<RendererInServer>(
         ipcStreamInServerRet2.config_,
         ipcStreamInServerRet2.streamListenerHolder_);
-    auto ret2 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet, latency);
+    auto ret2 = ipcStreamInServerRet1.GetAudioPosition(framePosRet, timestampRet, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
 }
 
@@ -630,7 +630,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_025, TestSize.Level1)
 
     auto ret = ipcStreamInServerRet.SetRate(rateRet);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-    auto ret1 = ipcStreamInServerRet.GetAudioPosition(famePosRet, timestampRet, latency);
+    auto ret1 = ipcStreamInServerRet.GetAudioPosition(famePosRet, timestampRet, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
@@ -1376,7 +1376,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_060, TestSize.Level1)
     uint64_t latency = 0;
     ipcStreamInServerRet.rendererInServer_ = nullptr;
 
-    auto ret = ipcStreamInServerRet.GetAudioPosition(framePos, timestamp, latency);
+    auto ret = ipcStreamInServerRet.GetAudioPosition(framePos, timestamp, latency, Timestamp::MONOTONIC);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
 

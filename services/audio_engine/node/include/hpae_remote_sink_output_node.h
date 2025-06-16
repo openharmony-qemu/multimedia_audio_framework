@@ -65,7 +65,6 @@ private:
     uint32_t renderId_ = HDI_INVALID_ID;
     IAudioSinkAttr sinkOutAttr_;
     StreamManagerState state_ = STREAM_MANAGER_NEW;
-    HighResolutionTimer remoteTimer_;
     TimePoint remoteTimePoint_;
     std::chrono::milliseconds remoteSleepTime_ = std::chrono::milliseconds(0);
 #ifdef ENABLE_HOOK_PCM

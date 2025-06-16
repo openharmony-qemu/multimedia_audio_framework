@@ -66,7 +66,7 @@ void AudioPrimarySourceClockUnitTest::SetUp()
 }
 
 /**
- * @tc.name   : Test Audio primary source clock 
+ * @tc.name   : Test Audio primary source clock
  * @tc.number : AudioPrimarySourceClockUnitTest_001
  * @tc.desc   : Test Audio primary source clock normal case
  */
@@ -83,7 +83,7 @@ HWTEST_F(AudioPrimarySourceClockUnitTest, AudioPrimarySourceClockUnitTest_001, T
 }
 
 /**
- * @tc.name   : Test Audio primary source clock 
+ * @tc.name   : Test Audio primary source clock
  * @tc.number : AudioPrimarySourceClockUnitTest_002
  * @tc.desc   : Test Audio primary source clock normal case 2
  */
@@ -107,7 +107,7 @@ HWTEST_F(AudioPrimarySourceClockUnitTest, AudioPrimarySourceClockUnitTest_002, T
 }
 
 /**
- * @tc.name   : Test Audio primary source clock 
+ * @tc.name   : Test Audio primary source clock
  * @tc.number : AudioPrimarySourceClockUnitTest_003
  * @tc.desc   : Test get timestamp when first timestamp set 0
  */
@@ -120,7 +120,7 @@ HWTEST_F(AudioPrimarySourceClockUnitTest, AudioPrimarySourceClockUnitTest_003, T
 }
 
 /**
- * @tc.name   : Test Audio primary source clock 
+ * @tc.name   : Test Audio primary source clock
  * @tc.number : AudioPrimarySourceClockUnitTest_004
  * @tc.desc   : Test Audio primary source clock normal case 4
  */

@@ -464,6 +464,27 @@ int32_t AudioPolicyProxy::SetA2dpDeviceVolume(const std::string &macAddress, con
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+    const int32_t volume, const bool updateUi)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(macAddress);
+    data.WriteInt32(static_cast<int32_t>(volumeType));
+    data.WriteInt32(volume);
+    data.WriteBool(updateUi);
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_NEARLINK_DEVICE_VOLUME), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "Failed, error: %d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::DisableSafeMediaVolume()
 {
     MessageParcel data;

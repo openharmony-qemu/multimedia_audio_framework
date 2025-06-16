@@ -41,7 +41,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-const int32_t LOG_COUNT_LIMIT = 500;
+const int32_t LOG_COUNT_LIMIT = 200;
 } // namespace
 class SpatializationStateChangeCallbackImpl;
 
@@ -212,6 +212,7 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
+    bool GetStopFlag() const override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -400,8 +401,7 @@ private:
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
-    uint64_t lastFramePosition_ = 0;
-    uint64_t lastFrameTimestamp_ = 0;
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";

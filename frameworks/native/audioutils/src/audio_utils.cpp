@@ -251,6 +251,18 @@ int64_t ClockTime::GetRealNano()
     return result;
 }
 
+int64_t ClockTime::GetBootNano()
+{
+    int64_t result = -1; // -1 for bad result
+    struct timespec time;
+    clockid_t clockId = CLOCK_BOOTTIME;
+    int ret = clock_gettime(clockId, &time);
+    CHECK_AND_RETURN_RET_LOG(ret >= 0, result,
+        "GetBootNanotime fail, result:%{public}d", ret);
+    result = (time.tv_sec * AUDIO_NS_PER_SECOND) + time.tv_nsec;
+    return result;
+}
+
 int32_t ClockTime::AbsoluteSleep(int64_t nanoTime)
 {
     int32_t ret = -1; // -1 for bad result.
@@ -303,6 +315,19 @@ int32_t ClockTime::RelativeSleep(int64_t nanoTime)
     }
 
     return ret;
+}
+
+void ClockTime::GetAllTimeStamp(std::vector<uint64_t> &timestamp)
+{
+    timestamp.resize(Timestamp::Timestampbase::BASESIZE);
+    int64_t tmpTime = GetCurNano();
+    if (tmpTime > 0) {
+        timestamp[Timestamp::Timestampbase::MONOTONIC] = static_cast<uint64_t>(tmpTime);
+    }
+    tmpTime = GetBootNano();
+    if (tmpTime > 0) {
+        timestamp[Timestamp::Timestampbase::BOOTTIME] = static_cast<uint64_t>(tmpTime);
+    }
 }
 
 void Trace::Count(const std::string &value, int64_t count)
@@ -487,6 +512,9 @@ bool PermissionUtil::CheckCallingUidPermission(const std::vector<uid_t> &allowed
 {
     CHECK_AND_RETURN_RET_LOG(allowedUids.size() > 0, false, "allowedUids is empty");
     auto callingUid = IPCSkeleton::GetCallingUid();
+    if (UID_AUDIO == callingUid) {
+        return true;
+    }
     for (const auto &uid : allowedUids) {
         if (uid == callingUid) {
             return true;
@@ -591,7 +619,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
         }
         return true;
     }
-        
+
     switch (targetState) {
         case SWITCH_STATE_WAITING:
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
@@ -1768,6 +1796,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
         STREAM_USAGE_MOVIE,
         STREAM_USAGE_AUDIOBOOK,
         STREAM_USAGE_GAME,
+        STREAM_USAGE_NAVIGATION,
         STREAM_USAGE_VOICE_MESSAGE}},
     {STREAM_VOICE_ASSISTANT, {
         STREAM_USAGE_VOICE_ASSISTANT}},
@@ -1776,9 +1805,7 @@ std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::defaultV
     {STREAM_ACCESSIBILITY, {
         STREAM_USAGE_ACCESSIBILITY}},
     {STREAM_ULTRASONIC, {
-        STREAM_USAGE_ULTRASONIC}},
-    {STREAM_NAVIGATION, {
-        STREAM_USAGE_NAVIGATION}}
+        STREAM_USAGE_ULTRASONIC}}
 };
 
 std::unordered_map<AudioVolumeType, std::set<StreamUsage>> VolumeUtils::pcVolumeToStreamUsageMap_ = {
@@ -1834,6 +1861,20 @@ std::unordered_map<StreamUsage, AudioStreamType> VolumeUtils::streamUsageMap_ = 
     {STREAM_USAGE_ULTRASONIC, STREAM_ULTRASONIC}
 };
 
+std::unordered_set<AudioVolumeType> VolumeUtils::audioVolumeTypeSet_ = {
+    STREAM_RING,
+    STREAM_MUSIC,
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_ALARM,
+    STREAM_SYSTEM,
+    STREAM_ACCESSIBILITY,
+    STREAM_ULTRASONIC,
+    STREAM_NOTIFICATION,
+    STREAM_NAVIGATION,
+    STREAM_ALL,
+};
+
 std::unordered_map<AudioStreamType, AudioVolumeType>& VolumeUtils::GetVolumeMap()
 {
     if (isPCVolumeEnable_) {
@@ -1880,6 +1921,26 @@ std::set<StreamUsage> VolumeUtils::GetOverlapStreamUsageSet(const std::set<Strea
     std::set_intersection(streamUsages.begin(), streamUsages.end(), tempSet.begin(), tempSet.end(),
         std::inserter(overlapSet, overlapSet.begin()));
     return overlapSet;
+}
+
+std::vector<AudioVolumeType> VolumeUtils::GetSupportedAudioVolumeTypes()
+{
+    std::vector<AudioVolumeType> result = {};
+    std::unordered_set<AudioVolumeType> volumeTypeSet = audioVolumeTypeSet_;
+    for (auto it = volumeTypeSet.begin(); it != volumeTypeSet.end(); ++it) {
+        result.push_back(*it);
+    }
+    return result;
+}
+
+std::vector<StreamUsage> VolumeUtils::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
+{
+    std::vector<StreamUsage> result = {};
+    std::set<StreamUsage> streamUsageSet = GetStreamUsageSetForVolumeType(audioVolumeType);
+    for (auto it = streamUsageSet.begin(); it != streamUsageSet.end(); ++it) {
+        result.push_back(*it);
+    }
+    return result;
 }
 
 std::set<StreamUsage>& VolumeUtils::GetStreamUsageSetForVolumeType(AudioVolumeType volumeType)

@@ -25,6 +25,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+const unsigned int ON_REMOTE_REQUEST_TIMEOUT_SEC = 20;
 bool IpcStreamStub::CheckInterfaceToken(MessageParcel &data)
 {
     static auto localDescriptor = IpcStream::GetDescriptor();
@@ -101,6 +102,7 @@ int IpcStreamStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessagePa
         return AUDIO_ERR;
     }
     Trace trace("IpcStream::Handle::" + std::to_string(code));
+    AudioXCollie audioXCollie("IpcStreamStub::OnRemoteRequest", ON_REMOTE_REQUEST_TIMEOUT_SEC);
     if (code >= IpcStreamMsg::IPC_STREAM_MAX_MSG) {
         AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
         return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -260,7 +262,8 @@ int32_t IpcStreamStub::HandleGetAudioPosition(MessageParcel &data, MessageParcel
     uint64_t framePos = 0;
     uint64_t timestamp = 0;
     uint64_t latency = 0;
-    reply.WriteInt32(GetAudioPosition(framePos, timestamp, latency));
+    int32_t base = data.ReadInt32();
+    reply.WriteInt32(GetAudioPosition(framePos, timestamp, latency, base));
     reply.WriteUint64(framePos);
     reply.WriteUint64(timestamp);
     reply.WriteUint64(latency);

@@ -31,6 +31,7 @@
 #include "source/i_audio_capture_source.h"
 #include "audio_volume.h"
 #include "audio_performance_monitor.h"
+#include "privacy_kit.h"
 #include "media_monitor_manager.h"
 #ifdef HAS_FEATURE_INNERCAPTURER
 #include "playback_capturer_manager.h"
@@ -41,7 +42,7 @@ namespace AudioStandard {
 
 #ifdef SUPPORT_LOW_LATENCY
 static uint64_t g_id = 1;
-static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
+static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
@@ -60,6 +61,7 @@ static inline const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
 };
+const size_t MAX_FG_LIST_SIZE = 10;
 }
 
 AudioService *AudioService::GetInstance()
@@ -99,6 +101,9 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             if (processConfig.audioMode == AUDIO_MODE_PLAYBACK) {
                 SetDecMaxRendererStreamCnt();
                 CleanAppUseNumMap(processConfig.appInfo.appUid);
+            }
+            if (processConfig.capturerInfo.isLoopback || processConfig.rendererInfo.isLoopback) {
+                SetDecMaxLoopbackStreamCnt(processConfig.audioMode);
             }
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
@@ -154,6 +159,14 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
+
+void AudioService::DisableLoopback()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", "Karaoke_enable=disable");
+}
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
@@ -269,6 +282,68 @@ void AudioService::InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererIn
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Insert renderer:%{public}u into map", sessionId);
     allRendererMap_[sessionId] = renderer;
+}
+
+void AudioService::SaveForegroundList(std::vector<std::string> list)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (list.size() > MAX_FG_LIST_SIZE) {
+        AUDIO_ERR_LOG("invalid list size %{public}zu", list.size());
+        return;
+    }
+
+    foregroundSet_.clear();
+    foregroundUidSet_.clear();
+    for (auto &item : list) {
+        AUDIO_WARNING_LOG("Add for hap: %{public}s", item.c_str());
+        foregroundSet_.insert(item);
+    }
+}
+
+bool AudioService::MatchForegroundList(const std::string &bundleName, uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundSet_.find(bundleName) != foregroundSet_.end()) {
+        AUDIO_WARNING_LOG("find hap %{public}s in list!", bundleName.c_str());
+        if (uid != 0) {
+            foregroundUidSet_.insert(uid);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::InForegroundList(uint32_t uid)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    if (foregroundUidSet_.find(uid) != foregroundUidSet_.end()) {
+        AUDIO_INFO_LOG("find hap %{public}d in list!", uid);
+        return true;
+    }
+    return false;
+}
+
+bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
+{
+    // UpdateForegroundState 200001000 to active
+    std::string str = "UpdateForegroundState " + std::to_string(appTokenId) + (isActive ? "to active" : "to deactive");
+    Trace trace(str);
+    WatchTimeout guard(str);
+    int32_t res = OHOS::Security::AccessToken::PrivacyKit::SetHapWithFGReminder(appTokenId, isActive);
+    AUDIO_INFO_LOG("res is %{public}d for %{public}s", res, str.c_str());
+    return res;
+}
+
+void AudioService::DumpForegroundList(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(foregroundSetMutex_);
+    std::stringstream temp;
+    temp << "DumpForegroundList:\n";
+    int32_t index = 0;
+    for (auto item : foregroundSet_) {
+        temp << "    " <<  std::to_string(index++) << ": " <<  item << "\n";
+    }
+    dumpString = temp.str();
 }
 
 int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
@@ -627,9 +702,9 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
         std::lock_guard<std::mutex> lock(workingConfigsMutex_);
         if (workingConfigs_.count(innerCapId)) {
             workingConfigs_[innerCapId] = newConfig;
-            isOldCap = true;  
+            isOldCap = true;
         } else {
-            workingConfigs_[innerCapId] = newConfig; 
+            workingConfigs_[innerCapId] = newConfig;
         }
     }
     if (isOldCap) {
@@ -1325,6 +1400,34 @@ void AudioService::SetDecMaxRendererStreamCnt()
     currentRendererStreamCnt_--;
 }
 
+void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_++;
+    } else {
+        currentLoopbackCapturerStreamCnt_++;
+    }
+}
+
+int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        return currentLoopbackRendererStreamCnt_;
+    } else {
+        return currentLoopbackCapturerStreamCnt_;
+    }
+}
+
+void AudioService::SetDecMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_--;
+    } else {
+        currentLoopbackCapturerStreamCnt_--;
+    }
+}
+
 void AudioService::CleanAppUseNumMap(int32_t appUid)
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
@@ -1499,6 +1602,45 @@ void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteF
     }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);
+}
+
+int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD, ERR_INVALID_PARAM, "Invalid audioType");
+    AUDIO_INFO_LOG("stop audio stream, type:%{public}d", audioType);
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RENDER) {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        for (auto &rendererMap : allRendererMap_) {
+            std::shared_ptr<RendererInServer> rendererInServer = rendererMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(rendererInServer != nullptr, "stream could be released, no need to stop");
+            rendererInServer->StopSession();
+        }
+    }
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RECORD) {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        for (auto &capturerMap : allCapturerMap_) {
+            std::shared_ptr<CapturerInServer> capturerInServer = capturerMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(capturerInServer != nullptr, "stream could be released, no need to stop");
+            capturerInServer->StopSession();
+        }
+    }
+#ifdef SUPPORT_LOW_LATENCY
+    {
+        std::lock_guard<std::mutex> lock(processListMutex_);
+        for (auto &[audioProcessInServer, audioEndpoint]: linkedPairedList_) {
+            CHECK_AND_CONTINUE_LOG(audioProcessInServer && audioEndpoint,
+                "stream could be released, no need to stop");
+            AudioMode audioMode = audioEndpoint->GetAudioMode();
+            bool isNeedStop = (audioType == StopAudioType::STOP_ALL) ||
+                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RENDER) ||
+                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RECORD);
+            if (isNeedStop) {
+                audioProcessInServer->StopSession();
+            }
+        }
+    }
+#endif
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

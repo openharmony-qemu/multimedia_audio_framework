@@ -210,6 +210,8 @@ public:
 
     int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) override;
 
+    int32_t SetForegroundList(std::vector<std::string> list) override;
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
@@ -242,8 +244,11 @@ public:
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
     void RemoveRendererDataTransferCallback(const int32_t &pid);
     int32_t RegisterDataTransferCallback(const sptr<IRemoteObject> &object) override;
     int32_t RegisterDataTransferMonitorParam(const int32_t &callbackId,
@@ -314,6 +319,7 @@ private:
     void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
         const int32_t &errorCode);
     int32_t CheckMaxRendererInstances();
+    int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetPcmDumpParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);

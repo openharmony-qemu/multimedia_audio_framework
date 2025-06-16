@@ -38,6 +38,7 @@ public:
     virtual int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) = 0;
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
+    virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
 
@@ -108,8 +109,6 @@ public:
     virtual void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList) = 0;
-    virtual int32_t SetInputDevice(
-        const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName = "") = 0;
     virtual int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice) = 0;
     virtual int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol) = 0;
     virtual int32_t SetMicrophoneMuteInfo(const bool &isMute) = 0;
@@ -130,6 +129,7 @@ public:
     virtual bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) = 0;
     virtual bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;
+    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

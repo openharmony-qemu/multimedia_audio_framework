@@ -82,7 +82,8 @@ void NapiAudioManagerActiveVolumeTypeChangeCallback::SafeJsCallbackActiveVolumeT
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && jsCallback != nullptr, "get reference value fail, %{public}s",
             request.c_str());
         napi_value args[ARGS_ONE] = { nullptr };
-        NapiParamUtils::SetValueInt32(env, event->activeVolumeTypeChangeEvent, args[PARAM0]);
+        NapiParamUtils::SetValueInt32(env, NapiAudioEnum::GetJsAudioVolumeType(event->activeVolumeTypeChangeEvent),
+            args[PARAM0]);
         CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[0] != nullptr,
             "fail to create active volume type change callback, %{public}s", request.c_str());
         const size_t argCount = ARGS_ONE;

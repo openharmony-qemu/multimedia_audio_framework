@@ -20,7 +20,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
+static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_192000 * 10; // max framelength is sample rate 192000, 10s
 static inline uint32_t Min(uint32_t a, uint32_t b)
 {
     return a < b ? a : b;
@@ -101,9 +101,9 @@ AudioChannelInfo ChannelConverter::GetOutChannelInfo() const
  
 int32_t ChannelConverter::Process(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
 {
-    if ((in == nullptr) || (out == nullptr) || frameSize <= 0 || inLen <= 0 || outLen <= 0) {
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(frameSize >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
     if (inChannelInfo_.numChannels < outChannelInfo_.numChannels) {
         return Upmix(frameSize, in, inLen, out, outLen);
     }
@@ -117,14 +117,13 @@ void ChannelConverter::Reset()
 
 int32_t ChannelConverter::Upmix(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
 {
+    CHECK_AND_RETURN_RET_LOG(frameSize <= MAX_FRAME_LENGTH, DMIX_ERR_INVALID_ARG,
+        "invalid frameSize %{public}d", frameSize);
     uint32_t expectInLen = frameSize * inChannelInfo_.numChannels * workSize_; // to be added size of other formats
     uint32_t expectOutLen = frameSize * outChannelInfo_.numChannels * workSize_;
-    if ((expectInLen > inLen) || (expectOutLen > outLen)) {
-        AUDIO_ERR_LOG("expect Input Len: %{public}d, inLen: %{public}d,"
-            "expected output len: %{public}d, outLen %{public}d",
-            expectInLen, inLen, expectOutLen, outLen);
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(expectInLen <= inLen, DMIX_ERR_ALLOC_FAILED, "invalid inLen %{public}d", inLen);
+    CHECK_AND_RETURN_RET_LOG(expectOutLen <= outLen, DMIX_ERR_ALLOC_FAILED, "invalid outLen %{public}d", outLen);
+    
     for (uint32_t i = 0; i < frameSize; ++i) {
         for (uint32_t ch = 0; ch < outChannelInfo_.numChannels; ++ch) {
             uint32_t leftChIndex = Min(ch, inChannelInfo_.numChannels - 1);

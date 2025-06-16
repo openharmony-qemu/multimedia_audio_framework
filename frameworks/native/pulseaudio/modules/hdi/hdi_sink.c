@@ -2254,6 +2254,9 @@ static void UpdateStreamVolumeMap(struct Userdata *u)
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float volume = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
         struct VolumeValues *vol = (struct VolumeValues *)pa_hashmap_get(u->streamVolumeMap, &sessionID);
+        AUTO_CTRACE("Volume, sessionId: %u, devClass: %s, volume: %.3f,"
+            "volumeSystem: %.3f, volumeStream: %.3f, volumeApp: %.3f",
+            sessionID, deviceClass, volumes.volume, volumes.volumeSystem, volumes.volumeStream, volumes.volumeApp);
         if (vol) {
             vol->volume = volume;
             vol->volumeHistory = volumes.volumeHistory;

@@ -20,6 +20,9 @@
 #include "securec.h"
 #include "audio_interrupt_service.h"
 #include "audio_device_descriptor.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 #include "input_manager.h"
@@ -33,6 +36,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+bool g_hasPermission = false;
 bool g_hasServerInit = false;
 sptr<AudioPolicyServer> GetPolicyServerUnitTest()
 {
@@ -55,6 +59,41 @@ sptr<AudioPolicyServer> GetPolicyServerUnitTest()
     return server;
 }
 
+void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
+
 void ReleaseServer()
 {
     GetPolicyServerUnitTest()->OnStop();
@@ -63,7 +102,10 @@ void ReleaseServer()
 
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
 void AudioPolicyUnitTest::TearDownTestCase(void) {}
-void AudioPolicyUnitTest::SetUp(void) {}
+void AudioPolicyUnitTest::SetUp(void)
+{
+    GetPermission();
+}
 
 void AudioPolicyUnitTest::TearDown(void)
 {
@@ -1481,7 +1523,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_046, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1499,7 +1541,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_047, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, ERROR_UNSUPPORTED);
 }
 /**
@@ -1517,7 +1559,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_048, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = true;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -1535,7 +1577,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_049, TestSize.Level1)
     ptrAudioPolicyServer->isScreenOffOrLock_ = false;
 
     int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
-    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyMuteEvents(keyType);
+    int32_t ret = ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
     EXPECT_EQ(ret, AUDIO_OK);
 }
 /**
@@ -2907,7 +2949,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_148, TestSize.Level1)
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_MUSIC, volumeLevel);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_RING);
     ret = server->SetSystemVolumeLevelLegacy(AudioStreamType::STREAM_RING, volumeLevel);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -2944,7 +2986,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_150, TestSize.Level1)
     auto ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_APP);
     ret = server->SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -2969,7 +3011,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_151, TestSize.Level1)
     ret = server->SetSystemVolumeLevel(AudioStreamType::STREAM_MUSIC, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 
-    volumeLevel = server->audioPolicyService_.GetMinVolumeLevel(AudioStreamType::STREAM_MUSIC);
+    volumeLevel = server->audioVolumeManager_.GetMinVolumeLevel(AudioStreamType::STREAM_MUSIC);
     ret = server->SetSystemVolumeLevel(AudioStreamType::STREAM_MUSIC, volumeLevel, volumeFlag);
     EXPECT_EQ(ret, SUCCESS);
 }

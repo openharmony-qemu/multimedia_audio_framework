@@ -37,12 +37,11 @@ AudioStreamMonitor& AudioStreamMonitor::GetInstance()
 
 bool AudioStreamMonitor::HasRegistered(const int32_t pid, const int32_t callbackId)
 {
-    for (auto item : registerInfo_) {
-        if (item.first.first == pid && item.first.second == callbackId) {
-            AUDIO_INFO_LOG("Monitor has registered, pid = %{public}d, callbackId = %{public}d",
-                pid, callbackId);
-            return true;
-        }
+    auto iter = registerInfo_.find(std::make_pair(pid, callbackId));
+    if (iter != registerInfo_.end()) {
+        AUDIO_INFO_LOG("Monitor has registered, pid = %{public}d, callbackId = %{public}d",
+            pid, callbackId);
+        return true;
     }
     AUDIO_INFO_LOG("Monitor not register, pid = %{public}d, callbackId = %{public}d", pid, callbackId);
     return false;
@@ -88,6 +87,9 @@ int32_t AudioStreamMonitor::UnregisterAudioRendererDataTransferStateListener(
             iter++;
         }
     }
+    for (auto iter = audioStreamCheckers_.begin(); iter != audioStreamCheckers_.end(); iter++) {
+        iter->second->DeleteCheckerPara(pid, callbackId);
+    }
     return SUCCESS;
 }
 
@@ -123,6 +125,23 @@ void AudioStreamMonitor::AddCheckForMonitor(uint32_t sessionId, std::shared_ptr<
             AUDIO_INFO_LOG("Find register, need init checker, uid = %{public}d", item.second.clientUID);
             checker->InitChecker(item.second, item.first.first, item.first.second);
         }
+    }
+}
+
+void AudioStreamMonitor::OnCallbackAppDied(const int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(regStatusMutex_);
+    AUDIO_INFO_LOG("On callback app died, pid = %{public}d", pid);
+    for (auto iter = registerInfo_.begin(); iter != registerInfo_.end();) {
+        if (iter->first.first == pid) {
+            AUDIO_INFO_LOG("erase registerInfo seccess by pid");
+            iter = registerInfo_.erase(iter);
+        } else {
+            iter++;
+        }
+    }
+    for (auto iter = audioStreamCheckers_.begin(); iter != audioStreamCheckers_.end(); iter++) {
+        iter->second->OnRemoteAppDied(pid);
     }
 }
 

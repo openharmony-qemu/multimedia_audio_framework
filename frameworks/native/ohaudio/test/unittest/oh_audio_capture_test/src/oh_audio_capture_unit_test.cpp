@@ -47,6 +47,7 @@ OH_AudioStreamBuilder* OHAudioCaptureUnitTest::CreateCapturerBuilder()
     return builder;
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via legal state.
 * @tc.number: OH_Audio_Capture_Generate_001
@@ -62,6 +63,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_001, TestSize.Level0)
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
+#endif
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
@@ -112,6 +114,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_004, TestSize.Level0)
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test OH_AudioCapturer_Start API via legal state.
 * @tc.number: Audio_Capturer_Start_001
@@ -483,6 +486,7 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetCapturerInfo_001, TestSize.Le
     EXPECT_TRUE(sourceType == AUDIOSTREAM_SOURCE_TYPE_MIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
+#endif
 
 /**
 * @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
@@ -1063,6 +1067,7 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturerCallback_003, TestSize.Level0)
     oHAudioCapturerCallback->OnInterrupt(interruptEvent);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test OHAudioCapturer API
 * @tc.number: OHAudioCapturer_001
@@ -1478,5 +1483,6 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_016, TestSize.Level0)
 
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

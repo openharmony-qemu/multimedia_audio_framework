@@ -101,6 +101,7 @@ bool RemoteAudioRenderSink::IsInited(void)
 
 void RemoteAudioRenderSink::JoinStartThread()
 {
+    std::lock_guard<std::mutex> lock(threadMutex_);
     if (startThread_ != nullptr) {
         if (startThread_->joinable()) {
             startThread_->join();
@@ -132,6 +133,7 @@ int32_t RemoteAudioRenderSink::Start(void)
     JoinStartThread();
     isThreadRunning_.store(true);
 
+    std::lock_guard<std::mutex> threadLock(threadMutex_);
     startThread_ = std::make_shared<std::thread>([this]() {
         AUDIO_INFO_LOG("SubThread Start");
         if (!renderInited_.load()) {

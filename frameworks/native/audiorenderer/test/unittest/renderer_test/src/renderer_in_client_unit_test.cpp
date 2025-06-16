@@ -61,7 +61,10 @@ public:
 
     virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) { return 0; }
 
-    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency) { return 0; }
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+    {
+        return 0;
+    }
 
     virtual int32_t GetLatency(uint64_t &latency) { return 0; }
 

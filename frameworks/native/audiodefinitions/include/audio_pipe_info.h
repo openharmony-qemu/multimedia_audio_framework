@@ -41,6 +41,8 @@ public:
 
     AudioPipeRole pipeRole_ = PIPE_ROLE_OUTPUT;
 
+    std::string name_ = "undefine";
+
     uint32_t routeFlag_ = 0;
 
     std::string adapterName_ = "";
@@ -60,6 +62,8 @@ public:
     AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo);
 
     void Dump(std::string &dumpString);
+
+    std::string ToString();
 
 private:
     bool IsOutput()

@@ -140,6 +140,8 @@ public:
 
     int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
 
+    bool GetStopFlag() const override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
     static constexpr AudioStreamInfo g_targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
@@ -343,6 +345,7 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
     AudioProcessConfig resetConfig = config;
     bool isVoipMmap = false;
     if (config.rendererInfo.streamUsage != STREAM_USAGE_VOICE_COMMUNICATION &&
+        config.rendererInfo.streamUsage != STREAM_USAGE_VIDEO_COMMUNICATION &&
         config.capturerInfo.sourceType != SOURCE_TYPE_VOICE_COMMUNICATION) {
         resetConfig.streamInfo = AudioProcessInClientInner::g_targetStreamInfo;
         if (config.audioMode == AUDIO_MODE_RECORD) {
@@ -834,6 +837,7 @@ int32_t AudioProcessInClientInner::GetBufferDesc(BufferDesc &bufDesc) const
 bool AudioProcessInClient::CheckIfSupport(const AudioProcessConfig &config)
 {
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
+        config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
         config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
         return true;
     }
@@ -1908,6 +1912,12 @@ int32_t AudioProcessInClientInner::RegisterThreadPriority(pid_t tid, const std::
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "ipcProxy is null.");
     return processProxy_->RegisterThreadPriority(tid, bundleName, method);
+}
+
+bool AudioProcessInClientInner::GetStopFlag() const
+{
+    CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
+    return audioBuffer_->GetStopFlag();
 }
 } // namespace AudioStandard
 } // namespace OHOS

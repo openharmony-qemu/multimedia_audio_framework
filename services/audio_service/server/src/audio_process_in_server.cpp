@@ -30,6 +30,7 @@
 #include "audio_dump_pcm.h"
 #include "audio_performance_monitor.h"
 #include "core_service_handler.h"
+#include "stream_dfx_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
@@ -168,10 +169,29 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     return SUCCESS;
 }
 
-bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
+bool AudioProcessInServer::CheckBGCapturer()
 {
     uint32_t tokenId = processConfig_.appInfo.appTokenId;
     uint64_t fullTokenId = processConfig_.appInfo.appFullTokenId;
+
+    if (PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId)) {
+        return true;
+    }
+
+    CHECK_AND_RETURN_RET_LOG(processConfig_.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION &&
+        AudioService::GetInstance()->InForegroundList(processConfig_.appInfo.appUid), false, "Verify failed");
+
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, true);
+    bool res = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
+    AUDIO_INFO_LOG("Retry result:%{public}s", (res ? "success" : "fail"));
+    AudioService::GetInstance()->UpdateForegroundState(tokenId, false);
+
+    return res;
+}
+
+bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
+{
+    uint32_t tokenId = processConfig_.appInfo.appTokenId;
     SwitchStreamInfo info = {
         sessionId_,
         processConfig_.callerUid,
@@ -181,8 +201,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
         capturerState,
     };
     if (!SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_STARTED)) {
-        CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId),
-            false, "VerifyBackgroundCapture failed!");
+        CHECK_AND_RETURN_RET_LOG(CheckBGCapturer(), false, "Verify failed");
     }
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_STARTED);
 
@@ -226,7 +245,6 @@ bool AudioProcessInServer::TurnOffMicIndicator(CapturerState capturerState)
 int32_t AudioProcessInServer::Start()
 {
     int32_t ret = StartInner();
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
         playerDfx_->WriteDfxStartMsg(sessionId_, stage, sourceDuration_, processConfig_);
@@ -265,6 +283,7 @@ int32_t AudioProcessInServer::StartInner()
 
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, true);
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
@@ -273,6 +292,9 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
+        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    } else {
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
@@ -303,7 +325,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnPause(this);
     }
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, false);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         playerDfx_->WriteDfxActionMsg(sessionId_, RENDERER_STAGE_PAUSE_OK);
     } else if (recorderDfx_ && processConfig_.audioMode == AUDIO_MODE_RECORD) {
@@ -313,6 +335,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
             GetLastAudioDuration(), processConfig_);
     }
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
@@ -339,6 +362,7 @@ int32_t AudioProcessInServer::Resume()
     }
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
+    CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -367,7 +391,7 @@ int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
     if (processBuffer_ != nullptr) {
         lastWriteFrame_ = static_cast<int64_t>(processBuffer_->GetCurReadFrame()) - lastWriteFrame_;
     }
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     if (playerDfx_ && processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
         RendererStage rendererStage = stage == AUDIO_PROC_STAGE_STOP_BY_RELEASE ?
             RENDERER_STAGE_STOP_BY_RELEASE : RENDERER_STAGE_STOP_OK;
@@ -380,6 +404,7 @@ int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
             GetLastAudioDuration(), processConfig_);
     }
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
 
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
@@ -402,6 +427,7 @@ int32_t AudioProcessInServer::Release(bool isSwitchStream)
     }
     int32_t ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy remove client failed, reason: %{public}d", ret);
+    StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
     ret = releaseCallback_->OnProcessRelease(this, isSwitchStream);
     AUDIO_INFO_LOG("notify service release result: %{public}d", ret);
     return SUCCESS;
@@ -419,6 +445,10 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    auto config = processInServer_->GetAudioProcessConfig();
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->DisableLoopback();
+    }
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }
@@ -780,6 +810,13 @@ int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t 
     uint32_t code)
 {
     AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::StopSession()
+{
+    CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_PARAM, "processBuffer_ is nullptr");
+    processBuffer_->SetStopFlag(true);
     return SUCCESS;
 }
 } // namespace AudioStandard

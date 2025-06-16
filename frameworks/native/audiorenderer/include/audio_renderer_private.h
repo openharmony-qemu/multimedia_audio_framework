@@ -150,6 +150,7 @@ public:
 
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
+    void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
@@ -186,7 +187,9 @@ protected:
 
 private:
     int32_t CheckAndRestoreAudioRenderer(std::string callingFunc);
-    int32_t AsyncCheckAndRestoreAudioRenderer(std::string callingFunc);
+    int32_t AsyncCheckAudioRenderer(std::string callingFunc);
+    int32_t CheckAudioRenderer(std::string callingFunc);
+    int32_t CheckAndStopAudioRenderer(std::string callingFunc);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
         const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
@@ -229,7 +232,9 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
+    FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
+    int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -275,6 +280,7 @@ private:
     std::atomic<uint32_t> switchStreamInNewThreadTaskCount_ = 0;
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
+    int32_t audioHapticsSyncId_ = 0;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

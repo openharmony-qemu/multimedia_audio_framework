@@ -70,7 +70,7 @@ private:
 
     static void ProcessTasks(std::queue<std::function<void()>> &tasks)
     {
-        while(!tasks.empty()) {
+        while (!tasks.empty()) {
             auto &&task = tasks.front();
             if (task) {
                 task();

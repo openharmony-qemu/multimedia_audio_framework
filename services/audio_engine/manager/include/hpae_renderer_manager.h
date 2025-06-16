@@ -29,6 +29,7 @@
 #include "hpae_msg_channel.h"
 #include "hpae_no_lock_queue.h"
 #include "i_hpae_renderer_manager.h"
+#include "hpae_co_buffer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -89,7 +90,11 @@ public:
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -118,6 +123,11 @@ private:
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);
+    bool CheckIsStreamRunning();
+    HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    void ReConnectNodeForCollaboration(uint32_t sessionID);
+    void EnableCollaboration();
+    void DisableCollaboration();
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
@@ -129,9 +139,12 @@ private:
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;
+    std::atomic<bool> isSuspend_ = false;
     HpaeSinkInfo sinkInfo_;
     std::unordered_map<HpaeProcessorType, int32_t> sceneTypeToProcessClusterCountMap_;
     std::vector<int32_t> appsUid_;
+    std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
+    bool isCollaborationEnabled_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

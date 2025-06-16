@@ -15,11 +15,11 @@
 
 #ifndef MULTIMEDIA_AUDIO_MANAGER_IMPL_H
 #define MULTIMEDIA_AUDIO_MANAGER_IMPL_H
-#include "cj_common_ffi.h"
-#include "native/ffi_remote_data.h"
 #include "audio_group_manager.h"
 #include "audio_system_manager.h"
+#include "cj_common_ffi.h"
 #include "multimedia_audio_ffi.h"
+#include "native/ffi_remote_data.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,14 +34,16 @@ public:
 
     int32_t GetAudioScene();
 
-    int64_t GetRoutingManager(int32_t *errorCode);
+    int64_t GetRoutingManager(int32_t* errorCode);
 
-    int64_t GetStreamManger(int32_t *errorCode);
+    int64_t GetStreamManger(int32_t* errorCode);
 
-    int64_t GetVolumeManager(int32_t *errorCode);
+    int64_t GetVolumeManager(int32_t* errorCode);
+
+    int64_t GetSessionManager(int32_t* errorCode);
 
 private:
-    AudioSystemManager *audioMgr_{};
+    AudioSystemManager* audioMgr_ {};
 };
 } // namespace AudioStandard
 } // namespace OHOS

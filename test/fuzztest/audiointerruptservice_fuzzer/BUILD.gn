@@ -26,7 +26,7 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/commcon/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
-    "../../../services/audio_policy/server/src/service/interrupt",
+    "../../../services/audio_policy/server/domain/interrupt/include",
     "../../../utils/system/safwk/native/include",
     "../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
@@ -77,6 +77,12 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
   }
 }
 

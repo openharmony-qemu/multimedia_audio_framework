@@ -47,7 +47,7 @@ public:
     HpaeSessionState GetState();
     uint64_t GetFramesWritten();
 
-    int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp);
+    int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
     int32_t RewindHistoryBuffer(uint64_t rewindTime);
 
     void SetAppUid(int32_t appUid);
@@ -59,20 +59,21 @@ public:
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
-    bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
+    bool ReadToAudioBuffer(int32_t &ret);
     std::weak_ptr<IStreamCallback> writeCallback_;
     AudioCallBackStreamInfo streamInfo_;
     PcmBufferInfo pcmBufferInfo_;
+    PcmBufferInfo emptyBufferInfo_;
     HpaePcmBuffer inputAudioBuffer_;
+    HpaePcmBuffer emptyAudioBuffer_;
     OutputPort<HpaePcmBuffer *> outputStream_;
     std::vector<int8_t> interleveData_;
-    std::atomic<uint64_t> framesWritten_;
+    uint64_t framesWritten_;
     uint64_t totalFrames_;
-    std::unique_ptr<LinearPosTimeModel> handleTimeModel_;
     bool isDrain_ = false;
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     int32_t appUid_ = -1;
-
+    bool pullDataFlag_ = false; // pull data each 40ms for 11025hz input
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
 #ifdef ENABLE_HOOK_PCM

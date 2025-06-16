@@ -72,6 +72,8 @@ public:
 
     bool IsStreamActive(AudioVolumeType volumeType) override;
 
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) override;
+
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage) override;
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source) override;
 
@@ -267,6 +269,9 @@ public:
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, const bool updateUi) override;
 
+    int32_t SetNearlinkDeviceVolume(const std::string &macAddress, AudioVolumeType volumeType,
+        const int32_t volume, const bool updateUi) override;
+
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage) override;
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
@@ -356,7 +361,7 @@ public:
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
-    
+
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
@@ -454,6 +459,14 @@ public:
 
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
 
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
+
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
+
+    bool SetKaraokeParameters(const std::string &parameters) override;
+
     int32_t GetMaxVolumeLevelByUsage(StreamUsage streamUsage) override;
 
     int32_t GetMinVolumeLevelByUsage(StreamUsage streamUsage) override;
@@ -461,6 +474,14 @@ public:
     int32_t GetVolumeLevelByUsage(StreamUsage streamUsage) override;
 
     bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
+
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) override;
+
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() override;
+
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) override;
+
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
 
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc,

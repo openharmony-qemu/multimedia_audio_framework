@@ -60,7 +60,7 @@ typedef struct OH_AudioResourceManager OH_AudioResourceManager;
  * The handle of audio workgroup is used for audio management related functions.
  *
  * @since 20
- */ 
+ */
 typedef struct OH_AudioWorkgroup OH_AudioWorkgroup;
 
 /**

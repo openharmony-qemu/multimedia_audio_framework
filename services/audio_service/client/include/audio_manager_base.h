@@ -489,6 +489,13 @@ public:
     virtual int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains) = 0;
 
     /**
+     * set foregroun list.
+     *
+     * @return Returns result 0 if success, error number else.
+     */
+    virtual int32_t SetForegroundList(std::vector<std::string> list) = 0;
+
+    /**
      * check standby status.
      *
      * @return Returns result 0 if success, error number else.
@@ -513,6 +520,12 @@ public:
     virtual void NotifyAudioPolicyReady() = 0;
 
     virtual bool IsAcousticEchoCancelerSupported(SourceType sourceType) = 0;
+
+    virtual int32_t ForceStopAudioStream(StopAudioType audioType) = 0;
+
+    virtual bool SetKaraokeParameters(const std::string &parameters) = 0;
+
+    virtual bool IsAudioLoopbackSupported(AudioLoopbackMode mode) = 0;
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
@@ -755,8 +768,11 @@ private:
     int HandleDestroyHdiPort(MessageParcel &data, MessageParcel &reply);
     int HandleDeviceConnectedFlag(MessageParcel &data, MessageParcel &reply);
     int HandleIsAcousticEchoCancelerSupported(MessageParcel &data, MessageParcel &reply);
+    int HandleSetKaraokeParameters(MessageParcel &data, MessageParcel &reply);
+    int HandleIsAudioLoopbackSupported(MessageParcel &data, MessageParcel &reply);
     int HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply);
     int HandleOnMuteStateChange(MessageParcel &data, MessageParcel &reply);
+    int HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferCallback(MessageParcel &data, MessageParcel &reply);
     int HandleRegisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);
     int HandleUnregisterDataTransferMonitorParam(MessageParcel &data, MessageParcel &reply);

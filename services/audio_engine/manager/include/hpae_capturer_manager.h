@@ -73,6 +73,7 @@ public:
     void SetCaptureId(uint32_t captureId);
     int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) override;
     void DumpSourceInfo() override;
+    std::string GetDeviceHDFDumpInfo() override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);

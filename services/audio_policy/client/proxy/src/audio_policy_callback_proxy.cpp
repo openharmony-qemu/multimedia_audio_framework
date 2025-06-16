@@ -461,7 +461,7 @@ int32_t AudioPolicyProxy::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDesc
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_OBJECT, "UpdateDeviceInfo deviceDesc is null");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, ERR_NULL_OBJECT, "deviceDesc is null");
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
@@ -470,7 +470,7 @@ int32_t AudioPolicyProxy::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDesc
 
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_DEVICE_INFO), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "UpdateDeviceInfo failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }
@@ -481,15 +481,14 @@ int32_t AudioPolicyProxy::SetSleAudioOperationCallback(const sptr<IRemoteObject>
     MessageParcel reply;
     MessageOption option;
 
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "SetSleAudioOperationCallback object is null");
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "callback object is null");
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
     (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SLE_AUDIO_OPERATION_CALLBACK), data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
-        "set callback failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set callback failed, error: %{public}d", error);
 
     return reply.ReadInt32();
 }

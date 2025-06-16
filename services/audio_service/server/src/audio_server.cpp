@@ -103,6 +103,7 @@ static const size_t PARAMETER_SET_LIMIT = 1024;
 constexpr int32_t UID_CAMERA = 1047;
 constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
+const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
@@ -245,6 +246,7 @@ void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
     audioServer_->RemoveRendererDataTransferCallback(pid_);
+    AudioStreamMonitor::GetInstance().OnCallbackAppDied(pid_);
 }
 
 PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
@@ -253,9 +255,11 @@ PipeInfoGuard::PipeInfoGuard(uint32_t sessionId)
     sessionId_ = sessionId;
 }
 
-PipeInfoGuard::~PipeInfoGuard() {
+PipeInfoGuard::~PipeInfoGuard()
+{
     if (releaseFlag_) {
-        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE);
+        CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_RELEASE,
+            SESSION_OP_MSG_REMOVE_PIPE);
     }
 }
 
@@ -339,6 +343,12 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         std::string bundleName = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{}.to_bytes(args[1]);
         std::string result = GetAudioParameter(CHECK_FAST_BLOCK_PREFIX + bundleName);
         std::string dumpString = "check fast list :bundle name is" + bundleName + " result is " + result + "\n";
+        return write(fd, dumpString.c_str(), dumpString.size());
+    }
+
+    if (args.size() == 1 && args[0] == u"-dfl") {
+        std::string dumpString;
+        AudioService::GetInstance()->DumpForegroundList(dumpString);
         return write(fd, dumpString.c_str(), dumpString.size());
     }
 
@@ -1153,8 +1163,7 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
     } else {
         UpdatePrimaryInstance(sink, source);
-        if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD &&
-            deviceTypes.size() == 1 && deviceTypes[0] == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             deviceTypes[0] = DEVICE_TYPE_NONE;
         }
     }
@@ -1604,6 +1613,15 @@ int32_t AudioServer::CheckMaxRendererInstances()
     return SUCCESS;
 }
 
+int32_t AudioServer::CheckMaxLoopbackInstances(AudioMode audioMode)
+{
+    if (AudioService::GetInstance()->GetCurrentLoopbackStreamCnt(audioMode) >= DEFAULT_MAX_LOOPBACK_INSTANCES) {
+        AUDIO_ERR_LOG("Current Loopback stream num is greater than the maximum num of configured instances");
+        return ERR_EXCEED_MAX_STREAM_CNT;
+    }
+    return SUCCESS;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &config, int32_t callingUid,
     std::shared_ptr<PipeInfoGuard> &pipeInfoGuard)
 {
@@ -1639,6 +1657,9 @@ sptr<IRemoteObject> AudioServer::CreateAudioStream(const AudioProcessConfig &con
         return nullptr;
     }
     AudioService::GetInstance()->SetIncMaxRendererStreamCnt(config.audioMode);
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(config.audioMode);
+    }
     sptr<IRemoteObject> remoteObject= process->AsObject();
     pipeInfoGuard->SetReleaseFlag(false);
     return remoteObject;
@@ -1698,9 +1719,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(config.originalSessionId);
 
     errorCode = CheckAndWaitAudioPolicyReady();
-    if (errorCode != SUCCESS) {
-        return nullptr;
-    }
+    CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
 
     AudioProcessConfig resetConfig = ResetProcessConfig(config);
     CHECK_AND_RETURN_RET_LOG(CheckConfigFormat(resetConfig), nullptr, "AudioProcessConfig format is wrong, please check"
@@ -1714,9 +1733,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
     if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK &&
         !IsVoiceModemCommunication(resetConfig.rendererInfo.streamUsage, callingUid)) {
         errorCode = CheckMaxRendererInstances();
-        if (errorCode != SUCCESS) {
-            return nullptr;
-        }
+        CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
         if (AudioService::GetInstance()->IsExceedingMaxStreamCntPerUid(callingUid, resetConfig.appInfo.appUid,
             maxRendererStreamCntPerUid_)) {
             errorCode = ERR_EXCEED_MAX_STREAM_CNT_PER_UID;
@@ -1724,7 +1741,10 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcess(const AudioProcessConfig &co
             return nullptr;
         }
     }
-
+    if (resetConfig.rendererInfo.isLoopback || resetConfig.capturerInfo.isLoopback) {
+        errorCode = CheckMaxLoopbackInstances(resetConfig.audioMode);
+        CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
+    }
     if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
         && config.rendererInfo.isSatellite) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
@@ -2082,6 +2102,17 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 
 bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
 {
+    if (!PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType)) {
+        // no need to check
+        return true;
+    }
+
+    AppInfo appInfo = config.appInfo;
+    if (PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId)) {
+        // check success
+        return true;
+    }
+
     SwitchStreamInfo info = {
         config.originalSessionId,
         config.callerUid,
@@ -2090,18 +2121,33 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         config.appInfo.appTokenId,
         CAPTURER_PREPARED,
     };
-    if (PermissionUtil::NeedVerifyBackgroundCapture(config.callerUid, config.capturerInfo.sourceType) &&
-        !PermissionUtil::VerifyBackgroundCapture(info.appTokenId, config.appInfo.appFullTokenId)) {
-        if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-            AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
-                config.callerUid);
-            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
-            return true;
-        }
-
-        return false;
+    if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
+        AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
+            config.callerUid);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
+        return true;
     }
-    return true;
+
+    std::string bundleName = GetBundleNameFromUid(config.appInfo.appUid);
+    if (AudioService::GetInstance()->MatchForegroundList(bundleName, config.appInfo.appUid) &&
+        config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
+        AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, true);
+        bool res = PermissionUtil::VerifyBackgroundCapture(appInfo.appTokenId, appInfo.appFullTokenId);
+        AUDIO_INFO_LOG("Retry for %{public}s, result:%{public}s", bundleName.c_str(), (res ? "success" : "fail"));
+        AudioService::GetInstance()->UpdateForegroundState(config.appInfo.appTokenId, false);
+        return res;
+    }
+
+    AUDIO_WARNING_LOG("failed for %{public}s", bundleName.c_str());
+    return false;
+}
+
+int32_t AudioServer::SetForegroundList(std::vector<std::string> list)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
+    AudioService::GetInstance()->SaveForegroundList(list);
+    return SUCCESS;
 }
 
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
@@ -2516,6 +2562,7 @@ void AudioServer::NotifyAudioPolicyReady()
     AUDIO_INFO_LOG("out");
 }
 
+// LCOV_EXCL_START
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t AudioServer::CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId)
 {
@@ -2541,6 +2588,7 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
     }
     return ret;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
@@ -2758,5 +2806,13 @@ void AudioServer::SetActiveOutputDevice(DeviceType deviceType)
     return;
 }
 
+int32_t AudioServer::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD,
+        ERR_INVALID_PARAM, "Invalid audioType");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
+    CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
+    return AudioService::GetInstance()->ForceStopAudioStream(audioType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

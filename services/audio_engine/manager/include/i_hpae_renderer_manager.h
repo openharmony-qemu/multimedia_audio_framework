@@ -22,6 +22,7 @@
 #include "hpae_stream_manager.h"
 #include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
+#include "hpae_co_buffer_node.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -99,6 +100,10 @@ public:
         dfxTree_.UpdateNodeInfo(nodeId, nodeInfo);
 #endif
     }
+    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) {return 0;};
+    virtual int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
+    virtual int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) {return 0;};
+    virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
     std::atomic<uint32_t> nodeIdCounter_ = 0;
