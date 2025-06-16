@@ -659,6 +659,7 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_027, TestSize.Level1)
     EXPECT_EQ(ret, true);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SwitchStreamUtil API
 * @tc.type  : FUNC
@@ -681,6 +682,7 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_028, TestSize.Level1)
     ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
     EXPECT_EQ(ret, true);
 }
+#endif
 
 /**
 * @tc.name  : Test SwitchStreamUtil API

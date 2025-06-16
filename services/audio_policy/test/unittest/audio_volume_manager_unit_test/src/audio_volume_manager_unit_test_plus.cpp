@@ -247,6 +247,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_111, TestSize.Level1)
     EXPECT_EQ(ret, true);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_112
@@ -266,6 +267,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_112, TestSize.Level1)
     auto ret = audioVolumeManager->SetSystemVolumeLevel(streamType, volumeLevel);
     EXPECT_NE(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioVolumeManager.

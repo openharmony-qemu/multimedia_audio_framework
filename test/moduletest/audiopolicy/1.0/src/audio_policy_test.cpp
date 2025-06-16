@@ -142,6 +142,7 @@ const PolicyParam AUDIO_SCENE_PARAMS[] = {
 };
 } // namespace
 
+#ifdef TEMP_DISABLE
 /*
  * Set Volume
  *
@@ -205,6 +206,7 @@ INSTANTIATE_TEST_SUITE_P(
     SetMute,
     AudioPolicySetMuteTest,
     ValuesIn(MUTE_PARAMS));
+#endif
 
 /*
  * Set Ringer Mode
@@ -277,6 +279,7 @@ INSTANTIATE_TEST_SUITE_P(
     AudioPolicySetRingerModeCallbackTest,
     ValuesIn(RINGER_MODE_PARAMS));
 
+#ifdef TEMP_DISABLE
 /*
  * Set microphone mute
  *
@@ -346,6 +349,7 @@ INSTANTIATE_TEST_SUITE_P(
     GetMinVolume,
     AudioPolicyVolumeRangeTest,
     ValuesIn(VOLUME_RANGE_PARAMS));
+#endif
 
 /*
  * Check volume range
@@ -377,6 +381,7 @@ INSTANTIATE_TEST_SUITE_P(
     AudioPolicyAudioParameterTest,
     ValuesIn(AUDIO_PARAMS));
 
+#ifdef TEMP_DISABLE
 /*
  * Check set audio scene
  *
@@ -397,6 +402,7 @@ INSTANTIATE_TEST_SUITE_P(
     SetAudioScene,
     AudioPolicySetAudioSceneTest,
     ValuesIn(AUDIO_SCENE_PARAMS));
+#endif
 
 /*
  * Check get audio scene

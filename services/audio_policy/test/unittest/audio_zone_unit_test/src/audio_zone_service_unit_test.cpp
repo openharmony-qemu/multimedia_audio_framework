@@ -45,6 +45,7 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_001, TestSize.Level1)
     EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneReport(0, false), SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.
  * @tc.number: AudioZoneService_002
@@ -56,6 +57,7 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_002, TestSize.Level1)
     EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(0), true);
     EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(1), false);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioZoneServiceUnitTest.

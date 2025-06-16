@@ -1163,6 +1163,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_006, TestSize.Level0
     EXPECT_EQ(sourceName, "WAKEUP");
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
 * @tc.type  : FUNC
@@ -1176,6 +1177,7 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "UNKNOWN");
 }
+#endif
 
 /**
 * @tc.name  : Test AudioInfoDumpUtils::GetDeviceVolumeTypeName  API

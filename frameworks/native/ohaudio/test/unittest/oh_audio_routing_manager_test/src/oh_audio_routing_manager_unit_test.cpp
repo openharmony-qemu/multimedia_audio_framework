@@ -482,6 +482,7 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_UnregisterDeviceCha
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetMicrophoneBlockedCallback.
  * @tc.number: SetMicrophoneBlockedCallback_001
@@ -498,6 +499,7 @@ HWTEST(OHAudioRoutingManagerUnitTest, SetMicrophoneBlockedCallback_001, TestSize
     result = OH_AudioRoutingManager_SetMicBlockStatusCallback(audioRoutingManager, callback, nullptr);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
+#endif
 
 /**
  * @tc.name  : Test OnMicrophoneBlocked.

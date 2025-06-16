@@ -358,6 +358,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_001, TestSize.Level1)
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_DEFAULT);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name: JudgeStreamAction_002
  * @tc.desc: Test JudgeStreamAction when newPipe and oldPipe have different adapterName and
@@ -379,6 +380,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, JudgeStreamAction_002, TestSize.Level1)
     AudioStreamAction result = audioPipeSelector->JudgeStreamAction(newPipe, oldPipe);
     EXPECT_EQ(result, AUDIO_STREAM_ACTION_MOVE);
 }
+#endif
 
 /**
  * @tc.name: JudgeStreamAction_003

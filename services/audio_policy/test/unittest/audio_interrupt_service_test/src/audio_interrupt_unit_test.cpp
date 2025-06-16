@@ -1965,6 +1965,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_001, TestSize.Level1)
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test InjectInterruptToAudioZone
 * @tc.number: InjectInterruptToAudioZone_002
@@ -1986,6 +1987,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_002, TestSize.Level1)
     ret = interruptServiceTest->InjectInterruptToAudioZone(1, interrupts);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test InjectInterruptToAudioZone

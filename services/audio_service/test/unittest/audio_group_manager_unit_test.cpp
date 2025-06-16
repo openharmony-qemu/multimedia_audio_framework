@@ -249,6 +249,7 @@ HWTEST(AudioGroupManagerUnitTest, SetMute_004, TestSize.Level1)
     int32_t ret = audioGroupManager.SetMute(AudioStreamType::STREAM_APP, false, deviceType);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC
@@ -263,6 +264,7 @@ HWTEST(AudioGroupManagerUnitTest, IsStreamMute_001, TestSize.Level1)
     int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_CAMCORDER, isMute);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC

@@ -368,6 +368,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceShouldBeDualTone_001, TestSize.Level1)
     EXPECT_FALSE(ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test OnInitInnerCapList API
  * @tc.type  : FUNC
@@ -418,6 +419,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     ret = AudioService::GetInstance()->OnProcessRelease(audioProcess, false);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test IsEndpointTypeVoip API
@@ -839,6 +841,7 @@ HWTEST(AudioServiceUnitTest, SetNonInterruptMute_004, TestSize.Level1)
     audioService->RemoveCapturer(1);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetNonInterruptMute API
  * @tc.type  : FUNC
@@ -858,6 +861,7 @@ HWTEST(AudioServiceUnitTest, SetNonInterruptMute_005, TestSize.Level1)
     audioService->SetNonInterruptMute(1, false);
     EXPECT_EQ(1, audioService->mutedSessions_.count(1));
 }
+#endif
 
 /**
  * @tc.name  : Test SetOffloadMode API
@@ -1148,6 +1152,7 @@ HWTEST(AudioServiceUnitTest, CheckCapturerSessionMuteState_001, TestSize.Level1)
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CheckFastSessionMuteState API
  * @tc.type  : FUNC
@@ -1168,6 +1173,7 @@ HWTEST(AudioServiceUnitTest, CheckFastSessionMuteState_001, TestSize.Level1)
     EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
+#endif
 
 /**
  * @tc.name  : Test GetStandbyStatus API

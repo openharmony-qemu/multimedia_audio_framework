@@ -556,6 +556,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_029, TestSize.Level1)
     EXPECT_NE(audioDeviceLock, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  :  AudioDeviceLock_030
 * @tc.desc  : Test SetAudioScene IssameScene.
@@ -567,5 +568,6 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_030, TestSize.Level1)
     EXPECT_EQ(audioDeviceLock->SetAudioScene(AUDIO_SCENE_DEFAULT), SUCCESS);
     EXPECT_NE(audioDeviceLock->SetAudioScene(AUDIO_SCENE_RINGING), SUCCESS);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

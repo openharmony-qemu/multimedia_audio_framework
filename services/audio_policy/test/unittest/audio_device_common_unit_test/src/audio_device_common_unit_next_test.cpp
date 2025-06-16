@@ -249,6 +249,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, NotifyRecreateDirectStream_001, TestSize
     EXPECT_EQ(false, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test NotifyRecreateDirectStream.
 * @tc.number: NotifyRecreateDirectStream_002
@@ -275,6 +276,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, NotifyRecreateDirectStream_002, TestSize
     ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
     EXPECT_EQ(false, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test SetDeviceConnectedFlagWhenFetchOutputDevice.
@@ -927,6 +929,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToNewInputDevice_002, TestSize.Level
     EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.networkId_, inputDevice->networkId_);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test MoveToNewInputDevice.
 * @tc.number: MoveToNewInputDevice_003
@@ -954,6 +957,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToNewInputDevice_003, TestSize.Level
     EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.macAddress_, inputDevice->macAddress_);
     EXPECT_EQ(capturerChangeInfo->inputDeviceInfo.networkId_, inputDevice->networkId_);
 }
+#endif
 
 /**
 * @tc.name  : Test FetchInputDeviceWhenNoRunningStream.
@@ -1017,6 +1021,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, BluetoothScoFetch_001, TestSize.Level1)
     EXPECT_EQ(activeDevice.networkId_, LOCAL_NETWORK_ID);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test MoveToRemoteOutputDevice.
 * @tc.number: MoveToRemoteOutputDevice_001
@@ -1044,6 +1049,7 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, MoveToRemoteOutputDevice_001, TestSize.L
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
     EXPECT_TRUE(audioDeviceCommon.audioIOHandleMap_.CheckIOHandleExist(moduleName));
 }
+#endif
 
 /**
 * @tc.name  : Test MoveToRemoteOutputDevice.

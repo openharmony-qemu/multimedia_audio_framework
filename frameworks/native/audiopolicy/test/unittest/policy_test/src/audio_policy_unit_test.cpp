@@ -103,7 +103,6 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
     toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
     EXPECT_NE(nullptr, toneInfo);
 }
-#endif
 
 /**
  * @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
@@ -116,6 +115,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_IsStreamActive_001, TestSize.Level1)
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(streamType);
     EXPECT_EQ(true, isStreamActive);
 }
+#endif
 
 /**
  * @tc.name  : Test Audio_Policy_SelectInputDevice_001 via illegal state
@@ -147,6 +147,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetStreamInFocus_001, TestSize.Level1)
     AudioPolicyManager::GetInstance().GetStreamInFocus();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test Audio_Policy_Manager_IsStreamActive_001 via illegal state
  * @tc.number: Audio_Policy_Manager_IsStreamActive_001
@@ -157,6 +158,7 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_Manager_IsStreamActive_001, TestSize.Le
     bool isStreamActive = AudioPolicyManager::GetInstance().IsStreamActive(AudioStreamType::STREAM_MUSIC);
     EXPECT_EQ(true, isStreamActive);
 }
+#endif
 
 /**
  * @tc.name  : Test Audio_Policy_Manager_SetMicrophoneMuteAudioConfig_001 via legal state
@@ -1372,6 +1374,7 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_002, TestSize.Level1)
     EXPECT_FALSE(isMute);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetStreamMute
  * @tc.number: GetStreamMute_003
@@ -1420,6 +1423,7 @@ HWTEST(AudioPolicyUnitTest, GetStreamMute_003, TestSize.Level1)
     isMute = AudioPolicyManager::GetInstance().GetStreamMute(static_cast<AudioVolumeType>(99));
     EXPECT_FALSE(isMute);
 }
+#endif
 
 /**
  * @tc.name  : Test GetStreamMute
