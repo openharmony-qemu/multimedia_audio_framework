@@ -433,6 +433,69 @@ describe("AudioRendererJsUnitTest", function() {
     })
 
     /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001
+     * @tc.desc:setLoudnessGain and getLoudnessGain success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001', 0, async function (done) {
+        await audioRenderer.setLoudnessGain(10).then(() => {
+            try {
+                let data = audioRenderer.getLoudnessGain();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001 SUCCESS: ${data}`);
+                expect(data).assertEqual(10);
+                done();
+            } catch (error) {
+                console.error(`setLoudnessGain ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002
+     * @tc.desc:setLoudnessGain and getLoudnessGain success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002', 0, async function (done) {
+        await audioRenderer.setLoudnessGain(-96).then(() => {
+            try {
+                let data = audioRenderer.getLoudnessGain();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 SUCCESS: ${data}`);
+                expect(data).assertEqual(-96);
+                done();
+            } catch (error) {
+                console.error(`setLoudnessGain ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003
+     * @tc.desc:setLoudnessGain and getLoudnessGain success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003', 0, async function (done) {
+        await audioRenderer.setLoudnessGain(24).then(() => {
+            try {
+                let data = audioRenderer.getLoudnessGain();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003 SUCCESS: ${data}`);
+                expect(data).assertEqual(24);
+                done();
+            } catch (error) {
+                console.error(`setLoudnessGain ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
      * @tc.name:SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001
      * @tc.desc:setSilentModeAndMixWithOthers and getSilentModeAndMixWithOthers success
      * @tc.type: FUNC

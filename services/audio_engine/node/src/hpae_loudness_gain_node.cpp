@@ -27,7 +27,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static const std::string LOUDNESSGAIN_PATH = "system/lib64/libaudio_integration_loudness.z.so";
+static const std::string LOUDNESSGAIN_PATH = "/system/lib64/libaudio_integration_loudness.z.so";
 static constexpr float EPSILON = 1e-6f;
 static constexpr uint32_t SAMPLE_RATE = 48000;
 static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
@@ -123,9 +123,8 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
         pcmBufferInfo_.frameLen != input->GetFrameLen() ||
         pcmBufferInfo_.rate != input->GetSampleRate() ||
         pcmBufferInfo_.channelLayout != input->GetChannelLayout());
-    // to-do: add log before change
-    AUDIO_INFO_LOG("Update pcmBufferInfo_: channel count: %{public}u -> %{public}u, frame len: %{public}u -> %{public}u, "
-        "sample rate: %{public}u -> %{public}u, channel layout: %{public}" PRIu64 " -> %{public}" PRIu64,
+    AUDIO_INFO_LOG("Update pcmBufferInfo_: channel count: %{public}u -> %{public}u, frame len: %{public}u -> "
+        "%{public}u, sample rate: %{public}u -> %{public}u, channel layout: %{public}" PRIu64 " -> %{public}" PRIu64,
         pcmBufferInfo_.ch, input->GetChannelCount(), pcmBufferInfo_.frameLen, input->GetFrameLen(),
         pcmBufferInfo_.rate, input->GetSampleRate(), pcmBufferInfo_.channelLayout, input->GetChannelLayout());
     pcmBufferInfo_.ch = input->GetChannelCount();
@@ -149,7 +148,7 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
 
 
 int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
-{  
+{
     CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     
@@ -157,7 +156,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         AUDIO_INFO_LOG("Releasing handle...");
         CHECK_AND_RETURN_RET_LOG(handle_, ERROR, "no handle.");
         int32_t ret = audioEffectLibHandle_->releaseEffect(handle_);
-        CHECK_AND_RETURN_RET_LOG(ret, ERROR, "handle releasing failed.");
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "handle releasing failed.");
         handle_ = nullptr;
         loudnessGain_ = loudnessGain;
         return SUCCESS;

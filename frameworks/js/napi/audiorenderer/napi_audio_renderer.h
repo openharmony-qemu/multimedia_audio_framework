@@ -64,6 +64,7 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        double loudnessGain;
         uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
@@ -108,6 +109,8 @@ private:
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
+    static napi_value SetLoudnessGain(napi_env env, napi_callback_info info);
+    static napi_value GetLoudnessGain(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetStreamInfo(napi_env env, napi_callback_info info);
@@ -182,6 +185,8 @@ private:
 
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
+    static constexpr double MIN_LOUDNESS_GAIN_IN_FLOAT = -96.0;
+    static constexpr double MAX_LOUDNESS_GAIN_IN_FLOAT = 24.0;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;

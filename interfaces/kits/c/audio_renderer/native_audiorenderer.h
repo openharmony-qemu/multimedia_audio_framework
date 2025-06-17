@@ -329,6 +329,26 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, flo
 OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* renderer, float volume, int32_t durationMs);
 
 /**
+ * Set loudnessGain of current renderer.
+ *
+ * @since 20
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param loudnessGain LoudnessGain to set, -96.0 <= loudnessGain <=24.0.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain);
+
+/**
+ * Get loudnessGain of current renderer.
+ *
+ * @since 20
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param loudnessGain Pointer to a variable to receive the loudnessGain.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer* renderer, float* loudnessGain);
+
+/**
  * Get Volume of current renderer.
  *
  * @since 12

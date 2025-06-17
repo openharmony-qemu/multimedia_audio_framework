@@ -293,6 +293,25 @@ OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer *renderer, flo
     return AUDIOSTREAM_SUCCESS;
 }
 
+OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= -96.0) && (loudnessGain <= 24.0)), AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "loudnessGain set invalid");
+    int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
+    return ConvertError(err);
+}
+
+OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer* renderer, float* loudnessGain)
+{
+    OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
+    CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    CHECK_AND_RETURN_RET_LOG(loudnessGain != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain is nullptr");
+    *loudnessGain = audioRenderer->GetLoudnessGain();
+    return AUDIOSTREAM_SUCCESS;
+}
+
 OH_AudioStream_Result OH_AudioRenderer_SetMarkPosition(OH_AudioRenderer *renderer, uint32_t samplePos,
     OH_AudioRenderer_OnMarkReachedCallback callback, void *userData)
 {
@@ -600,6 +619,18 @@ int32_t OHAudioRenderer::SetVolumeWithRamp(float volume, int32_t duration)
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetVolumeWithRamp(volume, duration);
+}
+
+int32_t OHAudioRenderer::SetLoudnessGain(float loudnessGain)
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->SetLoudnessGain(loudnessGain);
+}
+
+float OHAudioRenderer:GetLoudnessGain()
+{
+    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
+    return audioRenderer_->GetLoudnessGain();    
 }
 
 int32_t OHAudioRenderer::SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
