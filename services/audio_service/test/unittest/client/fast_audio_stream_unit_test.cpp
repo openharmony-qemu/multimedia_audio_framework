@@ -1569,6 +1569,7 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_002, TestSize.Level1)
  */
 HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
 {
+    int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream =
         std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     EXPECT_NE(fastAudioStream, nullptr);
