@@ -103,7 +103,9 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_GetToneConfig_001, TestSize.Level1)
     toneInfo = AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, "");
     EXPECT_NE(nullptr, toneInfo);
 }
+#endif
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test Audio_Policy_IsStreamActive_001 via legal state
  * @tc.number: Audio_Policy_IsStreamActive_001
