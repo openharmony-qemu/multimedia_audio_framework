@@ -270,8 +270,9 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest)
     TestIRendererManagerStartPuaseStream<HpaeOffloadRendererManager>();
 }
 
-static void HapeRendererManagerCreateStream(
-    std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager, HpaeStreamInfo &streamInfo)
+template <class RenderManagerType>
+static void HpaeRendererManagerCreateStream(
+    std::shared_ptr<RenderManagerType> &hpaeRendererManager, HpaeStreamInfo &streamInfo)
 {
     streamInfo.channels = STEREO;
     streamInfo.samplingRate = SAMPLE_RATE_44100;
@@ -310,7 +311,7 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001)
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
 
     EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
@@ -348,8 +349,8 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
     EXPECT_EQ(hpaeRendererManagerNew->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = 1;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
-    HapeRendererManagerCreateStream(hpaeRendererManagerNew, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManagerNew, streamInfo);
 
     EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
@@ -667,7 +668,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_001)
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
 
     uint32_t invalidSessionId = 999; // Assuming this ID doesn't exist
     std::string sinkName = "valid_sink_name";
@@ -702,7 +703,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_002)
     
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
 
     std::string emptySinkName;
     hpaeRendererManager->MoveStreamSync(streamInfo.sessionId, emptySinkName);
@@ -734,7 +735,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_003)
     
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     
     EXPECT_EQ(hpaeRendererManager->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -771,7 +772,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
     
     HpaeStreamInfo streamInfo;
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    HapeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeRendererManagerCreateStream(hpaeRendererManager, streamInfo);
     EXPECT_EQ(hpaeRendererManager->Pause(TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
 
