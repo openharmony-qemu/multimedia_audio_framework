@@ -110,7 +110,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
 #ifdef ENABLE_HOOK_PCM
         HandlePcmDumping(streamType, renderFrameData, renderFrameData_.size());
 #endif
-        auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(),
+        auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
             writeLen, std::to_string(static_cast<int>(streamType)).c_str());
         if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("HpaeRemoteSinkOutputNode: RenderFrame failed, SplitStreamType %{public}d", streamType);
