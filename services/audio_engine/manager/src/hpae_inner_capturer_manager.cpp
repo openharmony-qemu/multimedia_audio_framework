@@ -647,6 +647,7 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    nodeInfo.sourceType = streamInfo.sourceType;
     AUDIO_INFO_LOG("nodeInfo.channels %{public}d, nodeInfo.format %{public}hhu, nodeInfo.frameLen %{public}d",
         nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);

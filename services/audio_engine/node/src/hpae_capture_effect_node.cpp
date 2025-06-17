@@ -203,7 +203,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
 int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERROR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
 }
 

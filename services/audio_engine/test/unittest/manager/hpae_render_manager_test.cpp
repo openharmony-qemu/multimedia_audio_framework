@@ -183,6 +183,8 @@ void TestIRendererManagerCreateDestoryStream()
     WaitForMsgProcessing(hpaeRendererManager);
     ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
     EXPECT_EQ(ret == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 template <class RenderManagerType>
@@ -234,6 +236,8 @@ static void TestIRendererManagerStartPuaseStream()
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(
         hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 TEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest)
@@ -309,6 +313,8 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
@@ -348,6 +354,10 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(INVALID_ID) == SUCCESS, true);
     EXPECT_EQ(hpaeRendererManagerNew->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManagerNew);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManagerNew->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManagerNew);
 }
 
@@ -404,17 +414,12 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(
         hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
-/**
- * @tc.name  : Test UpdateCollaborativeState
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeState_001
- * @tc.desc  : Test UpdateCollaborativeState before stream is created.
- */
-TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
+static void GetBtSpeakerSinkInfo(HpaeSinkInfo &sinkInfo)
 {
-    HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
@@ -425,6 +430,17 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     sinkInfo.deviceName = "Bt_Speaker";
+}
+/**
+ * @tc.name  : Test UpdateCollaborativeState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState before stream is created.
+ */
+TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -461,6 +477,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
     EXPECT_EQ(hpaeRendererManager->UpdateCollaborativeState(false), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
@@ -473,16 +491,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
 TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
 {
     HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    sinkInfo.deviceName = "Bt_Speaker";
+    GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -519,6 +528,8 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 /**
@@ -557,6 +568,8 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     EXPECT_EQ(hpaeRendererManager->IsRunning(), true);
     ret = hpaeRendererManager->DisConnectCoBufferNode(coBufferNode);
     EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
 }  // namespace
