@@ -615,6 +615,180 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
     EXPECT_NE(result, TEST_RET_NUM);
 }
 
+/**
+ * @tc.name   : Test GetVolumeEvent API
+ * @tc.number : GetVolumeEvent_001
+ * @tc.desc   : Test GetVolumeEvent interface when VolumeEvent is not empty.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeEvent_001, TestSize.Level1)
+{
+    std::unordered_map<AudioStreamType, VolumeEvent> expectedVolumeEventMap;
+    expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC] = VolumeEvent();
+    expectedVolumeEventMap[AudioStreamType::STREAM_RING] = VolumeEvent();
+ 
+    AudioSystemManager::GetInstance()->volumeEventMap_ = expectedVolumeEventMap;
+ 
+    auto actualVolumeEventMap = AudioSystemManager::GetInstance()->GetVolumeEvent();
+ 
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].updateUi);
+}
+ 
+/**
+ * @tc.name   : Test GetVolumeEvent API
+ * @tc.number : GetVolumeEvent_002
+ * @tc.desc   : Test GetVolumeEvent interface when VolumeEvent is empty.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeEvent_002, TestSize.Level1)
+{
+    std::unordered_map<AudioStreamType, VolumeEvent> expectedVolumeEventMap;
+ 
+    AudioSystemManager::GetInstance()->volumeEventMap_ = expectedVolumeEventMap;
+ 
+    auto actualVolumeEventMap = AudioSystemManager::GetInstance()->GetVolumeEvent();
+ 
+    EXPECT_TRUE(actualVolumeEventMap.empty());
+}
+ 
+/**
+ * @tc.name   : Test SetVolumeEvent API
+ * @tc.number : SetVolumeEvent_001
+ * @tc.desc   : Test SetVolumeEvent interface when AudioStreamType is MUSIC.
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeEvent_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    VolumeEvent event = VolumeEvent();
+ 
+    manager.SetVolumeEvent(AudioStreamType::STREAM_MUSIC, event);
+ 
+    EXPECT_EQ(manager.volumeEventMap_[AudioStreamType::STREAM_MUSIC].volumeType, event.volumeType);
+}
+ 
+/**
+ * @tc.name   : Test SetVolumeEvent API
+ * @tc.number : SetVolumeEvent_002
+ * @tc.desc   : Test SetVolumeEvent interface when AudioStreamType is VOICE_COMMUNICATION.
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeEvent_002, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    VolumeEvent event = VolumeEvent();
+ 
+    manager.SetVolumeEvent(AudioStreamType::STREAM_VOICE_COMMUNICATION, event);
+ 
+    EXPECT_EQ(manager.volumeEventMap_[AudioStreamType::STREAM_VOICE_COMMUNICATION].volumeType, event.volumeType);
+}
+ 
+ 
+/**
+ * @tc.name   : Test GetAudioRendererChangeInfo API
+ * @tc.number : GetAudioRendererChangeInfo_001
+ * @tc.desc   : Test GetAudioRendererChangeInfo interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioRendererChangeInfo_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+ 
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioRendererChangeInfo>> expectedMap;
+    expectedMap[AudioStreamType::STREAM_MUSIC] = std::make_shared<AudioRendererChangeInfo>();
+    expectedMap[AudioStreamType::STREAM_ALARM] = std::make_shared<AudioRendererChangeInfo>();
+ 
+    manager.audioRendererChangeInfoMap_ = expectedMap;
+ 
+    auto actualMap = manager.GetAudioRendererChangeInfo();
+    
+    EXPECT_EQ(actualMap, expectedMap);
+}
+ 
+/**
+ * @tc.name   : Test SetAudioRendererChangeInfo API
+ * @tc.number : SetAudioRendererChangeInfo_001
+ * @tc.desc   : Test SetAudioRendererChangeInfo interface when set once.
+ */
+HWTEST(AudioSystemManagerUnitTest, SetAudioRendererChangeInfo_001, TestSize.Level1)
+{
+    AudioStreamType type = AudioStreamType::STREAM_MUSIC;
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+ 
+    AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(type, info);
+ 
+    auto storedInfo = AudioSystemManager::GetInstance()->audioRendererChangeInfoMap_[type];
+    EXPECT_EQ(storedInfo, info);
+}
+ 
+/**
+ * @tc.name   : Test SetAudioRendererChangeInfo API
+ * @tc.number : SetAudioRendererChangeInfo_002
+ * @tc.desc   : Test SetAudioRendererChangeInfo interface when set twice.
+ */
+HWTEST(AudioSystemManagerUnitTest, SetAudioRendererChangeInfo_002, TestSize.Level1)
+{
+    AudioStreamType type = AudioStreamType::STREAM_MUSIC;
+    auto info1 = std::make_shared<AudioRendererChangeInfo>();
+    auto info2 = std::make_shared<AudioRendererChangeInfo>();
+ 
+    AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(type, info1);
+ 
+    AudioSystemManager::GetInstance()->SetAudioRendererChangeInfo(type, info2);
+ 
+    auto storedInfo = AudioSystemManager::GetInstance()->audioRendererChangeInfoMap_[type];
+    EXPECT_EQ(storedInfo, info2);
+}
+ 
+/**
+ * @tc.name   : Test IsValidStreamType API
+ * @tc.number : IsValidStreamType_001
+ * @tc.desc   : Test IsValidStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsValidStreamType_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    EXPECT_FALSE(manager.IsValidStreamType(AudioStreamType::STREAM_ALARM));
+    EXPECT_TRUE(manager.IsValidStreamType(AudioStreamType::STREAM_MUSIC));
+    EXPECT_TRUE(manager.IsValidStreamType(AudioStreamType::STREAM_VOICE_COMMUNICATION));
+}
+ 
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_001
+ * @tc.desc   : Test StartGroup interface when startTime > endTime.
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 1000;
+    int32_t endTimeMs = 500;
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+ 
+/**
+ * @tc.name   : Test StartGroup API
+ * @tc.number : StartGroup_002
+ * @tc.desc   : Test StartGroup interface when startTime < endTime.
+ */
+HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    int32_t testWorkgroupid = 1;
+    int32_t startTimeMs = 1000;
+    int32_t endTimeMs = 2000;
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
 #ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test SetAppVolumeCallbackForUid API
