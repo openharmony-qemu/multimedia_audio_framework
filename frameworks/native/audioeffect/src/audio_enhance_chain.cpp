@@ -28,7 +28,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-
+namespace {
 const uint32_t BITLENGTH = 8;
 const uint32_t MILLISECOND = 1000;
 const uint32_t DEFAULT_FRAMELENGTH = 20;
@@ -63,29 +63,30 @@ const std::map<uint32_t, AudioSampleFormat> FORMAT_CONVERT_MAP = {
     {BYTE_SIZE_SAMPLE_S32, SAMPLE_S32LE},
 };
 
-AudioEnhanceChain::AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
-    const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag)
+AudioSampleFormat ConvertFormat(uint32_t format)
 {
-    sceneType_ = scene;
-    algoParam_ = algoParam;
-    defaultFlag_ = defaultFlag;
+    auto item = FORMAT_CONVERT_MAP.find(format);
+    if (item != FORMAT_CONVERT_MAP.end()) {
+        return item->second;
+    }
+    return INVALID_WIDTH;
+}
+} // namespace
+
+AudioEnhanceChain::AudioEnhanceChain(uint64_t chainId, const std::string &scene, ScenePriority scenePriority,
+    const AudioEnhanceParamAdapter &algoParam, const AudioEnhanceDeviceAttr &deviceAttr)
+    : chainId_(chainId), sceneType_(scene), scenePriority_(scenePriority), algoParam_(algoParam)
+{
     deviceAttr_ = deviceAttr;
     if (deviceAttr_.micChannels == 1) {
         deviceAttr_.micChannels = DEFAULT_MICNUM;
     }
-    
+
     InitAudioEnhanceChain();
-    InitDump();
 }
 
 void AudioEnhanceChain::InitAudioEnhanceChain()
 {
-    setConfigFlag_ = false;
-    needEcFlag_ = false;
-    needMicRefFlag_ = false;
-    enhanceLibHandles_.clear();
-    standByEnhanceHandles_.clear();
-
     if ((algoParam_.preDevice == DEFAULT_DEVICE_TYPE) && (deviceAttr_.micChannels != DEFAULT_DEVICE_TYPE_CH)) {
         AUDIO_WARNING_LOG("mic channel[%{public}d] is set to 4", deviceAttr_.micChannels);
         deviceAttr_.micChannels = DEFAULT_DEVICE_TYPE_CH;
@@ -93,7 +94,7 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
 
     algoSupportedConfig_ = {DEFAULT_FRAMELENGTH, DEFAULT_SAMPLE_RATE, DEFAULT_FORMAT * BITLENGTH,
         deviceAttr_.micChannels, DEFAULT_ECOFF_CH, DEFAULT_MICREFOFF_CH, deviceAttr_.micChannels};
-    
+
     uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (DEFAULT_SAMPLE_RATE / MILLISECOND) * DEFAULT_FORMAT;
     algoAttr_ = {DEFAULT_FORMAT, deviceAttr_.micChannels, byteLenPerFrame};
 
@@ -101,65 +102,96 @@ void AudioEnhanceChain::InitAudioEnhanceChain()
         needEcFlag_ = true;
         algoSupportedConfig_.ecNum = DEFAULT_ECON_CH;
         algoAttr_.batchLen = deviceAttr_.micChannels + algoSupportedConfig_.ecNum;
+        enhanceBuf_.ecBuffer.resize(deviceAttr_.ecChannels * byteLenPerFrame);
     }
 
     if (count(NEED_MICREF_SCENE.begin(), NEED_MICREF_SCENE.end(), sceneType_)) {
         needMicRefFlag_ = true;
         algoSupportedConfig_.micRefNum = DEFAULT_MICREFON_CH;
         algoAttr_.batchLen += algoSupportedConfig_.micRefNum;
+        enhanceBuf_.micRefBuffer.resize(deviceAttr_.micRefChannels * byteLenPerFrame);
     }
 
+    enhanceBuf_.micBuffer.resize(deviceAttr_.micChannels * byteLenPerFrame);
+    outputCache_.resize(deviceAttr_.micChannels * byteLenPerFrame);
     algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
     algoCache_.output.resize(algoAttr_.byteLenPerFrame * deviceAttr_.micChannels);
-    AUDIO_INFO_LOG("micNum: %{public}u ecNum: %{public}u micRefNum: %{public}u outNum: %{public}u \
-        byteLenPerFrame: %{public}u inputsize:%{public}zu outputsize:%{public}zu",
+    AUDIO_INFO_LOG("micNum: %{public}u ecNum: %{public}u micRefNum: %{public}u outNum: %{public}u"
+        " byteLenPerFrame: %{public}u inputsize:%{public}zu outputsize:%{public}zu",
         algoSupportedConfig_.micNum, algoSupportedConfig_.ecNum, algoSupportedConfig_.micRefNum,
         algoSupportedConfig_.outNum, byteLenPerFrame, algoCache_.input.size(), algoCache_.output.size());
-}
 
-void AudioEnhanceChain::InitDump()
-{
-    std::string dumpFileName = "Enhance_";
-    std::string dumpFileInName = dumpFileName + sceneType_ + "_" + GetTime() + "_In";
-    if (needEcFlag_) {
-        dumpFileInName += "_EC_" + std::to_string(algoSupportedConfig_.ecNum);
-    }
-    dumpFileInName += "_Mic_" + std::to_string(algoSupportedConfig_.micNum);
-    if (needMicRefFlag_) {
-        dumpFileInName += "_MicRef_" + std::to_string(algoSupportedConfig_.micRefNum);
-    }
-    dumpFileInName += ".pcm";
-    std::string dumpFileOutName = dumpFileName + sceneType_ + "_" + GetTime() + "_Out.pcm";
-    std::string dumpFileDeInterleaverName = dumpFileName + sceneType_ + "_" + GetTime() + "_DeInterLeaver.pcm";
+    traceTagIn_ = sceneType_ + "_IN";
+    traceTagOut_ = sceneType_ + "_OUT";
+    dfxStreamInfo_ = { static_cast<AudioSamplingRate>(DEFAULT_SAMPLE_RATE), AudioEncodingType::ENCODING_PCM,
+        ConvertFormat(DEFAULT_FORMAT), static_cast<AudioChannel>(deviceAttr_.micChannels) };
+    std::string dumpFileInName = "Enhance_" + sceneType_ + "_" + GetTime() + "_In_" +
+        std::to_string(algoSupportedConfig_.ecNum) + "Ec_" + std::to_string(algoSupportedConfig_.micNum) + "Mic_" +
+        std::to_string(algoSupportedConfig_.micRefNum) + "MicRef.pcm";
+    std::string dumpFileOutName = "Enhance_" + sceneType_ + "_" + GetTime() + "_Out.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileInName, &dumpFileIn_);
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileOutName, &dumpFileOut_);
-    DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileDeInterleaverName, &dumpFileDeinterLeaver_);
 }
 
 AudioEnhanceChain::~AudioEnhanceChain()
 {
-    ReleaseEnhanceChain();
+    threadHandler_ = nullptr;
+    ReleaseAllEnhanceModule();
     DumpFileUtil::CloseDumpFile(&dumpFileIn_);
     DumpFileUtil::CloseDumpFile(&dumpFileOut_);
-    DumpFileUtil::CloseDumpFile(&dumpFileDeinterLeaver_);
 }
 
-void AudioEnhanceChain::ReleaseEnhanceChain()
+void AudioEnhanceChain::ReleaseAllEnhanceModule()
 {
-    for (uint32_t i = 0; i < standByEnhanceHandles_.size() && i < enhanceLibHandles_.size(); i++) {
-        if (!enhanceLibHandles_[i]) {
-            continue;
+    for (auto &module : enhanceModules_) {
+        if (module.libHandle != nullptr) {
+            module.libHandle->releaseEffect(module.enhanceHandle);
         }
-        if (!standByEnhanceHandles_[i]) {
-            continue;
-        }
-        if (!enhanceLibHandles_[i]->releaseEffect) {
-            continue;
-        }
-        enhanceLibHandles_[i]->releaseEffect(standByEnhanceHandles_[i]);
     }
-    standByEnhanceHandles_.clear();
-    enhanceLibHandles_.clear();
+    enhanceModules_.clear();
+}
+
+int32_t AudioEnhanceChain::SetThreadHandler(const std::shared_ptr<ThreadHandler> &threadHandler)
+{
+    if (threadHandler == nullptr) {
+        AUDIO_ERR_LOG("threadHandler is null");
+        return ERROR;
+    }
+
+    threadHandler_ = threadHandler;
+    return SUCCESS;
+}
+
+void AudioEnhanceChain::ScheduleAudioTask(const ThreadHandler::Task &task)
+{
+    if (threadHandler_ != nullptr) {
+        threadHandler_->PostTask(task);
+    } else {
+        task();
+    }
+}
+
+int32_t AudioEnhanceChain::ProcessSetInputDevice(const std::string &inputDevice, const std::string &deviceName)
+{
+    if (inputDevice == algoParam_.preDevice) {
+        AUDIO_INFO_LOG("the current device does not need to be updated");
+        return SUCCESS;
+    }
+    algoParam_.preDevice = inputDevice;
+    algoParam_.preDeviceName = deviceName;
+    AUDIO_INFO_LOG("update input device %{public}s name %{public}s", inputDevice.c_str(), deviceName.c_str());
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    for (const auto &module : enhanceModules_) {
+        auto setParaCmdRet = SetEnhanceParamToHandle(module.enhanceHandle);
+        CHECK_AND_RETURN_RET_LOG(setParaCmdRet == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
+        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(initCmdRet == 0, ERROR,
+            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+    }
+
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const std::string &deviceName)
@@ -167,60 +199,83 @@ int32_t AudioEnhanceChain::SetInputDevice(const std::string &inputDevice, const 
     if (inputDevice.size() == 0) {
         return SUCCESS;
     }
-    algoParam_.preDevice = inputDevice;
-    algoParam_.preDeviceName = deviceName;
-    AUDIO_INFO_LOG("update input device %{public}s name %{public}s", inputDevice.c_str(), deviceName.c_str());
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    uint32_t size = standByEnhanceHandles_.size();
-    AudioEffectTransInfo cmdInfo = {};
-    AudioEffectTransInfo replyInfo = {};
-    for (uint32_t index = 0; index < size; index++) {
-        auto &handle = standByEnhanceHandles_[index];
-        CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
-        CHECK_AND_RETURN_RET_LOG((*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == 0, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
-    }
+
+    auto task = [self = weak_from_this(), inputDevice, deviceName]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetInputDevice(inputDevice, deviceName);
+        }
+    };
+
+    ScheduleAudioTask(task);
+
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
+int32_t AudioEnhanceChain::ProcessSetFoldState(uint32_t foldState)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    if (algoParam_.foldState == foldState) {
+    if (foldState == algoParam_.foldState) {
         AUDIO_INFO_LOG("no need update fold state %{public}u", foldState);
         return SUCCESS;
     }
     algoParam_.foldState = foldState;
     AUDIO_INFO_LOG("update fold state %{public}u", foldState);
+
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
-    for (const auto &handle : standByEnhanceHandles_) {
-        CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
+    for (const auto &module : enhanceModules_) {
+        auto setParaCmdRet = SetEnhanceParamToHandle(module.enhanceHandle);
+        CHECK_AND_RETURN_RET_LOG(setParaCmdRet == SUCCESS, ERROR,
             "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
-        CHECK_AND_RETURN_RET_LOG((*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == 0, ERROR,
+        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(initCmdRet == 0, ERROR,
             "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
     }
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::SetFoldState(uint32_t foldState)
+{
+    auto task = [self = weak_from_this(), foldState]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetFoldState(foldState);
+        }
+    };
+
+    ScheduleAudioTask(task);
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ProcessSetEnhanceParam(bool mute, uint32_t systemVol)
+{
+    algoParam_.muteInfo = mute;
+    algoParam_.volumeInfo = systemVol;
+
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    for (const auto &module : enhanceModules_) {
+        auto setParaCmdRet = SetEnhanceParamToHandle(module.enhanceHandle);
+        CHECK_AND_RETURN_RET_LOG(setParaCmdRet == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
+        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(initCmdRet == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+    }
+
     return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::SetEnhanceParam(bool mute, uint32_t systemVol)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    algoParam_.muteInfo = mute;
-    algoParam_.volumeInfo = systemVol;
+    auto task = [self = weak_from_this(), mute, systemVol]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetEnhanceParam(mute, systemVol);
+        }
+    };
 
-    uint32_t size = standByEnhanceHandles_.size();
-    AudioEffectTransInfo cmdInfo{};
-    AudioEffectTransInfo replyInfo{};
-    for (uint32_t index = 0; index < size; index++) {
-        auto &handle = standByEnhanceHandles_[index];
-        CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
-        CHECK_AND_RETURN_RET_LOG(
-            (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
-    }
+    ScheduleAudioTask(task);
+
     return SUCCESS;
 }
 
@@ -236,18 +291,16 @@ int32_t AudioEnhanceChain::SetEnhanceParamToHandle(AudioEffectHandle handle)
     return (*handle)->command(handle, EFFECT_CMD_SET_PARAM, &cmdInfo, &replyInfo);
 }
 
-int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle,
-    const std::string &enhance, const std::string &property)
+int32_t AudioEnhanceChain::InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    int32_t ret = 0;
+    int32_t ret = ERROR;
     AudioEffectTransInfo cmdInfo = {};
     AudioEffectTransInfo replyInfo = {};
 
     uint32_t maxSampleRate = DEFAULT_SAMPLE_RATE;
     replyInfo.data = &maxSampleRate;
     replyInfo.size = sizeof(maxSampleRate);
-    ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &replyInfo);
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &replyInfo);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("get algo maxSampleRate failed!");
     }
@@ -259,44 +312,88 @@ int32_t AudioEnhanceChain::AddEnhanceHandle(AudioEffectHandle handle, AudioEffec
 
         algoCache_.input.resize(algoAttr_.byteLenPerFrame * algoAttr_.batchLen);
         algoCache_.output.resize(algoAttr_.byteLenPerFrame * deviceAttr_.micChannels);
-        AUDIO_INFO_LOG("algo rate: %{public}u byteLenPerFrame: %{public}u inputsize:%{public}zu outputsize:%{public}zu",
+        AUDIO_INFO_LOG("algorate: %{public}u byteLenPerFrame: %{public}u inputsize:%{public}zu outputsize:%{public}zu",
             maxSampleRate, byteLenPerFrame, algoCache_.input.size(), algoCache_.output.size());
     }
 
     cmdInfo.data = static_cast<void *>(&algoSupportedConfig_);
     cmdInfo.size = sizeof(algoSupportedConfig_);
-    
-    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_SET_CONFIG fail",
         sceneType_.c_str());
 
-    CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(handle) == SUCCESS, ERROR,
-        "[%{public}s] %{public}s lib EFFECT_CMD_SET_PARAM fail", sceneType_.c_str(), libHandle->name);
+    CHECK_AND_RETURN_RET_LOG(SetEnhanceParamToHandle(enhanceHandle) == SUCCESS, ERROR,
+        "[%{public}s] EFFECT_CMD_SET_PARAM fail", sceneType_.c_str());
 
-    CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
-        "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str(), enhance.c_str());
+    CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(enhanceHandle, enhanceProp) == SUCCESS, ERROR,
+        "[%{public}s] EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str());
 
-    ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+    ret = (*enhanceHandle)->command(enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "[%{public}s], either one of libs EFFECT_CMD_INIT fail",
         sceneType_.c_str());
-    
-    setConfigFlag_ = true;
-    enhanceNames_.emplace_back(enhance);
-    standByEnhanceHandles_.emplace_back(handle);
-    enhanceLibHandles_.emplace_back(libHandle);
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ProcessCreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas)
+{
+    for (const auto &para : moduleParas) {
+        AudioEffectDescriptor descriptor = { para.libName, para.enhanceName };
+        AUDIO_INFO_LOG("libName: %{public}s enhanceName:%{public}s", para.libName.c_str(), para.enhanceName.c_str());
+        AudioEffectHandle enhanceHandle = nullptr;
+        int32_t ret = para.libHandle->createEffect(descriptor, &enhanceHandle);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "create effect: %{public}s fail", para.enhanceName.c_str());
+        CHECK_AND_RETURN_RET_LOG(enhanceHandle != nullptr, ERROR, "enhanceHandle is null");
+
+        int32_t initSingleModuleRet = InitSingleEnhanceModule(enhanceHandle, para.enhanceProp);
+        if (initSingleModuleRet != SUCCESS) {
+            AUDIO_ERR_LOG("init enhance: %{public}s fail", para.enhanceName.c_str());
+            para.libHandle->releaseEffect(enhanceHandle);
+            return ERROR;
+        }
+
+        EnhanceModule module = { para.enhanceName, enhanceHandle, para.libHandle };
+        enhanceModules_.emplace_back(module);
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        chainIsReady_ = true;
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::CreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas)
+{
+    for (const auto &para : moduleParas) {
+        if (para.libHandle == nullptr || para.libHandle->createEffect == nullptr ||
+            para.libHandle->releaseEffect == nullptr) {
+            AUDIO_ERR_LOG("enhance: %{public}s interface is null", para.enhanceName.c_str());
+            return ERROR;
+        }
+    }
+
+    auto task = [self = weak_from_this(), moduleParas]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessCreateAllEnhanceModule(moduleParas);
+        }
+    };
+
+    ScheduleAudioTask(task);
+
     return SUCCESS;
 }
 
 bool AudioEnhanceChain::IsEmptyEnhanceHandles()
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    return standByEnhanceHandles_.size() == 0;
+    return enhanceModules_.empty();
 }
 
 void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig,
     AudioBufferConfig &micRefConfig)
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
     uint8_t configDataformat = static_cast<uint8_t>(algoSupportedConfig_.dataFormat);
     micConfig.samplingRate = algoSupportedConfig_.sampleRate;
     micConfig.channels = algoSupportedConfig_.micNum;
@@ -307,7 +404,6 @@ void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferC
         ecConfig.channels = algoSupportedConfig_.ecNum;
         ecConfig.format = configDataformat;
     }
-
     if (needMicRefFlag_) {
         micRefConfig.samplingRate = algoSupportedConfig_.sampleRate;
         micRefConfig.channels = algoSupportedConfig_.micRefNum;
@@ -316,30 +412,14 @@ void AudioEnhanceChain::GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferC
     return;
 }
 
-uint32_t AudioEnhanceChain::GetAlgoBufferSize()
+uint64_t AudioEnhanceChain::GetChainId(void) const
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        DEFAULT_FORMAT;
-    return byteLenPerFrame * deviceAttr_.micChannels;
+    return chainId_;
 }
 
-uint32_t AudioEnhanceChain::GetAlgoBufferSizeEc()
+ScenePriority AudioEnhanceChain::GetScenePriority(void) const
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    CHECK_AND_RETURN_RET_LOG(needEcFlag_, 0, "%{public}s do not need ec", sceneType_.c_str());
-    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        DEFAULT_FORMAT;
-    return byteLenPerFrame * algoSupportedConfig_.ecNum;
-}
-
-uint32_t AudioEnhanceChain::GetAlgoBufferSizeMicRef()
-{
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    CHECK_AND_RETURN_RET_LOG(needMicRefFlag_, 0, "%{public}s do not need micref", sceneType_.c_str());
-    uint32_t byteLenPerFrame = DEFAULT_FRAMELENGTH * (algoSupportedConfig_.sampleRate / MILLISECOND) *
-        DEFAULT_FORMAT;
-    return byteLenPerFrame * algoSupportedConfig_.micRefNum;
+    return scenePriority_;
 }
 
 int32_t AudioEnhanceChain::DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset)
@@ -360,140 +440,40 @@ int32_t AudioEnhanceChain::DeinterleaverData(uint8_t *src, uint32_t channel, uin
     return SUCCESS;
 }
 
-int32_t AudioEnhanceChain::GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer)
+int32_t AudioEnhanceChain::ProcessSetEnhanceProperty(const std::string &enhance, const std::string &property)
 {
-    CHECK_AND_RETURN_RET_LOG(enhanceBuffer != nullptr, ERROR, "enhance buffer is null");
-
-    uint32_t offset = 0;
-    int32_t ret = 0;
-    if ((enhanceBuffer->ecBuffer.size() != 0) && needEcFlag_) {
-        ret = DeinterleaverData(enhanceBuffer->ecBuffer.data(), algoSupportedConfig_.ecNum,
-            &algoCache_.input[offset], offset);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in ec channel memcpy");
-        offset += algoAttr_.byteLenPerFrame * algoSupportedConfig_.ecNum;
-    }
-
-    if (enhanceBuffer->micBufferIn.size() != 0) {
-        ret = DeinterleaverData(enhanceBuffer->micBufferIn.data(), deviceAttr_.micChannels,
-            &algoCache_.input[offset], offset);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic channel memcpy");
-        offset += algoAttr_.byteLenPerFrame * deviceAttr_.micChannels;
-    }
-
-    if ((enhanceBuffer->micRefBuffer.size() != 0) && needMicRefFlag_) {
-        ret = DeinterleaverData(enhanceBuffer->micRefBuffer.data(), algoSupportedConfig_.micRefNum,
-            &algoCache_.input[offset], offset);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy error in mic ref channel memcpy");
-    }
-    return SUCCESS;
-}
-
-void AudioEnhanceChain::WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length)
-{
-    if (dumpFileIn_ == nullptr) {
-        return;
-    }
-    std::vector<uint8_t> buffer;
-    size_t ecLen = algoAttr_.bitDepth * algoSupportedConfig_.ecNum;
-    size_t micLen = algoAttr_.bitDepth * algoSupportedConfig_.micNum;
-    size_t micRefLen = algoAttr_.bitDepth * algoSupportedConfig_.micRefNum;
-    size_t offset = 0;
-    buffer.reserve(length);
-    for (size_t i = 0; i < algoAttr_.byteLenPerFrame / algoAttr_.bitDepth; i++) {
-        if (needEcFlag_) {
-            offset = i * ecLen;
-            buffer.insert(buffer.end(), enhanceBuffer->ecBuffer.begin() + offset,
-                enhanceBuffer->ecBuffer.begin() + offset + ecLen);
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    for (const auto &module : enhanceModules_) {
+        if (module.enhanceName != enhance) {
+            continue;
         }
-        offset = i * micLen;
-        buffer.insert(buffer.end(), enhanceBuffer->micBufferIn.begin() + offset,
-            enhanceBuffer->micBufferIn.begin() + offset + micLen);
-        if (needMicRefFlag_) {
-            offset = i * micRefLen;
-            buffer.insert(buffer.end(), enhanceBuffer->micRefBuffer.begin() + offset,
-                enhanceBuffer->micRefBuffer.begin() + offset + micRefLen);
-        }
+        auto setPropCmdRet = SetPropertyToHandle(module.enhanceHandle, property);
+        CHECK_AND_RETURN_RET_LOG(setPropCmdRet == SUCCESS, ERROR,
+            "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail", sceneType_.c_str(), enhance.c_str());
+        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(initCmdRet == SUCCESS, ERROR,
+            "[%{public}s] %{public}s effect EFFECT_CMD_INIT fail", sceneType_.c_str(), enhance.c_str());
     }
-    DumpFileUtil::WriteDumpFile(dumpFileIn_, buffer.data(), buffer.size());
-}
 
-int32_t AudioEnhanceChain::ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length)
-{
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    CHECK_AND_RETURN_RET_LOG(enhanceBuffer != nullptr, ERROR, "enhance buffer is null");
-
-    uint32_t inputLen = algoAttr_.byteLenPerFrame * algoAttr_.batchLen;
-    uint32_t outputLen = algoAttr_.byteLenPerFrame * algoSupportedConfig_.outNum;
-
-    BufferDesc bufferIn = {enhanceBuffer->micBufferIn.data(), length, length};
-    AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(deviceAttr_.micRate),
-        AudioEncodingType::ENCODING_PCM, ConvertFormat(deviceAttr_.micFormat),
-        static_cast<AudioChannel>(deviceAttr_.micChannels));
-
-    CHECK_AND_RETURN_RET_LOG(algoCache_.input.size() == inputLen, ERROR,
-        "algo cache input size:%{public}zu != inputLen:%{public}u", algoCache_.input.size(), inputLen);
-    CHECK_AND_RETURN_RET_LOG(algoCache_.output.size() == outputLen, ERROR,
-        "algo cache output size:%{public}zu != outputLen:%{public}u", algoCache_.output.size(), outputLen);
-    VolumeTools::DfxOperation(bufferIn, streamInfo, sceneType_, volumeDataCount_);
-    WriteDumpFile(enhanceBuffer, inputLen);
-    if (standByEnhanceHandles_.size() == 0) {
-        AUDIO_DEBUG_LOG("audioEnhanceChain->standByEnhanceHandles is empty");
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer->micBufferOut.data(), enhanceBuffer->micBufferOut.size(),
-            enhanceBuffer->micBufferIn.data(), length) == 0, ERROR, "memcpy error in IsEmptyEnhanceHandles");
-        return ERROR;
-    }
-    if (GetOneFrameInputData(enhanceBuffer) != SUCCESS) {
-        AUDIO_ERR_LOG("GetOneFrameInputData failed");
-        CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer->micBufferOut.data(), enhanceBuffer->micBufferOut.size(),
-            enhanceBuffer->micBufferIn.data(), length) == 0, ERROR, "memcpy error in GetOneFrameInputData");
-        return ERROR;
-    }
-    DumpFileUtil::WriteDumpFile(dumpFileDeinterLeaver_, algoCache_.input.data(), algoCache_.input.size());
-    AudioBuffer audioBufIn_ = {};
-    AudioBuffer audioBufOut_ = {};
-    audioBufIn_.frameLength = algoCache_.input.size();
-    audioBufOut_.frameLength = algoCache_.output.size();
-    audioBufIn_.raw = static_cast<void *>(algoCache_.input.data());
-    audioBufOut_.raw = static_cast<void *>(algoCache_.output.data());
-
-    for (AudioEffectHandle handle : standByEnhanceHandles_) {
-        CHECK_AND_CONTINUE_LOG(handle != nullptr, "handle is null ptr");
-        int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
-        CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] either one of libs process fail", sceneType_.c_str());
-    }
-    CHECK_AND_RETURN_RET_LOG(memcpy_s(enhanceBuffer->micBufferOut.data(), enhanceBuffer->micBufferOut.size(),
-        audioBufOut_.raw, audioBufOut_.frameLength) == 0,
-        ERROR, "memcpy error in audioBufOut_ to enhanceBuffer->output");
-    DumpFileUtil::WriteDumpFile(dumpFileOut_, enhanceBuffer->micBufferOut.data(), static_cast<uint64_t>(length));
     return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::SetEnhanceProperty(const std::string &enhance, const std::string &property)
 {
-    if (property.empty()) { return SUCCESS; }
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    uint32_t size = standByEnhanceHandles_.size();
-    AudioEffectTransInfo cmdInfo{};
-    AudioEffectTransInfo replyInfo{};
-    for (uint32_t index = 0; index < size; index++) {
-        auto &handle = standByEnhanceHandles_[index];
-        auto const &enhanceName = enhanceNames_[index];
-        if (enhance == enhanceName) {
-            CHECK_AND_RETURN_RET_LOG(SetPropertyToHandle(handle, property) == SUCCESS, ERROR,
-                "[%{public}s] %{public}s effect EFFECT_CMD_SET_PROPERTY fail",
-                sceneType_.c_str(), enhance.c_str());
-            CHECK_AND_RETURN_RET_LOG(
-                (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
-                "[%{public}s] %{public}s effect EFFECT_CMD_INIT fail",
-                sceneType_.c_str(), enhance.c_str());
+    auto task = [self = weak_from_this(), enhance, property]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessSetEnhanceProperty(enhance, property);
         }
-    }
+    };
+
+    ScheduleAudioTask(task);
+
     return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::SetPropertyToHandle(AudioEffectHandle handle, const std::string &property)
 {
-    if (property.empty()) { return SUCCESS; }
     int32_t replyData = 0;
     const char *propCstr = property.c_str();
     AudioEffectTransInfo cmdInfo = {sizeof(const char *), reinterpret_cast<void*>(&propCstr)};
@@ -501,33 +481,168 @@ int32_t AudioEnhanceChain::SetPropertyToHandle(AudioEffectHandle handle, const s
     return (*handle)->command(handle, EFFECT_CMD_SET_PROPERTY, &cmdInfo, &replyInfo);
 }
 
-bool AudioEnhanceChain::IsDefaultChain()
+int32_t AudioEnhanceChain::CacheChainInputData(const EnhanceTransBuffer &transBuf)
 {
-    return defaultFlag_;
+    if (transBuf.ecData != nullptr && transBuf.ecDataLen == enhanceBuf_.ecBuffer.size()) {
+        auto memcpyEcRet = memcpy_s(enhanceBuf_.ecBuffer.data(), enhanceBuf_.ecBuffer.size(),
+            transBuf.ecData, transBuf.ecDataLen);
+        CHECK_AND_RETURN_RET_LOG(memcpyEcRet == EOK, ERROR, "cache ec data fail");
+    }
+
+    if (transBuf.micData != nullptr && transBuf.micDataLen == enhanceBuf_.micBuffer.size()) {
+        auto memcpyMicRet = memcpy_s(enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size(),
+            transBuf.micData, transBuf.micDataLen);
+        CHECK_AND_RETURN_RET_LOG(memcpyMicRet == EOK, ERROR, "cache mic data fail");
+    }
+
+    if (transBuf.micRefData != nullptr && transBuf.micRefDataLen == enhanceBuf_.micRefBuffer.size()) {
+        auto memcpyMIcRefRet = memcpy_s(enhanceBuf_.micRefBuffer.data(), enhanceBuf_.micRefBuffer.size(),
+            transBuf.micRefData, transBuf.micRefDataLen);
+        CHECK_AND_RETURN_RET_LOG(memcpyMIcRefRet == EOK, ERROR, "cache micRef data fail");
+    }
+
+    hasTask_ = true;
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::GetOutputDataFromChain(void *buf, size_t bufSize)
+{
+    CHECK_AND_RETURN_RET_LOG(buf != nullptr, ERROR, "buf is null");
+    CHECK_AND_RETURN_RET_LOG(bufSize != 0, ERROR, "bufSize is 0");
+
+    std::lock_guard<std::mutex> lock(chainMutex_);
+    auto memcpyRet = memcpy_s(buf, bufSize, outputCache_.data(), outputCache_.size());
+    CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "memcpy chain out data fail");
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::WriteChainOutputData(void *buf, size_t bufSize)
+{
+    CHECK_AND_RETURN_RET_LOG(buf != nullptr, ERROR, "buf is null");
+    CHECK_AND_RETURN_RET_LOG(bufSize != 0, ERROR, "bufSize is 0");
+
+    auto memcpyRet = memcpy_s(outputCache_.data(), outputCache_.size(), buf, bufSize);
+    CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "write chain out data fail");
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::PrepareChainInputData(void)
+{
+    uint32_t offset = 0;
+    int32_t ret = 0;
+
+    if ((enhanceBuf_.ecBuffer.size() != 0) && needEcFlag_) {
+        ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels, &algoCache_.input[offset], offset);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver ec data fail");
+        offset += algoAttr_.byteLenPerFrame * deviceAttr_.ecChannels;
+    }
+
+    if (enhanceBuf_.micBuffer.size() != 0) {
+        BufferDesc bufferIn = { enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size(),
+            enhanceBuf_.micBuffer.size() };
+        VolumeTools::DfxOperation(bufferIn, dfxStreamInfo_, traceTagIn_, volumeDataCountIn_);
+        ret = DeinterleaverData(enhanceBuf_.micBuffer.data(), deviceAttr_.micChannels,
+            &algoCache_.input[offset], offset);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver mic data fail");
+        offset += algoAttr_.byteLenPerFrame * deviceAttr_.micChannels;
+    }
+
+    if ((enhanceBuf_.micRefBuffer.size() != 0) && needMicRefFlag_) {
+        ret = DeinterleaverData(enhanceBuf_.micRefBuffer.data(), deviceAttr_.micRefChannels,
+            &algoCache_.input[offset], offset);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver micRef data fail");
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ProcessApplyEnhanceChain(void)
+{
+    Trace trace("ProcessCapData");
+
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        CHECK_AND_RETURN_RET(hasTask_ == true, ERROR);
+        if (PrepareChainInputData() != SUCCESS || enhanceModules_.empty()) {
+            WriteChainOutputData(enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size());
+            return SUCCESS;
+        }
+        hasTask_ = false;
+    }
+
+    AudioBuffer audioBufIn = { .frameLength = algoCache_.input.size(), .raw = algoCache_.input.data() };
+    AudioBuffer audioBufOut = { .frameLength = algoCache_.output.size(), .raw = algoCache_.output.data() };
+    DumpFileUtil::WriteDumpFile(dumpFileIn_, algoCache_.input.data(), algoCache_.input.size());
+
+    for (const auto &module : enhanceModules_) {
+        int32_t ret = (*module.enhanceHandle)->process(module.enhanceHandle, &audioBufIn, &audioBufOut);
+        CHECK_AND_CONTINUE_LOG(ret == 0, "module: [%{public}s] process fail", module.enhanceName.c_str());
+    }
+
+    DumpFileUtil::WriteDumpFile(dumpFileOut_, algoCache_.output.data(), algoCache_.output.size());
+    BufferDesc bufferOut = { algoCache_.output.data(), algoCache_.output.size(), algoCache_.output.size() };
+    VolumeTools::DfxOperation(bufferOut, dfxStreamInfo_, traceTagOut_, volumeDataCountOut_);
+
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        WriteChainOutputData(audioBufOut.raw, audioBufOut.frameLength);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ApplyEnhanceChain(const EnhanceTransBuffer &transBuf)
+{
+    {
+        std::lock_guard<std::mutex> lock(chainMutex_);
+        if (chainIsReady_) {
+            auto cacheChainInputDataRet = CacheChainInputData(transBuf);
+            CHECK_AND_RETURN_RET_LOG(cacheChainInputDataRet == SUCCESS, ERROR, "cache chain input data fail");
+        } else {
+            AUDIO_INFO_LOG("chain is not ready, passthrough data");
+            WriteChainOutputData(transBuf.micData, transBuf.micDataLen);
+            return SUCCESS;
+        }
+    }
+
+    auto task = [self = weak_from_this()]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessApplyEnhanceChain();
+        }
+    };
+
+    ScheduleAudioTask(task);
+
+    return SUCCESS;
+}
+
+int32_t AudioEnhanceChain::ProcessInitCommand(void)
+{
+    AudioEffectTransInfo cmdInfo = {};
+    AudioEffectTransInfo replyInfo = {};
+    for (const auto &module : enhanceModules_) {
+        auto initCmdRet = (*module.enhanceHandle)->command(module.enhanceHandle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
+        CHECK_AND_RETURN_RET_LOG(initCmdRet == SUCCESS, ERROR,
+            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
+    }
+
+    return SUCCESS;
 }
 
 int32_t AudioEnhanceChain::InitCommand()
 {
-    std::lock_guard<std::mutex> lock(chainMutex_);
-    uint32_t size = standByEnhanceHandles_.size();
-    AudioEffectTransInfo cmdInfo{};
-    AudioEffectTransInfo replyInfo{};
-    for (uint32_t index = 0; index < size; index++) {
-        auto &handle = standByEnhanceHandles_[index];
-        CHECK_AND_RETURN_RET_LOG(
-            (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo) == SUCCESS, ERROR,
-            "[%{public}s] effect EFFECT_CMD_INIT fail", sceneType_.c_str());
-    }
-    return SUCCESS;
-}
+    auto task = [self = weak_from_this()]() {
+        if (auto chain = self.lock(); chain != nullptr) {
+            chain->ProcessInitCommand();
+        }
+    };
 
-AudioSampleFormat AudioEnhanceChain::ConvertFormat(uint32_t format)
-{
-    auto item = FORMAT_CONVERT_MAP.find(format);
-    if (item != FORMAT_CONVERT_MAP.end()) {
-        return item->second;
-    }
-    return INVALID_WIDTH;
+    ScheduleAudioTask(task);
+
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

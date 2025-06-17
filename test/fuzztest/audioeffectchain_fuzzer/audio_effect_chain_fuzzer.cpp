@@ -239,7 +239,6 @@ void AudioEffectChainFuzzTest()
 
 void AudioEnhanceChainManagerFuzzTest(AudioEnhanceChainManager *audioEnhanceChainMananger)
 {
-    audioEnhanceChainMananger->InitEnhanceBuffer();
     AudioEnhancePropertyArray propertyArray;
     AudioVolumeType volumeType = GetData<AudioVolumeType>();
     audioEnhanceChainMananger->SetVolumeInfo(volumeType, SYSTEM_VOLINFO);
@@ -253,6 +252,50 @@ void AudioEnhanceChainManagerFuzzTest(AudioEnhanceChainManager *audioEnhanceChai
     audioEnhanceChainMananger->GetAudioEnhanceProperty(propertyArray);
     audioEnhanceChainMananger->ResetInfo();
     audioEnhanceChainMananger->SetInputDevice(DEFAULT_CHANNEL, newDeviceType);
+    uint32_t sessionId = GetData<uint32_t>();
+    audioEnhanceChainMananger->SetStreamVolumeInfo(sessionId, 0);
+    std::string mainKey = "mainKey";
+    std::string subKey = "subKey";
+    std::string extraSceneType = "extraSceneType";
+    audioEnhanceChainMananger->UpdateExtraSceneType(mainKey, subKey, extraSceneType);
+    audioEnhanceChainMananger->SendInitCommand();
+}
+
+void AudioEnhanceChainManagerCreateFuzzTest(AudioEnhanceChainManager *manager)
+{
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    AudioEnhanceDeviceAttr deviceAttr = {};
+    manager->CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
+
+    AudioBufferConfig micConfig = {};
+    AudioBufferConfig ecConfig = {};
+    AudioBufferConfig micRefConfig = {};
+    manager->AudioEnhanceChainGetAlgoConfig(sceneKeyCode, micConfig, ecConfig, micRefConfig);
+
+    const uint32_t bufLen = 128;
+    std::vector<uint8_t> input(bufLen);
+    std::vector<uint8_t> output(bufLen);
+    EnhanceTransBuffer transBuf = {};
+    transBuf.micData = input.data();
+    transBuf.micDataLen = input.size();
+    manager->ApplyEnhanceChainById(sceneKeyCode, transBuf);
+    manager->GetChainOutputDataById(sceneKeyCode, output.data(), output.size());
+
+    manager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
+}
+
+void AudioEnhanceChainManagerPropertyFuzzTest(AudioEnhanceChainManager *manager)
+{
+    uint32_t temp = GetData<uint32_t>();
+    DeviceType deviceType = static_cast<DeviceType>(temp);
+
+    AudioEffectPropertyArrayV3 propV3Array = {};
+    manager->SetAudioEnhanceProperty(propV3Array, deviceType);
+    manager->GetAudioEnhanceProperty(propV3Array, deviceType);
+
+    AudioEnhancePropertyArray propArray = {};
+    manager->SetAudioEnhanceProperty(propArray, deviceType);
+    manager->GetAudioEnhanceProperty(propArray, deviceType);
 }
 
 void AudioEnhanceChainFuzzTest()
@@ -293,6 +336,8 @@ void AudioEnhanceChainFuzzTest()
     uint64_t sceneTypeCode = GetData<uint64_t>();
     GetSceneTypeCode(invalidScene, &sceneTypeCode);
     AudioEnhanceChainManagerFuzzTest(audioEnhanceChainMananger);
+    AudioEnhanceChainManagerCreateFuzzTest(audioEnhanceChainMananger);
+    AudioEnhanceChainManagerPropertyFuzzTest(audioEnhanceChainMananger);
 }
 
 typedef void (*TestFuncs[14])();

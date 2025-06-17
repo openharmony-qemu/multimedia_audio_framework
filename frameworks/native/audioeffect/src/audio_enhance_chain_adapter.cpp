@@ -91,10 +91,7 @@ int32_t EnhanceChainManagerReleaseCb(const uint64_t sceneKeyCode)
 
 bool EnhanceChainManagerExist(const uint64_t sceneKeyCode)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
-    return audioEnhanceChainMananger->ExistAudioEnhanceChain(sceneKeyCode);
+    return true;
 }
 
 int32_t EnhanceChainManagerGetAlgoConfig(const uint64_t sceneKeyCode, pa_sample_spec *micSpec,
@@ -130,68 +127,36 @@ int32_t EnhanceChainManagerGetAlgoConfig(const uint64_t sceneKeyCode, pa_sample_
 
 bool EnhanceChainManagerIsEmptyEnhanceChain(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        true, "null audioEnhanceChainManager");
-    return audioEnhanceChainMananger->IsEmptyEnhanceChain();
+    return false;
 }
 
 int32_t EnhanceChainManagerInitEnhanceBuffer(void)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERROR, "null audioEnhanceChainManager");
-    if (audioEnhanceChainMananger->IsEmptyEnhanceChain()) {
-        AUDIO_DEBUG_LOG("audioEnhanceChainMananger is empty EnhanceChain.");
-        return ERROR;
-    }
-    return audioEnhanceChainMananger->InitEnhanceBuffer();
+    return SUCCESS;
 }
 
 int32_t CopyToEnhanceBufferAdapter(void *data, uint32_t length)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERROR, "null audioEnhanceChainManager");
-    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
-    return audioEnhanceChainMananger->CopyToEnhanceBuffer(data, length);
+    return SUCCESS;
 }
 
 int32_t CopyEcdataToEnhanceBufferAdapter(void *data, uint32_t length)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERROR, "null audioEnhanceChainManager");
-    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
-    return audioEnhanceChainMananger->CopyEcToEnhanceBuffer(data, length);
+    return SUCCESS;
 }
 
 int32_t CopyMicRefdataToEnhanceBufferAdapter(void *data, uint32_t length)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERROR, "null audioEnhanceChainManager");
-    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
-    return audioEnhanceChainMananger->CopyMicRefToEnhanceBuffer(data, length);
+    return SUCCESS;
 }
 
 int32_t CopyFromEnhanceBufferAdapter(void *data, uint32_t length)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERROR, "null audioEnhanceChainManager");
-    CHECK_AND_RETURN_RET_LOG(data != nullptr, ERROR, "data null");
-    return audioEnhanceChainMananger->CopyFromEnhanceBuffer(data, length);
+    return SUCCESS;
 }
 
 int32_t EnhanceChainManagerProcess(const uint64_t sceneKeyCode, uint32_t length)
 {
-    AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
-        ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
-
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger->ApplyAudioEnhanceChain(sceneKeyCode, length) == SUCCESS,
-        ERROR, "%{public}" PRIu64 " process failed", sceneKeyCode);
     return SUCCESS;
 }
 
@@ -200,10 +165,6 @@ int32_t EnhanceChainManagerProcessDefault(const uint32_t captureId, uint32_t len
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainMananger != nullptr,
         ERR_INVALID_HANDLE, "null audioEnhanceChainManager");
-    if (audioEnhanceChainMananger->ApplyAudioEnhanceChainDefault(captureId, length) != SUCCESS) {
-        AUDIO_ERR_LOG("%{public}u default process failed", captureId);
-        return ERROR;
-    }
     AUDIO_DEBUG_LOG("%{public}u default process success", captureId);
     return SUCCESS;
 }
