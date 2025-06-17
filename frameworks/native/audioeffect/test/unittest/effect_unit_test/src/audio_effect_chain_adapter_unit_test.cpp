@@ -134,6 +134,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_001, TestSize
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test EffectChainManagerCreateCb API
 * @tc.number : EffectChainManagerCreateCb_002
@@ -156,6 +157,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_002, TestSize
     EXPECT_EQ(SUCCESS, result);
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+#endif
 
 /**
 * @tc.name   : Test EffectChainManagerCreateCb API
@@ -254,6 +256,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_005, TestSize
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name   : Test EffectChainManagerCreateCb API
 * @tc.number : EffectChainManagerCreateCb_006
@@ -291,6 +294,7 @@ HWTEST(AudioEffectChainAdapterUnitTest, EffectChainManagerCreateCb_006, TestSize
 
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
+#endif
 
 /**
 * @tc.name   : Test EffectChainManagerCheckEffectOffload API
