@@ -43,7 +43,6 @@ namespace {
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
     constexpr int32_t CAPTURER_FLAG = 0;
-    constexpr int32_t WAIT_TIME = 3;
 //    constexpr int32_t VALUE_HUNDRED = 100;
     std::string g_callbackName("");
     std::mutex g_mutex;
