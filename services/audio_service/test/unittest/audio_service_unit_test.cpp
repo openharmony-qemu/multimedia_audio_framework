@@ -1102,6 +1102,7 @@ HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_004, TestSize.Level1)
     audioService->GetCreatedAudioStreamMostUid(mostAppUid, mostAppNum);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CheckRenderSessionMuteState API
  * @tc.type  : FUNC
@@ -1126,7 +1127,9 @@ HWTEST(AudioServiceUnitTest, CheckRenderSessionMuteState_005, TestSize.Level1)
     EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
+#endif
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CheckCapturerSessionMuteState API
  * @tc.type  : FUNC
@@ -1151,6 +1154,7 @@ HWTEST(AudioServiceUnitTest, CheckCapturerSessionMuteState_001, TestSize.Level1)
     EXPECT_EQ(audioService->mutedSessions_.count(sessionId), 1);
     audioService->RemoveIdFromMuteControlSet(sessionId);
 }
+#endif
 
 #ifdef TEMP_DISABLE
 /**

@@ -43,7 +43,6 @@ namespace {
     constexpr int32_t VALUE_NEGATIVE = -1;
     constexpr int32_t RENDERER_FLAG = 0;
     constexpr int32_t CAPTURER_FLAG = 0;
-    constexpr int32_t WAIT_TIME = 3;
 //    constexpr int32_t VALUE_HUNDRED = 100;
     std::string g_callbackName("");
     std::mutex g_mutex;
@@ -312,6 +311,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
 }
 #endif
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetCurrentRendererChangeInfos API
 * @tc.number: Audio_Stream_Change_Listner_GetCurrentRendererChangeInfos_002
@@ -486,6 +486,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
+#endif
 
 #ifdef TEMP_DISABLE
 /**

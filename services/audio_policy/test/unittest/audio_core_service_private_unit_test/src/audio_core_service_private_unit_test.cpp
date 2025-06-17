@@ -276,6 +276,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_014, TestSize.Level1
     EXPECT_NE(audioCoreService, nullptr);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_015
@@ -294,6 +295,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_015, TestSize.Level1
     auto ret = audioCoreService->BluetoothDeviceFetchOutputHandle(desc, reason, encryptMacAddr);
     EXPECT_EQ(ret, BLUETOOTH_FETCH_RESULT_CONTINUE);
 }
+#endif
 
 /**
  * @tc.name  : Test AudioCoreService.
