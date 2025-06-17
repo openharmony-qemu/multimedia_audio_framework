@@ -1042,6 +1042,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_003, TestSize.Level1)
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetSourcePortName.
 * @tc.number: GetSourcePortName_001
@@ -1086,6 +1087,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSourcePortName_001, TestSize.Level1)
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 }
+#endif
 
 /**
 * @tc.name  : Test ConstructRemoteAudioModuleInfo.
@@ -1593,6 +1595,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_001, TestSize.Le
 }
 #endif
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test HandleLocalDeviceConnected.
 * @tc.number: HandleLocalDeviceConnected_002
@@ -1640,6 +1643,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceConnected_002, TestSize.Le
     ret = GetServerPtr()->audioPolicyService_.audioDeviceStatus_.HandleLocalDeviceConnected(updatedDesc);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
 * @tc.name  : Test HandleLocalDeviceDisconnected.

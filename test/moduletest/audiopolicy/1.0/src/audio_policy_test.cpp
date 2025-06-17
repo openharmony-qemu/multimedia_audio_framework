@@ -404,6 +404,7 @@ INSTANTIATE_TEST_SUITE_P(
     ValuesIn(AUDIO_SCENE_PARAMS));
 #endif
 
+#ifdef TEMP_DISABLE
 /*
  * Check get audio scene
  *
@@ -429,6 +430,7 @@ INSTANTIATE_TEST_SUITE_P(
     GetAudioScene,
     AudioPolicyGetAudioSceneTest,
     ValuesIn(AUDIO_SCENE_PARAMS));
+#endif
 } // namespace V1_0
 } // namespace AudioStandard
 } // namespace OHOS

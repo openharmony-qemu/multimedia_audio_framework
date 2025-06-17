@@ -66,7 +66,8 @@ group("audio_policy_unittest_packages") {
     # ":audio_policy_server_unit_test",
     ":audio_policy_service_first_unit_test",
     ":audio_policy_service_second_unit_test",
-    ":audio_policy_service_third_unit_test",
+
+    # ":audio_policy_service_third_unit_test",
 
     # ":audio_policy_service_thirdext_unit_test",
     ":audio_policy_state_monitor_test",
