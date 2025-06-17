@@ -49,12 +49,12 @@ public:
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode) override;
     void Enqueue(HpaePcmBuffer* buffer) override;
     void SetLatency(uint32_t latency);
+    void SetOutputClusterConnected(bool isConnect);
+    bool IsOutputClusterConnected();
 private:
     void FillSilenceFramesInner(uint32_t latencyMs);
     void ProcessInputFrameInner(HpaePcmBuffer* buffer);
     void ProcessOutputFrameInner();
-    bool SetOutputClusterConnected(bool isConnect);
-    bool IsOutputClusterConnected();
     std::mutex mutex_;
     bool enqueueRunning_ = false;
     InputPort<HpaePcmBuffer *> inputStream_;
@@ -66,6 +66,7 @@ private:
     int32_t enqueueCount_ = 1;
     uint64_t latency_  = 0; // in ms
     bool isOutputClusterConnected_ = false;
+    std::set<HpaeProcessorType> connectedProcessCluster_;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_;

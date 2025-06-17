@@ -125,10 +125,14 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
-    nodeInfo.nodeName = "HpaeCoBufferNode";
-    SetNodeInfo(nodeInfo);
-    inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+    if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
+        connectedProcessCluster_.insert(nodeInfo.sceneType);
+        nodeInfo.nodeName = "HpaeCoBufferNode";
+        SetNodeInfo(nodeInfo);
+        inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+        AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+    }
+
     // reset status flag
     enqueueCount_ = 1;
     enqueueRunning_ = false;
@@ -142,8 +146,12 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
-    inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
+    HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
+    if (connectedProcessCluster_.find(nodeInfo.sceneType) != connectedProcessCluster_.end()) {
+        connectedProcessCluster_.erase(nodeInfo.sceneType);
+        inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+        AUDIO_INFO_LOG("HpaeCoBufferNode disconnected from prenode, scenetype %{public}u", nodeInfo.sceneType);
+    }
 }
 
 void HpaeCoBufferNode::SetLatency(uint32_t latency)
@@ -225,7 +233,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     }
 }
 
-bool HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
+void HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
 {
     isOutputClusterConnected_ = isConnect;
     AUDIO_INFO_LOG("HpaeCoBufferNode output cluster connected status: %{public}d", isConnect);
