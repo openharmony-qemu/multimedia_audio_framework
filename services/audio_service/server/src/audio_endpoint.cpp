@@ -49,7 +49,7 @@ namespace {
     static constexpr int64_t MAX_SPAN_DURATION_NS = 100000000; // 100ms = 100 * 1000 * 1000ns
     static constexpr int64_t PLAYBACK_DELAY_STOP_HDI_TIME_NS = 3000000000; // 3s = 3 * 1000 * 1000 * 1000ns
     static constexpr int64_t RECORDER_DELAY_STOP_HDI_TIME_NS = 200000000; // 200ms = 200 * 1000 * 1000ns
-    static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 1000000000; // 1000ms = 1000 * 1000 * 1000ns
+    static constexpr int64_t LINK_RECORDER_DELAY_STOP_HDI_TIME_NS = 2000000000; // 2000ms = 2000 * 1000 * 1000ns
     static constexpr int64_t WAIT_CLIENT_STANDBY_TIME_NS = 1000000000; // 1s = 1000 * 1000 * 1000ns
     static constexpr int64_t DELAY_STOP_HDI_TIME_WHEN_NO_RUNNING_NS = 1000000000; // 1s
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
