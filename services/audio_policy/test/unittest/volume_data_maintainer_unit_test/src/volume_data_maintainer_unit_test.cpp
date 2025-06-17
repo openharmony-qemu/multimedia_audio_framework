@@ -14,6 +14,8 @@
  */
 
 #include "../include/volume_data_maintainer_unit_test.h"
+
+#include "system_ability_definition.h"
 #include "audio_errors.h"
 
 using namespace testing::ext;
@@ -632,6 +634,32 @@ HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_002, TestSize.Level1)
     int32_t volume = 0;
     bool result = volumeDataMaintainer.GetRestoreVolumeLevel(deviceType, volume);
     EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SaveMicMuteStateTest_002.
+ * @tc.desc  : Test SaveMicMuteState API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveMicMuteStateTest_002, TestSize.Level1)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    bool isMuteRet1 = true;
+    auto ret = volumeDataMaintainerRet.SaveMicMuteState(isMuteRet1);
+    EXPECT_EQ(ret, false);
+
+    const int32_t invalidUserId = -1;
+    const int32_t invalidUserIdMinUser = 99;
+    const int32_t validUser = 1000;
+    AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t userId = settingProvider.GetCurrentUserId(invalidUserId);
+    EXPECT_NE(userId, invalidUserId);
+    userId = settingProvider.GetCurrentUserId(AudioSettingProvider::MAIN_USER_ID);
+    EXPECT_EQ(userId, AudioSettingProvider::MAIN_USER_ID);
+    userId = settingProvider.GetCurrentUserId(invalidUserIdMinUser);
+    EXPECT_NE(userId, invalidUserIdMinUser);
+    userId = settingProvider.GetCurrentUserId(validUser);
+    EXPECT_EQ(userId, validUser);
 }
 } // AudioStandardnamespace
 } // OHOSnamespace
