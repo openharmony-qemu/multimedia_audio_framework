@@ -491,7 +491,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
 TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
 {
     HpaeSinkInfo sinkInfo;
-    GetSinkInfo(sinkInfo);
+    GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);

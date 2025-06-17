@@ -51,6 +51,11 @@ void HpaeSourceOutputNode::DoProcess()
         return;
     }
     HpaePcmBuffer *outputData = outputVec.front();
+    if (!outputData->IsValid() &&
+        GetNodeInfo().sourceType != SOURCE_TYPE_PLAYBACK_CAPTURE &&
+        GetNodeInfo().sourceType != SOURCE_TYPE_REMOTE_CAST) {
+        return;
+    }
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
 #ifdef ENABLE_HOOK_PCM
