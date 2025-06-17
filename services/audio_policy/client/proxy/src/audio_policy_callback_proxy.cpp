@@ -465,7 +465,9 @@ int32_t AudioPolicyProxy::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDesc
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    deviceDesc->Marshalling(data);
+    bool result = deviceDesc->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "AudioDeviceDescriptor Marshalling failed");
+
     data.WriteInt32(static_cast<int32_t>(command));
 
     int error = Remote()->SendRequest(

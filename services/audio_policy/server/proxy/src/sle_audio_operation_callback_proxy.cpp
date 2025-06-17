@@ -25,6 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const int32_t DEVICE_SIZE_LIMIT = 100;
+constexpr uint32_t SLE_STREAM_TYPE_NONE = 0;
 } // namespace
 SleAudioOperationCallbackProxy::SleAudioOperationCallbackProxy(const sptr<IRemoteObject> &impl)
     : IRemoteProxy<IStandardSleAudioOperationCallback>(impl)
@@ -102,7 +103,7 @@ uint32_t SleAudioOperationCallbackProxy::GetSupportStreamType(const std::string 
 
     data.WriteString(device);
     int error = Remote()->SendRequest(GET_SUPPORT_STREAM_TYPE, data, reply, option);
-    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, 0, "Failed, error: %{public}d", error);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, SLE_STREAM_TYPE_NONE, "Failed, error: %{public}d", error);
 
     return reply.ReadUint32();
 }
