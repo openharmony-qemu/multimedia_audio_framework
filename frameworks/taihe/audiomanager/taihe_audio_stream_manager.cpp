@@ -21,8 +21,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_audio_enum.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioStreamManagerImpl::AudioStreamManagerImpl() : audioStreamMngr_(nullptr) {}
 
@@ -44,6 +42,7 @@ AudioStreamManager AudioStreamManagerImpl::CreateStreamManagerWrapper()
         audioStreamMgrImpl->cachedClientId_ = getpid();
         return make_holder<AudioStreamManagerImpl, AudioStreamManager>(audioStreamMgrImpl);
     }
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioStreamMgrImpl is nullptr");
     return make_holder<AudioStreamManagerImpl, AudioStreamManager>(nullptr);
 }
 
@@ -75,6 +74,30 @@ array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerIn
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetCapturerChangeInfos(audioCapturerChangeInfos);
+}
+
+array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(StreamUsage usage)
+{
+    std::vector<AudioEffectMode> emptyResult;
+    int32_t streamUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of usage must be enum StreamUsage");
+        AUDIO_ERR_LOG("get streamUsage failed");
+        return array<AudioEffectMode>(emptyResult);
+    }
+    if (audioStreamMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioStreamMngr_ is nullptr");
+        return array<AudioEffectMode>(emptyResult);
+    }
+    OHOS::AudioStandard::AudioSceneEffectInfo audioSceneEffectInfo;
+    int32_t ret = audioStreamMngr_->GetEffectInfoArray(audioSceneEffectInfo,
+        static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage));
+    if (ret != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetEffectInfoArray failure!");
+        return array<AudioEffectMode>(emptyResult);
+    }
+    return TaiheParamUtils::SetEffectInfo(audioSceneEffectInfo);
 }
 
 bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)

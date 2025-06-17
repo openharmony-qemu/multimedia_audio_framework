@@ -16,6 +16,9 @@
 #define LOG_TAG "AudioRoutingManagerImpl"
 #endif
 
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+#include "parameters.h"
+#endif
 #include "taihe_audio_routing_manager.h"
 #include "taihe_audio_error.h"
 #include "taihe_param_utils.h"
@@ -24,7 +27,6 @@
 #include "taihe_audio_rounting_available_devicechange_callback.h"
 #include "taihe_audio_routing_manager_callbacks.h"
 
-using namespace ANI::Audio;
 namespace ANI::Audio {
 AudioRoutingManagerImpl::AudioRoutingManagerImpl() : audioMngr_(nullptr) {}
 
@@ -49,27 +51,129 @@ AudioRoutingManager AudioRoutingManagerImpl::CreateRoutingManagerWrapper()
         audioRoutingMgrImpl->audioRoutingMngr_ = OHOS::AudioStandard::AudioRoutingManager::GetInstance();
         return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(audioRoutingMgrImpl);
     }
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioRoutingMgrImpl is nullptr");
     return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(nullptr);
 }
 
-array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetAvailableDevices(DeviceUsage deviceUsage)
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetAvailableDevices(DeviceUsage usage)
 {
     std::vector<AudioDeviceDescriptor> emptyResult;
-    int32_t intValue = deviceUsage.get_value();
-    if (!TaiheAudioEnum::IsLegalDeviceUsage(intValue)) {
-        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", intValue);
+    int32_t deviceUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
+        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
         TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
         return array<AudioDeviceDescriptor>(emptyResult);
     }
-    OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(intValue);
+    OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
+        static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
 
     if (audioRoutingMngr_ == nullptr) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> availableDescs =
-        audioRoutingMngr_->GetAvailableDevices(usage);
+        audioRoutingMngr_->GetAvailableDevices(audioDevUsage);
     return TaiheParamUtils::SetDeviceDescriptors(availableDescs);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetExcludedDevices(DeviceUsage usage)
+{
+    std::vector<AudioDeviceDescriptor> emptyResult;
+    int32_t deviceUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
+        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
+        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
+        static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> excludedDevices =
+        audioMngr_->GetExcludedDevices(audioDevUsage);
+    return TaiheParamUtils::SetDeviceDescriptors(excludedDevices);
+}
+
+void AudioRoutingManagerImpl::ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices)
+{
+    int32_t deviceUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
+        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
+        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
+        return;
+    }
+    OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
+        static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
+    bool bArgTransFlag = true;
+    TaiheParamUtils::GetAudioDeviceDescriptorVector(deviceDescriptors, bArgTransFlag, devices);
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
+    if (audioMngr_->ExcludeOutputDevices(audioDevUsage, deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
+    }
+}
+
+void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsageAndDevices(DeviceUsage usage,
+    array_view<AudioDeviceDescriptor> devices)
+{
+    int32_t deviceUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
+        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
+        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
+        return;
+    }
+    OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
+        static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
+    bool bArgTransFlag = true;
+    TaiheParamUtils::GetAudioDeviceDescriptorVector(deviceDescriptors, bArgTransFlag, devices);
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
+    if (audioMngr_->UnexcludeOutputDevices(audioDevUsage, deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
+    }
+}
+
+void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsage(DeviceUsage usage)
+{
+    int32_t deviceUsage = usage.get_value();
+    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
+        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
+        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
+        return;
+    }
+    OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
+        static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
+
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
+    if (audioMngr_->UnexcludeOutputDevices(audioDevUsage) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
+    }
 }
 
 array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceForRendererInfoSync(
@@ -88,8 +192,12 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceFo
         return array<AudioDeviceDescriptor>(emptyResult);
     }
 
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
     if (audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> outDeviceDescriptors;
@@ -110,8 +218,12 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceFor
         return array<AudioDeviceDescriptor>(emptyResult);
     }
 
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
     if (audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> inDeviceDescriptors;
@@ -129,7 +241,14 @@ void AudioRoutingManagerImpl::SelectOutputDeviceSync(array_view<AudioDeviceDescr
         return;
     }
 
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "audioMngr_ is nullptr");
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
     if (audioMngr_->SelectOutputDevice(deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDevice failed");
     }
@@ -149,11 +268,93 @@ void AudioRoutingManagerImpl::SelectOutputDeviceByFilterSync(AudioRendererFilter
         return;
     }
 
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "audioMngr_ is nullptr");
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
     if (audioMngr_->SelectOutputDevice(audioRendererFilter, deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectOutputDeviceByFilter failed");
     }
 }
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter)
+{
+    std::vector<AudioDeviceDescriptor> emptyResult;
+    OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> audioCapturerFilter;
+    int32_t status = TaiheParamUtils::GetAudioCapturerFilter(audioCapturerFilter, filter);
+    if (status != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "get GetAudioCapturerFilter failed");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
+        audioMngr_->GetInputDevice(audioCapturerFilter);
+    return TaiheParamUtils::SetDeviceDescriptors(deviceDescriptors);
+}
+
+array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceByFilter(
+    AudioRendererFilter const &filter)
+{
+    std::vector<AudioDeviceDescriptor> emptyResult;
+    OHOS::sptr<OHOS::AudioStandard::AudioRendererFilter> audioRendererFilter;
+    bool bArgTransFlag = true;
+    int32_t status = TaiheParamUtils::GetAudioRendererFilter(audioRendererFilter, bArgTransFlag, filter);
+    if (status != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "get AudioRendererFilter failed");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
+        audioMngr_->GetOutputDevice(audioRendererFilter);
+    return TaiheParamUtils::SetDeviceDescriptors(deviceDescriptors);
+}
+
+void AudioRoutingManagerImpl::SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
+    array_view<AudioDeviceDescriptor> inputAudioDevices)
+{
+    OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> audioCapturerFilter;
+    int32_t status = TaiheParamUtils::GetAudioCapturerFilter(audioCapturerFilter, filter);
+    if (status != AUDIO_OK) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "select input device by filter failed");
+        return;
+    }
+    std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
+    bool bArgTransFlag = true;
+    TaiheParamUtils::GetAudioDeviceDescriptorVector(deviceDescriptors, bArgTransFlag, inputAudioDevices);
+    if (!bArgTransFlag) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_UNSUPPORTED);
+        return;
+    }
+    int32_t intValue = audioMngr_->SelectInputDevice(audioCapturerFilter, deviceDescriptors);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDevice failed");
+        return;
+    }
+    return;
+}
+
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+bool AudioRoutingManagerImpl::IsMicBlockDetectionSupportedSync()
+{
+    bool supported = OHOS::system::GetBoolParameter("const.multimedia.audio.mic_block_detection", false);
+    if (supported == true) {
+    AUDIO_INFO_LOG("mic block detection supported");
+    } else {
+    AUDIO_ERR_LOG("mic block detection is not supported");
+    }
+    return supported;
+}
+#endif
 
 void AudioRoutingManagerImpl::SelectInputDeviceSync(array_view<AudioDeviceDescriptor> inputAudioDevices)
 {
@@ -165,7 +366,14 @@ void AudioRoutingManagerImpl::SelectInputDeviceSync(array_view<AudioDeviceDescri
         return;
     }
 
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "audioMngr_ is nullptr");
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
     if (audioMngr_->SelectInputDevice(deviceDescriptors) != OHOS::AudioStandard::SUCCESS) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SelectInputDevice failed");
     }
@@ -181,19 +389,61 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag 
         return array<AudioDeviceDescriptor>(emptyResult);
     }
 
-    if (audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
-        return array<AudioDeviceDescriptor>(emptyResult);
-    }
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
-
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return array<AudioDeviceDescriptor>(emptyResult);
+    }
     OHOS::AudioStandard::DeviceFlag nativeFlag = static_cast<OHOS::AudioStandard::DeviceFlag>(deviceFlag.get_value());
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
         audioMngr_->GetDevices(nativeFlag);
     return TaiheParamUtils::SetDeviceDescriptors(deviceDescriptors);
+}
+
+void AudioRoutingManagerImpl::SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentCommunicationDeviceType(deviceType)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
+        AUDIO_ERR_LOG("get deviceType failed");
+        return;
+    }
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return;
+    }
+    OHOS::AudioStandard::DeviceType nativeType = static_cast<OHOS::AudioStandard::DeviceType>(deviceType.get_value());
+    if (audioMngr_->SetDeviceActive(nativeType, active) != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetDeviceActive failed");
+    }
+}
+
+bool AudioRoutingManagerImpl::IsCommunicationDeviceActiveSync(CommunicationDeviceType deviceType)
+{
+    if (!TaiheAudioEnum::IsLegalInputArgumentActiveDeviceType(deviceType)) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
+        AUDIO_ERR_LOG("get deviceType failed");
+        return false;
+    }
+    if (audioMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
+        return false;
+    }
+    if (audioRoutingMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
+        return false;
+    }
+    OHOS::AudioStandard::DeviceType nativeType = static_cast<OHOS::AudioStandard::DeviceType>(deviceType.get_value());
+    bool isActive = audioMngr_->IsDeviceActive(nativeType);
+    return isActive;
 }
 
 void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
@@ -213,7 +463,7 @@ void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCa
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
 
     CHECK_AND_RETURN_LOG(GetTaihePrefInputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");
@@ -368,7 +618,7 @@ void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<
     const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (!audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_) {
         audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
     }
@@ -515,7 +765,7 @@ void AudioRoutingManagerImpl::RegisterDeviceChangeCallback(DeviceFlag deviceFlag
     }
     OHOS::AudioStandard::DeviceFlag audioDeviceFlag = OHOS::AudioStandard::DeviceFlag(flag);
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (!taiheRoutingMgr->deviceChangeCallbackTaihe_) {
         taiheRoutingMgr->deviceChangeCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
     }
@@ -545,7 +795,7 @@ void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage d
     }
     OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(flag);
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (!taiheRoutingMgr->availableDeviceChangeCallbackTaihe_) {
         taiheRoutingMgr->availableDeviceChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioRountingAvailableDeviceChangeCallback>(env);
@@ -581,7 +831,7 @@ void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(AudioR
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
 
     CHECK_AND_RETURN_LOG(GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");

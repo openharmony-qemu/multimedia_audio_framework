@@ -20,9 +20,26 @@ static { loadLibrary("audio_taihe.z"); }
 """)
 
 @!sts_inject("""
+const LOCAL_NETWORK_ID: string = "LocalDevice";
+""")
+
+@!sts_inject("""
 const DEFAULT_VOLUME_GROUP_ID: int = 1;
 """)
 
+@!sts_inject("""
+const DEFAULT_INTERRUPT_GROUP_ID: int = 1;
+""")
+
+enum AudioErrors: i32 {
+  ERROR_INVALID_PARAM = 6800101,
+  ERROR_NO_MEMORY = 6800102,
+  ERROR_ILLEGAL_STATE = 6800103,
+  ERROR_UNSUPPORTED = 6800104,
+  ERROR_TIMEOUT = 6800105,
+  ERROR_STREAM_LIMIT = 6800201,
+  ERROR_SYSTEM = 6800301
+}
 
 enum AudioState: i32 {
   STATE_INVALID = -1,
@@ -40,6 +57,7 @@ enum AudioVolumeType: i32 {
   MEDIA = 3,
   ALARM = 4,
   ACCESSIBILITY = 5,
+  SYSTEM = 6,
   VOICE_ASSISTANT = 9,
   ULTRASONIC = 10,
   ALL = 100,
@@ -139,15 +157,6 @@ enum AudioEncodingType: i32 {
   ENCODING_TYPE_RAW = 0
 }
 
-enum ContentType: i32 {
-  CONTENT_TYPE_UNKNOWN = 0,
-  CONTENT_TYPE_SPEECH = 1,
-  CONTENT_TYPE_MUSIC = 2,
-  CONTENT_TYPE_MOVIE = 3,
-  CONTENT_TYPE_SONIFICATION = 4,
-  CONTENT_TYPE_RINGTONE = 5,
-}
-
 enum StreamUsage: i32 {
   STREAM_USAGE_UNKNOWN = 0,
   STREAM_USAGE_MUSIC = 1,
@@ -184,7 +193,6 @@ enum AudioVolumeMode: i32 {
 }
 
 struct AudioRendererInfo {
-  content: Optional<ContentType>;
   usage: StreamUsage;
   rendererFlags: i32;
   volumeMode: Optional<AudioVolumeMode>;
@@ -248,11 +256,6 @@ struct InterruptEvent {
   hintType: InterruptHint;
 }
 
-enum InterruptActionType: i32 {
-  TYPE_ACTIVATED = 0,
-  TYPE_INTERRUPT = 1
-}
-
 enum DeviceChangeType: i32 {
   CONNECT = 0,
   DISCONNECT = 1,
@@ -280,42 +283,29 @@ enum DeviceUsage: i32 {
 }
 
 interface AudioManager {
+  @gen_promise("setExtraParameters")
+  SetExtraParametersSync(mainKey: String, kvpairs: @record Map<String, String>): void;
+
+  @gen_promise("getExtraParameters")
+  GetExtraParametersSync(mainKey: String, subKeys: Optional<Array<String>>): @record Map<String, String>;
+
+  @gen_async("setAudioScene")
+  @gen_promise("setAudioScene")
+  SetAudioSceneSync(scene: AudioScene): void;
+
   GetVolumeManager(): AudioVolumeManager;
   GetStreamManager(): AudioStreamManager;
   GetRoutingManager(): AudioRoutingManager;
   GetSessionManager(): AudioSessionManager;
+  GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
+
+  @gen_promise("disableSafeMediaVolume")
+  DisableSafeMediaVolumeSync(): void;
 
   @gen_async("getAudioScene")
   @gen_promise("getAudioScene")
   GetAudioSceneSync(): AudioScene;
-
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, callback: object): void {
-            if (type === "volumeChange") {
-              this.OnVolumeChange_inner(callback as (data: VolumeEvent) => void);
-            }
-        }
-  """)
-
-  @!sts_inject_into_interface("on(type: string, interrupt: AudioInterrupt, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, interrupt: AudioInterrupt, callback: object): void {
-            if (type === "interrupt") {
-              this.OnInterrupt_inner(interrupt, callback as (data: InterruptAction) => void);
-            }
-        }
-  """)
-  OnVolumeChange(callback: (data: VolumeEvent) => void): void;
-  OnInterrupt(interrupt: AudioInterrupt, callback: (data: InterruptAction) => void): void;
-
-  @!sts_inject_into_interface("off(type: string, interrupt: AudioInterrupt, callback?: (data: object) => void): void;")
-  @!sts_inject_into_class("""off(type: string, interrupt: AudioInterrupt, callback?: object): void {
-            if (type === "interrupt") {
-              this.OffInterrupt_inner(interrupt, callback as ((data: InterruptAction) => void) | undefined);
-            }
-        }
-  """)
-  OffInterrupt(interrupt: AudioInterrupt, callback: Optional<(data: InterruptAction)=> void>): void;
 }
 
 enum DeviceBlockStatus: i32 {
@@ -334,10 +324,19 @@ interface AudioRoutingManager {
   GetDevicesSync(deviceFlag: DeviceFlag): Array<@readonly AudioDeviceDescriptor>;
 
   GetAvailableDevices(deviceUsage: DeviceUsage): Array<@readonly AudioDeviceDescriptor>;
+  GetExcludedDevices(deviceUsage: DeviceUsage): Array<@readonly AudioDeviceDescriptor>;
 
   @gen_async("selectOutputDevice")
   @gen_promise("selectOutputDevice")
   SelectOutputDeviceSync(outputAudioDevices: Array<@readonly AudioDeviceDescriptor>): void;
+
+  @gen_async("setCommunicationDevice")
+  @gen_promise("setCommunicationDevice")
+  SetCommunicationDeviceSync(deviceType: CommunicationDeviceType, active: bool);
+
+  @gen_async("isCommunicationDeviceActive")
+  @gen_promise("isCommunicationDeviceActive")
+  IsCommunicationDeviceActiveSync(deviceType: CommunicationDeviceType): bool;
 
   @gen_async("selectOutputDeviceByFilter")
   @gen_promise("selectOutputDeviceByFilter")
@@ -355,6 +354,25 @@ interface AudioRoutingManager {
   @gen_async("getPreferredInputDeviceForCapturerInfo")
   @gen_promise("getPreferredInputDeviceForCapturerInfo")
   GetPreferredInputDeviceForCapturerInfoSync(capturerInfo: AudioCapturerInfo): Array<@readonly AudioDeviceDescriptor>;
+
+  GetPreferredInputDeviceByFilter(filter: AudioCapturerFilter): Array<@readonly AudioDeviceDescriptor>;
+
+  GetPreferredOutputDeviceByFilter(filter: AudioRendererFilter): Array<@readonly AudioDeviceDescriptor>;
+
+  @gen_promise("selectInputDeviceByFilter")
+  SelectInputDeviceByFilterSync(filter: AudioCapturerFilter, inputAudioDevices: Array<@readonly AudioDeviceDescriptor>): void;
+
+  @gen_promise("isMicBlockDetectionSupported")
+  IsMicBlockDetectionSupportedSync(): bool;
+
+  @gen_promise("excludeOutputDevices")
+  ExcludeOutputDevicesSync(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
+
+  @overload("unexcludeOutputDevices")
+  UnexcludeOutputDevicesWithUsageAndDevices(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
+
+  @overload("unexcludeOutputDevices")
+  UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
 
   @!sts_inject_into_interface("on(type: string, capturerInfo: AudioCapturerInfo, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, capturerInfo: AudioCapturerInfo, callback: object): void {
@@ -411,6 +429,7 @@ interface AudioRoutingManager {
         }
   """)
 
+  @!sts_inject_into_interface("on(type: string, rendererInfo: AudioRendererInfo, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, rendererInfo: AudioRendererInfo, callback: object): void {
             if (type === "preferOutputDeviceChangeForRendererInfo") {
               this.OnPreferOutputDeviceChangeForRendererInfo_inner(rendererInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
@@ -430,6 +449,10 @@ interface AudioStreamManager {
   @gen_async("getCurrentAudioCapturerInfoArray")
   @gen_promise("getCurrentAudioCapturerInfoArray")
   GetCurrentAudioCapturerInfoArraySync(): Array<@readonly AudioCapturerChangeInfo>;
+
+  @gen_async("getAudioEffectInfoArray")
+  @gen_promise("getAudioEffectInfoArray")
+  GetAudioEffectInfoArraySync(usage: StreamUsage): Array<@readonly AudioEffectMode>;
 
   @gen_async("isActive")
   @gen_promise("isActive")
@@ -461,9 +484,31 @@ interface AudioStreamManager {
 }
 
 interface AudioVolumeManager {
+  @gen_async("getVolumeGroupInfos")
+  @gen_promise("getVolumeGroupInfos")
+  GetVolumeGroupInfosSync(networkId: String): Array<@readonly VolumeGroupInfo>;
+
   @gen_async("getVolumeGroupManager")
   @gen_promise("getVolumeGroupManager")
   GetVolumeGroupManagerSync(groupId: i32): AudioVolumeGroupManager;
+
+  @gen_promise("getAppVolumePercentageForUid")
+  GetAppVolumePercentageForUidSync(uid: i32): i32;
+
+  @gen_promise("setAppVolumePercentageForUid")
+  SetAppVolumePercentageForUidSync(uid: i32, volume: i32): void;
+
+  @gen_promise("isAppVolumeMutedForUid")
+  IsAppVolumeMutedForUidSync(uid: i32, owned: bool): bool;
+
+  @gen_promise("setAppVolumeMutedForUid")
+  SetAppVolumeMutedForUidSync(uid: i32, muted: bool): void;
+
+  @gen_promise("getAppVolumePercentage")
+  GetAppVolumePercentageSync(): i32;
+
+  @gen_promise("setAppVolumePercentage")
+  SetAppVolumePercentageSync(volume: i32): void;
 
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
@@ -507,6 +552,9 @@ interface AudioVolumeGroupManager {
   @gen_promise("setVolume")
   SetVolumeSync(volumeType: AudioVolumeType, volume: i32): void;
 
+  @gen_promise("setVolumeWithFlag")
+  SetVolumeWithFlagSync(volumeType: AudioVolumeType, volume: i32, flags: i32): void;
+
   GetActiveVolumeTypeSync(uid: i32): AudioVolumeType;
 
   @gen_async("getVolume")
@@ -536,10 +584,6 @@ interface AudioVolumeGroupManager {
   @gen_async("getRingerMode")
   @gen_promise("getRingerMode")
   GetRingerModeSync(): AudioRingMode;
-
-  @gen_async("setMicrophoneMute")
-  @gen_promise("setMicrophoneMute")
-  SetMicrophoneMuteSync(mute: bool): void;
 
   @gen_promise("setMicMute")
   SetMicMuteSync(mute: bool): void;
@@ -582,6 +626,22 @@ interface AudioVolumeGroupManager {
 
   OffRingerModeChange(callback: Optional<(data: AudioRingMode) => void>): void;
   OffMicStateChange(callback: Optional<(data: MicStateChangeEvent) => void>): void;
+
+  IsVolumeUnadjustable(): bool;
+
+  @gen_async("adjustSystemVolumeByStep")
+  @gen_promise("adjustSystemVolumeByStep")
+  AdjustSystemVolumeByStepSync(volumeType: AudioVolumeType, adjustType: VolumeAdjustType): void;
+
+  @gen_async("getSystemVolumeInDb")
+  @gen_promise("getSystemVolumeInDb")
+  GetSystemVolumeInDbSync(volumeType: AudioVolumeType, volumeLevel: i32, device: DeviceType): f64;
+
+  @gen_promise("getMaxAmplitudeForInputDevice")
+  GetMaxAmplitudeForInputDeviceSync(inputDevice: AudioDeviceDescriptor): f64;
+
+  @gen_promise("getMaxAmplitudeForOutputDevice")
+  GetMaxAmplitudeForOutputDeviceSync(inputDevice: AudioDeviceDescriptor): f64;
 }
 
 enum ConnectType: i32 {
@@ -638,19 +698,6 @@ struct VolumeEvent {
   updateUi: bool;
   volumeGroupId: f64;
   networkId: String;
-}
-
-struct InterruptAction {
-  actionType: InterruptActionType;
-  type: Optional<InterruptType>;
-  hint: Optional<InterruptHint>;
-  activated: Optional<bool>;
-}
-
-struct AudioInterrupt {
-  streamUsage: StreamUsage;
-  contentType: ContentType;
-  pauseWhenDucked: bool;
 }
 
 struct MicStateChangeEvent {
@@ -790,6 +837,7 @@ struct AudioEffectProperty {
 }
 
 interface AudioEffectManager {
+  GetSupportedAudioEffectProperty(): Array<AudioEffectProperty>;
   SetAudioEffectProperty(propertyArray: Array<AudioEffectProperty>): void;
   GetAudioEffectProperty(): Array<AudioEffectProperty>;
 }
@@ -798,7 +846,6 @@ enum SourceType: i32 {
   SOURCE_TYPE_INVALID = -1,
   SOURCE_TYPE_MIC = 0,
   SOURCE_TYPE_VOICE_RECOGNITION = 1,
-  SOURCE_TYPE_PLAYBACK_CAPTURE = 2,
   SOURCE_TYPE_WAKEUP = 3,
   SOURCE_TYPE_VOICE_CALL = 4,
   SOURCE_TYPE_VOICE_COMMUNICATION = 7,
@@ -816,19 +863,12 @@ struct AudioCapturerInfo {
 struct AudioCapturerOptions {
   streamInfo: AudioStreamInfo;
   capturerInfo: AudioCapturerInfo;
-  playbackCaptureConfig: Optional<AudioPlaybackCaptureConfig>;
-}
-
-struct CaptureFilterOptions {
-  usages: Array<StreamUsage>;
-}
-
-struct AudioPlaybackCaptureConfig {
-  filterOptions: CaptureFilterOptions;
 }
 
 interface AudioCapturer {
   @get GetState(): AudioState;
+
+  GetImplPtr(): i64;
 
   @gen_async("start")
   @gen_promise("start")
@@ -842,13 +882,13 @@ interface AudioCapturer {
   @gen_promise("release")
   ReleaseSync(): void;
 
-  @gen_async("read")
-  @gen_promise("read")
-  ReadSync(size: i64, isBlockingRead: bool): @arraybuffer Array<u8>;
-
   @gen_async("getBufferSize")
   @gen_promise("getBufferSize")
   GetBufferSizeSync(): i64;
+
+  @gen_async("getCapturerInfo")
+  @gen_promise("getCapturerInfo")
+  GetCapturerInfoSync(): AudioCapturerInfo;
 
   @gen_async("getStreamInfo")
   @gen_promise("getStreamInfo")
@@ -857,6 +897,16 @@ interface AudioCapturer {
   @gen_async("getAudioStreamId")
   @gen_promise("getAudioStreamId")
   GetAudioStreamIdSync(): i64;
+
+  @gen_async("getAudioTime")
+  @gen_promise("getAudioTime")
+  GetAudioTimeSync(): i64;
+
+  @gen_promise("getAudioTimestampInfo")
+  GetAudioTimestampInfoSync(): AudioTimestampInfo;
+
+  @gen_promise("getOverflowCount")
+  GetOverflowCountSync(): i64;
 
   GetCurrentInputDevices(): Array<@readonly AudioDeviceDescriptor>;
 
@@ -908,9 +958,9 @@ interface AudioCapturer {
             } else if (type === "readData") {
               this.OffReadData_inner(callback as (((data: ArrayBuffer) => void) | undefined));
             } else if (type === "periodReach") {
-              this.OffPeriodReach_inner(callback as (((data: double) => void) | undefined));
+              this.OffPeriodReach_inner(callback as (((data: long) => void) | undefined));
             } else if (type === "markReach") {
-              this.OffMarkReach_inner(callback as (((data: double) => void) | undefined));
+              this.OffMarkReach_inner(callback as (((data: long) => void) | undefined));
             }
         }
   """)
@@ -919,8 +969,8 @@ interface AudioCapturer {
   OffInputDeviceChange(callback: Optional<(data:  Array<@readonly AudioDeviceDescriptor>) => void>): void;
   OffAudioCapturerChange(callback: Optional<(data: AudioCapturerChangeInfo) => void>): void;
   OffReadData(callback: Optional<(data: @arraybuffer Array<u8>) => void>): void;
-  OffPeriodReach(callback: Optional<(data: f64) => void>): void;
-  OffMarkReach(callback: Optional<(data: f64) => void>): void;
+  OffPeriodReach(callback: Optional<(data: i64) => void>): void;
+  OffMarkReach(callback: Optional<(data: i64) => void>): void;
 }
 
 enum AudioDataCallbackResult: i32 {
@@ -928,12 +978,55 @@ enum AudioDataCallbackResult: i32 {
   VALID = 0,
 }
 
+struct AudioTimestampInfo {
+  @readonly framePos: i64;
+  @readonly timestamp: i64;
+}
+
 interface AudioRenderer {
   @get GetState(): AudioState;
+
+  @gen_async("getRendererInfo")
+  @gen_promise("getRendererInfo")
+  GetRendererInfoSync(): AudioRendererInfo;
+
+  @gen_async("getStreamInfo")
+  @gen_promise("getStreamInfo")
+  GetStreamInfoSync(): AudioStreamInfo;
+
+  @gen_async("getAudioStreamId")
+  @gen_promise("getAudioStreamId")
+  GetAudioStreamIdSync(): i64;
+
+  @gen_async("getAudioEffectMode")
+  @gen_promise("getAudioEffectMode")
+  GetAudioEffectModeSync(): AudioEffectMode;
+
+  @gen_async("setAudioEffectMode")
+  @gen_promise("setAudioEffectMode")
+  SetAudioEffectModeSync(mode: AudioEffectMode): void;
 
   @gen_async("start")
   @gen_promise("start")
   StartSync(): void;
+
+  @gen_async("getAudioTime")
+  @gen_promise("getAudioTime")
+  GetAudioTimeSync(): i64;
+
+  @gen_promise("getAudioTimestampInfo")
+  GetAudioTimestampInfoSync(): AudioTimestampInfo;
+
+  @gen_async("drain")
+  @gen_promise("drain")
+  DrainSync(): void;
+
+  @gen_promise("flush")
+  FlushSync(): void;
+
+  @gen_async("pause")
+  @gen_promise("pause")
+  PauseSync(): void;
 
   @gen_async("stop")
   @gen_promise("stop")
@@ -947,15 +1040,21 @@ interface AudioRenderer {
   @gen_promise("getBufferSize")
   GetBufferSizeSync(): i64;
 
-  @gen_async("getAudioStreamId")
-  @gen_promise("getAudioStreamId")
-  GetAudioStreamIdSync(): i64;
+  SetSpeed(speed: f64): void;
+
+  GetSpeed(): f64;
+
+  @gen_async("setInterruptMode")
+  @gen_promise("setInterruptMode")
+  SetInterruptModeSync(mode: InterruptMode): void;
 
   @gen_async("setVolume")
   @gen_promise("setVolume")
   SetVolumeSync(volume: f64): void;
 
   GetVolume(): f64;
+
+  SetVolumeWithRamp(volume: f64, duration: i32): void;
 
   @gen_async("getMinStreamVolume")
   @gen_promise("getMinStreamVolume")
@@ -969,9 +1068,18 @@ interface AudioRenderer {
   @gen_promise("getUnderflowCount")
   GetUnderflowCountSync(): i64;
 
-  @gen_async("getStreamInfo")
-  @gen_promise("getStreamInfo")
-  GetStreamInfoSync(): AudioStreamInfo;
+  @gen_async("getCurrentOutputDevices")
+  @gen_promise("getCurrentOutputDevices")
+  GetCurrentOutputDevicesSync(): Array<@readonly AudioDeviceDescriptor>;
+
+  SetChannelBlendMode(mode: ChannelBlendMode): void;
+
+  SetSilentModeAndMixWithOthers(on: bool): void;
+
+  GetSilentModeAndMixWithOthers(): bool;
+
+  @gen_promise("setDefaultOutputDevice")
+  SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
@@ -994,17 +1102,17 @@ interface AudioRenderer {
   OnOutputDeviceChangeWithInfo(callback: (data: AudioStreamDeviceChangeInfo) => void): void;
   OnWriteData(callback: (data: @arraybuffer Array<u8>) => AudioDataCallbackResult): void;
 
-  @!sts_inject_into_interface("on(type: string, frame: double, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, frame: double, callback: object): void {
+  @!sts_inject_into_interface("on(type: string, frame: long, callback: (data: object) => void): void;")
+  @!sts_inject_into_class("""on(type: string, frame: long, callback: object): void {
             if (type === "periodReach") {
-              this.OnPeriodReach_inner(frame, callback as (data: double) => void);
+              this.OnPeriodReach_inner(frame, callback as (data: long) => void);
             } else if (type === "markReach") {
-              this.OnMarkReach_inner(frame, callback as (data: double) => void);
+              this.OnMarkReach_inner(frame, callback as (data: long) => void);
             }
         }
   """)
-  OnPeriodReach(frame: f64, callback: (data: f64) => void): void;
-  OnMarkReach(frame: f64, callback: (data: f64) => void): void;
+  OnPeriodReach(frame: i64, callback: (data: i64) => void): void;
+  OnMarkReach(frame: i64, callback: (data: i64) => void): void;
 
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
@@ -1017,9 +1125,9 @@ interface AudioRenderer {
             } else if (type === "outputDeviceChangeWithInfo") {
               this.OffOutputDeviceChangeWithInfo_inner(callback as (((data: AudioStreamDeviceChangeInfo) => void) | undefined));
             } else if (type === "periodReach") {
-              this.OffPeriodReach_inner(callback as (((data: double) => void) | undefined));
+              this.OffPeriodReach_inner(callback as (((data: long) => void) | undefined));
             } else if (type === "markReach") {
-              this.OffMarkReach_inner(callback as (((data: double) => void) | undefined));
+              this.OffMarkReach_inner(callback as (((data: long) => void) | undefined));
             } else if (type === "writeData") {
               this.OffWriteData_inner(callback as (((data: ArrayBuffer) => AudioDataCallbackResult) | undefined));
             }
@@ -1029,8 +1137,8 @@ interface AudioRenderer {
   OffStateChange(callback: Optional<(data: AudioState) => void>): void;
   OffOutputDeviceChange(callback: Optional<(data:  Array<@readonly AudioDeviceDescriptor>) => void>): void;
   OffOutputDeviceChangeWithInfo(callback: Optional<(data: AudioStreamDeviceChangeInfo) => void>): void;
-  OffPeriodReach(callback: Optional<(data: f64) => void>): void;
-  OffMarkReach(callback: Optional<(data: f64) => void>): void;
+  OffPeriodReach(callback: Optional<(data: i64) => void>): void;
+  OffMarkReach(callback: Optional<(data: i64) => void>): void;
   OffWriteData(callback: Optional<(data: @arraybuffer Array<u8>) => AudioDataCallbackResult>): void;
 }
 
@@ -1116,12 +1224,46 @@ enum AudioChannelLayout: i64 {
 
 function GetAudioManager(): AudioManager;
 
+@gen_async("createAudioCapturer")
+@gen_promise("createAudioCapturer")
+function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturer;
+
+@gen_async("createAudioRenderer")
+@gen_promise("createAudioRenderer")
+function CreateAudioRendererSync(options: AudioRendererOptions): AudioRenderer;
+
+@gen_async("createTonePlayer")
+@gen_promise("createTonePlayer")
+function CreateTonePlayerSync(options: AudioRendererInfo): TonePlayer;
+
 struct AudioSpatialEnabledStateForDevice {
   deviceDescriptor: AudioDeviceDescriptor;
   enabled: bool;
 }
 
 interface AudioSpatializationManager {
+  IsSpatializationSupported(): bool;
+  IsSpatializationSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  IsHeadTrackingSupported(): bool;
+  IsHeadTrackingSupportedForDevice(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  @gen_promise("setSpatializationEnabled")
+  SetSpatializationEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+
+  IsSpatializationEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
+  IsSpatializationEnabledForCurrentDevice(): bool;
+
+  @gen_promise("setHeadTrackingEnabled")
+  SetHeadTrackingEnabledSync(deviceDescriptor: AudioDeviceDescriptor, enabled: bool): void;
+
+  IsHeadTrackingEnabled(deviceDescriptor: AudioDeviceDescriptor): bool;
+
+  UpdateSpatialDeviceState(spatialDeviceState: AudioSpatialDeviceState): void;
+
+  SetSpatializationSceneType(spatializationSceneType: AudioSpatializationSceneType): void;
+  GetSpatializationSceneType(): AudioSpatializationSceneType;
+
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "spatializationEnabledChangeForCurrentDevice") {
@@ -1152,3 +1294,49 @@ interface AudioSpatializationManager {
   OffSpatializationEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
   OffHeadTrackingEnabledChangeForAnyDevice(callback: Optional<(data: AudioSpatialEnabledStateForDevice) => void>): void;
 }
+
+enum AsrNoiseSuppressionMode: i32 {
+  BYPASS = 0,
+  STANDARD = 1,
+  NEAR_FIELD = 2,
+  FAR_FIELD = 3,
+}
+
+enum AsrAecMode: i32 {
+  BYPASS = 0,
+  STANDARD = 1,
+}
+
+enum AsrVoiceControlMode: i32 {
+  AUDIO_2_VOICE_TX = 0,
+  AUDIO_MIX_2_VOICE_TX = 1,
+  AUDIO_2_VOICE_TX_EX = 2,
+  AUDIO_MIX_2_VOICE_TX_EX = 3,
+}
+
+enum AsrVoiceMuteMode: i32 {
+  OUTPUT_MUTE = 0,
+  INPUT_MUTE = 1,
+  TTS_MUTE = 2,
+  CALL_MUTE = 3,
+  OUTPUT_MUTE_EX = 4,
+}
+
+enum AsrWhisperDetectionMode: i32 {
+  BYPASS = 0,
+  STANDARD = 1,
+}
+
+interface AsrProcessingController {
+  SetAsrAecMode(mode: AsrAecMode): bool;
+  GetAsrAecMode(): AsrAecMode;
+  SetAsrNoiseSuppressionMode(mode: AsrNoiseSuppressionMode): bool;
+  GetAsrNoiseSuppressionMode(): AsrNoiseSuppressionMode;
+  IsWhispering(): bool;
+  SetAsrVoiceControlMode(mode: AsrVoiceControlMode, enable: bool): bool;
+  SetAsrVoiceMuteMode(mode: AsrVoiceMuteMode, enable: bool): bool;
+  SetAsrWhisperDetectionMode(mode: AsrWhisperDetectionMode): bool;
+  GetAsrWhisperDetectionMode(): AsrWhisperDetectionMode;
+}
+
+function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingController;

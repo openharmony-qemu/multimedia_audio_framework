@@ -29,7 +29,9 @@ public:
     explicit AudioVolumeGroupManagerImpl(std::shared_ptr<AudioVolumeGroupManagerImpl> obj);
 
     static AudioVolumeGroupManager CreateAudioVolumeGroupManagerWrapper(int32_t groupId);
+
     void SetVolumeSync(AudioVolumeType volumeType, int32_t volume);
+    void SetVolumeWithFlagSync(AudioVolumeType volumeType, int32_t volume, int32_t flags);
     AudioVolumeType GetActiveVolumeTypeSync(int32_t uid);
     int32_t GetVolumeSync(AudioVolumeType volumeType);
     int32_t GetMinVolumeSync(AudioVolumeType volumeType);
@@ -38,28 +40,31 @@ public:
     bool IsMuteSync(AudioVolumeType volumeType);
     void SetRingerModeSync(AudioRingMode mode);
     AudioRingMode GetRingerModeSync();
-    void SetMicrophoneMuteSync(bool mute);
     void SetMicMuteSync(bool mute);
     void SetMicMutePersistentSync(bool mute, PolicyType type);
     bool IsPersistentMicMute();
     bool IsMicrophoneMuteSync();
     void AdjustVolumeByStepSync(VolumeAdjustType adjustType);
-
+    bool IsVolumeUnadjustable();
+    void AdjustSystemVolumeByStepSync(AudioVolumeType volumeType, VolumeAdjustType adjustType);
+    double GetSystemVolumeInDbSync(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device);
+    double GetMaxAmplitudeForInputDeviceSync(AudioDeviceDescriptor inputDevice);
+    double GetMaxAmplitudeForOutputDeviceSync(AudioDeviceDescriptor inputDevice);
     void OnRingerModeChange(callback_view<void(AudioRingMode)> callback);
-    void OffRingerModeChange(optional_view<callback<void(AudioRingMode)>> callback);
-    void RegisterRingModeCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
-    void UnregisterRingerModeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
-
     void OnMicStateChange(callback_view<void(MicStateChangeEvent const&)> callback);
+    void OffRingerModeChange(optional_view<callback<void(AudioRingMode)>> callback);
     void OffMicStateChange(optional_view<callback<void(MicStateChangeEvent const&)>> callback);
-    void RegisterMicStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
-    void UnregisterMicStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
 
 private:
+    static void RegisterRingModeCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
+    static void RegisterMicStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
+    static void UnregisterRingerModeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
+    static void UnregisterMicStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl);
+
     std::shared_ptr<OHOS::AudioStandard::AudioGroupManager> audioGroupMngr_ = nullptr;
     int32_t cachedClientId_ = -1;
 

@@ -42,8 +42,6 @@ public:
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
     void OnRingerModeUpdated(const OHOS::AudioStandard::AudioRingerMode &ringerMode) override;
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-
 private:
     struct AudioRingerModeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -58,6 +56,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> ringerModeCallback_ = nullptr;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_RINGMODE_CALLBACK_H

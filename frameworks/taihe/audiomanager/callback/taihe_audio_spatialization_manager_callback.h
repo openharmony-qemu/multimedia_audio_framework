@@ -47,7 +47,6 @@ public:
     void OnSpatializationEnabledChange(const bool &enabled) override;
     void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>
         &deviceDescriptor, const bool &enabled) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioSpatializationEnabledJsCallback {
@@ -68,6 +67,7 @@ private:
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForAnyDeviceList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
     static bool onSpatializationEnabledChangeFlag_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 
 class TaiheAudioCurrentSpatializationEnabledChangeCallback : public
@@ -81,7 +81,6 @@ public:
     void RemoveAllCurrentSpatializationEnabledChangeCallbackReference();
     int32_t GetCurrentSpatializationEnabledChangeCbListSize();
     void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioSpatializationEnabledForCurrentDeviceJsCallback {
@@ -99,6 +98,7 @@ private:
     static std::mutex sWorkerMutex_;
     ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 
 class TaiheAudioHeadTrackingEnabledChangeCallback : public OHOS::AudioStandard::AudioHeadTrackingEnabledChangeCallback,
@@ -115,7 +115,6 @@ public:
     void OnHeadTrackingEnabledChange(const bool &enabled) override;
     void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>
         &deviceDescriptor, const bool &enabled) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioHeadTrackingEnabledJsCallback {
@@ -135,6 +134,7 @@ private:
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbForAnyDeviceList_;
     static bool onHeadTrackingEnabledChangeFlag_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_SPATIALIZATION_MANAGER_CALLBACK_H

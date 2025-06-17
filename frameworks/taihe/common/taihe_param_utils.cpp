@@ -90,10 +90,6 @@ const std::unordered_map<OHOS::AudioStandard::AudioSampleFormat, AudioSampleForm
 int32_t TaiheParamUtils::GetRendererInfo(OHOS::AudioStandard::AudioRendererInfo &rendererInfo,
     AudioRendererInfo const &in)
 {
-    if (in.content.has_value()) {
-        rendererInfo.contentType = static_cast<OHOS::AudioStandard::ContentType>(in.content.value().get_value());
-    }
-
     int32_t intValue = in.usage.get_value();
     if (TaiheAudioEnum::IsLegalInputArgumentStreamUsage(intValue)) {
         rendererInfo.streamUsage = static_cast<OHOS::AudioStandard::StreamUsage>(intValue);
@@ -165,38 +161,14 @@ int32_t TaiheParamUtils::GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &aud
 }
 
 int32_t TaiheParamUtils::GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
-    AudioCapturerOptions const &options)
+    AudioCapturerInfo const &in)
 {
-    int32_t intValue = options.capturerInfo.source.get_value();
+    int32_t intValue = in.source.get_value();
     CHECK_AND_RETURN_RET_LOG(TaiheAudioEnum::IsLegalCapturerType(intValue),
         AUDIO_ERR, "Invailed captureType");
     audioCapturerInfo.sourceType = static_cast<OHOS::AudioStandard::SourceType>(intValue);
-    audioCapturerInfo.capturerFlags = options.capturerInfo.capturerFlags;
+    audioCapturerInfo.capturerFlags = in.capturerFlags;
     return AUDIO_OK;
-}
-
-int32_t TaiheParamUtils::GetCaptureFilterOptionsVector(OHOS::AudioStandard::CaptureFilterOptions &captureFilterOptions,
-    AudioCapturerOptions const &options)
-{
-    CHECK_AND_RETURN_RET_LOG(options.playbackCaptureConfig.has_value(), AUDIO_ERR, "playbackCaptureConfig is nullptr");
-    uint32_t arrayLen = options.playbackCaptureConfig->filterOptions.usages.size();
-    if (arrayLen == 0) {
-        captureFilterOptions.usages = {};
-        AUDIO_INFO_LOG("ParseCaptureFilterOptions get empty usage");
-        return AUDIO_OK;
-    }
-
-    for (auto &usages : options.playbackCaptureConfig->filterOptions.usages) {
-        captureFilterOptions.usages.emplace_back(static_cast<OHOS::AudioStandard::StreamUsage>(usages.get_value()));
-    }
-
-    return AUDIO_OK;
-}
-
-int32_t TaiheParamUtils::GetPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &audioCaptureConfig,
-    AudioCapturerOptions const &options)
-{
-    return GetCaptureFilterOptionsVector(audioCaptureConfig.filterOptions, options);
 }
 
 int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
@@ -206,12 +178,9 @@ int32_t TaiheParamUtils::GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOp
     status = GetStreamInfo(opts->streamInfo, options);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseStreamInfo failed");
 
-    status = GetCapturerInfo(opts->capturerInfo, options);
+    status = GetCapturerInfo(opts->capturerInfo, options.capturerInfo);
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParseCapturerInfo failed");
 
-    if (options.playbackCaptureConfig.has_value()) {
-        status = GetPlaybackCaptureConfig(opts->playbackCaptureConfig, options);
-    }
     CHECK_AND_RETURN_RET_LOG(status == AUDIO_OK, status, "ParsePlaybackCaptureConfig failed");
     AUDIO_INFO_LOG("ParseCapturerOptions, without playbackCaptureConfig");
     return AUDIO_OK;
@@ -230,6 +199,21 @@ int32_t TaiheParamUtils::GetRendererOptions(OHOS::AudioStandard::AudioRendererOp
     if (options.privacyType.has_value()) {
         opts->privacyType = static_cast<OHOS::AudioStandard::AudioPrivacyType>(options.privacyType.value().get_value());
     }
+    return AUDIO_OK;
+}
+int32_t TaiheParamUtils::GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
+    AudioSpatialDeviceState in)
+{
+    spatialDeviceState->address = std::string(in.address);
+    spatialDeviceState->isSpatializationSupported = in.isSpatializationSupported;
+    spatialDeviceState->isHeadTrackingSupported = in.isHeadTrackingSupported;
+    int32_t intValue = in.spatialDeviceType.get_value();
+    if (!((intValue >= OHOS::AudioStandard::AudioSpatialDeviceType::EARPHONE_TYPE_NONE) &&
+        (intValue <= OHOS::AudioStandard::AudioSpatialDeviceType::EARPHONE_TYPE_OTHERS))) {
+        AUDIO_ERR_LOG("Get spatialDeviceType failed");
+        return AUDIO_INVALID_PARAM;
+    }
+    spatialDeviceState->spatialDeviceType = static_cast<OHOS::AudioStandard::AudioSpatialDeviceType>(intValue);
     return AUDIO_OK;
 }
 
@@ -303,6 +287,20 @@ int32_t TaiheParamUtils::GetAudioCapturerInfo(OHOS::AudioStandard::AudioCapturer
     }
 
     capturerInfo.capturerFlags = in.capturerFlags;
+    return AUDIO_OK;
+}
+
+int32_t TaiheParamUtils::GetAudioCapturerFilter(OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter>
+    &audioCapturerFilter, AudioCapturerFilter const &in)
+{
+    audioCapturerFilter = new(std::nothrow) OHOS::AudioStandard::AudioCapturerFilter();
+    CHECK_AND_RETURN_RET_LOG(audioCapturerFilter != nullptr, AUDIO_INVALID_PARAM, "audioCapturerFilter is null");
+    if (in.uid.has_value()) {
+        audioCapturerFilter->uid = in.uid.value();
+    }
+    if (in.capturerInfo.has_value()) {
+        GetCapturerInfo(audioCapturerFilter->capturerInfo, in.capturerInfo.value());
+    }
     return AUDIO_OK;
 }
 
@@ -383,28 +381,16 @@ int32_t TaiheParamUtils::GetEffectPropertyArray(OHOS::AudioStandard::AudioEffect
     return AUDIO_OK;
 }
 
-int32_t TaiheParamUtils::GetAudioInterrupt(OHOS::AudioStandard::AudioInterrupt &audioInterrupt,
-    AudioInterrupt const &interrupt)
+int32_t TaiheParamUtils::GetExtraParametersSubKV(std::vector<std::pair<std::string, std::string>> &subKV,
+    map_view<string, string> in)
 {
-    audioInterrupt.contentType = static_cast<OHOS::AudioStandard::ContentType>(interrupt.contentType.get_value());
-    audioInterrupt.streamUsage = static_cast<OHOS::AudioStandard::StreamUsage>(interrupt.streamUsage.get_value());
-    audioInterrupt.pauseWhenDucked = interrupt.pauseWhenDucked;
-    audioInterrupt.audioFocusType.streamType = OHOS::AudioStandard::AudioSystemManager::GetStreamType(
-        audioInterrupt.contentType, audioInterrupt.streamUsage);
+    for (const auto &[key, value] : in) {
+        std::pair<std::string, std::string> pair;
+        pair.first = std::string(key);
+        pair.second = std::string(value);
+        subKV.push_back(pair);
+    }
     return AUDIO_OK;
-}
-
-InterruptAction TaiheParamUtils::SetValueInterruptAction(OHOS::AudioStandard::InterruptAction interruptAction)
-{
-    InterruptType interruptType = TaiheAudioEnum::ToTaiheInterruptType(interruptAction.interruptType);
-    InterruptHint interruptHint = TaiheAudioEnum::ToTaiheInterruptHint(interruptAction.interruptHint);
-    InterruptAction taiheInterruptAction {
-        .actionType = static_cast<InterruptActionType::key_t>(interruptAction.actionType),
-        .type = taihe::optional<InterruptType>(std::in_place_t{}, interruptType),
-        .hint = taihe::optional<InterruptHint>(std::in_place_t{}, interruptHint),
-        .activated = taihe::optional<bool>(std::in_place_t{}, interruptAction.activated),
-    };
-    return taiheInterruptAction;
 }
 
 AudioSamplingRate TaiheParamUtils::ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate)
@@ -444,16 +430,27 @@ AudioStreamInfo TaiheParamUtils::ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::Au
         .channels = ToTaiheAudioChannel(src->channels),
         .sampleFormat = ToTaiheAudioSampleFormat(src->format),
         .encodingType = TaiheAudioEnum::ToTaiheAudioEncodingType(src->encoding),
+        .channelLayout = taihe::optional<AudioChannelLayout>(std::in_place_t{},
+            TaiheAudioEnum::ToTaiheAudioChannelLayout(src->channelLayout)),
     };
     return streamInfo;
 }
 
+AudioTimestampInfo TaiheParamUtils::ToTaiheAudioTimestampInfo(OHOS::AudioStandard::Timestamp &src)
+{
+    static const int64_t secToNano = 1000000000;
+    int64_t time = src.time.tv_sec * secToNano + src.time.tv_nsec;
+    AudioTimestampInfo audioTimestampInfo = {
+        .framePos = static_cast<int64_t>(src.framePosition),
+        .timestamp = time,
+    };
+    return audioTimestampInfo;
+}
+
 AudioRendererInfo TaiheParamUtils::ToTaiheRendererInfo(const OHOS::AudioStandard::AudioRendererInfo &rendererInfo)
 {
-    ContentType contentType = TaiheAudioEnum::ToTaiheContentType(rendererInfo.contentType);
     AudioVolumeMode volumeMode = TaiheAudioEnum::ToTaiheAudioVolumeMode(rendererInfo.volumeMode);
     AudioRendererInfo result = {
-        .content = taihe::optional<ContentType>(std::in_place_t{}, contentType),
         .usage = TaiheAudioEnum::ToTaiheStreamUsage(rendererInfo.streamUsage),
         .rendererFlags = rendererInfo.rendererFlags,
         .volumeMode = taihe::optional<AudioVolumeMode>(std::in_place_t{}, volumeMode),
@@ -495,6 +492,24 @@ AudioCapturerChangeInfo TaiheParamUtils::ToTaiheAudioCapturerChangeInfo(
         .muted = taihe::optional<bool>(std::in_place_t{}, src->muted),
     };
     return changeInfo;
+}
+
+VolumeGroupInfo TaiheParamUtils::ToTaiheVolumeGroupInfo(const OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo>
+    &src)
+{
+    VolumeGroupInfo volumeGroupInfo = {
+        .networkId = ToTaiheString(src->networkId_),
+        .groupId = src->volumeGroupId_,
+        .mappingId = src->mappingId_,
+        .groupName = ToTaiheString(src->groupName_),
+        .type = TaiheAudioEnum::ToTaiheConnectType(src->connectType_),
+    };
+    return volumeGroupInfo;
+}
+
+string TaiheParamUtils::ToTaiheString(const std::string &src)
+{
+    return ::taihe::string(src);
 }
 
 taihe::array<AudioEffectProperty> TaiheParamUtils::ToTaiheEffectPropertyArray(
@@ -544,7 +559,7 @@ DeviceBlockStatusInfo TaiheParamUtils::SetValueBlockedDeviceAction(
     const OHOS::AudioStandard::MicrophoneBlockedInfo &microphoneBlockedInfo)
 {
     DeviceBlockStatusInfo taiheDeviceBlockStatusInfo {
-        .blockStatus = DeviceBlockStatus(static_cast<DeviceBlockStatus::key_t>(microphoneBlockedInfo.blockStatus)),
+        .blockStatus = TaiheAudioEnum::ToTaiheDeviceBlockStatus(microphoneBlockedInfo.blockStatus),
         .devices = TaiheParamUtils::SetDeviceDescriptors(microphoneBlockedInfo.devices),
     };
 
@@ -697,6 +712,28 @@ taihe::array<AudioCapturerChangeInfo> TaiheParamUtils::SetCapturerChangeInfos(
     return taihe::array<AudioCapturerChangeInfo>(result);
 }
 
+taihe::array<AudioEffectMode> TaiheParamUtils::SetEffectInfo(
+    const OHOS::AudioStandard::AudioSceneEffectInfo &audioSceneEffectInfo)
+{
+    std::vector<AudioEffectMode> result;
+    for (const auto &mode : audioSceneEffectInfo.mode) {
+        result.emplace_back(TaiheAudioEnum::ToTaiheAudioEffectMode(mode));
+    }
+    return taihe::array<AudioEffectMode>(result);
+}
+
+taihe::array<VolumeGroupInfo> TaiheParamUtils::SetVolumeGroupInfos(
+    const std::vector<OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo>> &volumeGroupInfos)
+{
+    std::vector<VolumeGroupInfo> result;
+    for (const auto &volumeGroupInfo : volumeGroupInfos) {
+        if (volumeGroupInfo != nullptr) {
+            result.emplace_back(ToTaiheVolumeGroupInfo(volumeGroupInfo));
+        }
+    }
+    return taihe::array<VolumeGroupInfo>(result);
+}
+
 taihe::array<taihe::string> TaiheParamUtils::ToTaiheArrayString(const std::vector<std::string> &src)
 {
     std::vector<::taihe::string> vec;
@@ -712,5 +749,12 @@ taihe::array<uint8_t> TaiheParamUtils::ToTaiheArrayBuffer(uint8_t *src, size_t s
         return taihe::array<uint8_t>(0);
     }
     return taihe::array<uint8_t>(copy_data_t{}, src, srcLen);
+}
+
+bool TaiheParamUtils::IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<uintptr_t> dst)
+{
+    std::shared_ptr<taihe::callback<void()>> srcPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(src);
+    std::shared_ptr<taihe::callback<void()>> dstPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(dst);
+    return taihe::same(*srcPtr, *dstPtr);
 }
 } // namespace ANI::Audio

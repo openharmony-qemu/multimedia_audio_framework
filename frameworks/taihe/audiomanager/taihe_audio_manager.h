@@ -20,7 +20,6 @@
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
 #include "taihe_audio_volume_key_event.h"
-#include "taihe_audio_manager_interrupt_callback.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -34,6 +33,11 @@ public:
     explicit AudioManagerImpl(std::shared_ptr<AudioManagerImpl> obj);
     ~AudioManagerImpl();
 
+    void SetExtraParametersSync(string_view mainKey, map_view<string, string> kvpairs);
+    map<string, string> GetExtraParametersSync(string_view mainKey, optional_view<array<string>> subKeys);
+    void SetAudioSceneSync(AudioScene scene);
+    void DisableSafeMediaVolumeSync();
+
     AudioVolumeManager GetVolumeManager();
     AudioStreamManager GetStreamManager();
     AudioRoutingManager GetRoutingManager();
@@ -42,23 +46,11 @@ public:
     AudioScene GetAudioSceneSync();
     AudioSpatializationManager GetSpatializationManager();
 
-    void OnInterrupt(AudioInterrupt const &interrupt, callback_view<void(InterruptAction const&)> callback);
-    void OffInterrupt(AudioInterrupt const &interrupt, optional_view<callback<void(InterruptAction const&)>> callback);
-    void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-
     friend AudioManager GetAudioManager();
 
 private:
-    static void RegisterInterruptCallback(AudioInterrupt const &interrupt,
-        std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl);
-    static void UnregisterInterruptCallback(AudioInterrupt const &interrupt,
-        std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl);
-    static void RegisterVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback, AudioManagerImpl *audioMngrImpl);
-
-    OHOS::AudioStandard::AudioSystemManager* audioMngr_;
+    OHOS::AudioStandard::AudioSystemManager *audioMngr_;
     int32_t cachedClientId_ = -1;
-    std::shared_ptr<OHOS::AudioStandard::AudioManagerCallback> interruptCallbackTaihe_ = nullptr;
-    std::shared_ptr<OHOS::AudioStandard::VolumeKeyEventCallback> volumeKeyEventCallbackTaihe_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_MANAGER_H

@@ -51,8 +51,6 @@ public:
     void RemoveAllRoutingManagerDeviceChangeCb();
     int32_t GetRoutingManagerDeviceChangeCbListSize();
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-
 private:
     struct AudioManagerJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -74,6 +72,7 @@ private:
     std::list<std::pair<std::shared_ptr<AutoRef>, OHOS::AudioStandard::DeviceFlag>> audioManagerDeviceChangeCbList_;
     std::list<std::pair<std::shared_ptr<AutoRef>, OHOS::AudioStandard::DeviceFlag>> routingManagerDeviceChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> microphoneBlockedCbList_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_MANAGER_CALLBACKS_H

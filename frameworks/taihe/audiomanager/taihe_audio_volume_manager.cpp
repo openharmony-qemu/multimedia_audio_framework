@@ -22,8 +22,6 @@
 #include "taihe_param_utils.h"
 #include "taihe_appvolume_change_callback.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
@@ -40,6 +38,108 @@ AudioVolumeManagerImpl::~AudioVolumeManagerImpl()
     AUDIO_DEBUG_LOG("AudioVolumeManagerImpl::~AudioVolumeManagerImpl()");
 }
 
+array<VolumeGroupInfo> AudioVolumeManagerImpl::GetVolumeGroupInfosSync(string_view networkId)
+{
+    std::string innerNetworkId = std::string(networkId);
+    std::vector<VolumeGroupInfo> emptyResult;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return array<VolumeGroupInfo>(emptyResult);
+    }
+    std::vector<OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo>> volumeGroupInfos;
+    int32_t ret = audioSystemMngr_->GetVolumeGroups(innerNetworkId, volumeGroupInfos);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, array<VolumeGroupInfo>(emptyResult), "GetVolumeGroups failure!");
+    return TaiheParamUtils::SetVolumeGroupInfos(volumeGroupInfos);
+}
+
+int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidSync(int32_t uid)
+{
+    int32_t appUid = uid;
+    int32_t volLevel = 0;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return volLevel;
+    }
+    volLevel = audioSystemMngr_->GetAppVolume(appUid);
+    if (volLevel == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return volLevel;
+    } else if (volLevel == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return volLevel;
+    }
+    return volLevel;
+}
+
+void AudioVolumeManagerImpl::SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume)
+{
+    int32_t appUid = uid;
+    int32_t volLevel = volume;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetAppVolume(appUid, volLevel);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "set appvolume failed");
+        return;
+    }
+    return;
+}
+
+bool AudioVolumeManagerImpl::IsAppVolumeMutedForUidSync(int32_t uid, bool owned)
+{
+    int32_t appUid = uid;
+    bool isOwned = owned;
+    bool isMute = false;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return isMute;
+    }
+    isMute = audioSystemMngr_->IsAppVolumeMute(appUid, isOwned);
+    return isMute;
+}
+
+void AudioVolumeManagerImpl::SetAppVolumeMutedForUidSync(int32_t uid, bool muted)
+{
+    int32_t appUid = uid;
+    bool isMute = muted;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetAppVolumeMuted(appUid, isMute);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "SetAppVolumeMuted failed");
+        return;
+    }
+}
+
+int32_t AudioVolumeManagerImpl::GetAppVolumePercentageSync()
+{
+    int32_t volLevel = 0;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return volLevel;
+    }
+    volLevel = audioSystemMngr_->GetSelfAppVolume();
+    return volLevel;
+}
+
+void AudioVolumeManagerImpl::SetAppVolumePercentageSync(int32_t volume)
+{
+    int32_t volLevel = volume;
+    if (audioSystemMngr_ == nullptr) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSystemMngr_ is nullptr");
+        return;
+    }
+    int32_t intValue = audioSystemMngr_->SetSelfAppVolume(volLevel);
+    if (intValue != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "set appvolume failed");
+        return;
+    }
+}
+
 AudioVolumeManager AudioVolumeManagerImpl::CreateVolumeManagerWrapper()
 {
     std::shared_ptr<AudioVolumeManagerImpl> audioVolMngrImpl = std::make_shared<AudioVolumeManagerImpl>();
@@ -48,6 +148,7 @@ AudioVolumeManager AudioVolumeManagerImpl::CreateVolumeManagerWrapper()
         audioVolMngrImpl->cachedClientId_ = getpid();
         return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(audioVolMngrImpl);
     }
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioVolMngrImpl is nullptr");
     return make_holder<AudioVolumeManagerImpl, AudioVolumeManager>(nullptr);
 }
 AudioVolumeGroupManager AudioVolumeManagerImpl::GetVolumeGroupManagerSync(int32_t groupId)
@@ -61,7 +162,7 @@ void AudioVolumeManagerImpl::RegisterCallback(std::shared_ptr<uintptr_t> &callba
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (audioVolMngrImpl->volumeKeyEventCallbackTaihe_ == nullptr) {
         audioVolMngrImpl->volumeKeyEventCallbackTaihe_ = std::make_shared<TaiheAudioVolumeKeyEvent>(env);
         int32_t ret =
@@ -86,7 +187,7 @@ void AudioVolumeManagerImpl::RegisterAppVolumeChangeForUidCallback(double uid, s
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     int32_t appUid = static_cast<int32_t>(uid);
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ == nullptr) {
         audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ =
             std::make_shared<TaiheAudioManagerAppVolumeChangeCallback>(env);
@@ -109,7 +210,7 @@ void AudioVolumeManagerImpl::RegisterSelfAppVolumeChangeCallback(std::shared_ptr
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ == nullptr) {
         audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioManagerAppVolumeChangeCallback>(env);
@@ -168,7 +269,7 @@ void AudioVolumeManagerImpl::UnregisterAppVolumeChangeForUidCallback(std::shared
         cb->RemoveAudioVolumeChangeForUidCbRef(callback);
     }
 
-    if (cb->GetAppVolumeChangeForUidListSize() == 0) {
+    if (callback == nullptr || cb->GetAppVolumeChangeForUidListSize() == 0) {
         audioVolMngrImpl->audioSystemMngr_->UnsetAppVolumeCallbackForUid();
         audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_.reset();
         audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ = nullptr;

@@ -42,8 +42,6 @@ public:
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
     void OnMicStateUpdated(const OHOS::AudioStandard::MicStateChangeEvent &micStateChangeEvent) override;
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-
 private:
     struct AudioManagerMicStateChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -58,6 +56,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> micStateChangeCallback_ = nullptr;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_MICSTATECHANGE_CALLBACK_H

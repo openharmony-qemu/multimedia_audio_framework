@@ -21,8 +21,6 @@
 #include <thread>
 #include "taihe_param_utils.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioRendererStateCallback::sWorkerMutex_;
 TaiheAudioRendererStateCallback::TaiheAudioRendererStateCallback(ani_env *env)
@@ -64,7 +62,7 @@ void TaiheAudioRendererStateCallback::SaveCallbackReference(const std::string &c
     CHECK_AND_RETURN_LOG(callback != nullptr, "TaiheAudioRendererStateCallback: creating reference for callback fail");
     callback_ = callback;
     ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get_env() fail");
+    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     rendererStateCallback_ = cb;
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
@@ -107,8 +105,8 @@ void TaiheAudioRendererStateCallback::SafeJsCallbackRendererStateWork(ani_env *e
     });
 
     do {
-        std::shared_ptr<taihe::callback<void(taihe::array<AudioRendererChangeInfo>)>> cacheCallback =
-            std::reinterpret_pointer_cast<taihe::callback<void(taihe::array<AudioRendererChangeInfo>)>>(
+        std::shared_ptr<taihe::callback<void(taihe::array_view<AudioRendererChangeInfo>)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(taihe::array_view<AudioRendererChangeInfo>)>>(
             event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "get reference value fail");
         taihe::array<AudioRendererChangeInfo> changeInfos = TaiheParamUtils::SetRendererChangeInfos(event->changeInfos);

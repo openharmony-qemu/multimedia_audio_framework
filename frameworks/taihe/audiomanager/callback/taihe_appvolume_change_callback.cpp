@@ -26,8 +26,6 @@
 #include "taihe_audio_error.h"
 #include "taihe_audio_enum.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioManagerAppVolumeChangeCallback::sWorkerMutex_;
 TaiheAudioManagerAppVolumeChangeCallback::TaiheAudioManagerAppVolumeChangeCallback(ani_env *env)
@@ -92,10 +90,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::SaveSelfVolumdChangeCallbackRefer
 bool TaiheAudioManagerAppVolumeChangeCallback::IsSameCallback(std::shared_ptr<uintptr_t> &callback,
     std::shared_ptr<uintptr_t> &listCallback)
 {
-    if (callback == listCallback) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, listCallback);
 }
 
 void TaiheAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t appUid,

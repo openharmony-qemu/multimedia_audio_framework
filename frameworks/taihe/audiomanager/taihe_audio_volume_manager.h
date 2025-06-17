@@ -31,13 +31,20 @@ public:
     ~AudioVolumeManagerImpl();
 
     static AudioVolumeManager CreateVolumeManagerWrapper();
-    AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
 
+    array<VolumeGroupInfo> GetVolumeGroupInfosSync(string_view networkId);
+    int32_t GetAppVolumePercentageForUidSync(int32_t uid);
+    void SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume);
+    bool IsAppVolumeMutedForUidSync(int32_t uid, bool owned);
+    void SetAppVolumeMutedForUidSync(int32_t uid, bool muted);
+    int32_t GetAppVolumePercentageSync();
+    void SetAppVolumePercentageSync(int32_t volume);
+    AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
     void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-    void OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
-    void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-    void OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OnAppVolumeChangeForUid(double uid, callback_view<void(VolumeEvent const&)> callback);
+    void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);
+    void OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
+    void OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffAppVolumeChangeForUid(optional_view<callback<void(VolumeEvent const&)>> callback);
 
 private:

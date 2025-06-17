@@ -41,10 +41,29 @@ AudioEffectManager AudioEffectManagerImpl::CreateEffectManagerWrapper()
 {
     auto *audioEffectMngr = OHOS::AudioStandard::AudioEffectManager::GetInstance();
     if (audioEffectMngr == nullptr) {
-        AUDIO_ERR_LOG("Failed to get AudioEffectManager instance");
-        return make_holder<AudioEffectManagerImpl, AudioEffectManager>();
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Failed to get AudioEffectManager instance");
+        return make_holder<AudioEffectManagerImpl, AudioEffectManager>(nullptr);
     }
     return make_holder<AudioEffectManagerImpl, AudioEffectManager>(audioEffectMngr);
+}
+
+array<AudioEffectProperty> AudioEffectManagerImpl::GetSupportedAudioEffectProperty()
+{
+    std::vector<AudioEffectProperty> emptyResult;
+    if (audioEffectMngr_ == nullptr) {
+        AUDIO_ERR_LOG("audioEffectMngr_ is nullptr");
+        TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM, "incorrect parameter types: The type of options must be empty");
+        return array<AudioEffectProperty>(emptyResult);
+    }
+
+    OHOS::AudioStandard::AudioEffectPropertyArrayV3 propertyArray = {};
+    int32_t result = audioEffectMngr_->GetSupportedAudioEffectProperty(propertyArray);
+    if (result != AUDIO_OK) {
+        AUDIO_ERR_LOG("get audio enhance property failure! %{public}d", result);
+        TaiheAudioError::ThrowError(result, "interface operation failed");
+        return array<AudioEffectProperty>(emptyResult);
+    }
+    return TaiheParamUtils::ToTaiheEffectPropertyArray(propertyArray);
 }
 
 void AudioEffectManagerImpl::SetAudioEffectProperty(array_view<AudioEffectProperty> propertyArray)

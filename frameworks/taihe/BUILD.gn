@@ -50,16 +50,29 @@ taihe_shared_library("audio_taihe") {
 
   include_dirs = [
     "common",
+    "asrcontroller",
+    "audiorenderer",
+    "audiorenderer/callback",
+    "audiocapturer",
+    "audiocapturer/callback",
     "audiomanager",
     "audiomanager/callback",
   ]
 
   sources = get_target_outputs(":run_taihe")
   sources += [
+    "asrcontroller/taihe_asr_processing_controller.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_callback_inner.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_callbacks.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_device_change_callback.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_info_change_callback.cpp",
+    "audiocapturer/callback/taihe_audio_capturer_read_data_callback.cpp",
+    "audiocapturer/callback/taihe_capturer_period_position_callback.cpp",
+    "audiocapturer/callback/taihe_capturer_position_callback.cpp",
+    "audiocapturer/taihe_audio_capturer.cpp",
     "audiomanager/callback/taihe_appvolume_change_callback.cpp",
     "audiomanager/callback/taihe_audio_capturer_state_callback.cpp",
     "audiomanager/callback/taihe_audio_manager_callbacks.cpp",
-    "audiomanager/callback/taihe_audio_manager_interrupt_callback.cpp",
     "audiomanager/callback/taihe_audio_micstatechange_callback.cpp",
     "audiomanager/callback/taihe_audio_renderer_state_callback.cpp",
     "audiomanager/callback/taihe_audio_ringermode_callback.cpp",
@@ -76,6 +89,14 @@ taihe_shared_library("audio_taihe") {
     "audiomanager/taihe_audio_stream_manager.cpp",
     "audiomanager/taihe_audio_volume_group_manager.cpp",
     "audiomanager/taihe_audio_volume_manager.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_callback_inner.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_device_change_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_policy_service_died_callback.cpp",
+    "audiorenderer/callback/taihe_audio_renderer_write_data_callback.cpp",
+    "audiorenderer/callback/taihe_renderer_period_position_callback.cpp",
+    "audiorenderer/callback/taihe_renderer_position_callback.cpp",
+    "audiorenderer/taihe_audio_renderer.cpp",
     "common/taihe_audio_enum.cpp",
     "common/taihe_audio_error.cpp",
     "common/taihe_param_utils.cpp",
@@ -93,6 +114,7 @@ taihe_shared_library("audio_taihe") {
   ]
 
   external_deps = [
+    "ability_runtime:abilitykit_native",
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "hilog:libhilog",
@@ -105,6 +127,12 @@ taihe_shared_library("audio_taihe") {
   if (audio_framework_feature_hiview_enable) {
     defines += [ "FEATURE_HIVIEW_ENABLE" ]
     external_deps += [ "hiview:libxpower_event_js" ]
+  }
+
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+    sources += [ "audiorenderer/taihe_toneplayer.cpp" ]
+    deps += [ "../native/toneplayer:audio_toneplayer" ]
   }
 }
 
