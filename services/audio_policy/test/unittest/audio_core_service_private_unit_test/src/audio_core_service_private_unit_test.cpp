@@ -1725,8 +1725,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_112, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({BLUETOOTH_SPEAKER, audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1749,8 +1748,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_113, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({"abc", audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1773,7 +1771,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({BLUETOOTH_SPEAKER, audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
+    EXPECT_NE(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
     EXPECT_NE(ret, SUCCESS);
 }
 

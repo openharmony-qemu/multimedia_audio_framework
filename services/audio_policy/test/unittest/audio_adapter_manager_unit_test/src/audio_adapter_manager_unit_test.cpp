@@ -161,7 +161,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
     AudioStreamType streamType = STREAM_VOICE_CALL;
     bool mute = false;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    int32_t ERROR = -1;
     int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
     EXPECT_EQ(result, ERROR);
 }
@@ -328,7 +327,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST(AudioAdapterManagerUnitTest, UpdateSinkArgs_001, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_001, TestSize.Level1)
 {
     AudioModuleInfo info;
     info.name = "hello";
@@ -360,7 +359,7 @@ HWTEST(AudioAdapterManagerUnitTest, UpdateSinkArgs_001, TestSize.Level1)
  * @tc.type: FUNC
  * @tc.require: #ICDC94
  */
-HWTEST(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
 {
     AudioModuleInfo info;
     std::string ret {};

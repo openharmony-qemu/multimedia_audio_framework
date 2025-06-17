@@ -20,11 +20,16 @@
 #include "audio_interrupt_service.h"
 #include "audio_policy_server.h"
 #include "audio_session_info.h"
+#include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
 using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
 using namespace std;
+bool g_hasPermission = false;
 bool g_hasServerInit = false;
 const int32_t SYSTEM_ABILITY_ID = 3009;
 const bool RUN_ON_CREATE = false;
@@ -62,6 +67,41 @@ uint32_t GetArrLength(T& arr)
         return 0;
     }
     return sizeof(arr) / sizeof(arr[0]);
+}
+
+void AudioFuzzTestGetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
 }
 
 AudioPolicyServer* GetServerPtr()
@@ -139,7 +179,7 @@ void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
     GetServerPtr()->interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 
-typedef void (*TestFuncs[5])();
+typedef void (*TestFuncs[4])();
 
 TestFuncs g_testFuncs = {
     MoreFuzzTest,
@@ -179,6 +219,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
         return 0;
     }
 
+    OHOS::AudioStandard::AudioFuzzTestGetPermission();
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }
