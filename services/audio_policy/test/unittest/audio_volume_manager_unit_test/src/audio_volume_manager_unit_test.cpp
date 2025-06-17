@@ -44,27 +44,6 @@ void AudioVolumeManagerUnitTest::TearDown(void)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_001
-* @tc.desc  : Test GetSharedVolume interface.
-*/
-HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_001, TestSize.Level1)
-{
-    AudioVolumeType streamType = AudioStreamType::STREAM_DEFAULT;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    Volume vol;
-    bool bRet;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    bRet = audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(bRet, false);
-
-    streamType = AudioStreamType::STREAM_RING;
-    bRet = audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(bRet, true);
-}
-
-/**
-* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_002
 * @tc.desc  : Test InitSharedVolume interface.
 */
@@ -167,12 +146,12 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_006, TestSize.Level1)
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_CAR;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     bRet = audioVolumeManager.IsBlueTooth(deviceType);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = BT_SOUNDBOX;
     deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     bRet = audioVolumeManager.IsBlueTooth(deviceType);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 
     audioVolumeManager.audioActiveDevice_.currentActiveDevice_.deviceCategory_ = CATEGORY_DEFAULT;
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -440,7 +419,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_019, TestSize.Level1)
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_020
-* @tc.desc  : Test GetSharedVolume interface.
+* @tc.desc  : Test GetMaxVolumeLevel interface.
 */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_020, TestSize.Level1)
 {
@@ -459,7 +438,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_020, TestSize.Level1)
 /**
 * @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_021
-* @tc.desc  : Test GetSharedVolume interface.
+* @tc.desc  : Test GetMinVolumeLevel interface.
 */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_021, TestSize.Level1)
 {

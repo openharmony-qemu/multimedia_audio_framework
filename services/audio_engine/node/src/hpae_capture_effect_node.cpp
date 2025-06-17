@@ -118,6 +118,8 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
 void HpaeCaptureEffectNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode,
     HpaeNodeInfo &nodeInfo)
 {
+    CHECK_AND_RETURN_LOG(!inputStream_.CheckIfDisConnected(preNode->GetOutputPort(nodeInfo)),
+        "HpaeCaptureEffectNode[%{public}u] has disconnected with preNode", GetNodeId());
     inputStream_.DisConnect(preNode->GetOutputPort(nodeInfo, true));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
@@ -201,7 +203,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
 int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERROR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);
 }
 

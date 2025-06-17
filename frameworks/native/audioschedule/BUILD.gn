@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
 import("../../../config.gni")
 import("../../../ressche_part.gni")
 
@@ -48,6 +49,7 @@ ohos_shared_library("audio_schedule") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
+    "init:libbegetutil",
   ]
 
   if (ressche_enable == true) {
@@ -60,4 +62,41 @@ ohos_shared_library("audio_schedule") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+}
+
+ohos_unittest("audioschedule_unit_test") {
+  module_out_path = "audio_framework/audio_framework_route/audioschedule"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "./include",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
+    "../audioutils/include",
+  ]
+
+  sources = [
+    "test/unittest/audio_schedule_unit_test.cpp",
+  ]
+
+  deps = [ 
+    ":audio_schedule",
+    "../audioutils:audio_utils"
+  ]
+
+  defines = []
+
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+  ]
+
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
 }

@@ -43,13 +43,13 @@ static uint32_t g_tbl = 10;
 static uint32_t g_tbr = 11;
 static uint32_t g_tsl = 12;
 static uint32_t g_tsr = 13;
-
 static constexpr uint32_t INDEX_SIX = 6;
 static constexpr uint32_t INDEX_SEVEN = 7;
 static constexpr uint32_t INDEX_EIGHT = 8;
 static constexpr uint32_t INDEX_NINE = 9;
 static constexpr uint32_t INDEX_TEN = 10;
 static constexpr uint32_t INDEX_ELEVEN = 11;
+static constexpr uint32_t MAX_FRAME_LENGTH = SAMPLE_RATE_192000 * 10; // max framelength is sample rate 192000, 10s
 
 // channel masks for downmixing general output channel layout
 static constexpr uint64_t MASK_MIDDLE_FRONT = FRONT_LEFT | FRONT_RIGHT | FRONT_CENTER |
@@ -96,6 +96,11 @@ int32_t DownMixer::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo out
     inChannels_ = inChannelInfo.numChannels;
     outChannels_ = outChannelInfo.numChannels;
     mixLfe_ = mixLfe;
+
+    CHECK_AND_RETURN_RET_LOG((inChannels_ >= 0) && (inChannels_ <= MAX_CHANNELS), DMIX_ERR_INVALID_ARG,
+        "invalid input channels");
+    CHECK_AND_RETURN_RET_LOG((outChannels_ >= 0) && (outChannels_ <= MAX_CHANNELS), DMIX_ERR_INVALID_ARG,
+        "invalid output channels");
     
     formatSize_ = formatSize;
     int32_t ret = SetupDownMixTable();
@@ -109,22 +114,15 @@ int32_t DownMixer::Process(uint32_t frameLen, float* in, uint32_t inLen, float* 
 {
     CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
-    CHECK_AND_RETURN_RET_LOG(frameLen >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
-    if (!isInitialized_) {
-        AUDIO_DEBUG_LOG("Downmixe table has not been initialized!");
-        return DMIX_ERR_ALLOC_FAILED;
-    }
+    CHECK_AND_RETURN_RET_LOG(frameLen <= MAX_FRAME_LENGTH, DMIX_ERR_INVALID_ARG, "invalid frameSize");
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, DMIX_ERR_ALLOC_FAILED, "Downmixe table has not been initialized!");
+    
     uint32_t expectInLen = frameLen * inChannels_ * formatSize_;
     uint32_t expectOutLen = frameLen * outChannels_ * formatSize_;
     if ((expectInLen > inLen) || (expectOutLen > outLen)) {
+        AUDIO_ERR_LOG("unexpected inLen %{public}d or outLen %{public}d", inLen, outLen);
         int32_t ret = memcpy_s(out, outLen, in, inLen);
-        if (ret != 0) {
-            AUDIO_ERR_LOG("memcpy failed when down-mixer process");
-            return DMIX_ERR_ALLOC_FAILED;
-        }
-        AUDIO_ERR_LOG("expect Input Len: %{public}d, inLen: %{public}d,"
-            "expected output len: %{public}d, outLen %{public}d",
-            expectInLen, inLen, expectOutLen, outLen);
+        CHECK_AND_RETURN_RET_LOG(ret == EOK, DMIX_ERR_ALLOC_FAILED, "memcpy failed when processing unexpected len");
         return DMIX_ERR_ALLOC_FAILED;
     }
     // For HOA, copy the first channel into all output channels
@@ -247,7 +245,7 @@ void DownMixer::SetupStereoDmixTable()
 {
     uint64_t inChMsk = inLayout_;
     for (uint32_t i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = 0.f;
         downMixTable_[FR][i] = 0.f;
         SetupStereoDmixTablePart1(bit, i);
@@ -266,7 +264,7 @@ void DownMixer::Setup5Point1DmixTable()
         downMixTable_[SW][i] = 0.f;
         downMixTable_[BL][i] = 0.f;
         downMixTable_[BR][i] = 0.f;
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         Setup5Point1DmixTablePart1(bit, i);
         Setup5Point1DmixTablePart2(bit, i);
         inChMsk ^= bit;
@@ -278,7 +276,7 @@ void DownMixer::Setup5Point1Point2DmixTable()
     g_tsr = INDEX_SEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
         downMixTable_[g_tsl][i] = downMixTable_[g_tsr][i] = 0.f;
@@ -295,7 +293,7 @@ void DownMixer::Setup5Point1Point4DmixTable()
     g_tbr = INDEX_NINE;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
         downMixTable_[g_tfl][i] = downMixTable_[g_tfr][i] = 0.f;
@@ -311,7 +309,7 @@ void DownMixer::Setup7Point1DmixTable()
     g_sr = INDEX_SEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
@@ -328,7 +326,7 @@ void DownMixer::Setup7Point1Point2DmixTable()
     g_tsr = INDEX_NINE;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
@@ -348,7 +346,7 @@ void DownMixer::Setup7Point1Point4DmixTable()
     g_tbr = INDEX_ELEVEN;
     uint64_t inChMsk = inLayout_;
     for (unsigned i = 0; i < inChannels_; i++) {
-        uint64_t bit = inChMsk & -(int64_t)inChMsk;
+        uint64_t bit = inChMsk & (~inChMsk + 1);
         downMixTable_[FL][i] = downMixTable_[FR][i] = downMixTable_[FC][i] = 0.f;
         downMixTable_[SW][i] = downMixTable_[g_sl][i] = downMixTable_[g_sr][i] = 0.f;
         downMixTable_[BL][i] = downMixTable_[BR][i] = 0.f;
@@ -372,10 +370,10 @@ void DownMixer::SetupGeneralDmixTable()
     uint64_t outChMsk = outLayout_;
 
     for (uint32_t i = 0; i < outChannels_; i++) {
-        uint64_t outBit = outChMsk & -(int64_t)outChMsk;
+        uint64_t outBit = outChMsk & (~outChMsk + 1);
         uint64_t inChMsk = inLayout_;
         for (uint32_t j = 0; j < inChannels_; j++) {
-            uint64_t inBit = inChMsk & -(int64_t)inChMsk;
+            uint64_t inBit = inChMsk & (~inChMsk + 1);
             if (inBit & outBit) { // if in channel and out channel is the same
                 downMixTable_[i][j] = COEF_0DB_F;
             } else if (inBit == TOP_CENTER) {
@@ -1074,9 +1072,8 @@ static bool IsValidChLayout(AudioChannelLayout &chLayout, uint32_t chCounts)
 
 AudioChannelLayout DownMixer::SetDefaultChannelLayout(AudioChannel channels)
 {
-    if (channels < MONO || channels > CHANNEL_16) {
-        return CH_LAYOUT_UNKNOWN;
-    }
+    CHECK_AND_RETURN_RET_LOG((channels >= MONO) && (channels <= CHANNEL_16), CH_LAYOUT_UNKNOWN,
+        "invalid channel count");
     switch (channels) {
         case MONO:
             return CH_LAYOUT_MONO;

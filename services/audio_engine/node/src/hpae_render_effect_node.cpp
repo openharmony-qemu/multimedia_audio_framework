@@ -16,7 +16,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeRenderEffectNode"
 #endif
- 
+
 #include <cinttypes>
 #include "audio_errors.h"
 #include "audio_engine_log.h"
@@ -28,6 +28,11 @@
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
+static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNELS = 4;
+static constexpr int32_t DIRECT_CHANNELS = 2;
+static constexpr int32_t COLLABORATIVE_CHANNELS = 2;
+static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX = 2;
+static constexpr int32_t COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX = 3;
 static constexpr int64_t WAIT_CLOSE_EFFECT_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_EFFECT_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
@@ -46,12 +51,69 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         audioSupportedSceneTypes.end()) {
         sceneType_ = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
     }
+    if (sceneType_ == "SCENE_COLLABORATIVE") {
+        PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
+        directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+        collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    }
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeRenderEffectNodeInput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeRenderEffectNodeOutput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
+    if (sceneType_ == "SCENE_COLLABORATIVE") {
+        directPcmDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
+        collaborativePcmDumper_ = std::make_unique<HpaePcmDumper>(
+            "HpaeRenderEffectNodeCollaborative_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
+    }
+#endif
+}
+
+void HpaeRenderEffectNode::DoProcess()
+{
+    HpaePcmBuffer *tempOut = nullptr;
+    std::vector<HpaePcmBuffer *>& preOutputs = inputStream_.ReadPreOutputData();
+    // if buffer is not valid, write silence data(invalid) to output
+    if (sceneType_ != "SCENE_COLLABORATIVE") {
+        if (enableProcess_ && !preOutputs.empty()) {
+            tempOut = SignalProcess(preOutputs);
+            outputStream_.WriteDataToOutput(tempOut);
+        } else if (!preOutputs.empty()) {
+            outputStream_.WriteDataToOutput(preOutputs[0]);
+        } else {
+            outputStream_.WriteDataToOutput(&silenceData_);
+        }
+        return;
+    }
+
+    if (enableProcess_ && !preOutputs.empty() && directOutput_ && collaborativeOutput_) {
+        SignalProcess(preOutputs);
+        int32_t ret = SplitCollaborativeData();
+        if (ret != SUCCESS) {
+            outputStream_.WriteDataToOutput(&silenceData_);
+            outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
+        } else {
+            outputStream_.WriteDataToOutput(directOutput_.get());
+            outputStream_.WriteDataToOutput(collaborativeOutput_.get(), HPAE_BUFFER_TYPE_COBUFFER);
+        }
+    } else if (!preOutputs.empty()) {
+        outputStream_.WriteDataToOutput(preOutputs[0]);
+        outputStream_.WriteDataToOutput(preOutputs[0], HPAE_BUFFER_TYPE_COBUFFER);
+    } else {
+        outputStream_.WriteDataToOutput(&silenceData_);
+        outputStream_.WriteDataToOutput(&silenceData_, HPAE_BUFFER_TYPE_COBUFFER);
+    }
+#ifdef ENABLE_HOOK_PCM
+    if (directPcmDumper_ && directOutput_) {
+        directPcmDumper_->Dump((int8_t *)directOutput_->GetPcmDataBuffer(),
+            directOutput_->GetFrameLen() * sizeof(float) * directOutput_->GetChannelCount());
+    }
+    if (collaborativePcmDumper_ && collaborativeOutput_) {
+        collaborativePcmDumper_->Dump((int8_t *)collaborativeOutput_->GetPcmDataBuffer(),
+            collaborativeOutput_->GetFrameLen() * sizeof(float) * collaborativeOutput_->GetChannelCount());
+    }
 #endif
 }
 
@@ -82,7 +144,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 #endif
 
     ReconfigOutputBuffer();
- 
+
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
         inputs[0]->GetPcmDataBuffer(),
         effectOutput_.GetPcmDataBuffer(),
@@ -104,6 +166,26 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
+}
+
+int32_t HpaeRenderEffectNode::SplitCollaborativeData()
+{
+    CHECK_AND_RETURN_RET_LOG(effectOutput_.GetChannelCount() == static_cast<uint32_t>(CHANNEL_4), ERROR,
+        "collaborative channel count is invalid, count: %{public}d", CHANNEL_4);
+    // need to check whether the sample rate or frame length changes
+    // currently, sample rate and frame length will not change
+    float *tempOutput = effectOutput_.GetPcmDataBuffer();
+    float *directOutput = directOutput_->GetPcmDataBuffer();
+    float *collaborativeOutput = collaborativeOutput_->GetPcmDataBuffer();
+    for (uint32_t i = 0; i < effectOutput_.GetFrameLen(); ++i) {
+        directOutput[DIRECT_CHANNELS * i] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i];
+        directOutput[DIRECT_CHANNELS * i + 1] = tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + 1];
+        collaborativeOutput[COLLABORATIVE_CHANNELS * i] =
+            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_1_INDEX];
+        collaborativeOutput[COLLABORATIVE_CHANNELS * i + 1] =
+            tempOutput[COLLABORATIVE_OUTPUT_CHANNELS * i + COLLABORATIVE_OUTPUT_CHANNEL_2_INDEX];
+    }
+    return SUCCESS;
 }
 
 int32_t HpaeRenderEffectNode::AudioRendererCreate(HpaeNodeInfo &nodeInfo)

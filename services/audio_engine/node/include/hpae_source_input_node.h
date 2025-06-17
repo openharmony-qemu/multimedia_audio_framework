@@ -83,6 +83,7 @@ private:
     std::unordered_map<HpaeSourceBufferType, HpaePcmBuffer> inputAudioBufferMap_; // output buffer
     std::unordered_map<HpaeSourceBufferType, size_t> frameByteSizeMap_;
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> historyDataMap_;
+    std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
 

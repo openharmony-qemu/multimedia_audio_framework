@@ -73,6 +73,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_STREAM_VOLUME_CHANGE):
             HandleStreamVolumeChange(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_SYSTEM_VOLUME_CHANGE):
+            HandleSystemVolumeChange(data, reply);
+            break;
         default:
             break;
     }
@@ -441,6 +444,13 @@ void AudioPolicyClientStub::HandleStreamVolumeChange(MessageParcel &data, Messag
     StreamVolumeEvent streamVolumeEvent;
     streamVolumeEvent.Unmarshalling(data);
     OnStreamVolumeChange(streamVolumeEvent);
+}
+
+void AudioPolicyClientStub::HandleSystemVolumeChange(MessageParcel &data, MessageParcel &reply)
+{
+    VolumeEvent volumeEvent;
+    volumeEvent.Unmarshalling(data);
+    OnSystemVolumeChange(volumeEvent);
 }
 } // namespace AudioStandard
 } // namespace OHOS

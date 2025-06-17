@@ -16,6 +16,7 @@
 #include "simd_utils.h"
 #include <algorithm>
 #include <limits>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -25,6 +26,9 @@ constexpr int ALIGIN_FLOAT_SIZE = 4;
 #endif
 void SimdPointByPointAdd(size_t length, const float* inputLeft, const float* inputRight, float* output)
 {
+    CHECK_AND_RETURN_LOG(inputLeft, "inputLeft is nullptr");
+    CHECK_AND_RETURN_LOG(inputRight, "inputRight is nullptr");
+    CHECK_AND_RETURN_LOG(output, "output is nullptr");
 #if USE_ARM_NEON == 1
     if (length < ALIGIN_FLOAT_SIZE) {
         for (size_t i = 0; i < length; i++) {
@@ -54,8 +58,12 @@ void SimdPointByPointAdd(size_t length, const float* inputLeft, const float* inp
     }
 #endif
 }
+
 void SimdPointByPointSub(size_t length, const float* inputLeft, const float* inputRight, float* output)
 {
+    CHECK_AND_RETURN_LOG(inputLeft, "inputLeft is nullptr");
+    CHECK_AND_RETURN_LOG(inputRight, "inputRight is nullptr");
+    CHECK_AND_RETURN_LOG(output, "output is nullptr");
 #if USE_ARM_NEON == 1
     if (length < ALIGIN_FLOAT_SIZE) {
         for (size_t i = 0; i < length; i++) {
@@ -88,6 +96,9 @@ void SimdPointByPointSub(size_t length, const float* inputLeft, const float* inp
 
 void SimdPointByPointMul(size_t length, const float* inputLeft, const float* inputRight, float* output)
 {
+    CHECK_AND_RETURN_LOG(inputLeft, "inputLeft is nullptr");
+    CHECK_AND_RETURN_LOG(inputRight, "inputRight is nullptr");
+    CHECK_AND_RETURN_LOG(output, "output is nullptr");
 #if USE_ARM_NEON == 1
     if (length < ALIGIN_FLOAT_SIZE) {
         for (size_t i = 0; i < length; i++) {

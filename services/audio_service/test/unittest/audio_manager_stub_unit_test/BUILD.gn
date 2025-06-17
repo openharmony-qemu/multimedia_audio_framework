@@ -62,9 +62,9 @@ ohos_unittest("audio_manager_stub_unit_test") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service_static",
-    "../../../../../frameworks/native/audioclock:audio_clock"
   ]
 
   external_deps = [
@@ -77,8 +77,8 @@ ohos_unittest("audio_manager_stub_unit_test") {
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "pulseaudio:pulse",
+    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "qos_manager:concurrent_task_client",
   ]
 }

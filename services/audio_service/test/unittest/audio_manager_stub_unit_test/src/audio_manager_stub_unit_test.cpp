@@ -17,6 +17,8 @@
 
 #include "audio_manager_base.h"
 #include "accesstoken_kit.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
 #include "audio_device_info.h"
 #include "audio_errors.h"
 #include "audio_info.h"
@@ -35,12 +37,51 @@ namespace OHOS {
 namespace AudioStandard {
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
+bool g_hasPermission = false;
+
+void GetPermission()
+{
+    if (!g_hasPermission) {
+        uint64_t tokenId;
+        constexpr int perNum = 10;
+        const char *perms[perNum] = {
+            "ohos.permission.MICROPHONE",
+            "ohos.permission.MANAGE_INTELLIGENT_VOICE",
+            "ohos.permission.MANAGE_AUDIO_CONFIG",
+            "ohos.permission.MICROPHONE_CONTROL",
+            "ohos.permission.MODIFY_AUDIO_SETTINGS",
+            "ohos.permission.ACCESS_NOTIFICATION_POLICY",
+            "ohos.permission.USE_BLUETOOTH",
+            "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO",
+            "ohos.permission.RECORD_VOICE_CALL",
+            "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS",
+        };
+
+        NativeTokenInfoParams infoInstance = {
+            .dcapsNum = 0,
+            .permsNum = 10,
+            .aclsNum = 0,
+            .dcaps = nullptr,
+            .perms = perms,
+            .acls = nullptr,
+            .processName = "audiofuzztest",
+            .aplStr = "system_basic",
+        };
+        tokenId = GetAccessTokenId(&infoInstance);
+        SetSelfTokenID(tokenId);
+        OHOS::Security::AccessToken::AccessTokenKit::ReloadNativeTokenInfo();
+        g_hasPermission = true;
+    }
+}
 
 void AudioManagerStubUnitTest::SetUpTestCase(void) {}
 
 void AudioManagerStubUnitTest::TearDownTestCase(void) {}
 
-void AudioManagerStubUnitTest::SetUp(void) {}
+void AudioManagerStubUnitTest::SetUp(void)
+{
+    GetPermission();
+}
 
 void AudioManagerStubUnitTest::TearDown(void) {}
 

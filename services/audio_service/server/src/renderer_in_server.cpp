@@ -706,6 +706,8 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
                 DoFadingOut(bufferDesc);
             }
         }
+        CHECK_AND_RETURN_RET_LOG(memcpy_s(inputData, requestDataLen, bufferDesc.buffer, bufferDesc.bufLength) == 0,
+            ERROR, "memcpy error");
         memcpy_s(inputData, requestDataLen, bufferDesc.buffer, bufferDesc.bufLength);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
@@ -876,6 +878,9 @@ int32_t RendererInServer::GetSessionId(uint32_t &sessionId)
 
 int32_t RendererInServer::Start()
 {
+    AudioXCollie audioXCollie(
+        "RendererInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t ret = StartInner();
     RendererStage stage = ret == SUCCESS ? RENDERER_STAGE_START_OK : RENDERER_STAGE_START_FAIL;
     if (playerDfx_) {
@@ -887,22 +892,30 @@ int32_t RendererInServer::Start()
     return ret;
 }
 
+int32_t RendererInServer::StartInnerDuringStandby()
+{
+    int32_t ret = 0;
+    AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
+    CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
+    standByCounter_ = 0;
+    startedTime_ = ClockTime::GetCurNano();
+    audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
+    ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
+    ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
+        IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
+    audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    return ret;
+}
+
 int32_t RendererInServer::StartInner()
 {
     AUDIO_INFO_LOG("sessionId: %{public}u", streamIndex_);
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START);
     int32_t ret = 0;
     if (standByEnable_) {
-        AUDIO_INFO_LOG("sessionId: %{public}u call to exit stand by!", streamIndex_);
-        CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr, ERR_OPERATION_FAILED, "null stream");
-        standByCounter_ = 0;
-        startedTime_ = ClockTime::GetCurNano();
-        audioServerBuffer_->GetStreamStatus()->store(STREAM_STARTING);
-        ret = CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
-        ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
-            IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
-        return ret;
+        return StartInnerDuringStandby();
+    } else {
+        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -962,13 +975,13 @@ void RendererInServer::dualToneStreamInStart()
 int32_t RendererInServer::Pause()
 {
     AUDIO_INFO_LOG("Pause.");
+    AudioXCollie audioXCollie("RendererInServer::Pause", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
-    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE);
-    if (status_ != I_STATUS_STARTED) {
-        AUDIO_ERR_LOG("RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
-        return ERR_ILLEGAL_STATE;
-    }
+    CHECK_AND_RETURN_RET_LOG(status_ == I_STATUS_STARTED, ERR_ILLEGAL_STATE,
+        "RendererInServer::Pause failed, Illegal state: %{public}u", status_.load());
     status_ = I_STATUS_PAUSING;
+    bool isStandbyTmp = false;
     if (standByEnable_) {
         AUDIO_INFO_LOG("sessionId: %{public}u call Pause while stand by", streamIndex_);
         CHECK_AND_RETURN_RET_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
@@ -979,6 +992,7 @@ int32_t RendererInServer::Pause()
         if (playerDfx_) {
             playerDfx_->WriteDfxActionMsg(streamIndex_, RENDERER_STAGE_STANDBY_END);
         }
+        isStandbyTmp = true;
     }
     standByCounter_ = 0;
     GetEAC3ControlParam();
@@ -1007,6 +1021,7 @@ int32_t RendererInServer::Pause()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
@@ -1014,6 +1029,9 @@ int32_t RendererInServer::Pause()
 int32_t RendererInServer::Flush()
 {
     AUDIO_PRERELEASE_LOGI("Flush.");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Flush", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     Trace trace(traceTag_ + " Flush");
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
@@ -1070,6 +1088,9 @@ int32_t RendererInServer::DrainAudioBuffer()
 
 int32_t RendererInServer::Drain(bool stopFlag)
 {
+    AudioXCollie audioXCollie(
+        "RendererInServer::Drain", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED) {
@@ -1109,9 +1130,11 @@ int32_t RendererInServer::Drain(bool stopFlag)
 int32_t RendererInServer::Stop()
 {
     AUDIO_INFO_LOG("Stop.");
+    AudioXCollie audioXCollie(
+        "RendererInServer::Stop", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     {
         std::unique_lock<std::mutex> lock(statusLock_);
-        audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
             AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
@@ -1165,6 +1188,7 @@ int32_t RendererInServer::StopInner()
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     return SUCCESS;
 }
@@ -1909,7 +1933,8 @@ std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 {
     // todo dynamic
-    if (innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
+    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
         innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr) {
         AUDIO_INFO_LOG("dup buffer already configed!");
         return SUCCESS;
@@ -1945,7 +1970,9 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId)
 {
     size_t targetSize = bufferDesc.bufLength;
-    if (innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
+    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
+        innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
         AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
         return ERROR;
     }

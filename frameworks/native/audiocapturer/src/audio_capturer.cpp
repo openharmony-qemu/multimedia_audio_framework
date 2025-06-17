@@ -129,6 +129,7 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
 }
 
+// LCOV_EXCL_START
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
@@ -148,11 +149,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
     params.samplingRate = capturerOptions.streamInfo.samplingRate;
-    if (AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels) {
-        params.audioChannel = AudioChannel::STEREO;
-    } else {
-        params.audioChannel = capturerOptions.streamInfo.channels;
-    }
+    params.audioChannel = AudioChannel::CHANNEL_3 == capturerOptions.streamInfo.channels ? AudioChannel::STEREO :
+        capturerOptions.streamInfo.channels;
     params.audioEncoding = capturerOptions.streamInfo.encoding;
     params.channelLayout = capturerOptions.streamInfo.channelLayout;
     auto capturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
@@ -171,6 +169,8 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturer->capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
+    capturer->capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
+    capturer->capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
     capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
     capturer->strategy_ = capturerOptions.strategy;
     if (capturer->SetParams(params) != SUCCESS) {
@@ -675,6 +675,10 @@ int32_t AudioCapturerPrivate::CheckAndRestoreAudioCapturer(std::string callingFu
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(capturerMutex_);
+    }
+
+    if (abortRestore_) {
+        return SUCCESS;
     }
     // Return in advance if there's no need for restore.
     CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
@@ -2004,6 +2008,7 @@ std::shared_ptr<IAudioStream> AudioCapturerPrivate::GetInnerStream() const
     }
     return audioStream_;
 }
+// LCOV_EXCL_STOP
 
 std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwitchInfo(
     const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo)

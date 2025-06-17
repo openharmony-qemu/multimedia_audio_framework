@@ -1276,6 +1276,7 @@ int32_t AudioEffectChainManager::CheckAndReleaseCommonEffectChain(const std::str
         return ERROR;
     }
     if (sceneTypeToEffectChainMap_.count(defaultSceneTypeAndDeviceKey) != 0 &&
+        sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] != nullptr &&
         sceneTypeToEffectChainMap_[defaultSceneTypeAndDeviceKey] ==
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey]) {
         if (defaultEffectChainCount_ <= 1) {

@@ -496,5 +496,29 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_024, TestSize.Level1)
     auto ret = audioCapturerSession->CloseWakeUpAudioCapturer();
     EXPECT_NE(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_025
+ * @tc.desc  : Test ReloadSourceForDeviceChange() for valid source and device
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_025, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioDeviceDescriptor inputDevice;
+    inputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    AudioDeviceDescriptor outputDevice;
+    std::string caller = "testCase";
+
+    const uint64_t testSessionId = 99;
+    audioCapturerSession->audioEcManager_.isEcFeatureEnable_ = true;
+    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
+    audioCapturerSession->audioEcManager_.sessionIdUsedToOpenSource_ = testSessionId;
+
+    audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
+    EXPECT_EQ(audioCapturerSession->audioEcManager_.GetOpenedNormalSourceSessionId(), testSessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

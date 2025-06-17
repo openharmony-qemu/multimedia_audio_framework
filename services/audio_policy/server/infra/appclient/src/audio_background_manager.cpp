@@ -117,7 +117,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
                 return streamCollector_.HandleForegroundUnmute(uid);
             }
             bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-            streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+            streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
         }
         if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
@@ -173,7 +173,7 @@ void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const i
     AppState &appState = appStatesMap_[pid];
     bool needMute = !appState.hasSession && appState.isBack && !isSystem;
     bool notifyMute = false;
-    streamCollector_.HandleAppStateChange(uid, needMute, notifyMute);
+    streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
     if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
         lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
         CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");

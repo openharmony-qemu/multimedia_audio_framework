@@ -52,6 +52,8 @@ AudioLimiter::AudioLimiter(int32_t sinkIndex)
     curMaxLev_ = 0.0f;
     gain_ = 0.0f;
     bufHis_ = nullptr;
+    channels_ = 0;
+    sampleRate_ = 0;
     AUDIO_INFO_LOG("AudioLimiter");
 }
 
@@ -83,8 +85,8 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
         maxRequest, biteSize, sampleRate, channels, algoFrameLen_, latency_);
     bufHis_ = new (std::nothrow) float[algoFrameLen_]();
     CHECK_AND_RETURN_RET_LOG(bufHis_ != nullptr, ERROR, "allocate limit algorithm buffer failed");
-    sampleRate_ = sampleRate;
-    channels_ = channels;
+    sampleRate_ = static_cast<uint32_t>(sampleRate);
+    channels_ = static_cast<uint32_t>(channels);
     dumpFileNameIn_ = std::to_string(sinkIndex_) + "_limiter_in_" + GetTime() + "_" + std::to_string(sampleRate) + "_"
         + std::to_string(channels) + "_" + std::to_string(format_) + ".pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileNameIn_, &dumpFileInput_);

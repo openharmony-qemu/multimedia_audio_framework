@@ -661,5 +661,23 @@ void AudioPolicyClientProxy::OnStreamVolumeChange(StreamVolumeEvent streamVolume
     }
     reply.ReadInt32();
 }
+void AudioPolicyClientProxy::OnSystemVolumeChange(VolumeEvent volumeEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_SYSTEM_VOLUME_CHANGE));
+    volumeEvent.Marshalling(data);
+    CHECK_AND_RETURN_LOG(Remote() != nullptr, "Remote() is nullptr");
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending system volume event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

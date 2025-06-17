@@ -56,6 +56,7 @@ public:
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
     virtual void OnCloseAudioPortCb(int32_t result) override;

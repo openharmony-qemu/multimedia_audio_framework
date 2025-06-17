@@ -28,10 +28,16 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static constexpr uint32_t EXPAND_SIZE = 2;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {
     nodeInfo.frameLen = (nodeInfo.frameLen * sinkInfo.samplingRate) / nodeInfo.samplingRate;
+    // for 11025, frameSize has expand twice, shrink to 20ms here for correctly setting up
+    // frameLen in formatConverterNode in outputCluster, need to be reconstructed
+    if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
+        nodeInfo.frameLen /= EXPAND_SIZE;
+    }
     nodeInfo.samplingRate = sinkInfo.samplingRate;
     // nodeInfo is the first streamInfo, but mixerNode need formatConverterOutput's nodeInfo.
     // so we need to make a prediction here on the output of the formatConverter node.

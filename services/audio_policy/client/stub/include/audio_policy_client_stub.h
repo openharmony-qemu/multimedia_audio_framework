@@ -58,6 +58,7 @@ private:
     void HandleAudioSceneChange(MessageParcel &data, MessageParcel &reply);
     void HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply);
     void HandleStreamVolumeChange(MessageParcel &data, MessageParcel &reply);
+    void HandleSystemVolumeChange(MessageParcel &data, MessageParcel &reply);
 
     void OnMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);
     void OnFirMaxRemoteRequest(uint32_t updateCode, MessageParcel &data, MessageParcel &reply);

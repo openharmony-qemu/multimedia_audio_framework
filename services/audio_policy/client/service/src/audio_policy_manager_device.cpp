@@ -410,6 +410,11 @@ int32_t AudioPolicyManager::SetAvailableDeviceChangeCallback(const int32_t clien
         return ERROR;
     }
 
+    {
+        std::lock_guard<std::mutex> lock(handleAvailableDeviceChangeCbsMapMutex_);
+        availableDeviceChangeCbsMap_[{clientId, usage}] = object;
+    }
+
     return gsp->SetAvailableDeviceChangeCallback(clientId, usage, object);
 }
 
@@ -417,6 +422,12 @@ int32_t AudioPolicyManager::UnsetAvailableDeviceChangeCallback(const int32_t cli
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    {
+        std::lock_guard<std::mutex> lock(handleAvailableDeviceChangeCbsMapMutex_);
+        availableDeviceChangeCbsMap_.erase({clientId, usage});
+    }
+
     return gsp->UnsetAvailableDeviceChangeCallback(clientId, usage);
 }
 

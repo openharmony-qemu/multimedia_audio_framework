@@ -60,7 +60,8 @@ int32_t CoreServiceProviderStub::HandleUpdateSessionOperation(MessageParcel &dat
 {
     uint32_t sessionId = data.ReadUint32();
     SessionOperation operation = static_cast<SessionOperation>(data.ReadUint32());
-    int32_t ret = UpdateSessionOperation(sessionId, operation);
+    SessionOperationMsg opMsg = static_cast<SessionOperationMsg>(data.ReadUint32());
+    int32_t ret = UpdateSessionOperation(sessionId, operation, opMsg);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 }
@@ -111,10 +112,11 @@ CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *cor
 {
 }
 
-int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
+int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+    SessionOperationMsg opMsg)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->UpdateSessionOperation(sessionId, operation);
+    return coreServiceWorker_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
 int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,

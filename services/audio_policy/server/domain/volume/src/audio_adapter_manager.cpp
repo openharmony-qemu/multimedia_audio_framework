@@ -243,6 +243,8 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         SetVolumeDb(*iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -966,6 +968,10 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup && isDpReConnect_) {
+        RefreshVolumeWhenDpReConnect();
+    }
+
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
@@ -990,6 +996,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
@@ -1283,6 +1291,13 @@ int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
+    return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
 void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
@@ -2041,10 +2056,17 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
 void AudioAdapterManager::HandleDpConnection()
 {
     AUDIO_INFO_LOG("dp device connect, set max volume of stream music");
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-    }
+    isDpReConnect_ = true;
+}
+
+void AudioAdapterManager::RefreshVolumeWhenDpReConnect()
+{
+    // dp reconnect need to set max volume
+    AUDIO_INFO_LOG("DP reconnect, set max volume");
+    SetSystemVolumeLevel(STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC));
+    SetSystemVolumeLevel(STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL));
+    SetSystemVolumeLevel(STREAM_VOICE_ASSISTANT, GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
+    isDpReConnect_ = false;
 }
 
 bool AudioAdapterManager::LoadVolumeMap(void)
@@ -2832,6 +2854,21 @@ bool AudioAdapterManager::IsVgsVolumeSupported() const
 std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(AdjustStreamVolume volumeType)
 {
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
+}
+
+void AudioAdapterManager::UpdateVolumeForLowLatency()
+{
+    Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
+    // update volumes for low latency streams when loading volumes from the database.
+    Volume vol = {false, 1.0f, 0};
+    DeviceType curOutputDeviceType = currentActiveDevice_.deviceType_;
+    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+        vol.isMute = GetStreamMute(*iter);
+        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
+        vol.volumeFloat = GetSystemVolumeInDb(*iter, (vol.isMute ? 0 : vol.volumeInt), curOutputDeviceType);
+        AudioVolumeManager::GetInstance().SetSharedVolume(*iter, curOutputDeviceType, vol);
+    }
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
 }
 
 // LCOV_EXCL_STOP

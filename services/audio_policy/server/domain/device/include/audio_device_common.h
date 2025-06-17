@@ -113,11 +113,10 @@ public:
     int32_t ScoInputDeviceFetchedForRecongnition(bool handleFlag, const std::string &address,
         ConnectState connectState);
     std::vector<SourceOutput> GetSourceOutputs();
-    void BluetoothScoDisconectForRecongnition();
     void SetFirstScreenOn();
     void ClientDiedDisconnectScoNormal();
     void ClientDiedDisconnectScoRecognition();
-    int32_t SetVirtualCall(const bool isVirtual);
+    int32_t SetVirtualCall(pid_t uid, const bool isVirtual);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
 private:
     AudioDeviceCommon() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

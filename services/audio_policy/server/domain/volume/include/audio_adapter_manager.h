@@ -201,6 +201,8 @@ public:
 
     void HandleDpConnection();
 
+    void RefreshVolumeWhenDpReConnect();
+
     int32_t GetStreamVolume(AudioStreamType streamType);
 
     void NotifyAccountsChanged(const int &id);
@@ -275,6 +277,7 @@ public:
         doNotDisturbStatusWhiteList);
 
     int32_t SetDoNotDisturbStatus(bool isDoNotDisturb);
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
 private:
     friend class PolicyCallbackImpl;
@@ -361,6 +364,7 @@ private:
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
+    void UpdateVolumeForLowLatency();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -428,6 +432,7 @@ private:
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
+    bool isDpReConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

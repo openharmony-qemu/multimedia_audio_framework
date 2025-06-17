@@ -51,21 +51,27 @@ private:
 
 class AudioSettingProvider : public NoCopyable {
 public:
+    static constexpr int32_t INVALID_ACCOUNT_ID = -1;
+    static constexpr int32_t MAIN_USER_ID = 100;
+
     static AudioSettingProvider& GetInstance(int32_t systemAbilityId);
-    static int32_t GetCurrentUserId();
+    static int32_t GetCurrentUserId(int32_t specificUserId = INVALID_ACCOUNT_ID);
     static bool CheckOsAccountReady();
-    ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "");
+    ErrCode GetStringValue(const std::string &key, std::string &value, std::string tableType = "",
+        int32_t userId = INVALID_ACCOUNT_ID);
     ErrCode GetIntValue(const std::string &key, int32_t &value, std::string tableType = "");
     ErrCode GetLongValue(const std::string &key, int64_t &value, std::string tableType = "");
     ErrCode GetFloatValue(const std::string &key, float &value, std::string tableType = "");
-    ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "");
+    ErrCode GetBoolValue(const std::string &key, bool &value, std::string tableType = "",
+        int32_t userId = INVALID_ACCOUNT_ID);
     ErrCode GetMapValue(const std::string &key, std::vector<std::map<std::string, std::string>> &value,
         std::string tableType = "");
     ErrCode PutStringValue(const std::string &key, const std::string &value,
-        std::string tableType = "", bool needNotify = true);
+        std::string tableType = "", bool needNotify = true, int32_t userId = INVALID_ACCOUNT_ID);
     ErrCode PutIntValue(const std::string &key, int32_t value, std::string tableType = "", bool needNotify = true);
     ErrCode PutLongValue(const std::string &key, int64_t value, std::string tableType = "", bool needNotify = true);
-    ErrCode PutBoolValue(const std::string &key, bool value, std::string tableType = "", bool needNotify = true);
+    ErrCode PutBoolValue(const std::string &key, bool value, std::string tableType = "", bool needNotify = true,
+        int32_t userId = INVALID_ACCOUNT_ID);
     bool IsValidKey(const std::string &key);
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
     sptr<AudioSettingObserver> CreateObserver(const std::string &key, AudioSettingObserver::UpdateFunc &func);
@@ -82,9 +88,10 @@ protected:
 private:
     static std::atomic<bool> isDataShareReady_;
     static void Initialize(int32_t systemAbilityId);
-    static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "");
+    static std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelper(std::string tableType = "",
+        int32_t userId = INVALID_ACCOUNT_ID);
     static bool ReleaseDataShareHelper(std::shared_ptr<DataShare::DataShareHelper> &helper);
-    static Uri AssembleUri(const std::string &key, std::string tableType = "");
+    static Uri AssembleUri(const std::string &key, std::string tableType = "", int32_t userId = INVALID_ACCOUNT_ID);
 
     static AudioSettingProvider *instance_;
     static std::mutex mutex_;

@@ -687,7 +687,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     if (isEcFeatureEnable_) {
         std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
-            targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            targetInfo.channels_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
             targetInfo.channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
             targetInfo.channelLayout_ = CH_LAYOUT_STEREO;
@@ -765,6 +765,28 @@ void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(sourceType, targetSourceType, useMatchingPropInfo);
     normalSourceOpened_ = targetSourceType;
+}
+
+void AudioEcManager::PrepareNormalSource(AudioModuleInfo &moduleInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+    AUDIO_INFO_LOG("prepare normal source for source type: %{public}d", sourceType);
+    UpdateEnhanceEffectState(sourceType);
+    UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    SetOpenedNormalSource(sourceType);
+    SetOpenedNormalSourceSessionId(streamDesc->sessionId_);
+}
+
+void AudioEcManager::SetOpenedNormalSourceSessionId(uint64_t sessionId)
+{
+    AUDIO_INFO_LOG("set normal source sessionId: %{public}" PRIu64, sessionId);
+    sessionIdUsedToOpenSource_ = sessionId;
+}
+
+uint64_t AudioEcManager::GetOpenedNormalSourceSessionId()
+{
+    return sessionIdUsedToOpenSource_;
 }
 
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,

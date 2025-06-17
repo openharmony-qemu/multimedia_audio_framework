@@ -94,6 +94,7 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getCurrentAudioCapturerInfoArraySync", GetCurrentAudioCapturerInfosSync),
         DECLARE_NAPI_FUNCTION("isActive", IsStreamActive),
         DECLARE_NAPI_FUNCTION("isActiveSync", IsStreamActiveSync),
+        DECLARE_NAPI_FUNCTION("isStreamActive", IsStreamActiveByStreamUsage),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArray", GetEffectInfoArray),
         DECLARE_NAPI_FUNCTION("getAudioEffectInfoArraySync", GetEffectInfoArraySync),
         DECLARE_NAPI_FUNCTION("getHardwareOutputSamplingRate", GetHardwareOutputSamplingRate),
@@ -104,7 +105,8 @@ napi_value NapiAudioStreamMgr::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getAudioEnhanceProperty", GetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("setAudioEnhanceProperty", SetAudioEnhanceProperty),
         DECLARE_NAPI_FUNCTION("isAcousticEchoCancelerSupported", IsAcousticEchoCancelerSupported),
-        DECLARE_NAPI_FUNCTION("isCapturerFocusAvailable", IsCapturerFocusAvailable),
+        DECLARE_NAPI_FUNCTION("isRecordingAvailable", IsRecordingAvailable),
+        DECLARE_NAPI_FUNCTION("isAudioLoopbackSupported", IsAudioLoopbackSupported),
     };
 
     status = napi_define_class(env, AUDIO_STREAM_MGR_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -348,6 +350,36 @@ napi_value NapiAudioStreamMgr::IsStreamActiveSync(napi_env env, napi_callback_in
         "audioStreamMngr_ is nullptr");
     bool isActive = napiStreamMgr->audioStreamMngr_->
         IsStreamActive(NapiAudioEnum::GetNativeAudioVolumeType(volType));
+    NapiParamUtils::SetValueBoolean(env, isActive, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsStreamActiveByStreamUsage(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of volumeType must be number"),
+        "invalid valueType");
+
+    int32_t streamUsage;
+    NapiParamUtils::GetValueInt32(env, streamUsage, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentStreamUsage(streamUsage),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of streamUsage must be enum StreamUsage"), "get streamUsage failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+    bool isActive = napiStreamMgr->audioStreamMngr_->
+        IsStreamActiveByStreamUsage(NapiAudioEnum::GetNativeStreamUsage(streamUsage));
     NapiParamUtils::SetValueBoolean(env, isActive, result);
     return result;
 }
@@ -819,14 +851,14 @@ napi_value NapiAudioStreamMgr::IsAcousticEchoCancelerSupported(napi_env env, nap
     CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsValidSourceType(sourceType),
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: The param of sourceType must be enum SourceType"), "get sourceType failed");
-    
+
     bool isSupported = napiStreamMgr->audioStreamMngr_->IsAcousticEchoCancelerSupported(
         static_cast<SourceType>(sourceType));
     NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;
 }
 
-napi_value NapiAudioStreamMgr::IsCapturerFocusAvailable(napi_env env, napi_callback_info info)
+napi_value NapiAudioStreamMgr::IsRecordingAvailable(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_ONE;
@@ -834,16 +866,47 @@ napi_value NapiAudioStreamMgr::IsCapturerFocusAvailable(napi_env env, napi_callb
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc == ARGS_ONE && napiStreamMgr != nullptr &&
         napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID,
+        NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
-    AudioCapturerChangeInfo changeInfo = {};
-    napi_status status = NapiParamUtils::GetAudioCapturerChangeInfo(env, changeInfo, args[PARAM0]);
+    AudioCapturerInfo changeInfo = {};
+    napi_status status = NapiParamUtils::GetAudioCapturerInfo(env, &changeInfo, args[PARAM0]);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "parameter verification failed"),
         "get audioCapturerChangeInfo failed");
 
     bool isAvailable = napiStreamMgr->audioStreamMngr_->IsCapturerFocusAvailable(changeInfo);
     NapiParamUtils::SetValueBoolean(env, isAvailable, result);
+    return result;
+}
+
+napi_value NapiAudioStreamMgr::IsAudioLoopbackSupported(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_ONE;
+    napi_value args[ARGS_ONE] = {};
+    auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of loopback mode must be number"),
+        "invalid valueType");
+
+    int32_t loopbackMode;
+    NapiParamUtils::GetValueInt32(env, loopbackMode, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(loopbackMode),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of loopbackMode must be enum AudioLoopbackMode"),
+        "get loopbackMode failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr != nullptr, result, "napiStreamMgr is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiStreamMgr->audioStreamMngr_ != nullptr, result,
+        "audioStreamMngr_ is nullptr");
+    bool isSupported = napiStreamMgr->audioStreamMngr_->
+        IsAudioLoopbackSupported(static_cast<AudioLoopbackMode>(loopbackMode));
+    NapiParamUtils::SetValueBoolean(env, isSupported, result);
     return result;
 }
 }  // namespace AudioStandard

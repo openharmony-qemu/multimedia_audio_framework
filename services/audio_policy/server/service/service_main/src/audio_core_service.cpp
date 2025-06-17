@@ -26,7 +26,7 @@
 #include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
-
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -159,6 +159,10 @@ int32_t AudioCoreService::CreateRendererClient(
         audioFlag = AUDIO_FLAG_NORMAL;
         AddSessionId(sessionId);
         pipeManager_->AddModemCommunicationId(sessionId, streamDesc);
+    } else if (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_RINGTONE ||
+        streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) {
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(streamDesc->appInfo_.appUid);
+        Bluetooth::AudioHfpManager::AddVirtualCallBundleName(bundleName, streamDesc->sessionId_);
     }
 
     AUDIO_INFO_LOG("[DeviceFetchStart] for stream %{public}d", sessionId);
@@ -372,6 +376,24 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
 }
 
+void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()),
+        "current output device is same as new device");
+    audioActiveDevice_.SetCurrentOutputDevice(*(desc));
+    OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+}
+
+void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentInputDevice()),
+        "current input device is same as new device");
+    audioActiveDevice_.SetCurrentInputDevice(*(desc));
+    OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
@@ -397,8 +419,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
-
-        audioActiveDevice_.SetCurrentOutputDevice(*(streamDesc->newDeviceDescs_.front()));
+        CheckAndSetCurrentOutputDevice(streamDesc->newDeviceDescs_.front());
         std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(streamDesc->newDeviceDescs_.front(),
             streamDesc->sessionId_);
         audioVolumeManager_.SetVolumeForSwitchDevice(*(streamDesc->newDeviceDescs_.front()), sinkName);
@@ -409,8 +430,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     } else {
         int32_t inputRet = ActivateInputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
-
-        audioActiveDevice_.SetCurrentInputDevice(*(streamDesc->newDeviceDescs_.front()));
+        CheckAndSetCurrentInputDevice(streamDesc->newDeviceDescs_.front());
         audioActiveDevice_.UpdateActiveDeviceRoute(
             streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
@@ -431,7 +451,7 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
+int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
@@ -444,6 +464,9 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId)
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
+    if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
+        RemoveUnusedRecordPipe();
+    }
     DeleteSessionId(sessionId);
 
     return SUCCESS;
@@ -805,15 +828,23 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
 
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
-    HandleAudioCaptureState(mode, streamChangeInfo);
-
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
+    HandleAudioCaptureState(mode, streamChangeInfo);
 
     const auto &rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     if (rendererState == RENDERER_PREPARED || rendererState == RENDERER_NEW || rendererState == RENDERER_INVALID) {
         return ret; // only update tracker in new and prepared
     }
 
+    const auto &rendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    if ((mode == AUDIO_MODE_PLAYBACK) && (rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_RINGTONE ||
+        rendererChangeInfo.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION)) {
+        if ((rendererState == RENDERER_STOPPED ||rendererState == RENDERER_RELEASED ||
+            rendererState == RENDERER_PAUSED)) {
+            Bluetooth::AudioHfpManager::DeleteVirtualCallStream(rendererChangeInfo.sessionId);
+        }
+    }
+    
     UpdateTracker(mode, streamChangeInfo, rendererState);
 
     if (audioA2dpOffloadManager_) {

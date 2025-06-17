@@ -58,7 +58,8 @@ enum class AudioPolicyClientCode {
     ON_SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
     ON_FORMAT_UNSUPPORTED_ERROR,
     ON_STREAM_VOLUME_CHANGE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_STREAM_VOLUME_CHANGE,
+    ON_SYSTEM_VOLUME_CHANGE,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_SYSTEM_VOLUME_CHANGE,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -99,6 +100,7 @@ public:
     virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
     virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
     virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;
+    virtual void OnSystemVolumeChange(VolumeEvent volumeEvent) = 0;
 
     bool hasBTPermission_ = true;
     bool hasSystemPermission_ = true;

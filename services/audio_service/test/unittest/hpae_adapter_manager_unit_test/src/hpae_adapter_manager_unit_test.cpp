@@ -35,6 +35,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 constexpr uint32_t MIDDLE_SESSIONID = 100001;
+constexpr uint32_t MAX_SESSIONID = UINT32_MAX - MIDDLE_SESSIONID;
 constexpr uint32_t MORE_SESSIONID = MAX_SESSIONID + 1;
 const int32_t MAP_NUM = 1;
 const int32_t CAPTURER_FLAG = 10;
@@ -765,43 +766,6 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_032, TestSize.Level1)
 */
 HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_033, TestSize.Level1)
 {
-    uint32_t streamIndex = 0;
-    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
-    ASSERT_TRUE(adapterManager != nullptr);
-
-    std::shared_ptr<ICapturerStream> capturerStream = nullptr;
-    adapterManager->capturerStreamMap_.insert({streamIndex, capturerStream});
-    auto ret = adapterManager->ReleaseCapturer(streamIndex);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name   : Test ReleaseCapturer API
-* @tc.number : HpaeAdapterManager_034
-* @tc.desc   : Test ReleaseCapturer interface.
-*/
-HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_034, TestSize.Level1)
-{
-    uint32_t streamIndex0 = 0;
-    uint32_t streamIndex1 = 1;
-    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
-    ASSERT_TRUE(adapterManager != nullptr);
-
-    std::shared_ptr<ICapturerStream> capturerStream = nullptr;
-    adapterManager->capturerStreamMap_.insert({streamIndex0, capturerStream});
-    adapterManager->capturerStreamMap_.insert({streamIndex1, capturerStream});
-
-    auto ret = adapterManager->ReleaseCapturer(streamIndex1);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name   : Test ReleaseCapturer API
-* @tc.number : HpaeAdapterManager_035
-* @tc.desc   : Test ReleaseCapturer interface.
-*/
-HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_035, TestSize.Level1)
-{
     uint32_t streamIndex0 = 0;
     HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
@@ -814,6 +778,27 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_035, TestSize.Level1)
 
     auto ret = adapterManager->ReleaseCapturer(streamIndex0);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name   : Test CreateRender API
+* @tc.number : HpaeAdapterManager_034
+* @tc.desc   : Test CreateRender interface.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_034, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    config.originalSessionId = MORE_SESSIONID;
+    uint32_t sessionId = SESSIONID;
+    std::shared_ptr<IRendererStream> stream = nullptr;
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, "");
+    ASSERT_TRUE(rendererStream != nullptr);
+
+    int result = adapterManager->CreateRender(config, rendererStream);
+    EXPECT_NE(sessionId, result);
 }
 } // namespace AudioStandard
 } // namespace OHOS
