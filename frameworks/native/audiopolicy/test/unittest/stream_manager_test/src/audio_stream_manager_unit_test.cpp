@@ -328,7 +328,6 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
-#endif
 
 /**
 * @tc.name  : Test GetCurrentRendererChangeInfos API
@@ -488,6 +487,7 @@ HWTEST_F(AudioStreamManagerUnitTest, Audio_Stream_Change_Listner_GetCurrentRende
     EXPECT_EQ(SUCCESS, ret);
     EXPECT_EQ(0, static_cast<int32_t>(audioRendererChangeInfos.size()));
 }
+#endif
 
 #ifdef TEMP_DISABLE
 /**
