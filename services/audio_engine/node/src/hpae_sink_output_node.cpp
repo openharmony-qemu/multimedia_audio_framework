@@ -93,7 +93,7 @@ void HpaeSinkOutputNode::DoProcess()
         HandleRemoteTiming();
     }
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
-    if (ret != SUCCESS) {
+    if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         usleep(SLEEP_TIME_IN_US);
         return;
@@ -286,6 +286,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 int32_t HpaeSinkOutputNode::RenderSinkStop(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -299,7 +300,6 @@ int32_t HpaeSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 
