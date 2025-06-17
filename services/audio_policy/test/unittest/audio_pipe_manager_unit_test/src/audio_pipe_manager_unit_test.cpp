@@ -322,8 +322,6 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
     EXPECT_EQ(unusedPipes.size(), 0);
 }
 
-
-
 /**
  * @tc.name: IsSpecialPipe_001
  * @tc.desc: Test IsSpecialPipe when routeFlag includes AUDIO_OUTPUT_FLAG_FAST.
