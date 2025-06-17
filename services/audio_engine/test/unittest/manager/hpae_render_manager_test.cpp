@@ -728,7 +728,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_003)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
@@ -765,7 +765,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), true);
@@ -791,7 +791,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
 TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_001)
 {
     HpaeSinkInfo sinkInfo;
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_NE(hpaeRendererManager, nullptr);
 
     HpaeNodeInfo nodeInfo;
