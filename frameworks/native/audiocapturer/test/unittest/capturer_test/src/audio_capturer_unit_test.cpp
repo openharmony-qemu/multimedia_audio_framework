@@ -2340,6 +2340,31 @@ HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test AudioCapturePrivate.
+* @tc.number: GetStreamDescBySwitchInfo_001
+* @tc.desc  : Test GetStreamDescBySwitchInfo - switchInfo to streamDesc.
+*/
+HWTEST(AudioCapturerUnitTest, GetStreamDescBySwitchInfo_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioCapturerPrivate> capture = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std:make_shared<AudioStreamDescriptor>();
+
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.params.format = 1;
+    switchInfo.params.samplingRate = 48000;
+    switchInfo.params.channels = 2;
+    switchInfo.params.encoding = 0;
+    switchInfo.params.channelLayout = 0;
+
+    EXPECT_EQ(streamDesc->streamInfo_.format, static_cast<AudioSampleFormat>(switchInfo.params.format));
+    EXPECT_EQ(streamDesc->streamInfo_.samplingRate, static_cast<AudioSamplingRate>(switchInfo.params.samplingRate));
+    EXPECT_EQ(streamDesc->streamInfo_.channels, static_cast<AudioChannel>(switchInfo.params.channels));
+    EXPECT_EQ(streamDesc->streamInfo_.encoding, static_cast<AudioEncodingType>(switchInfo.params.encoding));
+    EXPECT_EQ(streamDesc->streamInfo_.channelLayout, static_cast<AudioChannelLayout>(switchInfo.params.format));
+}
+
+/**
 * @tc.name  : Test RemoveCapturerPolicyServiceDiedCallback.
 * @tc.number: RemoveCapturerPolicyServiceDiedCallback
 * @tc.desc  : Test RemoveCapturerPolicyServiceDiedCallback.
