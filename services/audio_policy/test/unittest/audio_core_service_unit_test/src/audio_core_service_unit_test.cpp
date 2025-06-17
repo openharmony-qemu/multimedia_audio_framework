@@ -821,7 +821,7 @@ HWTEST_F(AudioCoreServiceUnitTest, SetFlagForSpecialStream_001, TestSize.Level1)
     ASSERT_NE(nullptr, GetServerPtr());
     std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
     bool isCreateProcess = true;
-    AudioFlag result = SetFlagForSpecialStream(streamDesc, isCreateProcess);
+    AudioFlag result = GetServerPtr()->coreService_->SetFlagForSpecialStream(streamDesc, isCreateProcess);
     EXPECT_EQ(result, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
