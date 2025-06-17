@@ -12,16 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifdef HPAE_LOUDNESS_gAIN_NODE
+#ifndef HPAE_LOUDNESS_gAIN_NODE
 #define HPAE_LOUDNESS_gAIN_NODE
 #include <memory>
 #include <unordered_map>
 #include "hpae_node.h"
 #include "hpae_plugin_node.h"
-#include "audio_limiter.h"
+#include "audio_effect.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
-#include "audio_effect.h"
 #endif
 
 namespace OHOS {
@@ -31,16 +30,16 @@ namespace HPAE {
 
 class HpaeLoudnessGainNode : public HpaePluginNode {
 public:
-    HpaeLoudnessNode(HpaeNodeInfo &nodeInfo);
-    ~HpaeLoudnessNode();
-    bool SetLoudnessGain(float loudnessGain);
+    HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo);
+    ~HpaeLoudnessGainNode();
+    int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
     bool IsLoudnessAlgoOn();
 
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
-    bool CheckUpdateInfo(HpaePcmBuffer *input);
+    void CheckUpdateInfo(HpaePcmBuffer *input);
     AudioEffectLibrary* audioEffectLibHandle_ = nullptr;
     AudioEffectHandle handle_ = nullptr;
     PcmBufferInfo pcmBufferInfo_;
