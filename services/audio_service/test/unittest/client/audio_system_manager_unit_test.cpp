@@ -630,12 +630,18 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeEvent_001, TestSize.Level1)
  
     auto actualVolumeEventMap = AudioSystemManager::GetInstance()->GetVolumeEvent();
  
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi, expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volumeType, expectedVolumeEventMap[AudioStreamType::STREAM_RING].volumeType);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volume, expectedVolumeEventMap[AudioStreamType::STREAM_RING].volume);
-    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].updateUi, expectedVolumeEventMap[AudioStreamType::STREAM_RING].updateUi);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_MUSIC].updateUi);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volumeType,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volumeType);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].volume,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].volume);
+    EXPECT_EQ(actualVolumeEventMap[AudioStreamType::STREAM_RING].updateUi,
+            expectedVolumeEventMap[AudioStreamType::STREAM_RING].updateUi);
 }
  
 /**
