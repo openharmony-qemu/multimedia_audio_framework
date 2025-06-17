@@ -418,15 +418,8 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-/**
- * @tc.name  : Test UpdateCollaborativeState
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeState_001
- * @tc.desc  : Test UpdateCollaborativeState before stream is created.
- */
-TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
+static void GetBtSpeakerSinkInfo(HpaeSinkInfo &sinkInfo)
 {
-    HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
     sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
     sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
@@ -437,6 +430,17 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
     sinkInfo.channels = STEREO;
     sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
     sinkInfo.deviceName = "Bt_Speaker";
+}
+/**
+ * @tc.name  : Test UpdateCollaborativeState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState before stream is created.
+ */
+TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
+{
+    HpaeSinkInfo sinkInfo;
+    GetBtSpeakerSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
@@ -487,16 +491,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
 TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
 {
     HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
-    sinkInfo.deviceName = "Bt_Speaker";
+    GetSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
     EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeRendererManager);
