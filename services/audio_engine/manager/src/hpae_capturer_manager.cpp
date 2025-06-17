@@ -180,7 +180,8 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
             sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     }
 
-    if (sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) &&
+        sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
         CapturerSourceStop();
     }
     sourceOutputNodeMap_.erase(sessionId);
