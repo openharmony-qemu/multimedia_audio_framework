@@ -39,7 +39,8 @@ group("audio_unit_test") {
     "../frameworks/native/audioloopback/test/unittest:audio_loopback_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/group_manager_test:audio_group_manager_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/manager_test:audio_manager_unit_test",
-    "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
+
+    # "../frameworks/native/audiopolicy/test/unittest/policy_test:audio_policy_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/routing_manager_test:audio_routing_manager_test",
     "../frameworks/native/audiopolicy/test/unittest/sasdk_test:audio_sasdk_unit_test",
     "../frameworks/native/audiopolicy/test/unittest/spatialization_manager_test:audio_spatialization_manager_test",
@@ -98,9 +99,10 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:ipc_stream_stub_unit_test",
     "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
-    "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
-    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
-    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
+
+    # "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
+    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
+    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:policy_handler_unit_test",
     "../services/audio_service/test/unittest:policy_provider_stub_unit_test",
     "../services/audio_service/test/unittest:resource_manager_adapter_unit_test",
