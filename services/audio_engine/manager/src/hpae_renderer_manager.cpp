@@ -1171,7 +1171,10 @@ int32_t HpaeRendererManager::ConnectCoBufferNode(const std::shared_ptr<HpaeCoBuf
     auto request = [this, coBufferNode]() {
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
             "outputCluster or coBufferNode is nullptr");
-        outputCluster_->Connect(coBufferNode);
+        if (!coBufferNode->IsOutputClusterConnected()) {
+            outputCluster_->Connect(coBufferNode);
+            coBufferNode->SetOutputClusterConnected(true);
+        }
         if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
             outputCluster_->Start();
         }
@@ -1185,7 +1188,10 @@ int32_t HpaeRendererManager::DisConnectCoBufferNode(const std::shared_ptr<HpaeCo
     auto request = [this, coBufferNode]() {
         CHECK_AND_RETURN_LOG((outputCluster_ != nullptr) && (coBufferNode != nullptr),
             "outputCluster or coBufferNode is nullptr");
-        outputCluster_->DisConnect(coBufferNode);
+        if (coBufferNode->IsOutputClusterConnected()) {
+            outputCluster_->DisConnect(coBufferNode);
+            coBufferNode->SetOutputClusterConnected(false);
+        }
     };
     SendRequest(request);
     return SUCCESS;

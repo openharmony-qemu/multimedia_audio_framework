@@ -27,7 +27,7 @@ static constexpr int32_t MAX_CACHE_SIZE = 500;
 static constexpr int32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr int32_t MS_PER_SECOND = 1000;
 static constexpr int32_t TEST_LATENCY = 280;
-static constexpr int32_t ENQUEUE_SECOND_FRAME = 2;
+static constexpr int32_t ENQUEUE_DONE_FRAME = 10;
 
 HpaeCoBufferNode::HpaeCoBufferNode()
     : HpaeNode(),
@@ -57,9 +57,9 @@ void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
     ProcessInputFrameInner(buffer);
     
     // process enqueue flag
-    if (enqueueCount_ < ENQUEUE_SECOND_FRAME) {
+    if (enqueueCount_ < ENQUEUE_DONE_FRAME) {
         enqueueCount_++;
-    } else if (enqueueCount_ == ENQUEUE_SECOND_FRAME) {
+    } else if (enqueueCount_ == ENQUEUE_DONE_FRAME) {
         enqueueCount_++;
         enqueueRunning_ = true;
         // fill silence frames for latency adjustment
@@ -125,10 +125,14 @@ OutputPort<HpaePcmBuffer *> *HpaeCoBufferNode::GetOutputPort()
 void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
-    nodeInfo.nodeName = "HpaeCoBufferNode";
-    SetNodeInfo(nodeInfo);
-    inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+    if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
+        connectedProcessCluster_.insert(nodeInfo.sceneType);
+        nodeInfo.nodeName = "HpaeCoBufferNode";
+        SetNodeInfo(nodeInfo);
+        inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+        AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");
+    }
+
     // reset status flag
     enqueueCount_ = 1;
     enqueueRunning_ = false;
@@ -142,8 +146,12 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
 
 void HpaeCoBufferNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
-    inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
-    AUDIO_INFO_LOG("HpaeCoBufferNode disconnect from preNode");
+    HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
+    if (connectedProcessCluster_.find(nodeInfo.sceneType) != connectedProcessCluster_.end()) {
+        connectedProcessCluster_.erase(nodeInfo.sceneType);
+        inputStream_.DisConnect(preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
+        AUDIO_INFO_LOG("HpaeCoBufferNode disconnected from prenode, scenetype %{public}u", nodeInfo.sceneType);
+    }
 }
 
 void HpaeCoBufferNode::SetLatency(uint32_t latency)
@@ -223,6 +231,17 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
             outputStream_.WriteDataToOutput(&coBufferOut_);
         }
     }
+}
+
+void HpaeCoBufferNode::SetOutputClusterConnected(bool isConnect)
+{
+    isOutputClusterConnected_ = isConnect;
+    AUDIO_INFO_LOG("HpaeCoBufferNode output cluster connected status: %{public}d", isConnect);
+}
+
+bool HpaeCoBufferNode::IsOutputClusterConnected()
+{
+    return isOutputClusterConnected_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

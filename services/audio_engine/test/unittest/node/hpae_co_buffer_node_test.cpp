@@ -70,7 +70,7 @@ void HpaeCoBufferNodeUnitTest::TearDown(void)
 }
 
 /**
- * @tc.name  : Test Construct
+ * @tc.name  : Test Construct and be connected
  * @tc.type  : FUNC
  * @tc.number: Construct_001
  * @tc.desc  : Test Construct when config in vaild.
@@ -79,6 +79,10 @@ TEST_F(HpaeCoBufferNodeUnitTest, Construct_001)
 {
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
+    coBufferNode->SetOutputClusterConnected(true);
+    EXPECT_EQ(coBufferNode->IsOutputClusterConnected(), true);
+    coBufferNode->SetOutputClusterConnected(false);
+    EXPECT_EQ(coBufferNode->IsOutputClusterConnected(), false);
 }
 
 /**
@@ -95,11 +99,13 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
     coBufferNode->Connect(sinkInputNode);
+    coBufferNode->Connect(sinkInputNode);
     HpaeNodeInfo &coNodeInfo = coBufferNode->GetNodeInfo();
     EXPECT_EQ(sinkInputNodeInfo.samplingRate, coNodeInfo.samplingRate);
     EXPECT_EQ(sinkInputNodeInfo.format, coNodeInfo.format);
     EXPECT_EQ(sinkInputNodeInfo.channels, coNodeInfo.channels);
     EXPECT_EQ(sinkInputNodeInfo.frameLen, coNodeInfo.frameLen);
+    coBufferNode->DisConnect(sinkInputNode);
     coBufferNode->DisConnect(sinkInputNode);
 }
 
