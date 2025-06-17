@@ -24,6 +24,7 @@
 #include "message_parcel.h"
 
 #include "audio_info.h"
+#include "ring_buffer_wrapper.h"
 #include "audio_shared_memory.h"
 #include "futex_tool.h"
 
@@ -203,9 +204,11 @@ public:
     int32_t GetOffsetByFrameForWrite(uint64_t writePosInFrame, size_t &offset);
     int32_t GetOffsetByFrameForRead(uint64_t readPosInFrame, size_t &offset);
 
+    int32_t GetAllWritableBufferFromPosFrame(uint64_t writePosInFrame, RingBufferWrapper &buffer);
+    int32_t GetAllReadableBufferFromPosFrame(uint64_t readPosInFrame, RingBufferWrapper &buffer);
+
     int32_t GetAllWritableBuffer(RingBufferWrapper &buffer);
     int32_t GetAllReadableBuffer(RingBufferWrapper &buffer);
-
 
     int64_t GetLastWrittenTime();
     void SetLastWrittenTime(int64_t time);

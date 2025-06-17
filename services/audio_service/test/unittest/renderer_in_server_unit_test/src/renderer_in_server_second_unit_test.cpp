@@ -135,10 +135,9 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerVolumeHandle_001, TestSize
 
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
     server->muteFlag_ = true;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
     server->VolumeHandle(bufferDesc);
 }
@@ -283,7 +282,6 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1
 {
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
     AudioProcessConfig processConfig;
     processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
@@ -293,10 +291,10 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_001, TestSize.Level1
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = true;
     server->playerDfx_ = nullptr;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
-    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
     auto ret = server->Pause();
     EXPECT_EQ(SUCCESS, ret);
@@ -312,7 +310,6 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_002, TestSize.Level1
 {
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
     AudioProcessConfig processConfig;
     processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
@@ -321,10 +318,10 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerPause_002, TestSize.Level1
 
     server->status_ = I_STATUS_STARTED;
     server->standByEnable_ = true;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
-    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
-    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
     server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, true);
 
     AppInfo appInfo;
@@ -550,9 +547,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetClientVolume_001, TestS
 
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
     server->playerDfx_ = nullptr;
 
@@ -575,9 +571,8 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetClientVolume_002, TestS
 
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
 
     AppInfo appInfo;
@@ -730,17 +725,16 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
 
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
-    uint32_t spanSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
     server->muteFlag_ = true;
-    server->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame, spanSizeInFrame,
+    server->audioServerBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         byteSizePerFrame);
 
     RestoreInfo restoreInfo;
     auto ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, RESTORE_ERROR);
 
-    server->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
+    server->audioServerBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, NO_NEED_FOR_RESTORE);
 }

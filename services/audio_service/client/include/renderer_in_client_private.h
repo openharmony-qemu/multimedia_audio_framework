@@ -229,14 +229,8 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
-    int32_t InitCacheBuffer(size_t targetSize);
 
-    int32_t FlushRingCache();
-    int32_t DrainRingCache();
-
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
-        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
-    int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
+    int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool WriteCallbackFunc();
@@ -259,8 +253,6 @@ private:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
-
-    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void ResetFramePosition();
 
@@ -312,6 +304,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
+    uint64_t engineTotalSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -369,7 +362,7 @@ private:
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IpcStream> ipcStream_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;

@@ -174,6 +174,11 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
     return SUCCESS;
 }
 
+int32_t MockCallbacks::GetAvailableSize(size_t &length)
+{
+    return ERR_NOT_SUPPORTED;
+}
+
 std::unique_ptr<AudioRingCache>& MockCallbacks::GetDupRingBuffer()
 {
     return dupRingBuffer_;

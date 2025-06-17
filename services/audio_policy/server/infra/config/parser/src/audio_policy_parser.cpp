@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t AUDIO_MS_PER_S = 1000;
 constexpr uint32_t LAYOUT_MONO_CHANNEL_ENUM = 1;
 constexpr uint32_t LAYOUT_STEREO_CHANNEL_ENUM = 2;
 constexpr uint32_t LAYOUT_QUAD_CHANNEL_ENUM = 4;

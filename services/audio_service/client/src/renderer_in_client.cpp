@@ -62,7 +62,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
-const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t MUTE_PLAY_MIN_DURAION = 3000000000; // 3S
 const int64_t MUTE_PLAY_MAX_DURAION = 30000000000; // 30S
@@ -71,7 +70,7 @@ static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
 static const int32_t WRITE_CACHE_TIMEOUT_IN_MS = 1500; // 1500ms
 static const int32_t WRITE_BUFFER_TIMEOUT_IN_MS = 20; // ms
-static const uint32_t WAIT_FOR_NEXT_CB = 5000; // 5ms
+static const uint32_t WAIT_FOR_NEXT_CB = 10000; // 10ms
 static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
@@ -224,13 +223,14 @@ const AudioProcessConfig RendererInClientInner::ConstructConfig()
 int32_t RendererInClientInner::InitSharedBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "InitSharedBuffer failed, null ipcStream_.");
-    int32_t ret = ipcStream_->ResolveBuffer(clientBuffer_);
+    int32_t ret = ipcStream_->ResolveBufferBaseAndGetServerSpanSize(clientBuffer_, spanSizeInFrame_,
+        engineTotalSizeInFrame_);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && clientBuffer_ != nullptr, ret, "ResolveBuffer failed:%{public}d", ret);
 
     uint32_t totalSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, spanSizeInFrame_, byteSizePerFrame);
+    ret = clientBuffer_->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
 
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && byteSizePerFrame == sizePerFrameInByte_, ret, "GetSizeParameter failed"
         ":%{public}d, byteSizePerFrame:%{public}u, sizePerFrameInByte_:%{public}zu", ret, byteSizePerFrame,
@@ -241,27 +241,6 @@ int32_t RendererInClientInner::InitSharedBuffer()
     AUDIO_INFO_LOG("totalSizeInFrame_[%{public}u] spanSizeInFrame[%{public}u] sizePerFrameInByte_[%{public}zu]"
         "clientSpanSizeInByte_[%{public}zu]", totalSizeInFrame, spanSizeInFrame_, sizePerFrameInByte_,
         clientSpanSizeInByte_);
-
-    return SUCCESS;
-}
-
-// InitCacheBuffer should be able to modify the cache size between clientSpanSizeInByte_ and 4 * clientSpanSizeInByte_
-int32_t RendererInClientInner::InitCacheBuffer(size_t targetSize)
-{
-    CHECK_AND_RETURN_RET_LOG(clientSpanSizeInByte_ != 0, ERR_OPERATION_FAILED, "clientSpanSizeInByte_ invalid");
-
-    AUDIO_INFO_LOG("old size:%{public}zu, new size:%{public}zu", cacheSizeInByte_, targetSize);
-    cacheSizeInByte_ = targetSize;
-
-    if (ringCache_ == nullptr) {
-        ringCache_ = AudioRingCache::Create(cacheSizeInByte_);
-    } else {
-        OptResult result = ringCache_->ReConfig(cacheSizeInByte_, false); // false --> clear buffer
-        if (result.ret != OPERATION_SUCCESS) {
-            AUDIO_ERR_LOG("ReConfig AudioRingCache to size %{public}u failed:ret%{public}zu", result.ret, targetSize);
-            return ERR_OPERATION_FAILED;
-        }
-    }
 
     return SUCCESS;
 }
@@ -294,9 +273,6 @@ int32_t RendererInClientInner::InitIpcStream()
     }
     ret = InitSharedBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitSharedBuffer failed:%{public}d", ret);
-
-    ret = InitCacheBuffer(clientSpanSizeInByte_);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitCacheBuffer failed:%{public}d", ret);
 
     ret = ipcStream_->GetAudioSessionID(sessionId_);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetAudioSessionID failed:%{public}d", ret);
@@ -425,6 +401,30 @@ bool RendererInClientInner::WriteCallbackFunc()
             break;
         }
     }
+
+    FutexCode futexRes = FUTEX_OPERATION_FAILED;
+    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+    futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        [this] () {
+            if (state_ != RUNNING) {
+                return true;
+            }
+            uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
+            size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
+            int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
+            size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+            if ((writableInFrame <= 0) || (cbBufferSize_ > totalSizeInByte) ||
+                // readable >= engineTotalSizeInFrame_
+                (writableInFrame < (totalSizeInFrame - engineTotalSizeInFrame_)) ||
+                (writableSizeInByte < cbBufferSize_)) {
+                return false;
+            }
+            return true;
+        });
+    if (futexRes != SUCCESS) {
+        AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
+    }
+
     if (state_ != RUNNING) {
         return true;
     }
@@ -443,42 +443,6 @@ bool RendererInClientInner::WriteCallbackFunc()
     std::unique_lock<std::mutex> lockBuffer(cbBufferMutex_);
     cbBufferQueue_.WaitNotEmptyFor(std::chrono::milliseconds(WRITE_BUFFER_TIMEOUT_IN_MS));
     return true;
-}
-
-int32_t RendererInClientInner::FlushRingCache()
-{
-    ringCache_->ResetBuffer();
-    return SUCCESS;
-}
-
-int32_t RendererInClientInner::DrainRingCache()
-{
-    // send all data in ringCache_ to server even if GetReadableSize() < clientSpanSizeInByte_.
-    Trace trace("RendererInClientInner::DrainRingCache " + std::to_string(sessionId_));
-
-    OptResult result = ringCache_->GetReadableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
-    size_t readableSize = result.size;
-    if (readableSize == 0) {
-        AUDIO_WARNING_LOG("Readable size is already zero");
-        return SUCCESS;
-    }
-
-    BufferDesc desc = {};
-    uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
-    int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetWriteBuffer failed %{public}d", ret);
-
-    // if readableSize < clientSpanSizeInByte_, server will recv a data with some empty data.
-    // it looks like this: |*******_____|
-    size_t minSize = std::min(readableSize, clientSpanSizeInByte_);
-    result = ringCache_->Dequeue({desc.buffer, minSize});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_ILLEGAL_STATE, "ipcStream is nullptr");
-    ipcStream_->UpdatePosition(); // notiify server update position
-    HandleRendererPositionChanges(minSize);
-    return SUCCESS;
 }
 
 bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, bool &speedCached)
@@ -553,51 +517,64 @@ void RendererInClientInner::FirstFrameProcess()
     if (!hasFirstFrameWrited_.exchange(true)) { OnFirstFrameWriting(); }
 }
 
-int32_t RendererInClientInner::WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached,
+int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached,
     size_t oriBufferSize)
 {
-    size_t targetSize = bufferSize;
-    size_t offset = 0;
-    while (targetSize >= sizePerFrameInByte_) {
-        // 1. write data into ring cache
-        OptResult result = ringCache_->GetWritableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
-            "RingCache write status invalid size is:%{public}zu", result.size);
+    CHECK_AND_RETURN_RET_LOG(sizePerFrameInByte_ > 0, ERROR, "sizePerFrameInByte :%{public}zu", sizePerFrameInByte_);
+    size_t remainSize = (bufferSize / sizePerFrameInByte_) * sizePerFrameInByte_;
 
-        size_t writableSize = result.size;
-        Trace::Count("RendererInClient::CacheBuffer->writableSize", writableSize);
+    RingBufferWrapper inBuffer = {
+        .basicBufferDescs = {{
+            {.buffer = buffer, .bufLength = remainSize},
+            {.buffer = nullptr, .bufLength = 0}
+        }},
+        .dataLenth = 0
+    };
 
-        size_t writeSize = std::min(writableSize, targetSize);
-        BufferWrap bufferWrap = {buffer + offset, writeSize};
+    while (remainSize >= sizePerFrameInByte_) {
+        FutexCode futexRes = FUTEX_OPERATION_FAILED;
+        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+        futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+            [this] () {
+                return (state_ != RUNNING) ||
+                    (static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) > 0);
+            });
+        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
+        CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
+            "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
 
-        if (writeSize > 0) {
-            result = ringCache_->Enqueue(bufferWrap);
-            if (result.ret != OPERATION_SUCCESS) {
-                // in plan: recall enqueue in some cases
-                AUDIO_ERR_LOG("RingCache Enqueue failed ret:%{public}d size:%{public}zu", result.ret, result.size);
-                break;
-            }
-            offset += writeSize;
-            targetSize -= writeSize;
-            clientWrittenBytes_ += writeSize;
-        }
-
-        // 2. copy data from cache to OHAudioBuffer
-        result = ringCache_->GetReadableSize();
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, speedCached ? oriBufferSize : bufferSize - targetSize,
-            "RingCache read status invalid size is:%{public}zu", result.size);
-        size_t readableSize = result.size;
-        Trace::Count("RendererInClient::CacheBuffer->readableSize", readableSize);
-
-        if (readableSize < clientSpanSizeInByte_) { continue; }
-        // if readable size is enough, we will call write data to server
-        int32_t ret = WriteCacheData();
-        CHECK_AND_RETURN_RET_LOG(ret != ERR_ILLEGAL_STATE, speedCached ? oriBufferSize : bufferSize - targetSize,
-            "Status changed while write");
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "WriteCacheData failed %{public}d", ret);
+        uint64_t writePos = clientBuffer_->GetCurWriteFrame();
+        uint64_t readPos = clientBuffer_->GetCurReadFrame();
+        CHECK_AND_RETURN_RET_LOG(writePos >= readPos, ERROR,
+            "writePos: %{public}" PRIu64 " readPos: %{public}" PRIu64 "",
+            writePos, readPos);
+        RingBufferWrapper ringBuffer;
+        int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
+        CHECK_AND_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLenth > 0), ERROR);
+        auto copySize = std::min(remainSize, ringBuffer.dataLenth);
+        inBuffer.dataLenth = copySize;
+        ret = ringBuffer.MemCopyFrom(inBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
+        clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
+        inBuffer.SeekFromStart(copySize);
+        remainSize -= copySize;
     }
+    size_t writtenSize = bufferSize - remainSize;
+
     preWriteEndTime_ = ClockTime::GetCurNano() / AUDIO_US_PER_SECOND;
-    return speedCached ? oriBufferSize : bufferSize - targetSize;
+
+    if (!ProcessVolume()) {
+        return ERR_OPERATION_FAILED;
+    }
+    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(buffer), writtenSize);
+    VolumeTools::DfxOperation({.buffer = buffer, .bufLength = writtenSize, .dataLength = writtenSize},
+        clientConfig_.streamInfo, traceTag_, volumeDataCount_);
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
+    ipcStream_->UpdatePosition(); // notiify server update position
+    HandleRendererPositionChanges(writtenSize);
+
+    return speedCached ? oriBufferSize : writtenSize;
 }
 
 int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
@@ -660,7 +637,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     }
 
-    int32_t result = WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
+    int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
     return result;
 }
@@ -794,86 +771,6 @@ bool RendererInClientInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize)
     return isInvalid;
 }
 
-int32_t RendererInClientInner::DrainIncompleteFrame(OptResult result, bool stopFlag,
-    size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame)
-{
-    if (result.size < clientSpanSizeInByte_ && stopFlag) {
-        result = ringCache_->Dequeue({desc->buffer, targetSize});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
-            "ringCache Dequeue failed %{public}d", result.ret);
-        int32_t ret = memset_s(desc->buffer, targetSize, 0, targetSize);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "DrainIncompleteFrame memset output failed");
-        AUDIO_WARNING_LOG("incomplete frame is set to 0");
-        dropIncompleteFrame = true;
-    }
-    return SUCCESS;
-}
-
-
-int32_t RendererInClientInner::WriteCacheData(bool isDrain, bool stopFlag)
-{
-    Trace traceCache(isDrain ? "RendererInClientInner::DrainCacheData" : "RendererInClientInner::WriteCacheData");
-
-    OptResult result = ringCache_->GetReadableSize();
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_OPERATION_FAILED, "ring cache unreadable");
-    if (result.size == 0) {
-        AUDIO_WARNING_LOG("Readable size is already zero");
-        return SUCCESS;
-    }
-    size_t targetSize = isDrain ? std::min(result.size, clientSpanSizeInByte_) : clientSpanSizeInByte_;
-
-    int32_t sizeInFrame = clientBuffer_->GetWritableDataFrames();
-    CHECK_AND_RETURN_RET_LOG(sizeInFrame >= 0, ERROR, "GetWritableDataFrames invalid, %{public}d", sizeInFrame);
-
-    FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    if (static_cast<uint32_t>(sizeInFrame) < spanSizeInFrame_) {
-        int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = FutexTool::FutexWait(clientBuffer_->GetFutex(), static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
-            [this] () {
-                return (state_ != RUNNING) ||
-                    (static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) >= spanSizeInFrame_);
-            });
-        CHECK_AND_RETURN_RET_LOG(state_ == RUNNING, ERR_ILLEGAL_STATE, "failed with state:%{public}d", state_.load());
-        CHECK_AND_RETURN_RET_LOG(futexRes != FUTEX_TIMEOUT, ERROR,
-            "write data time out, mode is %{public}s", (offloadEnable_ ? "offload" : "normal"));
-        sizeInFrame = clientBuffer_->GetWritableDataFrames();
-    }
-
-    if (sizeInFrame < 0 || static_cast<uint32_t>(clientBuffer_->GetWritableDataFrames()) < spanSizeInFrame_) {
-        AUDIO_ERR_LOG("failed: sizeInFrame is:%{public}d, futexRes:%{public}d", sizeInFrame, futexRes);
-        return ERROR;
-    }
-    BufferDesc desc = {};
-    uint64_t curWriteIndex = clientBuffer_->GetCurWriteFrame();
-    int32_t ret = clientBuffer_->GetWriteBuffer(curWriteIndex, desc);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "GetWriteBuffer failed %{public}d", ret);
-    bool dropIncompleteFrame = false;
-    CHECK_AND_RETURN_RET_LOG(DrainIncompleteFrame(result, stopFlag, targetSize, &desc, dropIncompleteFrame) == SUCCESS,
-        ERROR, "DrainIncompleteFrame failed");
-    if (dropIncompleteFrame) {
-        return SUCCESS;
-    }
-    result = ringCache_->Dequeue({desc.buffer, targetSize});
-    CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "ringCache Dequeue failed %{public}d", result.ret);
-    if (isDrain && targetSize < clientSpanSizeInByte_ && clientConfig_.streamInfo.format == SAMPLE_U8) {
-        size_t leftSize = clientSpanSizeInByte_ - targetSize;
-        int32_t ret = memset_s(desc.buffer + targetSize, leftSize, 0X7F, leftSize);
-        CHECK_AND_RETURN_RET_LOG(ret == EOK, ERROR, "left buffer memset output failed");
-    }
-    if (!ProcessVolume()) {
-        return ERR_OPERATION_FAILED;
-    }
-
-    DumpFileUtil::WriteDumpFile(dumpOutFd_, static_cast<void *>(desc.buffer), desc.bufLength);
-    VolumeTools::DfxOperation(desc, clientConfig_.streamInfo, traceTag_, volumeDataCount_);
-    clientBuffer_->SetCurWriteFrame(curWriteIndex + spanSizeInFrame_);
-
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
-    ipcStream_->UpdatePosition(); // notiify server update position
-    HandleRendererPositionChanges(desc.bufLength);
-    return SUCCESS;
-}
-
 bool RendererInClientInner::ProcessVolume()
 {
     // volume process in client
@@ -923,7 +820,6 @@ bool RendererInClientInner::DrainAudioStreamInner(bool stopFlag)
         AUDIO_ERR_LOG("Drain failed. Illegal state:%{public}u", state_.load());
         return false;
     }
-    CHECK_AND_RETURN_RET_LOG(WriteCacheData(true, stopFlag) == SUCCESS, false, "Drain cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     AUDIO_INFO_LOG("stopFlag:%{public}d", stopFlag);

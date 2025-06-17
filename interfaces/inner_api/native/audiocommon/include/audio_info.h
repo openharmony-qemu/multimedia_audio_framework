@@ -69,6 +69,14 @@ constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 constexpr uint32_t MIN_STREAMID = 100000;
 constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
 
+constexpr uint64_t AUDIO_US_PER_MS = 1000;
+constexpr uint64_t AUDIO_NS_PER_US = 1000;
+constexpr uint64_t AUDIO_US_PER_S = 1000000;
+constexpr uint64_t AUDIO_MS_PER_S = 1000;
+
+constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
+constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
+
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
 

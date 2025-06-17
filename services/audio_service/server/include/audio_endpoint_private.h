@@ -41,6 +41,7 @@ public:
     void OnStatusUpdate(IOperation operation) override;
     int32_t OnWriteData(size_t length) override;
     int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) override;
+    int32_t GetAvailableSize(size_t &length) override;
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
