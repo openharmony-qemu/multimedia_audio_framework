@@ -102,6 +102,30 @@ TEST_F(AudioProResamplerTest, ProcessTest)
     ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, EOK);
 }
+
+TEST_F(AudioProResamplerTest, UpdateRatesTest)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    resampler.UpdateRates(SAMPLE_RATE_11025, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_11025);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_11025 * FRAME_LEN_40MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+}
+
+TEST_F(AudioProResamplerTest, UpdateChannel)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.channels_, STEREO);
+
+    resampler.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler.channels_, CHANNEL_6);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
