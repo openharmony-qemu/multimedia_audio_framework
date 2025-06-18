@@ -577,7 +577,6 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-
 /**
  * @tc.name  : Test MoveAllStream
  * @tc.type  : FUNC
@@ -642,7 +641,6 @@ TEST_F(HpaeRendererManagerTest, MoveAllStream_002)
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-
 /**
  * @tc.name  : Test MoveStreamSync
  * @tc.type  : FUNC
@@ -674,8 +672,6 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_001)
     std::string sinkName = "valid_sink_name";
     hpaeRendererManager->MoveStreamSync(invalidSessionId, sinkName);
 }
-
-
 
 /**
  * @tc.name  : Test MoveStreamSync
@@ -742,9 +738,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_003)
 
     std::string sinkName = "valid_sink_name";
     hpaeRendererManager->MoveStreamSync(streamInfo.sessionId, sinkName);
-    
 }
-
 
 /**
  * @tc.name  : Test MoveStreamSync
@@ -778,9 +772,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
 
     std::string sinkName = "valid_sink_name";
     hpaeRendererManager->MoveStreamSync(streamInfo.sessionId, sinkName);
-    
 }
-
 
 /**
  * @tc.name  : Test CreateDefaultProcessCluster
@@ -816,7 +808,6 @@ TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002)
     hpaeRendererManager->CreateDefaultProcessCluster(defaultNodeInfo);
     hpaeRendererManager->CreateDefaultProcessCluster(nodeInfo);
 }
-
 
 /**
  * @tc.name: ReloadRenderManager
