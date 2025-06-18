@@ -1390,8 +1390,6 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSp
     } else {
         streamData.volumeStart = vol.isMute ? 0 :
             static_cast<int32_t>(curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume);
-        AUDIO_INFO_LOG("volumeStart:%{public}d,isVKB:%{public}s,isMute:%{public}s", streamData.volumeStart,
-            clientConfig_.rendererInfo.isVirtualKeyboard ? "T" : "F", vol.isMute ? "T" : "F");
     }
     Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
         " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));

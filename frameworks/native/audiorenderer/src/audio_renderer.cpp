@@ -320,8 +320,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return nullptr;
     }
