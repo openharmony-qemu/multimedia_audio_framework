@@ -35,7 +35,7 @@ const static std::map<uint32_t, uint32_t> TEST_SAMPLE_RATE_COMBINATION = { // {i
 };
 
 constexpr uint32_t INVALID_QUALITY = -1;
-constexpr uint32_t QUALICY_ONE = 1;
+constexpr uint32_t QUALITY_ONE = 1;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t FRAME_LEN_40MS = 40;
 constexpr uint32_t MS_PER_SECOND = 1000;
@@ -58,14 +58,14 @@ TEST_F(AudioProResamplerTest, InitTest)
     EXPECT_EQ(err, RESAMPLER_ERR_INVALID_ARG);
 
     // test valid input
-    SingleStagePolyphaseResamplerInit(STEREO, SAMPLE_RATE_24000, SAMPLE_RATE_48000, QUALICY_ONE, &err);
+    SingleStagePolyphaseResamplerInit(STEREO, SAMPLE_RATE_24000, SAMPLE_RATE_48000, QUALITY_ONE, &err);
     EXPECT_EQ(err, RESAMPLER_ERR_SUCCESS);
 
     // test 11025 input
-    ProResampler resampler1(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, QUALICY_ONE);
+    ProResampler resampler1(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
 
     // test other input
-    ProResampler resampler2(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALICY_ONE);
+    ProResampler resampler2(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
 }
 
 TEST_F(AudioProResamplerTest, ProcessTest)
@@ -77,7 +77,7 @@ TEST_F(AudioProResamplerTest, ProcessTest)
             uint32_t outRate = pair.second;
             uint32_t inFrameLen = inRate * FRAME_LEN_20MS / MS_PER_SECOND;
             uint32_t outFrameLen = outRate * FRAME_LEN_20MS / MS_PER_SECOND;
-            ProResampler resampler(inRate, outRate, channels, QUALICY_ONE);
+            ProResampler resampler(inRate, outRate, channels, QUALITY_ONE);
             std::vector<float> in(inFrameLen * channels);
             std::vector<float> out(outFrameLen * channels);
             int32_t ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
@@ -86,7 +86,7 @@ TEST_F(AudioProResamplerTest, ProcessTest)
     }
 
     // test 11025 spetial case
-    ProResampler resampler(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, QUALICY_ONE);
+    ProResampler resampler(SAMPLE_RATE_11025, SAMPLE_RATE_48000, STEREO, QUALITY_ONE);
     uint32_t inFrameLen = SAMPLE_RATE_11025 * FRAME_LEN_40MS / MS_PER_SECOND;
     uint32_t outFrameLen = SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND;
     std::vector<float> in(inFrameLen * STEREO);
@@ -101,6 +101,30 @@ TEST_F(AudioProResamplerTest, ProcessTest)
     // no data left, send 0s
     ret = resampler.Process(in.data(), inFrameLen, out.data(), outFrameLen);
     EXPECT_EQ(ret, EOK);
+}
+
+TEST_F(AudioProResamplerTest, UpdateRatesTest)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    resampler.UpdateRates(SAMPLE_RATE_11025, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_11025);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_11025 * FRAME_LEN_40MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+}
+
+TEST_F(AudioProResamplerTest, UpdateChannel)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.channels_, STEREO);
+
+    resampler.UpdateChannels(CHANNEL_6);
+    EXPECT_EQ(resampler.channels_, CHANNEL_6);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

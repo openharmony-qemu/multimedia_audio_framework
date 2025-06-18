@@ -32,10 +32,10 @@ public:
     ProResampler(ProResampler &&) noexcept;
     ProResampler &operator=(ProResampler &&) noexcept;
     void Reset() override;
-    int Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize)
+    int32_t Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer, uint32_t outFrameSize)
         override;
     int32_t UpdateRates(uint32_t inRate, uint32_t outRate) override;
-    void UpdateChannels(uint32_t channels) override;
+    int32_t UpdateChannels(uint32_t channels) override;
     uint32_t GetInRate() const override;
     uint32_t GetOutRate() const override;
     uint32_t GetChannels() const override;
