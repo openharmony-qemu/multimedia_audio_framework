@@ -578,7 +578,8 @@ HWTEST_F(AudioVolumeUnitTest, Monitor_001, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode);
+    bool isVKB = true;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
     audioVolume->streamVolume_.insert({sessionId, streamVolume});
     audioVolume->Monitor(sessionId, true);
 }
