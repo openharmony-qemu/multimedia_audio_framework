@@ -46,7 +46,7 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
-    if (nodeinfo.sceneType == HPAE_SCENE_DEFAULT) {
+    if (nodeInfo.sceneType == HPAE_SCENE_DEFAULT) {
         sceneType_ = "SCENE_DEFAULT";
     } else {
         const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
