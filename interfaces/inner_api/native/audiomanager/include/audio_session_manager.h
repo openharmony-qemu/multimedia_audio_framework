@@ -146,7 +146,7 @@ public:
     /**
      * @brief Set scene for audio session.
      *
-     * @param { AudioSessionScene } audioSessionScene - Audio session scene.
+     * @param audioSessionScene - Audio session scene.
      * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
@@ -168,7 +168,7 @@ public:
     /**
      * @brief Unset all audio session state changed callbacks.
      *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
@@ -178,7 +178,7 @@ public:
      * @brief Unset the audio session state changed callback.
      *
      * @param stateChangedCallback The audio session state changed callback.
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
@@ -189,7 +189,7 @@ public:
      * @brief Get current output device or devices.
      *
      * @param deviceInfo The current output device descriptor.
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
@@ -199,6 +199,8 @@ public:
      * @brief Set the default output device for audio session scene.
      *
      * @param deviceType. The available deviceTypes are EARPIECE/SPEAKER/DEFAULT.
+     * @return Returns {@link SUCCESS} if the operation is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
@@ -218,7 +220,7 @@ public:
     /**
      * @brief Unset all audio session device changed callbacks.
      *
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
@@ -228,7 +230,7 @@ public:
      * @brief Unset the audio session device changed callback.
      *
      * @param deviceChangedCallback The audio session device changed callback.
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20
      */
