@@ -650,9 +650,11 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+#ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
     fastStream->ResetCallbackLoopTid();
+#endif
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
@@ -692,6 +694,11 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
 {
     logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
     auto weakProcess = weak_from_this();
+#ifdef SUPPORT_LOW_LATENCY
+    std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
+    CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
+    fastStream->ResetCallbackLoopTid();
+#endif
     callbackLoop_ = std::thread([weakStream, weakProcess] {
         bool keepRunning = true;
         uint64_t curReadPos = 0;
@@ -699,6 +706,7 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
         int64_t clientReadCost = 0;
         std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
+        strongStream->SetCallbackLoopTid(gettid());
         if (strongProcess != nullptr) {
             AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
             strongProcess->processProxy_->RegisterThreadPriority(gettid(),
