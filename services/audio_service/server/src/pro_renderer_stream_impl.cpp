@@ -102,35 +102,23 @@ AudioSamplingRate ProRendererStreamImpl::GetDirectSampleRate(AudioSamplingRate s
     return result;
 }
 
-AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(const AudioStreamInfo &streamInfo) const noexcept
+AudioSampleFormat ProRendererStreamImpl::GetDirectFormat(AudioSampleFormat format) const noexcept
 {
-    if (streamInfo.encoding == ENCODING_EAC3) {
-        return streamInfo.format;
-    }
     if (isDirect_) {
         // Only SAMPLE_S32LE is supported for high resolution stream.
         return AudioSampleFormat::SAMPLE_S32LE;
     }
 
     // Both SAMPLE_S16LE and SAMPLE_S32LE are supported for direct VoIP stream.
-    if (streamInfo.format == SAMPLE_S16LE || streamInfo.format == SAMPLE_S32LE) {
-        return streamInfo.format;
-    } else if (streamInfo.format == SAMPLE_F32LE) {
+    if (format == SAMPLE_S16LE || format == SAMPLE_S32LE) {
+        return format;
+    } else if (format == SAMPLE_F32LE) {
         // Direct VoIP not support SAMPLE_F32LE format.It needs to be converted to S16.
         return AudioSampleFormat::SAMPLE_S16LE;
     } else {
-        AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", streamInfo.format);
+        AUDIO_WARNING_LOG("The format %{public}u is unsupported for direct VoIP. Use 32Bit.", format);
         return AudioSampleFormat::SAMPLE_S32LE;
     }
-}
-
-uint32_t ProRendererStreamImpl::GetDirectChannel(const AudioStreamInfo &streamInfo) const noexcept
-{
-    uint32_t result = 0;
-    if (streamInfo.encoding == ENCODING_EAC3) {
-        result = streamInfo.channels;
-    }
-    return result;
 }
 
 int32_t ProRendererStreamImpl::InitParams()
@@ -144,31 +132,34 @@ int32_t ProRendererStreamImpl::InitParams()
         streamInfo.format, streamInfo.samplingRate);
     InitBasicInfo(streamInfo);
     size_t frameSize = spanSizeInFrame_ * streamInfo.channels;
+    uint32_t desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
     uint32_t desSpanSize = (desSamplingRate_ * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
-    uint32_t desChannels = GetDirectChannel(streamInfo);
-    if (desChannels == 0) {
-        desChannels = streamInfo.channels >= STEREO_CHANNEL_COUNT ? STEREO_CHANNEL_COUNT : 1;
-        if (streamInfo.samplingRate != desSamplingRate_) {
-            Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.samplingRate);
-            AUDIO_INFO_LOG("stream need resample, dest:%{public}d", desSamplingRate_);
-            isNeedResample_ = true;
-            resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
-                DEFAULT_RESAMPLE_QUANTITY);
-            CHECK_AND_RETURN_RET_LOG(resample_->IsResampleInit(), ERR_INVALID_PARAM, "resample not supported.");
+    if (streamInfo.samplingRate != desSamplingRate_) {
+        Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.samplingRate);
+        AUDIO_INFO_LOG("stream need resample, dest:%{public}d", desSamplingRate_);
+        isNeedResample_ = true;
+        resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
+            DEFAULT_RESAMPLE_QUANTITY);
+        if (!resample_->IsResampleInit()) {
+            AUDIO_ERR_LOG("resample not supported.");
+            return ERR_INVALID_PARAM;
+        }
+        resampleSrcBuffer.resize(frameSize, 0.f);
+        resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
+        resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
+    }
+    if (streamInfo.channels > STEREO_CHANNEL_COUNT) {
+        Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.channels);
+        isNeedMcr_ = true;
+        if (!isNeedResample_) {
             resampleSrcBuffer.resize(frameSize, 0.f);
             resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
-            resample_->ProcessFloatResample(resampleSrcBuffer, resampleDesBuffer);
         }
-        if (streamInfo.channels > STEREO_CHANNEL_COUNT) {
-            Trace::Count("ProRendererStreamImpl::InitParams", streamInfo.channels);
-            isNeedMcr_ = true;
-            if (!isNeedResample_) {
-                resampleSrcBuffer.resize(frameSize, 0.f);
-                resampleDesBuffer.resize(desSpanSize * desChannels, 0.f);
-            }
-            downMixer_ = std::make_unique<AudioDownMixStereo>();
-            int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
-            CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "down mixer not supported.");
+        downMixer_ = std::make_unique<AudioDownMixStereo>();
+        int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("down mixer not supported.");
+            return ret;
         }
     }
     uint32_t bufferSize = Util::GetSamplePerFrame(desFormat_) * desSpanSize * desChannels;
@@ -690,7 +681,7 @@ void ProRendererStreamImpl::InitBasicInfo(const AudioStreamInfo &streamInfo)
 {
     currentRate_ = streamInfo.samplingRate;
     desSamplingRate_ = GetDirectSampleRate(streamInfo.samplingRate);
-    desFormat_ = GetDirectFormat(streamInfo);
+    desFormat_ = GetDirectFormat(streamInfo.format);
     spanSizeInFrame_ = (streamInfo.samplingRate * DEFAULT_BUFFER_MILLISECOND) / SECOND_TO_MILLISECOND;
     byteSizePerFrame_ = Util::GetSamplePerFrame(streamInfo.format) * streamInfo.channels;
     minBufferSize_ = spanSizeInFrame_ * byteSizePerFrame_;
