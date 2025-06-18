@@ -3856,6 +3856,19 @@ int32_t AudioPolicyServer::UnsetAudioDeviceAnahsCallback()
     return coreService_->UnsetAudioDeviceAnahsCallback();
 }
 
+void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
+{
+    AUDIO_INFO_LOG("Send VolumeKeyEvent to Rss");
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_MUSIC;
+    volumeEvent.volume = GetSystemVolumeLevelInternal(STREAM_MUSIC);
+    volumeEvent.updateUi = false;
+    volumeEvent.notifyRssWhenAccountsChange = true;
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    }
+}
+
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
@@ -3863,6 +3876,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);
     audioPolicyService_.NotifyAccountsChanged(id);
+    SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
 }
 

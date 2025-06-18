@@ -362,6 +362,7 @@ struct VolumeEvent {
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool notifyRssWhenAccountsChange = false;
 
     VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
         volume(volLevel), updateUi(isUiUpdated) {}
@@ -374,16 +375,18 @@ struct VolumeEvent {
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteBool(notifyRssWhenAccountsChange);
     }
     void Unmarshalling(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
-        updateUi = parcel.ReadInt32();
+        updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        notifyRssWhenAccountsChange = parcel.ReadBool();
     }
 };
 
