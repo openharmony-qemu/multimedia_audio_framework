@@ -57,9 +57,13 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
-    expectedPlaybackDurationMs_ =
-        (processConfig.rendererInfo.expectedPlaybackDurationBytes * MS_PER_SEC / byteSizePerFrame_) /
-            processConfig.streamInfo.samplingRate;
+    if (byteSizePerFrame_ == 0 || processConfig.streamInfo.samplingRate == 0) {
+        expectedPlaybackDurationMs_ = 0;
+    } else {
+        expectedPlaybackDurationMs_ =
+            (processConfig.rendererInfo.expectedPlaybackDurationBytes * MS_PER_SEC / byteSizePerFrame_) /
+                processConfig.streamInfo.samplingRate;
+    }
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
     if (!isCallbackMode_) {
