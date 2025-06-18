@@ -1728,7 +1728,7 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     const StreamUsage streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
-    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescByIdInner(sessionID) != nullptr, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
