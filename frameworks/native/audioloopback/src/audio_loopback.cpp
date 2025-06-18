@@ -93,6 +93,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         stateLock.unlock();
         DestroyAudioLoopback();
     }
+    return true;
 }
 
 void AudioLoopbackPrivate::InitStatus()
@@ -182,7 +183,6 @@ void AudioLoopbackPrivate::CreateAudioLoopback()
     rendererState_ = RENDERER_RUNNING;
     CHECK_AND_RETURN_LOG(audioCapturer_->Start(), "audioCapturer Start failed");
     capturerState_ = CAPTURER_RUNNING;
-    return true;
 }
 
 void AudioLoopbackPrivate::DisableLoopback()
