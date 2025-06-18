@@ -780,6 +780,52 @@ HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_001
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface - device type is not speaker/a2dp_offload, return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->a2dpOffloadFlag_ = A2DP_NOT_OFFLOAD;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_002
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface - channel count <= 2, return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->streamInfo_.channels = STEREO;
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : SetFlagForSpecialStream_001
+ * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetFlagForSpecialStream_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    bool isCreateProcess = true;
+    AudioFlag result = GetServerPtr()->coreService_->SetFlagForSpecialStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(result, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
 * @tc.name  : Test AudioCoreServiceUnit
 * @tc.number: AddAudioCapturerMicrophoneDescriptor_001
 * @tc.desc  : Test AudioCoreService interfaces - mic desc should be added.

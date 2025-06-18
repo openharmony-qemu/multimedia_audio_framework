@@ -1926,5 +1926,33 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1
         EXPECT_EQ(device->deviceType_ != DEVICE_TYPE_MIC, true);
     }
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsFastAllowedTest_001
+ * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is null.
+ */
+HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::string bundleName = "";
+    EXPECT_EQ(audioCoreService->IsFastAllowed(bundleName), true);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsFastAllowedTest_002
+ * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is normal app.
+ */
+HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::string bundleName = "com.example.app";
+    streamDesc->SetBunduleName(bundleName);
+    EXPECT_EQ(audioCoreService->IsFastAllowed(streamDesc->bundleName_), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
