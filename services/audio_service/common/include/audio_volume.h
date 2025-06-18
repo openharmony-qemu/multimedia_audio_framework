@@ -52,7 +52,7 @@ public:
 
     // stream volume
     void AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage, int32_t uid, int32_t pid,
-        bool isSystemApp, int32_t mode);
+        bool isSystemApp, int32_t mode, bool isVKB);
     void RemoveStreamVolume(uint32_t sessionId);
     void SetStreamVolume(uint32_t sessionId, float volume);
     void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor);
@@ -120,8 +120,9 @@ private:
 class StreamVolume {
 public:
     StreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage, int32_t uid, int32_t pid,
-        bool isSystemApp, int32_t mode) : sessionId_(sessionId), streamType_(streamType), streamUsage_(streamUsage),
-        appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
+        bool isSystemApp, int32_t mode, bool isVKB) : sessionId_(sessionId), streamType_(streamType),
+        streamUsage_(streamUsage), appUid_(uid), appPid_(pid), isSystemApp_(isSystemApp),
+        isVirtualKeyboard_(isVKB) {volumeMode_ = static_cast<AudioVolumeMode>(mode);};
     ~StreamVolume() = default;
     uint32_t GetSessionId() {return sessionId_;};
     int32_t GetStreamType() {return streamType_;};
@@ -130,6 +131,7 @@ public:
     int32_t GetAppPid() {return appPid_;};
     bool IsSystemApp() {return isSystemApp_;};
     AudioVolumeMode GetVolumeMode() {return volumeMode_;};
+    bool IsVirtualKeyboard() {return isVirtualKeyboard_;};
 public:
     float volume_ = 1.0f;
     float duckFactor_ = 1.0f;
@@ -151,6 +153,7 @@ private:
     int32_t appPid_ = 0;
     bool isSystemApp_ = false;
     AudioVolumeMode volumeMode_ = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool isVirtualKeyboard_ = false;
 };
 
 class SystemVolume {

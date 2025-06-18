@@ -201,7 +201,7 @@ int32_t RendererInServer::Init()
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -1392,7 +1392,7 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
     AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard);
 
     innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex);
     int32_t engineFlag = GetEngineFlag();
@@ -1471,7 +1471,7 @@ int32_t RendererInServer::InitDualToneStream()
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
         AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
             processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-            isSystemApp, processConfig_.rendererInfo.volumeMode);
+            isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard);
 
         isDualToneEnabled_ = true;
     }

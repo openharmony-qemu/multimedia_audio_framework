@@ -116,15 +116,20 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
             volumeType, deviceClass.c_str());
     }
+    float sysVolume = volumes->volumeSystem;
+    if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
+        sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
+    }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    volumes->volume = volumes->volumeSystem * volumes->volumeStream * doNotDisturbStatusVolume;
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
-        AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
-            " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f,"
-            " doNotDisturbStatusVolume: %{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
-            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, doNotDisturbStatusVolume);
+        AUDIO_INFO_LOG("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,devClass:%{public}s,"
+            "volumeSystem:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "doNotDisturbStatusVolume:%{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
+            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
+            itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
     }
     return volumes->volume;
 }
@@ -214,14 +219,14 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
 }
 
 void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage,
-    int32_t uid, int32_t pid, bool isSystemApp, int32_t mode)
+    int32_t uid, int32_t pid, bool isSystemApp, int32_t mode, bool isVKB)
 {
     AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
     auto it = streamVolume_.find(sessionId);
     if (it == streamVolume_.end()) {
         streamVolume_.emplace(sessionId,
-            StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode));
+            StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB));
     } else {
         AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", sessionId);
     }

@@ -53,6 +53,8 @@ constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
+constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
@@ -500,6 +502,7 @@ struct AudioRendererInfo {
     int32_t effectMode = 1;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool isVirtualKeyboard = false;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -521,7 +524,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(effectMode)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
-            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
+            && parcel.WriteBool(isVirtualKeyboard);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -544,6 +548,7 @@ struct AudioRendererInfo {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        isVirtualKeyboard = parcel.ReadBool();
     }
 };
 

@@ -591,6 +591,29 @@ HWTEST(FastSystemStreamUnitTest, InitializeAudioProcessConfig_001, TestSize.Leve
 }
 
 /**
+ * @tc.name  : Test InitializeAudioProcessConfig API
+ * @tc.type  : FUNC
+ * @tc.number: InitializeAudioProcessConfig_002
+ * @tc.desc  : Test InitializeAudioProcessConfig interface.
+ */
+HWTEST(FastSystemStreamUnitTest, InitializeAudioProcessConfig_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    AudioRendererInfo rendererInfo;
+    rendererInfo.isVirtualKeyboard = true;
+    fastAudioStream->SetRendererInfo(rendererInfo);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest InitializeAudioProcessConfig_002 start");
+    AudioProcessConfig config;
+    AudioStreamParams info;
+    auto result = fastAudioStream->InitializeAudioProcessConfig(config, info);
+    EXPECT_TRUE(config.rendererInfo.isVirtualKeyboard);
+    EXPECT_NE(result, ERR_INVALID_OPERATION);
+}
+
+/**
  * @tc.name  : Test GetState API
  * @tc.type  : FUNC
  * @tc.number: GetState_001
