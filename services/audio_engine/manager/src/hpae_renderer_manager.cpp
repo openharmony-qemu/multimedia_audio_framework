@@ -284,20 +284,6 @@ int32_t HpaeRendererManager::DestroyStream(uint32_t sessionId)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::DeleteMchInputSession(uint32_t sessionId)
-{
-    Trace trace("[" + std::to_string(sessionId) + "]DeleteMchInputSession");
-    DisConnectMchInputSession(sessionId);
-    sinkInputNodeMap_.erase(sessionId);
-    if (SafeGetMap(mchIdGainNodeMap_, sessionId)) {
-        mchIdGainNodeMap_.erase(sessionId);
-    } else {
-        AUDIO_ERR_LOG("could not find gain node id:%{public}d", sessionId);
-        return ERROR;
-    }
-    return SUCCESS;
-}
-
 int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSession");
@@ -352,28 +338,6 @@ void HpaeRendererManager::DeleteProcessCluster(
             sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
         }
     }
-}
-
-int32_t HpaeRendererManager::ConnectMchInputSession(uint32_t sessionId)
-{
-    Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectMchInputSession");
-    AUDIO_INFO_LOG("Mch Device connect input session:%{public}d", sessionId);
-    if (!SafeGetMap(mchIdGainNodeMap_, sessionId)) {
-        AUDIO_INFO_LOG("Mch Device connect can not find gain node, create it session:%{public}d", sessionId);
-        auto nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
-        nodeInfo.nodeName = "HpaeGainNode";
-        nodeInfo.nodeId = OnGetNodeId();
-        nodeInfo.deviceClass = sinkInfo_.deviceClass;
-        nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-        mchIdGainNodeMap_[sessionId] = std::make_shared<HpaeGainNode>(nodeInfo);
-    }
-    mchIdGainNodeMap_[sessionId]->Connect(sinkInputNodeMap_[sessionId]);
-    outputCluster_->Connect(mchIdGainNodeMap_[sessionId]);
-    OnNotifyDfxNodeInfo(true, mchIdGainNodeMap_[sessionId]->GetNodeId(), sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (outputCluster_->GetState() != STREAM_MANAGER_RUNNING && !isSuspend_) {
-        outputCluster_->Start();
-    }
-    return SUCCESS;
 }
 
 bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
@@ -529,18 +493,6 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
         SetSessionFade(sessionId, OPERATION_STARTED);
     };
     SendRequest(request);
-    return SUCCESS;
-}
-
-int32_t HpaeRendererManager::DisConnectMchInputSession(uint32_t sessionId)
-{
-    AUDIO_INFO_LOG("Mch Device Disconnect input session:%{public}d", sessionId);
-    if (!SafeGetMap(mchIdGainNodeMap_, sessionId)) {
-        AUDIO_INFO_LOG("Mch Device DisConnect can not find gain node session:%{public}u", sessionId);
-        return ERROR;
-    }
-    mchIdGainNodeMap_[sessionId]->DisConnect(sinkInputNodeMap_[sessionId]);
-    outputCluster_->DisConnect(mchIdGainNodeMap_[sessionId]);
     return SUCCESS;
 }
 

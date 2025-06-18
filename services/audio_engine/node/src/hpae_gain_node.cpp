@@ -38,7 +38,7 @@ static constexpr float FADE_LOW = 0.0f;
 static constexpr float FADE_HIGH = 1.0f;
 static constexpr float SHORT_FADE_PERIOD = 0.005f; // 5ms fade for 10ms < playback duration <= 40ms
 static constexpr float EPSILON = 1e-6f;
-static constexpr uint32_t FADE_OUT_PUSH_NUM = 4;
+static constexpr uint32_t FADE_OUT_PUSH_NUM = 2;
 
 HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo)
 {
