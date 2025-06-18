@@ -79,13 +79,13 @@ bool AudioLoopbackPrivate::Enable(bool enable)
     CHECK_AND_RETURN_RET_LOG(IsAudioLoopbackSupported(), false, "AudioLoopback not support");
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
-        CHECK_AND_RETURN_RET_LOG(GetState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
+        CHECK_AND_RETURN_RET_LOG(GetCurrentState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
         InitStatus();
         CHECK_AND_RETURN_RET_LOG(CheckDeviceSupport(), false, "Device not support");
         CreateAudioLoopback();
         currentState_ = LOOPBACK_STATE_PREPARED;
         UpdateStatus();
-        CHECK_AND_RETURN_RET_LOG(GetState() == LOOPBACK_STATE_RUNNING, false, "AudioLoopback Enable failed");
+        CHECK_AND_RETURN_RET_LOG(GetCurrentState() == LOOPBACK_STATE_RUNNING, false, "AudioLoopback Enable failed");
     } else {
         std::unique_lock<std::mutex> stateLock(stateMutex_);
         CHECK_AND_RETURN_RET_LOG(currentState_ == LOOPBACK_STATE_RUNNING, true, "AudioLoopback not Running");
@@ -93,7 +93,6 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         stateLock.unlock();
         DestroyAudioLoopback();
     }
-    return true;
 }
 
 void AudioLoopbackPrivate::InitStatus()
@@ -121,7 +120,7 @@ AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
 
 AudioLoopbackStatus AudioLoopbackPrivate::StateToStatus(AudioLoopbackState state)
 {
-     if (state == LOOPBACK_STATE_RUNNING) {
+    if (state == LOOPBACK_STATE_RUNNING) {
         return LOOPBACK_AVAILABLE_RUNNING;
     }
     bool ret = CheckDeviceSupport();
@@ -352,7 +351,7 @@ AudioLoopbackState AudioLoopbackPrivate::GetCurrentState()
 void AudioLoopbackPrivate::UpdateStatus()
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
-    CHECK_AND_RETURN(currentState == LOOPBACK_STATE_RUNNING || currentState == LOOPBACK_STATE_PREPARED);
+    CHECK_AND_RETURN(currentState_ == LOOPBACK_STATE_RUNNING || currentState_ == LOOPBACK_STATE_PREPARED);
     AudioLoopbackState oldState = currentState_;
     AudioLoopbackState newState = currentState_;
     const bool isDeviceValid = isRendererUsb_.load() && isCapturerUsb_.load();
