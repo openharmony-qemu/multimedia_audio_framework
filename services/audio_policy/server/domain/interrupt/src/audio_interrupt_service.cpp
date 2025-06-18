@@ -733,7 +733,7 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
     CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
     AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
     if (focusEntry.actionOn != CURRENT) {
-        AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+        AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
             "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
         return;
     }
@@ -773,7 +773,7 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
         default:
             break;
     }
-    AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+    AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
         "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
     return;
 }
