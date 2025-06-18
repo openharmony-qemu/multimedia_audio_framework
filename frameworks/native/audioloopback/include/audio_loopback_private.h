@@ -70,16 +70,17 @@ private:
     void InitStatus();
     void InitializeCallbacks();
     void UpdateStatus();
-
+    AudioLoopbackState GetCurrentState();
     AudioRendererOptions GenerateRendererConfig();
     AudioCapturerOptions GenerateCapturerConfig();
 
-    bool CreateAudioLoopback();
+    void CreateAudioLoopback();
     void DestroyAudioLoopback();
     bool IsAudioLoopbackSupported();
     bool CheckDeviceSupport();
-    bool SetKaraokeParameters();
+    bool EnableLoopback();
     void DisableLoopback();
+    AudioLoopbackStatus StateToStatus(AudioLoopbackState state);
 
     AudioRendererOptions rendererOptions_;
     AudioCapturerOptions capturerOptions_;
@@ -87,19 +88,19 @@ private:
     std::map<std::string, std::string> karaokeParams_ = {};
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioCapturer> audioCapturer_;
-    std::mutex mutex_;
+    std::mutex loopbackMutex_;
+    std::mutex stateMutex_;
     std::shared_ptr<AudioLoopbackCallback> statusCallback_;
-    AudioLoopbackStatus currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
+    AudioLoopbackState currentState_ = LOOPBACK_STATE_IDLE;
     AudioLoopbackMode mode_ = LOOPBACK_HARDWARE;
 
-    RendererState rendererState_ = RENDERER_INVALID;
-    bool isRendererUsb_ = false;
-    FastStatus rendererFastStatus_ = FASTSTATUS_NORMAL;
+    std::atomic<RendererState> rendererState_ = RENDERER_INVALID;
+    std::atomic<bool> isRendererUsb_ = false;
+    std::atomic<FastStatus> rendererFastStatus_ = FASTSTATUS_NORMAL;
 
-    CapturerState capturerState_ = CAPTURER_INVALID;
-    bool isCapturerUsb_ = false;
-    FastStatus capturerFastStatus_ = FASTSTATUS_NORMAL;
-    bool isStarted_ = false;
+    std::atomic<CapturerState> capturerState_ = CAPTURER_INVALID;
+    std::atomic<bool> isCapturerUsb_ = false;
+    std::atomic<FastStatus> capturerFastStatus_ = FASTSTATUS_NORMAL;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

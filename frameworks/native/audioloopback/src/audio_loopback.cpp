@@ -37,7 +37,8 @@ std::shared_ptr<AudioLoopback> AudioLoopback::CreateAudioLoopback(AudioLoopbackM
     int res = Security::AccessToken::AccessTokenKit::VerifyAccessToken(tokenId, MICROPHONE_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(res == Security::AccessToken::PermissionState::PERMISSION_GRANTED,
         nullptr, "Permission denied [tid:%{public}d]", tokenId);
-    return std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+    static std::shared_ptr<AudioLoopback> instance = std::make_shared<AudioLoopbackPrivate>(mode, appInfo);
+    return instance;
 }
 
 AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo &appInfo)
@@ -65,27 +66,31 @@ AudioLoopback::~AudioLoopback() = default;
 AudioLoopbackPrivate::~AudioLoopbackPrivate()
 {
     AUDIO_INFO_LOG("~AudioLoopbackPrivate");
-    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
-        DestroyAudioLoopback();
-    }
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN_LOG(currentState_ == LOOPBACK_STATE_RUNNING, "AudioLoopback not Running");
+    currentState_ = LOOPBACK_STATE_DESTROYING;
+    stateLock.unlock();
+    DestroyAudioLoopback();
 }
 
 bool AudioLoopbackPrivate::Enable(bool enable)
 {
-    AUDIO_INFO_LOG("Enable %{public}d, currentStatus_ %{public}d", enable, currentStatus_);
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
+    CHECK_AND_RETURN_RET_LOG(IsAudioLoopbackSupported(), false, "AudioLoopback not support");
+    AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
     if (enable) {
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ != LOOPBACK_AVAILABLE_RUNNING, false, "AudioLoopback already running");
+        CHECK_AND_RETURN_RET_LOG(GetState() != LOOPBACK_STATE_RUNNING, true, "AudioLoopback already running");
         InitStatus();
-        bool ret = IsAudioLoopbackSupported() && CheckDeviceSupport() && CreateAudioLoopback();
-        if (!ret) {
-            AUDIO_ERR_LOG("Create AudioLoopback failed");
-            DestroyAudioLoopback();
-        }
-        isStarted_ = true;
+        CHECK_AND_RETURN_RET_LOG(CheckDeviceSupport(), false, "Device not support");
+        CreateAudioLoopback();
+        currentState_ = LOOPBACK_STATE_PREPARED;
         UpdateStatus();
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ == LOOPBACK_AVAILABLE_RUNNING, false, "AudioLoopback Enable failed");
+        CHECK_AND_RETURN_RET_LOG(GetState() == LOOPBACK_STATE_RUNNING, false, "AudioLoopback Enable failed");
     } else {
-        CHECK_AND_RETURN_RET_LOG(currentStatus_ == LOOPBACK_AVAILABLE_RUNNING, true, "AudioLoopback not Running");
+        std::unique_lock<std::mutex> stateLock(stateMutex_);
+        CHECK_AND_RETURN_RET_LOG(currentState_ == LOOPBACK_STATE_RUNNING, true, "AudioLoopback not Running");
+        currentState_ = LOOPBACK_STATE_DESTROYING;
+        stateLock.unlock();
         DestroyAudioLoopback();
     }
     return true;
@@ -93,8 +98,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
 
 void AudioLoopbackPrivate::InitStatus()
 {
-    isStarted_ = false;
-    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
+    currentState_ = LOOPBACK_STATE_IDLE;
 
     rendererState_ = RENDERER_INVALID;
     isRendererUsb_ = false;
@@ -107,19 +111,27 @@ void AudioLoopbackPrivate::InitStatus()
 
 AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
 {
-    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
-        return currentStatus_;
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    AudioLoopbackStatus status = StateToStatus(currentState_);
+    if (status == LOOPBACK_UNAVAILABLE_SCENE) {
+        currentState_ = LOOPBACK_STATE_IDLE;
+    }
+    return status;
+}
+
+AudioLoopbackStatus AudioLoopbackPrivate::StateToStatus(AudioLoopbackState state)
+{
+     if (state == LOOPBACK_STATE_RUNNING) {
+        return LOOPBACK_AVAILABLE_RUNNING;
     }
     bool ret = CheckDeviceSupport();
     if (!ret) {
         return LOOPBACK_UNAVAILABLE_DEVICE;
     }
-    if (currentStatus_ == LOOPBACK_UNAVAILABLE_SCENE) {
-        currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
+    if (state == LOOPBACK_STATE_DESTROYED || state == LOOPBACK_STATE_DESTROYING) {
         return LOOPBACK_UNAVAILABLE_SCENE;
     }
-    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
-    return currentStatus_;
+    return LOOPBACK_AVAILABLE_IDLE;
 }
 
 int32_t AudioLoopbackPrivate::SetVolume(float volume)
@@ -128,8 +140,9 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
     }
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
     karaokeParams_["Karaoke_volume"] = std::to_string(static_cast<int>(volume * VALUE_HUNDRED));
-    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
+    if (currentState_ == LOOPBACK_STATE_RUNNING) {
         std::string parameters = "Karaoke_volume=" + karaokeParams_["Karaoke_volume"];
         CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), ERROR,
             "SetVolume failed");
@@ -139,43 +152,43 @@ int32_t AudioLoopbackPrivate::SetVolume(float volume)
 
 int32_t AudioLoopbackPrivate::SetAudioLoopbackCallback(const std::shared_ptr<AudioLoopbackCallback> &callback)
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
     statusCallback_ = callback;
     return SUCCESS;
 }
 
 int32_t AudioLoopbackPrivate::RemoveAudioLoopbackCallback()
 {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
     statusCallback_ = nullptr;
     return SUCCESS;
 }
 
-bool AudioLoopbackPrivate::CreateAudioLoopback()
+void AudioLoopbackPrivate::CreateAudioLoopback()
 {
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, false, "CreateRenderer failed");
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_->IsFastRenderer(), false, "CreateFastRenderer failed");
+    CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "CreateRenderer failed");
+    CHECK_AND_RETURN_LOG(audioRenderer_->IsFastRenderer(), "CreateFastRenderer failed");
     audioRenderer_->SetRendererWriteCallback(shared_from_this());
     rendererFastStatus_ = FASTSTATUS_FAST;
     audioCapturer_ = AudioCapturer::CreateCapturer(capturerOptions_, appInfo_);
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, false, "CreateCapturer failed");
+    CHECK_AND_RETURN_LOG(audioCapturer_ != nullptr, "CreateCapturer failed");
     AudioCapturerInfo capturerInfo;
     audioCapturer_->GetCapturerInfo(capturerInfo);
-    CHECK_AND_RETURN_RET_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, false, "CreateFastCapturer failed");
+    CHECK_AND_RETURN_LOG(capturerInfo.capturerFlags == STREAM_FLAG_FAST, "CreateFastCapturer failed");
     audioCapturer_->SetCapturerReadCallback(shared_from_this());
     InitializeCallbacks();
     capturerFastStatus_ = FASTSTATUS_FAST;
-    CHECK_AND_RETURN_RET_LOG(audioRenderer_->Start(), false, "audioRenderer Start failed");
+    CHECK_AND_RETURN_LOG(audioRenderer_->Start(), "audioRenderer Start failed");
     rendererState_ = RENDERER_RUNNING;
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_->Start(), false, "audioCapturer Start failed");
+    CHECK_AND_RETURN_LOG(audioCapturer_->Start(), "audioCapturer Start failed");
     capturerState_ = CAPTURER_RUNNING;
     return true;
 }
 
 void AudioLoopbackPrivate::DisableLoopback()
 {
-    if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING) {
+    if (karaokeParams_["Karaoke_enable"] == "enable") {
         karaokeParams_["Karaoke_enable"] = "disable";
         std::string parameters = "Karaoke_enable=" + karaokeParams_["Karaoke_enable"];
         CHECK_AND_RETURN_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters),
@@ -185,27 +198,20 @@ void AudioLoopbackPrivate::DisableLoopback()
 
 void AudioLoopbackPrivate::DestroyAudioLoopback()
 {
-    isStarted_ = false;
-    bool ret = true;
     DisableLoopback();
-    currentStatus_ = LOOPBACK_AVAILABLE_IDLE;
     if (audioCapturer_) {
-        ret = audioCapturer_->Stop();
-        CHECK_AND_RETURN_LOG(ret, "audioCapturer Stop failed");
-        ret = audioCapturer_->Release();
-        CHECK_AND_RETURN_LOG(ret, "audioCapturer Release failed");
+        audioCapturer_->Stop();
+        audioCapturer_->Release();
         audioCapturer_ = nullptr;
     } else {
-        AUDIO_ERR_LOG("audioCapturer is nullptr");
+        AUDIO_WARNING_LOG("audioCapturer is nullptr");
     }
     if (audioRenderer_) {
-        ret = audioRenderer_->Stop();
-        CHECK_AND_RETURN_LOG(ret, "audioRenderer Stop failed");
-        ret = audioRenderer_->Release();
-        CHECK_AND_RETURN_LOG(ret, "audioRenderer Release failed");
+        audioRenderer_->Stop();
+        audioRenderer_->Release();
         audioRenderer_ = nullptr;
     } else {
-        AUDIO_ERR_LOG("audioRenderer is nullptr");
+        AUDIO_WARNING_LOG("audioRenderer is nullptr");
     }
 }
 
@@ -250,8 +256,9 @@ bool AudioLoopbackPrivate::CheckDeviceSupport()
     return isRendererUsb_ && isCapturerUsb_;
 }
 
-bool AudioLoopbackPrivate::SetKaraokeParameters()
+bool AudioLoopbackPrivate::EnableLoopback()
 {
+    karaokeParams_["Karaoke_enable"] = "enable";
     std::string parameters = "";
     for (auto &param : karaokeParams_) {
         parameters = param.first + "=" + param.second + ";";
@@ -336,34 +343,38 @@ void AudioLoopbackPrivate::InitializeCallbacks()
     audioCapturer_->SetFastStatusChangeCallback(capturerCallback);
 }
 
+AudioLoopbackState AudioLoopbackPrivate::GetCurrentState()
+{
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    return currentState_;
+}
+
 void AudioLoopbackPrivate::UpdateStatus()
 {
-    CHECK_AND_RETURN(isStarted_);
-    AudioLoopbackStatus oldStatus = currentStatus_;
-    AudioLoopbackStatus newStatus = currentStatus_;
-    const bool isDeviceValid = isRendererUsb_ && isCapturerUsb_;
+    std::unique_lock<std::mutex> stateLock(stateMutex_);
+    CHECK_AND_RETURN(currentState == LOOPBACK_STATE_RUNNING || currentState == LOOPBACK_STATE_PREPARED);
+    AudioLoopbackState oldState = currentState_;
+    AudioLoopbackState newState = currentState_;
+    const bool isDeviceValid = isRendererUsb_.load() && isCapturerUsb_.load();
+    const bool isStateRunning = (rendererState_.load() == RENDERER_RUNNING) &&
+        (capturerState_.load() == CAPTURER_RUNNING);
+    const bool isFastValid = (rendererFastStatus_.load() == FASTSTATUS_FAST) &&
+        (capturerFastStatus_.load() == FASTSTATUS_FAST);
+    newState = (isDeviceValid && isStateRunning && isFastValid) ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
 
-    if (!isDeviceValid) {
-        newStatus = LOOPBACK_UNAVAILABLE_DEVICE;
-    } else {
-        const bool isStateRunning = (rendererState_ == RENDERER_RUNNING) && (capturerState_ == CAPTURER_RUNNING);
-        const bool isFastValid = (rendererFastStatus_ == FASTSTATUS_FAST) && (capturerFastStatus_ == FASTSTATUS_FAST);
-        newStatus = (isStateRunning && isFastValid) ? LOOPBACK_AVAILABLE_RUNNING : LOOPBACK_UNAVAILABLE_SCENE;
+    if (newState == LOOPBACK_STATE_RUNNING) {
+        newState = EnableLoopback() ? LOOPBACK_STATE_RUNNING : LOOPBACK_STATE_DESTROYED;
     }
-
-    if (newStatus == LOOPBACK_AVAILABLE_RUNNING) {
-        karaokeParams_["Karaoke_enable"] = "enable";
-        currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
-        newStatus = SetKaraokeParameters() ? LOOPBACK_AVAILABLE_RUNNING : LOOPBACK_UNAVAILABLE_SCENE;
-    }
-    if (newStatus != oldStatus) {
-        AUDIO_INFO_LOG("UpdateStatus: %{public}d -> %{public}d", oldStatus, newStatus);
-        if (currentStatus_ == LOOPBACK_AVAILABLE_RUNNING && newStatus != LOOPBACK_AVAILABLE_RUNNING) {
+    if (newState != oldState) {
+        AUDIO_INFO_LOG("UpdateState: %{public}d -> %{public}d", oldState, newState);
+        if (newState == LOOPBACK_STATE_DESTROYED) {
+            currentState_ = LOOPBACK_STATE_DESTROYING;
+            stateLock.unlock();
             DestroyAudioLoopback();
         }
-        currentStatus_ = newStatus;
+        currentState_ = newState;
         if (statusCallback_) {
-            statusCallback_->OnStatusChange(currentStatus_);
+            statusCallback_->OnStatusChange(StateToStatus(currentState_));
         }
     }
 }
