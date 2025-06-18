@@ -621,13 +621,13 @@ int32_t OHAudioRenderer::SetVolumeWithRamp(float volume, int32_t duration)
     return audioRenderer_->SetVolumeWithRamp(volume, duration);
 }
 
-int32_t OHAudioRenderer::SetLoudnessGain(float loudnessGain)
+int32_t OHAudioRenderer::SetLoudnessGain(float loudnessGain) const
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->SetLoudnessGain(loudnessGain);
 }
 
-float OHAudioRenderer:GetLoudnessGain()
+float OHAudioRenderer::GetLoudnessGain() const
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
     return audioRenderer_->GetLoudnessGain();    
