@@ -79,8 +79,7 @@ public:
 private:
     bool GetAudioTime(uint64_t &framePos, int64_t &sec, int64_t &nanoSec);
     AudioSamplingRate GetDirectSampleRate(AudioSamplingRate sampleRate) const noexcept;
-    AudioSampleFormat GetDirectFormat(const AudioStreamInfo &streamInfo) const noexcept;
-    uint32_t GetDirectChannel(const AudioStreamInfo &streamInfo) const noexcept;
+    AudioSampleFormat GetDirectFormat(AudioSampleFormat format) const noexcept;
     void ConvertSrcToFloat(const BufferDesc &bufferDesc);
     void ConvertFloatToDes(int32_t writeIndex);
     void GetStreamVolume();
