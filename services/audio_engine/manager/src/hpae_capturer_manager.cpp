@@ -119,9 +119,10 @@ int32_t HpaeCapturerManager::CaptureEffectRelease(const HpaeProcessorType &scene
 
 void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType)
 {
-    if (!SafeGetMap(sceneClusterMap_, sceneType) || sceneClusterMap_[sceneType]->GetOutputPortNum() != 0) {
-        return;
-    }
+    CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType), "connot find sceneType:%{public}u", sceneType);
+    CHECK_AND_RETURN_LOG(sceneClusterMap_[sceneType]->GetOutputPortNum() == 0,
+        "sceneType:%{public}u outputNum:%{public}u",
+        sceneType, static_cast<uint32_t>(sceneClusterMap_[sceneType]->GetOutputPortNum()));
     // need to disconnect sceneCluster and sourceInputCluster
     HpaeNodeInfo ecNodeInfo;
     if (CheckSceneTypeNeedEc(sceneType) &&
@@ -659,12 +660,11 @@ int32_t HpaeCapturerManager::Init()
     auto request = [this] {
         int32_t ret = InitCapturerManager();
         TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
-        if (ret == SUCCESS) {
-            AUDIO_INFO_LOG("Init HpaeCapturerManager success");
-            CheckIfAnyStreamRunning();
-            HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
-                static_cast<DeviceType>(sourceInfo_.deviceType));
-        }
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
+        AUDIO_INFO_LOG("Init HpaeCapturerManager success");
+        CheckIfAnyStreamRunning();
+        HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
+            static_cast<DeviceType>(sourceInfo_.deviceType));
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
