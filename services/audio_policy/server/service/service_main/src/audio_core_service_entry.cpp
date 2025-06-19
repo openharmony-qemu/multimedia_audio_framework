@@ -402,12 +402,6 @@ void AudioCoreService::EventEntry::OnCapturerSessionRemoved(uint64_t sessionID)
     coreService_->OnCapturerSessionRemoved(sessionID);
 }
 
-void AudioCoreService::EventEntry::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->SetDisplayName(deviceName, isLocalDevice);
-}
-
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

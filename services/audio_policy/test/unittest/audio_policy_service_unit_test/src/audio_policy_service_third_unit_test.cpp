@@ -1213,71 +1213,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnServiceDisconnected_001, TestSize.Le
 }
 
 /**
- * @tc.name  : Test OnMonoAudioConfigChanged.
- * @tc.number: OnMonoAudioConfigChanged_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, OnMonoAudioConfigChanged_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    bool audioMono = false;
-
-    server->audioPolicyService_.OnMonoAudioConfigChanged(audioMono);
-    EXPECT_NE(server, nullptr);
-}
-
-/**
- * @tc.name  : Test OnAudioBalanceChanged.
- * @tc.number: OnAudioBalanceChanged_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, OnAudioBalanceChanged_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    float audioBalance = 0.0;
-
-    server->audioPolicyService_.OnAudioBalanceChanged(audioBalance);
-    EXPECT_NE(server, nullptr);
-}
-
-/**
- * @tc.name  : Test onDoNotDisturbStatusChanged.
- * @tc.number: onDoNotDisturbStatusChanged_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
- HWTEST_F(AudioPolicyServiceThirdUnitTest, onDoNotDisturbStatusChanged_001, TestSize.Level1)
- {
-     auto server = GetServerPtr();
-     ASSERT_NE(nullptr, server);
- 
-     bool isDoNotDisturb = false;
-     server->audioPolicyService_.onDoNotDisturbStatusChanged(isDoNotDisturb);
-     EXPECT_NE(server, nullptr);
- }
-
- /**
- * @tc.name  : Test onDoNotDisturbStatusWhiteListChanged.
- * @tc.number: onDoNotDisturbStatusWhiteListChanged_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
- HWTEST_F(AudioPolicyServiceThirdUnitTest, onDoNotDisturbStatusWhiteListChanged_001, TestSize.Level1)
- {
-     auto server = GetServerPtr();
-     ASSERT_NE(nullptr, server);
- 
-     std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
-     std::map<std::string, std::string> obj;
-     obj["123"] = "1";
-     doNotDisturbStatusWhiteList.push_back(obj);
-     server->audioPolicyService_.onDoNotDisturbStatusWhiteListChanged(doNotDisturbStatusWhiteList);
-     EXPECT_NE(server, nullptr);
- }
-
-/**
  * @tc.name  : Test SetAudioClientInfoMgrCallback.
  * @tc.number: SetAudioClientInfoMgrCallback_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -2376,18 +2311,5 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetBackgroundMuteCallback_001, TestSiz
     EXPECT_EQ(ret, SUCCESS);
 }
 
-/**
- * @tc.name  : Test RegisterDefaultVolumeTypeListener.
- * @tc.number: RegisterDefaultVolumeTypeListener_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, RegisterDefaultVolumeTypeListener_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioStreamType ret = server->interruptService_->GetDefaultVolumeType();
-    EXPECT_EQ(ret, STREAM_MUSIC);
-}
 } // namespace AudioStandard
 } // namespace OHOS

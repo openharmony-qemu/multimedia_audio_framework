@@ -23,7 +23,6 @@
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
-#include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_zone_service.h"
 #include "audio_bundle_manager.h"
@@ -38,7 +37,6 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 }
 
-static const char* CONFIG_AUDIO_BALANACE_KEY = "master_balance";
 bool AudioCoreService::isBtListenerRegistered = false;
 bool AudioCoreService::isBtCrashed = false;
 #ifdef BLUETOOTH_ENABLE
@@ -968,11 +966,6 @@ int32_t AudioCoreService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo
 void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
-}
-
-void AudioCoreService::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
-{
-    audioConnectedDevice_.SetDisplayName(deviceName, isLocalDevice);
 }
 
 int32_t AudioCoreService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)

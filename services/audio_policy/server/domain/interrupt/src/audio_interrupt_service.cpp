@@ -35,6 +35,7 @@ constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
+const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -2242,15 +2243,27 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
     }
 }
 
-void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeType)
+void AudioInterruptService::RegisterDefaultVolumeTypeListener()
 {
-    defaultVolumeType_ = volumeType;
-    AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
-}
-
-AudioStreamType AudioInterruptService::GetDefaultVolumeType() const
-{
-    return defaultVolumeType_;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this, &settingProvider](const std::string &key) {
+        int32_t currentValueType = STREAM_MUSIC;
+        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentValueType, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
+        if (currentValueType == STREAM_RING) {
+            defaultVolumeType_ = STREAM_RING;
+        } else {
+            defaultVolumeType_ = STREAM_MUSIC;
+        }
+        AUDIO_INFO_LOG("Get defaultVolumeType: %{public}d", defaultVolumeType_);
+    };
+    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
+    }
+    updateFuncMono(DEFAULT_VOLUME_KEY);
+    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
 // LCOV_EXCL_STOP

@@ -1321,5 +1321,43 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_004, TestSize.
     EXPECT_EQ(ret, true);
 }
 
+/**
+* @tc.name  : Test RegisterAccessibilityMonitorHelper.
+* @tc.number: RegisterAccessibilityMonitorHelperTest
+* @tc.desc  : Test RegisterAccessibilityMonitorHelper interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterAccessibilityMonitorHelperTest, TestSize.Level1)
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool isDataShareReady = settingProvider.isDataShareReady_.load();
+    settingProvider.SetDataShareReady(true);
+    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    // The result can be verified only after the datashare mock framework is completed.
+    server->audioPolicyService_.RegisterAccessibilityMonitorHelper();
+    settingProvider.SetDataShareReady(isDataShareReady);
+}
+
+/**
+* @tc.name  : Test RegisterDataObserver.
+* @tc.number: RegisterDataObserverTest
+* @tc.desc  : Test RegisterDataObserver interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level1)
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool isDataShareReady = settingProvider.isDataShareReady_.load();
+    settingProvider.SetDataShareReady(true);
+    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    // These result can be verified only after the datashare mock framework is completed.
+    server->audioPolicyService_.audioConnectedDevice_.RegisterNameMonitorHelper();
+    server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatus();
+    server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
+    settingProvider.SetDataShareReady(isDataShareReady);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

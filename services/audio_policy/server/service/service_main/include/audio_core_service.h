@@ -102,7 +102,6 @@ public:
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
         int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
         void OnCapturerSessionRemoved(uint64_t sessionID);
-        void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
         int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
         void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
             const AudioStreamDeviceChangeReasonExt reason);
@@ -200,7 +199,6 @@ private:
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
     void OnCapturerSessionRemoved(uint64_t sessionID);
-    void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);

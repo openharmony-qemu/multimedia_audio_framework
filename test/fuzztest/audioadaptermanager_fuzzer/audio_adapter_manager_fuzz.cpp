@@ -253,23 +253,6 @@ void AudioVolumeManagerSetSystemVolumeLevelFuzzTest(const uint8_t *rawData, size
     audioAdapterManager->SetSystemVolumeLevel(STREAM_MUSIC, testVolumeLevel);
 }
 
-void AudioVolumeManagerSetDoNotDisturbStatusWhiteListFuzzTest(const uint8_t *rawData, size_t size)
-{
-    audioAdapterManager_->Init();
-    vector<string> testNetworkIds = {
-        "LocalDevice",
-        "RemoteDevice",
-        "NetworkDevice1",
-    };
-    std::vector<std::map<std::string, std::string>> doNotDisturbStatusWhiteList;
-    uint32_t index = static_cast<uint32_t>(size);
-    std::map<std::string, std::string> test;
-    std::string key = testNetworkIds[index % testNetworkIds.size()];
-    test[key] = key;
-    doNotDisturbStatusWhiteList.push_back(test);
-    audioAdapterManager_->SetDoNotDisturbStatusWhiteList(doNotDisturbStatusWhiteList);
-}
-
 void AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest(const uint8_t *rawData, size_t size)
 {
     audioAdapterManager_->Init();
@@ -452,7 +435,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerUpdateSafeVolumeByS4FuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeMutedFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetSystemVolumeLevelFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetDoNotDisturbStatusWhiteListFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetDoubleRingVolumeDbFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetInnerStreamMuteFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetStreamMuteFuzzTest,

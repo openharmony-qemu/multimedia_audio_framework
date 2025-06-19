@@ -91,7 +91,6 @@ const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
 const char* MICROPHONE_CONTROL_PERMISSION = "ohos.permission.MICROPHONE_CONTROL";
 const std::string CALLER_NAME = "audio_server";
-const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 static const int64_t WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US = 300000; // 300ms
 const std::string HIVIEWCARE_PERMISSION = "ohos.permission.ACCESS_HIVIEWCARE";
 static const uint32_t DEVICE_CONNECTED_FLAG_DURATION_MS = 3000000; // 3s
@@ -344,37 +343,7 @@ void AudioPolicyServer::RegisterDefaultVolumeTypeListener()
         AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener interruptService_ is nullptr!");
         return;
     }
-    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-    AudioSettingObserver::UpdateFunc updateFuncMono = [&](const std::string &key) {
-        AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-        int32_t currentVauleType = STREAM_MUSIC;
-        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentVauleType, "system");
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
-        if (currentVauleType == STREAM_RING) {
-            interruptService_->SetDefaultVolumeType(STREAM_RING);
-        } else {
-            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
-        }
-    };
-    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
-    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
-    }
-    int32_t result = STREAM_MUSIC;
-    ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, result, "system");
-    if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("DEFAULT_VOLUME_KEY GetIntValue failed");
-        return;
-    } else {
-        if (result == STREAM_RING) {
-            interruptService_->SetDefaultVolumeType(STREAM_RING);
-        } else {
-            interruptService_->SetDefaultVolumeType(STREAM_MUSIC);
-        }
-    }
-    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d",
-        interruptService_->GetDefaultVolumeType());
+    interruptService_->RegisterDefaultVolumeTypeListener();
 }
 
 void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const std::string& deviceId)
@@ -392,7 +361,7 @@ void AudioPolicyServer::OnAddSystemAbilityExtract(int32_t systemAbilityId, const
 void AudioPolicyServer::HandleKvDataShareEvent()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility kv data service start");
-    if (isInitMuteState_ == false && audioPolicyService_.IsDataShareReady()) {
+    if (isInitMuteState_ == false && AudioPolicyUtils::GetInstance().IsDataShareReady()) {
         AUDIO_INFO_LOG("datashare is ready and need init mic mute state");
         InitMicrophoneMute();
     }
