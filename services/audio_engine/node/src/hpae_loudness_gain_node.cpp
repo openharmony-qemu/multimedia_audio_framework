@@ -43,6 +43,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     loudnessGainOutput_(pcmBufferInfo_)
 {
+    AUDIO_INFO_LOG("HpaeLoudnessGainNode created");
     dlHandle_ = dlopen(LOUDNESSGAIN_PATH.c_str(), 1);
     if (!dlHandle_) {
         AUDIO_ERR_LOG("<log error> dlopen lib %{public}s Fail", LOUDNESSGAIN_PATH.c_str());
@@ -84,6 +85,7 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
 
 HpaePcmBuffer* HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
+    AUDIO_INFO_LOG("HpaeLoudnessGainNode signalProcess started.");
     Trace trace("HpaeLoudnessGainNode::SignalProcess");
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "inputs is empty");
 
@@ -94,7 +96,7 @@ HpaePcmBuffer* HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 #endif
 
     CheckUpdateInfo(inputs[0]);
-    CHECK_AND_RETURN_RET(!handle_, inputs[0]);
+    CHECK_AND_RETURN_RET(handle_, inputs[0]);
 
     AudioBuffer inBuffer = {
         .frameLength = inputs[0]->GetFrameLen(),
@@ -191,7 +193,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
     effectParam->valueSize = 0;
     int32_t *data = &(effectParam->data[0]);
     data[COMMAND_CODE_INDEX] = EFFECT_SET_PARAM;
-    CHECK_AND_RETURN_RET_LOG(memcpy_s(&data[LOUDNESS_GAIN_INDEX], sizeof(float), &loudnessGain_, sizeof(float)) == 0,
+    CHECK_AND_RETURN_RET_LOG(memcpy_s(&data[LOUDNESS_GAIN_INDEX], sizeof(float), &loudnessGain, sizeof(float)) == 0,
         ERROR, "memcpy failed");
 
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectParam) + sizeof(int32_t) * MAX_PARAM_INDEX, effectParam};
