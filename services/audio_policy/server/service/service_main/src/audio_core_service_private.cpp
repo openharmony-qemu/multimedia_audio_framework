@@ -1831,6 +1831,10 @@ void AudioCoreService::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDe
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", curOutputDeviceType);
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1845,6 +1849,10 @@ void AudioCoreService::WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDes
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", audioActiveDevice_.GetCurrentInputDeviceType());
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

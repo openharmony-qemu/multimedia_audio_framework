@@ -208,6 +208,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
+        descs[0]->routerType_ = routerType;
         AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
             "id:[%{public}d], router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
     }
