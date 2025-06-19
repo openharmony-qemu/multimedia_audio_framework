@@ -149,6 +149,7 @@ private:
     void ReConfigDupStreamCallback();
     void HandleOperationStopped(RendererStage stage);
     int32_t StartInnerDuringStandby();
+    void RecordStandbyTime(bool isStandby, bool isStart);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
