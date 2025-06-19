@@ -157,7 +157,7 @@ HWTEST(ProRendererStreamImplUnitTest, GetDirectFormat_002, TestSize.Level1)
     ret = rendererStreamImpl->GetDirectFormat(format);
     EXPECT_EQ(ret, SAMPLE_S32LE);
 
-    format = SAMPLE_F32LE;
+    format = SAMPLE_F16LE;
     ret = rendererStreamImpl->GetDirectFormat(format);
     EXPECT_EQ(ret, SAMPLE_S16LE);
 
