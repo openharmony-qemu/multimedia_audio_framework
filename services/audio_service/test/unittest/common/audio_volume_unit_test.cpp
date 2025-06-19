@@ -103,10 +103,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_002, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
 {
-    uint32_t sessionId = 1;
-    int32_t volumeType = STREAM_SYSTEM;
+    uint32_t sessionId = 2;
+    int32_t volumeType = STREAM_MUSIC;
     std::string deviceClass = "speaker";
-    int32_t streamType = STREAM_SYSTEM;
+    int32_t streamType = STREAM_MUSIC;
     int32_t streamUsage = STREAM_USAGE_SYSTEM;
     int32_t uid = 1000;
     int32_t pid = 1000;
@@ -115,7 +115,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
 
-    SystemVolume systemVolume(STREAM_SYSTEM, "speaker", 0.5f, 5, true);
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
@@ -131,10 +131,10 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
 {
-    uint32_t sessionId = 1;
-    int32_t volumeType = STREAM_SYSTEM;
+    uint32_t sessionId = 2;
+    int32_t volumeType = STREAM_MUSIC;
     std::string deviceClass = "speaker";
-    int32_t streamType = STREAM_SYSTEM;
+    int32_t streamType = STREAM_MUSIC;
     int32_t streamUsage = STREAM_USAGE_SYSTEM;
     int32_t uid = 1000;
     int32_t pid = 1000;
@@ -143,7 +143,7 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
     AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
 
-    SystemVolume systemVolume(STREAM_SYSTEM, "speaker", 0.5f, 5, false);
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
