@@ -452,8 +452,8 @@ int32_t HpaeSourceInputNode::CapturerSourceStop(void)
     if (audioCapturerSource_ == nullptr) {
         return ERROR;
     }
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
     return SUCCESS;
 }
 

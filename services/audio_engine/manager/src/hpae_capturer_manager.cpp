@@ -179,6 +179,11 @@ int32_t HpaeCapturerManager::DeleteOutputSession(uint32_t sessionId)
         sourceOutputNodeMap_[sessionId]->DisConnectWithInfo(sourceInputClusterMap_[mainMicType_],
             sourceOutputNodeMap_[sessionId]->GetNodeInfo());
     }
+
+    if (SafeGetMap(sourceInputClusterMap_, mainMicType_) &&
+        sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0) {
+        CapturerSourceStop();
+    }
     sourceOutputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -589,6 +594,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
         int32_t ret = InitCapturerManager();
         if (ret != SUCCESS) {
             AUDIO_INFO_LOG("re-Init HpaeCapturerManager failed");
+            TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             return;
         }
         AUDIO_INFO_LOG("re-Init HpaeCapturerManager success");
@@ -640,7 +646,8 @@ int32_t HpaeCapturerManager::InitCapturerManager()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "get mic capturer soruce instance error, ret = %{public}d.\n", ret);
     PrepareCapturerEc(ecNodeInfo);
     PrepareCapturerMicRef(micRefNodeInfo);
-    CHECK_AND_RETURN_RET_LOG(InitCapturer() == SUCCESS, ret, "init main capturer error");
+    ret = InitCapturer();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "init main capturer error");
     isInit_.store(true);
     return SUCCESS;
 }
@@ -651,9 +658,9 @@ int32_t HpaeCapturerManager::Init()
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this] {
         int32_t ret = InitCapturerManager();
+        TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
         if (ret == SUCCESS) {
             AUDIO_INFO_LOG("Init HpaeCapturerManager success");
-            TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
             CheckIfAnyStreamRunning();
             HpaePolicyManager::GetInstance().SetInputDevice(captureId_,
                 static_cast<DeviceType>(sourceInfo_.deviceType));
