@@ -37,8 +37,8 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize.L
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize.Level0)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
-    EXPECT_EQ(audioLoopback->Enable(true), false);
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
+    EXPECT_EQ(audioLoopback->Enable(true), true);
     EXPECT_EQ(audioLoopback->Enable(false), true);
     EXPECT_EQ(audioLoopback->Enable(false), true);
 }
@@ -79,7 +79,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize.L
     audioLoopback->isRendererUsb_ = true;
     audioLoopback->isCapturerUsb_ = true;
     audioLoopback->CreateAudioLoopback();
-    audioLoopback->isStarted_ = true;
+    audioLoopback->currentState_ = LOOPBACK_STATE_PREPARED;
     audioLoopback->UpdateStatus();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
     EXPECT_EQ(audioLoopback->GetStatus(), LOOPBACK_AVAILABLE_RUNNING);
@@ -144,7 +144,6 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_012, TestSize.L
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->capturerOptions_.capturerInfo.capturerFlags = 0;
     audioLoopback->CreateAudioLoopback();
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
     EXPECT_EQ(audioLoopback->capturerFastStatus_, FASTSTATUS_NORMAL);
     audioLoopback->DestroyAudioLoopback();
 }
@@ -169,7 +168,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_001, TestSize.Level1)
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     int32_t ret = audioLoopback->SetVolume(1);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(audioLoopback->karaokeParams_["Karaoke_volume"], "100");
@@ -185,7 +184,7 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_003, TestSize.Level1)
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_004, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     int32_t ret = audioLoopback->SetVolume(-1);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
@@ -193,25 +192,24 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_SetVolume_004, TestSize.Level1)
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_GetStatus_001, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     EXPECT_EQ(audioLoopback->GetStatus(), LOOPBACK_AVAILABLE_RUNNING);
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_001, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     audioLoopback->isRendererUsb_ = true;
     audioLoopback->isCapturerUsb_ = true;
-    audioLoopback->isStarted_ = true;
     audioLoopback->UpdateStatus();
-    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_UNAVAILABLE_SCENE);
+    EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_DESTROYED);
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_002, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-    audioLoopback->currentStatus_ = LOOPBACK_AVAILABLE_RUNNING;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     audioLoopback->rendererState_ = RENDERER_RUNNING;
     audioLoopback->isRendererUsb_ = true;
     audioLoopback->rendererFastStatus_ = FASTSTATUS_FAST;
@@ -219,19 +217,16 @@ HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_002, TestSize.Level1)
     audioLoopback->capturerState_ = CAPTURER_RUNNING;
     audioLoopback->isCapturerUsb_ = true;
     audioLoopback->capturerFastStatus_ = FASTSTATUS_FAST;
-    audioLoopback->isStarted_ = true;
     audioLoopback->UpdateStatus();
-    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_AVAILABLE_RUNNING);
+    EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_RUNNING);
 }
 
 HWTEST(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_003, TestSize.Level1)
 {
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
-
-    audioLoopback->currentStatus_ = LOOPBACK_UNAVAILABLE_DEVICE;
-    audioLoopback->isStarted_ = true;
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
     audioLoopback->UpdateStatus();
-    EXPECT_EQ(audioLoopback->currentStatus_, LOOPBACK_UNAVAILABLE_DEVICE);
+    EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_DESTROYED);
 }
 } // namespace AudioStandard
 } // namespace OHOS
