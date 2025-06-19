@@ -154,12 +154,8 @@ void AudioPolicyServiceDeviceTest(const uint8_t *rawData, size_t size)
     AudioDeviceDescriptor audioDeviceDescriptor;
     GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
 
-    GetServerPtr()->audioPolicyService_.IsA2dpOffloadConnected();
     int32_t state = (num % MOD_NUM_TWO) + CONNECTING_NUMBER; // DATA_LINK_CONNECTING = 10, DATA_LINK_CONNECTED = 11;
     GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(num, state);
-
-    std::string macAddress = "11:22:33:44:55:66";
-    GetServerPtr()->audioPolicyService_.SetCallDeviceActive(deviceType, isConnected, macAddress);
 
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
@@ -189,7 +185,6 @@ void AudioPolicyServiceAccountTest(const uint8_t *rawData, size_t size)
     }
 
     uint8_t num = *reinterpret_cast<const uint8_t *>(rawData);
-    GetServerPtr()->audioPolicyService_.GetCurActivateCount();
     GetServerPtr()->audioPolicyService_.NotifyAccountsChanged(num);
 }
 
@@ -204,7 +199,6 @@ void AudioPolicyServiceSafeVolumeTest(const uint8_t *rawData, size_t size)
     size = size - OFFSET;
 
     GetServerPtr()->audioPolicyService_.audioVolumeManager_.SetDeviceSafeVolumeStatus();
-    GetServerPtr()->audioPolicyService_.DisableSafeMediaVolume();
 }
 
 void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
@@ -237,8 +231,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.audioRecoveryDevice_.HandleRecoveryPreferredDevices(fuzzInt32One,
         fuzzInt32Two, fuzzInt32Three);
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetVolumeGroupType(fuzzDeviceType);
-    GetServerPtr()->audioPolicyService_.GetSystemVolumeDb(fuzzAudioStreamType);
-    GetServerPtr()->audioPolicyService_.SetLowPowerVolume(fuzzInt32One, fuzzFloat);
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.SetOffloadMode();
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.ResetOffloadMode(fuzzInt32One);
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.OffloadStreamReleaseCheck(fuzzInt32One);
@@ -246,8 +238,6 @@ void AudioPolicyServiceInterfaceTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.CheckActiveOutputDeviceSupportOffload();
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.GetOffloadAvailableFromXml();
     GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(fuzzInt32One, fuzzBool);
-    GetServerPtr()->audioPolicyService_.NotifyRemoteRenderState(fuzzNetworkId, fuzzString, fuzzString);
-    GetServerPtr()->audioPolicyService_.IsArmUsbDevice(fuzzAudioDeviceDescriptor);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsDeviceConnected(fuzzAudioDeviceDescriptorSptr);
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.DeviceParamsCheck(fuzzDeviceRole,
         fuzzAudioDeviceDescriptorSptrVector);
