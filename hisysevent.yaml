@@ -268,3 +268,4 @@ STREAM_OCCUPANCY:
   STREAM_OR_SOURCE_TYPE: {type: INT32, desc: streamusage or sourcetype}
   START_TIME: {type: INT64, desc: time of start}
   UPLOAD_TIME: {type: INT64, desc: time of upload}
+
