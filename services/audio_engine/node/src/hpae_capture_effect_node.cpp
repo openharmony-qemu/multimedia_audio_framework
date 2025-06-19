@@ -179,10 +179,8 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     AudioBufferConfig ecConfig = {};
     AudioBufferConfig micrefConfig = {};
     ret = audioEnhanceChainManager->AudioEnhanceChainGetAlgoConfig(sceneKeyCode, micConfig, ecConfig, micrefConfig);
-    if (ret != 0 || micConfig.samplingRate == 0) {
-        AUDIO_ERR_LOG("get algo config failed, ret:%{public}d", ret);
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == 0 && micConfig.samplingRate != 0, ERROR,
+        "get algo config failed, ret:%{public}d", ret);
     SetCapturerEffectConfig(micConfig, ecConfig, micrefConfig);
     micBufferLength_ = FRAME_LEN * micConfig.channels * (micConfig.samplingRate / MILLISECOND_PER_SECOND) *
         (micConfig.format / BITLENGTH);
