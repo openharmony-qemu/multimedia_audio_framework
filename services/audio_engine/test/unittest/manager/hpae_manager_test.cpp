@@ -30,7 +30,7 @@ using namespace AudioStandard;
 using namespace HPAE;
 namespace {
 static std::string g_rootPath = "/data/";
-const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm"
+const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
@@ -726,7 +726,7 @@ TEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001)
     EXPECT_EQ(ret, true);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002)
+TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -957,7 +957,7 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, 1234), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
     std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
@@ -966,7 +966,7 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(ret, SUCCESS);
 
-    AudioModuleInfo audioModuleInfo1 = GetSourceAudioModeInfo();
+    audioModuleInfo1 = GetSourceAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
@@ -1199,7 +1199,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 
-TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
+TEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->rendererIdSinkNameMap_.emplace(1234, "speaker_file");
