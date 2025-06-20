@@ -52,7 +52,10 @@
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
+
+#ifdef USB_ENABLE
 #include "audio_usb_manager.h"
+#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -788,8 +791,10 @@ private:
     AudioCollaborativeService &audioCollaborativeService_;
     AudioRouterCenter &audioRouterCenter_;
     AudioPolicyDump &audioPolicyDump_;
-    AudioActiveDevice &audioActiveDevice_;
+#ifdef USB_ENABLE
     AudioUsbManager &usbManager_;
+#endif
+    AudioActiveDevice &audioActiveDevice_;
 
     std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioCoreService> coreService_;
