@@ -299,7 +299,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)), 
+    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
     return ConvertError(err);
@@ -632,7 +632,7 @@ int32_t OHAudioRenderer::SetLoudnessGain(float loudnessGain) const
 float OHAudioRenderer::GetLoudnessGain() const
 {
     CHECK_AND_RETURN_RET_LOG(audioRenderer_ != nullptr, ERROR, "renderer client is nullptr");
-    return audioRenderer_->GetLoudnessGain();    
+    return audioRenderer_->GetLoudnessGain();
 }
 
 int32_t OHAudioRenderer::SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,

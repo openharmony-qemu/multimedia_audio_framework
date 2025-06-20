@@ -44,7 +44,7 @@ uint32_t g_flag = 0;
 const float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
 const float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
 const float INVALID_LOUDNESS_GAIN = 25.0f; // loudness gain range is between -96.0 to 24.0.
-const float VALID_LOUDNESS_GAIN = 10.0f; 
+const float VALID_LOUDNESS_GAIN = 10.0f;
 const int32_t DURATIONMS = 40; // 40:fade out latency ms
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,

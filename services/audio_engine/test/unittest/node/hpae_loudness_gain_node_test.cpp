@@ -59,7 +59,7 @@ TEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode)
     inputs.emplace_back(&hpaePcmBuffer);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
-    }    
+    }
     EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(0.0f), SUCCESS);
     EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), 0.0f);
     for (int32_t i = 0; i < TIMES; i++) {
@@ -78,7 +78,7 @@ TEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode)
     std::vector<HpaePcmBuffer*> inputs1;
     PcmBufferInfo pcmBufferInfo1(CHANNEL_6, TEST_FRAMELEN, SAMPLE_RATE_48000);
     HpaePcmBuffer hpaePcmBuffer1(pcmBufferInfo1);
-    inputs1.emplace_back(&hpaePcmBuffer1); 
+    inputs1.emplace_back(&hpaePcmBuffer1);
     EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs1);

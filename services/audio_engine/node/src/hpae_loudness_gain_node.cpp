@@ -20,7 +20,7 @@
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include <dlfcn.h>
-#include <inttypes.h>
+#include <cinttypes>
 
 #include <cmath>
 
@@ -35,7 +35,8 @@ static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
     .effectName = "loudness",
 };
 
-static inline bool IsFloatValueEqual(float a, float b) {
+static inline bool IsFloatValueEqual(float a, float b)
+{
     return std::abs(a - b) < EPSILON;
 }
 
@@ -89,7 +90,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 #ifdef ENABLE_HOOK_PCM
     inputPcmDumper_->CheckAndReopenHandlde();
     inputPcmDumper_->Dump((int8_t *)(loudnessGainOutput_.GetPcmDataBuffer()),
-        loudnessGainOutput_.GetChannelCount() * sizeof(float) * loudnessGainOutput_.GetFrameLen()); 
+        loudnessGainOutput_.GetChannelCount() * sizeof(float) * loudnessGainOutput_.GetFrameLen());
 #endif
 
     CheckUpdateInfo(inputs[0]);
@@ -206,7 +207,8 @@ float HpaeLoudnessGainNode::GetLoudnessGain()
     return loudnessGain_;
 }
 
-bool HpaeLoudnessGainNode::IsLoudnessAlgoOn() {
+bool HpaeLoudnessGainNode::IsLoudnessAlgoOn()
+{
     return handle_ != nullptr;
 }
 

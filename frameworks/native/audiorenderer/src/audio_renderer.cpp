@@ -1332,14 +1332,14 @@ float AudioRendererPrivate::GetVolume() const
     return currentStream->GetVolume();
 }
 
-int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const 
+int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
 
-float AudioRendererPrivate::GetLoudnessGain() const 
+float AudioRendererPrivate::GetLoudnessGain() const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");

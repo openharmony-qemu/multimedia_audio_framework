@@ -265,7 +265,7 @@ int32_t HpaeManagerImpl::SetClientVolume(uint32_t sessionId, float volume)
 int32_t HpaeManagerImpl::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->SetLoudnessGain(sessionId, loudnessGain);    
+    return manager_->SetLoudnessGain(sessionId, loudnessGain);
 }
 
 int32_t HpaeManagerImpl::SetRate(uint32_t sessionId, int32_t rate)

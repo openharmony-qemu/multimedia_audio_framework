@@ -1073,7 +1073,8 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
-        if (context->loudnessGain < MIN_LOUDNESS_GAIN_IN_DOUBLE || context->loudnessGain > MAX_LOUDNESS_GAIN_IN_DOUBLE){
+        if (context->loudnessGain < MIN_LOUDNESS_GAIN_IN_DOUBLE ||
+            context->loudnessGain > MAX_LOUDNESS_GAIN_IN_DOUBLE) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
             return;
         }
