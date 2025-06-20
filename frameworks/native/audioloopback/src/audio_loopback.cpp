@@ -251,7 +251,7 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
 
 bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 {
-    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported();
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_);
 }
 
 bool AudioLoopbackPrivate::CheckDeviceSupport()
