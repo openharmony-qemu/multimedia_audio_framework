@@ -122,6 +122,11 @@ struct HpaeSourceInfo {
     AudioChannel micRefChannels;
     uint32_t openMicSpeaker;
 };
+
+enum HpaeBufferType {
+    HPAE_BUFFER_TYPE_DEFAULT = 0,
+    HPAE_BUFFER_TYPE_COBUFFER
+};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

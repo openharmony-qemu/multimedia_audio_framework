@@ -139,7 +139,7 @@ void AudioProcessInServer::EnableStandby()
     CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
-
+    audioStreamChecker_->RecordStandbyTime(true);
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
@@ -292,7 +292,7 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
-        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+        audioStreamChecker_->RecordStandbyTime(false);
     } else {
         audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
@@ -363,6 +363,7 @@ int32_t AudioProcessInServer::Resume()
     AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
+    audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     AUDIO_PRERELEASE_LOGI("Resume in server success!");
     return SUCCESS;
 }
@@ -445,6 +446,10 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    auto config = processInServer_->GetAudioProcessConfig();
+    if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
+        AudioService::GetInstance()->DisableLoopback();
+    }
     int32_t ret = processHolder_->OnProcessRelease(processInServer_);
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }

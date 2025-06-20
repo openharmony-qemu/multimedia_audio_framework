@@ -1363,24 +1363,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, IsSameDevice_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test BluetoothScoDisconectForRecongnition.
-* @tc.number: BluetoothScoDisconectForRecongnition_001
-* @tc.desc  : Test BluetoothScoDisconectForRecongnition interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, BluetoothScoDisconectForRecongnition_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-
-    AudioDeviceDescriptor deviceInfo;
-    deviceInfo.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceInfo);
-    audioDeviceCommon.BluetoothScoDisconectForRecongnition();
-    DeviceType deviceType = audioDeviceCommon.audioActiveDevice_.currentActiveInputDevice_.deviceType_;
-    EXPECT_EQ(deviceType, DEVICE_TYPE_BLUETOOTH_SCO);
-}
-
-/**
 * @tc.name  : Test ClientDiedDisconnectScoNormal.
 * @tc.number: ClientDiedDisconnectScoNormal_001
 * @tc.desc  : Test ClientDiedDisconnectScoNormal interface.

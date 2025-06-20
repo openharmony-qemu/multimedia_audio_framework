@@ -80,7 +80,7 @@ public:
     int32_t ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
-    bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerChangeInfo &capturerInfo);
+    bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
@@ -113,8 +113,7 @@ public:
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
-    void SetDefaultVolumeType(const AudioStreamType volumeType);
-    AudioStreamType GetDefaultVolumeType() const;
+    void RegisterDefaultVolumeTypeListener();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;

@@ -224,6 +224,8 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
 void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
     const AudioInterrupt &activeInterrupt, int32_t reason)
 {
+    CHECK_AND_RETURN_LOG(incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID &&
+        incomingInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID, "not recording");
     AUDIO_INFO_LOG("recording failed to start, incoming: sourceType %{public}d pid %{public}d uid %{public}d"\
         "active: sourceType %{public}d pid %{public}d uid %{public}d",
         incomingInterrupt.audioFocusType.sourceType, incomingInterrupt.pid, incomingInterrupt.uid,
@@ -244,30 +246,21 @@ void AudioInterruptService::ReportRecordGetFocusFail(const AudioInterrupt &incom
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
-bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerChangeInfo &capturerInfo)
+bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const AudioCapturerInfo &capturerInfo)
 {
     if (isPreemptMode_) {
         AUDIO_INFO_LOG("Preempt mode, recording is not allowed");
         return false;
     }
 
-    uint32_t incomingSessionId = static_cast<uint32_t>(capturerInfo.sessionId);
-    if (AudioInterruptIsActiveInFocusList(zoneId, incomingSessionId)) {
-        AUDIO_INFO_LOG("Stream is active in focus list, recording is allowed");
-        return true;
-    }
-
     AudioInterrupt incomingInterrupt;
-    incomingInterrupt.streamId = incomingSessionId;
-    incomingInterrupt.pid = capturerInfo.clientPid;
-    incomingInterrupt.uid = capturerInfo.clientUID;
-    incomingInterrupt.audioFocusType.sourceType = capturerInfo.capturerInfo.sourceType;
+    incomingInterrupt.audioFocusType.sourceType = capturerInfo.sourceType;
     incomingInterrupt.audioFocusType.isPlay = false;
     AudioFocuState incomingState = ACTIVE;
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_RET_LOG(itZone != zonesMap_.end(), false, "can not find zoneid");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList;
-    if (itZone != zonesMap_.end() && itZone->second != nullptr) {
+    if (itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = audioFocusInfoList.end();

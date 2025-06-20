@@ -83,7 +83,7 @@ void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDevi
     AUDIO_INFO_LOG("OnDeviceChanged:remote name [%{public}s]", strDeviceName.c_str());
 
     //OnDeviceChanged listeren did not report networkId information
-    audioPolicyService_.SetDisplayName(strDeviceName, false);
+    AudioConnectedDevice::GetInstance().SetDisplayName(strDeviceName, false);
 }
 
 void DeviceStatusCallbackImpl::OnDeviceChanged(const DistributedHardware::DmDeviceInfo &dmDeviceInfo)

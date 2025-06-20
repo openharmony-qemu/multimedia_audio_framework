@@ -32,6 +32,7 @@ public:
     void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
+    void OnSystemVolumeChange(VolumeEvent volumeEvent) override;
     void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
     void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
     void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
@@ -65,7 +66,7 @@ public:
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
-    
+
 private:
     static inline BrokerDelegator<AudioPolicyClientProxy> delegator_;
 };

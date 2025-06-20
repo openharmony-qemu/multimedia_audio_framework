@@ -101,18 +101,6 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void AudioVolumeManagerGetSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
-    AudioVolumeType streamType = g_testStreamTypes[index];
-    index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
-    DeviceType deviceType = g_testDeviceTypes[index];
-    Volume vol;
-    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
-
-    audioVolumeManager.GetSharedVolume(streamType, deviceType, vol);
-}
-
 void AudioVolumeManagerInitSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
@@ -375,11 +363,26 @@ void AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest(const uint8_t *rawData, si
     audioVolumeManager->GetAllDeviceVolumeInfo();
 }
 
+void AudioVolumeManagerInitFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+
+    audioVolumeManager.DeInit();
+    audioVolumeManager.Init(audioPolicyServerHandler);
+}
+
+void AudioVolumeManagerInitKVStoreFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.InitKVStore();
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
 OHOS::AudioStandard::TestPtr g_testPtrs[] = {
-    OHOS::AudioStandard::AudioVolumeManagerGetSharedVolumeFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitSharedVolumeFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetVoiceRingtoneMuteFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerHandleAbsBluetoothVolumeFuzzTest,
@@ -399,6 +402,8 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerGetMaxVolumeLevelFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetMinVolumeLevelFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerInitFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerInitKVStoreFuzzTest,
 };
 
 /* Fuzzer entry point */

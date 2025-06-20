@@ -21,7 +21,6 @@
 #include "iservice_registry.h"
 #include "parameter.h"
 #include "parameters.h"
-#include "data_share_observer_callback.h"
 
 #include "audio_policy_log.h"
 

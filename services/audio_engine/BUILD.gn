@@ -77,7 +77,6 @@ ohos_shared_library("audio_engine_plugins") {
   install_enable = true
 
   sources = [
-    "plugin/bitdepth_converter/bitdepth_converter.c",
     "plugin/channel_converter/src/channel_converter.cpp",
     "plugin/channel_converter/src/down_mixer.cpp",
     "plugin/resample/proresampler/audio_proresampler.cpp",
@@ -88,7 +87,6 @@ ohos_shared_library("audio_engine_plugins") {
     "plugin/resample/include",
     "../../interfaces/inner_api/native/audiocommon/include",
     "plugin/channel_converter/include",
-    "pulgin/bitdepth_converter",
   ]
 
   cflags = [
@@ -160,6 +158,7 @@ ohos_shared_library("audio_engine_node") {
   sources = [
     "node/src/hpae_audio_format_converter_node.cpp",
     "node/src/hpae_capture_effect_node.cpp",
+    "node/src/hpae_co_buffer_node.cpp",
     "node/src/hpae_gain_node.cpp",
     "node/src/hpae_inner_cap_sink_node.cpp",
     "node/src/hpae_mixer_node.cpp",

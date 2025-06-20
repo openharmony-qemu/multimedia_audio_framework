@@ -23,7 +23,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-
+const char *ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 class HpaeSinkOutputNodeTest : public testing::Test {
 public:
     void SetUp();
@@ -100,13 +100,13 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = nullptr;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
     attr.audioStreamFlag = 0;
 
-    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkInit(attr), ERROR);
+    EXPECT_EQ(hpaeSinkOutputNode->RenderSinkInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_IDLE, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStart(), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_RUNNING, true);
@@ -120,6 +120,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
+    hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
 TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
@@ -144,7 +145,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = nullptr;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
@@ -158,13 +159,14 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
     EXPECT_EQ(hpaeSinkOutputNode->RenderSinkStop(), SUCCESS);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_SUSPENDED, true);
-    hpaeSinkOutputNode->remoteTimePoint_ += std::chrono::milliseconds(20000000000); // 20000000000 ms, need to optimize
+    hpaeSinkOutputNode->remoteTimePoint_ = std::chrono::high_resolution_clock::now();
     hpaeSinkOutputNode->DoProcess();
     TestRendererRenderFrame(hpaeSinkOutputNode->GetRenderFrameData(),
         nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format));
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
+    hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
 TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
@@ -182,13 +184,13 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
     EXPECT_EQ(hpaeSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId), 0);
     EXPECT_EQ(hpaeSinkOutputNode->GetSinkState() == STREAM_MANAGER_NEW, true);
     IAudioSinkAttr attr;
-    attr.adapterName = "file_io";
+    attr.adapterName = "primary";
     attr.openMicSpeaker = 0;
     attr.format = nodeInfo.format;
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = nullptr;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
@@ -209,6 +211,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
     hpaeSinkOutputNode->isOpenPaPower_ = false;
     hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
     hpaeSinkOutputNode->HandlePaPower(outputData);
+    hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
 #ifdef ENABLE_HOOK_PCM
@@ -235,7 +238,7 @@ TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
     attr.sampleRate = nodeInfo.samplingRate;
     attr.channel = nodeInfo.channels;
     attr.volume = 0.0f;
-    attr.filePath = nullptr;
+    attr.filePath = ROOT_PATH;
     attr.deviceNetworkId = deviceNetId.c_str();
     attr.deviceType = 0;
     attr.channelLayout = 0;
@@ -244,6 +247,7 @@ TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
     hpaeSinkOutputNode->RenderSinkStart();
     hpaeSinkOutputNode->outputPcmDumper_ = nullptr;
     hpaeSinkOutputNode->DoProcess();
+    hpaeSinkOutputNode->RenderSinkDeInit();
 }
 #endif
 } // namespace HPAE

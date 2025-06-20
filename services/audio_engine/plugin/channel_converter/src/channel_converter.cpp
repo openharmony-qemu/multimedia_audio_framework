@@ -54,6 +54,10 @@ static uint32_t GetFormatSize(AudioSampleFormat format)
 int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelInfo outChannelInfo,
     AudioSampleFormat format, bool mixLfe)
 {
+    CHECK_AND_RETURN_RET_LOG((inChannelInfo.numChannels >= 0) && (inChannelInfo.numChannels <= MAX_CHANNELS),
+        DMIX_ERR_INVALID_ARG, "invalid input channels");
+    CHECK_AND_RETURN_RET_LOG((outChannelInfo.numChannels >= 0) && (outChannelInfo.numChannels <= MAX_CHANNELS),
+        DMIX_ERR_INVALID_ARG, "invalid output channels");
     inChannelInfo_.channelLayout = inChannelInfo.channelLayout;
     outChannelInfo_.channelLayout = outChannelInfo.channelLayout;
     inChannelInfo_.numChannels = inChannelInfo.numChannels;
@@ -61,6 +65,7 @@ int32_t ChannelConverter::SetParam(AudioChannelInfo inChannelInfo, AudioChannelI
     workFormat_ = format;
     workSize_ = GetFormatSize(format);
     mixLfe_ = mixLfe;
+    isInitialized_ = true;
     int32_t ret = DMIX_ERR_SUCCESS;
     if (inChannelInfo_.numChannels > outChannelInfo_.numChannels) {
         ret = downMixer_.SetParam(inChannelInfo, outChannelInfo, workSize_, mixLfe);
@@ -101,6 +106,7 @@ AudioChannelInfo ChannelConverter::GetOutChannelInfo() const
  
 int32_t ChannelConverter::Process(uint32_t frameSize, float* in, uint32_t inLen, float* out, uint32_t outLen)
 {
+    CHECK_AND_RETURN_RET_LOG(isInitialized_, DMIX_ERR_ALLOC_FAILED, "ChannelConverter is not initialized_");
     CHECK_AND_RETURN_RET_LOG(in, DMIX_ERR_INVALID_ARG, "input pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(out, DMIX_ERR_INVALID_ARG, "output pointer is nullptr");
     CHECK_AND_RETURN_RET_LOG(frameSize >= 0, DMIX_ERR_INVALID_ARG, "invalid frameSize");
@@ -112,6 +118,7 @@ int32_t ChannelConverter::Process(uint32_t frameSize, float* in, uint32_t inLen,
 
 void ChannelConverter::Reset()
 {
+    isInitialized_ = false;
     downMixer_.Reset();
 }
 

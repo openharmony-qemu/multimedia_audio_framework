@@ -112,6 +112,31 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: CreateRenderClient_002
+* @tc.desc  : Test CreateRenderClient - Create stream with (S32 96k STEREO) will be successful.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateRenderClient_002 start");
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    streamDesc->callerUid_ = getuid();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    uint32_t originalSessionId = 0;
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: CreateCapturerClient_001
 * @tc.desc  : Test CreateCapturerClient - Create stream with (S32 48k STEREO) will be successful..
 */
@@ -343,6 +368,22 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_004, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioCoreService.
+* @tc.number: UpdateTracker_005
+* @tc.desc  : Test UpdateTracker - RENDERER_PAUSED.
+*/
+HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_005 start");
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
+    streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
+    auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCoreService.
 * @tc.number: ConnectServiceAdapter_001
 * @tc.desc  : Test ConnectServiceAdapter - will return success.
 */
@@ -482,10 +523,10 @@ HWTEST_F(AudioCoreServiceUnitTest, SetDisplayName_001, TestSize.Level1)
     GetServerPtr()->coreService_->audioConnectedDevice_.connectedDevices_.push_back(audioDeviceDescriptor3);
 
     bool isLocalDevice = true;
-    GetServerPtr()->coreService_->SetDisplayName("deviceX", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceX", isLocalDevice);
     isLocalDevice = false;
-    GetServerPtr()->coreService_->SetDisplayName("deviceY", isLocalDevice);
-    GetServerPtr()->coreService_->SetDisplayName("deviceZ", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceY", isLocalDevice);
+    GetServerPtr()->coreService_->audioConnectedDevice_.SetDisplayName("deviceZ", isLocalDevice);
 }
 
 /**
@@ -736,6 +777,52 @@ HWTEST_F(AudioCoreServiceUnitTest, GetAvailableMicrophones_001, TestSize.Level1)
             }
         }
     }
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_001
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface - device type is not speaker/a2dp_offload, return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    deviceDesc->a2dpOffloadFlag_ = A2DP_NOT_OFFLOAD;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : IsStreamSupportMultiChannel_002
+ * @tc.desc   : Test IsStreamSupportMultiChannel interface - channel count <= 2, return false.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    streamDesc->streamInfo_.channels = STEREO;
+    EXPECT_EQ(GetServerPtr()->coreService_->IsStreamSupportMultiChannel(streamDesc), false);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : SetFlagForSpecialStream_001
+ * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, SetFlagForSpecialStream_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    bool isCreateProcess = true;
+    AudioFlag result = GetServerPtr()->coreService_->SetFlagForSpecialStream(streamDesc, isCreateProcess);
+    EXPECT_EQ(result, AUDIO_OUTPUT_FLAG_NORMAL);
 }
 
 /**

@@ -223,6 +223,8 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.rendererInfo.playerType);
     parcel.WriteUint64(config.rendererInfo.expectedPlaybackDurationBytes);
     parcel.WriteInt32(config.rendererInfo.effectMode);
+    parcel.WriteBool(config.rendererInfo.isLoopback);
+    parcel.WriteInt32(static_cast<int32_t>(config.rendererInfo.loopbackMode));
 
     //AudioPrivacyType
     parcel.WriteInt32(config.privacyType);
@@ -233,6 +235,8 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.capturerInfo.originalFlag);
     parcel.WriteInt32(config.capturerInfo.pipeType);
     parcel.WriteInt32(config.capturerInfo.recorderType);
+    parcel.WriteBool(config.capturerInfo.isLoopback);
+    parcel.WriteInt32(static_cast<int32_t>(config.capturerInfo.loopbackMode));
 
     // streamType
     parcel.WriteInt32(config.streamType);
@@ -283,6 +287,8 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
     config.rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
     config.rendererInfo.effectMode = parcel.ReadInt32();
+    config.rendererInfo.isLoopback = parcel.ReadBool();
+    config.rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
 
     //AudioPrivacyType
     config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
@@ -293,6 +299,8 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.capturerInfo.originalFlag = parcel.ReadInt32();
     config.capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
     config.capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+    config.capturerInfo.isLoopback = parcel.ReadBool();
+    config.capturerInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
 
     // streamType
     config.streamType = static_cast<AudioStreamType>(parcel.ReadInt32());

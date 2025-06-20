@@ -167,9 +167,9 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
         AUDIO_INFO_LOG("Current source: %{public}d, target: %{public}d",
             audioEcManager_.GetSourceOpened(), targetSource);
         if (audioEcManager_.GetSourceOpened() == SOURCE_TYPE_INVALID) {
-            // normal source is not opened before
-            audioEcManager_.PrepareAndOpenNormalSource(sessionInfo, targetInfo, targetSource);
-            audioEcManager_.SetOpenedNormalSourceSessionId(sessionID);
+            // normal source is not opened before -- it should not be happen!!
+            AUDIO_WARNING_LOG("Record route should not be opened here!");
+            return SUCCESS;
         } else if (IsHigherPrioritySource(targetSource, audioEcManager_.GetSourceOpened())) {
             // reload if higher source come
             audioEcManager_.ReloadNormalSource(sessionInfo, targetInfo, targetSource);
@@ -219,25 +219,26 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
 void AudioCapturerSession::HandleRemainingSource()
 {
     SourceType highestSource = SOURCE_TYPE_INVALID;
+    SourceType normalSourceInHdi = SOURCE_TYPE_INVALID;
+    SourceType openSource = audioEcManager_.GetSourceOpened();
+    bool useMatchingPropInfo = false;
     uint32_t highestSession = 0;
     // find highest source in remaining session
     for (const auto &iter : sessionWithNormalSourceType_) {
-        if (IsHigherPrioritySource(iter.second.sourceType, highestSource)) {
+        // Convert sessionWithNormalSourceType to normalSourceInHdi
+        audioEcManager_.GetTargetSourceTypeAndMatchingFlag(iter.second.sourceType,
+            normalSourceInHdi, useMatchingPropInfo);
+        AUDIO_INFO_LOG("Get session:%{public}d from map，convert original sourceType:%{public}d into "
+            "HdiSource:%{public}d", iter.first, iter.second.sourceType, normalSourceInHdi);
+        if (IsHigherPrioritySource(normalSourceInHdi, highestSource)) {
             highestSession = iter.first;
-            highestSource = iter.second.sourceType;
+            highestSource = normalSourceInHdi;
         }
     }
 
-    // Convert highestSource to highestSourceInHdi
-    SourceType highestSourceInHdi = SOURCE_TYPE_INVALID;
-    bool useMatchingPropInfo = false;
-    audioEcManager_.GetTargetSourceTypeAndMatchingFlag(highestSource, highestSourceInHdi, useMatchingPropInfo);
-
     // if remaining sources are all lower than current removeed one, reload with the highest source in remaining
-    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(audioEcManager_.GetSourceOpened(),
-        highestSourceInHdi)) {
-        AUDIO_INFO_LOG("reload source %{pblic}d because higher source removed, normalSourceOpened:%{public}d, "
-            "highestSourceInHdi:%{public}d ", highestSource, audioEcManager_.GetSourceOpened(), highestSourceInHdi);
+    AUDIO_INFO_LOG("the highestSource:%{public}d, normalSourceOpened_:%{public}d", highestSource, openSource);
+    if (highestSource != SOURCE_TYPE_INVALID && IsHigherPrioritySource(openSource, highestSource)) {
         audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[highestSession]);
         audioEcManager_.SetOpenedNormalSourceSessionId(highestSession);
     }

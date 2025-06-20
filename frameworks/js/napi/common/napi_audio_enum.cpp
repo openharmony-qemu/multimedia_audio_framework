@@ -85,6 +85,8 @@ napi_ref NapiAudioEnum::audioDataCallbackResult_ = nullptr;
 napi_ref NapiAudioEnum::concurrencyMode_ = nullptr;
 napi_ref NapiAudioEnum::reason_ = nullptr;
 napi_ref NapiAudioEnum::policyType_ = nullptr;
+napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
+napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -544,6 +546,17 @@ const std::map<std::string, int32_t> NapiAudioEnum::reasonMap = {
     {"DEACTIVATED_TIMEOUT", static_cast<int32_t>(AudioSessionDeactiveReason::TIMEOUT)}
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackModeMap = {
+    {"HARDWARE", LOOPBACK_MODE_HARDWARE},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
+    {"UNAVAILABLE_DEVICE", LOOPBACK_UNAVAILABLE_DEVICE},
+    {"UNAVAILABLE_SCENE", LOOPBACK_UNAVAILABLE_SCENE},
+    {"AVAILABLE_IDLE", LOOPBACK_AVAILABLE_IDLE},
+    {"AVAILABLE_RUNNING", LOOPBACK_AVAILABLE_RUNNING},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -720,6 +733,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, concurrencyModeMap, concurrencyMode_)),
         DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
         DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap, audioLoopbackMode_)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
+            CreateEnumObject(env, audioLoopbackStatusMap, audioLoopbackStatus_)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1195,6 +1211,8 @@ bool NapiAudioEnum::IsLegalInputArgumentVolType(int32_t inputType)
         case AudioJsVolumeType::SYSTEM:
         case AudioJsVolumeType::ACCESSIBILITY:
         case AudioJsVolumeType::ULTRASONIC:
+        case AudioJsVolumeType::NOTIFICATION:
+        case AudioJsVolumeType::NAVIGATION:
         case AudioJsVolumeType::ALL:
             result = true;
             break;
@@ -1327,6 +1345,88 @@ int32_t NapiAudioEnum::GetJsAudioVolumeType(AudioStreamType volumeType)
             break;
         default:
             result = NapiAudioEnum::MEDIA;
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
+{
+    int32_t result = NapiAudioEnum::USAGE_UNKNOW;
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_UNKNOWN:
+            result = NapiAudioEnum::USAGE_UNKNOW;
+            break;
+        case StreamUsage::STREAM_USAGE_MEDIA:
+            result = NapiAudioEnum::USAGE_MEDIA;
+            break;
+        case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
+            result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
+            break;
+        case StreamUsage::STREAM_USAGE_VOICE_ASSISTANT:
+            result = NapiAudioEnum::USAGE_VOICE_ASSISTANT;
+            break;
+        case StreamUsage::STREAM_USAGE_ALARM:
+            result = NapiAudioEnum::USAGE_ALARM;
+            break;
+        case StreamUsage::STREAM_USAGE_VOICE_MESSAGE:
+            result = NapiAudioEnum::USAGE_VOICE_MESSAGE;
+            break;
+        case StreamUsage::STREAM_USAGE_RINGTONE:
+            result = NapiAudioEnum::USAGE_RINGTONE;
+            break;
+        case StreamUsage::STREAM_USAGE_NOTIFICATION:
+            result = NapiAudioEnum::USAGE_NOTIFICATION;
+            break;
+        case StreamUsage::STREAM_USAGE_ACCESSIBILITY:
+            result = NapiAudioEnum::USAGE_ACCESSIBILITY;
+            break;
+        case StreamUsage::STREAM_USAGE_SYSTEM:
+            result = NapiAudioEnum::USAGE_SYSTEM;
+            break;
+        case StreamUsage::STREAM_USAGE_MOVIE:
+            result = NapiAudioEnum::USAGE_MOVIE;
+            break;
+        default:
+            result = GetJsStreamUsageFir(streamUsage);
+            break;
+    }
+    return result;
+}
+
+int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
+{
+    int32_t result = NapiAudioEnum::USAGE_UNKNOW;
+    switch (streamUsage) {
+        case StreamUsage::STREAM_USAGE_GAME:
+            result = NapiAudioEnum::USAGE_GAME;
+            break;
+        case StreamUsage::STREAM_USAGE_AUDIOBOOK:
+            result = NapiAudioEnum::USAGE_AUDIOBOOK;
+            break;
+        case StreamUsage::STREAM_USAGE_NAVIGATION:
+            result = NapiAudioEnum::USAGE_NAVIGATION;
+            break;
+        case StreamUsage::STREAM_USAGE_DTMF:
+            result = NapiAudioEnum::USAGE_DTMF;
+            break;
+        case StreamUsage::STREAM_USAGE_ENFORCED_TONE:
+            result = NapiAudioEnum::USAGE_ENFORCED_TONE;
+            break;
+        case StreamUsage::STREAM_USAGE_ULTRASONIC:
+            result = NapiAudioEnum::USAGE_ULTRASONIC;
+            break;
+        case StreamUsage::STREAM_USAGE_VIDEO_COMMUNICATION:
+            result = NapiAudioEnum::USAGE_VIDEO_COMMUNICATION;
+            break;
+        case StreamUsage::STREAM_USAGE_RANGING:
+        case StreamUsage::STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case StreamUsage::STREAM_USAGE_VOICE_RINGTONE:
+        case StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT:
+            result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        default:
+            result = NapiAudioEnum::USAGE_MEDIA;
             break;
     }
     return result;
@@ -1528,12 +1628,104 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
         case NapiAudioEnum::SYSTEM:
             result = STREAM_SYSTEM;
             break;
+        case NapiAudioEnum::NOTIFICATION:
+            result = STREAM_NOTIFICATION;
+            break;
+        case NapiAudioEnum::NAVIGATION:
+            result = STREAM_NAVIGATION;
+            break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
             break;
         default:
             result = STREAM_MUSIC;
             AUDIO_ERR_LOG("GetNativeAudioVolumeType: Unknown volume type, Set it to default MEDIA!");
+            break;
+    }
+
+    return result;
+}
+
+StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
+{
+    StreamUsage result = STREAM_USAGE_UNKNOWN;
+
+    switch (streamUsage) {
+        case NapiAudioEnum::USAGE_UNKNOW:
+            result = STREAM_USAGE_UNKNOWN;
+            break;
+        case NapiAudioEnum::USAGE_MEDIA:
+            result = STREAM_USAGE_MEDIA;
+            break;
+        case NapiAudioEnum::USAGE_VOICE_COMMUNICATION:
+            result = STREAM_USAGE_VOICE_COMMUNICATION;
+            break;
+        case NapiAudioEnum::USAGE_VOICE_ASSISTANT:
+            result = STREAM_USAGE_VOICE_ASSISTANT;
+            break;
+        case NapiAudioEnum::USAGE_ALARM:
+            result = STREAM_USAGE_ALARM;
+            break;
+        case NapiAudioEnum::USAGE_VOICE_MESSAGE:
+            result = STREAM_USAGE_VOICE_MESSAGE;
+            break;
+        case NapiAudioEnum::USAGE_RINGTONE:
+            result = STREAM_USAGE_RINGTONE;
+            break;
+        case NapiAudioEnum::USAGE_NOTIFICATION:
+            result = STREAM_USAGE_NOTIFICATION;
+            break;
+        case NapiAudioEnum::USAGE_ACCESSIBILITY:
+            result = STREAM_USAGE_ACCESSIBILITY;
+            break;
+        case NapiAudioEnum::USAGE_SYSTEM:
+            result = STREAM_USAGE_SYSTEM;
+            break;
+        case NapiAudioEnum::USAGE_MOVIE:
+            result = STREAM_USAGE_MOVIE;
+            break;
+        default:
+            result = GetNativeStreamUsageFir(streamUsage);
+            break;
+    }
+
+    return result;
+}
+
+StreamUsage NapiAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
+{
+    StreamUsage result = STREAM_USAGE_UNKNOWN;
+
+    switch (streamUsage) {
+        case NapiAudioEnum::USAGE_GAME:
+            result = STREAM_USAGE_GAME;
+            break;
+        case NapiAudioEnum::USAGE_AUDIOBOOK:
+            result = STREAM_USAGE_AUDIOBOOK;
+            break;
+        case NapiAudioEnum::USAGE_NAVIGATION:
+            result = STREAM_USAGE_NAVIGATION;
+            break;
+        case NapiAudioEnum::USAGE_DTMF:
+            result = STREAM_USAGE_DTMF;
+            break;
+        case NapiAudioEnum::USAGE_ENFORCED_TONE:
+            result = STREAM_USAGE_ENFORCED_TONE;
+            break;
+        case NapiAudioEnum::USAGE_ULTRASONIC:
+            result = STREAM_USAGE_ULTRASONIC;
+            break;
+        case NapiAudioEnum::USAGE_VIDEO_COMMUNICATION:
+            result = STREAM_USAGE_VIDEO_COMMUNICATION;
+            break;
+        case NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
+            result = STREAM_USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case NapiAudioEnum::USAGE_MAX:
+            result = STREAM_USAGE_MAX;
+            break;
+        default:
+            result = STREAM_USAGE_INVALID;
             break;
     }
 
@@ -1668,6 +1860,20 @@ bool NapiAudioEnum::IsLegalCapturerState(int32_t state)
         case CapturerState::CAPTURER_STOPPED:
         case CapturerState::CAPTURER_RELEASED:
         case CapturerState::CAPTURER_PAUSED:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
+{
+    bool result = false;
+    switch (inputMode) {
+        case AudioLoopbackModeNapi::LOOPBACK_MODE_HARDWARE:
             result = true;
             break;
         default:

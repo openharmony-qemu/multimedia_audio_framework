@@ -28,7 +28,7 @@ public:
     virtual uint32_t GetInRate() const = 0;
     virtual uint32_t GetOutRate() const = 0;
     virtual uint32_t GetChannels() const = 0;
-    virtual void UpdateChannels(uint32_t channels) = 0;
+    virtual int32_t UpdateChannels(uint32_t channels) = 0;
 };
 
 } // HPAE

@@ -43,6 +43,7 @@
 #include "audio_policy_client_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "session_processor.h"
+#include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
 #include "audio_interrupt_service.h"
@@ -51,6 +52,7 @@
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
+#include "audio_usb_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -127,6 +129,8 @@ public:
     bool GetStreamMute(AudioStreamType streamType) override;
 
     bool IsStreamActive(AudioStreamType streamType) override;
+
+    bool IsStreamActiveByStreamUsage(StreamUsage streamUsage) override;
 
     bool IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage) override;
     bool IsFastRecordingSupported(AudioStreamInfo &streamInfo, SourceType source) override;
@@ -220,7 +224,7 @@ public:
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     int32_t ActivatePreemptMode(void) override;
-    
+
     int32_t DeactivatePreemptMode(void) override;
 
     int32_t SetAudioManagerInterruptCallback(const int32_t clientId, const sptr<IRemoteObject> &object) override;
@@ -300,6 +304,8 @@ public:
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray) override;
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
 
     int32_t GetNetworkIdByGroupId(int32_t groupId, std::string &networkId) override;
 
@@ -449,7 +455,7 @@ public:
 
     int32_t InjectInterruptToAudioZone(int32_t zoneId,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
-    
+
     int32_t InjectInterruptToAudioZone(int32_t zoneId, const std::string &deviceTag,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts) override;
 
@@ -536,11 +542,19 @@ public:
 
     bool GetStreamMuteByUsage(StreamUsage streamUsage) override;
 
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType) override;
+
+    std::vector<AudioVolumeType> GetSupportedAudioVolumeTypes() override;
+
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage) override;
+
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType) override;
+
     int32_t SetCallbackStreamUsageInfo(const std::set<StreamUsage> &streamUsages) override;
 
     int32_t ForceStopAudioStream(StopAudioType audioType) override;
 
-    bool IsCapturerFocusAvailable(const AudioCapturerChangeInfo &capturerInfo) override;
+    bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
@@ -551,6 +565,14 @@ public:
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
+
+    int32_t SetCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled) override;
+    
+    bool IsCollaborativePlaybackEnabledForDevice(
+        const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice) override;
+
+    bool IsCollaborativePlaybackSupported() override;
 
     class RemoteParameterCallback : public AudioParameterCallback {
     public:
@@ -741,29 +763,35 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
-    AudioEffectService& audioEffectService_;
+    AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
-    AudioCapturerSession& audioCapturerSession_;
+    AudioCapturerSession &audioCapturerSession_;
     AudioStateManager &audioStateManager_;
-    AudioToneManager& audioToneManager_;
-    AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
-    AudioDeviceStatus& audioDeviceStatus_;
-    AudioPolicyConfigManager& audioConfigManager_;
-    AudioSceneManager& audioSceneManager_;
-    AudioConnectedDevice& audioConnectedDevice_;
-    AudioDeviceLock& audioDeviceLock_;
-    AudioStreamCollector& streamCollector_;
-    AudioOffloadStream& audioOffloadStream_;
-    AudioBackgroundManager& audioBackgroundManager_;
-    AudioVolumeManager& audioVolumeManager_;
-    AudioDeviceCommon& audioDeviceCommon_;
-    IAudioPolicyInterface& audioPolicyManager_;
+    AudioToneManager &audioToneManager_;
+    AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;
+    AudioDeviceStatus &audioDeviceStatus_;
+    AudioPolicyConfigManager &audioConfigManager_;
+    AudioSceneManager &audioSceneManager_;
+    AudioConnectedDevice &audioConnectedDevice_;
+    AudioDeviceLock &audioDeviceLock_;
+    AudioStreamCollector &streamCollector_;
+    AudioOffloadStream &audioOffloadStream_;
+    AudioBackgroundManager &audioBackgroundManager_;
+    AudioVolumeManager &audioVolumeManager_;
+    AudioDeviceCommon &audioDeviceCommon_;
+    IAudioPolicyInterface &audioPolicyManager_;
     AudioPolicyConfigManager &audioPolicyConfigManager_;
-    AudioPolicyService& audioPolicyService_;
+    AudioPolicyService &audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
-    std::shared_ptr<AudioInterruptService> interruptService_;
+    AudioSpatializationService &audioSpatializationService_;
+    AudioCollaborativeService &audioCollaborativeService_;
+    AudioRouterCenter &audioRouterCenter_;
+    AudioPolicyDump &audioPolicyDump_;
+    AudioActiveDevice &audioActiveDevice_;
+    AudioUsbManager &usbManager_;
 
+    std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 
@@ -792,21 +820,19 @@ private:
         [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
         [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
-    AudioSpatializationService& audioSpatializationService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
     bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
-    AudioRouterCenter &audioRouterCenter_;
+
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
-    AudioPolicyDump &audioPolicyDump_;
+
     int32_t sessionIdByRemote_ = -1;
-    AudioActiveDevice& audioActiveDevice_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 

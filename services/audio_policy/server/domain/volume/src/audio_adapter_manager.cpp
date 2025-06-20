@@ -32,6 +32,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
+static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+
 static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
@@ -243,6 +246,8 @@ void AudioAdapterManager::HandleKvData(bool isFirstBoot)
         SetVolumeDb(*iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::ReInitKVStore()
@@ -443,23 +448,6 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
     handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
-    doNotDisturbStatusWhiteList)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDoNotDisturbStatus(bool isDoNotDisturb)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatus(isDoNotDisturb);
     return SUCCESS;
 }
 
@@ -966,6 +954,10 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup && isDpReConnect_) {
+        RefreshVolumeWhenDpReConnect();
+    }
+
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
@@ -990,6 +982,8 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
         iter++;
     }
+
+    UpdateVolumeForLowLatency();
 }
 
 int32_t AudioAdapterManager::MoveSinkInputByIndexOrName(uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
@@ -1283,6 +1277,13 @@ int32_t AudioAdapterManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &
 {
     CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
     return audioServiceAdapter_->GetAudioEnhanceProperty(propertyArray, deviceType);
+}
+
+int32_t AudioAdapterManager::UpdateCollaborativeState(bool isCollaborationEnabled)
+{
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AUDIO_INFO_LOG("AudioCollaborativeService UpdateCollaborativeState entered!");
+    return audioServiceAdapter_->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
 void AudioAdapterManager::UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args)
@@ -2041,10 +2042,17 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
 void AudioAdapterManager::HandleDpConnection()
 {
     AUDIO_INFO_LOG("dp device connect, set max volume of stream music");
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP) {
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-    }
+    isDpReConnect_ = true;
+}
+
+void AudioAdapterManager::RefreshVolumeWhenDpReConnect()
+{
+    // dp reconnect need to set max volume
+    AUDIO_INFO_LOG("DP reconnect, set max volume");
+    SetSystemVolumeLevel(STREAM_MUSIC, GetMaxVolumeLevel(STREAM_MUSIC));
+    SetSystemVolumeLevel(STREAM_VOICE_CALL, GetMaxVolumeLevel(STREAM_VOICE_CALL));
+    SetSystemVolumeLevel(STREAM_VOICE_ASSISTANT, GetMaxVolumeLevel(STREAM_VOICE_ASSISTANT));
+    isDpReConnect_ = false;
 }
 
 bool AudioAdapterManager::LoadVolumeMap(void)
@@ -2704,10 +2712,17 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
         AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()
+        && !VolumeUtils::IsPCVolumeEnable()) {
+        volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
+        SetVolumeDb(STREAM_VOICE_ASSISTANT);
+        AUDIO_INFO_LOG("a2dp ok");
     }
 }
 
@@ -2832,6 +2847,66 @@ bool AudioAdapterManager::IsVgsVolumeSupported() const
 std::vector<AdjustStreamVolumeInfo> AudioAdapterManager::GetStreamVolumeInfo(AdjustStreamVolume volumeType)
 {
     return AudioVolume::GetInstance()->GetStreamVolumeInfo(volumeType);
+}
+
+void AudioAdapterManager::UpdateVolumeForLowLatency()
+{
+    Trace trace("AudioAdapterManager::UpdateVolumeForLowLatency");
+    // update volumes for low latency streams when loading volumes from the database.
+    Volume vol = {false, 1.0f, 0};
+    DeviceType curOutputDeviceType = currentActiveDevice_.deviceType_;
+    for (auto iter = VOLUME_TYPE_LIST.begin(); iter != VOLUME_TYPE_LIST.end(); iter++) {
+        vol.isMute = GetStreamMute(*iter);
+        vol.volumeInt = static_cast<uint32_t>(GetSystemVolumeLevelNoMuteState(*iter));
+        vol.volumeFloat = GetSystemVolumeInDb(*iter, (vol.isMute ? 0 : vol.volumeInt), curOutputDeviceType);
+        AudioVolumeManager::GetInstance().SetSharedVolume(*iter, curOutputDeviceType, vol);
+    }
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
+        int32_t isDoNotDisturb = 0;
+        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
+        AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, set DoNotDisturbStatus failed");
+        audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
+    }
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
+        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+            doNotDisturbWhiteList, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
+        AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, \
+            set doNotDisturbStatusWhiteList failed");
+        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbWhiteList);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        updateFuncDoNotDisturbWhiteList);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
 }
 
 // LCOV_EXCL_STOP

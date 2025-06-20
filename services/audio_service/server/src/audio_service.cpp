@@ -102,6 +102,9 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
                 SetDecMaxRendererStreamCnt();
                 CleanAppUseNumMap(processConfig.appInfo.appUid);
             }
+            if (processConfig.capturerInfo.isLoopback || processConfig.rendererInfo.isLoopback) {
+                SetDecMaxLoopbackStreamCnt(processConfig.audioMode);
+            }
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
                 RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
@@ -156,6 +159,14 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
+
+void AudioService::DisableLoopback()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", "Karaoke_enable=disable");
+}
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
@@ -945,7 +956,9 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
         return;
     }
     releasingEndpointSet_.erase(endpointName);
+    lock.unlock();
 
+    std::lock_guard<std::mutex> processListLock(processListMutex_);
     std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
@@ -1387,6 +1400,34 @@ void AudioService::SetDecMaxRendererStreamCnt()
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
     currentRendererStreamCnt_--;
+}
+
+void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_++;
+    } else {
+        currentLoopbackCapturerStreamCnt_++;
+    }
+}
+
+int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        return currentLoopbackRendererStreamCnt_;
+    } else {
+        return currentLoopbackCapturerStreamCnt_;
+    }
+}
+
+void AudioService::SetDecMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_--;
+    } else {
+        currentLoopbackCapturerStreamCnt_--;
+    }
 }
 
 void AudioService::CleanAppUseNumMap(int32_t appUid)

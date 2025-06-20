@@ -306,6 +306,7 @@ enum CallbackChange : int32_t {
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -348,6 +349,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_DISTRIBUTED_OUTPUT_CHANGE,
     CALLBACK_FORMAT_UNSUPPORTED_ERROR,
     CALLBACK_STREAM_VOLUME_CHANGE,
+    CALLBACK_SYSTEM_VOLUME_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -458,6 +460,30 @@ enum RecorderType : int32_t {
     RECORDER_TYPE_AV_RECORDER = 1000,
 };
 
+enum AudioLoopbackMode {
+    /** The hardware mode of audio loopback.*/
+    LOOPBACK_HARDWARE = 0,
+};
+
+enum AudioLoopbackStatus {
+    /** Audio loopback unavailable by the output or input device. For example, the device change.*/
+    LOOPBACK_UNAVAILABLE_DEVICE = -2,
+    /** Audio loopback unavailable by the audio scene. For example, the audio interrupt.*/
+    LOOPBACK_UNAVAILABLE_SCENE = -1,
+    /** Audio loopback available and idle.*/
+    LOOPBACK_AVAILABLE_IDLE = 0,
+    /** Audio loopback available and running.*/
+    LOOPBACK_AVAILABLE_RUNNING = 1,
+};
+
+enum AudioLoopbackState {
+    LOOPBACK_STATE_IDLE,
+    LOOPBACK_STATE_PREPARED,
+    LOOPBACK_STATE_RUNNING,
+    LOOPBACK_STATE_DESTROYING,
+    LOOPBACK_STATE_DESTROYED,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
@@ -480,6 +506,8 @@ struct AudioRendererInfo {
     // 0 is the default value, it is considered that no
     uint64_t expectedPlaybackDurationBytes = 0;
     int32_t effectMode = 1;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -499,7 +527,9 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(playerType)
             && parcel.WriteUint64(expectedPlaybackDurationBytes)
             && parcel.WriteInt32(effectMode)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteBool(isLoopback)
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -520,6 +550,8 @@ struct AudioRendererInfo {
         expectedPlaybackDurationBytes = parcel.ReadUint64();
         effectMode = parcel.ReadInt32();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -534,6 +566,8 @@ public:
     uint64_t channelLayout = 0ULL;
     std::string sceneType = "";
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
+    bool isLoopback = false;
+    AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -553,7 +587,9 @@ public:
             parcel.WriteUint8(encodingType) &&
             parcel.WriteUint64(channelLayout) &&
             parcel.WriteString(sceneType) &&
-            parcel.WriteInt32(static_cast<int32_t>(recorderType));
+            parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
+            parcel.WriteBool(isLoopback) &&
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -566,6 +602,8 @@ public:
         channelLayout = parcel.ReadUint64();
         sceneType = parcel.ReadString();
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+        isLoopback = parcel.ReadBool();
+        loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
     }
 };
 
@@ -1430,7 +1468,6 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_WRITE_OR_READ,
     METHOD_MAX
 };
-
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_INFO_H

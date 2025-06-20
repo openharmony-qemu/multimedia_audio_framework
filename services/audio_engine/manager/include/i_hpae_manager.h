@@ -129,6 +129,7 @@ public:
     virtual bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) = 0;
     virtual bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;
+    virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard
