@@ -25,6 +25,9 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+
+static constexpr uint32_t WAIT_FRAMES_NUM = 5; // wait 5 * 20ms before disconnect
+    
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
@@ -65,10 +68,13 @@ int32_t HpaeMixerNode::SetupAudioLimiter()
 
 HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    Trace trace("HpaeMixerNode::SignalProcess");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "inputs is empty");
-
+    Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + "HpaeMixerNode::SignalProcess");
     mixedOutput_.Reset();
+
+    if (GetSceneType() != HPAE_SCENE_EFFECT_OUT) {
+        DrainProcess();
+    }
+    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), &mixedOutput_, "inputs is empty");
 
     uint32_t bufferState = PCM_BUFFER_STATE_INVALID | PCM_BUFFER_STATE_SILENCE;
     if (limiter_ == nullptr) {
@@ -130,6 +136,22 @@ bool HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer *input)
     return isPCMBufferInfoUpdated;
 }
 
+void HpaeMixerNode::DrainProcess()
+{
+    if (GetPreOutNum() != 0) {
+        waitFrames_ = 0;
+    } else {
+        waitFrames_++;
+        if (waitFrames_ == WAIT_FRAMES_NUM) {
+            waitFrames_ = 0;
+            auto statusCallback = GetNodeStatusCallback().lock();
+            if (statusCallback) {
+                AUDIO_INFO_LOG("trigger callback to disconnect");
+                statusCallback->OnDisConnectProcessCluster(GetSceneType());
+            }
+        }
+    }
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

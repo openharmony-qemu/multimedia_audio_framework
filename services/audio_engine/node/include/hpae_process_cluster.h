@@ -50,6 +50,7 @@ public:
     int32_t SetupAudioLimiter();
 private:
     void ConnectMixerNode();
+    void DisConnectMixerNode();
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
