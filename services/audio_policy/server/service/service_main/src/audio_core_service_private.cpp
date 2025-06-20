@@ -97,6 +97,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 {
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
+    uint32_t sessionId = 0;
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
         //  if streamDesc select bluetooth or headset, active it
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
@@ -110,6 +111,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
+            sessionId = streamDesc->sessionId_;
         }
 
         // started stream need to mute when switch device
@@ -119,7 +121,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     }
     
     if (isUpdateActiveDevice) {
-        AUDIO_INFO_LOG("active device updated, update volume");
+        AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
         AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
