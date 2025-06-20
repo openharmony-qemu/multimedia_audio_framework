@@ -454,8 +454,8 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
         "invalid scene");
     CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d",
-        audioScene, currentAudioScene_, activeDevices.front());
+    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, currentAudioScene_, activeDevices.front(), scoExcludeFlag);
     if (!openSpeaker_) {
         return SUCCESS;
     }
