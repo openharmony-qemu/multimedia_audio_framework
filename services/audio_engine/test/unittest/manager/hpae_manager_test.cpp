@@ -1201,7 +1201,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
 
     hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
     hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, TEST_STREAM_SESSION_ID,
-    MOVE_PREFER, "Speaker_File1");
+        MOVE_PREFER, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 
