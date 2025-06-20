@@ -37,7 +37,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     // so we need to make a prediction here on the output of the formatConverter node.
     // don't worry, Nodeinfo will still be modified during DoProcess.
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
-    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
+    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
         renderEffectNode_ = nullptr;
