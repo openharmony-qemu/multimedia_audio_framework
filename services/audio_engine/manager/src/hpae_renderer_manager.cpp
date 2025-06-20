@@ -226,7 +226,7 @@ HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage stream
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
         return TransStreamUsageToSplitSceneType(streamUsage, sinkInfo_.splitMode);
     } else if (sinkInfo_.deviceClass == "remote" || IsMchDevice()) {
-        return HPAE_SCENE_EFFECT_NONE
+        return HPAE_SCENE_EFFECT_NONE;
     } else {
         return TransEffectSceneToSceneType(effectScene);
     }
