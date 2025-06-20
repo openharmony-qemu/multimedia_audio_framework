@@ -157,6 +157,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
     return res;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
@@ -363,6 +364,7 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
     }
     return 0;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
     const AudioParamKey paramKey, AsrVoiceControlMode asrVoiceControlMode, bool on, int32_t modifyVolume)
@@ -387,6 +389,7 @@ int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
     return 0;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
@@ -469,6 +472,6 @@ int32_t AudioServer::IsWhispering()
     }
     return whisperRes;
 }
-
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

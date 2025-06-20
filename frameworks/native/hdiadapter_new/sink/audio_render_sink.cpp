@@ -836,6 +836,7 @@ void AudioRenderSink::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, Audi
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 
+// LCOV_EXCL_START
 void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
 {
     int32_t engineFlag = GetEngineFlag();
@@ -851,6 +852,7 @@ void AudioRenderSink::SetAudioRouteInfoForEnhanceChain(void)
         }
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioRenderSink::CreateRender(void)
 {

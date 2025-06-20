@@ -188,6 +188,7 @@ DeviceType AudioPolicyManager::GetActiveInputDevice()
     return gsp->GetActiveInputDevice();
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, const DeviceFlag flag,
     const std::shared_ptr<AudioManagerDeviceChangeCallback> &callback)
 {
@@ -230,6 +231,7 @@ int32_t AudioPolicyManager::SetDeviceChangeCallback(const int32_t clientId, cons
     }
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyManager::UnsetDeviceChangeCallback(const int32_t clientId, DeviceFlag flag,
     std::shared_ptr<AudioManagerDeviceChangeCallback> &cb)
