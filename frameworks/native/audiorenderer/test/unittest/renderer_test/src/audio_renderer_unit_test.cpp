@@ -3820,7 +3820,7 @@ HWTEST(AudioRendererUnitTest, UpdateAudioInterruptStrategy_001, TestSize.Level1)
     audioRendererPrivate->isStillZeroStreamVolume_ = true;
     float volume = 1;
 
-    audioRendererPrivate->UpdateAudioInterruptStrategy(volume);
+    audioRendererPrivate->UpdateAudioInterruptStrategy(volume, false);
     EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, false);
 }
 
@@ -3837,7 +3837,7 @@ HWTEST(AudioRendererUnitTest, UpdateAudioInterruptStrategy_002, TestSize.Level1)
     audioRendererPrivate->isStillZeroStreamVolume_ = true;
     float volume = 1;
     audioRendererPrivate->audioStream_ = nullptr;
-    audioRendererPrivate->UpdateAudioInterruptStrategy(volume);
+    audioRendererPrivate->UpdateAudioInterruptStrategy(volume, false);
     EXPECT_EQ(audioRendererPrivate->isStillZeroStreamVolume_, true);
 }
 
