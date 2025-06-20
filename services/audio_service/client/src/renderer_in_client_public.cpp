@@ -489,6 +489,7 @@ int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
 
 float RendererInClientInner::GetLoudnessGain()
 {
+    AUDIO_INFO_LOG("loudnessGain: %{public}f", loudnessGain_);
     return loudnessGain_;
 }
 

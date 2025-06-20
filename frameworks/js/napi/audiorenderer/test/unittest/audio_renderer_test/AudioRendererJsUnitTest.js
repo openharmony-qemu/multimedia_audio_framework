@@ -463,20 +463,17 @@ describe("AudioRendererJsUnitTest", function() {
      * @tc.type: FUNC
      * @tc.require: I8OIJL
      */
-    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002_INVALID', 0, async function (done) {
-        await audioRenderer.setLoudnessGain(INVALID_LOUDNESS_GAIN).then(() => {
-            try {
-                let data = audioRenderer.getLoudnessGain();
-                console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002_INVALID FAIL: ${data}`);
-                expect(true).assertFalse();
-                done();
-            } catch (error) {
-                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002_INVALID SUCCESS:
-                    cannot set invalid loudnessGain.`);
-                expect(true).assertTrue();
-                done();
-            }
-        })
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002', 0, async function (done) {
+        try {
+            await audioRenderer.setLoudnessGain(INVALID_LOUDNESS_GAIN);
+            console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 FAIL`);
+            expect(true).assertFalse();
+            done();
+        } catch (err) {
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 SUCCESS`);
+            expect(true).assertTrue();
+            done();
+        }
     })
 
     /*

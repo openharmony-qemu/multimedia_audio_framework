@@ -1523,9 +1523,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_003, TestSize.Leve
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     float loudnessGainGet;
-    result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGainSet);
+    result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGainGet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_FLOAT_EQ(loudnessGainSet, VALID_LOUDNESS_GAIN);
+    EXPECT_FLOAT_EQ(loudnessGainGet, VALID_LOUDNESS_GAIN);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -1542,10 +1542,10 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_004, TestSize.Leve
     float loudnessGainSet = VALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    loudnessGainSet = inVALID_LOUDNESS_GAIN;
+    loudnessGainSet = INVALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-    float loudnessGainGet;
+    float loudnessGainGet = 0.0f;
     result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGainGet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     EXPECT_FLOAT_EQ(loudnessGainGet, VALID_LOUDNESS_GAIN);

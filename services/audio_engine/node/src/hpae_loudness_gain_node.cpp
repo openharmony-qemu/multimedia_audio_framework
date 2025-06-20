@@ -148,7 +148,7 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
 int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
 {
     CHECK_AND_RETURN_RET_LOG(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS,
-        "SetLoudnessGain: Same loudnessGain: %{public}", loudnessGain);
+        "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     
     if (IsFloatValueEqual(loudnessGain, 0.0f)) {

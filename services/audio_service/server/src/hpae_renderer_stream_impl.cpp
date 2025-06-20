@@ -512,7 +512,7 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_INFO_LOG("set loudnessGain: %{public}", loudnessGain);
+    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
     int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(processConfig_.originalSessionId, loudnessGain);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "SetLoudnessGain is error");
     return SUCCESS;

@@ -43,7 +43,7 @@ constexpr uint32_t TEST_FRAMELEN = 960;
 constexpr int TIMES = 5;
 constexpr float LOUDNESS_GAIN_VALUE = 10.0f;
 
-TEST_F(HpaeLoudnessNodeTest, testLoudnessGainNode)
+TEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -60,18 +60,18 @@ TEST_F(HpaeLoudnessNodeTest, testLoudnessGainNode)
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }    
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(0.0f), SUCCESS);
-    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
+    EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(0.0f), SUCCESS);
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), 0.0f);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
-    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
+    EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(0.0f), SUCCESS);
-    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
+    EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(0.0f), SUCCESS);
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), 0.0f);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
@@ -79,11 +79,11 @@ TEST_F(HpaeLoudnessNodeTest, testLoudnessGainNode)
     PcmBufferInfo pcmBufferInfo1(CHANNEL_6, TEST_FRAMELEN, SAMPLE_RATE_48000);
     HpaePcmBuffer hpaePcmBuffer1(pcmBufferInfo1);
     inputs1.emplace_back(&hpaePcmBuffer1); 
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
+    EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs1);
     }    
-    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
 }
 
 }
