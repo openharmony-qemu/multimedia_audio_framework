@@ -70,7 +70,7 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
     CHECK_AND_RETURN_LOG(currentState_ == LOOPBACK_STATE_RUNNING, "AudioLoopback not Running");
     currentState_ = LOOPBACK_STATE_DESTROYING;
     stateLock.unlock();
-    DestroyAudioLoopback();
+    DestroyAudioLoopbackInner();
 }
 
 bool AudioLoopbackPrivate::Enable(bool enable)
@@ -91,7 +91,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         CHECK_AND_RETURN_RET_LOG(currentState_ == LOOPBACK_STATE_RUNNING, true, "AudioLoopback not Running");
         currentState_ = LOOPBACK_STATE_DESTROYING;
         stateLock.unlock();
-        DestroyAudioLoopback();
+        DestroyAudioLoopbackInner();
     }
     return true;
 }
@@ -195,7 +195,7 @@ void AudioLoopbackPrivate::DisableLoopback()
     }
 }
 
-void AudioLoopbackPrivate::DestroyAudioLoopback()
+void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
 {
     DisableLoopback();
     if (audioCapturer_) {
@@ -212,6 +212,12 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
     } else {
         AUDIO_WARNING_LOG("audioRenderer is nullptr");
     }
+}
+
+void AudioLoopbackPrivate::DestroyAudioLoopback()
+{
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
+    DestroyAudioLoopbackInner();
 }
 
 AudioRendererOptions AudioLoopbackPrivate::GenerateRendererConfig()
@@ -245,7 +251,7 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
 
 bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 {
-    return true;
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported();
 }
 
 bool AudioLoopbackPrivate::CheckDeviceSupport()
@@ -368,8 +374,10 @@ void AudioLoopbackPrivate::UpdateStatus()
         AUDIO_INFO_LOG("UpdateState: %{public}d -> %{public}d", oldState, newState);
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
-            stateLock.unlock();
-            DestroyAudioLoopback();
+            auto self = shared_from_this();
+            std::thread([self] {
+                self->DestroyAudioLoopback();
+            }).detach();
         }
         currentState_ = newState;
         if (statusCallback_) {
