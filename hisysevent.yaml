@@ -269,3 +269,13 @@ STREAM_OCCUPANCY:
   START_TIME: {type: INT64, desc: time of start}
   UPLOAD_TIME: {type: INT64, desc: time of upload}
 
+ADD_REMOVE_CUSTOMIZED_TONE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: add or remove customized tone}
+  ADD_REMOVE_OPERATION: {type: BOOL, arrsize: 100, desc: add or remove operation}
+  APP_NAME: {type: STRING, arrsize: 100, desc: application name}
+  FILE_SIZE: {type: UINT32, arrsize: 100, desc: file size}
+  RINGTONE_CATEGORY: {type: INT32, arrsize: 100, desc: ringtone category}
+  MEDIA_TYPE: {type: INT8, arrsize: 100, desc: media type}
+  MIME_TYPE: {type: STRING, arrsize: 100, desc: mime type}
+  TIMESTAMP: {type: UINT64, arrsize: 100, desc: time stamp}
+  RESULT: {type: INT8, arrsize: 100, desc: result}
