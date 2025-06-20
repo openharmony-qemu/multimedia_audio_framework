@@ -995,6 +995,11 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
     return streamCollector_.SetLowPowerVolume(streamId, volume);
 }
 
+AudioStreamInfo AudioPolicyServer::GetFastStreamInfo()
+{
+    return audioPolicyService_.GetFastStreamInfo();
+}
+
 float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
 {
     return streamCollector_.GetLowPowerVolume(streamId);

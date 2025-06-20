@@ -116,6 +116,8 @@ public:
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
+    AudioStreamInfo GetFastStreamInfo() override;
+
     float GetLowPowerVolume(int32_t streamId) override;
 
     float GetSingleStreamVolume(int32_t streamId) override;

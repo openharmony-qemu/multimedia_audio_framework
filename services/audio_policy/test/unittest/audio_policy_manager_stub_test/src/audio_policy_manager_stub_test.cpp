@@ -505,11 +505,11 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStubUnitTest_016, TestS
     MessageOption option;
     std::shared_ptr<AudioPolicyManagerStub> AudioPolicyManage_ = std::make_shared<AudioPolicyServer>(systemAbilityId);
     AudioPolicyManage_->OnMiddleSecRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREAM_VOLUME), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     AudioPolicyManage_->OnMiddleSecRemoteRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWER_STREAM_VOLUME), data, reply, option);
     EXPECT_NE(AudioPolicyManage_, nullptr);
 
     uint32_t code = 1000;

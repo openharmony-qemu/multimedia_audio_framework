@@ -95,6 +95,7 @@ private:
     void GetRendererChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void GetCapturerChangeInfosInternal(MessageParcel &data, MessageParcel &reply);
     void SetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
+    void GetFastStreamInfoInternal(MessageParcel &data, MessageParcel &reply);
     void GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateStreamStateInternal(MessageParcel& data, MessageParcel& reply);
     void GetSingleStreamVolumeInternal(MessageParcel &data, MessageParcel &reply);
