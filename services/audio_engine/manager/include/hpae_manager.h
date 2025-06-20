@@ -214,6 +214,7 @@ private:
     bool MovingSinkStateChange(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode>& sinkInput);
     bool SetMovingStreamState(HpaeStreamClassType streamType, uint32_t sessionId,
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
+    void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
