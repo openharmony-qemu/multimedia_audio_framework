@@ -35,6 +35,7 @@ constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
+constexpr int32_t SESSION_ID_NOEXIST = 100000; 
 
 class HpaeManagerUnitTest : public testing::Test {
 public:
@@ -762,7 +763,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "virtual1"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->MoveSinkInputByIndexOrName(100000, 1, "Speaker_File1"), SUCCESS);
+    EXPECT_EQ(hpaeManager_->MoveSinkInputByIndexOrName(SESSION_ID_NOEXIST, 1, "Speaker_File1"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->MoveSinkInputByIndexOrName(streamInfo.sessionId, 1, "Speaker_File"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -788,17 +789,17 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->Start(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Start(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Pause(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Pause(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Stop(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Stop(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Drain(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Drain(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Flush(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Flush(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->rendererIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_PREPARED;
@@ -806,12 +807,12 @@ TEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);
 
-    EXPECT_EQ(hpaeManager_->SetClientVolume(10000, 1.0f), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetClientVolume(SESSION_ID_NOEXIST, 1.0f), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->SetClientVolume(streamInfo.sessionId, 1.0f), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->SetOffloadPolicy(10000, 1), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetOffloadPolicy(SESSION_ID_NOEXIST, 1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->movingIds_.emplace(streamInfo.sessionId, HPAE_SESSION_RUNNING);
     EXPECT_EQ(hpaeManager_->SetOffloadPolicy(streamInfo.sessionId, 1), SUCCESS);
@@ -866,7 +867,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_NEW);
 
     std::shared_ptr<ReadDataCb> readDataCb = std::make_shared<ReadDataCb>(ROOT_PATH);
-    EXPECT_EQ(hpaeManager_->RegisterReadCallback(100000, readDataCb), SUCCESS);
+    EXPECT_EQ(hpaeManager_->RegisterReadCallback(SESSION_ID_NOEXIST, readDataCb), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->RegisterReadCallback(streamInfo.sessionId, readDataCb), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -875,7 +876,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "virtual1"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->MoveSourceOutputByIndexOrName(100000, 1, "mic1"), SUCCESS);
+    EXPECT_EQ(hpaeManager_->MoveSourceOutputByIndexOrName(SESSION_ID_NOEXIST, 1, "mic1"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->MoveSourceOutputByIndexOrName(streamInfo.sessionId, 1, "mic"), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -901,17 +902,17 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
     EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->Start(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Start(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Pause(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Pause(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Stop(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Stop(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Drain(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Drain(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Flush(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Flush(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, 10000), SUCCESS);
+    EXPECT_EQ(hpaeManager_->Release(streamInfo.streamClassType, SESSION_ID_NOEXIST), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->capturerIdStreamInfoMap_[streamInfo.sessionId].state = HPAE_SESSION_PREPARED;
@@ -943,7 +944,8 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     sleep(1);
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = 
+        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
 
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
@@ -958,9 +960,9 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     hpaeManager_->DumpSinkInfo("virtual1");
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo, 1234), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo, TEST_STREAM_SESSION_ID), SUCCESS);
     AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
-    EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, 1234), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, TEST_STREAM_SESSION_ID), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     
     ret = hpaeManager_->GetAllSinks();
@@ -1102,7 +1104,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001)
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->UpdateSpatializationState(streamInfo.sessionId, true, false), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(hpaeManager_->UpdateMaxLength(streamInfo.sessionId, 20), SUCCESS);
+    EXPECT_EQ(hpaeManager_->UpdateMaxLength(streamInfo.sessionId, TEST_SLEEP_TIME_20), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->SetOffloadRenderCallbackType(streamInfo.sessionId, CB_FLUSH_COMPLETED), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
@@ -1148,7 +1150,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002)
     WaitForMsgProcessing(hpaeManager_);
 
     hpaeManager_->UpdateEffectBtOffloadSupported(true);
-    EXPECT_EQ(hpaeManager_->SetOutputDevice(123456, DEVICE_TYPE_SPEAKER), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetOutputDevice(TEST_STREAM_SESSION_ID, DEVICE_TYPE_SPEAKER), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
     EXPECT_EQ(hpaeManager_->SetMicrophoneMuteInfo(false), SUCCESS);
@@ -1178,7 +1180,7 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerSuspend002)
     std::string deviceName = "virtual1";
     EXPECT_EQ(hpaeManager_->SuspendAudioDevice(deviceName, true), SUCCESS);
     EXPECT_EQ(hpaeManager_->SetSinkMute(deviceName, true), SUCCESS);
-    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(123456, true), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_SESSION_ID, true), SUCCESS);
 }
 
 TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
@@ -1187,23 +1189,26 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
     hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
-    hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
-    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_PLAY, 123456, MOVE_SINGLE, "Speaker_File1");
+    hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
+    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_PLAY, TEST_STREAM_SESSION_ID,
+        MOVE_SINGLE, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 
-    hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
-    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, 123456, MOVE_SINGLE, "Speaker_File1");
+    hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
+    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, TEST_STREAM_SESSION_ID,
+        MOVE_SINGLE, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 
-    hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
-    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, 123456, MOVE_PREFER, "Speaker_File1");
+    hpaeManager_->movingIds_.emplace(TEST_STREAM_SESSION_ID, HPAE_SESSION_RUNNING);
+    hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, TEST_STREAM_SESSION_ID,
+    MOVE_PREFER, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
 }
 
 TEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001)
 {
     EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->rendererIdSinkNameMap_.emplace(1234, "speaker_file");
+    hpaeManager_->rendererIdSinkNameMap_.emplace(TEST_STREAM_SESSION_ID, "speaker_file");
     hpaeManager_->AddPreferSinkForDefaultChange(false, "speaker_file");
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 0, true);
     hpaeManager_->AddPreferSinkForDefaultChange(true, "speaker_file");
