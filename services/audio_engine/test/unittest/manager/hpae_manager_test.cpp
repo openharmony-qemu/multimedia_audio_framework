@@ -1189,13 +1189,23 @@ TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
     hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
     hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_PLAY, 123456, MOVE_SINGLE, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
-+
+
     hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
     hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, 123456, MOVE_SINGLE, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
-+
+
     hpaeManager_->movingIds_.emplace(123456, HPAE_SESSION_RUNNING);
     hpaeManager_->HandleMoveSessionFailed(HPAE_STREAM_CLASS_TYPE_RECORD, 123456, MOVE_PREFER, "Speaker_File1");
     EXPECT_EQ(hpaeManager_->movingIds_.size(), 0);
+}
+
+TEST_F(HpaeManagerUnitTest, IHpaeManagerMoveFailed002)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->rendererIdSinkNameMap_.emplace(1234, "speaker_file");
+    hpaeManager_->AddPreferSinkForDefaultChange(false, "speaker_file");
+    EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 0, true);
+    hpaeManager_->AddPreferSinkForDefaultChange(true, "speaker_file");
+    EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 1, true);
 }
 }  // namespace

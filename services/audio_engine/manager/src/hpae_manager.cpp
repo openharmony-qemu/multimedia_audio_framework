@@ -456,20 +456,35 @@ void HpaeManager::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
     SendRequest(request, __func__);
 }
 
+void HpaeManager::AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName)
+{
+    if (!isAdd) {
+        return;
+    }
+    for (const auto& sinkinput : rendererIdSinkNameMap_) {
+        if (sinkinput.second == sinkName) {
+            idPreferSinkNameMap_[sinkinput.first] = sinkName;
+        }
+    }
+}
+
 int32_t HpaeManager::CloseOutAudioPort(std::string sinkName)
 {
     if (!SafeGetMap(rendererManagerMap_, sinkName)) {
         AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", sinkName.c_str());
         return SUCCESS;
     }
+    bool isChangeDefaultSink = false;
     if (sinkName == defaultSink_ && defaultSink_ != coreSink_) {
         if (GetRendererManagerByName(coreSink_) != nullptr) {
             AUDIO_INFO_LOG("reset default sink to core sink.");
             defaultSink_ = coreSink_;
+            isChangeDefaultSink = true;
         } else {
             AUDIO_ERR_LOG("can not find core sink to replace default sink.");
         }
     }
+    AddPreferSinkForDefaultChange(isChangeDefaultSink, sinkName);
     rendererManagerMap_[sinkName]->DeInit(sinkName != defaultSink_);
     if (sinkName != defaultSink_) {
         rendererManagerMap_.erase(sinkName);
