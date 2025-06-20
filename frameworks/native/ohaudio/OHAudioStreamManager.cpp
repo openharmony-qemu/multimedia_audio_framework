@@ -63,7 +63,7 @@ using OHOS::AudioStandard::StreamUsage;
 using OHOS::AudioStandard::DirectPlaybackMode;
 using OHOS::AudioStandard::SourceType;
 
-static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamManager* manager)
+static OHOS::AudioStandard::OHAudioStreamManager *convertManager(OH_AudioStreamManager *manager)
 {
     return (OHAudioStreamManager*) manager;
 }
@@ -75,6 +75,15 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioStreamManager(OH_AudioStreamManage
     OHAudioStreamManager *ohAudioStreamManager = OHAudioStreamManager::GetInstance();
     *streamManager = reinterpret_cast<OH_AudioStreamManager*>(ohAudioStreamManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
+}
+
+static OHOS::AudioStandard::AudioStreamInfo convertStreamInfo(OH_AudioStreamInfo *streamInfo)
+{
+    return AudioStreamInfo(static_cast<AudioSamplingRate>(streamInfo->samplingRate),
+        static_cast<AudioEncodingType>(streamInfo->encodingType),
+        static_cast<AudioSampleFormat>(streamInfo->sampleFormat),
+        OHOS::AudioStandard::OHAudioCommon::ConvertLayoutToChannel(streamInfo->channelLayout),
+        static_cast<AudioChannelLayout>(streamInfo->channelLayout));
 }
 
 OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
@@ -89,11 +98,7 @@ OH_AudioCommon_Result OH_AudioStreamManager_GetDirectPlaybackSupport(
         "usage is invalid");
     CHECK_AND_RETURN_RET_LOG(directPlaybackMode != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "directPlaybackMode is nullptr");
-    AudioStreamInfo info(static_cast<AudioSamplingRate>(streamInfo->samplingRate),
-        static_cast<AudioEncodingType>(streamInfo->encodingType),
-        static_cast<AudioSampleFormat>(streamInfo->sampleFormat),
-        OHOS::AudioStandard::OHAudioCommon::ConvertLayoutToChannel(streamInfo->channelLayout),
-        static_cast<AudioChannelLayout>(streamInfo->channelLayout));
+    AudioStreamInfo info = convertStreamInfo(streamInfo);
     *directPlaybackMode = ohAudioStreamManager->GetDirectPlaybackSupport(info, static_cast<StreamUsage>(usage));
     return AUDIOCOMMON_RESULT_SUCCESS;
 }

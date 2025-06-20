@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_core_service_utils.h"
+#include "audio_policy_manager_factory.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -58,7 +59,8 @@ bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std
     if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
+    AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
+    AudioPolicyManagerFactory::GetAudioPolicyManager().SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 

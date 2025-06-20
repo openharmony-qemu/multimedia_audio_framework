@@ -162,16 +162,16 @@ private:
     static napi_value UnregisterCallback(napi_env env, napi_value jsThis, size_t argc, napi_value *argv,
         const std::string &cbName);
     static void RegisterRendererDeviceChangeCallback(napi_env env, napi_value *argv,
-        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+        NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererCallback(napi_env env, size_t argc, const std::string &cbName,
         napi_value *argv, NapiAudioRenderer *napiRenderer);
-    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc, const std::string &cbName,
+    static void UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc,
         napi_value *argv, NapiAudioRenderer *napiRenderer);
 
     static void RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *argv,
-        const std::string &cbName, NapiAudioRenderer *napiRenderer);
+        NapiAudioRenderer *napiRenderer);
     static void UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc,
-        const std::string &cbName, napi_value *argv, NapiAudioRenderer *napiRenderer);
+        napi_value *argv, NapiAudioRenderer *napiRenderer);
 
     static void RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,
         const std::string &cbName, NapiAudioRenderer *napiRenderer);

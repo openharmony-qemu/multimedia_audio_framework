@@ -60,8 +60,8 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
     nodeInfo.statusCallback = weak_from_this();
     sinkInputNodeMap_[sessionId]->SetNodeInfo(nodeInfo);
     SetSessionStateForRenderer(sessionId, node->GetState());
-    rendererSessionNodeMap_[sessionId].sinkInputNodeId = nodeInfo.nodeId;
     rendererSessionNodeMap_[sessionId].sceneType = nodeInfo.sceneType;
+    sceneTypeToProcessClusterCount_++;
 
     if (!SafeGetMap(rendererSceneClusterMap_, nodeInfo.sceneType)) {
         rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
@@ -637,6 +637,7 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
             AUDIO_ERR_LOG("SetupAudioLimiter failed, sessionId %{public}u", nodeInfo.sessionId);
         }
     }
+    sceneTypeToProcessClusterCount_++;
     // todo change nodeInfo
     return SUCCESS;
 }
@@ -651,6 +652,7 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+    nodeInfo.sourceType = streamInfo.sourceType;
     AUDIO_INFO_LOG("nodeInfo.channels %{public}d, nodeInfo.format %{public}hhu, nodeInfo.frameLen %{public}d",
         nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
@@ -669,9 +671,15 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
+        sceneTypeToProcessClusterCount_--;
         if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
+        }
+        if (sceneTypeToProcessClusterCount_ == 0) {
             rendererSceneClusterMap_.erase(sceneType);
+            AUDIO_INFO_LOG("erase rendererSceneCluster, last stream: %{public}u", sessionId);
+        } else {
+            AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }
     }
     sinkInputNodeMap_.erase(sessionId);
@@ -776,6 +784,12 @@ std::string HpaeInnerCapturerManager::GetThreadName()
     return sinkInfo_.deviceName;
 }
 
+std::string HpaeInnerCapturerManager::GetDeviceHDFDumpInfo()
+{
+    std::string config;
+    TransDeviceInfoToString(sinkInfo_, config);
+    return config;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -133,6 +133,7 @@ const char *g_audioServerCodeStrs[] = {
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "SET_SESSION_MUTE_STATE",
     "NOTIFY_MUTE_STATE_CHANGE",
+    "FORCE_STOP_AUDIO_STREAM",
     "CREATE_AUDIOWORKGROUP",
     "RELEASE_AUDIOWORKGROUP",
     "ADD_THREAD_TO_AUDIOWORKGROUP",
@@ -140,6 +141,8 @@ const char *g_audioServerCodeStrs[] = {
     "START_AUDIOWORKGROUP",
     "STOP_AUDIOWORKGROUP",
     "SET_BT_HDI_INVALID_STATE",
+    "SET_KARAOKE_PARAMETERS",
+    "IS_AUDIO_LOOPBACK_SUPPORTED",
 };
 constexpr size_t CODE_NUMS = sizeof(g_audioServerCodeStrs) / sizeof(const char *);
 static_assert(CODE_NUMS == (static_cast<size_t> (AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX) + 1),
@@ -854,6 +857,8 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
             return HandleGetStandbyStatus(data, reply);
         case static_cast<uint32_t>(AudioServerInterfaceCode::GENERATE_SESSION_ID):
             return HandleGenerateSessionId(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::FORCE_STOP_AUDIO_STREAM):
+            return HandleForceStopAudioStream(data, reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
         case static_cast<uint32_t>(AudioServerInterfaceCode::SET_CAPTURE_LIMIT):
             return HandleSetInnerCapLimit(data, reply);
@@ -862,6 +867,10 @@ int AudioManagerStub::HandleFifthPartCode(uint32_t code, MessageParcel &data, Me
         case static_cast<uint32_t>(AudioServerInterfaceCode::RELEASE_CAPTURE_LIMIT):
             return HandleReleaseCaptureLimit(data, reply);
 #endif
+        case static_cast<uint32_t>(AudioServerInterfaceCode::SET_KARAOKE_PARAMETERS):
+            return HandleSetKaraokeParameters(data, reply);
+        case static_cast<uint32_t>(AudioServerInterfaceCode::IS_AUDIO_LOOPBACK_SUPPORTED):
+            return HandleIsAudioLoopbackSupported(data, reply);
         default:
             return HandleSixthPartCode(code, data, reply, option);
     }
@@ -1429,6 +1438,22 @@ int AudioManagerStub::HandleIsAcousticEchoCancelerSupported(MessageParcel &data,
     return AUDIO_OK;
 }
 
+int AudioManagerStub::HandleSetKaraokeParameters(MessageParcel &data, MessageParcel &reply)
+{
+    std::string parameters = data.ReadString();
+    bool result = SetKaraokeParameters(parameters);
+    reply.WriteBool(result);
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleIsAudioLoopbackSupported(MessageParcel &data, MessageParcel &reply)
+{
+    AudioLoopbackMode mode = static_cast<AudioLoopbackMode>(data.ReadInt32());
+    bool ret = IsAudioLoopbackSupported(mode);
+    reply.WriteBool(ret);
+    return AUDIO_OK;
+}
+
 int AudioManagerStub::HandleSetSessionMuteState(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionId = data.ReadUint32();
@@ -1506,6 +1531,14 @@ int AudioManagerStub::HandleStopAudioWorkgroup(MessageParcel &data, MessageParce
 int AudioManagerStub::HandleSetBtHdiInvalidState(MessageParcel &data, MessageParcel &reply)
 {
     SetBtHdiInvalidState();
+    return AUDIO_OK;
+}
+
+int AudioManagerStub::HandleForceStopAudioStream(MessageParcel &data, MessageParcel &reply)
+{
+    StopAudioType audioType = static_cast<StopAudioType>(data.ReadInt32());
+    int32_t ret = ForceStopAudioStream(audioType);
+    reply.WriteInt32(ret);
     return AUDIO_OK;
 }
 } // namespace AudioStandard

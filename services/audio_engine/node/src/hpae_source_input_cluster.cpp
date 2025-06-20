@@ -24,7 +24,7 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-static std::string TransSourceBufferTypeToString(HpaeSourceBufferType &type)
+static std::string TransSourceBufferTypeToString(const HpaeSourceBufferType &type)
 {
     if (type == HPAE_SOURCE_BUFFER_TYPE_MIC) {
         return "MIC";
@@ -50,10 +50,12 @@ HpaeSourceInputCluster::HpaeSourceInputCluster(HpaeNodeInfo &nodeInfo)
 }
 
 HpaeSourceInputCluster::HpaeSourceInputCluster(std::vector<HpaeNodeInfo> &nodeInfos)
-    : HpaeNode(*nodeInfos.begin()), sourceInputNode_(std::make_shared<HpaeSourceInputNode>(nodeInfos))
 {
-#ifdef ENABLE_HIDUMP_DFX
+    CHECK_AND_RETURN_LOG(!nodeInfos.empty(), "nodeInfos vector is empty!");
     auto nodeInfo = *nodeInfos.begin();
+    SetNodeInfo(nodeInfo);
+    sourceInputNode_ = std::make_shared<HpaeSourceInputNode>(nodeInfos);
+#ifdef ENABLE_HIDUMP_DFX
     if (nodeInfo.statusCallback.lock()) {
         nodeInfo.nodeName = "HpaeSourceInputNode[MIC_EC]";
         nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();

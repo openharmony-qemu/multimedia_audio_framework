@@ -42,7 +42,7 @@ namespace AudioStandard {
 
 #ifdef SUPPORT_LOW_LATENCY
 static uint64_t g_id = 1;
-static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
+static const int32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
 static const uint32_t VOIP_ENDPOINT_RELEASE_DELAY_TIME = 200; // 200ms
 static const uint32_t VOIP_REC_ENDPOINT_RELEASE_DELAY_TIME = 60; // 60ms
@@ -102,6 +102,9 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
                 SetDecMaxRendererStreamCnt();
                 CleanAppUseNumMap(processConfig.appInfo.appUid);
             }
+            if (processConfig.capturerInfo.isLoopback || processConfig.rendererInfo.isLoopback) {
+                SetDecMaxLoopbackStreamCnt(processConfig.audioMode);
+            }
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
                 RemoveIdFromMuteControlSet((*paired).first->GetSessionId());
@@ -156,6 +159,14 @@ int32_t AudioService::GetReleaseDelayTime(std::shared_ptr<AudioEndpoint> endpoin
     return isSwitchStream ? A2DP_ENDPOINT_RE_CREATE_RELEASE_DELAY_TIME : A2DP_ENDPOINT_RELEASE_DELAY_TIME;
 }
 #endif
+
+void AudioService::DisableLoopback()
+{
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", "Karaoke_enable=disable");
+}
 
 sptr<IpcStreamInServer> AudioService::GetIpcStream(const AudioProcessConfig &config, int32_t &ret)
 {
@@ -691,9 +702,9 @@ int32_t AudioService::OnCapturerFilterChange(uint32_t sessionId, const AudioPlay
         std::lock_guard<std::mutex> lock(workingConfigsMutex_);
         if (workingConfigs_.count(innerCapId)) {
             workingConfigs_[innerCapId] = newConfig;
-            isOldCap = true;  
+            isOldCap = true;
         } else {
-            workingConfigs_[innerCapId] = newConfig; 
+            workingConfigs_[innerCapId] = newConfig;
         }
     }
     if (isOldCap) {
@@ -945,7 +956,9 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
         return;
     }
     releasingEndpointSet_.erase(endpointName);
+    lock.unlock();
 
+    std::lock_guard<std::mutex> processListLock(processListMutex_);
     std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
@@ -1389,6 +1402,34 @@ void AudioService::SetDecMaxRendererStreamCnt()
     currentRendererStreamCnt_--;
 }
 
+void AudioService::SetIncMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_++;
+    } else {
+        currentLoopbackCapturerStreamCnt_++;
+    }
+}
+
+int32_t AudioService::GetCurrentLoopbackStreamCnt(AudioMode audioMode)
+{
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        return currentLoopbackRendererStreamCnt_;
+    } else {
+        return currentLoopbackCapturerStreamCnt_;
+    }
+}
+
+void AudioService::SetDecMaxLoopbackStreamCnt(AudioMode audioMode)
+{
+    std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
+    if (audioMode == AUDIO_MODE_PLAYBACK) {
+        currentLoopbackRendererStreamCnt_--;
+    } else {
+        currentLoopbackCapturerStreamCnt_--;
+    }
+}
+
 void AudioService::CleanAppUseNumMap(int32_t appUid)
 {
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
@@ -1563,6 +1604,45 @@ void AudioService::SetLatestMuteState(const uint32_t sessionId, const bool muteF
     }
     AUDIO_INFO_LOG("session:%{public}u muteflag=%{public}d", sessionId, muteFlag ? 1 : 0);
     muteStateCallbacks_[sessionId](muteFlag);
+}
+
+int32_t AudioService::ForceStopAudioStream(StopAudioType audioType)
+{
+    CHECK_AND_RETURN_RET_LOG(audioType >= STOP_ALL && audioType <= STOP_RECORD, ERR_INVALID_PARAM, "Invalid audioType");
+    AUDIO_INFO_LOG("stop audio stream, type:%{public}d", audioType);
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RENDER) {
+        std::lock_guard<std::mutex> lock(rendererMapMutex_);
+        for (auto &rendererMap : allRendererMap_) {
+            std::shared_ptr<RendererInServer> rendererInServer = rendererMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(rendererInServer != nullptr, "stream could be released, no need to stop");
+            rendererInServer->StopSession();
+        }
+    }
+    if (audioType == StopAudioType::STOP_ALL || audioType == StopAudioType::STOP_RECORD) {
+        std::lock_guard<std::mutex> lock(capturerMapMutex_);
+        for (auto &capturerMap : allCapturerMap_) {
+            std::shared_ptr<CapturerInServer> capturerInServer = capturerMap.second.lock();
+            CHECK_AND_CONTINUE_LOG(capturerInServer != nullptr, "stream could be released, no need to stop");
+            capturerInServer->StopSession();
+        }
+    }
+#ifdef SUPPORT_LOW_LATENCY
+    {
+        std::lock_guard<std::mutex> lock(processListMutex_);
+        for (auto &[audioProcessInServer, audioEndpoint]: linkedPairedList_) {
+            CHECK_AND_CONTINUE_LOG(audioProcessInServer && audioEndpoint,
+                "stream could be released, no need to stop");
+            AudioMode audioMode = audioEndpoint->GetAudioMode();
+            bool isNeedStop = (audioType == StopAudioType::STOP_ALL) ||
+                (audioMode == AudioMode::AUDIO_MODE_PLAYBACK && audioType == StopAudioType::STOP_RENDER) ||
+                (audioMode == AudioMode::AUDIO_MODE_RECORD && audioType == StopAudioType::STOP_RECORD);
+            if (isNeedStop) {
+                audioProcessInServer->StopSession();
+            }
+        }
+    }
+#endif
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -128,7 +128,7 @@ int32_t AudioRecoveryDevice::HandleRecoveryPreferredDevices(int32_t preferredTyp
 
 void AudioRecoveryDevice::RecoverExcludedOutputDevices()
 {
-    AUDIO_INFO_LOG("Start recover excluded output devices.");
+    AUDIO_INFO_LOG("[ADeviceEvent] Start recover excluded output devices");
     int32_t tryCounter = RECOVERY_ATTEMPT_LIMIT;
     // Waiting for 1000000 μs. Ensure that the playback/recording stream is restored first
     uint32_t firstSleepTime = INITIAL_STREAM_RESTORATION_WAIT_US;
@@ -172,7 +172,8 @@ int32_t AudioRecoveryDevice::HandleExcludedOutputDevicesRecovery(AudioDeviceUsag
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    AUDIO_WARNING_LOG("uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d] callerUid[%{public}d]",
+    AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] mac[%{public}s] streamUsage[%{public}d] " \
+        "callerUid[%{public}d]",
         audioRendererFilter->uid, selectedDesc[0]->deviceType_, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
         audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid());
 
@@ -187,7 +188,9 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }
 
-    if (audioRendererFilter->uid != -1) { return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc); }
+    if (audioRendererFilter->uid != -1) {
+        return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
+    }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
@@ -216,7 +219,9 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
 
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+    if (selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
+        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+    }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;
 }
@@ -409,8 +414,6 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     audioActiveDevice_.NotifyUserSelectionEventForInput(selectedDesc[0], srcType);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
 
-    audioDeviceCommon_.OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(),
-        audioActiveDevice_.GetCurrentInputDevice().networkId_);
     WriteSelectInputSysEvents(selectedDesc, srcType, scene);
     audioCapturerSession_.ReloadSourceForDeviceChange(
         audioActiveDevice_.GetCurrentInputDevice(),
@@ -464,7 +467,6 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
     return SUCCESS;
 }
 
@@ -491,7 +493,6 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(currentOutputDevice);
     return SUCCESS;
 }
 

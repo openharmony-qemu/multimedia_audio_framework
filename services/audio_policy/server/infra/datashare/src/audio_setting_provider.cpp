@@ -119,10 +119,10 @@ ErrCode AudioSettingProvider::GetFloatValue(const std::string &key, float &value
 }
 
 ErrCode AudioSettingProvider::GetBoolValue(const std::string &key, bool &value,
-    std::string tableType)
+    std::string tableType, int32_t userId)
 {
     std::string valueStr;
-    ErrCode ret = GetStringValue(key, valueStr, tableType);
+    ErrCode ret = GetStringValue(key, valueStr, tableType, userId);
     if (ret != ERR_OK) {
         return ret;
     }
@@ -243,10 +243,10 @@ ErrCode AudioSettingProvider::PutLongValue(const std::string &key, int64_t value
 }
 
 ErrCode AudioSettingProvider::PutBoolValue(const std::string &key, bool value,
-    std::string tableType, bool needNotify)
+    std::string tableType, bool needNotify, int32_t userId)
 {
     std::string valueStr = value ? "true" : "false";
-    return PutStringValue(key, valueStr, tableType, needNotify);
+    return PutStringValue(key, valueStr, tableType, needNotify, userId);
 }
 
 bool AudioSettingProvider::IsValidKey(const std::string &key)
@@ -330,10 +330,10 @@ void AudioSettingProvider::Initialize(int32_t systemAbilityId)
 }
 
 ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
-    std::string &value, std::string tableType)
+    std::string &value, std::string tableType, int32_t userId)
 {
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
-    auto helper = CreateDataShareHelper(tableType);
+    auto helper = CreateDataShareHelper(tableType, userId);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;
@@ -341,7 +341,7 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
     std::vector<std::string> columns = {SETTING_COLUMN_VALUE};
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTING_COLUMN_KEYWORD, key);
-    Uri uri(AssembleUri(key, tableType));
+    Uri uri(AssembleUri(key, tableType, userId));
     auto resultSet = helper->Query(uri, predicates, columns);
     ReleaseDataShareHelper(helper);
     if (resultSet == nullptr) {
@@ -376,11 +376,11 @@ ErrCode AudioSettingProvider::GetStringValue(const std::string &key,
 }
 
 ErrCode AudioSettingProvider::PutStringValue(const std::string &key, const std::string &value,
-    std::string tableType, bool needNotify)
+    std::string tableType, bool needNotify, int32_t userId)
 {
     AUDIO_INFO_LOG("Write audio_info_database with key: %{public}s value: %{public}s", key.c_str(), value.c_str());
     std::string callingIdentity = IPCSkeleton::ResetCallingIdentity();
-    auto helper = CreateDataShareHelper(tableType);
+    auto helper = CreateDataShareHelper(tableType, userId);
     if (helper == nullptr) {
         IPCSkeleton::SetCallingIdentity(callingIdentity);
         return ERR_NO_INIT;
@@ -392,21 +392,25 @@ ErrCode AudioSettingProvider::PutStringValue(const std::string &key, const std::
     bucket.Put(SETTING_COLUMN_VALUE, valueObj);
     DataShare::DataSharePredicates predicates;
     predicates.EqualTo(SETTING_COLUMN_KEYWORD, key);
-    Uri uri(AssembleUri(key, tableType));
+    Uri uri(AssembleUri(key, tableType, userId));
     if (helper->Update(uri, predicates, bucket) <= 0) {
         AUDIO_INFO_LOG("audio_info_database no data exist, insert one row");
         helper->Insert(uri, bucket);
     }
     if (needNotify) {
-        helper->NotifyChange(AssembleUri(key, tableType));
+        helper->NotifyChange(AssembleUri(key, tableType, userId));
     }
     ReleaseDataShareHelper(helper);
     IPCSkeleton::SetCallingIdentity(callingIdentity);
     return ERR_OK;
 }
 
-int32_t AudioSettingProvider::GetCurrentUserId()
+int32_t AudioSettingProvider::GetCurrentUserId(int32_t specificUserId)
 {
+    if (specificUserId != INVALID_ACCOUNT_ID && specificUserId >= MIN_USER_ACCOUNT) {
+        AUDIO_INFO_LOG("just use specific id: %{public}d", specificUserId);
+        return specificUserId;
+    }
     std::vector<int> ids;
     int32_t currentuserId = -1;
     ErrCode result;
@@ -441,7 +445,7 @@ void AudioSettingProvider::SetDataShareReady(std::atomic<bool> isDataShareReady)
 }
 
 std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShareHelper(
-    std::string tableType)
+    std::string tableType, int32_t userId)
 {
     CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
         "DATA_SHARE_READY not received, create DataShareHelper failed");
@@ -450,7 +454,7 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
         Initialize(AUDIO_POLICY_SERVICE_ID);
     }
 #ifdef SUPPORT_USER_ACCOUNT
-    int32_t currentuserId = GetCurrentUserId();
+    int32_t currentuserId = GetCurrentUserId(userId);
     if (currentuserId < MIN_USER_ACCOUNT) {
         currentuserId = MIN_USER_ACCOUNT;
     }
@@ -492,10 +496,10 @@ bool AudioSettingProvider::ReleaseDataShareHelper(
     return true;
 }
 
-Uri AudioSettingProvider::AssembleUri(const std::string &key, std::string tableType)
+Uri AudioSettingProvider::AssembleUri(const std::string &key, std::string tableType, int32_t userId)
 {
 #ifdef SUPPORT_USER_ACCOUNT
-    int32_t currentuserId = GetCurrentUserId();
+    int32_t currentuserId = GetCurrentUserId(userId);
     if (currentuserId < MIN_USER_ACCOUNT) {
         currentuserId = MIN_USER_ACCOUNT;
     }

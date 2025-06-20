@@ -149,7 +149,6 @@ private:
 
     void DeactivateNearlinkDevice(AudioDeviceDescriptor &desc);
 
-    void DeviceUpdateClearRecongnitionStatus(AudioDeviceDescriptor &desc);
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
     bool NoNeedChangeUsbDevice(const string &address);

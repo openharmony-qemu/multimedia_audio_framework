@@ -126,6 +126,7 @@ void TonePlayerImpl::OnStateChange(const RendererState state, const StateChangeC
     AUDIO_INFO_LOG("ToneType %{public}d  OnStateChange state: %{public}d", toneType_, state);
 }
 
+// LCOV_EXCL_START
 void TonePlayerImpl::OnWriteData(size_t length)
 {
     std::lock_guard<std::mutex> lock(optMutex_);
@@ -150,6 +151,11 @@ void TonePlayerImpl::OnWriteData(size_t length)
     if (AudioToneSequenceGen(bufDesc) == false) {
         AUDIO_WARNING_LOG("SequenceGen error");
         bufDesc.dataLength = bufDesc.bufLength;
+    }
+    if (needFadeOut_) {
+        needFadeOut_ = false;
+        AudioRenderer::FadeOutAudioBuffer(bufDesc, rendererOptions_.streamInfo.format,
+            rendererOptions_.streamInfo.channels);
     }
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(bufDesc.buffer), bufDesc.dataLength);
     if (audioRenderer_ != nullptr) {
@@ -237,6 +243,7 @@ bool TonePlayerImpl::Release()
     DumpFileUtil::CloseDumpFile(&dumpFile_);
     return true;
 }
+// LCOV_EXCL_STOP
 
 void TonePlayerImpl::GetCurrentSegmentUpdated()
 {
@@ -253,12 +260,16 @@ void TonePlayerImpl::GetCurrentSegmentUpdated()
         // no looping required , go to next segment
         currSegment_++;
     }
+    Trace trace("GetCurrentSegmentUpdated:toneState:" + std::to_string(toneState_) + "currSegment:" +
+        std::to_string(currSegment_));
     AUDIO_INFO_LOG("GetCurrentSegmentUpdated loopCounter_: %{public}d, currSegment_: %{public}d",
         loopCounter_, currSegment_);
 }
 
 bool TonePlayerImpl::CheckToneContinuity()
 {
+    Trace trace("CheckToneContinuity:toneState:" + std::to_string(toneState_) + "currSegment:" +
+        std::to_string(currSegment_));
     AUDIO_INFO_LOG("CheckToneContinuity Entry loopCounter_: %{public}d, currSegment_: %{public}d",
         loopCounter_, currSegment_);
     bool retVal = false;
@@ -284,12 +295,17 @@ bool TonePlayerImpl::CheckToneContinuity()
 
 bool TonePlayerImpl::ContinueToneplay(uint32_t reqSample, int8_t *audioBuffer)
 {
+    Trace trace("ContinueToneplay:toneState:" + std::to_string(toneState_) + "currSegment:" +
+        std::to_string(currSegment_));
     if (toneState_ != TONE_RUNNING) {
         return false;
     }
     if (totalSample_ <= nextSegSample_) {
         if (toneInfo_->segments[currSegment_].duration != 0) {
             GetSamples(toneInfo_->segments[currSegment_].waveFreq, audioBuffer, reqSample);
+        }
+        if (totalSample_ == nextSegSample_) {
+            needFadeOut_ = true;
         }
         return true;
     }
@@ -307,10 +323,11 @@ bool TonePlayerImpl::ContinueToneplay(uint32_t reqSample, int8_t *audioBuffer)
 
 int32_t TonePlayerImpl::GetSamples(uint16_t *freqs, int8_t *buffer, uint32_t reqSamples)
 {
+    Trace trace("GetSamples");
     uint32_t index;
     uint8_t *data;
     uint16_t freqVal;
-    float pi = 3.1428f;
+    float pi = 3.1415926;
     for (uint32_t i = 0; i <= TONEINFO_MAX_WAVES; i++) {
         if (freqs[i] == 0) {
             break;
@@ -386,6 +403,8 @@ std::string TonePlayerImpl::GetCountryCode()
 
 bool TonePlayerImpl::CheckToneStarted(uint32_t reqSample, int8_t *audioBuffer)
 {
+    Trace trace("CheckToneStarted:toneState:" + std::to_string(toneState_) + "currSegment:" +
+        std::to_string(currSegment_));
     if (toneState_ != TONE_STARTING) {
         return false;
     }
@@ -399,6 +418,8 @@ bool TonePlayerImpl::CheckToneStarted(uint32_t reqSample, int8_t *audioBuffer)
 
 bool TonePlayerImpl::CheckToneStopped()
 {
+    Trace trace("CheckToneStopped:toneState:" + std::to_string(toneState_) + "currSegment:" +
+        std::to_string(currSegment_));
     if (toneState_ == TONE_STOPPED) {
         return true;
     }
@@ -414,6 +435,7 @@ bool TonePlayerImpl::CheckToneStopped()
 
 bool TonePlayerImpl::AudioToneSequenceGen(BufferDesc &bufDesc)
 {
+    Trace trace("AudioToneSequenceGen");
     int8_t *audioBuffer = reinterpret_cast<int8_t *>(bufDesc.buffer);
     uint32_t totalBufAvailable = bufDesc.bufLength / sizeof(int16_t);
     bool retVal = true;
@@ -467,7 +489,7 @@ bool TonePlayerImpl::InitToneWaveInfo()
     return true;
 }
 
-
+// LCOV_EXCL_START
 bool TonePlayerImpl::InitAudioRenderer()
 {
     processSize_ = (rendererOptions_.streamInfo.samplingRate * C20MS) / C1000MS;
@@ -504,5 +526,6 @@ bool TonePlayerImpl::InitAudioRenderer()
     AUDIO_DEBUG_LOG("SetRendererCallback Sucessful");
     return true;
 }
+// LCOV_EXCL_STOP
 } // end namespace AudioStandard
 } // end OHOS

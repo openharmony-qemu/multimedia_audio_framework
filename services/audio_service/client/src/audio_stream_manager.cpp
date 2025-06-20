@@ -177,6 +177,7 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
         case STREAM_ACCESSIBILITY:
         case STREAM_VOICE_RING:
         case STREAM_CAMCORDER:
+        case STREAM_NAVIGATION:
             break;
         case STREAM_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
@@ -190,6 +191,42 @@ bool AudioStreamManager::IsStreamActive(AudioVolumeType volumeType) const
     }
 
     return AudioPolicyManager::GetInstance().IsStreamActive(volumeType);
+}
+
+bool AudioStreamManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) const
+{
+    switch (streamUsage) {
+        case STREAM_USAGE_MEDIA:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+        case STREAM_USAGE_RANGING:
+        case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
+        case STREAM_USAGE_VOICE_RINGTONE:
+        case STREAM_USAGE_VOICE_CALL_ASSISTANT:
+            break;
+        case STREAM_USAGE_ULTRASONIC:{
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, false, "streamUsage=%{public}d. No system permission", streamUsage);
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("IsStreamActiveByStreamUsage: streamUsage=%{public}d not supported", streamUsage);
+            return false;
+    }
+    return AudioPolicyManager::GetInstance().IsStreamActiveByStreamUsage(streamUsage);
 }
 
 bool AudioStreamManager::IsFastPlaybackSupported(AudioStreamInfo &streamInfo, StreamUsage usage)
@@ -274,6 +311,21 @@ int32_t AudioStreamManager::GetAudioEnhanceProperty(AudioEnhancePropertyArray &p
 bool AudioStreamManager::IsAcousticEchoCancelerSupported(SourceType sourceType)
 {
     return AudioPolicyManager::GetInstance().IsAcousticEchoCancelerSupported(sourceType);
+}
+
+int32_t AudioStreamManager::ForceStopAudioStream(StopAudioType audioType)
+{
+    return AudioPolicyManager::GetInstance().ForceStopAudioStream(audioType);
+}
+
+bool AudioStreamManager::IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo)
+{
+    return AudioPolicyManager::GetInstance().IsCapturerFocusAvailable(capturerInfo);
+}
+
+bool AudioStreamManager::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode);
 }
 } // namespace AudioStandard
 } // namespace OHOS

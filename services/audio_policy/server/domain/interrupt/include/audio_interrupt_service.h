@@ -80,6 +80,7 @@ public:
     int32_t ActivateAudioInterrupt(
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
+    bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
@@ -112,8 +113,7 @@ public:
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
-    void SetDefaultVolumeType(const AudioStreamType volumeType);
-    AudioStreamType GetDefaultVolumeType() const;
+    void RegisterDefaultVolumeTypeListener();
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -279,6 +279,12 @@ private:
     bool IsGameAvoidCallbackCase(const AudioInterrupt &audioInterrupt);
     void ResetNonInterruptControl(AudioInterrupt audioInterrupt);
     ClientType GetClientTypeByStreamId(int32_t streamId);
+
+    int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
+        const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,
+        std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
+    void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
+        const AudioInterrupt &activeInterrupt, int32_t reason);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

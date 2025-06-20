@@ -35,6 +35,7 @@ constexpr uint32_t MEDIA_SA_UID = 1013;
 constexpr uint32_t THP_EXTRA_SA_UID = 5000;
 static const int32_t INTERRUPT_SERVICE_TIMEOUT = 10; // 10s
 static sptr<IStandardAudioService> g_adProxy = nullptr;
+const std::string DEFAULT_VOLUME_KEY = "default_volume_key_control";
 
 static const map<InterruptHint, AudioFocuState> HINT_STATE_MAP = {
     {INTERRUPT_HINT_PAUSE, PAUSE},
@@ -698,6 +699,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
 
     if (currAudioInterrupt.parallelPlayFlag) {
+        updateScene = true;
         AUDIO_PRERELEASE_LOGI("allow parallel play");
         return SUCCESS;
     }
@@ -732,7 +734,7 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
     CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
     AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
     if (focusEntry.actionOn != CURRENT) {
-        AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+        AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
             "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
         return;
     }
@@ -772,7 +774,7 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
         default:
             break;
     }
-    AUDIO_INFO_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
+    AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
         "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
     return;
 }
@@ -1530,40 +1532,13 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end()) { audioFocusInfoList = itZone->second->audioFocusInfoList; }
 
-    for (auto iterActive = audioFocusInfoList.begin(); iterActive != audioFocusInfoList.end(); ++iterActive) {
-        if (IsSameAppInShareMode(incomingInterrupt, iterActive->first)) { continue; }
-        // if peeling is the incomming interrupt while at the momount there are already some existing recordings
-        // peeling should be rejected
-        if (IsLowestPriorityRecording(incomingInterrupt) && IsRecordingInterruption(iterActive->first)) {
-            incomingState = STOP;
-            AUDIO_INFO_LOG("PEELING AUDIO fail, there's a device recording");
-            break;
-        }
-
-        std::pair<AudioFocusType, AudioFocusType> focusPair =
-            std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
-        CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), ERR_INVALID_PARAM, "no focus cfg");
-        AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
-        UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
-        CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
-        if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
-        if (focusEntry.isReject) {
-            if (IsGameAvoidCallbackCase(iterActive->first)) {
-                incomingState = PAUSE;
-                AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
-                continue;
-            }
-
-            AUDIO_INFO_LOG("the incoming stream is rejected by streamId:%{public}d, pid:%{public}d",
-                (iterActive->first).streamId, (iterActive->first).pid);
-            incomingState = STOP;
-            break;
-        }
-        incomingState = GetNewIncomingState(focusEntry.hintType, incomingState);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = audioFocusInfoList.end();
+    int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
+    if ((incomingState >= PAUSE || res != SUCCESS) && activeInterrupt != audioFocusInfoList.end()) {
+        ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt->first,
+            res == SUCCESS ? RECORD_ERROR_GET_FOCUS_FAIL : RECORD_ERROR_NO_FOCUS_CFG);
     }
-    if (incomingState == STOP && !incomingInterrupt.deviceTag.empty()) {
-        incomingState = ACTIVE;
-    }
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "ProcessActiveStreamFocus fail");
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
@@ -2268,15 +2243,27 @@ void AudioInterruptService::WriteStopDfxMsg(const AudioInterrupt &audioInterrupt
     }
 }
 
-void AudioInterruptService::SetDefaultVolumeType(const AudioStreamType volumeType)
+void AudioInterruptService::RegisterDefaultVolumeTypeListener()
 {
-    defaultVolumeType_ = volumeType;
-    AUDIO_INFO_LOG("defaultVolumeType: %{public}d", defaultVolumeType_);
-}
-
-AudioStreamType AudioInterruptService::GetDefaultVolumeType() const
-{
-    return defaultVolumeType_;
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncMono = [this, &settingProvider](const std::string &key) {
+        int32_t currentValueType = STREAM_MUSIC;
+        ErrCode ret = settingProvider.GetIntValue(DEFAULT_VOLUME_KEY, currentValueType, "system");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DEFAULT_VOLUME_KEY get mono value failed");
+        if (currentValueType == STREAM_RING) {
+            defaultVolumeType_ = STREAM_RING;
+        } else {
+            defaultVolumeType_ = STREAM_MUSIC;
+        }
+        AUDIO_INFO_LOG("Get defaultVolumeType: %{public}d", defaultVolumeType_);
+    };
+    sptr observer = settingProvider.CreateObserver(DEFAULT_VOLUME_KEY, updateFuncMono);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "system");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterDefaultVolumeTypeListener mono failed");
+    }
+    updateFuncMono(DEFAULT_VOLUME_KEY);
+    AUDIO_INFO_LOG("DefaultVolumeTypeListener mono successfully, defaultVolumeType:%{public}d", defaultVolumeType_);
 }
 
 // LCOV_EXCL_STOP

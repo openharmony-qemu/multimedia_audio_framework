@@ -14,6 +14,7 @@
  */
 
 #include "multimedia_audio_volume_manager_callback.h"
+
 #include "multimedia_audio_common.h"
 
 namespace OHOS {
@@ -27,7 +28,7 @@ void CjVolumeKeyEventCallback::RegisterFunc(std::function<void(CVolumeEvent)> cj
 void CjVolumeKeyEventCallback::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(cbMutex_);
-    CVolumeEvent cVol{};
+    CVolumeEvent cVol {};
     cVol.volume = volumeEvent.volume;
     cVol.volumeType = static_cast<int32_t>(volumeEvent.volumeType);
     cVol.updateUi = volumeEvent.updateUi;

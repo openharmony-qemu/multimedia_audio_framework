@@ -935,6 +935,19 @@ HWTEST_F(AudioServerUnitTest, AudioServerResetRecordConfig_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test CheckMaxLoopbackInstances API
+ * @tc.type  : FUNC
+ * @tc.number: CheckMaxLoopbackInstances_001
+ * @tc.desc  : Test CheckMaxLoopbackInstances interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_RECORD);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name  : Test CreateAudioStream API
  * @tc.type  : FUNC
  * @tc.number: AudioServerCreateAudioStream_001

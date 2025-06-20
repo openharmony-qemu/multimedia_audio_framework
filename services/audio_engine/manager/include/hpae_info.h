@@ -41,6 +41,7 @@ struct HpaeEffectInfo {
     AudioEffectMode effectMode;
     AudioEnhanceScene enhanceScene;
     AudioEnhanceMode enhanceMode;
+    AudioEffectScene lastEffectScene;
 };
 
 enum FadeType {

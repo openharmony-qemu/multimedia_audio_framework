@@ -23,7 +23,11 @@ namespace AudioStandard {
 namespace {
 const float TRANS_PERCENTAGE = 100.0;
 const int32_t TRANS_INTEGER = 100;
-const int64_t STREAM_CHECK_INTERVAL_TIME = 500000000;
+const int32_t AUDIOSTREAM_LATENCY_MODE_NORMAL = 0;
+const int64_t STREAM_CHECK_INTERVAL_TIME = 500000000;  // 500ms
+const int64_t DEFAULT_TIME = 0;
+const int64_t NORMAL_FRAME_PER_TIME = 20000000;  // 20ms
+const int64_t FAST_FRAME_PER_TIME = 5000000;  // 5ms
 }
 
 AudioStreamChecker::AudioStreamChecker(AudioProcessConfig cfg) : streamConfig_(cfg)
@@ -95,6 +99,54 @@ void AudioStreamChecker::DeleteCheckerPara(const int32_t pid, const int32_t call
     AUDIO_INFO_LOG("Delete check para end, pid = %{public}d, callbackId = %{public}d", pid, callbackId);
 }
 
+void AudioStreamChecker::CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum)
+{
+    int64_t timePerFrame = (streamConfig_.rendererInfo.rendererFlags == AUDIOSTREAM_LATENCY_MODE_NORMAL) ?
+        NORMAL_FRAME_PER_TIME : FAST_FRAME_PER_TIME;
+    AUDIO_DEBUG_LOG("Frame per time = %{public}" PRId64"", timePerFrame);
+    AUDIO_DEBUG_LOG("StandbyStartTime = %{public}" PRId64", StandbyStopTime = %{public}" PRId64"",
+        para.standbyStartTime, para.standbyStopTime);
+    AUDIO_DEBUG_LOG("IsInStandby = %{public}d", para.isInStandby);
+    int64_t calculateFrameNum = 0;
+    if (para.standbyStartTime != DEFAULT_TIME && para.standbyStopTime != DEFAULT_TIME) {
+        calculateFrameNum = ((para.standbyStopTime - para.standbyStartTime) / timePerFrame);
+    } else if (para.standbyStartTime != DEFAULT_TIME && para.standbyStopTime == DEFAULT_TIME) {
+        calculateFrameNum = ((ClockTime::GetCurNano() - para.standbyStartTime) / timePerFrame);
+        AUDIO_DEBUG_LOG("Current time = %{public}" PRId64"", ClockTime::GetCurNano());
+    } else if (para.standbyStartTime == DEFAULT_TIME && para.standbyStopTime != DEFAULT_TIME) {
+        calculateFrameNum = ((para.standbyStopTime - para.lastUpdateTime) / timePerFrame);
+        AUDIO_DEBUG_LOG("Last update time = %{public}" PRId64"", para.lastUpdateTime);
+    } else {
+        calculateFrameNum = (para.isInStandby ? (para.para.timeInterval / timePerFrame) : 0);
+    }
+    AUDIO_DEBUG_LOG("Calculate no data frame num = %{public}" PRId64"", calculateFrameNum);
+    if (para.isMonitorNoDataFrame) {
+        abnormalFrameNum += calculateFrameNum;
+    }
+    para.noDataFrameNum += calculateFrameNum;
+    AUDIO_DEBUG_LOG("AbnormalFrameNum = %{public}" PRId64", NoDataFrameNum = %{public}" PRId64"",
+        abnormalFrameNum, para.noDataFrameNum);
+}
+
+void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
+{
+    std::lock_guard<std::recursive_mutex> lock(checkLock_);
+    for (auto iter = checkParaVector_.begin(); iter != checkParaVector_.end();) {
+        if (iter->pid == pid) {
+            iter = checkParaVector_.erase(iter);
+            AUDIO_INFO_LOG("Delete check para success when remote app died, pid = %{public}d", pid);
+        } else {
+            iter++;
+        }
+    }
+    if (checkParaVector_.size() == 0) {
+        isNeedCreateThread_.store(true);
+        isKeepCheck_.store(false);
+        AUDIO_INFO_LOG("Stream has no callback when remote app died, stop check thread");
+    }
+    AUDIO_INFO_LOG("Delete check para end when remote app died, pid = %{public}d", pid);
+}
+
 void AudioStreamChecker::StopCheckStreamThread()
 {
     AUDIO_INFO_LOG("Stop check stream thread");
@@ -123,6 +175,39 @@ void AudioStreamChecker::MonitorCheckFrame()
     }
 }
 
+void AudioStreamChecker::MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum,
+    float badFrameRatio)
+{
+    if (abnormalFrameNum >= static_cast<int64_t>(para.sumFrameCount * badFrameRatio)) {
+        if (para.lastStatus == DATA_TRANS_STOP) {
+            AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_STOP",
+                streamConfig_.originalSessionId);
+            MonitorOnCallback(DATA_TRANS_STOP, false, para);
+        } else if (para.lastStatus == AUDIO_STREAM_PAUSE) {
+            AUDIO_DEBUG_LOG("Last status is AUDIO_STREAM_PAUSE, no need callback");
+            CleanRecordData(para);
+        } else {
+            AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_STOP",
+                streamConfig_.originalSessionId);
+            MonitorOnCallback(DATA_TRANS_STOP, true, para);
+        }
+    } else {
+        if (para.lastStatus == DATA_TRANS_RESUME) {
+            AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_RESUME",
+                streamConfig_.originalSessionId);
+            MonitorOnCallback(DATA_TRANS_RESUME, false, para);
+        } else if (para.lastStatus == AUDIO_STREAM_START || para.lastStatus == AUDIO_STREAM_PAUSE) {
+            AUDIO_DEBUG_LOG("Last status is %{public}d, no need callback", para.lastStatus);
+            para.lastStatus = para.lastStatus == AUDIO_STREAM_START ? DATA_TRANS_RESUME : AUDIO_STREAM_PAUSE;
+            CleanRecordData(para);
+        } else {
+            AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_RESUME",
+                streamConfig_.originalSessionId);
+            MonitorOnCallback(DATA_TRANS_RESUME, true, para);
+        }
+    }
+}
+
 void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
 {
     if (!para.hasInitCheck) {
@@ -139,32 +224,19 @@ void AudioStreamChecker::MonitorCheckFrameSub(CheckerParam &para)
         abnormalFrameNum += para.noDataFrameNum;
         AUDIO_DEBUG_LOG("Check no data frame size = %{public}" PRId64, para.noDataFrameNum);
     }
+
     if (timeCost < para.para.timeInterval) {
         AUDIO_DEBUG_LOG("Check time is not enough");
         return;
     }
+    AUDIO_DEBUG_LOG("Before calculate abnormalFrameNum = %{public}" PRId64"", abnormalFrameNum);
+    CalculateFrameAfterStandby(para, abnormalFrameNum);
     para.sumFrameCount = para.normalFrameCount + para.noDataFrameNum;
     float badFrameRatio = para.para.badFramesRatio / TRANS_PERCENTAGE;
     AUDIO_DEBUG_LOG("Check frame sum = %{public}" PRId64", abnormal = %{public}" PRId64", badRatio = %{public}f",
         para.sumFrameCount, abnormalFrameNum, badFrameRatio);
     AUDIO_DEBUG_LOG("Last check status = %{public}d", para.lastStatus);
-    if (abnormalFrameNum >= static_cast<int64_t>(para.sumFrameCount * badFrameRatio)) {
-        if (para.lastStatus == DATA_TRANS_STOP) {
-            AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_STOP", streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_STOP, false, para);
-        } else {
-            AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_STOP", streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_STOP, true, para);
-        }
-    } else {
-        if (para.lastStatus == DATA_TRANS_RESUME) {
-            AUDIO_DEBUG_LOG("sessionId = %{public}u, status still in DATA_TRANS_RESUME", streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_RESUME, false, para);
-        } else {
-            AUDIO_DEBUG_LOG("sessionId = %{public}u, status change in DATA_TRANS_RESUME", streamConfig_.originalSessionId);
-            MonitorOnCallback(DATA_TRANS_RESUME, true, para);
-        }
-    }
+    MonitorCheckFrameAction(para, abnormalFrameNum, badFrameRatio);
 }
 
 void AudioStreamChecker::CleanRecordData(CheckerParam &para)
@@ -173,10 +245,13 @@ void AudioStreamChecker::CleanRecordData(CheckerParam &para)
     para.noDataFrameNum = 0;
     para.normalFrameCount = 0;
     para.sumFrameCount = 0;
+    para.standbyStartTime = 0;
+    para.standbyStopTime = 0;
+    para.lastUpdateTime = ClockTime::GetCurNano();
     AUDIO_DEBUG_LOG("Clean check para end...");
 }
 
-void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type)
+void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type, bool isStandby)
 {
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
     if (!monitorSwitch_) {
@@ -185,7 +260,11 @@ void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type)
     }
     AudioRendererDataTransferStateChangeInfo callbackInfo;
     InitCallbackInfo(type, callbackInfo);
-    for (int32_t index = 0; index < checkParaVector_.size(); index++) {
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
+        if (isStandby && type == DATA_TRANS_RESUME && !checkParaVector_[index].isMonitorNoDataFrame) {
+            AUDIO_INFO_LOG("Start during standby and no monitor nodata frame, no need callback");
+            continue;
+        }
         checkParaVector_[index].lastStatus = type;
         AUDIO_INFO_LOG("MonitorOnAllCallback type = %{public}d", type);
         checkParaVector_[index].lastUpdateTime = ClockTime::GetCurNano();
@@ -194,6 +273,19 @@ void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type)
         InitCallbackInfo(type, callbackInfo);
         AudioStreamMonitor::GetInstance().OnCallback(checkParaVector_[index].pid,
             checkParaVector_[index].callbackId, callbackInfo);
+    }
+}
+
+void AudioStreamChecker::RecordStandbyTime(bool isStandbyStart)
+{
+    std::lock_guard<std::recursive_mutex> lock(checkLock_);
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
+        if (isStandbyStart) {
+            checkParaVector_[index].standbyStartTime = ClockTime::GetCurNano();
+        } else {
+            checkParaVector_[index].standbyStopTime = ClockTime::GetCurNano();
+        }
+        checkParaVector_[index].isInStandby = isStandbyStart;
     }
 }
 
@@ -258,7 +350,7 @@ int32_t AudioStreamChecker::GetAppUid()
 void AudioStreamChecker::RecordMuteFrame()
 {
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (int32_t index = 0; index < checkParaVector_.size(); index++) {
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].muteFrameNum++;
         AUDIO_DEBUG_LOG("Mute frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].muteFrameNum, checkParaVector_[index].callbackId);
@@ -268,7 +360,7 @@ void AudioStreamChecker::RecordMuteFrame()
 void AudioStreamChecker::RecordNodataFrame()
 {
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (int32_t index = 0; index < checkParaVector_.size(); index++) {
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].noDataFrameNum++;
         AUDIO_DEBUG_LOG("No data frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].noDataFrameNum, checkParaVector_[index].callbackId);
@@ -278,7 +370,7 @@ void AudioStreamChecker::RecordNodataFrame()
 void AudioStreamChecker::RecordNormalFrame()
 {
     std::lock_guard<std::recursive_mutex> lock(checkLock_);
-    for (int32_t index = 0; index < checkParaVector_.size(); index++) {
+    for (size_t index = 0; index < checkParaVector_.size(); index++) {
         checkParaVector_[index].normalFrameCount++;
         AUDIO_DEBUG_LOG("Normal frame num = %{public}" PRId64", callbackId = %{public}d",
             checkParaVector_[index].normalFrameCount, checkParaVector_[index].callbackId);

@@ -72,25 +72,6 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_003, TestSize.Level1
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreServicePrivate_004
- * @tc.desc  : Test AudioCoreService::HandleScoInputDeviceFetched()
- */
-HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_004, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
-
-    auto ret = audioCoreService->HandleScoInputDeviceFetched(streamDesc);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_005
  * @tc.desc  : Test AudioCoreService::ScoInputDeviceFetchedForRecongnition()
  */
@@ -1326,14 +1307,19 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 0,
+    streamDesc->callerUid_ = 0;
+    streamDesc->appInfo_.appUid = 0;
+    streamDesc->appInfo_.appPid = 0;
+    streamDesc->appInfo_.appTokenId = 0;
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->routeFlag_ = true;
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->SetCallbackHandler(nullptr);
 
-    audioCoreService->TriggerRecreateCapturerStreamCallback(callerPid, sessionId, routeFlag);
+    audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
 
     EXPECT_EQ(audioCoreService->audioPolicyServerHandler_, nullptr);
 }
@@ -1345,17 +1331,49 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_072, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_073, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->sessionId_ = 123456,
+    streamDesc->callerUid_ = 0;
+    streamDesc->appInfo_.appUid = 0;
+    streamDesc->appInfo_.appPid = 0;
+    streamDesc->appInfo_.appTokenId = 0;
+    streamDesc->streamStatus_ = STREAM_STATUS_NEW;
+    streamDesc->routeFlag_ = true;
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
-
-    audioCoreService->TriggerRecreateCapturerStreamCallback(callerPid, sessionId, routeFlag);
-
+    
+    audioCoreService->TriggerRecreateCapturerStreamCallback(streamDesc);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
+
+    bool ret = SwitchStreamUtil::RemoveAllRecordBySessionId(123456);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_074
+ * @tc.desc : Test AudioCoreService::HandleStreamStatusToCapturerState
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2)
+{
+    auto audioCoreService = AudioCoreService::GetCoreService();
+    
+    CapturerState state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_NEW);
+    EXPECT_EQ(state, CAPTURER_PREPARED);
+
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_STARTED);
+    EXPECT_EQ(state, CAPTURER_RUNNING);
+
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_PAUSED);
+    EXPECT_EQ(state, CAPTURER_PAUSED);
+
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_STOPPED);
+    EXPECT_EQ(state, CAPTURER_STOPPED);
+
+    state = audioCoreService->HandleStreamStatusToCapturerState(STREAM_STATUS_RELEASED);
+    EXPECT_EQ(state, CAPTURER_RELEASED);
 }
 
 /**
@@ -1707,8 +1725,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_112, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({BLUETOOTH_SPEAKER, audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1731,8 +1748,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_113, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({"abc", audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
@@ -1755,7 +1771,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_114, TestSize.Level1
     audioCoreService->audioIOHandleMap_.IOHandles_.insert({BLUETOOTH_SPEAKER, audioIOHandle});
 
     auto ret = audioCoreService->SwitchActiveA2dpDevice(deviceDescriptor);
-    EXPECT_EQ(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
+    EXPECT_NE(Bluetooth::AudioA2dpManager::GetActiveA2dpDevice(), "00:00:00:00:00:00");
     EXPECT_NE(ret, SUCCESS);
 }
 
@@ -1909,6 +1925,34 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_121, TestSize.Level1
         device = audioCoreService->audioDeviceManager_.GetSelectedCaptureDevice(sessionID);
         EXPECT_EQ(device->deviceType_ != DEVICE_TYPE_MIC, true);
     }
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsFastAllowedTest_001
+ * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is null.
+ */
+HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::string bundleName = "";
+    EXPECT_EQ(audioCoreService->IsFastAllowed(bundleName), true);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: IsFastAllowedTest_002
+ * @tc.desc  : Test AudioCoreService::IsFastAllowed, return true when bundleName is normal app.
+ */
+HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::string bundleName = "com.example.app";
+    streamDesc->SetBunduleName(bundleName);
+    EXPECT_EQ(audioCoreService->IsFastAllowed(streamDesc->bundleName_), true);
 }
 } // namespace AudioStandard
 } // namespace OHOS

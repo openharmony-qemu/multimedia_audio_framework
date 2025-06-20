@@ -31,7 +31,8 @@ CoreServiceProviderProxy::~CoreServiceProviderProxy()
 {
 }
 
-int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
+int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+    SessionOperationMsg opMsg)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -40,6 +41,7 @@ int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, Ses
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteUint32(sessionId);
     data.WriteUint32(operation);
+    data.WriteUint32(opMsg);
 
     int ret = Remote()->SendRequest(ICoreServiceProviderMsg::UPDATE_SESSION_OPERATION, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);

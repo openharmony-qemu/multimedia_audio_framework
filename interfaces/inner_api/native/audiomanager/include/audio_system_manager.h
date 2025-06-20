@@ -430,7 +430,7 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t UnsetSelfAppVolumeCallback(const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
-    
+
     /**
      * @brief Set app volume change callback.
      *
@@ -451,7 +451,7 @@ public:
      */
     int32_t UnsetAppVolumeCallbackForUid(
         const std::shared_ptr<AudioManagerAppVolumeChangeCallback> &callback = nullptr);
-    
+
     /**
      * @brief Set the uid app volume muted.
      * @param appUid app uid
@@ -567,6 +567,17 @@ public:
      * @since 8
      */
     bool IsStreamMute(AudioVolumeType volumeType) const;
+
+    /**
+     * @brief get volume db value that system calculate by volume type, volume level and device type.
+     *
+     * @param volumeType audio volume type.
+     * @param volumeLevel volume level.
+     * @param device device type.
+     * @return Returns volume db value that system calculate by volume type, volume level and device type.
+     * @since 20
+     */
+    float GetVolumeInUnitOfDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType device);
 
     /**
      * @brief Set global microphone mute state.
@@ -988,6 +999,26 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the systemVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t RegisterSystemVolumeChangeCallback(const int32_t clientPid,
+        const std::shared_ptr<SystemVolumeChangeCallback> &callback);
+
+    /**
+     * @brief Unregisters the systemVolumeChange callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnregisterSystemVolumeChangeCallback(const int32_t clientPid,
+        const std::shared_ptr<SystemVolumeChangeCallback> &callback = nullptr);
+
+    /**
      * @brief registers the renderer data transfer callback listener
      *
      * @param param {@link DataTransferMonitorParam}
@@ -1378,7 +1409,7 @@ public:
 
     int32_t SetMicrophoneBlockedCallback(const std::shared_ptr<AudioManagerMicrophoneBlockedCallback>& callback);
     int32_t UnsetMicrophoneBlockedCallback(std::shared_ptr<AudioManagerMicrophoneBlockedCallback> callback = nullptr);
-    
+
     /**
      * @brief Registers the audioScene change callback listener.
      *
@@ -1499,7 +1530,7 @@ public:
     * @test
     */
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId);
-    
+
     /**
     * @brief release capture limit
     *
@@ -1559,6 +1590,43 @@ public:
     int32_t IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute);
 
     /**
+     * @brief Get the volume in unit of db by streamUsage.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @param volumeLevel Specifies the volume level.
+     * @param deviceType Specifies the device type.
+     * @return Returns current volume in unit of db by streamUsage
+     * @since 20
+     */
+    float GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType);
+
+    /**
+     * @brief Get supported audio volume types.
+     *
+     * @return Returns current supported audio volume types
+     * @since 20
+     */
+    std::vector<AudioVolumeType>GetSupportedAudioVolumeTypes();
+
+    /**
+     * @brief Get the audioVolumeType that streamUsage belongs.
+     *
+     * @param streamUsage Specifies the stream usage.
+     * @return Returns the audioVolumeType that streamUsage belongs
+     * @since 20
+     */
+    AudioVolumeType GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage);
+
+    /**
+     * @brief Get the streamUsages contained in audioVolumeType
+     *
+     * @param audioVolumeType Specifies the audio volume type.
+     * @return Returns the streamUsages contained in audioVolumeType
+     * @since 20
+     */
+    std::vector<StreamUsage> GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType);
+
+    /**
      * @brief registers the StreamVolumeChange callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
@@ -1585,7 +1653,7 @@ public:
     * @test
     */
     int32_t CreateAudioWorkgroup();
- 
+
     /**
     * @brief release audio workgroup.
     *
@@ -1594,7 +1662,7 @@ public:
     * @test
     */
     int32_t ReleaseAudioWorkgroup(int32_t workgroupId);
- 
+
     /**
     * @brief add thread to audio workgroup.
     *
@@ -1604,7 +1672,7 @@ public:
     * @test
     */
     int32_t AddThreadToGroup(int32_t workgroupId, int32_t tokenId);
- 
+
     /**
     * @brief remove thread to audio workgroup.y
     *
@@ -1614,7 +1682,7 @@ public:
     * @test
     */
     int32_t RemoveThreadFromGroup(int32_t workgroupId, int32_t tokenId);
- 
+
     /**
     * @brief the deadline workgroup starts to take effect.
     *
@@ -1625,7 +1693,7 @@ public:
     * @test
     */
     int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
- 
+
     /**
     * @brief stop the deadline workgroup.
     *
@@ -1642,7 +1710,7 @@ public:
     * @test
     */
     std::unordered_map<AudioStreamType, VolumeEvent> GetVolumeEvent();
- 
+
     /**
     * @brief set latest volume event when callback.
     *
@@ -1651,7 +1719,7 @@ public:
     * @test
     */
     void SetVolumeEvent(AudioStreamType type, VolumeEvent event);
- 
+
     /**
     * @brief get renderer change info from register callback.
     *
@@ -1660,7 +1728,7 @@ public:
     */
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
         GetAudioRendererChangeInfo();
- 
+
     /**
     * @brief set latest renderer change info when callback.
     *
@@ -1739,13 +1807,13 @@ private:
     private:
         void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
     };
- 
+
     std::unordered_map<AudioStreamType, VolumeEvent> volumeEventMap_;
     std::mutex volumeEventMutexMap_;
     void AttachVolumeKeyEventListener();
     void DetachVolumeKeyEventListener();
     std::shared_ptr<VolumeKeyEventCallbackImpl> volumeKeyEventCallback_ = nullptr;
- 
+
     class AudioRendererStateChangeCallbackImpl : public AudioRendererStateChangeCallback {
     public:
         AudioRendererStateChangeCallbackImpl() {};
@@ -1754,7 +1822,7 @@ private:
         void OnRendererStateChange(
             const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
     };
-    
+
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioStandard::AudioRendererChangeInfo>>
         audioRendererChangeInfoMap_;
     std::mutex audioRendererChangeInfoMapMutex_;

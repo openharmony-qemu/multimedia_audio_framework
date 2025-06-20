@@ -92,6 +92,52 @@ HWTEST_F(UtilUnitTest, AudioRunningLockUnitTest_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test AudioRunningLock API
+ * @tc.number : AudioRunningLockUnitTest_002
+ * @tc.desc   : Test AudioRunningLock action
+ */
+HWTEST_F(UtilUnitTest, AudioRunningLockUnitTest_002, TestSize.Level1)
+{
+#ifdef FEATURE_POWER_MANAGER
+    std::shared_ptr<AudioRunningLock> runningLock = std::make_shared<AudioRunningLock>("test");
+    ASSERT_NE(runningLock, nullptr);
+
+    auto ret = runningLock->UpdateAppsUidToPowerMgr();
+    EXPECT_EQ(ret, SUCCESS);
+    
+    vector<int32_t> vec = { 0 };
+    runningLock->UpdateAppsUid(vec.begin(), vec.end());
+
+    ret = runningLock->UpdateAppsUidToPowerMgr();
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
+ * @tc.name   : Test AudioRunningLock API
+ * @tc.number : AudioRunningLockUnitTest_003
+ * @tc.desc   : Test AudioRunningLock action
+ */
+HWTEST_F(UtilUnitTest, AudioRunningLockUnitTest_003, TestSize.Level1)
+{
+#ifdef FEATURE_POWER_MANAGER
+    std::shared_ptr<AudioRunningLock> runningLock = std::make_shared<AudioRunningLock>("test");
+    ASSERT_NE(runningLock, nullptr);
+
+    runningLock->isLocked_ = true;
+
+    auto ret = runningLock->UpdateAppsUidToPowerMgr();
+    EXPECT_EQ(ret, SUCCESS);
+    
+    vector<int32_t> vec = { 0 };
+    runningLock->UpdateAppsUid(vec.begin(), vec.end());
+
+    ret = runningLock->UpdateAppsUidToPowerMgr();
+    EXPECT_EQ(ret, SUCCESS);
+#endif
+}
+
+/**
  * @tc.name   : Test RingBufferHandler API
  * @tc.number : RingBufferHandlerUnitTest_001
  * @tc.desc   : Test RingBufferHandler action

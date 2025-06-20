@@ -40,6 +40,23 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
 bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
 int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
 AudioSampleFormat TransFormatFromStringToEnum(std::string format);
+std::string TransFormatFromEnumToString(AudioSampleFormat format);
+void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled);
+void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
+
+// for hidumper device info trans, param should be HpaeSinkInfo or HpaeSourceInfo
+template <typename T>
+int32_t TransDeviceInfoToString(const T& info, std::string &config)
+{
+    if constexpr (std::is_same_v<T, HpaeSinkInfo> || std::is_same_v<T, HpaeSourceInfo>) {
+        config += TransFormatFromEnumToString(info.format) + " ";
+        config += std::to_string(info.channels) + "ch ";
+        config += std::to_string(info.samplingRate) + "Hz";
+        return 0;
+    }
+    AUDIO_ERR_LOG("error info type");
+    return ERROR_INVALID_PARAM;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

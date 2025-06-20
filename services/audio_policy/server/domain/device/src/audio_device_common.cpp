@@ -28,6 +28,7 @@
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "audio_recovery_device.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,7 +45,6 @@ static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_SLEEP_US = 50000; // 50ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_EXT_MUTE_MS = 300000; // 300ms
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_MUTE_MS = 1500000;  // 1.5s
 static const int64_t DISTRIBUTED_DEVICE_UNAVALIABLE_SLEEP_US = 350000; // 350ms
-static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int VOLUME_LEVEL_DEFAULT = 5;
 static const int VOLUME_LEVEL_MIN_SIZE = 5;
@@ -776,20 +776,16 @@ int32_t AudioDeviceCommon::HandleScoOutputDeviceFetched(std::shared_ptr<AudioDev
 {
     Trace trace("AudioDeviceCommon::HandleScoOutputDeviceFetched");
 #ifdef BLUETOOTH_ENABLE
-        int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
-        if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
-            desc->exceptionFlag_ = true;
-            audioDeviceManager_.UpdateDevicesListInfo(
-                std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-            FetchOutputDevice(rendererChangeInfos, reason);
-            return ERROR;
-        }
-        if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene() ||
-            !Bluetooth::AudioHfpManager::IsVirtualCall()) {
-            Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-            return SUCCESS;
-        }
+    int32_t ret = Bluetooth::AudioHfpManager::SetActiveHfpDevice(desc->macAddress_);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Active hfp device failed, retrigger fetch output device.");
+        desc->exceptionFlag_ = true;
+        audioDeviceManager_.UpdateDevicesListInfo(
+            std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
+        FetchOutputDevice(rendererChangeInfos, reason);
+        return ERROR;
+    }
+    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
 #endif
     return SUCCESS;
 }
@@ -1109,7 +1105,8 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
     if (descs.back()->deviceType_ != DEVICE_TYPE_SPEAKER) {
         return false;
     }
-    AUDIO_INFO_LOG("ring dual tone on primary speaker.");
+    AUDIO_INFO_LOG("ring dual tone on primary speaker and mute music.");
+    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, true, STREAM_USAGE_MUSIC);
     return true;
 }
 
@@ -1341,9 +1338,7 @@ void AudioDeviceCommon::FetchInputDeviceWhenNoRunningStream()
 {
     std::shared_ptr<AudioDeviceDescriptor> desc;
     AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-        (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
-        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING)) {
+    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && Bluetooth::AudioHfpManager::IsRecognitionStatus()) {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_RECOGNITION, -1);
     } else {
         desc = audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_MIC, -1);
@@ -1510,8 +1505,7 @@ int32_t AudioDeviceCommon::ScoInputDeviceFetchedForRecongnition(bool handleFlag,
     if (handleFlag && connectState != DEACTIVE_CONNECTED) {
         return SUCCESS;
     }
-    Bluetooth::BluetoothRemoteDevice device = Bluetooth::BluetoothRemoteDevice(address);
-    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag, device);
+    return Bluetooth::AudioHfpManager::HandleScoWithRecongnition(handleFlag);
 }
 
 int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -1527,10 +1521,7 @@ int32_t AudioDeviceCommon::HandleScoInputDeviceFetched(std::shared_ptr<AudioDevi
         FetchInputDevice(capturerChangeInfos);
         return ERROR;
     }
-    if (desc->connectState_ == DEACTIVE_CONNECTED || !audioSceneManager_.IsSameAudioScene()) {
-        Bluetooth::AudioHfpManager::ConnectScoWithAudioScene(audioSceneManager_.GetAudioScene(true));
-        return SUCCESS;
-    }
+    Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
 #endif
     return SUCCESS;
 }
@@ -1753,14 +1744,11 @@ void AudioDeviceCommon::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &st
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer stop/release.");
         isRingDualToneOnPrimarySpeaker_ = false;
-        // Add delay between end of double ringtone and device switch.
-        // After the ringtone ends, there may still be residual audio data in the pipeline.
-        // Switching the device immediately can cause pop noise due the undrained buffers.
-        usleep(RING_DUAL_END_DELAY_US);
         for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
         }
         streamsWhenRingDualOnPrimarySpeaker_.clear();
+        audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
     }
 }
 
@@ -1819,30 +1807,11 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
     return sourceOutputs;
 }
 
-void AudioDeviceCommon::BluetoothScoDisconectForRecongnition()
-{
-    AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    AUDIO_INFO_LOG("Recongnition scoCategory: %{public}d, deviceType: %{public}d, scoState: %{public}d",
-        Bluetooth::AudioHfpManager::GetScoCategory(), tempDesc.deviceType_,
-        audioDeviceManager_.GetScoState());
-    if (tempDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = ScoInputDeviceFetchedForRecongnition(false, tempDesc.macAddress_,
-            tempDesc.connectState_);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "sco [%{public}s] disconnected failed",
-            GetEncryptAddr(tempDesc.macAddress_).c_str());
-    }
-}
-
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
 {
-    DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-    bool hasRunningRendererStream = streamCollector_.HasRunningRendererStream();
-    if (hasRunningRendererStream && deviceType == DEVICE_TYPE_BLUETOOTH_SCO) {
-        return;
-    }
-    AUDIO_WARNING_LOG("Client died disconnect sco for normal");
-    Bluetooth::AudioHfpManager::DisconnectSco();
-    Bluetooth::AudioHfpManager::SetVirtualCall(true);
+    bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+    AudioScene scene = audioSceneManager_.GetAudioScene(true);
+    Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }
 
 void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
@@ -1851,16 +1820,7 @@ void AudioDeviceCommon::ClientDiedDisconnectScoRecognition()
     if (hasRunningRecognitionCapturerStream) {
         return;
     }
-    AudioDeviceDescriptor tempDesc = audioActiveDevice_.GetCurrentInputDevice();
-    if (tempDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        return;
-    }
-    if (Bluetooth::AudioHfpManager::GetScoCategory() == Bluetooth::ScoCategory::SCO_RECOGNITION ||
-        Bluetooth::AudioHfpManager::GetRecognitionStatus() == Bluetooth::RecognitionStatus::RECOGNITION_CONNECTING) {
-        AUDIO_WARNING_LOG("Client died disconnect sco for recognition");
-        BluetoothScoDisconectForRecongnition();
-        Bluetooth::AudioHfpManager::ClearRecongnitionStatus();
-    }
+    Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
 }
 
 void AudioDeviceCommon::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
@@ -1962,7 +1922,6 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     audioActiveDevice_.SetActiveBtDeviceMac(deviceDescriptor->macAddress_);
     AudioDeviceDescriptor lastDevice = audioPolicyManager_.GetActiveDeviceDescriptor();
     deviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    audioPolicyManager_.SetActiveDeviceDescriptor(*deviceDescriptor);
 
     if (Bluetooth::AudioA2dpManager::GetActiveA2dpDevice() == deviceDescriptor->macAddress_ &&
         audioIOHandleMap_.CheckIOHandleExist(BLUETOOTH_SPEAKER)) {
@@ -1974,7 +1933,6 @@ int32_t AudioDeviceCommon::SwitchActiveA2dpDevice(const std::shared_ptr<AudioDev
     result = Bluetooth::AudioA2dpManager::SetActiveA2dpDevice(deviceDescriptor->macAddress_);
     if (result != SUCCESS) {
         audioActiveDevice_.SetActiveBtDeviceMac(lastActiveA2dpDevice);
-        audioPolicyManager_.SetActiveDeviceDescriptor(lastDevice);
         AUDIO_ERR_LOG("Active [%{public}s] failed, using original [%{public}s] device",
             GetEncryptAddr(audioActiveDevice_.GetActiveBtDeviceMac()).c_str(),
             GetEncryptAddr(lastActiveA2dpDevice).c_str());
@@ -2031,9 +1989,13 @@ void AudioDeviceCommon::SetFirstScreenOn()
     isFirstScreenOn_ = true;
 }
 
-int32_t AudioDeviceCommon::SetVirtualCall(const bool isVirtual)
+int32_t AudioDeviceCommon::SetVirtualCall(pid_t uid, const bool isVirtual)
 {
-    return Bluetooth::AudioHfpManager::SetVirtualCall(isVirtual);
+    if (uid == 5523) { /* 5523 call manager */
+        return Bluetooth::AudioHfpManager::SetVirtualCall("meetimeservice", isVirtual);
+    }
+    std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+    return Bluetooth::AudioHfpManager::SetVirtualCall(bundleName, isVirtual);
 }
 
 void AudioDeviceCommon::SetHeadsetUnpluggedToSpkOrEpFlag(DeviceType oldDeviceType, DeviceType newDeviceType)

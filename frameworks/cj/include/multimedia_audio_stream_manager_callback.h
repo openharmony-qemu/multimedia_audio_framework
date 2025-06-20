@@ -15,8 +15,8 @@
 
 #ifndef MULTIMEDIA_AUDIO_STREAM_MANAGER_CALLBACK_H
 #define MULTIMEDIA_AUDIO_STREAM_MANAGER_CALLBACK_H
-#include "audio_stream_manager.h"
 #include "audio_policy_interface.h"
+#include "audio_stream_manager.h"
 #include "multimedia_audio_ffi.h"
 
 namespace OHOS {
@@ -29,10 +29,10 @@ public:
     void RegisterFunc(std::function<void(CArrAudioCapturerChangeInfo)> cjCallback);
 
     void OnCapturerStateChange(
-        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>>& audioCapturerChangeInfos) override;
 
 private:
-    std::function<void(CArrAudioCapturerChangeInfo)> func_{};
+    std::function<void(CArrAudioCapturerChangeInfo)> func_ {};
     std::mutex cbMutex_;
 };
 
@@ -44,10 +44,10 @@ public:
     void RegisterFunc(std::function<void(CArrAudioRendererChangeInfo)> cjCallback);
 
     void OnRendererStateChange(
-        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>>& audioRendererChangeInfos) override;
 
 private:
-    std::function<void(CArrAudioRendererChangeInfo)> func_{};
+    std::function<void(CArrAudioRendererChangeInfo)> func_ {};
     std::mutex cbMutex_;
 };
 } // namespace AudioStandard

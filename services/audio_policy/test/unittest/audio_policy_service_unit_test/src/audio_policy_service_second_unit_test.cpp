@@ -241,7 +241,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceAbsVolumeSupported_001, TestSiz
     auto server = GetServerUtil::GetServerPtr();
     std::string macAddress = "";
     bool support = false;
-    int32_t ret = server->audioPolicyService_.SetDeviceAbsVolumeSupported(macAddress, support);
+    int32_t ret = server->audioVolumeManager_.SetDeviceAbsVolumeSupported(macAddress, support);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -385,7 +385,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_001, TestSize.Level1
     std::string macAddress = "";
     int32_t volumeLevel = 4;
     bool internalCall = false;
-    int32_t ret = server->audioPolicyService_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -403,7 +403,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, SetA2dpDeviceVolume_002, TestSize.Level1
     server->audioPolicyService_.audioDeviceStatus_.audioA2dpDevice_.AddA2dpDevice(macAddress, configInfo);
     int32_t volumeLevel = 4;
     bool internalCall = true;
-    int32_t ret = server->audioPolicyService_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
+    int32_t ret = server->audioVolumeManager_.SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -702,22 +702,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipDeviceInfo_001, TestSize.Level1)
     type = AUDIO_FLAG_VOIP_DIRECT;
     ret = server->audioPolicyService_.GetVoipDeviceInfo(config, deviceInfo, type, preferredDeviceList);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test GetSharedVolume.
- * @tc.number: GetSharedVolume_001
- * @tc.desc  : Test GetSharedVolume interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetSharedVolume_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioVolumeType streamType = AudioStreamType::STREAM_RING;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    Volume vol;
-
-    bool ret = server->audioPolicyService_.GetSharedVolume(streamType, deviceType, vol);
-    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -1082,11 +1066,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
 
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     sessionIds.clear();
     ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
@@ -1103,11 +1085,9 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
     std::vector<int32_t> sessionIds = {0};
     int32_t ret;
 
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
 
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::A2DP_OFFLOAD);
     sessionIds.clear();
     ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
     EXPECT_EQ(ret, SUCCESS);
@@ -1129,21 +1109,18 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP;
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
-    server->audioPolicyService_.SetA2dpOffloadFlag(BluetoothOffloadState::NO_A2DP_DEVICE);
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1274,67 +1251,105 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_001
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_001
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_001, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, false);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_002
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_002
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_002, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_002, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_PCM;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_003
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_003
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_003, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_003, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_HDMI;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
 }
 
 /**
- * @tc.name  : Test IsDevicePlaybackSupport.
- * @tc.number: IsDevicePlaybackSupport_004
- * @tc.desc  : Test IsDevicePlaybackSupport interfaces.
+ * @tc.name  : Test IsDevicePlaybackSupported.
+ * @tc.number: IsDevicePlaybackSupported_004
+ * @tc.desc  : Test IsDevicePlaybackSupported interfaces.
  */
-HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupport_004, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceExtUnitTest, IsDevicePlaybackSupported_004, TestSize.Level1)
 {
     auto server = GetServerUtil::GetServerPtr();
     AudioProcessConfig config;
     config.streamInfo.encoding = ENCODING_EAC3;
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_LINE_DIGITAL;
-    auto ret = server->audioPolicyService_.IsDevicePlaybackSupport(config, desc);
+    auto ret = server->audioPolicyService_.IsDevicePlaybackSupported(config, desc);
     EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test RegisterAccessibilityMonitorHelper.
+* @tc.number: RegisterAccessibilityMonitorHelperTest
+* @tc.desc  : Test RegisterAccessibilityMonitorHelper interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterAccessibilityMonitorHelperTest, TestSize.Level1)
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool isDataShareReady = settingProvider.isDataShareReady_.load();
+    settingProvider.SetDataShareReady(true);
+    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    // The result can be verified only after the datashare mock framework is completed.
+    server->audioPolicyService_.RegisterAccessibilityMonitorHelper();
+    settingProvider.SetDataShareReady(isDataShareReady);
+}
+
+/**
+* @tc.name  : Test RegisterDataObserver.
+* @tc.number: RegisterDataObserverTest
+* @tc.desc  : Test RegisterDataObserver interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level1)
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool isDataShareReady = settingProvider.isDataShareReady_.load();
+    settingProvider.SetDataShareReady(true);
+    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    // These result can be verified only after the datashare mock framework is completed.
+    server->audioPolicyService_.audioConnectedDevice_.RegisterNameMonitorHelper();
+    server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatus();
+    server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
+    settingProvider.SetDataShareReady(isDataShareReady);
 }
 
 } // namespace AudioStandard

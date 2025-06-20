@@ -161,7 +161,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, IsHandleStreamMute_002, TestSize.Level1)
     AudioStreamType streamType = STREAM_VOICE_CALL;
     bool mute = false;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    int32_t ERROR = -1;
     int32_t result = audioAdapterManager_->IsHandleStreamMute(streamType, mute, streamUsage);
     EXPECT_EQ(result, ERROR);
 }
@@ -321,5 +320,52 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
     audioAdapterManager->SetSystemVolumeLevel(STREAM_MUSIC, testVolumeLevel);
     EXPECT_EQ(audioAdapterManager->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), testVolumeLevel);
 }
+
+/**
+ * @tc.name: UpdateSinkArgs_001
+ * @tc.desc: Test UpdateSinkArgs all args have value
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_001, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    info.name = "hello";
+    info.adapterName = "world";
+    info.className = "CALSS";
+    info.fileName = "sink.so";
+    info.sinkLatency = "300ms";
+    info.networkId = "ASD**G124";
+    info.deviceType = "AE00";
+    info.extra = "1:13:2";
+    info.needEmptyChunk = true;
+    std::string ret {};
+    AudioAdapterManager::UpdateSinkArgs(info, ret);
+    EXPECT_EQ(ret,
+    " sink_name=hello"
+    " adapter_name=world"
+    " device_class=CALSS"
+    " file_path=sink.so"
+    " sink_latency=300ms"
+    " network_id=ASD**G124"
+    " device_type=AE00"
+    " split_mode=1:13:2"
+    " need_empty_chunk=1");
+}
+
+/**
+ * @tc.name: UpdateSinkArgs_002
+ * @tc.desc: Test UpdateSinkArgs no value: network_id
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    std::string ret {};
+    AudioAdapterManager::UpdateSinkArgs(info, ret);
+    EXPECT_EQ(ret, " network_id=LocalDevice");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

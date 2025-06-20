@@ -46,6 +46,7 @@ private:
     void SetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteInternal(MessageParcel &data, MessageParcel &reply);
     void IsStreamActiveInternal(MessageParcel &data, MessageParcel &reply);
+    void IsStreamActiveByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
     void IsFastPlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void IsFastRecordingSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceActiveInternal(MessageParcel &data, MessageParcel &reply);
@@ -232,14 +233,26 @@ private:
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);
+    void SetKaraokeParametersInternal(MessageParcel &data, MessageParcel &reply);
+    void IsAudioLoopbackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void GetMaxVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetMinVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetVolumeLevelByUsageInternal(MessageParcel &data, MessageParcel &reply);
     void GetStreamMuteByUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetVolumeInDbByStreamInternal(MessageParcel &data, MessageParcel &reply);
+    void GetSupportedAudioVolumeTypesInternal(MessageParcel &data, MessageParcel &reply);
+    void GetAudioVolumeTypeByStreamUsageInternal(MessageParcel &data, MessageParcel &reply);
+    void GetStreamUsagesByVolumeTypeInternal(MessageParcel &data, MessageParcel &reply);
     void SetCallbackStreamUsageInfoInternal(MessageParcel &data, MessageParcel &reply);
     void UpdateDeviceInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetSleAudioOperationCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleNinRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

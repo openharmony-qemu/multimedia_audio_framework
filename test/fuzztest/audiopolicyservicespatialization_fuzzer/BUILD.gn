@@ -45,6 +45,9 @@ ohos_fuzztest("AudioPolicyServiceSpatializationFuzzTest") {
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
 
   sources = [ "audio_policy_service_spatialization_fuzzer.cpp" ]
 

@@ -34,6 +34,9 @@ public:
     int32_t AddVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     int32_t RemoveVolumeKeyEventCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb);
     size_t GetVolumeKeyEventCallbackSize() const;
+    int32_t AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
+    int32_t RemoveSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb);
+    size_t GetSystemVolumeChangeCallbackSize() const;
     size_t GetStreamVolumeChangeCallbackSize() const;
     std::set<StreamUsage> GetStreamVolumeChangeCallbackStreamUsages() const;
     int32_t AddStreamVolumeChangeCallback(const std::set<StreamUsage> &streamUsages,
@@ -165,6 +168,7 @@ public:
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
+    void OnSystemVolumeChange(VolumeEvent volumeEvent) override;
 
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
@@ -173,6 +177,7 @@ private:
     std::vector<std::weak_ptr<VolumeKeyEventCallback>> volumeKeyEventCallbackList_;
     std::vector<std::pair<std::set<StreamUsage>,
         std::weak_ptr<StreamVolumeChangeCallback>>> streamVolumeChangeCallbackList_;
+    std::vector<std::weak_ptr<SystemVolumeChangeCallback>> systemVolumeChangeCallbackList_;
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
@@ -230,6 +235,7 @@ private:
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;
     mutable std::mutex streamVolumeChangeMutex_;
+    mutable std::mutex systemVolumeChangeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

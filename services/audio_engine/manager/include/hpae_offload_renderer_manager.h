@@ -90,6 +90,7 @@ public:
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
 private:
     void SendRequest(Request &&request, bool isInit = false);

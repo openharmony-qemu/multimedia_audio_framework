@@ -50,6 +50,107 @@ enum class AudioSessionType {
     DTMF = 7,
     VOICE_ASSISTANT = 8,
 };
+
+/**
+ * Audio session scene.
+ * @since 20
+ */
+enum class AudioSessionScene {
+    /**
+     * Invalid audio session scene.
+     * @since 20
+     */
+    INVALID = -1,
+    /**
+     * Scene for media.
+     * @since 20
+     */
+    MEDIA = 0,
+    /**
+     * Scene for game.
+     * @since 20
+     */
+    GAME = 1,
+    /**
+     * Scene for voice communication.
+     * @since 20
+     */
+    VOICE_COMMUNICATION = 2,
+};
+
+/**
+ * Enumerates the session state change hints.
+ * @since 20
+ */
+enum class AudioSessionStateChangedHint {
+    /**
+     * Invalid audio session state change hint.
+     * @since 20
+     */
+    INVALID = -1,
+    /**
+     * Resume the playback.
+     * @since 20
+     */
+    RESUME = 0,
+
+    /**
+     * Paused/Pause the playback.
+     * @since 20
+     */
+    PAUSE = 1,
+
+    /**
+     * Stopped/Stop the playback due to focus priority.
+     * @since 20
+     */
+    STOP = 2,
+
+    /**
+     * Stopped/Stop the playback due to no audio stream for a long time.
+     * @since 20
+     */
+    TIME_OUT_STOP = 3,
+
+    /**
+     * Ducked the playback. (In ducking, the audio volume is reduced, but not silenced.)
+     * @since 20
+     */
+    DUCK = 4,
+
+    /**
+     * Unducked the playback.
+     * @since 20
+     */
+    UNDUCK = 5,
+};
+
+/**
+ * Audio session state changed event.
+ * @since 20
+ */
+struct AudioSessionStateChangedEvent {
+    /**
+     * Audio session state changed hints.
+     * @since 20
+     */
+    AudioSessionStateChangedHint stateChangedHint;
+};
+
+/**
+ * Enumerates the recommend action when device changed.
+ * @since 20
+ */
+enum class DeviceChangedRecommendedAction {
+    /**
+     * No special recommendations, the playback can continue or not.
+     */
+    NO_RECOMMENDATION = 0,
+    /**
+     * Recommend to stop the playback.
+     */
+    RECOMMEND_TO_STOP = 1,
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SESSION_INFO_H

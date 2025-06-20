@@ -42,6 +42,9 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
 
   sources = [ "audio_power_state_listener_fuzzer.cpp" ]
 

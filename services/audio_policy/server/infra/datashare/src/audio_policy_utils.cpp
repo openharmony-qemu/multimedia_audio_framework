@@ -26,7 +26,6 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
-#include "data_share_observer_callback.h"
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
@@ -82,7 +81,7 @@ int32_t AudioPolicyUtils::startDeviceId = 1;
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {
     Trace trace("SYSEVENT FAULT EVENT AUDIO_SERVICE_STARTUP_ERROR, SERVICE_ID: "
-        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) + 
+        + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID) +
         ", ERROR_CODE: " + std::to_string(Media::MediaMonitor::AUDIO_POLICY_SERVER));
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::AUDIO_SERVICE_STARTUP_ERROR,
@@ -637,7 +636,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
 std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceDescriptor>> &descs)
 {
     std::string devices;
-    devices.append("device type:id:(category:constate) ");
+    devices.append("device type:id:(category:constate:enable:exceptionflag) ");
     for (auto iter : descs) {
         CHECK_AND_CONTINUE_LOG(iter != nullptr, "iter is nullptr");
         devices.append(std::to_string(static_cast<uint32_t>(iter->getType())));
@@ -646,6 +645,8 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
             iter->getType() == DEVICE_TYPE_BLUETOOTH_SCO) {
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->deviceCategory_)));
             devices.append(":" + std::to_string(static_cast<uint32_t>(iter->connectState_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->isEnable_)));
+            devices.append(":" + std::to_string(static_cast<uint32_t>(iter->exceptionFlag_)));
         } else if (IsUsb(iter->getType())) {
             devices.append(":" + GetEncryptAddr(iter->macAddress_));
         }
@@ -698,6 +699,29 @@ void AudioPolicyUtils::SetScoExcluded(bool scoExcluded)
 bool AudioPolicyUtils::GetScoExcluded()
 {
     return isScoExcluded_;
+}
+
+bool AudioPolicyUtils::IsDataShareReady()
+{
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    CHECK_AND_RETURN_RET_LOG(samgr != nullptr, false, "[Policy Service] Get samgr failed.");
+    sptr<IRemoteObject> remoteObject = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+    CHECK_AND_RETURN_RET_LOG(remoteObject != nullptr, false, "[Policy Service] audio service remote object is NULL.");
+    WatchTimeout guard("DataShare::DataShareHelper::Create:IsDataShareReady", CALL_IPC_COST_TIME_MS);
+    std::pair<int, std::shared_ptr<DataShare::DataShareHelper>> res = DataShare::DataShareHelper::Create(remoteObject,
+        SETTINGS_DATA_BASE_URI, SETTINGS_DATA_EXT_URI);
+    guard.CheckCurrTimeout();
+    if (res.first == DataShare::E_OK) {
+        AUDIO_INFO_LOG("DataShareHelper is ready.");
+        auto helper = res.second;
+        if (helper != nullptr) {
+            helper->Release();
+        }
+        return true;
+    } else {
+        AUDIO_WARNING_LOG("DataShareHelper::Create failed: E_DATA_SHARE_NOT_READY");
+        return false;
+    }
 }
 
 } // namespace AudioStandard

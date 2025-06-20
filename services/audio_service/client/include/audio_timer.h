@@ -20,19 +20,26 @@
 #include <condition_variable>
 #include <mutex>
 #include <thread>
+#include <functional>
 
 namespace OHOS {
 namespace AudioStandard {
-const int WAIT_TIMEOUT_IN_SECS = 5;
+const uint32_t WAIT_TIMEOUT_IN_SECS = 5;
 
 class AudioTimer {
 public:
     AudioTimer()
+        : AudioTimer(nullptr)
+    {
+    }
+
+    AudioTimer(std::function<void()> func)
     {
         timeoutDuration = WAIT_TIMEOUT_IN_SECS;
         isTimerStarted = false;
         isTimedOut     = false;
         exitLoop       =  false;
+        timeOutCallBack_ = func;
         timerLoop = std::thread([this] { this->TimerLoopFunc(); });
         pthread_setname_np(timerLoop.native_handle(), "OS_ATimer");
     }
@@ -83,24 +90,32 @@ private:
     std::mutex timerMutex;
     volatile bool exitLoop;
     uint32_t timeoutDuration;
+    std::function<void()> timeOutCallBack_ = nullptr;
 
     void TimerLoopFunc()
     {
         while (true) {
-            std::unique_lock<std::mutex> lck(timerMutex);
-            if (exitLoop) {
-                break;
-            }
-            if (isTimerStarted) {
-                if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
-                    [this] { return CheckTimerStopped(); })) {
-                    isTimedOut = true;
-                    isTimerStarted = false;
-                    OnTimeOut();
+            bool isCallBack = false;
+            {
+                std::unique_lock<std::mutex> lck(timerMutex);
+                if (exitLoop) {
+                    break;
                 }
-            } else {
-                timerCtrl.wait(lck, [this] { return CheckTimerStarted(); });
-                isTimedOut = false;
+                if (isTimerStarted) {
+                    if (!timerCtrl.wait_for(lck, std::chrono::seconds(timeoutDuration),
+                        [this] { return CheckTimerStopped() || exitLoop; })) {
+                        isTimedOut = true;
+                        isCallBack = !exitLoop;
+                        isTimerStarted = false;
+                        OnTimeOut();
+                    }
+                } else {
+                    timerCtrl.wait(lck, [this] { return CheckTimerStarted() || exitLoop; });
+                    isTimedOut = false;
+                }
+            }
+            if (isCallBack && timeOutCallBack_ != nullptr) {
+                timeOutCallBack_();
             }
         }
     }

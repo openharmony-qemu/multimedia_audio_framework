@@ -250,8 +250,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.sourceType = std::to_string(sourceType);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
-        CHECK_AND_RETURN_LOG(inputDesc != nullptr, "inputDesc is nullptr");
-        if (inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
             moduleInfo = usbSourceModuleInfo_;
             moduleInfo.sourceType = std::to_string(sourceType);
         } else {
@@ -262,7 +261,9 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
             moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
             moduleInfo.sourceType = std::to_string(sourceType);
-            moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+            if (inputDesc != nullptr) {
+                moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
+            }
             // update primary info for ec config to get later
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
@@ -530,7 +531,7 @@ void AudioEcManager::ActivateArmDevice(const string& address, const DeviceRole r
 {
     AUDIO_INFO_LOG("address=%{public}s, role=%{public}d", GetEncryptAddr(address).c_str(), role);
     string &activeArmAddr = role == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_RET(address != activeArmAddr,);
+    CHECK_AND_RETURN_LOG(address != activeArmAddr, "usb device addr already active");
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType empty");
@@ -568,7 +569,7 @@ void AudioEcManager::CloseUsbArmDevice(const AudioDeviceDescriptor &device)
     AUDIO_INFO_LOG("address=%{public}s, role=%{public}d",
         GetEncryptAddr(device.macAddress_).c_str(), device.deviceRole_);
     string &activeArmAddr = device.deviceRole_ == INPUT_DEVICE ? activeArmInputAddr_ : activeArmOutputAddr_;
-    CHECK_AND_RETURN_RET(device.macAddress_ == activeArmAddr,);
+    CHECK_AND_RETURN_LOG(device.macAddress_ == activeArmAddr, "usb device addr not match");
     std::list<AudioModuleInfo> moduleInfoList;
     bool ret = audioConfigManager_.GetModuleListByType(ClassType::TYPE_USB, moduleInfoList);
     CHECK_AND_RETURN_LOG(ret, "GetModuleListByType Failed");
@@ -686,7 +687,7 @@ int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionIn
     if (isEcFeatureEnable_) {
         std::shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(targetSourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ != DEVICE_TYPE_MIC &&
-            targetInfo.channelLayout_ == PC_MIC_CHANNEL_NUM) {
+            targetInfo.channels_ == PC_MIC_CHANNEL_NUM) {
             // only built-in mic can use 4 channel, update later by using xml to describe
             targetInfo.channels_ = static_cast<AudioChannel>(HEADPHONE_CHANNEL_NUM);
             targetInfo.channelLayout_ = CH_LAYOUT_STEREO;
@@ -756,9 +757,36 @@ std::string AudioEcManager::GetHalNameForDevice(const std::string &role, const D
     return halName;
 }
 
-void AudioEcManager::SetOpenedNormalSource(SourceType targetSource)
+void AudioEcManager::SetOpenedNormalSource(SourceType sourceType)
 {
-    normalSourceOpened_ = targetSource;
+    SourceType targetSourceType = SOURCE_TYPE_MIC;
+    // useMatchingPropInfo is used when selecting route parameters.
+    // Here only need to get the targetSourceType, useMatchingDropInfo is not required.
+    bool useMatchingPropInfo = false;
+    GetTargetSourceTypeAndMatchingFlag(sourceType, targetSourceType, useMatchingPropInfo);
+    normalSourceOpened_ = targetSourceType;
+}
+
+void AudioEcManager::PrepareNormalSource(AudioModuleInfo &moduleInfo,
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+    AUDIO_INFO_LOG("prepare normal source for source type: %{public}d", sourceType);
+    UpdateEnhanceEffectState(sourceType);
+    UpdateStreamEcAndMicRefInfo(moduleInfo, sourceType);
+    SetOpenedNormalSource(sourceType);
+    SetOpenedNormalSourceSessionId(streamDesc->sessionId_);
+}
+
+void AudioEcManager::SetOpenedNormalSourceSessionId(uint64_t sessionId)
+{
+    AUDIO_INFO_LOG("set normal source sessionId: %{public}" PRIu64, sessionId);
+    sessionIdUsedToOpenSource_ = sessionId;
+}
+
+uint64_t AudioEcManager::GetOpenedNormalSourceSessionId()
+{
+    return sessionIdUsedToOpenSource_;
 }
 
 int32_t AudioEcManager::ReloadNormalSource(SessionInfo &sessionInfo,

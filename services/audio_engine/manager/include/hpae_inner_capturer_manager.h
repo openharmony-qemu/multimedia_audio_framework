@@ -90,6 +90,7 @@ public:
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    std::string GetDeviceHDFDumpInfo() override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
@@ -110,6 +111,7 @@ private:
         MoveSessionType moveType);
     void InitSinkInner();
     uint32_t sinkInputNodeCounter_ = 0;
+    int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;
     std::atomic<bool> isMute_ = false;
     HpaeSinkInfo sinkInfo_;

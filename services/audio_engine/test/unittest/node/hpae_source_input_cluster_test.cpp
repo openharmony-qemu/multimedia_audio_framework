@@ -123,6 +123,34 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     }
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
+    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceDeInit(), SUCCESS);
+}
+
+TEST_F(HpaeSourceInputClusterTest, testInterfaces)
+{
+    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_VOIP_UP;
+    nodeInfo.statusCallback = testStatuscallback;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_EC;
+    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster =
+        std::make_shared<HpaeSourceInputCluster>(nodeInfo);
+    hpaeSourceInputCluster->DoProcess();
+    hpaeSourceInputCluster->ResetAll();
+    EXPECT_NE(hpaeSourceInputCluster->GetSharedInstance(nodeInfo), nullptr);
+    EXPECT_NE(hpaeSourceInputCluster->CapturerSourcePause(), 0);
+    EXPECT_NE(hpaeSourceInputCluster->CapturerSourceResume(), 0);
+    EXPECT_NE(hpaeSourceInputCluster->CapturerSourceReset(), 0);
+    EXPECT_EQ(hpaeSourceInputCluster->GetOutputPortNum(nodeInfo), 0);
+    EXPECT_EQ(hpaeSourceInputCluster->GetSourceInputNodeType(), HPAE_SOURCE_DEFAULT);
+    EXPECT_NE(hpaeSourceInputCluster->CapturerSourceFlush(), 0);
+
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MICREF;
+    hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

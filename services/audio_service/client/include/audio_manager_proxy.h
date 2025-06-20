@@ -123,6 +123,7 @@ public:
     void NotifyAudioPolicyReady() override;
     void SetLatestMuteState(const uint32_t sessionId, const bool muteFlag) override;
     void SetSessionMuteState(const uint32_t sessionId, const bool insert, const bool muteFlag) override;
+    int32_t ForceStopAudioStream(StopAudioType audioType) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t SetInnerCapLimit(uint32_t innerCapLimit) override;
     int32_t CheckCaptureLimit(const AudioPlaybackCaptureConfig &config, int32_t &innerCapId) override;
@@ -145,6 +146,8 @@ public:
     void DestroyHdiPort(uint32_t id) override;
     void SetDeviceConnectedFlag(bool flag) override;
     bool IsAcousticEchoCancelerSupported(SourceType sourceType) override;
+    bool SetKaraokeParameters(const std::string &parameters) override;
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode) override;
     void SetBtHdiInvalidState() override;
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;

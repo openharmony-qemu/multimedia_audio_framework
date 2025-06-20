@@ -43,6 +43,18 @@ static const char *SessionOperationToString(SessionOperation operation)
     }
 }
 
+static const char *SessionOperationMsgToString(SessionOperationMsg opMsg)
+{
+    switch (opMsg) {
+        case SESSION_OP_MSG_DEFAULT:
+            return "MSG_DEFAULT";
+        case SESSION_OP_MSG_REMOVE_PIPE:
+            return "MSG_REMOVE_REC_PIPE";
+        default:
+            return "MSG_UNKNOWN";
+    }
+}
+
 AudioCoreService::EventEntry::EventEntry(std::shared_ptr<AudioCoreService> coreService) : coreService_(coreService)
 {
     AUDIO_INFO_LOG("Ctor");
@@ -79,11 +91,12 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     return SUCCESS;
 }
 
-int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation)
+int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+    SessionOperationMsg opMsg)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s",
-        sessionId, SessionOperationToString(operation));
+    AUDIO_INFO_LOG("withlock sessionId %{public}u, operation %{public}s, msg %{public}s",
+        sessionId, SessionOperationToString(operation), SessionOperationMsgToString(opMsg));
     switch (operation) {
         case SESSION_OPERATION_START:
             return coreService_->StartClient(sessionId);
@@ -92,7 +105,7 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
         case SESSION_OPERATION_STOP:
             return coreService_->StopClient(sessionId);
         case SESSION_OPERATION_RELEASE:
-            return coreService_->ReleaseClient(sessionId);
+            return coreService_->ReleaseClient(sessionId, opMsg);
         default:
             return SUCCESS;
     }
@@ -189,9 +202,6 @@ void AudioCoreService::EventEntry::OnServiceConnected(AudioServiceIndex serviceI
     int32_t ret = coreService_->OnServiceConnected(serviceIndex);
     serviceLock.unlock();
     if (ret == SUCCESS) {
-#ifdef USB_ENABLE
-        AudioUsbManager::GetInstance().Init();
-#endif
         coreService_->audioEffectService_.SetMasterSinkAvailable();
     }
     // RegisterBluetoothListener() will be called when bluetooth_host is online
@@ -273,7 +283,7 @@ int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
     InternalDeviceType deviceType, bool active, std::string address, const int32_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock device %{public}d, active %{public}d, uid %{public}d",
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock device %{public}d, active %{public}d, uid %{public}d",
         deviceType, active, uid);
     coreService_->SetCallDeviceActive(deviceType, active, address, uid);
     return SUCCESS;
@@ -303,7 +313,7 @@ int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStream
 void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock uid %{public}d", uid);
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock uid %{public}d", uid);
     coreService_->RegisteredTrackerClientDied(uid);
 }
 
@@ -392,15 +402,10 @@ void AudioCoreService::EventEntry::OnCapturerSessionRemoved(uint64_t sessionID)
     coreService_->OnCapturerSessionRemoved(sessionID);
 }
 
-void AudioCoreService::EventEntry::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
-{
-    std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->SetDisplayName(deviceName, isLocalDevice);
-}
-
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("[ADeviceEvent] withlock");
     return coreService_->TriggerFetchDevice(reason);
 }
 

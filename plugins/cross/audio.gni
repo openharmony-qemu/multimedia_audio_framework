@@ -21,7 +21,7 @@ audio_utils_source = []
 audio_include = []
 
 audio_sources = [
-  "$AUDIO_SUBSYSTEM_DIR/services/audio_policy/server/src/service/device/audio_device_descriptor.cpp",
+  "$AUDIO_SUBSYSTEM_DIR/services/audio_policy/server/domain/device/src/audio_device_descriptor.cpp",
   "$AUDIO_SUBSYSTEM_DIR/services/audio_service/client/src/audio_filter.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callback_inner.cpp",
   "$WORK_DIR/audiocapturer/callback/napi_audio_capturer_callbacks.cpp",
@@ -43,8 +43,11 @@ audio_sources = [
   "$WORK_DIR/audiomanager/callback/napi_audio_routing_manager_callbacks.cpp",
   "$WORK_DIR/audiomanager/callback/napi_audio_scene_callbacks.cpp",
   "$WORK_DIR/audiomanager/callback/napi_audio_spatialization_manager_callback.cpp",
+  "$WORK_DIR/audiomanager/callback/napi_audio_system_volume_change_callback.cpp",
+  "$WORK_DIR/audiomanager/callback/napi_audio_system_volume_change_callback.cpp",
   "$WORK_DIR/audiomanager/callback/napi_audio_volume_key_event.cpp",
   "$WORK_DIR/audiomanager/napi_audio_interrupt_manager.cpp",
+  "$WORK_DIR/audiomanager/napi_audio_collaborative_manager.cpp",
   "$WORK_DIR/audiomanager/napi_audio_manager.cpp",
   "$WORK_DIR/audiomanager/napi_audio_routing_manager.cpp",
   "$WORK_DIR/audiomanager/napi_audio_spatialization_manager.cpp",

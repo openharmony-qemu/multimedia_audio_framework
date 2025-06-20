@@ -34,7 +34,8 @@ public:
     // would be called only once
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
-    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation);
+    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
+        SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(
         const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);

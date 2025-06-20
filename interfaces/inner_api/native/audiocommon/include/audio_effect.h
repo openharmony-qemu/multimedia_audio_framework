@@ -185,6 +185,7 @@ enum AudioEffectScene {
     SCENE_SPEECH = 4,
     SCENE_RING = 5,
     SCENE_VOIP_DOWN = 6,
+    SCENE_COLLABORATIVE = 7,
 };
 
 /**
@@ -447,6 +448,15 @@ struct AlgoConfig {
     uint32_t ecNum;
     uint32_t micRefNum;
     uint32_t outNum;
+};
+
+enum ProcessClusterOperation {
+    NO_NEED_TO_CREATE_PROCESSCLUSTER,
+    CREATE_NEW_PROCESSCLUSTER,
+    CREATE_DEFAULT_PROCESSCLUSTER,
+    USE_DEFAULT_PROCESSCLUSTER,
+    USE_NONE_PROCESSCLUSTER,
+    CREATE_EXTRA_PROCESSCLUSTER
 };
 } // namespace AudioStandard
 } // namespace OHOS

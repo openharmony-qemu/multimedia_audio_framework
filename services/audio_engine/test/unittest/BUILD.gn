@@ -37,45 +37,22 @@ config("audio_engine_private_config") {
     "../../utils",
     "../../plugin/resample/include",
     "../../plugin/channel_converter/include",
-    "../../plugin/bitdepth_converter",
     "../../manager/include",
     "../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../audio_service/server/include",
     "../../../audio_service/common/include",
     "../../../audio_service/common/include/limiter",
-    "../../../audio_policy/server/include/service/common",
+    "../../../audio_policy/common/include",
     "../../../../frameworks/native/audioeffect/include",
     "../../../../frameworks/native/hdiadapter_new/include",
   ]
 }
 
-ohos_unittest("audio_engine_unit_test") {
+ohos_unittest("hpae_render_manager_test") {
   module_out_path = module_output_path
   sources = [
     "common/test_case_common.cpp",
-    "dfx/hpae_dfx_tree_test.cpp",
-    "manager/hpae_audio_service_callback_unit_test.cpp",
-    "manager/hpae_capturer_manager_test.cpp",
-    "manager/hpae_inner_capturer_unit_test.cpp",
-    "manager/hpae_manager_test.cpp",
-    "manager/hpae_policy_manager_test.cpp",
     "manager/hpae_render_manager_test.cpp",
-    "manager/hpae_signal_process_thread_test.cpp",
-    "node/hpae_capture_effect_node_test.cpp",
-    "node/hpae_gain_node_test.cpp",
-    "node/hpae_mixer_node_test.cpp",
-    "node/hpae_node_common_test.cpp",
-    "node/hpae_output_cluster_test.cpp",
-    "node/hpae_pcm_buffer_test.cpp",
-    "node/hpae_pcm_process_test.cpp",
-    "node/hpae_process_cluster_test.cpp",
-    "node/hpae_resample_node_test.cpp",
-    "node/hpae_sink_input_node_test.cpp",
-    "node/hpae_sink_output_node_test.cpp",
-    "node/hpae_source_input_cluster_test.cpp",
-    "node/hpae_source_input_node_test.cpp",
-    "node/hpae_source_output_node_test.cpp",
-    "node/hpae_source_process_cluster_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]
@@ -85,6 +62,35 @@ ohos_unittest("audio_engine_unit_test") {
     "../../:audio_engine_node",
     "../../:audio_engine_utils",
     "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("hpae_capturer_manager_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_capturer_manager_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
   ]
 
   external_deps = [
@@ -99,3 +105,257 @@ ohos_unittest("audio_engine_unit_test") {
 
   resource_config_file = "./resource/ohos_test.xml"
 }
+
+ohos_unittest("hpae_manager_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_audio_service_callback_unit_test.cpp",
+    "manager/hpae_manager_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("hpae_inner_capturer_unit_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "manager/hpae_inner_capturer_unit_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("hpae_render_effect_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_render_effect_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("hpae_sink_output_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_sink_output_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_source_process_cluster_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_source_process_cluster_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("audio_engine_unit_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "dfx/hpae_dfx_tree_test.cpp",
+    "manager/hpae_policy_manager_test.cpp",
+    "manager/hpae_signal_process_thread_test.cpp",
+    "node/hpae_gain_node_test.cpp",
+    "node/hpae_mixer_node_test.cpp",
+    "node/hpae_node_common_test.cpp",
+    "node/hpae_remote_output_cluster_test.cpp",
+    "node/hpae_remote_sink_output_node_test.cpp",
+    "node/hpae_output_cluster_test.cpp",
+    "node/hpae_pcm_buffer_test.cpp",
+    "node/hpae_pcm_process_test.cpp",
+    "node/hpae_process_cluster_test.cpp",
+    "node/hpae_resample_node_test.cpp",
+    "node/hpae_sink_input_node_test.cpp",
+    "node/hpae_source_input_cluster_test.cpp",
+    "node/hpae_source_input_node_test.cpp",
+    "node/hpae_source_output_node_test.cpp",
+    "node/hpae_co_buffer_node_test.cpp",
+    "plugin/channel_converter/down_mixer_test.cpp",
+    "plugin/channel_converter/channel_converter_test.cpp",
+    "plugin/proresampler/audio_proresampler_test.cpp",
+    "utils/hpae_pcm_utils_test.cpp",
+    "utils/hpae_no_lock_queue_test.cpp",
+    
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_plugins",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_plugins_unit_test") {
+  module_out_path = module_output_path
+  sources = [
+    "plugin/channel_converter/down_mixer_test.cpp",
+    "plugin/channel_converter/channel_converter_test.cpp",
+    "plugin/proresampler/audio_proresampler_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_plugins",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file = "./resource/ohos_test.xml"
+}
+
+ohos_unittest("hpae_capture_effect_node_test") {
+  module_out_path = module_output_path
+  sources = [
+    "common/test_case_common.cpp",
+    "node/hpae_capture_effect_node_test.cpp",
+  ]
+
+  configs = [ ":audio_engine_private_config" ]
+
+  deps = [
+    "../../:audio_engine_manager",
+    "../../:audio_engine_node",
+    "../../:audio_engine_utils",
+    "../../../audio_service:audio_common",
+    "../../../../frameworks/native/audioeffect:audio_effect",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  resource_config_file = "./resource/ohos_test.xml"
+}

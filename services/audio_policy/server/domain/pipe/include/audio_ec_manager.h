@@ -67,7 +67,10 @@ public:
     bool GetEcFeatureEnable();
     bool GetMicRefFeatureEnable();
     void UpdateStreamEcAndMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
-    void SetOpenedNormalSource(SourceType targetSource);
+    void SetOpenedNormalSource(SourceType sourceType);
+    void PrepareNormalSource(AudioModuleInfo &moduleInfo, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    void SetOpenedNormalSourceSessionId(uint64_t sessionId);
+    uint64_t GetOpenedNormalSourceSessionId();
     int32_t ReloadNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
     void UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
     void UpdateStreamMicRefInfo(AudioModuleInfo &moduleInfo, SourceType sourceType);
@@ -106,6 +109,7 @@ private:
     AudioModuleInfo primaryMicModuleInfo_ = {};
     AudioModuleInfo dpSinkModuleInfo_ = {};
     SourceType normalSourceOpened_ = SOURCE_TYPE_INVALID;
+    uint64_t sessionIdUsedToOpenSource_ = 0;
 
     std::mutex audioEcInfoMutex_;
     AudioEcInfo audioEcInfo_;

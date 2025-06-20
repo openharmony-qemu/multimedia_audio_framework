@@ -17,6 +17,7 @@
 #define AUDIO_CORE_SERVICE_ENTRY_UNIT_TEST_H
 
 #include "gtest/gtest.h"
+#include "audio_utils.h"
 #include "audio_core_service.h"
 
 namespace OHOS {

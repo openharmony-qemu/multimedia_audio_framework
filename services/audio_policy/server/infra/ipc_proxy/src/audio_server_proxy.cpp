@@ -609,6 +609,26 @@ bool AudioServerProxy::IsAcousticEchoCancelerSupported(SourceType sourceType)
     return res;
 }
 
+bool AudioServerProxy::SetKaraokeParameters(const std::string &parameters)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    bool res = gsp->SetKaraokeParameters(parameters);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
+bool AudioServerProxy::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    bool res = gsp->IsAudioLoopbackSupported(mode);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
+}
+
 void AudioServerProxy::SetLatestMuteState(const uint32_t sessionId, const bool muteFlag)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
@@ -634,6 +654,16 @@ void AudioServerProxy::SetBtHdiInvalidState()
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     gsp->SetBtHdiInvalidState();
     IPCSkeleton::SetCallingIdentity(identity);
+}
+
+int32_t AudioServerProxy::ForceStopAudioStreamProxy(StopAudioType audioType)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_INVALID_OPERATION, "Service proxy unavailable");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t res = gsp->ForceStopAudioStream(audioType);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return res;
 }
 }
 }

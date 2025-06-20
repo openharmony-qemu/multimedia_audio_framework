@@ -73,6 +73,7 @@ public:
     int32_t RegisterHpaeDumpCallback(const std::weak_ptr<AudioServiceHpaeDumpCallback> &callback) override;
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
+    void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     int32_t GetAllSinkInputs() override;
@@ -148,8 +149,6 @@ public:
     void InitAudioEnhanceChainManager(const std::vector<EffectChain> &enhanceChains,
         const EffectChainManagerParam &managerParam,
         const std::vector<std::shared_ptr<AudioEffectLibEntry>> &enhanceLibraryList) override;
-    int32_t SetInputDevice(
-        const uint32_t &captureId, const DeviceType &inputDevice, const std::string &deviceName = "") override;
     int32_t SetOutputDevice(const uint32_t &renderId, const DeviceType &outputDevice) override;
     int32_t SetVolumeInfo(const AudioVolumeType &volumeType, const float &systemVol) override;
     int32_t SetMicrophoneMuteInfo(const bool &isMute) override;
@@ -170,6 +169,7 @@ public:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params) override;
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
     void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
@@ -189,7 +189,8 @@ private:
         std::string name);
     void HandleDumpSinkInfo(std::string deviceName, std::string dumpStr);
     void HandleDumpSourceInfo(std::string deviceName, std::string dumpStr);
-    void HandleGetCaptureId(uint32_t captureId, int32_t deviceType);
+    void HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
+    void HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCobufferNode);
 
     void SendRequest(Request &&request, std::string funcName);
     int32_t OpenAudioPortInner(const AudioModuleInfo &audioModuleInfo);
@@ -216,7 +217,6 @@ private:
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;
-    std::unique_ptr<HpaePolicyManager> hpaePolicyManager_ = nullptr;
     std::unordered_map<std::string, std::shared_ptr<IHpaeCapturerManager>> capturerManagerMap_;
     std::unordered_map<std::string, std::shared_ptr<IHpaeRendererManager>> rendererManagerMap_;
     std::unordered_map<uint32_t, std::string> capturerIdSourceNameMap_;

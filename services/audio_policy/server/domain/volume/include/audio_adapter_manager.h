@@ -167,6 +167,8 @@ public:
 
     DeviceType GetActiveDevice();
 
+    DeviceCategory GetCurrentOutputDeviceCategory();
+
     AudioDeviceDescriptor GetActiveDeviceDescriptor();
 
     float GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType);
@@ -198,6 +200,8 @@ public:
     void ResetRemoteCastDeviceVolume();
 
     void HandleDpConnection();
+
+    void RefreshVolumeWhenDpReConnect();
 
     int32_t GetStreamVolume(AudioStreamType streamType);
 
@@ -268,12 +272,10 @@ public:
     bool IsVgsVolumeSupported() const;
 
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
-
-    int32_t SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
-        doNotDisturbStatusWhiteList);
-
-    int32_t SetDoNotDisturbStatus(bool isDoNotDisturb);
+    int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
+    void RegisterDoNotDisturbStatus();
+    void RegisterDoNotDisturbStatusWhiteList();
 private:
     friend class PolicyCallbackImpl;
 
@@ -358,6 +360,8 @@ private:
     void GetSinkIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     void GetSourceIdInfoAndIdType(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &idInfo, HdiIdType &idType);
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
+    static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
+    void UpdateVolumeForLowLatency();
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -425,6 +429,7 @@ private:
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
+    bool isDpReConnect_ = false;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

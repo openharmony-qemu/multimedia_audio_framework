@@ -79,6 +79,7 @@ int32_t WakeupBuffer::Poll(char *frame, uint64_t requestBytes, uint64_t &replyBy
 
 void WakeupBuffer::Offer(const char *frame, const uint64_t bufferBytes)
 {
+    std::lock_guard<std::mutex> lock(mutex_);
     if ((size_ + bufferBytes) > MAX_BUFFER_SIZE) { // head_ need shift
         uint64_t shift = (size_ + bufferBytes) - MAX_BUFFER_SIZE; // 1 to MAX_BUFFER_SIZE
         headNum_ += shift;
