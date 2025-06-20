@@ -944,7 +944,7 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     sleep(1);
     std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
     hpaeManager_->RegisterSerivceCallback(callback);
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = 
+    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
         std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
     hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
 
