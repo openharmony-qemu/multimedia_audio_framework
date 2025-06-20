@@ -37,6 +37,9 @@ struct CheckerParam {
     int64_t sumFrameCount = 0;
     int64_t lastUpdateTime = 0;
     bool hasInitCheck = false;
+    int64_t standbyStartTime = 0;
+    int64_t standbyStopTime = 0;
+    bool isInStandby = false;
     DataTransferStateChangeType lastStatus = DATA_TRANS_RESUME;
 };
 
@@ -57,12 +60,14 @@ public:
     void DeleteCheckerPara(const int32_t pid, const int32_t callbackId);
     void StopCheckStreamThread();
     void OnRemoteAppDied(const int32_t pid);
+    void RecordStandbyTime(bool isStart);
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
     void InitCallbackInfo(DataTransferStateChangeType type, AudioRendererDataTransferStateChangeInfo &callbackInfo);
     void CheckStreamThread();
     void MonitorCheckFrameAction(CheckerParam &para, int64_t abnormalFrameNum, float badFrameRatio);
+    void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
     std::vector<CheckerParam> checkParaVector_;
     bool monitorSwitch_ = false;
     std::recursive_mutex checkLock_;

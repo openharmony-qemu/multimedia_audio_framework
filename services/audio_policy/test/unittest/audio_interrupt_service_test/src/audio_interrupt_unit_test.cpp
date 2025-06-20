@@ -3613,5 +3613,24 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_119, TestSize.Level1)
     ret1 = interruptServiceTest->ActivateAudioInterrupt(0, audioInterrupt);
     EXPECT_EQ(ret1, SUCCESS);
 }
+
+/**
+* @tc.name  : Test RegisterDefaultVolumeTypeListener
+* @tc.number: RegisterDefaultVolumeTypeListenerTest
+* @tc.desc  : Test RegisterDefaultVolumeTypeListener
+*/
+HWTEST(AudioInterruptUnitTest, RegisterDefaultVolumeTypeListenerTest, TestSize.Level1)
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool isDataShareReady = settingProvider.isDataShareReady_.load();
+    settingProvider.SetDataShareReady(true);
+    ASSERT_TRUE(settingProvider.isDataShareReady_.load());
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    ASSERT_TRUE(interruptServiceTest != nullptr);
+    // The result can be verified only after the datashare mock framework is completed.
+    interruptServiceTest->RegisterDefaultVolumeTypeListener();
+    settingProvider.SetDataShareReady(isDataShareReady);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

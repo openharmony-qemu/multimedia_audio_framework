@@ -143,7 +143,7 @@ struct AudioSessionStateChangedEvent {
  */
 enum class DeviceChangedRecommendedAction {
     /**
-     * No special recommendations, the playback can be continue or not.
+     * No special recommendations, the playback can continue or not.
      */
     NO_RECOMMENDATION = 0,
     /**

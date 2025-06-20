@@ -1772,9 +1772,9 @@ napi_value NapiAudioRenderer::RegisterCallback(napi_env env, napi_value jsThis,
     } else if (!cbName.compare(DATA_REQUEST_CALLBACK_NAME)) {
         result = RegisterDataRequestCallback(env, argv, cbName, napiRenderer);
     } else if (!cbName.compare(DEVICECHANGE_CALLBACK_NAME)) {
-        RegisterRendererDeviceChangeCallback(env, argv, cbName, napiRenderer);
+        RegisterRendererDeviceChangeCallback(env, argv, napiRenderer);
     } else if (cbName == OUTPUT_DEVICECHANGE_WITH_INFO) {
-        RegisterRendererOutputDeviceChangeWithInfoCallback(env, argv, cbName, napiRenderer);
+        RegisterRendererOutputDeviceChangeWithInfoCallback(env, argv, napiRenderer);
     } else if (!cbName.compare(WRITE_DATA_CALLBACK_NAME)) {
         RegisterRendererWriteDataCallback(env, argv, cbName, napiRenderer);
     } else {
@@ -1804,7 +1804,7 @@ napi_value NapiAudioRenderer::UnregisterCallback(napi_env env, napi_value jsThis
     } else if (!cbName.compare(PERIOD_REACH_CALLBACK_NAME)) {
         UnregisterPeriodPositionCallback(env, argc, cbName, argv, napiRenderer);
     } else if (!cbName.compare(DEVICECHANGE_CALLBACK_NAME)) {
-        UnregisterRendererDeviceChangeCallback(env, argc, cbName, argv, napiRenderer);
+        UnregisterRendererDeviceChangeCallback(env, argc, argv, napiRenderer);
     } else if (!cbName.compare(INTERRUPT_CALLBACK_NAME) ||
         !cbName.compare(AUDIO_INTERRUPT_CALLBACK_NAME) ||
         !cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
@@ -1812,7 +1812,7 @@ napi_value NapiAudioRenderer::UnregisterCallback(napi_env env, napi_value jsThis
     } else if (!cbName.compare(DATA_REQUEST_CALLBACK_NAME)) {
         UnregisterDataRequestCallback(env, argc, cbName, argv, napiRenderer);
     } else if (cbName == OUTPUT_DEVICECHANGE_WITH_INFO) {
-        UnregisterRendererOutputDeviceChangeWithInfoCallback(env, argc, cbName, argv, napiRenderer);
+        UnregisterRendererOutputDeviceChangeWithInfoCallback(env, argc, argv, napiRenderer);
     } else if (!cbName.compare(WRITE_DATA_CALLBACK_NAME)) {
         UnregisterRendererWriteDataCallback(env, argc, argv, napiRenderer);
     } else {
@@ -1996,7 +1996,7 @@ void NapiAudioRenderer::UnregisterDataRequestCallback(napi_env env, size_t argc,
 }
 
 void NapiAudioRenderer::RegisterRendererDeviceChangeCallback(napi_env env, napi_value *argv,
-    const std::string &cbName, NapiAudioRenderer *napiRenderer)
+    NapiAudioRenderer *napiRenderer)
 {
     if (!napiRenderer->rendererDeviceChangeCallbackNapi_) {
         napiRenderer->rendererDeviceChangeCallbackNapi_ = std::make_shared<NapiAudioRendererDeviceChangeCallback>(env);
@@ -2023,7 +2023,7 @@ void NapiAudioRenderer::RegisterRendererDeviceChangeCallback(napi_env env, napi_
     std::shared_ptr<NapiAudioRendererDeviceChangeCallback> cb =
         std::static_pointer_cast<NapiAudioRendererDeviceChangeCallback>(
         napiRenderer->rendererDeviceChangeCallbackNapi_);
-    cb->SaveCallbackReference(cbName, argv[PARAM1]);
+    cb->AddCallbackReference(argv[PARAM1]);
     if (!cb->GetRendererDeviceChangeTsfnFlag()) {
         cb->CreateRendererDeviceChangeTsfn(env);
     }
@@ -2043,8 +2043,14 @@ void NapiAudioRenderer::UnregisterRendererCallback(napi_env env, size_t argc,
 }
 
 void NapiAudioRenderer::UnregisterRendererDeviceChangeCallback(napi_env env, size_t argc,
-    const std::string &cbName, napi_value *argv, NapiAudioRenderer *napiRenderer)
+    napi_value *argv, NapiAudioRenderer *napiRenderer)
 {
+    napi_value callback = nullptr;
+
+    if (argc == ARGS_TWO) {
+        callback = argv[PARAM1];
+    }
+    
     CHECK_AND_RETURN_LOG(napiRenderer->rendererDeviceChangeCallbackNapi_ != nullptr,
         "rendererDeviceChangeCallbackNapi_ is nullptr, return");
 
@@ -2055,27 +2061,21 @@ void NapiAudioRenderer::UnregisterRendererDeviceChangeCallback(napi_env env, siz
         std::static_pointer_cast<NapiAudioRendererDeviceChangeCallback>(
             napiRenderer->rendererDeviceChangeCallbackNapi_);
 
-    std::function<int32_t(std::shared_ptr<NapiAudioRendererDeviceChangeCallback> callbackPtr,
-        napi_value callback)> removeFunction =
-        [&napiRenderer] (std::shared_ptr<NapiAudioRendererDeviceChangeCallback> callbackPtr, napi_value callback) {
-            if (callback == nullptr || callbackPtr->GetCallbackListSize() == 0) {
-                int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(callbackPtr);
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                    ERR_OPERATION_FAILED, "unregister renderer device change callback failed");
-                ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                    ERR_OPERATION_FAILED, "unregister AudioPolicyServerDiedCb failed");
-                napiRenderer->DestroyNAPICallbacks();
-            }
-            AUDIO_INFO_LOG("UnregisterRendererDeviceChangeCallback success");
-            return SUCCESS;
-        };
-    auto callback = GetCallback(argc, argv);
-    UnregisterAudioRendererSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+    cb->RemoveCallbackReference(env, callback);
+
+    if (callback == nullptr || cb->GetCallbackListSize() == 0) {
+        int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unregister renderer device change callback failed");
+        ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unregister AudioPolicyServerDiedCb failed");
+        napiRenderer->DestroyNAPICallbacks();
+    }
+
+    AUDIO_INFO_LOG("UnregisterRendererDeviceChangeCallback success!");
 }
 
 void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, napi_value *argv,
-    const std::string &cbName, NapiAudioRenderer *napiRenderer)
+    NapiAudioRenderer *napiRenderer)
 {
     if (!napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_) {
         napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_
@@ -2102,7 +2102,7 @@ void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_
 
     std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> cb =
         napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_;
-    cb->SaveCallbackReference(cbName, argv[PARAM1]);
+    cb->AddCallbackReference(argv[PARAM1]);
     if (!cb->GetOutputDeviceChangeTsfnFlag()) {
         cb->CreateOutputDeviceChangeTsfn(env);
     }
@@ -2110,8 +2110,14 @@ void NapiAudioRenderer::RegisterRendererOutputDeviceChangeWithInfoCallback(napi_
 }
 
 void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(napi_env env, size_t argc,
-    const std::string &cbName, napi_value *argv, NapiAudioRenderer *napiRenderer)
+    napi_value *argv, NapiAudioRenderer *napiRenderer)
 {
+    napi_value callback = nullptr;
+
+    if (argc == ARGS_TWO) {
+        callback = argv[PARAM1];
+    }
+    
     CHECK_AND_RETURN_LOG(napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_ != nullptr,
         "rendererDeviceChangeCallbackNapi_ is nullptr, return");
 
@@ -2120,23 +2126,19 @@ void NapiAudioRenderer::UnregisterRendererOutputDeviceChangeWithInfoCallback(nap
 
     std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> cb =
         napiRenderer->rendererOutputDeviceChangeWithInfoCallbackNapi_;
-    std::function<int32_t(std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> callbackPtr,
-        napi_value callback)> removeFunction = [&napiRenderer] (
-        std::shared_ptr<NapiAudioRendererOutputDeviceChangeWithInfoCallback> callbackPtr, napi_value callback) {
-            if (callback == nullptr || callbackPtr->GetCallbackListSize() == 0) {
-                int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(callbackPtr);
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                    ERR_OPERATION_FAILED, "unregister renderer outputDevice change with info callback failed");
-                ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
-                CHECK_AND_RETURN_RET_LOG(ret == SUCCESS,
-                    ERR_OPERATION_FAILED, "unregister AudioPolicyServerDiedCb failed");
-                napiRenderer->DestroyNAPICallbacks();
-            }
-            AUDIO_INFO_LOG("UnregisterRendererDeviceChangeCallback success");
-            return SUCCESS;
-        };
-    auto callback = GetCallback(argc, argv);
-    UnregisterAudioRendererSingletonCallbackTemplate(env, callback, cbName, cb, removeFunction);
+    cb->RemoveCallbackReference(env, callback);
+
+    if (callback == nullptr || cb->GetCallbackListSize() == 0) {
+        int32_t ret = napiRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "UnregisterRendererOutputDeviceChangeWithInfoCallback failed");
+
+        ret = napiRenderer->audioRenderer_->UnregisterAudioPolicyServerDiedCb(getpid());
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "unregister AudioPolicyServerDiedCb failed");
+
+        napiRenderer->DestroyNAPICallbacks();
+    }
+    
+    AUDIO_INFO_LOG("UnregisterRendererOutputDeviceChangeWithInfoCallback success");
 }
 
 void NapiAudioRenderer::RegisterRendererWriteDataCallback(napi_env env, napi_value *argv,

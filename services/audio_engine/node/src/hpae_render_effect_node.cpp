@@ -46,15 +46,19 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     pcmBufferInfo_(nodeInfo.channels, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, nodeInfo.channelLayout),
     effectOutput_(pcmBufferInfo_)
 {
-    const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
-    if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
-        audioSupportedSceneTypes.end()) {
-        sceneType_ = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
-    }
-    if (sceneType_ == "SCENE_COLLABORATIVE") {
-        PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
-        directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
-        collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+    if (nodeInfo.sceneType == HPAE_SCENE_DEFAULT) {
+        sceneType_ = "SCENE_DEFAULT";
+    } else {
+        const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
+        if (audioSupportedSceneTypes.find(nodeInfo.effectInfo.effectScene) !=
+            audioSupportedSceneTypes.end()) {
+            sceneType_ = audioSupportedSceneTypes.at(nodeInfo.effectInfo.effectScene);
+        }
+        if (sceneType_ == "SCENE_COLLABORATIVE") {
+            PcmBufferInfo pcmBufferInfo(STEREO, DEFAULT_EFFECT_FRAMELEN, DEFUALT_EFFECT_RATE, CH_LAYOUT_STEREO);
+            directOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+            collaborativeOutput_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
+        }
     }
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM

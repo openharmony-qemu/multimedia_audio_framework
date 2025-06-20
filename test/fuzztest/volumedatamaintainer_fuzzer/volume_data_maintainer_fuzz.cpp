@@ -309,6 +309,49 @@ void VolumeDataMaintainerGetRingerModeFuzzTest(const uint8_t *rawData, size_t si
     volumeDataMaintainerRet.GetRingerMode(ringerModeRet);
 }
 
+void VolumeDataMaintainerGetDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    uint32_t index = static_cast<uint32_t>(size);
+    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
+    volumeDataMaintainerRet.GetDeviceVolume(deviceType, streamType);
+}
+
+void VolumeDataMaintainerSetStreamMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
+    bool muteStatus = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    volumeDataMaintainerRet.SetStreamMuteStatus(streamType, muteStatus);
+}
+
+void VolumeDataMaintainerGetMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    uint32_t index = static_cast<uint32_t>(size);
+    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
+    volumeDataMaintainerRet.GetMuteStatus(deviceType, streamType);
+}
+
+void VolumeDataMaintainerGetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
+    volumeDataMaintainerRet.GetStreamMute(streamType);
+}
+
+void VolumeDataMaintainerSetAppVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    int32_t appUid = static_cast<int32_t>(size);
+    int32_t volumeLevel = static_cast<int32_t>(size / NUM_2);
+    volumeDataMaintainerRet.SetAppVolume(appUid, volumeLevel);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -332,6 +375,11 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest,
     OHOS::AudioStandard::VolumeDataMaintainerGetRingerModeFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerGetDeviceVolumeFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerSetStreamMuteStatusFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerGetMuteStatusFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerGetStreamMuteFuzzTest,
+    OHOS::AudioStandard::VolumeDataMaintainerSetAppVolumeFuzzTest,
 };
 
 /* Fuzzer entry point */

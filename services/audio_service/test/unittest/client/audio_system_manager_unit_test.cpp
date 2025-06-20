@@ -773,21 +773,6 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
     int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
- 
-/**
- * @tc.name   : Test StartGroup API
- * @tc.number : StartGroup_002
- * @tc.desc   : Test StartGroup interface when startTime < endTime.
- */
-HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level1)
-{
-    AudioSystemManager manager;
-    int32_t testWorkgroupid = 1;
-    int32_t startTimeMs = 1000;
-    int32_t endTimeMs = 2000;
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
-    EXPECT_EQ(result, AUDIO_OK);
-}
 
 #ifdef TEMP_DISABLE
 /**

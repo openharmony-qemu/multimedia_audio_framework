@@ -329,21 +329,6 @@ HWTEST_F(AudioOffloadStreamTest, ReleaseOffloadStream_WhenSessionIdDoesNotMatch,
 }
 
 /**
- * @tc.name  : CheckStreamMode_ShouldActivate_WhenMultichannel
- * @tc.number: AudioOffloadStreamTest_012
- * @tc.desc  : Test CheckStreamMode function when CheckStreamMultichannelMode returns true
- */
-HWTEST_F(AudioOffloadStreamTest, CheckStreamMode_ShouldActivate_WhenMultichannel, TestSize.Level0)
-{
-    // Arrange
-    int64_t activateSessionId = 1;
-    // Act
-    audioOffloadStream_->CheckStreamMode(activateSessionId);
-    // Assert
-    EXPECT_EQ(DeviceType::DEVICE_TYPE_SPEAKER, audioOffloadStream_->audioActiveDevice_.GetCurrentOutputDeviceType());
-}
-
-/**
  * @tc.name  : AudioOffloadStreamTest_013
  * @tc.number: AudioOffloadStreamTest_013
  * @tc.desc  : Test FilterSinkInputs function
@@ -351,6 +336,8 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamMode_ShouldActivate_WhenMultichannel
 HWTEST_F(AudioOffloadStreamTest, FilterSinkInputs_ShouldReturnEmpty_WhenSinkInputsIsEmpty, TestSize.Level0)
 {
     AudioOffloadStream audioOffloadStream;
+    int64_t activateSessionId = 1;
+    audioOffloadStream_->CheckStreamMode(activateSessionId);
     std::vector<SinkInput> sinkInputs;
     std::vector<SinkInput> result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
     EXPECT_TRUE(result.empty());

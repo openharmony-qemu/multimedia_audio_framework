@@ -84,6 +84,7 @@ public:
     std::string GetInputDeviceClassBySourcePortName(std::string sourcePortName);
     void SetScoExcluded(bool scoExcluded);
     bool GetScoExcluded();
+    bool IsDataShareReady();
 private:
     AudioPolicyUtils() : streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),
         audioStateManager_(AudioStateManager::GetAudioStateManager()),

@@ -112,7 +112,7 @@ void HpaeRemoteSinkOutputNode::DoProcess()
 #endif
         auto ret = audioRendererSink_->SplitRenderFrame(*renderFrameData, renderFrameData_.size(),
             writeLen, std::to_string(static_cast<int>(streamType)).c_str());
-        if (ret != SUCCESS) {
+        if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
             AUDIO_ERR_LOG("HpaeRemoteSinkOutputNode: RenderFrame failed, SplitStreamType %{public}d", streamType);
         }
     }
@@ -313,6 +313,7 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStop(void)
     if (audioRendererSink_ == nullptr) {
         return ERROR;
     }
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -328,7 +329,6 @@ int32_t HpaeRemoteSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 

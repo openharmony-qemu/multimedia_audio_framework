@@ -277,6 +277,7 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
 {
     CHECK_AND_RETURN_RET_LOG(audioRendererSink_, ERR_ILLEGAL_STATE,
         "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    SetSinkState(STREAM_MANAGER_SUSPENDED);
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -293,7 +294,6 @@ int32_t HpaeOffloadSinkOutputNode::RenderSinkStop(void)
     AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderSinkStop Elapsed: %{public}" PRId64 " ms",
         sinkOutAttr_.adapterName.c_str(), interval);
 #endif
-    SetSinkState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
 }
 

@@ -32,6 +32,9 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
+static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+
 static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
     STREAM_RING,
@@ -445,23 +448,6 @@ int32_t AudioAdapterManager::SaveSpecifiedDeviceVolume(AudioStreamType streamTyp
     CHECK_AND_RETURN_RET_LOG(volumeLevel >= mimRet && volumeLevel <= maxRet, ERR_OPERATION_FAILED,
         "volumeLevel not in scope,mimRet:%{public}d maxRet:%{public}d", mimRet, maxRet);
     handler_->SendSaveVolume(deviceType, streamType, volumeLevel);
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDoNotDisturbStatusWhiteList(std::vector<std::map<std::string, std::string>>
-    doNotDisturbStatusWhiteList)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbStatusWhiteList);
-    return SUCCESS;
-}
-
-int32_t AudioAdapterManager::SetDoNotDisturbStatus(bool isDoNotDisturb)
-{
-    auto audioVolume = AudioVolume::GetInstance();
-    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
-    audioVolume->SetDoNotDisturbStatus(isDoNotDisturb);
     return SUCCESS;
 }
 
@@ -2726,10 +2712,17 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);
     } else {
         AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
+    }
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && IsAbsVolumeScene()
+        && !VolumeUtils::IsPCVolumeEnable()) {
+        volumeDataMaintainer_.SetStreamVolume(STREAM_VOICE_ASSISTANT, MAX_VOLUME_LEVEL);
+        SetVolumeDb(STREAM_VOICE_ASSISTANT);
+        AUDIO_INFO_LOG("a2dp ok");
     }
 }
 
@@ -2869,6 +2862,51 @@ void AudioAdapterManager::UpdateVolumeForLowLatency()
         AudioVolumeManager::GetInstance().SetSharedVolume(*iter, curOutputDeviceType, vol);
     }
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(IsAbsVolumeScene());
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatus()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturb = [&](const std::string &key) {
+        int32_t isDoNotDisturb = 0;
+        int32_t ret = settingProvider.GetIntValue(DO_NOT_DISTURB_STATUS, isDoNotDisturb, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus failed");
+        AUDIO_INFO_LOG("doNotDisturbStatus = %{public}s", isDoNotDisturb != 0 ? "true" : "false");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, set DoNotDisturbStatus failed");
+        audioVolume->SetDoNotDisturbStatus(isDoNotDisturb != 0);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
+    }
+}
+
+void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
+{
+    AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    AudioSettingObserver::UpdateFunc updateFuncDoNotDisturbWhiteList = [&](const std::string &key) {
+        std::vector<std::map<std::string, std::string>> doNotDisturbWhiteList;
+        int32_t ret = settingProvider.GetMapValue(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+            doNotDisturbWhiteList, "secure");
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get doNotDisturbStatus WhiteList failed");
+        AUDIO_INFO_LOG("doNotDisturbStatusWhiteList changed");
+        auto audioVolume = AudioVolume::GetInstance();
+        CHECK_AND_RETURN_LOG(audioVolume != nullptr, "audioVolume handle null, \
+            set doNotDisturbStatusWhiteList failed");
+        audioVolume->SetDoNotDisturbStatusWhiteListVolume(doNotDisturbWhiteList);
+    };
+    sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS_WHITE_LIST,
+        updateFuncDoNotDisturbWhiteList);
+    ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
+    if (ret != ERR_OK) {
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+    } else {
+        AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
 }
 
 // LCOV_EXCL_STOP

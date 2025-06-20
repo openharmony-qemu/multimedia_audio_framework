@@ -478,6 +478,14 @@ enum AudioLoopbackStatus {
     LOOPBACK_AVAILABLE_RUNNING = 1,
 };
 
+enum AudioLoopbackState {
+    LOOPBACK_STATE_IDLE,
+    LOOPBACK_STATE_PREPARED,
+    LOOPBACK_STATE_RUNNING,
+    LOOPBACK_STATE_DESTROYING,
+    LOOPBACK_STATE_DESTROYED,
+};
+
 struct AudioRendererInfo {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;

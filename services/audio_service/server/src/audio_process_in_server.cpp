@@ -139,7 +139,7 @@ void AudioProcessInServer::EnableStandby()
     CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
-
+    audioStreamChecker_->RecordStandbyTime(true);
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
@@ -292,7 +292,7 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
-        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+        audioStreamChecker_->RecordStandbyTime(false);
     } else {
         audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }

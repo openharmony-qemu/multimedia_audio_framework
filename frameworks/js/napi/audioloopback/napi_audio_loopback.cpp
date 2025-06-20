@@ -22,6 +22,8 @@
 #include "napi_audio_error.h"
 #include "napi_audio_enum.h"
 #include "napi_audio_loopback_callback.h"
+#include "audio_stream_manager.h"
+#include "audio_manager_log.h"
 
 using namespace std;
 
@@ -105,13 +107,18 @@ napi_value NapiAudioLoopback::Construct(napi_env env, napi_callback_info info)
 
     napiLoopback->env_ = env;
     auto loopbackMode = sLoopbackMode_;
-    AppInfo appInfo = {};
-    napiLoopback->loopback_ = AudioLoopback::CreateAudioLoopback(loopbackMode, appInfo);
-
-    if (napiLoopback->loopback_  == nullptr) {
-        AUDIO_ERR_LOG("AudioLoopback Create failed");
-        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_NO_PERMISSION;
+    auto streamManager = AudioStreamManager::GetInstance();
+    if (streamManager != nullptr && streamManager->IsAudioLoopbackSupported(loopbackMode)) {
+        napiLoopback->loopback_ = AudioLoopback::CreateAudioLoopback(loopbackMode);
+        if (napiLoopback->loopback_  == nullptr) {
+            AUDIO_ERR_LOG("AudioLoopback Create failed");
+            NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_NO_PERMISSION;
+        }
+    } else {
+        AUDIO_ERR_LOG("AudioLoopback not supported");
+        NapiAudioLoopback::isConstructSuccess_ = NAPI_ERR_UNSUPPORTED;
     }
+
     if (napiLoopback->loopback_ != nullptr && napiLoopback->callbackNapi_ == nullptr) {
         napiLoopback->callbackNapi_ = std::make_shared<NapiAudioLoopbackCallback>(env);
         CHECK_AND_RETURN_RET_LOG(napiLoopback->callbackNapi_ != nullptr, nullptr, "No memory");
@@ -279,10 +286,6 @@ napi_value NapiAudioLoopback::Enable(napi_env env, napi_callback_info info)
         CHECK_AND_RETURN_LOG(CheckAudioLoopbackStatus(napiAudioLoopback, context),
             "context object state is error.");
         context->isTrue = napiAudioLoopback->loopback_->Enable(context->enable);
-        context->status = context->isTrue ? napi_ok : napi_generic_failure;
-        if (context->status != napi_ok) {
-            context->SignError(NAPI_ERR_SYSTEM);
-        }
     };
 
     auto complete = [env, context](napi_value &output) {

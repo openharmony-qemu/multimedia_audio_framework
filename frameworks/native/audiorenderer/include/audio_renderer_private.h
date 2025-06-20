@@ -221,7 +221,7 @@ private:
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
-    void UpdateAudioInterruptStrategy(float volume) const;
+    void UpdateAudioInterruptStrategy(float volume, bool setVolume) const;
     bool IsAllowedStartBackgroud();
     bool GetStartStreamResult(StateChangeCmdType cmdType);
     void UpdateFramesWritten();
