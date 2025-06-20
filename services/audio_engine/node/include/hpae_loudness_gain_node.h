@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef HPAE_LOUDNESS_gAIN_NODE
-#define HPAE_LOUDNESS_gAIN_NODE
+#ifndef HPAE_LOUDNESS_GAIN_NODE
+#define HPAE_LOUDNESS_GAIN_NODE
 #include <memory>
 #include <unordered_map>
 #include "hpae_node.h"
@@ -40,12 +40,12 @@ protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
     void CheckUpdateInfo(HpaePcmBuffer *input);
-    AudioEffectLibrary* audioEffectLibHandle_ = nullptr;
+    AudioEffectLibrary *audioEffectLibHandle_ = nullptr;
     AudioEffectHandle handle_ = nullptr;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer loudnessGainOutput_;
     float loudnessGain_ = 0.0f;
-    void* dlHandle_ = nullptr;
+    void *dlHandle_ = nullptr;
 
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;

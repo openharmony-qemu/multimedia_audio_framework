@@ -56,9 +56,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         AUDIO_EFFECT_LIBRARY_INFO_SYM_AS_STR));
     if (!audioEffectLibHandle_) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s", dlerror());
-#ifndef TEST_COVERAGE
         dlclose(dlHandle_);
-#endif
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
 
@@ -83,9 +81,8 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
     AUDIO_INFO_LOG("HpaeLoudnessGainNode destroyed");
 }
 
-HpaePcmBuffer* HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
+HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
-    AUDIO_INFO_LOG("HpaeLoudnessGainNode signalProcess started.");
     Trace trace("HpaeLoudnessGainNode::SignalProcess");
     CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "inputs is empty");
 
@@ -148,10 +145,10 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
     CHECK_AND_RETURN_LOG(ret == 0, "Loudness algo lib EFFECT_CMD_SET_CONFIG failed");
 }
 
-
 int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
 {
-    CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS);
+    CHECK_AND_RETURN_RET_LOG(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS,
+        "SetLoudnessGain: Same loudnessGain: %{public}", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     
     if (IsFloatValueEqual(loudnessGain, 0.0f)) {

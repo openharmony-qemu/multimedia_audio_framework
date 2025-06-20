@@ -39,50 +39,51 @@ void HpaeLoudnessGainNodeTest::TearDown()
 namespace {
 
 constexpr uint32_t TEST_ID = 1234;
-constexpr uint32_t TEST_FRAMELEN1 = 960;
+constexpr uint32_t TEST_FRAMELEN = 960;
+constexpr int TIMES = 5;
+constexpr float LOUDNESS_GAIN_VALUE = 10.0f;
 
 TEST_F(HpaeLoudnessNodeTest, testLoudnessGainNode)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
-    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.frameLen = TEST_FRAMELEN;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeLoudnessGainNode> hpaeLoudnessGainNode = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
 
     std::vector<HpaePcmBuffer*> inputs;
-    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN, SAMPLE_RATE_48000);
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
     inputs.emplace_back(&hpaePcmBuffer);
-    for (int32_t i = 0; i < 5; i++) {
+    for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }    
     EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(0.0f), SUCCESS);
-    EXPECT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
-    for (int32_t i = 0; i < 5; i++) {
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
+    for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(10.0f), SUCCESS);
-    EXPECT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 10.0f);
-    for (int32_t i = 0; i < 5; i++) {
+    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
+    for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
     EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(0.0f), SUCCESS);
-    EXPECT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
-    for (int32_t i = 0; i < 5; i++) {
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 0.0f);
+    for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs);
     }
     std::vector<HpaePcmBuffer*> inputs1;
-    PcmBufferInfo pcmBufferInfo1(CHANNEL_6, TEST_FRAMELEN1, SAMPLE_RATE_48000);
+    PcmBufferInfo pcmBufferInfo1(CHANNEL_6, TEST_FRAMELEN, SAMPLE_RATE_48000);
     HpaePcmBuffer hpaePcmBuffer1(pcmBufferInfo1);
     inputs1.emplace_back(&hpaePcmBuffer1); 
-    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(10.0f), SUCCESS);
-    for (int32_t i = 0; i < 5; i++) {
+    EXPECT_EQ(hpaeLoudnessGainNode.SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
+    for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs1);
     }    
-    EXPECT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), 10.0f);
-
+    EXPECT_FLOAT_EQ(hpaeLoudnessGainNode.GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
 }
 
 }

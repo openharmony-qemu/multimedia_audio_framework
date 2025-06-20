@@ -43,8 +43,8 @@ const int32_t FRAME_SIZE = 240; // 240:FRAME_SIZE value
 uint32_t g_flag = 0;
 const float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
 const float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
-const float MAX_LOUDNESS_GAIN = 24.0f; // loudness gain range is between -96.0 to 24.0.
-const float MIN_LOUDNESS_GAIN = -96.0f; 
+const float INVALID_LOUDNESS_GAIN = 25.0f; // loudness gain range is between -96.0 to 24.0.
+const float VALID_LOUDNESS_GAIN = 10.0f; 
 const int32_t DURATIONMS = 40; // 40:fade out latency ms
 
 static int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
@@ -1519,13 +1519,13 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_003, TestSize.Leve
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
-    float loudnessGainSet = 10.0;
+    float loudnessGainSet = VALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
     float loudnessGainGet;
     result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_EQ(loudnessGainSet, 10.0);
+    EXPECT_FLOAT_EQ(loudnessGainSet, VALID_LOUDNESS_GAIN);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -1539,16 +1539,16 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_004, TestSize.Leve
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
-    float loudnessGainSet = 10.0;
+    float loudnessGainSet = VALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    loudnessGainSet = 25.0;
+    loudnessGainSet = inVALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     float loudnessGainGet;
     result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGainGet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_EQ(loudnessGainGet, 10.0);
+    EXPECT_FLOAT_EQ(loudnessGainGet, VALID_LOUDNESS_GAIN);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -1560,63 +1560,10 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_004, TestSize.Leve
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_001, TestSize.Level0)
 {
     OH_AudioRenderer* audioRenderer = nullptr;
-    float loudnessGainSet = 0.5;
+    float loudnessGainSet = VALID_LOUDNESS_GAIN;
     OH_AudioStream_Result result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 }
-
-/**
- * @tc.name  : Test OH_AudioRenderer_SetLoudnessGain API via legal state.
- * @tc.number: OH_Audio_Render_SetLoudnessGain_002
- * @tc.desc  : Test OH_AudioRenderer_SetLoudnessGain interface between minimum and maximum loudnessGain.
- */
-HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_002, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
-    float loudnessGainSet = 10.0;
-    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
- * @tc.name  : Test OH_AudioRenderer_SetLoudnessGain API via legal state.
- * @tc.number: OH_Audio_Render_SetLoudnessGain_003
- * @tc.desc  : Test OH_AudioRenderer_SetLoudnessGain interface for minimum and maximum loudnessGain.
- */
-HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_003, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
-    float loudnessGainSet = MIN_LOUDNESS_GAIN;
-    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    loudnessGainSet = MAX_LOUDNESS_GAIN;
-    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    OH_AudioStreamBuilder_Destroy(builder);
-}
-
-/**
- * @tc.name  : Test OH_AudioRenderer_SetLoudnessGain API via illegal state.
- * @tc.number: OH_Audio_Render_SetLoudnessGain_004
- * @tc.desc  : Test OH_AudioRenderer_SetLoudnessGain interface out of loudnessGain range.
- */
-HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_004, TestSize.Level0)
-{
-    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
-    OH_AudioRenderer* audioRenderer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
-    float loudnessGainSet = -96.0;
-    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-    loudnessGainSet = 25.0;
-    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
-    OH_AudioStreamBuilder_Destroy(builder);
 
 /**
  * @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.

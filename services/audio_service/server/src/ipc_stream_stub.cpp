@@ -74,7 +74,7 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetDuckFactor(data, reply);
         case ON_SET_OFFLOAD_DATA_CALLBACK_STATE:
             return HandleSetOffloadDataCallbackState(data, reply);
-        case ON_SET_CLIENT_LOUDNESSGAIN:
+        case ON_SET_LOUDNESSGAIN:
             return HandleSetLoudnessGain(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);

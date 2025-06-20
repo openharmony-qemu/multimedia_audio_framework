@@ -24,6 +24,8 @@ using OHOS::AudioStandard::Timestamp;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
+static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
     return (OHOS::AudioStandard::OHAudioRenderer*) renderer;
@@ -293,17 +295,17 @@ OH_AudioStream_Result OH_AudioRenderer_GetVolume(OH_AudioRenderer *renderer, flo
     return AUDIOSTREAM_SUCCESS;
 }
 
-OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain)
+OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *renderer, float loudnessGain)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= -96.0) && (loudnessGain <= 24.0)), AUDIOSTREAM_ERROR_INVALID_PARAM,
-        "loudnessGain set invalid");
+    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)), 
+        AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
     return ConvertError(err);
 }
 
-OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer* renderer, float* loudnessGain)
+OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *renderer, float *loudnessGain)
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
