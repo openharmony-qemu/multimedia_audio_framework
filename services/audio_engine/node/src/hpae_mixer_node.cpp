@@ -142,7 +142,7 @@ bool HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer* input)
 }
 
 
-void HpaeMixerNode::CheckUpdateInfoForDisConnect()
+bool HpaeMixerNode::CheckUpdateInfoForDisConnect()
 {
     struct UpdateCheck {
         std::string name;
