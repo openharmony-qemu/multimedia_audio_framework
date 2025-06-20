@@ -183,7 +183,7 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentage(napi_env env, napi_cal
     }
     int32_t argNum = 0;
     auto inputParser = [context, &argNum](size_t argc, napi_value *argv) {
-        argNum = argc;
+        argNum = static_cast<int32_t>(argc);
     };
     context->GetCbInfo(env, info, inputParser);
 
@@ -213,7 +213,7 @@ napi_value NapiAudioVolumeManager::GetAppVolumePercentageForUid(napi_env env, na
     }
     int32_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
-        argNum = argc;
+        argNum = static_cast<int32_t>(argc);;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
@@ -252,7 +252,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentageForUid(napi_env env, na
     }
     int32_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
-        argNum = argc;
+        argNum = static_cast<int32_t>(argc);;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->appUid, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
@@ -292,7 +292,7 @@ napi_value NapiAudioVolumeManager::SetAppVolumePercentage(napi_env env, napi_cal
     }
     int32_t argNum = 0;
     auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
-        argNum = argc;
+        argNum = static_cast<int32_t>(argc);;
         NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments", NAPI_ERR_INVALID_PARAM);
         context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get appUid failed",
