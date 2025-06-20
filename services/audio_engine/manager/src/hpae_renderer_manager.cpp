@@ -190,16 +190,20 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
             }
             break;
         case CREATE_NEW_PROCESSCLUSTER:
-            AUDIO_INFO_LOG("create new processCluster");
-            sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+            if (!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType)) {
+                AUDIO_INFO_LOG("create new processCluster");
+                sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+            }
             break;
         case CREATE_DEFAULT_PROCESSCLUSTER:
             temp.sceneType = HPAE_SCENE_DEFAULT;
-            AUDIO_INFO_LOG("begin control, create default processCluster");
-            hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
-            sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
-            sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
-            sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
+            if (!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType)) {
+                AUDIO_INFO_LOG("begin control, create default processCluster");
+                hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
+                sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
+                sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
+                sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
+            }
             break;
         case USE_DEFAULT_PROCESSCLUSTER:
             CreateDefaultProcessCluster(nodeInfo);
@@ -311,7 +315,6 @@ void HpaeRendererManager::DeleteProcessCluster(
             "could not find processorType %{public}d", nodeInfo.sceneType);
         sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo());
     }
-    isDeleted_ = true;
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
     if (!sessionNodeMap_[sessionId].bypass) {
         sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
@@ -508,16 +511,13 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
 
-        if (isDeleted_) {
-            isDeleted_ = false; // reset delete flag
-            if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-                sceneClusterMap_.erase(sceneType);
-                sceneTypeToProcessClusterCountMap_.erase(sceneType);
-            }
-            if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-                sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-                sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-            }
+        if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
+            sceneClusterMap_.erase(sceneType);
+            sceneTypeToProcessClusterCountMap_.erase(sceneType);
+        }
+        if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
+            sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+            sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
         }
     };
     SendRequest(request);

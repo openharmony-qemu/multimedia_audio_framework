@@ -143,7 +143,6 @@ private:
     std::vector<int32_t> appsUid_;
     std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode_;
     bool isCollaborationEnabled_ = false;
-    bool isDeleted_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

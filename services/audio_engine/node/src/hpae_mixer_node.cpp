@@ -27,6 +27,9 @@ namespace AudioStandard {
 namespace HPAE {
 
 static constexpr uint32_t WAIT_FRAMES_NUM = 5; // wait 5 * 20ms before disconnect
+static constexpr uint32_t DEFAULT_CHANNEL_COUNT = 2;
+static constexpr uint32_t DEFAULT_FRAME_LEN = 960;
+static constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
     
 HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -74,11 +77,11 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
     if (GetSceneType() != HPAE_SCENE_EFFECT_OUT) {
         DrainProcess();
     }
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), &mixedOutput_, "inputs is empty");
 
     uint32_t bufferState = PCM_BUFFER_STATE_INVALID | PCM_BUFFER_STATE_SILENCE;
     if (limiter_ == nullptr) {
-        if (CheckUpdateInfo(inputs[0])) {
+        bool ret = inputs.empty() ? CheckUpdateInfoForDisConnect() : CheckUpdateInfo(inputs[0]);
+        if (ret) {
             mixedOutput_.ReConfig(pcmBufferInfo_);
         }
         for (auto input: inputs) {
@@ -103,31 +106,69 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
     return &mixedOutput_;
 }
 
-bool HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer *input)
+bool HpaeMixerNode::CheckUpdateInfo(HpaePcmBuffer* input)
 {
+    struct UpdateCheck {
+        std::string name;
+        uint32_t &currentVal;
+        uint32_t newVal;
+    } checks[] = {
+        {"channel count", pcmBufferInfo_.ch, input->GetChannelCount()},
+        {"frame len", pcmBufferInfo_.frameLen, input->GetFrameLen()},
+        {"sample rate", pcmBufferInfo_.rate, input->GetSampleRate()}
+    };
+
     bool isPCMBufferInfoUpdated = false;
-    if (pcmBufferInfo_.ch != input->GetChannelCount()) {
-        AUDIO_INFO_LOG("Update channel count: %{public}d -> %{public}d",
-            pcmBufferInfo_.ch, input->GetChannelCount());
-        pcmBufferInfo_.ch = input->GetChannelCount();
-        isPCMBufferInfoUpdated = true;
+    
+    for (auto& check : checks) {
+        if (check.currentVal != check.newVal) {
+            AUDIO_INFO_LOG("Update %{public}s: %{public}d -> %{public}d",
+                check.name.c_str(), check.currentVal, check.newVal);
+            check.currentVal = check.newVal;
+            isPCMBufferInfoUpdated = true;
+        }
     }
-    if (pcmBufferInfo_.frameLen != input->GetFrameLen()) {
-        AUDIO_INFO_LOG("Update frame len %{public}d -> %{public}d",
-            pcmBufferInfo_.frameLen, input->GetFrameLen());
-        pcmBufferInfo_.frameLen = input->GetFrameLen();
-        isPCMBufferInfoUpdated = true;
-    }
-    if (pcmBufferInfo_.rate != input->GetSampleRate()) {
-        AUDIO_INFO_LOG("Update sample rate %{public}d -> %{public}d",
-            pcmBufferInfo_.rate, input->GetSampleRate());
-        pcmBufferInfo_.rate = input->GetSampleRate();
-        isPCMBufferInfoUpdated = true;
-    }
+
     if (pcmBufferInfo_.channelLayout != input->GetChannelLayout()) {
         AUDIO_INFO_LOG("Update channel layout %{public}" PRIu64 " -> %{public}" PRIu64 "",
             pcmBufferInfo_.channelLayout, input->GetChannelLayout());
         pcmBufferInfo_.channelLayout = input->GetChannelLayout();
+        isPCMBufferInfoUpdated = true;
+    }
+
+    // if other bitwidth is supported, add check here
+
+    return isPCMBufferInfoUpdated;
+}
+
+
+void HpaeMixerNode::CheckUpdateInfoForDisConnect()
+{
+    struct UpdateCheck {
+        std::string name;
+        uint32_t &currentVal;
+        uint32_t newVal;
+    } checks[] = {
+        {"channel count", pcmBufferInfo_.ch, DEFAULT_CHANNEL_COUNT},
+        {"frame len", pcmBufferInfo_.frameLen, DEFAULT_FRAME_LEN},
+        {"sample rate", pcmBufferInfo_.rate, DEFAULT_SAMPLE_RATE}
+    };
+
+    bool isPCMBufferInfoUpdated = false;
+    
+    for (auto& check : checks) {
+        if (check.currentVal != check.newVal) {
+            AUDIO_INFO_LOG("Update %{public}s: %{public}d -> %{public}d",
+                check.name.c_str(), check.currentVal, check.newVal);
+            check.currentVal = check.newVal;
+            isPCMBufferInfoUpdated = true;
+        }
+    }
+
+    if (pcmBufferInfo_.channelLayout != AudioChannelLayout::CH_LAYOUT_STEREO) {
+        AUDIO_INFO_LOG("Update channel layout %{public}" PRIu64 " -> %{public}" PRIu64 "",
+            pcmBufferInfo_.channelLayout, AudioChannelLayout::CH_LAYOUT_STEREO);
+        pcmBufferInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
         isPCMBufferInfoUpdated = true;
     }
 

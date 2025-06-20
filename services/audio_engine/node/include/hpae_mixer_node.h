@@ -36,6 +36,7 @@ protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
     bool CheckUpdateInfo(HpaePcmBuffer *input);
+    bool CheckUpdateInfoForDisConnect();
     void DrainProcess();
     std::unordered_map<uint32_t, float> streamVolumeMap_;
     PcmBufferInfo pcmBufferInfo_;
