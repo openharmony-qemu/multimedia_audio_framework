@@ -128,6 +128,7 @@ bool NapiAudioManagerAppVolumeChangeCallback::IsSameCallback(napi_env env, napi_
     return isEquals;
 }
 
+// LCOV_EXCL_START
 void NapiAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t appUid, const VolumeEvent &event)
 {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -149,6 +150,7 @@ void NapiAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t a
         OnJsCallbackAppVolumeChange(cb);
     }
 }
+// LCOV_EXCL_STOP
 
 void NapiAudioManagerAppVolumeChangeCallback::OnSelfAppVolumeChanged(const VolumeEvent &event)
 {

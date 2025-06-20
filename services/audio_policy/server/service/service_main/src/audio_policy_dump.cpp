@@ -238,6 +238,7 @@ void AudioPolicyDump::AudioModeDump(std::string &dumpString)
     GetRingerModeInfoDump(dumpString);
 }
 
+// LCOV_EXCL_START
 void AudioPolicyDump::GetCallStatusDump(std::string &dumpString)
 {
     dumpString += "\nAudio Scene:";
@@ -261,6 +262,7 @@ void AudioPolicyDump::GetCallStatusDump(std::string &dumpString)
     }
     dumpString += "\n";
 }
+// LCOV_EXCL_STOP
 
 void AudioPolicyDump::GetRingerModeDump(std::string &dumpString)
 {

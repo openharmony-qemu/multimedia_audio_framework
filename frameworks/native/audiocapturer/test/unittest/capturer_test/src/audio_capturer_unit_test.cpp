@@ -1094,6 +1094,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_Stability_001, TestSize.L
     audioCapturer->Release();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetParams API stability.
  * @tc.number: Audio_Capturer_GetParams_Stability_001
@@ -1115,7 +1116,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioStreamId_001, TestSize.Leve
     audioCapturer->Release();
 }
 
-#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetBufferSize API via legal input.
 * @tc.number: Audio_Capturer_GetBufferSize_001

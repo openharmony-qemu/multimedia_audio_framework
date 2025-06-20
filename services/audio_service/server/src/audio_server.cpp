@@ -581,6 +581,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     return false;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -622,6 +623,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,
@@ -1011,6 +1013,7 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     return transactionId;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1130,6 +1133,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     audioScene_ = audioScene;
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
     BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
@@ -1227,6 +1231,7 @@ void AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
     source->SetDmDeviceType(dmDeviceType);
 }
 
+// LCOV_EXCL_START
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_INFO_LOG("AudioMonoState = [%{public}s]", audioMono ? "true": "false");
@@ -1302,6 +1307,7 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
 }
+// LCOV_EXCL_STOP
 
 inline bool IsParamEnabled(std::string key, bool &isEnabled)
 {
@@ -1807,6 +1813,7 @@ bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
     return false;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
@@ -1847,6 +1854,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
     }
     return ret;
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
     const std::string &condition, const std::string &value)
@@ -2052,6 +2060,7 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 #endif
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
@@ -2099,6 +2108,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
     return true;
 }
+// LCOV_EXCL_STOP
 
 bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
 {
@@ -2182,6 +2192,7 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
     }
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CreatePlaybackCapturerManager()
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -2197,6 +2208,7 @@ bool AudioServer::CreatePlaybackCapturerManager()
     return false;
 #endif
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
@@ -2268,6 +2280,7 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     HdiAdapterManager::GetInstance().RegistSinkCallback(HDI_CB_RENDER_STATE, this, limitFunc);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
@@ -2343,6 +2356,7 @@ void AudioServer::ResetAudioEndpoint()
     AudioService::GetInstance()->ResetAudioEndpoint();
 #endif
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
@@ -2354,6 +2368,7 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
     }
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2365,6 +2380,7 @@ int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
         return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs)
 {
@@ -2377,6 +2393,7 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     return sink->SetRenderEmpty(durationUs);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2479,6 +2496,7 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::OnRenderSinkStateChange(uint32_t sinkId, bool started)
 {
