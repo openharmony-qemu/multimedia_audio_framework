@@ -537,5 +537,135 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_003, TestSize.Level1)
     EXPECT_GT(size, 0);
 }
 
+/**
+ * @tc.name  : Test RecordStandbyTime API
+ * @tc.type  : FUNC
+ * @tc.number: RecordStandbyTime_001
+ */
+HWTEST(AudioStreamCheckerTest, RecordStandbyTime_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->RecordStandbyTime(true);
+    int64_t time = checker->checkParaVector_[0].standbyStartTime;
+    EXPECT_GT(time, 0);
+}
+
+/**
+ * @tc.name  : Test RecordStandbyTime API
+ * @tc.type  : FUNC
+ * @tc.number: RecordStandbyTime_002
+ */
+HWTEST(AudioStreamCheckerTest, RecordStandbyTime_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->RecordStandbyTime(false);
+    int64_t time = checker->checkParaVector_[0].standbyStopTime;
+    EXPECT_GT(time, 0);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_001
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.isMonitorNoDataFrame = true;
+    checkerPara.standbyStartTime = ClockTime::GetCurNano();
+    checkerPara.standbyStopTime = checkerPara.standbyStartTime + 1000000000;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
+    EXPECT_GT(abnormalFrameNum, 0);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_002
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.isMonitorNoDataFrame = true;
+    checkerPara.standbyStartTime = ClockTime::GetCurNano() - 1000000000;
+    checkerPara.standbyStopTime = 0;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
+    EXPECT_GT(abnormalFrameNum, 0);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_003
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.isMonitorNoDataFrame = true;
+    checkerPara.standbyStartTime = 0;
+    checkerPara.lastUpdateTime = ClockTime::GetCurNano();
+    checkerPara.standbyStopTime = checkerPara.lastUpdateTime + 1000000000;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
+    EXPECT_GT(abnormalFrameNum, 0);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_004
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.isMonitorNoDataFrame = true;
+    checkerPara.standbyStartTime = 0;
+    checkerPara.standbyStopTime = 0;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
+    EXPECT_EQ(abnormalFrameNum, 0);
+}
 }
 }
