@@ -60,14 +60,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
-        nodeInfo.sceneType = TransStreamUsageToSplitSceneType(streamInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
-    } else {
-        nodeInfo.sceneType = TransEffectSceneToSceneType(streamInfo.effectInfo.effectScene);
-    }
-    if (IsMchDevice()) {
-        nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-    }
+    nodeInfo.sceneType = TransToProperSceneType(streamInfo.effectInfo.streamUsage, streamInfo.effectInfo.effectScene);
     nodeInfo.effectInfo = streamInfo.effectInfo;
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     nodeInfo.fadeType = streamInfo.fadeType;
@@ -112,14 +105,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.historyFrameCount = 0;
     nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
-    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
-        nodeInfo.sceneType = TransStreamUsageToSplitSceneType(nodeInfo.effectInfo.streamUsage, sinkInfo_.splitMode);
-    } else {
-        nodeInfo.sceneType = TransEffectSceneToSceneType(nodeInfo.effectInfo.effectScene);
-    }
-    if (IsMchDevice()) {
-        nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
-    }
+    nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);
     node->SetNodeInfo(nodeInfo);
@@ -233,6 +219,17 @@ int32_t HpaeRendererManager::AddAllNodesToSink(
     };
     SendRequest(request);
     return SUCCESS;
+}
+
+HpaeProcessorType HpaeRendererManager::TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene)
+{
+    if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
+        return TransStreamUsageToSplitSceneType(streamUsage, sinkInfo_.splitMode);
+    } else if (sinkInfo_.deviceClass == "remote" || IsMchDevice()) {
+        return HPAE_SCENE_EFFECT_NONE;
+    } else {
+        return TransEffectSceneToSceneType(effectScene);
+    }
 }
 
 HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)

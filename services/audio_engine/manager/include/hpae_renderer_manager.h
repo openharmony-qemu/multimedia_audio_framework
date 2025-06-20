@@ -122,6 +122,7 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();
