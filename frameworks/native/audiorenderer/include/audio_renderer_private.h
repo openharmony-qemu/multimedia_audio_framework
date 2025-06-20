@@ -152,6 +152,8 @@ public:
     int32_t StopDataCallback() override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
+    bool IsVirtualKeyboard(const int32_t flags);
+
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)

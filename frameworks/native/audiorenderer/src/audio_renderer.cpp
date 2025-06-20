@@ -56,6 +56,7 @@ static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr const char* VKB_BUNDLE_NAME = "com.huawei.hmos.virtualkeyboard";
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -333,7 +334,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
-    bool isVirtualKeyboard = rendererFlags == AUDIO_FLAG_VKB_NORMAL || rendererFlags == AUDIO_FLAG_VKB_FAST;
+    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
 
@@ -2724,6 +2725,14 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
     audioHapticsSyncId_ = audioHapticsSyncId;
+}
+
+bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+{
+    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && AudioSystemManager::GetInstance()->GetSelfBundleName(getuid()) == VKB_BUNDLE_NAME;
+    AUDIO_INFO_LOG("Check VKB flags:%{public}d, isVKB:%{public}s", flags, isVirtualKeyboard ? "T" : "F");
+    return isVirtualKeyboard;
 }
 
 int32_t AudioRendererPrivate::StopDataCallback()
