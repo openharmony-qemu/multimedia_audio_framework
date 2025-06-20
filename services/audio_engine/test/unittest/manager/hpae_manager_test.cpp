@@ -938,8 +938,14 @@ TEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003)
 TEST_F(HpaeManagerUnitTest, GetAllSinks003)
 {
     EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
+
     AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
     hpaeManager_->SetDefaultSink(audioModuleInfo.name);
@@ -956,12 +962,7 @@ TEST_F(HpaeManagerUnitTest, GetAllSinks003)
     AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
     EXPECT_EQ(hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, 1234), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-
-    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback = std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
-    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
-
+    
     ret = hpaeManager_->GetAllSinks();
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(ret, SUCCESS);
