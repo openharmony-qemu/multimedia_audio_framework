@@ -26,7 +26,6 @@
 #include "iservice_registry.h"
 #include "hdi_adapter_info.h"
 #include "audio_usb_manager.h"
-#include "data_share_observer_callback.h"
 #include "audio_spatialization_service.h"
 #include "audio_collaborative_service.h"
 #include "ipc_skeleton.h"
@@ -98,6 +97,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 {
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
+    uint32_t sessionId = 0;
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
         //  if streamDesc select bluetooth or headset, active it
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
@@ -111,6 +111,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
+            sessionId = streamDesc->sessionId_;
         }
 
         // started stream need to mute when switch device
@@ -120,7 +121,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     }
     
     if (isUpdateActiveDevice) {
-        AUDIO_INFO_LOG("active device updated, update volume");
+        AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
         AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
@@ -1444,8 +1445,8 @@ void AudioCoreService::TriggerRecreateRendererStreamCallback(int32_t callerPid, 
     uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt::ExtEnum reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateRendererStreamCallback");
-    AUDIO_INFO_LOG("Trigger recreate renderer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        callerPid, sessionId, routeFlag);
+    AUDIO_INFO_LOG("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
+        sessionId, callerPid, routeFlag);
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
     } else {
@@ -1474,8 +1475,8 @@ CapturerState AudioCoreService::HandleStreamStatusToCapturerState(AudioStreamSta
 void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     Trace trace("AudioCoreService::TriggerRecreateCapturerStreamCallback");
-    AUDIO_INFO_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
-        streamDesc->appInfo_.appPid, streamDesc->sessionId_, streamDesc->routeFlag_);
+    AUDIO_INFO_LOG("Trigger recreate capturer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
+        streamDesc->sessionId_, streamDesc->callerPid_, streamDesc->routeFlag_);
 
     SwitchStreamInfo info = {
         streamDesc->sessionId_,
@@ -1728,8 +1729,11 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     const StreamUsage streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
-    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescByIdInner(sessionID) != nullptr, ERR_NOT_SUPPORTED,
+    CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
+
+    AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
+        isRunning ? "running" : "not running", sessionID);
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
         FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
@@ -1940,6 +1944,8 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
 
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
     if (mode == AUDIO_MODE_RECORD && capturerState == CAPTURER_RELEASED) {
+        AUDIO_INFO_LOG("[ADeviceEvent] fetch device for capturer stream %{public}d released",
+            streamChangeInfo.audioCapturerChangeInfo.sessionId);
         audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
         FetchInputDeviceAndRoute();
     }
@@ -1957,7 +1963,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         isRingDualToneOnPrimarySpeaker_, streamUsage);
     if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        AUDIO_INFO_LOG("disable primary speaker dual tone when ringer renderer run over.");
+        AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
         isRingDualToneOnPrimarySpeaker_ = false;
         // Add delay between end of double ringtone and device switch.
         // After the ringtone ends, there may still be residual audio data in the pipeline.

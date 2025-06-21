@@ -653,12 +653,6 @@ void AudioDeviceLock::OnServiceDisconnected(AudioServiceIndex serviceIndex)
     AUDIO_WARNING_LOG("Start for [%{public}d]", serviceIndex);
 }
 
-void AudioDeviceLock::SetDisplayName(const std::string &deviceName, bool isLocalDevice)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioConnectedDevice_.SetDisplayName(deviceName, isLocalDevice);
-}
-
 void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress, const bool support)
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);

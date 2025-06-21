@@ -190,7 +190,7 @@ void AudioPolicyManager::RecoverAudioPolicyCallbackClient()
     }
 
     std::lock_guard<std::mutex> lock(handleAvailableDeviceChangeCbsMapMutex_);
-    for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end();) {
+    for (auto it = availableDeviceChangeCbsMap_.begin(); it != availableDeviceChangeCbsMap_.end(); ++it) {
         gsp->SetAvailableDeviceChangeCallback(it->first.first, it->first.second, it->second);
     }
 }

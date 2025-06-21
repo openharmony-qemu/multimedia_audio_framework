@@ -148,37 +148,33 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
     AppendFormat(dumpString, "    - StreamStatus: %u (%s)\n",
         streamStatus_, StreamStatusToString(streamStatus_));
 
-    AppendFormat(dumpString, "    - CallerUid: %d\n", callerUid_);
-    AppendFormat(dumpString, "    - CallerPid: %d\n", callerPid_);
-    AppendFormat(dumpString, "    - AppUid: %d\n", appInfo_.appUid);
-    AppendFormat(dumpString, "    - AppPid: %d\n", appInfo_.appPid);
+    AppendFormat(dumpString, "    - CallerUid: %d CallerPid: %d AppUid: %d AppPid: %d\n",
+        callerUid_, callerPid_, appInfo_.appUid, appInfo_.appPid);
 
-    AppendFormat(dumpString, "    - SampleRate: %d\n", streamInfo_.samplingRate);
-    AppendFormat(dumpString, "    - ChannelCount: %u\n", streamInfo_.channels);
-    AppendFormat(dumpString, "    - ChannelLayout: %" PRIu64"\n", streamInfo_.channelLayout);
-    AppendFormat(dumpString, "    - Format: %u\n", streamInfo_.format);
-    AppendFormat(dumpString, "    - Encoding: %d\n", streamInfo_.encoding);
+    AppendFormat(dumpString, "    - SampleRate: %d ChannelCount: %u ChannelLayout: %" PRIu64"" \
+        " Format: %u Encoding: %d\n",
+        streamInfo_.samplingRate, streamInfo_.channels, streamInfo_.channelLayout,
+        streamInfo_.format, streamInfo_.encoding);
 
-    AppendFormat(dumpString, "    - AudioFlag: 0x%x\n", audioFlag_);
-    AppendFormat(dumpString, "    - RouteFlag: 0x%x\n", routeFlag_);
+    AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x\n", audioFlag_, routeFlag_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
 }
 
 void AudioStreamDescriptor::DumpRendererStreamAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "    - StreamUsage: %d\n", rendererInfo_.streamUsage);
-    AppendFormat(dumpString, "    - OriginalFlag: %d\n", rendererInfo_.originalFlag);
-    AppendFormat(dumpString, "    - RendererFlag: %d\n", rendererInfo_.rendererFlags);
-    AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
     AppendFormat(dumpString, "    - PlayerType: %d\n", rendererInfo_.playerType);
+    AppendFormat(dumpString, "    - OriginalFlag: %d RendererFlags: %d\n",
+        rendererInfo_.originalFlag, rendererInfo_.rendererFlags);
+    AppendFormat(dumpString, "    - OffloadAllowed: %d\n", rendererInfo_.isOffloadAllowed);
 }
 
 void AudioStreamDescriptor::DumpCapturerStreamAttrs(std::string &dumpString)
 {
     AppendFormat(dumpString, "    - SourceType: %d\n", capturerInfo_.sourceType);
-    AppendFormat(dumpString, "    - OriginalFlag: %d\n", capturerInfo_.originalFlag);
-    AppendFormat(dumpString, "    - RendererFlag: %d\n", capturerInfo_.capturerFlags);
     AppendFormat(dumpString, "    - RecorderType: %d\n", capturerInfo_.recorderType);
+    AppendFormat(dumpString, "    - OriginalFlag: %d CapturerFlags: %d\n",
+        capturerInfo_.originalFlag, capturerInfo_.capturerFlags);
 }
 
 void AudioStreamDescriptor::DumpDeviceAttrs(std::string &dumpString)

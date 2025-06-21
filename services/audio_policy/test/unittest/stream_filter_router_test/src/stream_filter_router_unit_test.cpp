@@ -83,7 +83,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_001, TestSize.Level1)
     auto server = GetServerPtr();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     std::cout<<callerPid<<std::endl;
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -104,7 +103,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_002, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -125,7 +123,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_003, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -150,7 +147,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_004, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -171,7 +167,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_005, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -192,7 +187,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_006, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_NULL;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -213,7 +207,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_007, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -234,7 +227,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_008, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -259,7 +251,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_009, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -280,7 +271,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_010, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -302,7 +292,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 

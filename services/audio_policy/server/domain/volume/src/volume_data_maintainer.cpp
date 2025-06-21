@@ -44,8 +44,9 @@ static const std::vector<VolumeDataMaintainer::VolumeDataMaintainerStreamType> V
 };
 
 static const std::vector<DeviceType> DEVICE_TYPE_LIST = {
-    // The three devices represent the three volume groups(build-in, wireless, wired).
+    // The five devices represent the three volume groups(build-in, wireless, wired).
     DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_EARPIECE,
     DEVICE_TYPE_BLUETOOTH_A2DP,
     DEVICE_TYPE_WIRED_HEADSET,
     DEVICE_TYPE_REMOTE_CAST

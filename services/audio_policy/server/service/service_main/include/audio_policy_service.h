@@ -95,7 +95,6 @@ public:
 
     bool Init(void);
     void Deinit(void);
-    bool ConnectServiceAdapter();
 
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);
 
@@ -103,20 +102,7 @@ public:
 
     int32_t SetSourceOutputStreamMute(int32_t uid, bool setMute) const;
 
-    void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
-
-    bool IsArmUsbDevice(const AudioDeviceDescriptor &desc);
-
-    int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-
     std::string GetSelectedDeviceInfo(int32_t uid, int32_t pid, AudioStreamType streamType);
-
-    int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
-
-    int32_t ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
 
@@ -131,29 +117,15 @@ public:
 
     bool IsAbsVolumeSupported();
 
-    int32_t SetDeviceActive(InternalDeviceType deviceType, bool active, const int32_t uid = INVALID_UID);
-
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
-    int32_t SetRingerMode(AudioRingerMode ringMode);
-
     int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
-
-    int32_t GetAudioLatencyFromXml() const;
-
-    uint32_t GetSinkLatencyFromXml() const;
 
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
 
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
-
-    int32_t GetDeviceNameFromDataShareHelper(std::string &deviceName);
-
-    void SetDisplayName(const std::string &deviceName, bool isLocalDevice);
-
-    bool IsDataShareReady();
 
     void GetAllSinkInputs(std::vector<SinkInput> &sinkInputs);
 
@@ -173,15 +145,6 @@ public:
     void OnServiceDisconnected(AudioServiceIndex serviceIndex);
 
     void OnForcedDeviceSelected(DeviceType devType, const std::string &macAddress);
-
-    void OnMonoAudioConfigChanged(bool audioMono);
-
-    void OnAudioBalanceChanged(float audioBalance);
-
-    void onDoNotDisturbStatusChanged(bool isDoNotDisturb);
-
-    void onDoNotDisturbStatusWhiteListChanged(std::vector<std::map<std::string, std::string>>
-        doNotDisturbStatusWhiteList);
 
     void LoadEffectLibrary();
 
@@ -226,8 +189,6 @@ public:
 
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
 
-    bool GetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume &vol);
-
 #ifdef BLUETOOTH_ENABLE
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);
 #endif
@@ -267,17 +228,11 @@ public:
 
     std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
 
-    void OffloadStreamSetCheck(uint32_t sessionId);
-
-    void OffloadStreamReleaseCheck(uint32_t sessionId);
-
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
-
-    void ConfigDistributedRoutingRole(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
 
     DistributedRoutingInfo GetDistributedRoutingRoleInfo();
 
@@ -300,12 +255,7 @@ public:
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
-    // for hidump
-    int32_t GetCurActivateCount();
-
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
-
-    int32_t ResetRingerModeMute();
 
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for effect V3
@@ -320,19 +270,12 @@ public:
     int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhancePropertyByDevice(DeviceType deviceType, AudioEnhancePropertyArray &propertyArray);
-
-    AudioScene GetLastAudioScene() const;
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning);
-
-    int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object);
-
-    int32_t UnsetAudioDeviceAnahsCallback();
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
@@ -388,23 +331,9 @@ private:
     int32_t CheckSupportedAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray, const EffectFlag& flag);
     int32_t GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray);
 
-    std::shared_ptr<DataShare::DataShareHelper> CreateDataShareHelperInstance();
-
     void RegisterNameMonitorHelper();
 
     void RegisterAccessibilityMonitorHelper();
-
-    void RegisterAccessiblilityBalance();
-
-    void RegisterAccessiblilityMono();
-
-    void RegisterDoNotDisturbStatus();
-
-    void RegisterDoNotDisturbStatusWhiteList();
-
-    void StoreDistributedRoutingRoleInfo(const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type);
-
-    void ResetToSpeaker(DeviceType devType);
 
     PipeInfo& GetPipeInfoByPipeName(std::string &supportPipe, AudioAdapterInfo &adapterInfo);
 
@@ -417,29 +346,19 @@ private:
 
     bool LoadAudioPolicyConfig();
     void CreateRecoveryThread();
-    void RecoverExcludedOutputDevices();
-    void RecoveryPreferredDevices();
 
     void LoadHdiEffectModel();
 
-    void UpdateEffectBtOffloadSupported(const bool &isSupported);
-
     void UpdateInputDeviceWhenStopping(const bool &isSupported);
-
-    bool IsA2dpOffloadConnected();
 
     void SetDefaultDeviceLoadFlag(bool isLoad);
 
-    bool GetAudioEffectOffloadFlag();
-
     void OnServiceConnected(AudioServiceIndex serviceIndex);
-    int32_t GetUid(int32_t sessionId);
 
     void UnregisterBluetoothListener();
 
     int32_t OffloadStartPlaying(const std::vector<int32_t> &sessionIds);
 
-    void SetA2dpOffloadFlag(BluetoothOffloadState state);
     BluetoothOffloadState GetA2dpOffloadFlag();
     void SetDefaultAdapterEnable(bool isEnable);
     bool IsDevicePlaybackSupported(const AudioProcessConfig &config, const AudioDeviceDescriptor &deviceInfo);

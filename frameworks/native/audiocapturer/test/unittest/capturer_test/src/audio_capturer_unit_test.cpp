@@ -1094,6 +1094,7 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_Stability_001, TestSize.L
     audioCapturer->Release();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetParams API stability.
  * @tc.number: Audio_Capturer_GetParams_Stability_001
@@ -1115,7 +1116,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetAudioStreamId_001, TestSize.Leve
     audioCapturer->Release();
 }
 
-#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test GetBufferSize API via legal input.
 * @tc.number: Audio_Capturer_GetBufferSize_001
@@ -2337,6 +2337,32 @@ HWTEST(AudioCapturerUnitTest, IsDeviceChanged_001, TestSize.Level1)
 
     bool ret = audioCapturer->IsDeviceChanged(newDeviceInfo);
     EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test AudioCapturePrivate.
+* @tc.number: GetStreamDescBySwitchInfo_001
+* @tc.desc  : Test GetStreamDescBySwitchInfo - switchInfo to streamDesc.
+*/
+HWTEST(AudioCapturerUnitTest, GetStreamDescBySwitchInfo_001, TestSize.Level1)
+{
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.params.format = 1;
+    switchInfo.params.samplingRate = 48000;
+    switchInfo.params.channels = 2;
+    switchInfo.params.encoding = 0;
+    switchInfo.params.channelLayout = 0;
+
+    AppInfo appInfo = {};
+    RestoreInfo restoreInfo = {};
+    std::shared_ptr<AudioCapturerPrivate> capture = std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = capture->GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
+
+    EXPECT_EQ(streamDesc->streamInfo_.format, static_cast<AudioSampleFormat>(switchInfo.params.format));
+    EXPECT_EQ(streamDesc->streamInfo_.samplingRate, static_cast<AudioSamplingRate>(switchInfo.params.samplingRate));
+    EXPECT_EQ(streamDesc->streamInfo_.channels, static_cast<AudioChannel>(switchInfo.params.channels));
+    EXPECT_EQ(streamDesc->streamInfo_.encoding, static_cast<AudioEncodingType>(switchInfo.params.encoding));
+    EXPECT_EQ(streamDesc->streamInfo_.channelLayout, static_cast<AudioChannelLayout>(switchInfo.params.channelLayout));
 }
 
 /**

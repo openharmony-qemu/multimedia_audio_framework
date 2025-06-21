@@ -162,7 +162,6 @@ void GetMediaRenderDeviceFuzzTest()
     int32_t typeCount = static_cast<int32_t>(CastType::CAST_TYPE_COOPERATION) + 1;
     CastType type = static_cast<CastType>(GetData<uint8_t>() % typeCount);
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
     g_server.OnStop();
@@ -179,7 +178,6 @@ void GetRecordCaptureDeviceFuzzTest()
     int32_t typeCount = static_cast<int32_t>(CastType::CAST_TYPE_COOPERATION) + 1;
     CastType type = static_cast<CastType>(GetData<uint8_t>() % typeCount);
     auto server = GetServerPtr();
-    server->audioPolicyService_.StoreDistributedRoutingRoleInfo(deviceDescriptor, type);
     streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
     g_server.OnStop();

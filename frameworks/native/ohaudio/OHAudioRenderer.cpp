@@ -659,7 +659,7 @@ void OHAudioRenderer::SetWriteDataCallback(RendererCallback rendererCallbacks, v
             rendererCallbacks.writeDataWithMetadataCallback, (OH_AudioRenderer*)this, metadataUserData, encodingType);
         audioRenderer_->SetRendererWriteCallback(callback);
         AUDIO_INFO_LOG("The write callback function is for AudioVivid type");
-    } else if (encodingType == ENCODING_PCM || encodingType == ENCODING_EAC3) {
+    } else if (encodingType == ENCODING_PCM) {
         if (writeDataCallbackType_ == WRITE_DATA_CALLBACK_WITH_RESULT &&
             rendererCallbacks.onWriteDataCallback != nullptr) {
             std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
@@ -782,9 +782,6 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
         "pointer to the function is nullptr");
-    CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_EAC3) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
-        ((encodingType_ == ENCODING_EAC3) && (onWriteDataCallback_ != nullptr)),
-        "eac3 encoding type, pointer to the function is nullptr");
     BufferDesc bufDesc;
     audioRenderer->GetBufferDesc(bufDesc);
     if (encodingType_ == ENCODING_AUDIOVIVID && writeDataWithMetadataCallback_ != nullptr) {

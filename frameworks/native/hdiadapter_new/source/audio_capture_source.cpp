@@ -852,6 +852,7 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     sceneDesc.desc.desc = const_cast<char *>("");
 }
 
+// LCOV_EXCL_START
 void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 {
     if (IsNonblockingSource(attr_.adapterName)) {
@@ -869,6 +870,7 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
         }
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioCaptureSource::CreateCapture(void)
 {

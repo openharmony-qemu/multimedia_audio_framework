@@ -26,6 +26,8 @@
 #include "audio_enhance_chain.h"
 #include "audio_enhance_chain_adapter.h"
 #include "audio_enhance_chain_manager.h"
+#include "chain_pool.h"
+#include "thread_handler.h"
 using namespace std;
 
 namespace OHOS {
@@ -36,7 +38,6 @@ const uint32_t AUDIOEFFECTSCENE_LENGTH = 6;
 const uint32_t CHANNEL_NUM = 10;
 constexpr uint32_t INFOCHANNELS = 2;
 constexpr uint64_t INFOCHANNELLAYOUT = 0x3;
-const int32_t VALID_BUFFER_SIZE = 1000;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -178,49 +179,135 @@ void AudioEnhanceChainMoreFuzzTest()
     std::string scene = "scene";
     AudioEnhanceParamAdapter algoParam;
     AudioEnhanceDeviceAttr deviceAttr;
+    uint64_t chainId = GetData<uint64_t>();
     std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
-        std::make_shared<AudioEnhanceChain>(scene, algoParam, deviceAttr, true);
+        std::make_shared<AudioEnhanceChain>(chainId, scene, ScenePriority::PRIOR_SCENE, algoParam, deviceAttr);
+    if (audioEnhanceChain == nullptr) {
+        return;
+    }
+
+    std::vector<uint8_t> src(LIMITSIZE);
+    std::vector<uint8_t> dst(LIMITSIZE);
+    uint32_t channel = CHANNEL_NUM;
+    uint32_t offset = 0;
+    audioEnhanceChain->DeinterleaverData(src.data(), channel, dst.data(), offset);
+
+    EnhanceTransBuffer transBuf = {};
+    transBuf.micData = dst.data();
+    transBuf.micDataLen = dst.size();
+    audioEnhanceChain->ApplyEnhanceChain(transBuf);
+
+    std::vector<uint8_t> outBuf(LIMITSIZE);
+    audioEnhanceChain->GetOutputDataFromChain(outBuf.data(), outBuf.size());
+}
+
+void AudioEnhanceChainSetParaFuzzTest()
+{
+    std::string scene = "RECORD";
+    AudioEnhanceParamAdapter algoParam = {};
+    AudioEnhanceDeviceAttr deviceAttr = {};
+    uint64_t chainId = GetData<uint64_t>();
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(chainId, scene, ScenePriority::NORMAL_SCENE, algoParam, deviceAttr);
+    if (audioEnhanceChain == nullptr) {
+        return;
+    }
+
+    std::vector<EnhanceModulePara> moduleParas;
+    audioEnhanceChain->CreateAllEnhanceModule(moduleParas);
 
     std::string inputDevice = "inputDevice";
     std::string deviceName = "deviceName";
     audioEnhanceChain->SetInputDevice(inputDevice, deviceName);
 
-    uint8_t *src = new uint8_t[LIMITSIZE];
-    uint32_t channel = CHANNEL_NUM;
-    uint8_t *dst = new uint8_t[LIMITSIZE];
-    uint32_t offset = 0;
-    audioEnhanceChain->DeinterleaverData(src, channel, dst, offset);
+    std::string effect = "voip_up";
+    std::string prop = "test_prop";
+    audioEnhanceChain->SetEnhanceProperty(effect, prop);
 
-    std::unique_ptr<EnhanceBuffer> enhanceBuffer = std::make_unique<EnhanceBuffer>();
-    audioEnhanceChain->GetOneFrameInputData(enhanceBuffer);
+    bool isMute = (GetData<uint32_t>() % 2 == 0);
+    uint32_t systemVol = GetData<uint32_t>();
+    audioEnhanceChain->SetEnhanceParam(isMute, systemVol);
 
-    uint32_t length = GetData<uint32_t>();
-    audioEnhanceChain->ApplyEnhanceChain(enhanceBuffer, length);
+    uint32_t foldState = GetData<uint32_t>();
+    audioEnhanceChain->SetFoldState(foldState);
 
-    std::string enhanceSet = "enhanceSet";
-    std::string propertySet = "propertySet";
-    audioEnhanceChain->SetEnhanceProperty(enhanceSet, propertySet);
+    audioEnhanceChain->SetThreadHandler(nullptr);
+    audioEnhanceChain->InitCommand();
+}
+
+void AudioEnhanceChainGetParaFuzzTest()
+{
+    std::string scene = "VOIP_UP";
+    AudioEnhanceParamAdapter algoParam = {};
+    AudioEnhanceDeviceAttr deviceAttr = {};
+    uint64_t chainId = GetData<uint64_t>();
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(chainId, scene, ScenePriority::NORMAL_SCENE, algoParam, deviceAttr);
+    if (audioEnhanceChain == nullptr) {
+        return;
+    }
+
+    audioEnhanceChain->IsEmptyEnhanceHandles();
+    audioEnhanceChain->GetChainId();
+    audioEnhanceChain->GetScenePriority();
+
+    AudioBufferConfig micConfig = {};
+    AudioBufferConfig ecConfig = {};
+    AudioBufferConfig micRefConfig = {};
+    audioEnhanceChain->GetAlgoConfig(micConfig, ecConfig, micRefConfig);
+}
+
+void ChainPoolFuzzTest()
+{
+    ChainPool::GetInstance().AddChain(nullptr);
+
+    std::string scene = "TRANS";
+    AudioEnhanceParamAdapter algoParam = {};
+    AudioEnhanceDeviceAttr deviceAttr = {};
+    uint64_t chainId = GetData<uint64_t>();
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(chainId, scene, ScenePriority::NORMAL_SCENE, algoParam, deviceAttr);
+
+    ChainPool::GetInstance().AddChain(audioEnhanceChain);
+    ChainPool::GetInstance().GetChainById(chainId);
+    ChainPool::GetInstance().GetAllChain();
+    ChainPool::GetInstance().DeleteChain(chainId);
+}
+
+void ThreadHandlerFuzzTest()
+{
+    std::string name = "test_thread";
+    auto handler = ThreadHandler::NewInstance(name);
+    if (handler == nullptr) {
+        return;
+    }
+
+    auto task1 = []() {
+        AUDIO_INFO_LOG("execute task 1");
+    };
+    handler->PostTask(task1);
+
+    auto task2 = []() {
+        AUDIO_INFO_LOG("execute task 2");
+    };
+    handler->EnsureTask(task2);
 }
 
 void AudioEnhanceChainManagerMoreFuzzTest()
 {
     AudioEnhanceChainManager *audioEnhanceChainMananger = AudioEnhanceChainManager::GetInstance();
 
-    audioEnhanceChainMananger->enhanceBuffer_ = std::make_unique<EnhanceBuffer>();
-    uint32_t lengthBuffer = VALID_BUFFER_SIZE;
-    std::vector<uint8_t> dummyData(lengthBuffer, 0xAA);
-    audioEnhanceChainMananger->CopyToEnhanceBuffer(dummyData.data(), lengthBuffer);
-    audioEnhanceChainMananger->CopyEcToEnhanceBuffer(dummyData.data(), lengthBuffer);
-    audioEnhanceChainMananger->CopyMicRefToEnhanceBuffer(dummyData.data(), lengthBuffer);
-    audioEnhanceChainMananger->CopyFromEnhanceBuffer(dummyData.data(), lengthBuffer);
+    const uint32_t bufferLen = 1000;
+    std::vector<uint8_t> dummyData(bufferLen, 0x08);
+    EnhanceTransBuffer transBuf = {};
+    transBuf.micData = dummyData.data();
+    transBuf.micDataLen = dummyData.size();
 
-    uint32_t sceneKeyCode = GetData<uint32_t>();
-    uint32_t length = GetData<uint32_t>();
-    audioEnhanceChainMananger->ApplyAudioEnhanceChain(sceneKeyCode, length);
-    audioEnhanceChainMananger->UpdatePropertyAndSendToAlgo(DEVICE_TYPE_EARPIECE);
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    audioEnhanceChainMananger->ApplyEnhanceChainById(sceneKeyCode, transBuf);
 
-    uint32_t captureId = GetData<uint32_t>();
-    audioEnhanceChainMananger->ApplyAudioEnhanceChainDefault(captureId, length);
+    std::vector<uint8_t> output(bufferLen);
+    audioEnhanceChainMananger->GetChainOutputDataById(sceneKeyCode, output.data(), output.size());
 }
 
 void AudioEnhanceChainAdapterMoreFuzzTest()
@@ -232,22 +319,25 @@ void AudioEnhanceChainAdapterMoreFuzzTest()
     CopyMicRefdataToEnhanceBufferAdapter(data, length);
     CopyFromEnhanceBufferAdapter(data, length);
 
-    uint32_t sceneKeyCode = GetData<uint32_t>();
+    uint64_t sceneKeyCode = GetData<uint64_t>();
     EnhanceChainManagerProcess(sceneKeyCode, length);
 
     uint32_t captureId = GetData<uint32_t>();
     EnhanceChainManagerProcessDefault(captureId, length);
 }
 
-typedef void (*TestFuncs[6])();
-
-TestFuncs g_testFuncs = {
+using FuzzFunc = decltype(AudioEffectChainEnhanceFuzzTest);
+FuzzFunc *g_fuzzFuncs[] = {
     AudioEffectChainEnhanceFuzzTest,
     AudioEffectChainManagerEnhanceFuzzTest,
     AudioEffectChainAdapterFuzzTest,
     AudioEnhanceChainMoreFuzzTest,
     AudioEnhanceChainManagerMoreFuzzTest,
     AudioEnhanceChainAdapterMoreFuzzTest,
+    AudioEnhanceChainSetParaFuzzTest,
+    AudioEnhanceChainGetParaFuzzTest,
+    ChainPoolFuzzTest,
+    ThreadHandlerFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
@@ -262,9 +352,9 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
     g_pos = 0;
 
     uint32_t code = GetData<uint32_t>();
-    uint32_t len = GetArrLength(g_testFuncs);
+    uint32_t len = GetArrLength(g_fuzzFuncs);
     if (len > 0) {
-        g_testFuncs[code % len]();
+        g_fuzzFuncs[code % len]();
     } else {
         AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
     }

@@ -28,8 +28,7 @@ public:
     static std::vector<EffectChain> enhanceChains_;
     static EffectChainManagerParam managerParam_;
     static std::vector<std::shared_ptr<AudioEffectLibEntry>> enhanceLibraryList_;
-    static AudioEnhanceDeviceAttr deviceAttr;
-    
+
     // SetUpTestSuite: Called before all test cases
     static void SetUpTestSuite(void);
     // TearDownTestSuite: Called after all test cases

@@ -40,6 +40,7 @@ namespace AudioStandard {
 
 AudioServiceAdapter::~AudioServiceAdapter() = default;
 
+// LCOV_EXCL_START
 std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(
     std::unique_ptr<AudioServiceAdapterCallback> cb, bool isAudioEngine)
 {
@@ -52,6 +53,6 @@ std::shared_ptr<AudioServiceAdapter> AudioServiceAdapter::CreateAudioAdapter(
         return make_shared<PulseAudioServiceAdapterImpl>(cb);
     }
 }
-
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

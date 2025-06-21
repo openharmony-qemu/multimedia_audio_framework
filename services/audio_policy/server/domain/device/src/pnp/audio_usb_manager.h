@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -69,16 +69,16 @@ public:
         void OnReceiveEvent(const EventFwk::CommonEventData &data) override;
     };
 
-    static AudioUsbManager& GetInstance();
+    static AudioUsbManager &GetInstance();
     static map<UsbAddr, SoundCard> GetUsbSoundCardMap();
     static int32_t GetUsbAudioDevices(vector<UsbAudioDevice> &result);
 
-    void Init();
+    void Init(std::shared_ptr<IDeviceStatusObserver> observer);
     void Deinit();
     void SubscribeEvent();
 
 private:
-    AudioUsbManager(IDeviceStatusObserver &observer) : observer_(observer) {}
+    AudioUsbManager() = default;
     void RefreshUsbAudioDevices();
     void NotifyDevice(const UsbAudioDevice &device, const bool isConnected);
     void HandleAudioDeviceEvent(pair<UsbAudioDevice, bool> &&p);
@@ -86,13 +86,13 @@ private:
     // must be called in mutex_ lock
     void UpdateDevice(const UsbAudioDevice &dev, std::__wrap_iter<UsbAudioDevice *> &it);
 
+    std::shared_ptr<IDeviceStatusObserver> observer_{nullptr};
+    std::shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
     vector<UsbAudioDevice> audioDevices_;
     map<UsbAddr, SoundCard> soundCardMap_;
-    shared_ptr<EventSubscriber> eventSubscriber_{nullptr};
+    
     bool initialized_{false};
-
     mutex mutex_;
-    IDeviceStatusObserver &observer_;
 };
 
 } // namespace AudioStandard

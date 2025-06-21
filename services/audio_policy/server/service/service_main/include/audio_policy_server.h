@@ -52,6 +52,7 @@
 #include "app_state_listener.h"
 #include "audio_core_service.h"
 #include "audio_converter_parser.h"
+#include "audio_usb_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -762,29 +763,35 @@ private:
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
 
-    AudioEffectService& audioEffectService_;
+    AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;
-    AudioCapturerSession& audioCapturerSession_;
+    AudioCapturerSession &audioCapturerSession_;
     AudioStateManager &audioStateManager_;
-    AudioToneManager& audioToneManager_;
-    AudioMicrophoneDescriptor& audioMicrophoneDescriptor_;
-    AudioDeviceStatus& audioDeviceStatus_;
-    AudioPolicyConfigManager& audioConfigManager_;
-    AudioSceneManager& audioSceneManager_;
-    AudioConnectedDevice& audioConnectedDevice_;
-    AudioDeviceLock& audioDeviceLock_;
-    AudioStreamCollector& streamCollector_;
-    AudioOffloadStream& audioOffloadStream_;
-    AudioBackgroundManager& audioBackgroundManager_;
-    AudioVolumeManager& audioVolumeManager_;
-    AudioDeviceCommon& audioDeviceCommon_;
-    IAudioPolicyInterface& audioPolicyManager_;
+    AudioToneManager &audioToneManager_;
+    AudioMicrophoneDescriptor &audioMicrophoneDescriptor_;
+    AudioDeviceStatus &audioDeviceStatus_;
+    AudioPolicyConfigManager &audioConfigManager_;
+    AudioSceneManager &audioSceneManager_;
+    AudioConnectedDevice &audioConnectedDevice_;
+    AudioDeviceLock &audioDeviceLock_;
+    AudioStreamCollector &streamCollector_;
+    AudioOffloadStream &audioOffloadStream_;
+    AudioBackgroundManager &audioBackgroundManager_;
+    AudioVolumeManager &audioVolumeManager_;
+    AudioDeviceCommon &audioDeviceCommon_;
+    IAudioPolicyInterface &audioPolicyManager_;
     AudioPolicyConfigManager &audioPolicyConfigManager_;
-    AudioPolicyService& audioPolicyService_;
+    AudioPolicyService &audioPolicyService_;
     AudioPolicyUtils &audioPolicyUtils_;
     AudioDeviceManager &audioDeviceManager_;
-    std::shared_ptr<AudioInterruptService> interruptService_;
+    AudioSpatializationService &audioSpatializationService_;
+    AudioCollaborativeService &audioCollaborativeService_;
+    AudioRouterCenter &audioRouterCenter_;
+    AudioPolicyDump &audioPolicyDump_;
+    AudioActiveDevice &audioActiveDevice_;
+    AudioUsbManager &usbManager_;
 
+    std::shared_ptr<AudioInterruptService> interruptService_;
     std::shared_ptr<AudioCoreService> coreService_;
     std::shared_ptr<AudioCoreService::EventEntry> eventEntry_;
 
@@ -813,22 +820,19 @@ private:
         [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
         [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
-    AudioSpatializationService& audioSpatializationService_;
-    AudioCollaborativeService& audioCollaborativeService_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
     bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;
-    AudioRouterCenter &audioRouterCenter_;
+
     using DumpFunc = void(AudioPolicyServer::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     pid_t lastMicMuteSettingPid_ = 0;
     std::shared_ptr<AudioOsAccountInfo> accountObserver_ = nullptr;
-    AudioPolicyDump &audioPolicyDump_;
+
     int32_t sessionIdByRemote_ = -1;
-    AudioActiveDevice& audioActiveDevice_;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
 };
 

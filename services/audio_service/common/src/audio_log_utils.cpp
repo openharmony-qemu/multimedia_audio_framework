@@ -38,7 +38,7 @@ void AudioLogUtils::ProcessVolumeData(const std::string &logTag, const ChannelVo
     }
     if (isDataSilent) {
         if (count > 0) {
-            AUDIO_INFO_LOG("[%{public}s] not slient %{public}" PRId64 "frames change to slient",
+            AUDIO_WARNING_LOG("[%{public}s] not slient %{public}" PRId64 "frames change to slient",
                 logTag.c_str(), count);
             count = 0;
         }
@@ -46,7 +46,7 @@ void AudioLogUtils::ProcessVolumeData(const std::string &logTag, const ChannelVo
         IncSilentData(logTag, vols, -count);
     } else {
         if (count < 0) {
-            AUDIO_INFO_LOG("[%{public}s] slient %{public}" PRId64 "frames change to not slient",
+            AUDIO_WARNING_LOG("[%{public}s] slient %{public}" PRId64 "frames change to not slient",
                 logTag.c_str(), -count);
             count = 0;
         }

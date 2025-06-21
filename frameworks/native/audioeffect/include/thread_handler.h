@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,25 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef ST_DATA_SHARE_OBSERVER_CALLBACK_H
-#define ST_DATA_SHARE_OBSERVER_CALLBACK_H
+#ifndef AUDIO_THREAD_HANDLER_H
+#define AUDIO_THREAD_HANDLER_H
 
-#include "datashare_helper.h"
-#include "audio_policy_service.h"
-#include "data_ability_observer_stub.h"
+#include <functional>
+#include <memory>
+#include <string>
 
 namespace OHOS {
 namespace AudioStandard {
-class DataShareObserverCallBack : public AAFwk::DataAbilityObserverStub {
+class ThreadHandler {
 public:
-    explicit DataShareObserverCallBack();
-    ~DataShareObserverCallBack() override {};
-    void OnChange() override;
-
-private:
-    AudioPolicyService& audioPolicyService_;
+    static std::shared_ptr<ThreadHandler> NewInstance(const std::string &threadName);
+    using Task = std::function<void(void)>;
+    ThreadHandler() = default;
+    virtual ~ThreadHandler() = default;
+    virtual void PostTask(const Task &task) = 0;
+    virtual void EnsureTask(const Task &task) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
 
-#endif // ST_DATA_SHARE_OBSERVER_CALLBACK_H
+#endif // AUDIO_THREAD_HANDLER_H

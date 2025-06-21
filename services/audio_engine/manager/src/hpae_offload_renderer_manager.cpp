@@ -193,7 +193,6 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
             sinkOutputNode_->RenderSinkStart();
         }
         sessionInfo_.state = HPAE_SESSION_RUNNING;
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STARTED);
     };
     SendRequest(request);
     return SUCCESS;

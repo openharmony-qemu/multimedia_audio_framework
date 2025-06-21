@@ -295,7 +295,11 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
             return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
     }
     return make_shared<AudioDeviceDescriptor>();
 }
