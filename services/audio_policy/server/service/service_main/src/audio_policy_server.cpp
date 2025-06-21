@@ -141,8 +141,11 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
-      audioActiveDevice_(AudioActiveDevice::GetInstance()),
-      usbManager_(AudioUsbManager::GetInstance())
+#ifdef USB_ENABLE
+      usbManager_(AudioUsbManager::GetInstance()),
+#endif
+      audioActiveDevice_(AudioActiveDevice::GetInstance())
+
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
