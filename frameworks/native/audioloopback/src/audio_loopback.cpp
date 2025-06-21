@@ -25,6 +25,7 @@
 #include "access_token.h"
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
+#include "audio_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {

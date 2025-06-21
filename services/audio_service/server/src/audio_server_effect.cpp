@@ -476,7 +476,7 @@ bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
         return true;
     }
 #endif
-    AUDIO_ERROR_LOG("IsAudioLoopbackSupported not support");
+    AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
     return false;
 }
 } // namespace AudioStandard
