@@ -19,9 +19,6 @@
 #include "hpae_plugin_node.h"
 #include "hpae_node.h"
 #include "audio_effect.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,9 +62,6 @@ private:
     std::vector<uint8_t> cacheDataOut_;
     HpaePcmBuffer *outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
-#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

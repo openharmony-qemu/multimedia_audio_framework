@@ -778,8 +778,7 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
     outputCluster_->Stop();
-    int32_t ret = outputCluster_->DeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
+    outputCluster_->DeInit();
     for (const auto &item : sceneClusterMap_) {
         item.second->SetConnectedFlag(false);
     }

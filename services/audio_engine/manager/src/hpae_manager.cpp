@@ -671,8 +671,8 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
             AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
             isReturn = true;
         }
-        std::shared_ptr<IHpaeCapturerManager> capturerManager = GetCapturerManagerByName(sourceName);
-        if (capturerManager == nullptr || !capturerManager->IsInit()) {
+        std::shared_ptr<IHpaeCapturerManager> captureManager = GetCapturerManagerByName(sourceName);
+        if (captureManager == nullptr || !captureManager->IsInit()) {
             AUDIO_ERR_LOG("move session:%{public}u failed, can not find source:%{public}s or source is not open.",
                 sourceOutputId, sourceName.c_str());
             isReturn = true;

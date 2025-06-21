@@ -42,10 +42,6 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     } else {
         AUDIO_ERR_LOG("scenetype: %{public}u not supported", nodeInfo.effectInfo.enhanceScene);
     }
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeCaptureEffectNode_id_" + std::to_string(GetNodeId()) + "_" + sceneType_ + "_Out.pcm");
-#endif
 }
 
 bool HpaeCaptureEffectNode::Reset()
@@ -93,12 +89,6 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
         static_cast<size_t>(processLength));
     ConvertToFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
         static_cast<void *>(cacheDataOut_.data()), outPcmBuffer_->GetPcmDataBuffer());
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)outPcmBuffer_->GetPcmDataBuffer(),
-            micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE) * sizeof(float));
-    }
-#endif
     return outPcmBuffer_;
 }
 
