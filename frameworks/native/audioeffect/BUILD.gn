@@ -29,6 +29,7 @@ config("audio_effect_config") {
     "../../../services/audio_service/test/example",
     "../../../services/audio_policy/server/infra/datashare/include",
     "../../../services/audio_policy/util/include",
+    "../audioschedule/include",
   ]
 
   cflags = [
@@ -74,14 +75,17 @@ audio_ohos_library("audio_effect") {
     "src/audio_effect_volume.cpp",
     "src/audio_enhance_chain.cpp",
     "src/audio_enhance_chain_adapter.cpp",
-    "src/audio_enhance_chain_manager.cpp",
+    "src/audio_enhance_chain_manager_impl.cpp",
     "src/audio_head_tracker.cpp",
+    "src/chain_pool_impl.cpp",
+    "src/thread_handler_impl.cpp",
   ]
 
   deps = [
     "../../../services/audio_policy:audio_foundation",
     "../../../services/audio_policy:audio_setting_provider",
     "../../../services/audio_service:audio_common",
+    "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
   ]
 
