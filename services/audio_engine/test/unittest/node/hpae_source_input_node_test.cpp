@@ -220,6 +220,9 @@ TEST_F(HpaeSourceInputNodeTest, testInterfaces_002)
     SourceType sourceType = SOURCE_TYPE_MIC;
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSoruceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
+    IAudioSourceAttr attr;
+    attr.filePath = g_rootCapturerPath.c_str();
+    EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourcePause(), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceFlush(), SUCCESS);
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceResume(), SUCCESS);
@@ -231,7 +234,8 @@ TEST_F(HpaeSourceInputNodeTest, testInterfaces_002)
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceResume(), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceReset(), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceDeInit(), SUCCESS);
-    IAudioSourceAttr attr;
+
+    attr.filePath = NULL;
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_NE(hpaeSoruceInputNode->CapturerSourceStop(), SUCCESS);

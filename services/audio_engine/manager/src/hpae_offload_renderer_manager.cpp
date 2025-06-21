@@ -466,8 +466,7 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
     sinkOutputNode_->RenderSinkStop();
-    int32_t ret = sinkOutputNode_->RenderSinkDeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
+    sinkOutputNode_->RenderSinkDeInit();
     sinkOutputNode_->ResetAll();
     isInit_.store(false);
     return SUCCESS;
