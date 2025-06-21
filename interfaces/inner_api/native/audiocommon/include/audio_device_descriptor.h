@@ -20,6 +20,7 @@
 #include <map>
 #include "parcel.h"
 #include "audio_device_info.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -161,6 +162,7 @@ public:
     int32_t descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     bool spatializationSupported_ = false;
     bool hasPair_{false};
+    RouterType routerType_ = ROUTER_TYPE_NONE;
 
 private:
     bool IsOutput()

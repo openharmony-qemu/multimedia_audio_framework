@@ -155,6 +155,10 @@ AUDIO_ROUTE_CHANGE:
   REASON: {type: UINT8, desc: route change reason}
   DEVICE_TYPE_BEFORE_CHANGE: {type: UINT8, desc: audio device type before change}
   DEVICE_TYPE_AFTER_CHANGE: {type: UINT8, desc: audio device type after change}
+  PRE_AUDIO_SCENE: {type: INT8, desc: previous audio scene}
+  CUR_AUDIO_SCENE: {type: INT8, desc: current audio scene}
+  DEVICE_LIST: {type: STRING, desc: current device list}
+  ROUTER_TYPE: {type: UINT8, desc: device selection routing policy}
 
 AUDIO_PIPE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio pipe change}
