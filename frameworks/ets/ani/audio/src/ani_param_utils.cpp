@@ -51,16 +51,16 @@ ani_status AniParamUtils::GetInt32(ani_env *env, ani_object arg, int32_t &value)
     }
 
     ani_method method {};
-    status = env->Class_FindMethod(cls, "intValue", nullptr, &method);
+    status = env->Class_FindMethod(cls, "unboxed", nullptr, &method);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Can't find method intValue in Lstd/core/Int.");
+        AUDIO_ERR_LOG("Can't find method unboxed in Lstd/core/Int.");
         return status;
     }
 
     ani_int result;
     status = env->Object_CallMethod_Int(arg, method, &result);
     if (status != ANI_OK) {
-        AUDIO_ERR_LOG("Call method intValue failed.");
+        AUDIO_ERR_LOG("Call method unboxed failed.");
         return status;
     }
 
