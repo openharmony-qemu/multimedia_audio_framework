@@ -230,7 +230,7 @@ void AudioPolicyVolumeFuzzTest()
     audioPolicyProxy->IsVolumeUnadjustable();
 
     VolumeAdjustType adjustType = GetData<VolumeAdjustType>();
-    audioPolicyProxy->AdjustVolumeByStep(VolumeAdjustType adjustType);
+    audioPolicyProxy->AdjustVolumeByStep(adjustType);
     audioPolicyProxy->AdjustSystemVolumeByStep(volumeType, adjustType);
     audioPolicyProxy->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType);
     audioPolicyProxy->GetMinStreamVolume();
@@ -298,7 +298,6 @@ void AudioPolicyProxyOneFuzzTest()
     audioPolicyProxy->GetActiveOutputDevice();
     audioPolicyProxy->GetDmDeviceType();
     audioPolicyProxy->GetActiveInputDevice();
-
 }
 
 void AudioPolicyProxyTwoFuzzTest()
