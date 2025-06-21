@@ -81,6 +81,7 @@ private:
     void SyncOffloadMode();
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
+    uint32_t GetA2dpOffloadLatency(); // unit ms
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
