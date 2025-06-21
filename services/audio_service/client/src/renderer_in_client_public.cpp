@@ -1733,9 +1733,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t framePosition = lastFramePosition_[base].first;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
-        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * speed_;
+        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * lastSpeed_;
         lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
+        lastLatencyPosition_ = latency * lastSpeed_;
         lastReadIdx_ = readIdx;
     } else { // happen when last speed latency not consumed
         if (lastLatency_ + readIdx > latency + lastReadIdx_) {
@@ -1744,6 +1744,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
             lastLatency_ = latency + lastReadIdx_ - readIdx;
         }
     }
+    lastSpeed_ = speed_;
     // add MCR latency
     uint32_t mcrLatency = 0;
     if (converter_ != nullptr) {
