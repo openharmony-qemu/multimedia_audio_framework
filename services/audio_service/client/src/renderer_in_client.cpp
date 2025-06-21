@@ -650,7 +650,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     if (abs(speed_ - lastSpeed_) > EPSILON) {
         Timestamp timestamp;
-        GetAudioTimeStampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
+        GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     }
 
     return WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
