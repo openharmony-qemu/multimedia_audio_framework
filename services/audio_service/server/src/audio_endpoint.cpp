@@ -581,8 +581,15 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
         return false;
     }
 
-    float initVolume = 1.0; // init volume to 1.0
-    sink->SetVolume(initVolume, initVolume);
+    Volume vol = {true, 1.0f, 0};
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+        sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
+        AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
+    } else {
+        sink->SetVolume(1.0f, 1.0f);
+        AUDIO_INFO_LOG("Init Volume 1.0 with Device %{public}d", deviceType);
+    }
 
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
