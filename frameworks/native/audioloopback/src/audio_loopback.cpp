@@ -92,6 +92,7 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         currentState_ = LOOPBACK_STATE_DESTROYING;
         stateLock.unlock();
         DestroyAudioLoopbackInner();
+        currentState_ = LOOPBACK_STATE_IDLE;
     }
     return true;
 }
