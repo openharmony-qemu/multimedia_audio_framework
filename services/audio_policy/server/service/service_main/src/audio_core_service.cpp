@@ -874,14 +874,6 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
 
     audioDeviceCommon_.ClientDiedDisconnectScoNormal();
     audioDeviceCommon_.ClientDiedDisconnectScoRecognition();
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_OFFLOAD)) {
-        audioOffloadStream_.DynamicUnloadOffloadModule();
-    }
-
-    if (!streamCollector_.ExistStreamForPipe(PIPE_TYPE_MULTICHANNEL)) {
-        audioOffloadStream_.UnloadMchModule();
-    }
 }
 
 bool AudioCoreService::ConnectServiceAdapter()
