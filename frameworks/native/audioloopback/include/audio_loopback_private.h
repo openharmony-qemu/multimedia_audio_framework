@@ -76,6 +76,7 @@ private:
 
     void CreateAudioLoopback();
     void DestroyAudioLoopback();
+    void DestroyAudioLoopbackInner();
     bool IsAudioLoopbackSupported();
     bool CheckDeviceSupport();
     bool EnableLoopback();

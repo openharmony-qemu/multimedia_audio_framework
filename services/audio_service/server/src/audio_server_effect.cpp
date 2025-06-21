@@ -479,8 +479,14 @@ bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
         "IsAudioLoopbackSupported refused for %{public}d", callingUid);
-    AUDIO_INFO_LOG("IsAudioLoopbackSupported support %{public}d", mode);
-    return true;
+#ifdef SUPPORT_LOW_LATENCY
+    if (mode == AudioLoopbackMode::LOOPBACK_HARDWARE) {
+        AUDIO_INFO_LOG("IsAudioLoopbackSupported support");
+        return true;
+    }
+#endif
+    AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
+    return false;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
