@@ -408,7 +408,6 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
-    audioInterrupt_.parallelPlayFlag = false;
 
     state_ = RENDERER_PREPARED;
 }
@@ -1729,7 +1728,11 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
     AUDIO_PRERELEASE_LOGI("parallelPlayFlag %{public}d", parallelPlayFlag);
-    audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
+    if (parallelPlayFlag) {
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    } else {
+        audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+    }
     return SUCCESS;
 }
 
