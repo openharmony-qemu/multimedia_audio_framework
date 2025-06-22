@@ -115,6 +115,8 @@ public:
 
     int32_t NotifyWakeUpCapturerRemoved();
 
+    AudioStreamInfo GetFastStreamInfo();
+
     bool IsAbsVolumeSupported();
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();

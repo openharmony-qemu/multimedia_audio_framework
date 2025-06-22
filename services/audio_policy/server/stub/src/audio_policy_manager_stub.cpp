@@ -88,8 +88,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
     "GET_CAPTURER_CHANGE_INFOS",
-    "SET_LOW_POWER_STREM_VOLUME",
-    "GET_LOW_POWRR_STREM_VOLUME",
+    "SET_LOW_POWER_STREAM_VOLUME",
+    "GET_FAST_STREAM_INFO",
+    "GET_LOW_POWER_STREAM_VOLUME",
     "UPDATE_STREAM_STATE",
     "GET_SINGLE_STREAM_VOLUME",
     "GET_VOLUME_GROUP_INFO",
@@ -466,6 +467,12 @@ void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, Mess
         reply.WriteInt32(AUDIO_OK);
     else
         reply.WriteInt32(AUDIO_ERR);
+}
+
+void AudioPolicyManagerStub::GetFastStreamInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo streamInfo = GetFastStreamInfo();
+    streamInfo.Marshalling(reply);
 }
 
 void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
@@ -1733,6 +1740,9 @@ void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_FAST_STREAM_INFO):
+            GetFastStreamInfoInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_SOUND_URI):
             GetSystemSoundUriInternal(data, reply);
             break;
@@ -1851,10 +1861,10 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
             GetCapturerChangeInfosInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME):
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREAM_VOLUME):
             SetLowPowerVolumeInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME):
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWER_STREAM_VOLUME):
             GetLowPowerVolumeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE):

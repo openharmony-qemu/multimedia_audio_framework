@@ -22,6 +22,10 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const size_t BUFFER_LENGTH_FOUR = 4;
+const size_t BUFFER_LENGTH_EIGHT = 8;
+}
 class FormatConverterUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -213,6 +217,110 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_002, TestSize.Level1)
 
     ret = FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, -1);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_001
+ * @tc.desc  : Test FormatConverter interface: format not equal
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_001, TestSize.Level0)
+{
+    uint8_t srcBuffer[BUFFER_LENGTH_EIGHT] = {0};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_LENGTH_EIGHT, BUFFER_LENGTH_EIGHT};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    uint8_t dstBuffer[BUFFER_LENGTH_FOUR] = {0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_LENGTH_FOUR, BUFFER_LENGTH_FOUR};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_002
+ * @tc.desc  : Test FormatConverter interface: mix s32
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_002, TestSize.Level0)
+{
+    uint8_t srcBuffer[BUFFER_LENGTH_EIGHT] = {0};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_LENGTH_EIGHT, BUFFER_LENGTH_EIGHT};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    uint8_t dstBuffer[BUFFER_LENGTH_EIGHT] = {0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_LENGTH_EIGHT, BUFFER_LENGTH_EIGHT};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_003
+ * @tc.desc  : Test FormatConverter interface: mix s32
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_003, TestSize.Level0)
+{
+    uint8_t srcBuffer[BUFFER_LENGTH_FOUR] = {0};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_LENGTH_FOUR, BUFFER_LENGTH_FOUR};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    uint8_t dstBuffer[BUFFER_LENGTH_FOUR] = {0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_LENGTH_FOUR, BUFFER_LENGTH_FOUR};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test FormatConverter API
+ * @tc.type  : FUNC
+ * @tc.number: DataAccumulationFromVolume_004
+ * @tc.desc  : Test FormatConverter interface: not support f32
+ */
+HWTEST_F(FormatConverterUnitTest, DataAccumulationFromVolume_004, TestSize.Level0)
+{
+    uint8_t srcBuffer[BUFFER_LENGTH_EIGHT] = {0};
+    BufferDesc srcDesc = {srcBuffer, BUFFER_LENGTH_EIGHT, BUFFER_LENGTH_EIGHT};
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+    srcData.bufferDesc = srcDesc;
+    std::vector<AudioStreamData> srcDataList = {srcData};
+
+    uint8_t dstBuffer[BUFFER_LENGTH_EIGHT] = {0};
+    BufferDesc dstDesc = {dstBuffer, BUFFER_LENGTH_EIGHT, BUFFER_LENGTH_EIGHT};
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+    dstData.bufferDesc = dstDesc;
+
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+
+    EXPECT_EQ(ret, false);
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

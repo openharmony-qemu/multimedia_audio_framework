@@ -65,6 +65,8 @@ public:
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
+    virtual AudioStreamInfo GetFastStreamInfo() = 0;
+
     virtual float GetLowPowerVolume(int32_t streamId) = 0;
 
     virtual float GetSingleStreamVolume(int32_t streamId) = 0;

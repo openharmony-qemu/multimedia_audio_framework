@@ -83,6 +83,17 @@ void AudioPolicyConfigManager::OnAudioLatencyParsed(uint64_t latency)
     audioLatencyInMsec_ = latency;
 }
 
+void AudioPolicyConfigManager::OnFastFormatParsed(AudioSampleFormat format)
+{
+    AUDIO_INFO_LOG("fast format is %{public}d", fastFormat_);
+    fastFormat_ = format;
+}
+
+AudioSampleFormat AudioPolicyConfigManager::GetFastFormat() const
+{
+    return fastFormat_;
+}
+
 void AudioPolicyConfigManager::OnSinkLatencyParsed(uint32_t latency)
 {
     sinkLatencyInMsec_ = latency;

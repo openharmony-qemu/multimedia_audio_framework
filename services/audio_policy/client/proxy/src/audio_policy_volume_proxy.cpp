@@ -250,9 +250,27 @@ int32_t AudioPolicyProxy::SetLowPowerVolume(int32_t streamId, float volume)
     data.WriteInt32(streamId);
     data.WriteFloat(volume);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREAM_VOLUME), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "set low power stream volume failed, error: %d", error);
     return reply.ReadInt32();
+}
+
+AudioStreamInfo AudioPolicyProxy::GetFastStreamInfo()
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, streamInfo, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_FAST_STREAM_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, streamInfo, "failed, error: %d", error);
+
+    streamInfo.Unmarshalling(reply);
+    return streamInfo;
 }
 
 float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
@@ -265,7 +283,7 @@ float AudioPolicyProxy::GetLowPowerVolume(int32_t streamId)
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
     data.WriteInt32(streamId);
     int32_t error = Remote()->SendRequest(
-        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME), data, reply, option);
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWER_STREAM_VOLUME), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "get low power stream volume failed, error: %d", error);
     return reply.ReadFloat();
 }

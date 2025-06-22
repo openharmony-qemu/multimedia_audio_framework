@@ -1106,7 +1106,7 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_050, TestSize.Leve
 
     EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
 
-    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME);
+    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREAM_VOLUME);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
@@ -1128,7 +1128,7 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_051, TestSize.Leve
 
     EXPECT_NE(ptrAudioPolicyManagerStub, nullptr);
 
-    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME);
+    uint32_t code = static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWER_STREAM_VOLUME);
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;

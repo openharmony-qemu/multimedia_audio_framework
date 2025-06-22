@@ -43,6 +43,7 @@ public:
     // custom parser callback
     void OnXmlParsingCompleted(const std::unordered_map<ClassType, std::list<AudioModuleInfo>> &xmldata);
     void OnAudioLatencyParsed(uint64_t latency);
+    void OnFastFormatParsed(AudioSampleFormat format);
     void OnSinkLatencyParsed(uint32_t latency);
     void OnVolumeGroupParsed(std::unordered_map<std::string, std::string>& volumeGroupData);
     void OnInterruptGroupParsed(std::unordered_map<std::string, std::string>& interruptGroupData);
@@ -68,6 +69,7 @@ public:
         const AudioSamplingRate &samplingRate);
     bool GetNormalVoipFlag();
     int32_t GetAudioLatencyFromXml() const;
+    AudioSampleFormat GetFastFormat() const;
     uint32_t GetSinkLatencyFromXml() const;
     void GetAudioAdapterInfos(std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> &adapterInfoMap);
     void GetVolumeGroupData(std::unordered_map<std::string, std::string>& volumeGroupData);
@@ -119,6 +121,7 @@ private:
     bool enableFastVoip_ = false;
     uint64_t audioLatencyInMsec_ = 50;
     uint32_t sinkLatencyInMsec_ {0};
+    AudioSampleFormat fastFormat_ = SAMPLE_S16LE;
     bool normalVoipFlag_ = false;
 
     std::atomic<bool> isAdapterInfoMap_ = false;
