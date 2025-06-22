@@ -1846,5 +1846,40 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_ShouldSetRendererFlags_WhenRenderer
     EXPECT_EQ(info.rendererInfo.rendererFlags, AUDIO_FLAG_MMAP);
 }
 
+/**
+ * @tc.name  : Test SetFastStatusChangeCallback API.
+ * @tc.number: SetFastStatusChangeCallback_001
+ * @tc.desc  : Test SetFastStatusChangeCallback interface.
+ */
+HWTEST(AudioRendererUnitTest, SetFastStatusChangeCallback_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    std::shared_ptr<RendererFastStatusChangeCallbackTest> fastStatusChangeCallback =
+        std::make_shared<RendererFastStatusChangeCallbackTest>();
+
+    audioRendererPrivate->SetFastStatusChangeCallback(fastStatusChangeCallback);
+    EXPECT_NE(audioRendererPrivate->fastStatusChangeCallback_, nullptr);
+}
+
+/**
+ * @tc.name  : Test SetAudioHapticsSyncId API.
+ * @tc.number: SetAudioHapticsSyncId_001
+ * @tc.desc  : Test SetAudioHapticsSyncId interface.
+ */
+HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    int32_t syncId = 100000;
+    audioRendererPrivate->SetAudioHapticsSyncId(syncId);
+    EXPECT_NE(audioRendererPrivate->audioHapticsSyncId_, syncId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

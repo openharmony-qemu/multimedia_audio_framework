@@ -2820,5 +2820,36 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_GetAudioTimestampInfo_007, TestSize
     audioRenderer->Release();
 }
 
+/**
+ * @tc.name  : Test GetStartStreamResult API.
+ * @tc.number: Audio_Renderer_GetStartStreamResult_001
+ * @tc.desc  : Test GetStartStreamResult interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStartStreamResult_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    int32_t ret = audioRendererPrivate->GetStartStreamResult(StateChangeCmdType::CMD_FROM_CLIENT);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetFastStatus API.
+ * @tc.number: GetFastStatus_001
+ * @tc.desc  : Test GetFastStatus interface.
+ */
+HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+
+    auto ret = audioRendererPrivate->GetFastStatus();
+    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS

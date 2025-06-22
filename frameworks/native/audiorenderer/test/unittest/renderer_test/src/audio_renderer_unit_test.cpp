@@ -4164,22 +4164,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_InitFormatUnsupportedErrorCallback_
 }
 
 /**
- * @tc.name  : Test GetStartStreamResult API.
- * @tc.number: Audio_Renderer_GetStartStreamResult_001
- * @tc.desc  : Test GetStartStreamResult interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_GetStartStreamResult_001, TestSize.Level2)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    int32_t ret = audioRendererPrivate->GetStartStreamResult(StateChangeCmdType::CMD_FROM_CLIENT);
-    EXPECT_FALSE(ret);
-}
-
-/**
  * @tc.name  : Test OnInterrupt API.
  * @tc.number: Audio_Renderer_OnInterrupt_002
  * @tc.desc  : Test OnInterrupt interface.
@@ -4461,56 +4445,5 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     fclose(wavFile);
 }
 
-/**
- * @tc.name  : Test GetFastStatus API.
- * @tc.number: GetFastStatus_001
- * @tc.desc  : Test GetFastStatus interface.
- */
-HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    auto ret = audioRendererPrivate->GetFastStatus();
-    EXPECT_EQ(ret, FASTSTATUS_NORMAL);
-}
-
-/**
- * @tc.name  : Test SetFastStatusChangeCallback API.
- * @tc.number: SetFastStatusChangeCallback_001
- * @tc.desc  : Test SetFastStatusChangeCallback interface.
- */
-HWTEST(AudioRendererUnitTest, SetFastStatusChangeCallback_001, TestSize.Level2)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    std::shared_ptr<RendererFastStatusChangeCallbackTest> fastStatusChangeCallback =
-        std::make_shared<RendererFastStatusChangeCallbackTest>();
-
-    audioRendererPrivate->SetFastStatusChangeCallback(fastStatusChangeCallback);
-    EXPECT_NE(audioRendererPrivate->fastStatusChangeCallback_, nullptr);
-}
-
-/**
- * @tc.name  : Test SetAudioHapticsSyncId API.
- * @tc.number: SetAudioHapticsSyncId_001
- * @tc.desc  : Test SetAudioHapticsSyncId interface.
- */
-HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    int32_t syncId = 100000;
-    audioRendererPrivate->SetAudioHapticsSyncId(syncId);
-    EXPECT_NE(audioRendererPrivate->audioHapticsSyncId_, syncId);
-}
 } // namespace AudioStandard
 } // namespace OHOS
