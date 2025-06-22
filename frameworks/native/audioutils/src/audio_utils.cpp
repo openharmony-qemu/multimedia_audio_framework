@@ -1294,18 +1294,18 @@ std::string GetTime()
     }
 
     curTime += std::to_string(YEAR_BASE + t->tm_year);
-    curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
+    curTime += "-" + (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
         std::to_string(1 + t->tm_mon));
-    curTime += (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
+    curTime += "-" + (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
         std::to_string(t->tm_mday));
-    curTime += (t->tm_hour < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_hour) :
+    curTime += "-" + (t->tm_hour < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_hour) :
         std::to_string(t->tm_hour));
-    curTime += (t->tm_min < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_min) :
+    curTime += ":" + (t->tm_min < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_min) :
         std::to_string(t->tm_min));
-    curTime += (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
+    curTime += ":" + (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
         std::to_string(t->tm_sec));
     int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
-    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
+    curTime += ":" + (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
         std::to_string(mSec) : std::to_string(mSec));
     return curTime;
 }

@@ -170,7 +170,6 @@ private:
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
     // for dfx log
-    int32_t logMode_ = 0;
     std::string logUtilsTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
 #ifdef FEATURE_POWER_MANAGER

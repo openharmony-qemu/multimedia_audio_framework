@@ -146,6 +146,7 @@ private:
     std::shared_ptr<EventEntry> GetEventEntry();
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
+    void DumpSelectHistory(std::string &dumpString);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -270,6 +271,7 @@ private:
         SourceType sourceType);
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
         SourceType sourceType);
+    void RecordSelectDevice(const std::string &history);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
@@ -430,6 +432,10 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+
+    // select device history
+    std::mutex hisQueueMutex_;
+    std::deque<std::string> selectDeviceHistory_;
 
     // dual tone for same sinks
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;

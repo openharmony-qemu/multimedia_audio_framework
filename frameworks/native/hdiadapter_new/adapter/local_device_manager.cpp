@@ -18,6 +18,7 @@
 #endif
 
 #include "adapter/local_device_manager.h"
+#include "manager/hdi_monitor.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -277,6 +278,8 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
         &hdiRenderId);
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
+        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create render fail, id:" + std::to_string(hdiRenderId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -319,6 +322,8 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
         &hdiCaptureId);
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
+        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create capture fail, id:" + std::to_string(hdiCaptureId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -366,6 +371,10 @@ void LocalDeviceManager::InitAudioManager(void)
     CHECK_AND_RETURN_LOG(audioManager_ == nullptr, "audio manager already inited");
     AUDIO_INFO_LOG("init audio manager");
     audioManager_ = IAudioManagerGet(false);
+    if (audioManager_ == nullptr) {
+        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, 0,
+            "get hdi manager fail");
+    }
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "get audio manager fail");
 
     CHECK_AND_RETURN_LOG(hdfRemoteService_ == nullptr, "hdf remote service already inited");

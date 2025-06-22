@@ -2398,6 +2398,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
     dumpFuncMap[u"-as"] = &AudioPolicyServer::AudioSessionInfoDump;
     dumpFuncMap[u"-ap"] = &AudioPolicyServer::AudioPipeManagerDump;
+    dumpFuncMap[u"-sd"] = &AudioPolicyServer::SelectDeviceDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -2413,6 +2414,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     MicrophoneMuteInfoDump(dumpString);
     AudioSessionInfoDump(dumpString);
     AudioPipeManagerDump(dumpString);
+    SelectDeviceDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -2469,6 +2471,13 @@ void AudioPolicyServer::AudioPipeManagerDump(std::string &dumpString)
 {
     if (coreService_ != nullptr) {
         coreService_->DumpPipeManager(dumpString);
+    }
+}
+
+void AudioPolicyServer::SelectDeviceDump(std::string &dumpString)
+{
+    if (coreService_ != nullptr) {
+        coreService_->DumpSelectHistory(dumpString);
     }
 }
 

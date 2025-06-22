@@ -29,10 +29,15 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_monitor.h"
 #include "adapter/i_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int64_t RENDER_FRAME_LIMIT = 50; // 50ms
+const int64_t RENDER_FRAME_REPORT_LIMIT = 100000000; // 100ms
+}
 AudioRenderSink::AudioRenderSink(const uint32_t renderId, const std::string &halName)
     : renderId_(renderId), halName_(halName)
 {
@@ -63,7 +68,6 @@ int32_t AudioRenderSink::Init(const IAudioSinkAttr &attr)
     adapterNameCase_ = attr_.adapterName;
     AUDIO_INFO_LOG("adapterNameCase_: %{public}s", adapterNameCase_.c_str());
     openSpeaker_ = attr_.openMicSpeaker;
-    logMode_ = system::GetIntParameter("persist.multimedia.audiolog.switch", 0);
 
     Trace trace("AudioRenderSink::Init " + adapterNameCase_);
     int32_t ret = InitRender();
@@ -128,6 +132,10 @@ int32_t AudioRenderSink::Start(void)
     }
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
+    if (ret != SUCCESS) {
+        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
+            "local start failed, halName_:" + halName_);
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     UpdateSinkState(true);
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
@@ -227,7 +235,6 @@ int32_t AudioRenderSink::Reset(void)
 
 int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
-    int64_t stamp = ClockTime::GetCurNano();
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_) {
         AUDIO_WARNING_LOG("not start, invalid state");
@@ -256,13 +263,13 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
         AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), len);
     }
     Trace trace("AudioRenderSink::RenderFrame");
+    int64_t stamp = ClockTime::GetCurNano();
     int32_t ret = audioRender_->RenderFrame(audioRender_, reinterpret_cast<int8_t *>(&data), static_cast<uint32_t>(len),
         &writeLen);
+    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
-    stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
-    int64_t stampThreshold = 50; // 50ms
-    if (logMode_ || stamp >= stampThreshold) {
+    if (stamp >= RENDER_FRAME_LIMIT) {
         AUDIO_WARNING_LOG("len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms", len, stamp);
     }
 #ifdef FEATURE_POWER_MANAGER
@@ -270,6 +277,10 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
         runningLock_->UpdateAppsUidToPowerMgr();
     }
 #endif
+    if (stamp > RENDER_FRAME_REPORT_LIMIT) {
+        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_TIMEOUT,
+            static_cast<int32_t>(stamp), "call RenderFrame too long, " + halName_);
+    }
 
     return SUCCESS;
 }

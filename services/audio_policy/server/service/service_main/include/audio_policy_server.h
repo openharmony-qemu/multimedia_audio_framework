@@ -638,6 +638,7 @@ public:
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
     void AudioPipeManagerDump(std::string &dumpString);
+    void SelectDeviceDump(std::string &dumpString);
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
