@@ -1231,7 +1231,12 @@ bool AudioRendererPrivate::Release()
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
+
     abortRestore_ = true;
+    if (audioStream_ == nullptr) {
+        AUDIO_ERR_LOG("audioStream is null");
+        return true;
+    }
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
