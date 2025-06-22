@@ -264,23 +264,6 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
 #endif
 }
 
-static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
-    std::shared_ptr<IAudioCaptureSource> &source)
-{
-    sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-    source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-    if (!source->IsInited()) {
-#ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Use fast capturer source instance");
-        source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
-        if (source && !source->IsInited()) {
-            AUDIO_INFO_LOG("Use fast capturer voip source instance");
-            source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
-        }
-#endif
-    }
-}
-
 void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(audioServer_ != nullptr, "audioServer is null");
