@@ -211,7 +211,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", sessionId_);
         isMicIndicatorOn_ = true;
     }
@@ -837,7 +837,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 "because restoreStatus:NEED_RESTORE", sessionId_);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
-        
+
         processBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;

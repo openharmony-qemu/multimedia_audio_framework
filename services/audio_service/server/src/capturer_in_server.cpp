@@ -152,7 +152,7 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
-    traceTag_ = "[" + std::to_string(streamIndex_) + "]CapturerInServer"; // [100001]CapturerInServer
+    traceTag_ = "[" + std::to_string(streamIndex_) + "]CapturerServerOut"; // [100001]CapturerServerOut
     // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
