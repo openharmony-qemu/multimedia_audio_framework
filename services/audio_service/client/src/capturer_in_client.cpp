@@ -99,7 +99,9 @@ public:
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     float GetVolume() override;
+    float GetLoudnessGain() override;
     int32_t SetVolume(float volume) override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
@@ -991,6 +993,19 @@ float CapturerInClientInner::GetVolume()
     AUDIO_WARNING_LOG("GetVolume is only for renderer");
     return 0.0;
 }
+
+int32_t CapturerInClientInner::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain is only for renderer");
+    return ERROR;
+}
+
+float CapturerInClientInner::GetLoudnessGain()
+{
+    AUDIO_WARNING_LOG("GetLoudnessGain is only for renderer");
+    return 0.0;
+}
+
 
 int32_t CapturerInClientInner::SetMute(bool mute)
 {

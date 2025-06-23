@@ -74,6 +74,7 @@ public:
     int32_t Peek(std::vector<char> *audioBuffer, int32_t &index) override;
     int32_t ReturnIndex(int32_t index) override;
     int32_t SetClientVolume(float clientVolume) override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
 
 private:
