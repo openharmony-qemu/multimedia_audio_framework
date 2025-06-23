@@ -386,6 +386,9 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     }
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sinkInputNode is nullptr");
+    sceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNode->GetLoudnessGain());
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
@@ -797,8 +800,22 @@ int32_t HpaeRendererManager::SetClientVolume(uint32_t sessionId, float volume)
     return SUCCESS;
 }
 
-int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
+    auto request = [this, sessionId] {
+        AUDIO_INFO_LOG("set loudnessGain %{public}f to sessionId %{public}d", loudnessGain, sessionId);
+        std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+            "session with Id %{public}d not in sinkInputNodeMap_", sessionId);
+        sinkInputNode->SetLoudnessGain(loudnessGain);
+
+        HpaeProcessorType processorType = GetProcessorType(sessionId);
+        std::shared_ptr<HpaeProcessCluster> processCluster = SafeGetMap(sceneClusterMap_, processorType);
+        CHECK_AND_RETURN_LOG(processCluster != nullptr,
+            "session with Id %{public}d not in sceneClusterMap_", sessionId);
+        processCluster->SetLoudnessGain(sessionId, float);
+    }
+    SendRequest(request);
     return SUCCESS;
 }
 

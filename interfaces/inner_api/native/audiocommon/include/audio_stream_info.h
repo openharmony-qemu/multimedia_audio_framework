@@ -621,9 +621,15 @@ struct AudioCallBackCapturerStreamInfo {
 };
 
 struct AudioChannelInfo {
-    AudioChannelLayout channelLayout;
-    uint32_t numChannels;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    uint32_t numChannels = 0;
 };
+
+struct AudioBasicFormat {
+    AudioChannelInfo audioChannelInfo;
+    AudioSampleFormat format = INVALID_WIDTH;
+    AudioSamplingRate rate = 0;
+}
 
 } // namespace AudioStandard
 } // namespace OHOS

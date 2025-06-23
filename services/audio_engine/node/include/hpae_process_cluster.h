@@ -19,6 +19,7 @@
 #include "hpae_audio_format_converter_node.h"
 #include "hpae_gain_node.h"
 #include "hpae_render_effect_node.h"
+#include "hape_loudness_gain_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,18 +43,21 @@ public:
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
-    int32_t GetEffectNodeInputChannelInfo(uint32_t &channels, uint64_t &channelLayout) override;
+    int32_t GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat) override;
+    int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
     void SetConnectedFlag(bool flag);
     bool GetConnectedFlag() const;
     int32_t SetupAudioLimiter();
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
 private:
-    void ConnectMixerNode();
+    void ConnectEffectNodeToMixerNode();
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeGainNode>> idGainMap_;
+    std::unordered_map<uint32_t, std::shared_ptr<HpaeLoudnessGainNode>> idLoudnessGainNodeMap_;
     HpaeSinkInfo sinkInfo_;
     bool isConnectedToOutputCluster = false;
 };

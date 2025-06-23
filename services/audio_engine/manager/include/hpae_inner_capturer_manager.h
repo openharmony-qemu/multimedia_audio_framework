@@ -91,7 +91,7 @@ public:
     std::string GetThreadName() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     std::string GetDeviceHDFDumpInfo() override;
-
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
     int32_t CreateRendererInputSessionInner(const HpaeStreamInfo &streamInfo);
@@ -125,7 +125,6 @@ private:
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> rendererSceneClusterMap_;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> capturerSessionNodeMap_;
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> rendererSessionNodeMap_;
-};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

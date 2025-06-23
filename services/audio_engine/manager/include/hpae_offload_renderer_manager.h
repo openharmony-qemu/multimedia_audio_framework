@@ -33,7 +33,7 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-class HpaeOffloadRendererManager : public IHpaeRendererManager {
+class HpaeOffloadRendererManager : public IHpaeRendererManager, public INodeFormatInfoCallback {
 public:
     HpaeOffloadRendererManager(HpaeSinkInfo& sinkInfo);
     virtual ~HpaeOffloadRendererManager();
@@ -91,7 +91,8 @@ public:
     void DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     std::string GetDeviceHDFDumpInfo() override;
-
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -107,7 +108,9 @@ private:
 
     HpaeRenderSessionInfo sessionInfo_;
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode_ = nullptr;
-    std::shared_ptr<HpaeAudioFormatConverterNode> formatConverterNode_ = nullptr;
+    std::shared_ptr<HpaeAudioFormatConverterNode> converterForLoudness_ = nullptr;
+    std::shared_ptr<HpaeAudioFormatConverterNode> converterForOutput_ = nullptr;
+    std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = nullptr;
     std::unique_ptr<HpaeOffloadSinkOutputNode> sinkOutputNode_ = nullptr;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

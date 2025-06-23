@@ -132,7 +132,10 @@ void HpaeOffloadRendererManager::DeleteInputSession()
         sinkOutputNode_->StopStream();
     }
     sinkInputNode_ = nullptr;
-    formatConverterNode_ = nullptr;
+    converterForLoudness_ = nullptr;
+    loudnessGainNode_ = nullptr;
+    converterForOutput_ = nullptr;
+    sinkInputNode_ = nullptr;
 }
 
 int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
@@ -157,27 +160,35 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         return SUCCESS;
     }
 
-    if (CheckHpaeNodeInfoIsSame(sinkInputNode_->GetNodeInfo(), sinkOutputNode_->GetNodeInfo())) {
-        formatConverterNode_ = nullptr;
-        sinkOutputNode_->Connect(sinkInputNode_);
-        OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-    } else {
-        HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
-        nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-        nodeInfo.nodeId = OnGetNodeId();
-        nodeInfo.sessionId = sinkInputNode_->GetSessionId();
-        formatConverterNode_ = std::make_shared<HpaeAudioFormatConverterNode>(
-            sinkInputNode_->GetNodeInfo(), nodeInfo);
-        formatConverterNode_->Connect(sinkInputNode_);
-        sinkOutputNode_->Connect(formatConverterNode_);
-        OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), formatConverterNode_->GetNodeInfo());
-        OnNotifyDfxNodeInfo(true, formatConverterNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-    }
+    HpaeNodeInfo nodeInfo = sinkInputNode_.GetNodeInfo();
+    nodeInfo.nodeId = OnGetNodeId();
+    nodeInfo.name = "HpaeAudioFormatConverterNode";
+    converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(
+        sinkInputNode_->GetNodeInfo(), nodeInfo);
+    converterForLoudness_->Connect(sinkInputNode_);
+
+    nodeInfo.nodeName = "HpaeLoudnessGainNode";
+    nodeInfo.nodeId = OnGetNodeId();
+    std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    loudnessGainNode_->Connect(converterForLoudness_);
+    loudnessGainNode_->SetLoudnessGain(sinkInputInfo_->GetLoudnessGain());
+
     // single stream manager
-    HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
-    nodeInfo.sessionId = sinkInputNode_->GetSessionId();
-    nodeInfo.streamType = sinkInputNode_->GetStreamType();
-    sinkOutputNode_->SetNodeInfo(nodeInfo);
+    HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
+    outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
+    outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
+    sinkOutputNode_->SetNodeInfo(outputNodeInfo);
+    outputNodeInfo.name = "HpaeAudioFormatConverterNode";
+    outputNodeInfo.nodeId = OnGetNodeId();
+    converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
+    converterForOutput_->Connect(loudnessGainNode_);
+    sinkOutputNode_->Connect(converterForOutput_);
+
+    OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), converterForOutput_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(true, converterForOutput_->GetNodeId(), loudnessGainNode_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(true, loudnessGainNode_->GetNodeId(), converterForLoudness_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(true, converterForLoudness_->GetNodeId(), sinkInputNode_->GetNodeInfo());
+    
     return SUCCESS;
 }
 
@@ -200,15 +211,14 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
 
 int32_t HpaeOffloadRendererManager::DisConnectInputSession()
 {
-    if (formatConverterNode_ == nullptr) {
-        sinkOutputNode_->DisConnect(sinkInputNode_);
-        OnNotifyDfxNodeInfo(false, sinkOutputNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-    } else {
-        formatConverterNode_->DisConnect(sinkInputNode_);
-        sinkOutputNode_->DisConnect(formatConverterNode_);
-        OnNotifyDfxNodeInfo(false, formatConverterNode_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-        OnNotifyDfxNodeInfo(false, sinkOutputNode_->GetNodeId(), formatConverterNode_->GetNodeInfo());
-    }
+    converterForLoudness_->DisConnect(sinkInputNode_);
+    loudnessGainNode_->DisConnect(converterForLoudness_);
+    converterForOutput_->DisConnect(loudnessGainNode_);
+    sinkOutputNode_->DisConnect(converterForOutput_);
+    OnNotifyDfxNodeInfo(false, converterForLoudness_->GetNodeId(), sinkInputNode_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(false, loudnessGainNode_->GetNodeId(), converterForLoudness_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(false, converterForOutput_->GetNodeId(), loudnessGainNode_->GetNodeInfo());
+    OnNotifyDfxNodeInfo(false, sinkOutputNode_->GetNodeId(), converterForOutput_->GetNodeInfo());
     return SUCCESS;
 }
 
@@ -677,6 +687,22 @@ std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()
     std::string config;
     TransDeviceInfoToString(sinkInfo_, config);
     return config;
+}
+
+int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    CHECK_AND_RETURN_RET_LOG(sinkInputNode_, ERROR, "sessionId %{public}d, sinkInputNode is nullptr", sessionId);
+    CHECK_AND_RETURN_RET_LOG(sinkInputNode_->GetSessionId() == sessionId, ERROR,
+        "sessionId %{public}d is not current sessionid %{public}d for offload",
+        sessionId, sinkInputNode_->GetSessionId());
+    sinkInputNode_->SetLoudnessGain(loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, SUCCESS, "session id %{public}d is not connected", sessionId);
+    loudnessGainNode_->SetLoudnessGain(loudnessGain);
+}
+
+int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+{
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

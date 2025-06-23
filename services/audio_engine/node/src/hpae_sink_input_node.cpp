@@ -275,6 +275,17 @@ bool HpaeSinkInputNode::GetOffloadEnabled()
 {
     return offloadEnable_;
 }
+
+int32_t SetLoudnessGain(float loudnessGain)
+{
+    loudnessGain_ = loudnessGain;
+    return SUCCESS;
+}
+
+float GetLoundnessGain()
+{
+    return loudnessGain_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

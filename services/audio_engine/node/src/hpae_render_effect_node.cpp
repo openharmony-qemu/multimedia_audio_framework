@@ -379,9 +379,12 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
     }
 }
 
-int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(uint32_t &channels, uint64_t &channelLayout)
+int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    return AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_, channels, channelLayout);
+    AudioBasicFormat basicFormat;
+    basicFormat.rate = DEFUALT_EFFECT_RATE;
+    return AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
+        basicFormat.audioChannelInfo.numChannels, basicFormat.audioChannelInfo.channelLayout);
 }
 
 bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)

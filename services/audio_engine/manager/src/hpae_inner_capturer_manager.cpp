@@ -709,6 +709,7 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(rendererSceneClusterMap_, sceneType), SUCCESS,
         "miss corresponding process cluster for scene type %{public}d", sceneType);
     rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
+    rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, hpaeInnerCapSinkNode_->GetLoudnessGain());
     // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
     return SUCCESS;
@@ -789,6 +790,25 @@ std::string HpaeInnerCapturerManager::GetDeviceHDFDumpInfo()
     std::string config;
     TransDeviceInfoToString(sinkInfo_, config);
     return config;
+}
+
+int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    auto request = [this, sessionId]() {
+        AUDIO_INFO_LOG("set loudnessGain %{public}f to sessionId %{public}d", loudnessGain, sessionId);
+        std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+            "session with Id %{public}d not in sinkInputNodeMap_", sessionId);
+        sinkInputNode->SetLoudnessGain(loudnessGain);
+
+        HpaeProcessorType processorType = GetProcessorType(sessionId);
+        std::shared_ptr<HpaeProcessCluster> processCluster = SafeGetMap(rendererSceneClusterMap_, processorType);
+        CHECK_AND_RETURN_LOG(processCluster != nullptr,
+            "processCluster with sceneType %{public}d not exists", processorType);
+        processCluster->SetLoudnessGain(sessionId, float);
+    }
+    SendRequestInner(request);
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
