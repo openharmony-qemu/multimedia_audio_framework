@@ -367,7 +367,12 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+        if (bufferDesc.dataLength != 0) {
+            result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+        } else {
+            AUDIO_WARNING_LOG("INVALID AudioVivid buffer");
+            usleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (curStreamParams_.encoding == ENCODING_PCM) {
         if (bufferDesc.dataLength != 0) {
