@@ -831,7 +831,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appUid,
                 processConfig_.appInfo.appPid,
                 processConfig_.appInfo.appTokenId,
-                HandleStreamStatusToCapturerState(streamStatus_->load());
+                HandleStreamStatusToCapturerState(streamStatus_->load())
             };
             AUDIO_INFO_LOG("Insert fast stream:%{public}u into switchStreamRecord "
                 "because restoreStatus:NEED_RESTORE", sessionId_);
