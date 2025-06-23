@@ -91,6 +91,8 @@ enum DeviceType: i32 {
   DISPLAY_PORT = 23,
   REMOTE_CAST = 24,
   USB_DEVICE = 25,
+  HDMI = 27,
+  LINE_DIGITAL = 28,
   REMOTE_DAUDIO = 29,
   DEFAULT = 1000,
 }
@@ -177,6 +179,14 @@ enum StreamUsage: i32 {
   STREAM_USAGE_ULTRASONIC = 16,
   STREAM_USAGE_VIDEO_COMMUNICATION = 17,
   STREAM_USAGE_VOICE_CALL_ASSISTANT = 21,
+}
+
+enum InterruptRequestType: i32 {
+  INTERRUPT_REQUEST_TYPE_DEFAULT = 0
+}
+
+enum VolumeFlag: i32 {
+  FLAG_SHOW_SYSTEM_UI = 1
 }
 
 struct AudioStreamInfo {
@@ -308,6 +318,16 @@ interface AudioManager {
   GetAudioSceneSync(): AudioScene;
 }
 
+enum InterruptRequestResultType: i32 {
+  INTERRUPT_REQUEST_GRANT = 0,
+  INTERRUPT_REQUEST_REJECT = 1,
+}
+
+struct InterruptResult {
+  requestResult: InterruptRequestResultType;
+  interruptNode: i32;
+}
+
 enum DeviceBlockStatus: i32 {
   UNBLOCKED = 0,
   BLOCKED = 1,
@@ -368,10 +388,10 @@ interface AudioRoutingManager {
   @gen_promise("excludeOutputDevices")
   ExcludeOutputDevicesSync(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
 
-  @overload("unexcludeOutputDevices")
+  @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsageAndDevices(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
 
-  @overload("unexcludeOutputDevices")
+  @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
 
   @!sts_inject_into_interface("on(type: string, capturerInfo: AudioCapturerInfo, callback: (data: object) => void): void;")
@@ -522,14 +542,14 @@ interface AudioVolumeManager {
   OnVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChange(callback: (data: VolumeEvent) => void): void;
 
-  @!sts_inject_into_interface("on(type: string, uid: double, callback: (data: object) => void): void;")
-  @!sts_inject_into_class("""on(type: string, uid: double, callback: object): void {
+  @!sts_inject_into_interface("on(type: string, uid: int, callback: (data: object) => void): void;")
+  @!sts_inject_into_class("""on(type: string, uid: int, callback: object): void {
             if (type === "appVolumeChangeForUid") {
               this.OnAppVolumeChangeForUid_inner(uid, callback as (data: VolumeEvent) => void);
             }
         }
   """)
-  OnAppVolumeChangeForUid(uid: f64, callback: (data: VolumeEvent) => void): void;
+  OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
 
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
@@ -694,10 +714,11 @@ struct AudioDeviceDescriptor {
 
 struct VolumeEvent {
   volumeType: AudioVolumeType;
-  volume: f64;
+  volume: i32;
   updateUi: bool;
-  volumeGroupId: f64;
+  volumeGroupId: i32;
   networkId: String;
+  volumeMode: Optional<AudioVolumeMode>;
 }
 
 struct MicStateChangeEvent {
@@ -1081,7 +1102,7 @@ interface AudioRenderer {
   @gen_promise("setDefaultOutputDevice")
   SetDefaultOutputDeviceSync(deviceType: DeviceType): void;
 
-  @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
+  @!sts_inject_into_interface("on(type: string, callback: (data: object) => object): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "stateChange") {
               this.OnStateChange_inner(callback as (data: AudioState) => void);

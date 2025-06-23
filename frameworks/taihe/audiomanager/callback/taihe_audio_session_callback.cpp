@@ -59,19 +59,13 @@ void TaiheAudioSessionCallback::SaveCallbackReference(std::shared_ptr<uintptr_t>
     CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     audioSessionJsCallback_ = cb;
+    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
 void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(ani_env *env, AudioSessionJsCallback *event)
 {
     std::lock_guard<std::mutex> lock(sWorkerMutex_);
-    ani_vm *etsVm;
-    ani_env *etsEnv;
-    CHECK_AND_RETURN_LOG(env->GetVM(&etsVm) == ANI_OK, "Get etsVm fail");
-    ani_option interopEnabled {"--interop=disable", nullptr};
-    ani_options aniArgs {1, &interopEnabled};
-    CHECK_AND_RETURN_LOG(etsVm->AttachCurrentThread(&aniArgs, ANI_VERSION_1, &etsEnv) == ANI_OK,
-        "AttachCurrentThread fail");
-    CHECK_AND_RETURN_LOG(etsEnv != nullptr, "SafeJsCallbackRendererStateWork: etsEnv is nullptr");
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackAudioSession: no memory");
     std::shared_ptr<AudioSessionJsCallback> safeContext(
@@ -90,7 +84,6 @@ void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(ani_env *env, Aud
             event->audioSessionDeactiveEvent);
         (*cacheCallback)(sessionDeactivatedEvent);
     } while (0);
-    CHECK_AND_RETURN_LOG(etsVm->DetachCurrentThread() == ANI_OK, "DetachCurrentThread fail");
 }
 
 void TaiheAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb)
@@ -101,7 +94,12 @@ void TaiheAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSe
     }
     AudioSessionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    std::thread worker(SafeJsCallbackAudioSessionWork, env_, event);
-    worker.join();
+    auto sharePtr = shared_from_this();
+    auto task = [event, sharePtr, this]() {
+        if (sharePtr != nullptr) {
+            sharePtr->SafeJsCallbackAudioSessionWork(this->env_, event);
+        }
+    };
+    mainHandler_->PostTask(task, "OnAudioSessionDeactivated", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 } // namespace ANI::Audio

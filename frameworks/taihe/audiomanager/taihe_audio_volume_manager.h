@@ -41,7 +41,7 @@ public:
     void SetAppVolumePercentageSync(int32_t volume);
     AudioVolumeGroupManager GetVolumeGroupManagerSync(int32_t groupId);
     void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
-    void OnAppVolumeChangeForUid(double uid, callback_view<void(VolumeEvent const&)> callback);
+    void OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback);
     void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);
     void OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
@@ -52,7 +52,7 @@ private:
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void RegisterSelfAppVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
-    static void RegisterAppVolumeChangeForUidCallback(double uid, std::shared_ptr<uintptr_t> &callback,
+    static void RegisterAppVolumeChangeForUidCallback(int32_t appUid, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);

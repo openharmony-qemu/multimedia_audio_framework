@@ -180,12 +180,11 @@ void AudioVolumeManagerImpl::RegisterCallback(std::shared_ptr<uintptr_t> &callba
     cb->SaveCallbackReference(cbName, callback);
 }
 
-void AudioVolumeManagerImpl::RegisterAppVolumeChangeForUidCallback(double uid, std::shared_ptr<uintptr_t> &callback,
+void AudioVolumeManagerImpl::RegisterAppVolumeChangeForUidCallback(int32_t appUid, std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl)
 {
     CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioVolMngrImpl is nullptr");
-    int32_t appUid = static_cast<int32_t>(uid);
     ani_env *env = get_env();
     CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (audioVolMngrImpl->appVolumeChangeCallbackForUidTaihe_ == nullptr) {
@@ -339,7 +338,7 @@ void AudioVolumeManagerImpl::OffAppVolumeChange(optional_view<callback<void(Volu
     UnregisterSelfAppVolumeChangeCallback(cacheCallback, this);
 }
 
-void AudioVolumeManagerImpl::OnAppVolumeChangeForUid(double uid, callback_view<void(VolumeEvent const&)> callback)
+void AudioVolumeManagerImpl::OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback)
 {
     CHECK_AND_RETURN_RET_LOG(audioSystemMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioSystemMngr_ is nullptr");

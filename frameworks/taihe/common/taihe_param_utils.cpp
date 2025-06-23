@@ -572,9 +572,9 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
         static_cast<OHOS::AudioStandard::AudioStreamType>(volumeEvent.volumeType);
     VolumeEvent taiheVolumeEvent {
         .volumeType = TaiheAudioEnum::GetJsAudioVolumeType(audioVolumeType),
-        .volume = static_cast<double>(volumeEvent.volume),
+        .volume = volumeEvent.volume,
         .updateUi = volumeEvent.updateUi,
-        .volumeGroupId = static_cast<double>(volumeEvent.volumeGroupId),
+        .volumeGroupId = volumeEvent.volumeGroupId,
         .networkId = ::taihe::string(volumeEvent.networkId),
     };
     return taiheVolumeEvent;
