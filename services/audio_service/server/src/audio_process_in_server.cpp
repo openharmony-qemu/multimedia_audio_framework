@@ -798,11 +798,60 @@ int64_t AudioProcessInServer::GetLastAudioDuration()
     return ret < 0 ? -1 : ret;
 }
 
+enum StreamStatus : uint32_t {
+    STREAM_IDEL = 0,
+    STREAM_STARTING,
+    STREAM_RUNNING,
+    STREAM_PAUSING,
+    STREAM_PAUSED,
+    STREAM_STOPPING,
+    STREAM_STOPPED,
+    STREAM_RELEASED,
+    STREAM_STAND_BY,
+    STREAM_INVALID
+};
+
+CapturerState AudioProcessInServer::HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
 RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            SwitchStreamInfo info = {
+                sessionId_,
+                processConfig_.callerUid,
+                processConfig_.appInfo.appUid,
+                processConfig_.appInfo.appPid,
+                processConfig_.appInfo.appTokenId,
+                HandleStreamStatusToCapturerState(streamStatus_->load());
+            };
+            AUDIO_INFO_LOG("Insert fast stream:%{public}d into switchStreamRecord "
+                "because restoreStatus:NEED_RESTORE", sessionId_);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        }
         processBuffer_->SetRestoreInfo(restoreInfo);
+
     }
     return restoreStatus;
 }
