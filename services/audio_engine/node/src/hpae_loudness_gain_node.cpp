@@ -58,6 +58,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     if (!audioEffectLibHandle_) {
         AUDIO_ERR_LOG("<log error> dlsym failed: error: %{public}s", dlerror());
         dlclose(dlHandle_);
+        dlHandle_ = nullptr;
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
 
@@ -78,6 +79,7 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
 {
     if (dlHandle_) {
         dlclose(dlHandle_);
+        dlHandle_ = nullptr;
     }
     AUDIO_INFO_LOG("HpaeLoudnessGainNode destroyed");
 }
@@ -151,6 +153,10 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
     CHECK_AND_RETURN_RET_LOG(!IsFloatValueEqual(loudnessGain_, loudnessGain), SUCCESS,
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
+    if (!dlHandle_ || !audioEffectLibHandle_) {
+        loudnessGain_ = loudnessGain;
+        return SUCCESS;
+    }
     
     if (IsFloatValueEqual(loudnessGain, 0.0f)) {
         AUDIO_INFO_LOG("Releasing handle...");
