@@ -25,13 +25,11 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/client/include",
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/commcon/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_policy/server/domain/interrupt/include",
     "../../../utils/system/safwk/native/include",
-    "../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
 
   cflags = [

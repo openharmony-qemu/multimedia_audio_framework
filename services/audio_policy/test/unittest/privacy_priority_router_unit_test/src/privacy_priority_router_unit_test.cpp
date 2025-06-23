@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/privacy_priority_router_unit_test.h"
+#include "privacy_priority_router_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 

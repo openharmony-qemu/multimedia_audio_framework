@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/stream_filter_router_unit_test.h"
+#include "stream_filter_router_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_policy_server.h"

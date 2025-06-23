@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/volume_data_maintainer_unit_test.h"
+#include "volume_data_maintainer_unit_test.h"
 
 #include "system_ability_definition.h"
 #include "audio_errors.h"
