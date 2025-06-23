@@ -121,7 +121,7 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"offload", PIPE_TYPE_OFFLOAD},
     {"dp", PIPE_TYPE_NORMAL_OUT},
     {"multichannel", PIPE_TYPE_MULTICHANNEL},
-}
+};
 
 AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass)
 {
