@@ -43,6 +43,7 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format);
 std::string TransFormatFromEnumToString(AudioSampleFormat format);
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled);
 void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
+AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass);
 
 // for hidumper device info trans, param should be HpaeSinkInfo or HpaeSourceInfo
 template <typename T>
