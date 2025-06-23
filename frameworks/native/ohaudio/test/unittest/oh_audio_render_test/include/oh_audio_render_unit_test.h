@@ -90,7 +90,8 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void) {}
     // create a renderer type builder
-    static OH_AudioStreamBuilder* CreateRenderBuilder() {
+    static OH_AudioStreamBuilder* CreateRenderBuilder()
+    {
         OH_AudioStreamBuilder* builder;
         OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
         OH_AudioStreamBuilder_Create(&builder, type);
