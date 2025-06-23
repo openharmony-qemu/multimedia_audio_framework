@@ -84,6 +84,9 @@ public:
         const std::string &deviceName = "");
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
         const std::string &deviceName = "");
+    bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
+    void UpdateStreamDeviceMap(std::string source);
 private:
     AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -104,6 +107,9 @@ private:
 
     std::string activeBTDevice_;
     std::string activeBTInDevice_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioDeviceDescriptor>> streamTypeDeviceMap_;
+    std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>> streamUsageDeviceMap_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;
