@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -24,7 +25,6 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include/service/listener",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
   cflags = [
     "-g",
@@ -90,6 +90,9 @@ ohos_fuzztest("AudioPowerStateListenerFuzzTest") {
 
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
   }
 }
 

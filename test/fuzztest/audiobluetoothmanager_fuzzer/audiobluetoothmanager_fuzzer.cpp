@@ -19,7 +19,9 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
+#ifdef BLUETOOTH_PART_ENABLE
 #include "audio_bluetooth_manager.h"
+#endif
 #include "audio_device_info.h"
 using namespace std;
 

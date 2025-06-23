@@ -21,7 +21,7 @@
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
 #include "capturer_in_client.h"
-#include "../../../client/src/capturer_in_client.cpp"
+#include "capturer_in_client_inner.h"
 
 using namespace testing::ext;
 
