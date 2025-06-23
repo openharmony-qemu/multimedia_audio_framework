@@ -82,7 +82,7 @@ TEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode)
     EXPECT_EQ(hpaeLoudnessGainNode->SetLoudnessGain(LOUDNESS_GAIN_VALUE), SUCCESS);
     for (int32_t i = 0; i < TIMES; i++) {
         hpaeLoudnessGainNode->SignalProcess(inputs1);
-    }    
+    }
     EXPECT_FLOAT_EQ(hpaeLoudnessGainNode->GetLoudnessGain(), LOUDNESS_GAIN_VALUE);
 }
 

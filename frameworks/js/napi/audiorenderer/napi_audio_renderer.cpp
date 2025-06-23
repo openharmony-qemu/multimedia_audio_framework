@@ -41,6 +41,8 @@ static __thread napi_ref g_rendererConstructor = nullptr;
 mutex NapiAudioRenderer::createMutex_;
 int32_t NapiAudioRenderer::isConstructSuccess_ = SUCCESS;
 std::unique_ptr<AudioRendererOptions> NapiAudioRenderer::sRendererOptions_ = nullptr;
+static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -96.0;
+static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}

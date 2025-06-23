@@ -185,8 +185,6 @@ private:
 
     static constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
     static constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
-    static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -96.0;
-    static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static std::unique_ptr<AudioRendererOptions> sRendererOptions_;
