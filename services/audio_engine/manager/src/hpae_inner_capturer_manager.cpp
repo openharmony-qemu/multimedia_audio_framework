@@ -722,7 +722,8 @@ void HpaeInnerCapturerManager::OnDisConnectProcessCluster(HpaeProcessorType scen
 {
     auto request = [this, sceneType]() {
         AUDIO_INFO_LOG("mixerNode trigger callback");
-        if (SafeGetMap(rendererSceneClusterMap_, sceneType) && rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+        if (SafeGetMap(rendererSceneClusterMap_, sceneType) &&
+            rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             rendererSceneClusterMap_[sceneType]->DisConnectMixerNode();
             hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
         }

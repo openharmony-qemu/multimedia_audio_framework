@@ -38,7 +38,7 @@ void HpaePluginNode::DoProcess()
         outputStream_.WriteDataToOutput(tempOut);
     } else if (!preOutputs.empty()) {
         outputStream_.WriteDataToOutput(preOutputs[0]);
-    } else if (!enableProcess_ && preOutputs.empty()) { 
+    } else if (!enableProcess_ && preOutputs.empty()) {
         // use to drain data when disconnecting, now use for mixerNode of processCluster
         tempOut = SignalProcess(preOutputs);
         outputStream_.WriteDataToOutput(tempOut);
