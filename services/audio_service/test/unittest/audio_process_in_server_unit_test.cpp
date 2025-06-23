@@ -114,15 +114,18 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_002, TestSize.Level1)
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> bufferRet = nullptr;
+    std::shared_ptr<OHAudioBufferBase> bufferRet = nullptr;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = 1000;
     EXPECT_EQ(audioProcessInServerRet.processBuffer_, nullptr);
-    audioProcessInServerRet.ResolveBuffer(bufferRet);
-    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
-        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    uint32_t spanSizeInFrame;
+    audioProcessInServerRet.ResolveBufferBaseAndGetServerSpanSize(
+        bufferRet, spanSizeInFrame);
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(
+        bufferHolder, TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
-    auto ret = audioProcessInServerRet.ResolveBuffer(bufferRet);
+    auto ret = audioProcessInServerRet.ResolveBufferBaseAndGetServerSpanSize(
+        bufferRet, spanSizeInFrame);
     EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
 }
 
@@ -140,8 +143,8 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_003, TestSize.Level1)
     audioProcessInServerRet.isInited_ = true;
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = 1000;
-    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
-        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
     bool isAsyncRet = false;
     auto ret = audioProcessInServerRet.RequestHandleInfo(isAsyncRet);
@@ -159,7 +162,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_004, TestSize.Level1)
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -181,7 +184,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_005, TestSize.Level1)
     configRet.streamInfo.format = SAMPLE_U8;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -203,7 +206,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_006, TestSize.Level1)
     configRet.streamInfo.format = SAMPLE_S16LE;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -225,7 +228,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_007, TestSize.Level1)
     configRet.streamInfo.format = SAMPLE_S24LE;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -247,7 +250,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_008, TestSize.Level1)
     configRet.streamInfo.format = SAMPLE_F32LE;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -269,7 +272,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_009, TestSize.Level1)
     configRet.streamInfo.format = INVALID_WIDTH;
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
 
@@ -291,7 +294,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_010, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -317,7 +320,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_011, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -349,7 +352,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_012, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -380,7 +383,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_013, TestSize.Level1)
     configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -409,7 +412,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_014, TestSize.Level1)
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -438,7 +441,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_015, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -466,7 +469,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_016, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -492,7 +495,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_017, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -522,7 +525,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_018, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -553,7 +556,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_019, TestSize.Level1)
     configRet.callerUid = INTELL_VOICE_SERVICR_UID;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -582,7 +585,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_020, TestSize.Level1)
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -610,7 +613,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_021, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -638,7 +641,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_022, TestSize.Level1)
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
     audioProcessInServerRet.needCheckBackground_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -669,7 +672,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_023, TestSize.Level1)
     configRet.audioMode = AUDIO_MODE_PLAYBACK;
     AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -703,7 +706,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_024, TestSize.Level1)
     audioProcessInServerRet.Dump(dumpStringRet1);
 
     audioProcessInServerRet.isInited_ = true;
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t totalSizeInFrame = TOTAL_SIZE_IN_FRAME;
     uint32_t spanSizeInFrame = SPAN_SIZE_IN_FRAME;
     audioProcessInServerRet.ConfigProcessBuffer(totalSizeInFrame,
@@ -817,11 +820,11 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_030, TestSize.Level1)
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
-        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBufferBase>(
+        bufferHolder, TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
-    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = nullptr;
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = nullptr;
     auto ret = audioProcessInServer->GetStandbyStatus(isStandby, enterStandbyTime);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
@@ -844,14 +847,14 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_031, TestSize.Level1)
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
-        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBufferBase>(
+        bufferHolder, TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
     BasicBufferInfo basicBufferInfo;
-    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
-    EXPECT_NE(audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_, nullptr);
-    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_STAND_BY;
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_STAND_BY;
 
     audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
 
@@ -878,14 +881,14 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_032, TestSize.Level1)
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
     uint32_t byteSizePerFrame = SPAN_SIZE_IN_FRAME;
-    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder,
-        TOTAL_SIZE_IN_FRAME, SPAN_SIZE_IN_FRAME, byteSizePerFrame);
+    audioProcessInServer->processBuffer_ = std::make_shared<OHAudioBufferBase>(
+        bufferHolder, TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServer->processBuffer_, nullptr);
 
     BasicBufferInfo basicBufferInfo;
-    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_ = &basicBufferInfo;
-    EXPECT_NE(audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_, nullptr);
-    audioProcessInServer->processBuffer_->ohAudioBufferBase_.basicBufferInfo_->streamStatus = STREAM_IDEL;
+    audioProcessInServer->processBuffer_->basicBufferInfo_ = &basicBufferInfo;
+    EXPECT_NE(audioProcessInServer->processBuffer_->basicBufferInfo_, nullptr);
+    audioProcessInServer->processBuffer_->basicBufferInfo_->streamStatus = STREAM_IDEL;
 
     audioProcessInServer->enterStandbyTime_ = DEFAULT_STREAM_ID;
 

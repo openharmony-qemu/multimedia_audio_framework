@@ -185,6 +185,7 @@ public:
     bool SetSyncReadFrame(uint32_t readFrame);
 
     int32_t GetWritableDataFrames();
+    int32_t GetReadableDataFrames();
 
     int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
 

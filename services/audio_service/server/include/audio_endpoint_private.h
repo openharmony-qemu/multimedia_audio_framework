@@ -78,7 +78,7 @@ public:
     */
     int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
-    const std::shared_ptr<OHAudioBuffer>& processBuffer);
+    const std::shared_ptr<OHAudioBufferBase>& processBuffer);
 
     int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
 
@@ -93,11 +93,10 @@ public:
     }
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
 
-    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
-
-    std::shared_ptr<OHAudioBuffer> GetBuffer() override
+    std::shared_ptr<OHAudioBufferBase> GetBuffer() override
     {
-        return dstAudioBuffer_;
+        // not support
+        return nullptr;
     }
 
     // for inner-cap
@@ -147,12 +146,12 @@ private:
     void HandleZeroVolumeStartEvent();
     void HandleZeroVolumeStopEvent();
     void HandleRendererDataParams(const AudioStreamData &srcData, const AudioStreamData &dstData, bool applyVol = true);
-    int32_t HandleCapturerDataParams(const BufferDesc &writeBuf, const BufferDesc &readBuf,
+    int32_t HandleCapturerDataParams(RingBufferWrapper &writeBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer);
     void ZeroVolumeCheck(const int32_t vol);
     int64_t GetPredictNextReadTime(uint64_t posInFrame);
     int64_t GetPredictNextWriteTime(uint64_t posInFrame);
-    bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
+    bool PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime, const std::function<void()> &moveClientIndex);
     bool RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wakeUpTime);
     int32_t InitDupBuffer(AudioProcessConfig processConfig, int32_t innerCapId, uint32_t dupStreamIndex);
 
@@ -163,8 +162,6 @@ private:
      * @param nanoTime the time in nanosecond when device-sink start read the buffer
     */
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
-    int32_t GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer, uint64_t curWriteFrame,
-        uint64_t &proHandleFrame, int64_t &proHandleTime);
 
     void CheckStandBy();
     bool IsAnyProcessRunning();
@@ -172,15 +169,16 @@ private:
     bool CheckAllBufferReady(int64_t checkTime, uint64_t curWritePos);
     void WaitAllProcessReady(uint64_t curWritePos);
     void CheckSyncInfo(uint64_t curWritePos);
-    bool ProcessToEndpointDataHandle(uint64_t curWritePos);
+    bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
-    void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList);
-    void GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSpan,
-        std::vector<AudioStreamData> &audioDataList, uint64_t curRead);
+    void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList, std::function<void()> &moveClientIndex);
+    void GetAllReadyProcessDataSub(size_t i,
+        std::vector<AudioStreamData> &audioDataList, uint64_t curRead, uint64_t &readFramePosAfterRead,
+        RingBufferWrapper &ringBufferNeedMemset);
     std::string GetStatusStr(EndpointStatus status);
 
-    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf,
+    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBufferBase> &procBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer, bool muteFlag);
     void WriteToProcessBuffers(const BufferDesc &readBuf);
     int32_t ReadFromEndpoint(uint64_t curReadPos);
@@ -260,7 +258,8 @@ private:
     int32_t id_ = 0;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;
-    std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
+    std::vector<std::shared_ptr<OHAudioBufferBase>> processBufferList_;
+    std::vector<std::vector<uint8_t>> processTmpBufferList_;
     AudioProcessConfig clientConfig_;
 
     std::atomic<bool> isInited_ = false;

@@ -97,13 +97,13 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     std::unique_ptr<AudioProcessProxy> audioProcessProxy = std::make_unique<AudioProcessProxy>(object);
 
     int32_t ret = -1;
-    std::shared_ptr<OHAudioBuffer> buffer;
+    std::shared_ptr<OHAudioBufferBase> buffer;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    buffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
 
-    ret=audioProcessProxy->ResolveBuffer(buffer);
+    ret=audioProcessProxy->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Start();

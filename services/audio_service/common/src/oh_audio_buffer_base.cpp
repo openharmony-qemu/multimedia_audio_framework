@@ -546,6 +546,19 @@ int32_t OHAudioBufferBase::GetWritableDataFrames()
     return result;
 }
 
+int32_t OHAudioBufferBase::GetReadableDataFrames()
+{
+    int32_t result = -1; // failed
+    uint64_t write = basicBufferInfo_->curWriteFrame.load();
+    uint64_t read = basicBufferInfo_->curReadFrame.load();
+    CHECK_AND_RETURN_RET_LOG(write >= read, result, "invalid write and read position.");
+    uint32_t temp = write - read;
+    CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
+        result, "failed to GetWritableDataFrames.");
+    result = temp;
+    return result;
+}
+
 int32_t OHAudioBufferBase::ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame)
 {
     CHECK_AND_RETURN_RET_LOG(readFrame <= writeFrame && writeFrame - readFrame < totalSizeInFrame_,

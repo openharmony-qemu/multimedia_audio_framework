@@ -98,7 +98,7 @@ struct RingBufferWrapper {
         for (auto &[buffer, bufLength] : basicBufferDescs) {
             size_t setSize = std::min(remainSize, bufLength);
             remainSize -= setSize;
-            if (buffer != nullptr && bufLength != 0) {
+            if (buffer != nullptr && bufLength != 0 && setSize != 0) {
                 memset_s(buffer, bufLength, ch, setSize);
             }
         }

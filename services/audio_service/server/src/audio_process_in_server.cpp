@@ -39,7 +39,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -165,7 +164,8 @@ void AudioProcessInServer::EnableStandby()
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
-int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame)
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,
@@ -175,6 +175,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
         AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr.");
     }
     buffer = processBuffer_;
+    spanSizeInFrame = spanSizeInframe_;
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 
     return SUCCESS;
@@ -538,7 +539,7 @@ void AudioProcessInServer::Dump(std::string &dumpString)
     dumpString += "\n";
 }
 
-std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
+std::shared_ptr<OHAudioBufferBase> AudioProcessInServer::GetStreamBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_ && processBuffer_ != nullptr,
         nullptr, "GetStreamBuffer failed:process buffer not config.");
@@ -588,30 +589,12 @@ int32_t AudioProcessInServer::InitBufferStatus()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE,
         "InitBufferStatus failed, null buffer.");
 
-    uint32_t spanCount = processBuffer_->GetSpanCount();
-    for (uint32_t i = 0; i < spanCount; i++) {
-        SpanInfo *spanInfo = processBuffer_->GetSpanInfoByIndex(i);
-        CHECK_AND_RETURN_RET_LOG(spanInfo != nullptr, ERR_ILLEGAL_STATE,
-            "InitBufferStatus failed, null spaninfo");
-        spanInfo->spanStatus = SPAN_READ_DONE;
-        spanInfo->offsetInFrame = 0;
-
-        spanInfo->readStartTime = 0;
-        spanInfo->readDoneTime = 0;
-
-        spanInfo->writeStartTime = 0;
-        spanInfo->writeDoneTime = 0;
-
-        spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->isMute = false;
-    }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
-    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &buffer)
+    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -645,7 +628,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
 
     if (buffer == nullptr) {
         // create OHAudioBuffer in server.
-        processBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+        processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
         CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
@@ -856,6 +839,16 @@ int32_t AudioProcessInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_PARAM, "processBuffer_ is nullptr");
     processBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+uint32_t AudioProcessInServer::GetSpanSizeInFrame()
+{
+    return spanSizeInframe_;
+}
+
+uint32_t AudioProcessInServer::GetByteSizePerFrame()
+{
+    return byteSizePerFrame_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

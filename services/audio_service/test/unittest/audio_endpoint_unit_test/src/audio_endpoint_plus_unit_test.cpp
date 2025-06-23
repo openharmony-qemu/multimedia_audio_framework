@@ -984,7 +984,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_034, TestSize.Level1)
     uint32_t totalSizeInFrame = 0;
     uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    const std::shared_ptr<OHAudioBuffer> procBuf = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+    const std::shared_ptr<OHAudioBufferBase> procBuf = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     procBuf->ohAudioBufferBase_.basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
 
@@ -1256,7 +1256,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_044, TestSize.Level1)
 
     ASSERT_NE(audioEndpointInner, nullptr);
 
-    std::shared_ptr<OHAudioBuffer> buffer = audioEndpointInner->GetBuffer();
+    std::shared_ptr<OHAudioBufferBase> buffer = audioEndpointInner->GetBuffer();
     EXPECT_EQ(buffer, nullptr);
 }
 
@@ -1513,7 +1513,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_057, TestSize.Level1)
     ASSERT_NE(audioEndpointInner, nullptr);
 
     sptr<AudioProcessInServer> processStream = CreateAudioProcessInServer();
-    std::shared_ptr<OHAudioBuffer> processBuffer;
+    std::shared_ptr<OHAudioBufferBase> processBuffer;
 
     audioEndpointInner->LinkProcessStreamExt(processStream, processBuffer);
 }
