@@ -334,6 +334,18 @@ float FastAudioStream::GetVolume()
     return processClient_->GetVolume();
 }
 
+int32_t FastAudioStream::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_WARNING_LOG("SetLoudnessGain is only for renderer");
+    return ERROR;
+}
+
+float FastAudioStream::GetLoudnessGain()
+{
+    AUDIO_WARNING_LOG("GetLoudnessGain is only for renderer");
+    return 0.0;
+}
+
 int32_t FastAudioStream::SetMute(bool mute)
 {
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");

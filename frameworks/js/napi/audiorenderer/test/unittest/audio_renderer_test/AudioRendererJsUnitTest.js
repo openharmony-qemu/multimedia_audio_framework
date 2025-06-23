@@ -18,6 +18,10 @@ import { describe, beforeAll, beforeEach, afterEach, afterAll, it, expect } from
 
 const TAG = "[AudioRendererJsUnitTest]";
 
+const VALID_LOUDNESS_GAIN = 10.0;
+const INVALID_LOUDNESS_GAIN = -100.0;
+const TOLERANCE = 5;
+
 describe("AudioRendererJsUnitTest", function() {
     let audioStreamInfo = {
         samplingRate: audio.AudioSamplingRate.SAMPLE_RATE_48000,
@@ -433,6 +437,46 @@ describe("AudioRendererJsUnitTest", function() {
     })
 
     /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001
+     * @tc.desc:setLoudnessGain and getLoudnessGain success
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001', 0, async function (done) {
+        await audioRenderer.setLoudnessGain(VALID_LOUDNESS_GAIN).then(() => {
+            try {
+                let data = audioRenderer.getLoudnessGain();
+                console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001 SUCCESS: ${data}`);
+                expect(data).BeCloseTo(VALID_LOUDNESS_GAIN, TOLERANCE);
+                done();
+            } catch (error) {
+                console.error(`setLoudnessGain ERROR: ${err}`);
+                expect(false).assertTrue();
+                done();
+            }
+        })
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002
+     * @tc.desc: invalid loudnessGain, setLoudnessGain and getLoudnessGain fail
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002', 0, async function (done) {
+        try {
+            await audioRenderer.setLoudnessGain(INVALID_LOUDNESS_GAIN);
+            console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 FAIL`);
+            expect(true).assertFalse();
+            done();
+        } catch (err) {
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 SUCCESS`);
+            expect(true).assertTrue();
+            done();
+        }
+    })
+
+    /*
      * @tc.name:SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001
      * @tc.desc:setSilentModeAndMixWithOthers and getSilentModeAndMixWithOthers success
      * @tc.type: FUNC
@@ -448,6 +492,6 @@ describe("AudioRendererJsUnitTest", function() {
         } catch (err) {
             console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_SILENT_MODE_AND_MIX_WITH_OTHERS_TEST_001 ERROR: ${err}`);
             done();
-	}
+	    }
     })
 })

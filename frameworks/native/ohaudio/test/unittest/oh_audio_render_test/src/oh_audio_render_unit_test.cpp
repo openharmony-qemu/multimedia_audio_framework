@@ -359,8 +359,6 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_Release_001, TestSize.Level0)
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
-
-
 /**
  * @tc.name  : Test OH_AudioRenderer_CancelMark API via illegal state.
  * @tc.number: OH_Audio_Render_CancelMark_001

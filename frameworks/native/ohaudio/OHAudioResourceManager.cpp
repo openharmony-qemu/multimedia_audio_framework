@@ -48,7 +48,7 @@ OH_AudioCommon_Result OH_AudioResourceManager_CreateWorkgroup(OH_AudioResourceMa
     }
 
     *group = (OH_AudioWorkgroup *)(convertResourceManager(resourceManager)->CreateWorkgroup());
-    CHECK_AND_RETURN_RET_LOG(group != nullptr, AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE, "workgroup returned nullptr");
+    CHECK_AND_RETURN_RET_LOG(group != nullptr, AUDIOCOMMON_RESULT_ERROR_SYSTEM, "workgroup returned nullptr");
     return AUDIOCOMMON_RESULT_SUCCESS;
 }
 
@@ -62,7 +62,7 @@ OH_AudioCommon_Result OH_AudioResourceManager_ReleaseWorkgroup(OH_AudioResourceM
     if (convertResourceManager(resourceManager)->ReleaseWorkgroup((OHAudioWorkgroup *)group)) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 }
 
@@ -73,7 +73,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_AddCurrentThread(OH_AudioWorkgroup *grou
     if (convertWorkgroup(group)->AddThread(*tokenId)) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 }
 
@@ -83,7 +83,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_RemoveThread(OH_AudioWorkgroup *group, i
     if (convertWorkgroup(group)->RemoveThread(tokenId)) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 }
 
@@ -93,7 +93,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_Start(OH_AudioWorkgroup *group, uint64_t
     if (convertWorkgroup(group)->Start(startTime, deadlineTime)) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 }
 
@@ -103,7 +103,7 @@ OH_AudioCommon_Result OH_AudioWorkgroup_Stop(OH_AudioWorkgroup *group)
     if (convertWorkgroup(group)->Stop()) {
         return AUDIOCOMMON_RESULT_SUCCESS;
     } else {
-        return AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE;
+        return AUDIOCOMMON_RESULT_ERROR_SYSTEM;
     }
 }
 

@@ -549,6 +549,24 @@ public:
      * @since 8
      */
     virtual float GetVolume() const = 0;
+    
+    /**
+     * @brief Set he track loudness
+     *
+     * @param loudness The loudness to be set for the current track.
+     * @return Returns {@link SUCCESS} if loudness is successfully set; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    virtual int32_t SetLoudnessGain(float loudnessGain) const {return 0;};
+
+    /**
+     * @brief Obtains the current track loudness
+     *
+     * @return Returns current track loudness
+     * @since 20
+     */
+    virtual float GetLoudnessGain() const {return 0.0;};
 
     /**
      * @brief Set the render rate

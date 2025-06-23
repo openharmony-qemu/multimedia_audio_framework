@@ -146,6 +146,8 @@ public:
     virtual int32_t SetAudioStreamType(AudioStreamType audioStreamType) = 0;
     virtual int32_t SetVolume(float volume) = 0;
     virtual float GetVolume() = 0;
+    virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
+    virtual float GetLoudnessGain() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
     virtual float GetDuckVolume() = 0;
     virtual int32_t SetMute(bool mute) = 0;

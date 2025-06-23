@@ -41,6 +41,8 @@ static __thread napi_ref g_rendererConstructor = nullptr;
 mutex NapiAudioRenderer::createMutex_;
 int32_t NapiAudioRenderer::isConstructSuccess_ = SUCCESS;
 std::unique_ptr<AudioRendererOptions> NapiAudioRenderer::sRendererOptions_ = nullptr;
+static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -96.0;
+static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}
@@ -79,6 +81,8 @@ napi_status NapiAudioRenderer::InitNapiAudioRenderer(napi_env env, napi_value &c
         DECLARE_NAPI_FUNCTION("getAudioStreamIdSync", GetAudioStreamIdSync),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
+        DECLARE_NAPI_FUNCTION("setLoudnessGain", SetLoudnessGain),
+        DECLARE_NAPI_FUNCTION("getLoudnessGain", GetLoudnessGain),
         DECLARE_NAPI_FUNCTION("getRendererInfo", GetRendererInfo),
         DECLARE_NAPI_FUNCTION("getRendererInfoSync", GetRendererInfoSync),
         DECLARE_NAPI_FUNCTION("getStreamInfo", GetStreamInfo),
@@ -1042,6 +1046,63 @@ napi_value NapiAudioRenderer::GetVolume(napi_env env, napi_callback_info info)
 
     double volLevel = napiAudioRenderer->audioRenderer_->GetVolume();
     NapiParamUtils::SetValueDouble(env, volLevel, result);
+    return result;
+}
+
+napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioRendererAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetLoudnessGain failed : no memory");
+        NapiAudioError::ThrowError(env, "SetLoudnessGain failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueDouble(env, context->loudnessGain, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioRenderer*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioRenderer = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
+            "context object state is error.");
+        if (context->loudnessGain < MIN_LOUDNESS_GAIN_IN_DOUBLE ||
+            context->loudnessGain > MAX_LOUDNESS_GAIN_IN_DOUBLE) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+            return;
+        }
+        context->intValue = napiAudioRenderer->audioRenderer_->
+            SetLoudnessGain(static_cast<float>(context->loudnessGain));
+        if (context->intValue != SUCCESS) {
+            context->SignError(NAPI_ERR_SYSTEM);
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetLoudnessGain", executor, complete);
+}
+
+napi_value NapiAudioRenderer::GetLoudnessGain(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = PARAM0;
+    auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
+    
+    double loudnessGain = napiAudioRenderer->audioRenderer_->GetLoudnessGain();
+    NapiParamUtils::SetValueDouble(env, loudnessGain, result);
     return result;
 }
 

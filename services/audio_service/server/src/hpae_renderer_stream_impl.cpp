@@ -561,6 +561,14 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
     return SUCCESS;
 }
 
+int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
+    int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(processConfig_.originalSessionId, loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "SetLoudnessGain is error");
+    return SUCCESS;
+}
+
 void HpaeRendererStreamImpl::InitRingBuffer()
 {
     uint32_t maxLength = 20; // 20 for dup and dual play, only for enqueue buffer

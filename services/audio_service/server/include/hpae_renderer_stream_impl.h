@@ -74,6 +74,7 @@ public:
     int32_t ReturnIndex(int32_t index) override;
     AudioProcessConfig GetAudioProcessConfig() const noexcept override;
     int32_t SetClientVolume(float clientVolume) override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
     void OnStatusUpdate(IOperation operation) override;

@@ -346,6 +346,7 @@ void AudioPolicyManagerStub::SetNearlinkDeviceVolumeInternal(MessageParcel &data
 void AudioPolicyManagerStub::SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> desc = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(desc != nullptr, "deviceDesc is nullptr");
     bool isConnected = data.ReadBool();
     int32_t result = SetDeviceConnectionStatus(desc, isConnected);
     reply.WriteInt32(result);

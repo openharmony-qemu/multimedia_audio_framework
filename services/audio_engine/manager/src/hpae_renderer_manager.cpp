@@ -797,6 +797,11 @@ int32_t HpaeRendererManager::SetClientVolume(uint32_t sessionId, float volume)
     return SUCCESS;
 }
 
+int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    return SUCCESS;
+}
+
 int32_t HpaeRendererManager::SetRate(uint32_t sessionId, int32_t rate)
 {
     return SUCCESS;

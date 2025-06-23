@@ -614,6 +614,7 @@ public:
     int32_t SetHighResolutionExist(bool highResExist) override;
 
     void NotifyAccountsChanged(const int &id);
+    void SendVolumeKeyEventToRssWhenAccountsChanged();
 
     // for hidump
     void AudioDevicesDump(std::string &dumpString);

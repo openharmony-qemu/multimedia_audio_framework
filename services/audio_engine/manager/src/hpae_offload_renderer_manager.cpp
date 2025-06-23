@@ -495,6 +495,12 @@ int32_t HpaeOffloadRendererManager::SetClientVolume(uint32_t sessionId, float vo
     return SUCCESS;
 }
 
+int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    return SUCCESS;
+}
+
+
 int32_t HpaeOffloadRendererManager::SetRate(uint32_t sessionId, int32_t rate)
 {
     return SUCCESS;
