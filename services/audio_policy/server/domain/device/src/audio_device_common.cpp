@@ -1415,18 +1415,10 @@ void AudioDeviceCommon::TriggerRecreateCapturerStreamCallback(
     int32_t streamFlag, const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioDeviceCommon::TriggerRecreateCapturerStreamCallback");
-    SwitchStreamInfo info = {
-        static_cast<uint32_t>(capturerChangeInfo->sessionId),
-        capturerChangeInfo->createrUID,
-        capturerChangeInfo->clientUID,
-        capturerChangeInfo->clientPid,
-        capturerChangeInfo->appTokenId,
-        capturerChangeInfo->capturerState,
-    };
+
     AUDIO_WARNING_LOG("Trigger recreate capturer stream, pid: %{public}d, sessionId: %{public}d, flag: %{public}d",
         capturerChangeInfo->callerPid, capturerChangeInfo->sessionId, streamFlag);
     if (audioPolicyServerHandler_ != nullptr) {
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(capturerChangeInfo->callerPid,
             capturerChangeInfo->sessionId, streamFlag, reason);
     } else {

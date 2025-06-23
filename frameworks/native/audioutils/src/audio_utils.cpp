@@ -530,6 +530,8 @@ bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchSta
 {
     std::lock_guard<std::mutex> lock(g_switchMapMutex);
     auto iter = g_switchStreamRecordMap.find(info);
+    CHECK_AND_RETURN_RET_LOG(iter != g_switchStreamRecordMap.end(), false,
+        "can not find info for sessionId:%{public}u in switchStreamRecord", info.sessionId);
     if (iter != g_switchStreamRecordMap.end() && targetState == SWITCH_STATE_CREATED &&
         iter->second == SWITCH_STATE_WAITING && (info.nextState == CAPTURER_PREPARED)) {
         AUDIO_INFO_LOG("stream:%{public}u is recreating , need not check using mic in background !",
@@ -548,15 +550,15 @@ bool SwitchStreamUtil::IsSwitchStreamSwitching(SwitchStreamInfo &info, SwitchSta
 bool SwitchStreamUtil::InsertSwitchStreamRecord(SwitchStreamInfo &info, SwitchState targetState)
 {
     if (RECORD_ALLOW_BACKGROUND_LIST.count(info.callerUid)) {
-        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording", info.callerUid);
+        AUDIO_INFO_LOG("internal sa(%{public}d) user directly recording, "
+            "need not insert into SwitchStreamRecord", info.callerUid);
         return true;
     }
     auto ret = g_switchStreamRecordMap.insert(std::make_pair(info, targetState));
-    CHECK_AND_RETURN_RET_LOG(ret.second, false, "Update Record switchState:%{public}d for stream:%{public}u failed",
-        targetState, info.sessionId);
-    AUDIO_INFO_LOG("SwitchStream will start!Update Record switchState:%{public}d for stream:%{public}u"
-        "uid:%{public}d CapturerState:%{public}d success", targetState, info.sessionId, info.appUid, info.nextState);
-    std::thread(TimeoutThreadHandleTimeoutRecord, info, targetState).detach();
+    CHECK_AND_RETURN_RET_LOG(ret.second, false, "Insert stream:%{public}u switchState:%{public}d "
+        "into switchStreamRecord failed", info.sessionId, targetState);
+    AUDIO_INFO_LOG("Insert stream:%{public}u switchState:%{public}d uid:%{public}d CapturerState:%{public}d"
+        "into switchStreamRecord success", info.sessionId, targetState, info.appUid, info.nextState);
     return true;
 }
 
@@ -614,8 +616,7 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
     if (!isInfoInRecord) {
         if (targetState == SWITCH_STATE_WAITING) {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
-                false, "Insert SwitchStream into Record fail!");
-            AUDIO_INFO_LOG("Insert SwitchStream into Record success!");
+                false, "Insert switchStream into Record fail!");
         }
         return true;
     }
@@ -623,9 +624,9 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
     switch (targetState) {
         case SWITCH_STATE_WAITING:
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::RemoveSwitchStreamRecord(info, targetState),
-                false, "Remove Error Record for Stream:%{public}u Failed!", iter->first.sessionId);
+                false, "Remove error record for switchStream:%{public}u failed!", iter->first.sessionId);
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
-                false, "Insert SwitchStream into Record fail!");
+                false, "Retry insert switchStream into record failed!");
             break;
         case SWITCH_STATE_CREATED:
             CHECK_AND_RETURN_RET_LOG(HandleCreatedSwitchInfoInRecord(info, targetState), false,
