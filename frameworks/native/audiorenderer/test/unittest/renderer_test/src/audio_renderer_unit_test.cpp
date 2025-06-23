@@ -133,11 +133,6 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
     fclose(metaFile);
 }
 
-class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
-public:
-    void OnFastStatusChange(FastStatus status) override { return; }
-};
-
 /**
  * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_001
