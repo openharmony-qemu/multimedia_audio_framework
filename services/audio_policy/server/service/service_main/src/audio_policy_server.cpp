@@ -141,8 +141,11 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
       audioCollaborativeService_(AudioCollaborativeService::GetAudioCollaborativeService()),
       audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
       audioPolicyDump_(AudioPolicyDump::GetInstance()),
-      audioActiveDevice_(AudioActiveDevice::GetInstance()),
-      usbManager_(AudioUsbManager::GetInstance())
+#ifdef USB_ENABLE
+      usbManager_(AudioUsbManager::GetInstance()),
+#endif
+      audioActiveDevice_(AudioActiveDevice::GetInstance())
+
 {
     volumeStep_ = system::GetIntParameter("const.multimedia.audio.volumestep", 1);
     AUDIO_INFO_LOG("Get volumeStep parameter success %{public}d", volumeStep_);
@@ -852,6 +855,7 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelLegacy(AudioStreamType streamType
     return SetSystemVolumeLevelInternal(streamType, volumeLevel, false);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -942,6 +946,7 @@ int32_t AudioPolicyServer::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLeve
     }
     return GetAppVolumeLevelInternal(appUid, volumeLevel);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetSelfAppVolumeLevel(int32_t &volumeLevel)
 {
@@ -993,6 +998,11 @@ int32_t AudioPolicyServer::SetLowPowerVolume(int32_t streamId, float volume)
     return streamCollector_.SetLowPowerVolume(streamId, volume);
 }
 
+AudioStreamInfo AudioPolicyServer::GetFastStreamInfo()
+{
+    return audioPolicyService_.GetFastStreamInfo();
+}
+
 float AudioPolicyServer::GetLowPowerVolume(int32_t streamId)
 {
     return streamCollector_.GetLowPowerVolume(streamId);
@@ -1018,6 +1028,7 @@ bool AudioPolicyServer::CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType,
     return true;
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::AdjustVolumeByStep(VolumeAdjustType adjustType)
 {
     auto callerUid = IPCSkeleton::GetCallingUid();
@@ -1105,6 +1116,7 @@ int32_t AudioPolicyServer::AdjustSystemVolumeByStep(AudioVolumeType volumeType, 
     int32_t ret = SetSystemVolumeLevelInternal(volumeType, volumeLevelInInt, false);
     return ret;
 }
+// LCOV_EXCL_STOP
 
 float AudioPolicyServer::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType)
 {
@@ -1125,6 +1137,7 @@ int32_t AudioPolicyServer::SetStreamMuteLegacy(AudioStreamType streamType, bool 
     return SetStreamMuteInternal(streamType, mute, false, deviceType);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, const DeviceType &deviceType)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -1135,6 +1148,7 @@ int32_t AudioPolicyServer::SetStreamMute(AudioStreamType streamType, bool mute, 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetStreamMuteInternal(streamType, mute, false, deviceType);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
     const DeviceType &deviceType)
@@ -1278,6 +1292,7 @@ int32_t AudioPolicyServer::SetAppVolumeMutedInternal(int32_t appUid, bool muted,
     return ret;
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute)
 {
     AUDIO_INFO_LOG("IsAppVolumeMute appUid: %{public}d, owned: %{public}d", appUid, owned);
@@ -1288,6 +1303,7 @@ int32_t AudioPolicyServer::IsAppVolumeMute(int32_t appUid, bool owned, bool &isM
     int32_t ret = audioVolumeManager_.IsAppVolumeMute(appUid, owned, isMute);
     return ret;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
     bool isUpdateUi)
@@ -1503,6 +1519,7 @@ void AudioPolicyServer::MapExternalToInternalDeviceType(AudioDeviceDescriptor &d
     }
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors)
 {
@@ -1585,6 +1602,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevice
 
     return deviceDescs;
 }
+// LCOV_EXCL_STOP
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevicesInner(DeviceFlag deviceFlag)
 {
@@ -1597,6 +1615,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetDevice
     return deviceDescs;
 }
 
+// LCOV_EXCL_START
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetOutputDevice(
     sptr<AudioRendererFilter> audioRendererFilter)
 {
@@ -1631,6 +1650,7 @@ int32_t AudioPolicyServer::VerifyVoiceCallPermission(
     CHECK_AND_RETURN_RET_LOG(hasRecordVoiceCallPermission, ERR_PERMISSION_DENIED, "No permission");
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyServer::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, bool forceNoBTPermission)
@@ -1720,6 +1740,7 @@ int32_t AudioPolicyServer::SetDeviceActive(InternalDeviceType deviceType, bool a
     return eventEntry_->SetDeviceActive(deviceType, active, uid);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
     const SourceType sourceType, bool isRunning)
 {
@@ -1735,6 +1756,7 @@ int32_t AudioPolicyServer::SetInputDevice(const DeviceType deviceType, const uin
     }
     return ret;
 }
+// LCOV_EXCL_STOP
 
 bool AudioPolicyServer::IsDeviceActive(InternalDeviceType deviceType)
 {
@@ -1768,6 +1790,7 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(AudioRingerMode ringMode)
     return SetRingerModeInner(ringMode);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
 {
     AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
@@ -1790,6 +1813,7 @@ int32_t AudioPolicyServer::SetRingerMode(AudioRingerMode ringMode)
     }
     return result;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetRingerModeInner(AudioRingerMode ringMode)
 {
@@ -1972,6 +1996,7 @@ AudioRingerMode AudioPolicyServer::GetRingerMode()
     return audioPolicyManager_.GetRingerMode();
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene > AUDIO_SCENE_INVALID && audioScene < AUDIO_SCENE_MAX,
@@ -1990,6 +2015,7 @@ int32_t AudioPolicyServer::SetAudioScene(AudioScene audioScene)
             return ERR_INVALID_PARAM;
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetAudioSceneInternal(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
@@ -2057,6 +2083,7 @@ int32_t AudioPolicyServer::UnsetAudioManagerInterruptCallback(const int32_t /* c
     return ERR_UNKNOWN;
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> &object)
 {
     if (!PermissionUtil::VerifyIsAudio()) {
@@ -2095,6 +2122,7 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
     }
     return ERR_UNKNOWN;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
@@ -2204,6 +2232,7 @@ AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
     return STREAM_MUSIC;
 }
 
+// LCOV_EXCL_START
 AudioStreamType AudioPolicyServer::GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -2216,6 +2245,7 @@ AudioStreamType AudioPolicyServer::GetStreamInFocusByUid(const int32_t uid, cons
     }
     return STREAM_MUSIC;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
@@ -2710,7 +2740,6 @@ int32_t AudioPolicyServer::UpdateStreamState(const int32_t clientUid,
 
     return streamCollector_.UpdateStreamState(clientUid, setStateEvent);
 }
-// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetVolumeGroupInfos(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
@@ -2726,6 +2755,7 @@ int32_t AudioPolicyServer::GetVolumeGroupInfos(std::string networkId, std::vecto
 
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetNetworkIdByGroupId(int32_t groupId, std::string &networkId)
 {
@@ -2922,6 +2952,7 @@ void AudioPolicyServer::SubscribeAccessibilityConfigObserver()
     audioPolicyService_.SubscribeAccessibilityConfigObserver();
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::SetSystemSoundUri(const std::string &key, const std::string &uri)
 {
     if (!PermissionUtil::VerifySystemPermission()) {
@@ -2941,6 +2972,7 @@ std::string AudioPolicyServer::GetSystemSoundUri(const std::string &key)
     AUDIO_INFO_LOG("key: %{public}s", key.c_str());
     return audioPolicyManager_.GetSystemSoundUri(key);
 }
+// LCOV_EXCL_STOP
 
 float AudioPolicyServer::GetMinStreamVolume()
 {
@@ -3155,6 +3187,7 @@ int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterru
     return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.streamId));
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> descriptor, CastType type)
 {
@@ -3167,6 +3200,7 @@ int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
     OnDistributedRoutingRoleChange(descriptor, type);
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::SetDistributedRoutingRoleCallback(const sptr<IRemoteObject> &object)
 {
@@ -3299,6 +3333,7 @@ void AudioPolicyServer::UnRegisterSyncHibernateListener()
     }
 }
 
+// LCOV_EXCL_START
 bool AudioPolicyServer::IsSpatializationEnabled()
 {
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
@@ -3447,6 +3482,7 @@ int32_t AudioPolicyServer::UpdateSpatialDeviceState(const AudioSpatialDeviceStat
     }
     return audioSpatializationService_.UpdateSpatialDeviceState(audioSpatialDeviceState);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::RegisterSpatializationStateEventListener(const uint32_t sessionID,
     const StreamUsage streamUsage, const sptr<IRemoteObject> &object)
@@ -3604,6 +3640,7 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioPolicyServer::GetAudio
     return AudioZoneService::GetInstance().GetAudioInterruptForZone(zoneId, deviceTag);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::EnableAudioZoneInterruptReport(int32_t zoneId, const std::string &deviceTag, bool enable)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
@@ -3733,6 +3770,7 @@ int32_t AudioPolicyServer::SetHighResolutionExist(bool highResExist)
     isHighResolutionExist_ = highResExist;
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 float AudioPolicyServer::GetMaxAmplitude(int32_t deviceId)
 {
@@ -3826,6 +3864,19 @@ int32_t AudioPolicyServer::UnsetAudioDeviceAnahsCallback()
     return coreService_->UnsetAudioDeviceAnahsCallback();
 }
 
+void AudioPolicyServer::SendVolumeKeyEventToRssWhenAccountsChanged()
+{
+    AUDIO_INFO_LOG("Send VolumeKeyEvent to Rss");
+    VolumeEvent volumeEvent;
+    volumeEvent.volumeType = STREAM_MUSIC;
+    volumeEvent.volume = GetSystemVolumeLevelInternal(STREAM_MUSIC);
+    volumeEvent.updateUi = false;
+    volumeEvent.notifyRssWhenAccountsChange = true;
+    if (audioPolicyServerHandler_ != nullptr) {
+        audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
+    }
+}
+
 void AudioPolicyServer::NotifyAccountsChanged(const int &id)
 {
     CHECK_AND_RETURN_LOG(interruptService_ != nullptr, "interruptService_ is nullptr");
@@ -3833,6 +3884,7 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     // Asynchronous clear audio focus infos
     usleep(WAIT_CLEAR_AUDIO_FOCUSINFOS_TIME_US);
     audioPolicyService_.NotifyAccountsChanged(id);
+    SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
 }
 
@@ -3884,6 +3936,7 @@ void AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration()
     AudioServerProxy::GetInstance().SetDeviceConnectedFlag(false);
 }
 
+// LCOV_EXCL_START
 int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray)
 {
     bool ret = PermissionUtil::VerifySystemPermission();
@@ -3924,6 +3977,7 @@ int32_t AudioPolicyServer::GetSupportedAudioEffectProperty(AudioEffectPropertyAr
     CHECK_AND_RETURN_RET_LOG(ret, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     return audioPolicyService_.GetSupportedAudioEffectProperty(propertyArray);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioPolicyServer::GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray)
 {

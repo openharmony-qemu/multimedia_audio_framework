@@ -322,6 +322,7 @@ void RendererInServer::HandleOperationStarted()
     lastWriteMuteFrame_ = 0;
 }
 
+// LCOV_EXCL_START
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -364,6 +365,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             status_ = I_STATUS_INVALID;
     }
 }
+// LCOV_EXCL_STOP
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
@@ -1712,6 +1714,12 @@ int32_t RendererInServer::SetClientVolume()
 
     RendererStage stage = clientVolume == 0 ? RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
     playerDfx_->WriteDfxActionMsg(streamIndex_, stage);
+    return ret;
+}
+
+int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
+{
+    int32_t ret = stream_->SetLoudnessGain(loudnessGain);
     return ret;
 }
 

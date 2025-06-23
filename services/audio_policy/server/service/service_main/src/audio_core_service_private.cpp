@@ -97,6 +97,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
 {
     bool needUpdateActiveDevice = true;
     bool isUpdateActiveDevice = false;
+    uint32_t sessionId = 0;
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
         //  if streamDesc select bluetooth or headset, active it
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
@@ -110,6 +111,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             isUpdateActiveDevice = UpdateOutputDevice(streamDesc->newDeviceDescs_.front(), GetRealUid(streamDesc),
                 reason);
             needUpdateActiveDevice = !isUpdateActiveDevice;
+            sessionId = streamDesc->sessionId_;
         }
 
         // started stream need to mute when switch device
@@ -119,7 +121,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     }
     
     if (isUpdateActiveDevice) {
-        AUDIO_INFO_LOG("active device updated, update volume");
+        AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
         AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
@@ -566,6 +568,11 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
+        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
+            pipeInfo->streamDescriptors_.size() > 0) {
+            isOffloadOpened_.store(true);
+            offloadCloseCondition_.notify_all();
+        }
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -1707,11 +1714,6 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
-    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        // a2dp offload
-        return true;
-    }
-
     // LowPower: Speaker, USB headset, a2dp offload
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_SPEAKER &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
@@ -1833,6 +1835,10 @@ void AudioCoreService::WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDe
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", curOutputDeviceType);
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
@@ -1847,6 +1853,10 @@ void AudioCoreService::WriteInputRouteChangeEvent(std::shared_ptr<AudioDeviceDes
     bean->Add("TIMESTAMP", static_cast<uint64_t>(timeStamp));
     bean->Add("DEVICE_TYPE_BEFORE_CHANGE", audioActiveDevice_.GetCurrentInputDeviceType());
     bean->Add("DEVICE_TYPE_AFTER_CHANGE", desc->deviceType_);
+    bean->Add("PRE_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetLastAudioScene()));
+    bean->Add("CUR_AUDIO_SCENE", static_cast<int32_t>(audioSceneManager_.GetAudioScene(true)));
+    bean->Add("DEVICE_LIST", audioDeviceManager_.GetConnDevicesStr());
+    bean->Add("ROUTER_TYPE", static_cast<int32_t>(desc->routerType_));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

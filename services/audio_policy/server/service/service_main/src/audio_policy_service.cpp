@@ -266,6 +266,20 @@ int32_t AudioPolicyService::NotifyWakeUpCapturerRemoved()
     return SUCCESS;
 }
 
+AudioStreamInfo AudioPolicyService::GetFastStreamInfo()
+{
+    AudioStreamInfo streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    streamInfo.format = audioConfigManager_.GetFastFormat();
+
+    // change to SAMPLE_S16LE for bluetooth
+    if (streamInfo.format == SAMPLE_S32LE) {
+        DeviceType deviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+        streamInfo.format = deviceType == DEVICE_TYPE_BLUETOOTH_A2DP ? SAMPLE_S16LE : SAMPLE_S32LE;
+    }
+    AUDIO_INFO_LOG("Fast format is %{public}d", streamInfo.format);
+    return streamInfo;
+}
+
 bool AudioPolicyService::IsAbsVolumeSupported()
 {
     return audioPolicyManager_.IsAbsVolumeScene();
@@ -688,6 +702,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
 {
     AUDIO_INFO_LOG("%{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
     AudioSamplingRate samplingRate = config.streamInfo.samplingRate;
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
@@ -706,6 +721,8 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
         deviceInfo.networkId_ = curOutputDeviceDesc.networkId_;
         deviceInfo.deviceType_ = curOutputDeviceDesc.deviceType_;
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
+        targetStreamInfo.format = curOutputDeviceDesc.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP ?
+            audioConfigManager_.GetFastFormat() : SAMPLE_S16LE;
         CHECK_AND_RETURN_RET_LOG(IsDevicePlaybackSupported(config, deviceInfo), ERROR, "device not support playback");
     } else {
         if (config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
@@ -729,7 +746,6 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     // check process in routerMap, return target device for it
     // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
     // genarate the unique deviceid?
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
     deviceInfo.audioStreamInfo_ = targetStreamInfo;
     deviceInfo.deviceName_ = "mmap_device";
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);

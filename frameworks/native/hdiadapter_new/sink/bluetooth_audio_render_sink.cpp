@@ -61,6 +61,10 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
 
     attr_ = attr;
     audioSampleFormat_ = attr_.format;
+    if (isBluetoothLowLatency_ && attr.format == SAMPLE_S32LE) {
+        AUDIO_WARNING_LOG("Format shoule not be s32 for bluetooth");
+        return ERR_NOT_SUPPORTED;
+    }
     int32_t ret = InitRender();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     sinkInited_ = true;

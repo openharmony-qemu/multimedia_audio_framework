@@ -33,27 +33,29 @@
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
 #include "down_mixer.h"
+#include "policy_handler.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t MIN_BUFFER_SIZE = 2;
-const uint64_t FRAME_LEN_10MS = 10;
-const uint64_t FRAME_LEN_20MS = 20;
-const uint64_t FRAME_LEN_40MS = 40;
-const int32_t MS_PER_SEC = 1000;
-const int32_t DEFAULT_PAUSED_LATENCY = 40;
+static constexpr int32_t MIN_BUFFER_SIZE = 2;
+static constexpr uint64_t FRAME_LEN_10MS = 10;
+static constexpr uint64_t FRAME_LEN_20MS = 20;
+static constexpr uint64_t FRAME_LEN_40MS = 40;
+static constexpr uint32_t AUDIO_NS_PER_US = 1000;
+static constexpr uint32_t AUDIO_US_PER_MS = 1000;
+static constexpr uint32_t AUDIO_MS_PER_S = 1000;
+static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
     processConfig_ = processConfig;
-    spanSizeInFrame_ = FRAME_LEN_20MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
-    if (processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025) {
-        spanSizeInFrame_ = FRAME_LEN_40MS * processConfig.streamInfo.samplingRate / MS_PER_SEC;
-    }
+    spanSizeInFrame_ = processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025 ?
+        FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S :
+        FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
@@ -61,7 +63,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
         expectedPlaybackDurationMs_ = 0;
     } else {
         expectedPlaybackDurationMs_ =
-            (processConfig.rendererInfo.expectedPlaybackDurationBytes * MS_PER_SEC / byteSizePerFrame_) /
+            (processConfig.rendererInfo.expectedPlaybackDurationBytes * AUDIO_MS_PER_S / byteSizePerFrame_) /
                 processConfig.streamInfo.samplingRate;
     }
     isCallbackMode_ = isCallbackMode;
@@ -216,44 +218,66 @@ int32_t HpaeRendererStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
     return SUCCESS;
 }
 
+uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
+{
+    Trace trace("PaRendererStreamImpl::GetA2dpOffloadLatency");
+    uint32_t a2dpOffloadLatency = 0;
+    uint64_t a2dpOffloadSendDataSize = 0;
+    uint32_t a2dpOffloadTimestamp = 0;
+    auto& handle = PolicyHandler::GetInstance();
+    int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+    }
+    return a2dpOffloadLatency;
+}
+
 int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
+    uint32_t sinkLatency = 0;
     framePosition = framePosition_;
     timestamp = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
         timestamp_[base] :
         timestamp_[Timestamp::Timestampbase::MONOTONIC];
     latency = latency_;
     if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
-        uint32_t SinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
-            audioRendererSink->GetLatency(SinkLatency);
+            audioRendererSink->GetLatency(sinkLatency);
         }
-        latency = SinkLatency + latency_;
     }
+    latency += (sinkLatency + a2dpOffloadLatency) * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) /
+        AUDIO_MS_PER_S;
+
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", totlatency %{public}" PRIu64
+        ", base %{public}d, timestamp %{public}" PRIu64
+        ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms",
+        framePosition, latency, base, timestamp, sinkLatency, a2dpOffloadLatency);
     return SUCCESS;
 }
-
 
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
-        uint32_t SinkLatency = 0;
+        uint32_t sinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
-            audioRendererSink->GetLatency(SinkLatency);
+            audioRendererSink->GetLatency(sinkLatency);
         }
-        latency = SinkLatency + latency_;
+        latency = sinkLatency + latency_;
+        latency += GetA2dpOffloadLatency() * AUDIO_US_PER_MS;
         return SUCCESS;
     }
     auto timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
-    auto interval = (timestamp - timestamp_[Timestamp::Timestampbase::MONOTONIC]) / 1000;
+    auto interval = (timestamp - timestamp_[Timestamp::Timestampbase::MONOTONIC]) / AUDIO_NS_PER_US;
     latency = latency_ > interval ? latency_ - interval : 0;
+    latency += GetA2dpOffloadLatency() * AUDIO_US_PER_MS;
     AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", \
-        interval %{public}llu latency %{public}" PRIu64, latency_, interval, latency);
+        interval %{public}" PRIu64 ", latency %{public}" PRIu64, latency_, interval, latency);
     return SUCCESS;
 }
 
@@ -534,6 +558,14 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
         return ERR_INVALID_PARAM;
     }
     clientVolume_ = clientVolume;
+    return SUCCESS;
+}
+
+int32_t HpaeRendererStreamImpl::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
+    int32_t ret = IHpaeManager::GetHpaeManager().SetLoudnessGain(processConfig_.originalSessionId, loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "SetLoudnessGain is error");
     return SUCCESS;
 }
 

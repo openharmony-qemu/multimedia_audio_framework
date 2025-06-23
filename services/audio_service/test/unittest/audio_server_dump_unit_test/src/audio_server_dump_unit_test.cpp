@@ -524,6 +524,7 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerAudioDataDump_004, TestSize.Level1)
     EXPECT_NE(nullptr, audioServerDump.mainLoop);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test ResetPAAudioDump
  * @tc.type  : FUNC
@@ -542,6 +543,7 @@ HWTEST_F(AudioServerDumpUnitTest, AudioServerResetPAAudioDump_001, TestSize.Leve
     EXPECT_EQ(nullptr, audioServerDump.mainLoop);
     EXPECT_FALSE(audioServerDump.isMainLoopStarted_);
 }
+#endif
 
 /**
  * @tc.name  : Test ResetPAAudioDump

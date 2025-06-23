@@ -1144,7 +1144,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
     (void)audioStream_->SetMute(false);
-    UpdateAudioInterruptStrategy(GetVolumeInner());
+    UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
 }
 
@@ -1231,7 +1231,12 @@ bool AudioRendererPrivate::Release()
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
+
     abortRestore_ = true;
+    if (audioStream_ == nullptr) {
+        AUDIO_ERR_LOG("audioStream is null");
+        return true;
+    }
     bool result = audioStream_->ReleaseAudioStream();
 
     // If Stop call was skipped, Release to take care of Deactivation
@@ -1296,17 +1301,18 @@ int32_t AudioRendererPrivate::SetVolumeMode(int32_t mode)
 
 int32_t AudioRendererPrivate::SetVolume(float volume) const
 {
-    UpdateAudioInterruptStrategy(volume);
+    UpdateAudioInterruptStrategy(volume, true);
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->SetVolume(volume);
 }
 
-void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
+void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume, bool setVolume) const
 {
     CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "audioStream_ is nullptr");
     State currentState = audioStream_->GetState();
     bool isMute = audioStream_->GetMute();
+    bool noNeedActive = setVolume && (audioStream_->GetVolume() > 0) && (volume > 0);
     if (currentState == NEW || currentState == PREPARED) {
         AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume before RUNNING,  volume=%{public}f", volume);
         isStillZeroStreamVolume_ = (volume == 0);
@@ -1315,7 +1321,7 @@ void AudioRendererPrivate::UpdateAudioInterruptStrategy(float volume) const
         audioInterrupt_.sessionStrategy.concurrencyMode =
             (originalStrategy_.concurrencyMode == AudioConcurrencyMode::INVALID ?
             AudioConcurrencyMode::DEFAULT : originalStrategy_.concurrencyMode);
-        if (currentState == RUNNING) {
+        if (currentState == RUNNING && !noNeedActive) {
             AudioInterrupt audioInterrupt = audioInterrupt_;
             AUDIO_INFO_LOG("UpdateAudioInterruptStrategy for set volume,  volume=%{public}f", volume);
             int ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt, 0, true);
@@ -1329,6 +1335,20 @@ float AudioRendererPrivate::GetVolume() const
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
     return currentStream->GetVolume();
+}
+
+int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->SetLoudnessGain(loudnessGain);
+}
+
+float AudioRendererPrivate::GetLoudnessGain() const
+{
+    std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
+    CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    return currentStream->GetLoudnessGain();
 }
 
 int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const

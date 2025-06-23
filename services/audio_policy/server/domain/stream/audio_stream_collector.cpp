@@ -1080,7 +1080,7 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool m
                 changeInfo->rendererInfo.streamUsage) == 0) {
                 continue;
             }
-            CHECK_AND_CONTINUE(!hasBackTask);
+            CHECK_AND_CONTINUE(hasBackTask || mute);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);

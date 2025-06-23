@@ -76,6 +76,8 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
+    float GetLoudnessGain() override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
     int32_t SetMute(bool mute) override;
@@ -353,6 +355,8 @@ private:
     float muteVolume_ = 1.0;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
+
+    float loudnessGain_ = 0.0f;
     
     bool flushAfterStop_ = false;
 
@@ -419,6 +423,7 @@ private:
     uint64_t lastLatency_ = 0;
     uint64_t lastLatencyPosition_ = 0;
     uint64_t lastReadIdx_ = 0;
+    float lastSpeed_ = 1.0;
 
     enum {
         STATE_CHANGE_EVENT = 0,

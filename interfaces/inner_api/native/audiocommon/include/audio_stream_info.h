@@ -596,6 +596,7 @@ struct AudioStreamData {
     BufferDesc bufferDesc;
     int32_t volumeStart;
     int32_t volumeEnd;
+    int32_t volumeHap;
     std::unordered_map<int32_t, bool> isInnerCapeds;
 };
 

@@ -89,6 +89,7 @@ enum class PolicyGlobalConfigType {
 };
 
 enum class PolicyPAConfigType {
+    FAST_FORMAT,
     AUDIO_LATENCY,
     SINK_LATENCY,
     UNKNOWN

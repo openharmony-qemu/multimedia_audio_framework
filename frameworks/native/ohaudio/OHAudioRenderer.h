@@ -234,6 +234,8 @@ public:
     int32_t SetVolume(float volume) const;
     int32_t SetVolumeWithRamp(float volume, int32_t duration);
     float GetVolume() const;
+    int32_t SetLoudnessGain(float loudnessGain) const;
+    float GetLoudnessGain() const;
     int32_t SetRendererPositionCallback(OH_AudioRenderer_OnMarkReachedCallback callback,
         uint32_t markPosition, void *userData);
     void UnsetRendererPositionCallback();

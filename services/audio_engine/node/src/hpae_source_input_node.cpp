@@ -358,10 +358,9 @@ int32_t HpaeSourceInputNode::GetCapturerSourceInstance(const std::string &device
 
 int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
-
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    Trace trace("HpaeSourceInputNode::CapturerSourceInit");
     if (audioCapturerSource_->IsInited()) {
         SetSourceState(STREAM_MANAGER_IDLE);
 #ifdef IS_EMULATOR
@@ -391,29 +390,29 @@ int32_t HpaeSourceInputNode::CapturerSourceInit(IAudioSourceAttr &attr)
 
 int32_t HpaeSourceInputNode::CapturerSourceDeInit()
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceDeInit");
     audioCapturerSource_->DeInit();
     audioCapturerSource_ = nullptr;
-    // todo: check where to release captureId_
     HdiAdapterManager::GetInstance().ReleaseId(captureId_);
     return SUCCESS;
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceFlush(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     return audioCapturerSource_->Flush();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Pause() == SUCCESS, ERROR, "Source pause fail");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
     return SUCCESS;
@@ -421,17 +420,15 @@ int32_t HpaeSourceInputNode::CapturerSourcePause(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceReset(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
     return audioCapturerSource_->Reset();
 }
 
 int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Resume() == SUCCESS, ERROR, "Source resume fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -439,9 +436,10 @@ int32_t HpaeSourceInputNode::CapturerSourceResume(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceStart");
     CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Start() == SUCCESS, ERROR, "Source start fail");
     SetSourceState(STREAM_MANAGER_RUNNING);
     return SUCCESS;
@@ -449,11 +447,14 @@ int32_t HpaeSourceInputNode::CapturerSourceStart(void)
 
 int32_t HpaeSourceInputNode::CapturerSourceStop(void)
 {
-    if (audioCapturerSource_ == nullptr) {
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        ERROR, "invalid audioCapturerSource");
+    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->IsInited(), ERROR, "invalid source state");
+    Trace trace("HpaeSourceInputNode::CapturerSourceStop");
     SetSourceState(STREAM_MANAGER_SUSPENDED);
-    CHECK_AND_RETURN_RET_LOG(audioCapturerSource_->Stop() == SUCCESS, ERROR, "Source stop fail");
+    if (audioCapturerSource_->Stop() != SUCCESS) {
+        AUDIO_ERR_LOG("CapturerSourceStop error, sourceInputNode[%{public}u]", sourceInputNodeType_);
+    }
     return SUCCESS;
 }
 
@@ -510,8 +511,9 @@ HpaeNodeInfo &HpaeSourceInputNode::GetNodeInfoWithInfo(HpaeSourceBufferType &typ
 
 void HpaeSourceInputNode::UpdateAppsUidAndSessionId(std::vector<int32_t> &appsUid, std::vector<int32_t> &sessionsId)
 {
-    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr, "audioCapturerSource_ is nullptr");
-    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "audioCapturerSource_ not init");
+    CHECK_AND_RETURN_LOG(audioCapturerSource_ != nullptr && captureId_ != HDI_INVALID_ID,
+        "audioCapturerSource_ is nullptr");
+    CHECK_AND_RETURN_LOG(audioCapturerSource_->IsInited(), "invalid source state");
     audioCapturerSource_->UpdateAppsUid(appsUid);
     std::shared_ptr<AudioSourceClock> clock =
         CapturerClockManager::GetInstance().GetAudioSourceClock(captureId_);

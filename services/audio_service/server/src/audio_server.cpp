@@ -225,21 +225,43 @@ static void UpdateArmInstance(std::shared_ptr<IAudioRenderSink> &sink,
     primarySink->ResetActiveDeviceForDisconnect(DEVICE_TYPE_NONE);
 }
 
-static void UpdatePrimaryInstance(std::shared_ptr<IAudioRenderSink> &sink,
-    std::shared_ptr<IAudioCaptureSource> &source)
+static void SetAudioSceneForAllSource(std::shared_ptr<IAudioCaptureSource> &source,
+    AudioScene audioScene, DeviceType activeInputDevice)
 {
-    sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-    source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
-    if (!source->IsInited()) {
-#ifdef SUPPORT_LOW_LATENCY
-        AUDIO_INFO_LOG("Use fast capturer source instance");
-        source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
-        if (source && !source->IsInited()) {
-            AUDIO_INFO_LOG("Use fast capturer voip source instance");
-            source = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
-        }
-#endif
+    if (source == nullptr || !source->IsInited()) {
+        AUDIO_WARNING_LOG("Capturer is not initialized.");
+    } else {
+        source->SetAudioScene(audioScene, activeInputDevice);
     }
+#ifdef SUPPORT_LOW_LATENCY
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->SetAudioScene(audioScene, activeInputDevice);
+    }
+    std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
+    if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
+        fastVoipSource->SetAudioScene(audioScene, activeInputDevice);
+    }
+#endif
+}
+
+static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
+{
+    if (source == nullptr || !source->IsInited()) {
+        AUDIO_WARNING_LOG("Capturer is not initialized.");
+    } else {
+        source->UpdateActiveDevice(type);
+    }
+#ifdef SUPPORT_LOW_LATENCY
+    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
+    if (fastSource != nullptr && fastSource->IsInited()) {
+        fastSource->UpdateActiveDevice(type);
+    }
+    std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
+    if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
+        fastVoipSource->UpdateActiveDevice(type);
+    }
+#endif
 }
 
 void ProxyDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
@@ -581,6 +603,7 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     return false;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -622,6 +645,7 @@ int32_t AudioServer::SetExtraParameters(const std::string &key,
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs,
@@ -1011,6 +1035,7 @@ uint64_t AudioServer::GetTransactionId(DeviceType deviceType, DeviceRole deviceR
     return transactionId;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetMicrophoneMute(bool isMute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1110,15 +1135,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
         source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
     }
 
-    if (source == nullptr || !source->IsInited()) {
-        AUDIO_WARNING_LOG("Capturer is not initialized.");
-    } else {
-        source->SetAudioScene(audioScene, activeInputDevice, scoExcludeFlag);
-    }
-    std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
-    if (fastSource != nullptr && fastSource->IsInited()) {
-        fastSource->SetAudioScene(audioScene, activeInputDevice, scoExcludeFlag);
-    }
+    SetAudioSceneForAllSource(source, audioScene, activeInputDevice);
     if (sink == nullptr || !sink->IsInited()) {
         AUDIO_WARNING_LOG("Renderer is not initialized.");
     } else {
@@ -1131,6 +1148,7 @@ int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType
     audioScene_ = audioScene;
     return SUCCESS;
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
     BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
@@ -1154,16 +1172,15 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
 int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<DeviceType> deviceTypes,
     BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName)
 {
-    std::shared_ptr<IAudioRenderSink> sink = nullptr;
+    std::shared_ptr<IAudioRenderSink> sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
 
     if (type == DEVICE_TYPE_USB_ARM_HEADSET) {
         UpdateArmInstance(sink, source);
     } else if (type == DEVICE_TYPE_ACCESSORY) {
-        sink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
         source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
     } else {
-        UpdatePrimaryInstance(sink, source);
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
         if (type == DEVICE_TYPE_BLUETOOTH_A2DP && a2dpOffloadFlag != A2DP_OFFLOAD) {
             deviceTypes[0] = DEVICE_TYPE_NONE;
         }
@@ -1174,9 +1191,9 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
     if (flag == DeviceFlag::INPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            source->SetAudioScene(audioScene_, type);
+            SetAudioSceneForAllSource(source, audioScene_, type);
         } else {
-            source->UpdateActiveDevice(type);
+            UpdateDeviceForAllSource(source, type);
         }
     } else if (flag == DeviceFlag::OUTPUT_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
@@ -1187,10 +1204,10 @@ int32_t AudioServer::SetIORoutes(DeviceType type, DeviceFlag flag, std::vector<D
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
     } else if (flag == DeviceFlag::ALL_DEVICES_FLAG) {
         if (audioScene_ != AUDIO_SCENE_DEFAULT) {
-            source->SetAudioScene(audioScene_, type);
+            SetAudioSceneForAllSource(source, audioScene_, type);
             sink->SetAudioScene(audioScene_, deviceTypes);
         } else {
-            source->UpdateActiveDevice(type);
+            UpdateDeviceForAllSource(source, type);
             sink->UpdateActiveDevice(deviceTypes);
         }
         PolicyHandler::GetInstance().SetActiveOutputDevice(type);
@@ -1228,6 +1245,7 @@ void AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
     source->SetDmDeviceType(dmDeviceType);
 }
 
+// LCOV_EXCL_START
 void AudioServer::SetAudioMonoState(bool audioMono)
 {
     AUDIO_INFO_LOG("AudioMonoState = [%{public}s]", audioMono ? "true": "false");
@@ -1303,6 +1321,7 @@ void AudioServer::NotifyDeviceInfo(std::string networkId, bool connected)
         sink->RegistCallback(HDI_CB_RENDER_PARAM, this);
     }
 }
+// LCOV_EXCL_STOP
 
 inline bool IsParamEnabled(std::string key, bool &isEnabled)
 {
@@ -1808,6 +1827,7 @@ bool AudioServer::IsNormalIpcStream(const AudioProcessConfig &config) const
     return false;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole deviceRole, bool isStartDevice)
 {
     AUDIO_INFO_LOG("CheckRemoteDeviceState: device[%{public}s] deviceRole[%{public}d] isStartDevice[%{public}s]",
@@ -1848,6 +1868,7 @@ int32_t AudioServer::CheckRemoteDeviceState(std::string networkId, DeviceRole de
     }
     return ret;
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::OnRenderSinkParamChange(const std::string &networkId, const AudioParamKey key,
     const std::string &condition, const std::string &value)
@@ -2053,6 +2074,7 @@ int32_t AudioServer::CheckInnerRecorderPermission(const AudioProcessConfig &conf
 #endif
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
 {
     Security::AccessToken::AccessTokenID tokenId = config.appInfo.appTokenId;
@@ -2100,6 +2122,7 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
         "VerifyBackgroundCapture failed for callerUid:%{public}d", config.callerUid);
     return true;
 }
+// LCOV_EXCL_STOP
 
 bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig &config)
 {
@@ -2183,6 +2206,7 @@ void AudioServer::RegisterPolicyServerDeathRecipient()
     }
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CreatePlaybackCapturerManager()
 {
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -2198,6 +2222,7 @@ bool AudioServer::CreatePlaybackCapturerManager()
     return false;
 #endif
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::RegisterAudioCapturerSourceCallback()
 {
@@ -2269,6 +2294,7 @@ void AudioServer::RegisterAudioRendererSinkCallback()
     HdiAdapterManager::GetInstance().RegistSinkCallback(HDI_CB_RENDER_STATE, this, limitFunc);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::NotifyStreamVolumeChanged(AudioStreamType streamType, float volume)
 {
     AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
@@ -2344,6 +2370,7 @@ void AudioServer::ResetAudioEndpoint()
     AudioService::GetInstance()->ResetAudioEndpoint();
 #endif
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer)
 {
@@ -2355,6 +2382,7 @@ void AudioServer::UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer
     }
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2366,6 +2394,7 @@ int32_t AudioServer::UpdateDualToneState(bool enable, int32_t sessionId)
         return AudioService::GetInstance()->DisableDualToneList(static_cast<uint32_t>(sessionId));
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t durationUs)
 {
@@ -2378,6 +2407,7 @@ int32_t AudioServer::SetSinkRenderEmpty(const std::string &devceClass, int32_t d
     return sink->SetRenderEmpty(durationUs);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetSinkMuteForSwitchDevice(const std::string &devceClass, int32_t durationUs, bool mute)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -2480,6 +2510,7 @@ int32_t AudioServer::UnsetOffloadMode(uint32_t sessionId)
         callingUid);
     return AudioService::GetInstance()->UnsetOffloadMode(sessionId);
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::OnRenderSinkStateChange(uint32_t sinkId, bool started)
 {

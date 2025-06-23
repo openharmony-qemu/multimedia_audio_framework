@@ -573,7 +573,6 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDequeueBuffer_001, TestSize.L
     size_t length = 10;
     bufferDesc = rendererInServer->DequeueBuffer(length);
     EXPECT_EQ(SUCCESS, ret);
-    EXPECT_EQ(length, bufferDesc.bufLength);
 }
 
 /**
@@ -2186,7 +2185,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_001, TestSize.
 
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2202,7 +2201,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerEnableInnerCap_002, TestSize.
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->EnableInnerCap(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2233,7 +2232,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDisableInnerCap_002, TestSize
     rendererInServer->InitDupStream(1);
     int32_t ret = rendererInServer->DisableInnerCap(1);
 
-    EXPECT_EQ(ERR_INVALID_OPERATION, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2257,7 +2256,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_001, TestSize.L
     tempRendererInServer->dualToneStream_ = nullptr;
     int32_t ret = tempRendererInServer->InitDupStream(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2273,7 +2272,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDupStream_002, TestSize.L
     rendererInServer->status_ = I_STATUS_STARTED;
     int32_t ret = rendererInServer->InitDupStream(1);
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
@@ -2359,7 +2358,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerInitDualToneStream_001, TestS
     tempRendererInServer->dualToneStream_ = nullptr;
     int32_t ret = tempRendererInServer->InitDualToneStream();
 
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

@@ -42,6 +42,7 @@ namespace {
     static const size_t CAPTURER_BUFFER_DEFAULT_NUM = 4;
     static const size_t CAPTURER_BUFFER_WAKE_UP_NUM = 100;
     static const uint32_t OVERFLOW_LOG_LOOP_COUNT = 100;
+    constexpr int32_t RELEASE_TIMEOUT_IN_SEC = 10; // 10S
 }
 
 enum AudioByteSize : int32_t {
@@ -518,6 +519,9 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
 
 int32_t CapturerInServer::Start()
 {
+    AudioXCollie audioXCollie(
+        "CapturerInServer::Start", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     int32_t ret = StartInner();
     CapturerStage stage = ret == SUCCESS ? CAPTURER_STAGE_START_OK : CAPTURER_STAGE_START_FAIL;
     if (recorderDfx_) {
@@ -567,6 +571,9 @@ int32_t CapturerInServer::StartInner()
 
 int32_t CapturerInServer::Pause()
 {
+    AudioXCollie audioXCollie(
+        "CapturerInServer::Pause", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
 
     if (status_ != I_STATUS_STARTED) {
@@ -589,6 +596,9 @@ int32_t CapturerInServer::Pause()
 
 int32_t CapturerInServer::Flush()
 {
+    AudioXCollie audioXCollie(
+        "CapturerInServer::Flush", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_STARTED) {
         status_ = I_STATUS_FLUSHING_WHEN_STARTED;
@@ -630,6 +640,9 @@ int32_t CapturerInServer::DrainAudioBuffer()
 
 int32_t CapturerInServer::Stop()
 {
+    AudioXCollie audioXCollie(
+        "CapturerInServer::Stop", RELEASE_TIMEOUT_IN_SEC, nullptr, nullptr,
+            AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED) {
         AUDIO_ERR_LOG("CapturerInServer::Stop failed, Illegal state: %{public}u", status_.load());
@@ -653,6 +666,8 @@ int32_t CapturerInServer::Stop()
 
 int32_t CapturerInServer::Release()
 {
+    AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
+        nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     AudioService::GetInstance()->RemoveCapturer(streamIndex_);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {

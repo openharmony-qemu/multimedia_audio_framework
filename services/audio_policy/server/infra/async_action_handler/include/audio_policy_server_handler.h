@@ -261,6 +261,8 @@ private:
     void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
+    void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
+
     std::vector<AudioRendererInfo> GetCallbackRendererInfoList(int32_t clientPid);
     std::vector<AudioCapturerInfo> GetCallbackCapturerInfoList(int32_t clientPid);
 
@@ -281,6 +283,7 @@ private:
         sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
+    int32_t pidOfRss_ = -1;
     std::unordered_map<int32_t, std::vector<AudioRendererInfo>> clientCbRendererInfoMap_;
     std::unordered_map<int32_t, std::vector<AudioCapturerInfo>> clientCbCapturerInfoMap_;
     std::unordered_map<int32_t, std::set<StreamUsage>> clientCbStreamUsageMap_;

@@ -138,7 +138,7 @@ void AudioConcurrencyServiceFuzzTest()
 
     std::shared_ptr<AudioConcurrencyCallback> callback;
     auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
     sptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> deathRecipient;
     std::shared_ptr<AudioConcurrencyService::AudioConcurrencyClient> audioConcurrencyClient =
         std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);

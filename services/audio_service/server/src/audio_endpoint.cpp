@@ -539,7 +539,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 {
-    AUDIO_INFO_LOG("Config enter, deviceRole %{public}d.", deviceInfo.deviceRole_);
+    AUDIO_INFO_LOG("Role %{public}d, format %{public}d", deviceInfo.deviceRole_, deviceInfo.audioStreamInfo_.format);
     deviceInfo_ = deviceInfo;
     bool res = deviceInfo_.audioStreamInfo_.CheckParams();
     CHECK_AND_RETURN_RET_LOG(res, false, "samplingRate or channels size is 0");
@@ -581,8 +581,15 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
         return false;
     }
 
-    float initVolume = 1.0; // init volume to 1.0
-    sink->SetVolume(initVolume, initVolume);
+    Volume vol = {true, 1.0f, 0};
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+        sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
+        AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
+    } else {
+        sink->SetVolume(1.0f, 1.0f);
+        AUDIO_INFO_LOG("Init Volume 1.0 with Device %{public}d", deviceType);
+    }
 
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
@@ -667,7 +674,8 @@ int32_t AudioEndpointInner::GetAdapterBufferInfo(const AudioDeviceDescriptor &de
             ret, dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
         return ERR_ILLEGAL_STATE;
     }
-    AUDIO_DEBUG_LOG("end, fd %{public}d.", dstBufferFd_);
+    AUDIO_INFO_LOG("mmap buffer info: dstTotalSizeInframe %{public}d, dstSpanSizeInframe %{public}d,"
+        "dstByteSizePerFrame %{public}d.", dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
     return SUCCESS;
 }
 
@@ -1232,27 +1240,24 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
 
+    std::vector<AudioStreamData> tempList;
     for (size_t i = 0; i < srcDataList.size(); i++) {
         if (!srcDataList[i].isInnerCapeds.count(innerCapId) ||
             !srcDataList[i].isInnerCapeds.at(innerCapId)) {
             continue;
         }
-        size_t dataLength = dupBufferSize_;
-        dataLength /= 2; // SAMPLE_S16LE--> 2 byte
-        int16_t *dstPtr = reinterpret_cast<int16_t *>(dupBuffer_.get());
-
-        for (size_t offset = 0; dataLength > 0; dataLength--) {
-            int32_t sum = *dstPtr;
-            sum += *(reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset);
-            *dstPtr = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
-            dstPtr++;
-            offset++;
-        }
+        AudioStreamData cur = srcDataList[i];
+        cur.volumeStart = cur.volumeHap;
+        tempList.push_back(cur);
     }
     BufferDesc temp;
     temp.buffer = dupBuffer_.get();
     temp.bufLength = dupBufferSize_;
     temp.dataLength = dupBufferSize_;
+    AudioStreamData dstStream;
+    dstStream.streamInfo = dstStreamInfo_;
+    dstStream.bufferDesc = temp;
+    FormatConverter::DataAccumulationFromVolume(tempList, dstStream);
 
     int32_t engineFlag = GetEngineFlag();
     int32_t ret;
@@ -1271,20 +1276,8 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
 
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
-    size_t srcListSize = srcDataList.size();
-    for (size_t i = 0; i < srcListSize; i++) {
-        if (srcDataList[i].streamInfo.format != SAMPLE_S16LE || srcDataList[i].streamInfo.channels != STEREO ||
-            srcDataList[i].bufferDesc.bufLength != dstData.bufferDesc.bufLength ||
-            srcDataList[i].bufferDesc.dataLength != dstData.bufferDesc.dataLength) {
-            AUDIO_ERR_LOG("ProcessData failed, streamInfo are different");
-            return;
-        }
-    }
-    // Assum using the same format and same size
-    CHECK_AND_RETURN_LOG(dstData.streamInfo.format == SAMPLE_S16LE && dstData.streamInfo.channels == STEREO,
-        "ProcessData failed, streamInfo are not support");
-
-    FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+    CHECK_AND_RETURN_LOG(ret, "Format may not match");
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
@@ -1393,6 +1386,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSp
     Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
         " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));
     streamData.volumeEnd = curReadSpan->volumeEnd;
+    streamData.volumeHap = muteFlag ? 0 : curReadSpan->volumeStart;
     streamData.streamInfo = processList_[i]->GetStreamInfo();
     streamData.isInnerCapeds = processList_[i]->GetInnerCapState();
     SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;

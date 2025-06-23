@@ -99,6 +99,8 @@ public:
 
     virtual int32_t SetClientVolume() { return 0; }
 
+    virtual int32_t SetLoudnessGain(float loudnessGain) { return 0; }
+
     virtual int32_t SetMute(bool isMute) { return (isMute ? SUCCESS : ERROR); }
 
     virtual int32_t SetDuckFactor(float duckFactor) { return 0; }
