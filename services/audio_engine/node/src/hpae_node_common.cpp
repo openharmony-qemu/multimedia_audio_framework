@@ -125,7 +125,7 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
 
 AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass)
 {
-    if (g_deviceClassToPipeMap.find(state) == g_deviceClassToPipeMap()) {
+    if (g_deviceClassToPipeMap.find(deviceClass) == g_deviceClassToPipeMap.end()) {
         return PIPE_TYPE_UNKNOWN;
     }
     return g_deviceClassToPipeMap[deviceClass];
