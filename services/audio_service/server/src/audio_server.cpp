@@ -513,7 +513,6 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
     }
-    // TODO: release voip stream when DATA_TRANS_STOP
 }
 
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
