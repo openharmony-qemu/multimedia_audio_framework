@@ -77,9 +77,14 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
 
 HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
 {
+    if (handle_ && audioEffectLibHandle_) {
+        audioEffectLibHandle_->releaseEffect(handle_);
+        handle_ = nullptr;
+    }
     if (dlHandle_) {
         dlclose(dlHandle_);
         dlHandle_ = nullptr;
+        audioEffectLibHandle_ = nullptr;
     }
     AUDIO_INFO_LOG("HpaeLoudnessGainNode destroyed");
 }
@@ -173,8 +178,6 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
 
     if (IsFloatValueEqual(loudnessGain_, 0.0f)) {
         AUDIO_INFO_LOG("Creating handle...");
-        CHECK_AND_RETURN_RET_LOG(audioEffectLibHandle_->checkEffect(LOUDNESS_DESCRIPTOR), ERROR,
-            "wrong loudnessGain descriptor");
         int32_t ret = audioEffectLibHandle_->createEffect(LOUDNESS_DESCRIPTOR, &handle_);
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "loudness lib handle create failed");
         
