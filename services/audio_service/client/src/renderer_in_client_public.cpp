@@ -518,10 +518,11 @@ float RendererInClientInner::GetDuckVolume()
     return duckVolume_;
 }
 
-int32_t RendererInClientInner::SetMute(bool mute)
+int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
     AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
+    muteCmd_ = cmdType;
     muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetMuteFactor(muteVolume_);
@@ -919,6 +920,7 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
+    mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
@@ -990,6 +992,7 @@ void RendererInClientInner::FlushBeforeStart()
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::PauseAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("State is not RUNNING. Illegal state:%{public}u", state_.load());
@@ -1030,6 +1033,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
@@ -1086,6 +1090,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 {
     (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");

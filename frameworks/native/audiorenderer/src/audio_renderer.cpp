@@ -1131,7 +1131,7 @@ bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(true);
+    (void)audioStream_->SetMute(true, cmdType);
     return true;
 }
 
@@ -1143,7 +1143,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(false);
+    (void)audioStream_->SetMute(false, cmdType);
     UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
 }
@@ -2079,7 +2079,7 @@ bool AudioRendererPrivate::InitTargetStream(IAudioStream::SwitchInfo &info,
 bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
-    audioStream_->SetMute(true); // Do not record this status in recover(InitSwitchInfo)
+    audioStream_->SetMute(true, CMD_FROM_SYSTEM); // Do not record this status in recover(InitSwitchInfo)
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();

@@ -291,7 +291,7 @@ HWTEST(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    int32_t res = fastAudioStream->SetMute(false);
+    int32_t res = fastAudioStream->SetMute(false, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
 }
 
