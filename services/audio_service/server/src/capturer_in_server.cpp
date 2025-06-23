@@ -855,7 +855,7 @@ CapturerState CapturerInServer::HandleStreamStatusToCapturerState(const IStatus 
 RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = audioServerBuffer_->SetRestoreStatus(NEED_RESTORE);
-    if (restoreStatus == NEED_RESTORE) {  
+    if (restoreStatus == NEED_RESTORE) {
         SwitchStreamInfo info = {
             streamIndex_,
             processConfig_.callerUid,
@@ -868,7 +868,7 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             "because restoreStatus:NEED_RESTORE", streamIndex_);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
-        audioServerBuffer_->SetRestoreInfo(restoreInfo);  
+        audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
 }

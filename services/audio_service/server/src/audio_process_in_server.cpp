@@ -837,8 +837,8 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 "because restoreStatus:NEED_RESTORE", sessionId_);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
+        
         processBuffer_->SetRestoreInfo(restoreInfo);
-
     }
     return restoreStatus;
 }
