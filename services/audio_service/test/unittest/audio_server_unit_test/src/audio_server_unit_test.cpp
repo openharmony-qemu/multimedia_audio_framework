@@ -1409,5 +1409,74 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
     audioServer->RemoveRendererDataTransferCallback(pid);
     EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_001
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_RESUME;
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_002
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_STOP;
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_003
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_STOP;
+    info.streamUsage = STREAM_USAGE_MUSIC;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

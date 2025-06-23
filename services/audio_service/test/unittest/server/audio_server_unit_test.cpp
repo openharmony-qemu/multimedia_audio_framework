@@ -231,6 +231,21 @@ HWTEST(AudioServerUnitTest, RegisterAudioRendererSinkCallback_001, TestSize.Leve
 }
 
 /**
+ * @tc.name  : Test RegisterDataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterDataTransferStateChangeCallback_001
+ * @tc.desc  : Test RegisterDataTransferStateChangeCallback interface using empty case.
+ */
+HWTEST(AudioServerUnitTest, RegisterDataTransferStateChangeCallback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest RegisterDataTransferStateChangeCallback_001 start");
+    int32_t systemAbilityId = 100;
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+    audioServer->RegisterDataTransferStateChangeCallback();
+}
+
+/**
  * @tc.name  : Test OnRenderSinkStateChange API
  * @tc.type  : FUNC
  * @tc.number: OnRenderSinkStateChange_001

@@ -295,6 +295,7 @@ private:
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     void RegisterAudioRendererSinkCallback();
+    void RegisterDataTransferStateChangeCallback();
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
@@ -388,6 +389,19 @@ private:
 
     std::mutex audioDataTransferMutex_;
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
+};
+
+class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {
+public:
+    DataTransferStateChangeCallbackInnerImpl() = default;
+    virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
+    void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
+private:
+    void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
+
+    DataTransferMonitorParam param_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
