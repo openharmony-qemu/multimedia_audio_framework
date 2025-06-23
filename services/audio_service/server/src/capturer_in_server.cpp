@@ -864,7 +864,7 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             processConfig_.appInfo.appTokenId,
             HandleStreamStatusToCapturerState(status_);
         };
-        AUDIO_INFO_LOG("Insert ipc stream:%{public}d into switchStreamRecord "
+        AUDIO_INFO_LOG("Insert ipc stream:%{public}u into switchStreamRecord "
             "because restoreStatus:NEED_RESTORE", streamIndex_);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 

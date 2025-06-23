@@ -798,19 +798,6 @@ int64_t AudioProcessInServer::GetLastAudioDuration()
     return ret < 0 ? -1 : ret;
 }
 
-enum StreamStatus : uint32_t {
-    STREAM_IDEL = 0,
-    STREAM_STARTING,
-    STREAM_RUNNING,
-    STREAM_PAUSING,
-    STREAM_PAUSED,
-    STREAM_STOPPING,
-    STREAM_STOPPED,
-    STREAM_RELEASED,
-    STREAM_STAND_BY,
-    STREAM_INVALID
-};
-
 CapturerState AudioProcessInServer::HandleStreamStatusToCapturerState(const StreamStatus &status)
 {
     switch (status) {
@@ -846,7 +833,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appTokenId,
                 HandleStreamStatusToCapturerState(streamStatus_->load());
             };
-            AUDIO_INFO_LOG("Insert fast stream:%{public}d into switchStreamRecord "
+            AUDIO_INFO_LOG("Insert fast stream:%{public}u into switchStreamRecord "
                 "because restoreStatus:NEED_RESTORE", sessionId_);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }

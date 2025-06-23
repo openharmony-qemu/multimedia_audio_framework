@@ -617,7 +617,6 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
         if (targetState == SWITCH_STATE_WAITING) {
             CHECK_AND_RETURN_RET_LOG(SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState),
                 false, "Insert switchStream into Record fail!");
-            AUDIO_INFO_LOG("Insert switchStream into Record success!");
         }
         return true;
     }
