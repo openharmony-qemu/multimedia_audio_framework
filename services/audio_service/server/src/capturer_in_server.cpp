@@ -258,6 +258,32 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
     return false;
 }
 
+
+static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
+{
+    switch (status) {
+        case I_STATUS_IDLE:
+            return CAPTURER_PREPARED;
+        case I_STATUS_STARTING:
+        case I_STATUS_STARTED:
+        case I_STATUS_FLUSHING_WHEN_STARTED:
+            return CAPTURER_RUNNING;
+        case I_STATUS_PAUSING:
+        case I_STATUS_PAUSED:
+        case I_STATUS_FLUSHING_WHEN_PAUSED:
+            return CAPTURER_PAUSED;
+        case I_STATUS_STOPPING:
+        case I_STATUS_STOPPED:
+        case I_STATUS_FLUSHING_WHEN_STOPPED:
+            return CAPTURER_STOPPED;
+        case I_STATUS_RELEASING:
+        case I_STATUS_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 {
     uint32_t byteSize = 0;
@@ -827,31 +853,6 @@ void CapturerInServer::SetNonInterruptMute(const bool muteFlag)
     AudioService::GetInstance()->UpdateMuteControlSet(streamIndex_, muteFlag);
 }
 
-CapturerState CapturerInServer::HandleStreamStatusToCapturerState(const IStatus &status)
-{
-    switch (status) {
-        case I_STATUS_IDLE:
-            return CAPTURER_PREPARED;
-        case I_STATUS_STARTING:
-        case I_STATUS_STARTED:
-        case I_STATUS_FLUSHING_WHEN_STARTED:
-            return CAPTURER_RUNNING;
-        case I_STATUS_PAUSING:
-        case I_STATUS_PAUSED:
-        case I_STATUS_FLUSHING_WHEN_PAUSED:
-            return CAPTURER_PAUSED;
-        case I_STATUS_STOPPING:
-        case I_STATUS_STOPPED:
-        case I_STATUS_FLUSHING_WHEN_STOPPED:
-            return CAPTURER_STOPPED;
-        case I_STATUS_RELEASING:
-        case I_STATUS_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
-    }
-}
-
 RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = audioServerBuffer_->SetRestoreStatus(NEED_RESTORE);
@@ -864,8 +865,9 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
             processConfig_.appInfo.appTokenId,
             HandleStreamStatusToCapturerState(status_)
         };
-        AUDIO_INFO_LOG("Insert ipc stream:%{public}u into switchStreamRecord "
-            "because restoreStatus:NEED_RESTORE", streamIndex_);
+        AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+            "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+            streamIndex_, info.callerUid, info.appTokenId);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
 
         audioServerBuffer_->SetRestoreInfo(restoreInfo);

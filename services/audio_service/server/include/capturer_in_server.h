@@ -61,7 +61,6 @@ public:
 #endif
     void SetNonInterruptMute(const bool muteFlag);
     RestoreStatus RestoreSession(RestoreInfo restoreInfo);
-    CapturerState HandleStreamStatusToCapturerState(const IStatus &status);
     int32_t StopSession();
 
     bool TurnOnMicIndicator(CapturerState capturerState);

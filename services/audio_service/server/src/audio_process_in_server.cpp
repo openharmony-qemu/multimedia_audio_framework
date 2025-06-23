@@ -95,6 +95,28 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
+static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
@@ -798,28 +820,6 @@ int64_t AudioProcessInServer::GetLastAudioDuration()
     return ret < 0 ? -1 : ret;
 }
 
-CapturerState AudioProcessInServer::HandleStreamStatusToCapturerState(const StreamStatus &status)
-{
-    switch (status) {
-        case STREAM_IDEL:
-        case STREAM_STAND_BY:
-            return CAPTURER_PREPARED;
-        case STREAM_STARTING:
-        case STREAM_RUNNING:
-            return CAPTURER_RUNNING;
-        case STREAM_PAUSING:
-        case STREAM_PAUSED:
-            return CAPTURER_PAUSED;
-        case STREAM_STOPPING:
-        case STREAM_STOPPED:
-            return CAPTURER_STOPPED;
-        case STREAM_RELEASED:
-            return CAPTURER_RELEASED;
-        default:
-            return CAPTURER_INVALID;
-    }
-}
-
 RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
@@ -833,8 +833,9 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
                 processConfig_.appInfo.appTokenId,
                 HandleStreamStatusToCapturerState(streamStatus_->load())
             };
-            AUDIO_INFO_LOG("Insert fast stream:%{public}u into switchStreamRecord "
-                "because restoreStatus:NEED_RESTORE", sessionId_);
+            AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+                sessionId_, info.callerUid, info.appTokenId);
             SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         }
 
