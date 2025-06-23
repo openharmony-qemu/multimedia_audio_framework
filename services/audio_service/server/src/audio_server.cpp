@@ -105,6 +105,9 @@ constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
+constexpr int32_t CHECK_ALL_RENDER_UID = -1;
+constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
+constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
@@ -472,6 +475,64 @@ void AudioServer::OnDataTransferStateChange(const int32_t &pid, const int32_t &c
     callback->OnDataTransferStateChange(callbackId, info);
 }
 
+void AudioServer::RegisterDataTransferStateChangeCallback()
+{
+    DataTransferMonitorParam param;
+    param.clientUID = CHECK_ALL_RENDER_UID;
+    param.badDataTransferTypeBitMap = 0b01; // bit0:NO_DATA_TRANS, bit1:SILENCE_DATA_TRANS
+    param.timeInterval = RENDER_DETECTION_CYCLE_NS;
+    param.badFramesRatio = RENDER_BAD_FRAMES_RATIO;
+
+    std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    CHECK_AND_RETURN_LOG(callback != nullptr, "AudioPolicyServer: failed to  create cb obj");
+
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    callback->SetDataTransferMonitorParam(param);
+    audioDataTransferCbMap_[pid] = callback;
+    int32_t ret = AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(
+        param, pid, -1);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "register fail");
+    AUDIO_INFO_LOG("pid: %{public}d RegisterDataTransferStateChangeCallback done", pid);
+}
+
+void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
+    const DataTransferMonitorParam &param)
+{
+    param_.clientUID = param.clientUID;
+    param_.badDataTransferTypeBitMap = param.badDataTransferTypeBitMap;
+    param_.timeInterval = param.timeInterval;
+    param_.badFramesRatio = param.badFramesRatio;
+}
+
+void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
+    const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
+{
+    if (info.stateChangeType == DATA_TRANS_STOP) {
+        ReportEvent(info);
+    }
+    // TODO: release voip stream when DATA_TRANS_STOP
+}
+
+void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
+    const AudioRendererDataTransferStateChangeInfo &info)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::STREAM_OCCUPANCY,
+        Media::MediaMonitor::EventType::DURATION_AGGREGATION_EVENT);
+    CHECK_AND_RETURN_LOG(bean != nullptr, "bean is nullptr");
+
+    bean->Add("IS_PLAYBACK", 1);
+    bean->Add("SESSIONID", static_cast<int32_t>(info.sessionId));
+    bean->Add("UID", info.clientUID);
+    bean->Add("STREAM_OR_SOURCE_TYPE", info.streamUsage);
+    bean->Add("START_TIME", static_cast<uint64_t>(0));
+    bean->Add("UPLOAD_TIME", static_cast<uint64_t>(0));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -524,6 +585,7 @@ void AudioServer::OnStart()
     ParseAudioParameter();
     NotifyProcessStatus();
     DlopenUtils::DeInit();
+    RegisterDataTransferStateChangeCallback();
 }
 
 void AudioServer::ParseAudioParameter()
