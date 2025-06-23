@@ -786,7 +786,9 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
     int32_t ret = outputCluster_->DeInit();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
     for (const auto &item : sceneClusterMap_) {
-        item.second->SetConnectedFlag(false);
+        if (item.second) {
+            item.second->SetConnectedFlag(false);
+        }
     }
     outputCluster_->ResetAll();
     isInit_.store(false);
