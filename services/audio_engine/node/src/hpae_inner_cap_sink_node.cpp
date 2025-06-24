@@ -48,9 +48,16 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
 
 void HpaeInnerCapSinkNode::DoProcess()
 {
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeInnerCapSinkNode::DoProcess " + GetTraceInfo());
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (outputVec.empty()) {
+    if (outputVec.empty() || isMute_ == true) {
         outputStream_.WriteDataToOutput(&silenceData_);
+#ifdef ENABLE_HOOK_PCM
+        if (outputPcmDumper_) {
+            outputPcmDumper_->Dump((int8_t *)silenceData_->GetPcmDataBuffer(), GetChannelCount() *
+                GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
+        }
+#endif
     } else {
         HpaePcmBuffer *outputData = outputVec.front();
 #ifdef ENABLE_HOOK_PCM
@@ -190,6 +197,14 @@ int32_t HpaeInnerCapSinkNode::SetSinkState(StreamManagerState sinkState)
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
     return SUCCESS;
+}
+
+void HpaeInnerCapSinkNode::SetMute(bool isMute)
+{
+    if (isMute_ != isMute) {
+        isMute_ = isMute;
+        AUDIO_INFO_LOG("SetMute: %{public}d", isMute);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

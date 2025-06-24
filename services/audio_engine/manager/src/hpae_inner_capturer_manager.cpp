@@ -52,6 +52,7 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
 {
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     uint32_t sessionId = nodeInfo.sessionId;
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::AddSingleNodeToSinkInner");
     AUDIO_INFO_LOG("[FinishMove] session :%{public}u to sink:%{public}s", sessionId, sinkInfo_.deviceClass.c_str());
     sinkInputNodeMap_[sessionId] = node;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
@@ -97,6 +98,7 @@ int32_t HpaeInnerCapturerManager::AddAllNodesToSink(
 void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &sinkName,
     const std::vector<uint32_t>& moveIds, MoveSessionType moveType)
 {
+    Trace trace("HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner[" + sinkName + "]");
     std::string name = sinkName;
     std::vector<std::shared_ptr<HpaeSinkInputNode>> sinkInputs;
     std::vector<uint32_t> sessionIds;
@@ -173,12 +175,16 @@ int32_t HpaeInnerCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
     }
     auto request = [this, streamInfo]() {
         if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+            Trace trace("HpaeInnerCapturerManager::CreateRendererStream id[" +
+                std::to_string(streamInfo.sessionId) + "]");
             AUDIO_INFO_LOG("CreateCapRendererStream sessionID: %{public}d", streamInfo.sessionId);
             CreateRendererInputSessionInner(streamInfo);
             SetSessionStateForRenderer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
             sinkInputNodeMap_[streamInfo.sessionId]->SetState(HPAE_SESSION_PREPARED);
             rendererSessionNodeMap_[streamInfo.sessionId].isMoveAble = streamInfo.isMoveAble;
         } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
+            Trace trace("HpaeInnerCapturerManager::CreateCapturerStream id[" +
+                std::to_string(streamInfo.sessionId) + "]");
             AUDIO_INFO_LOG("CreateCapCapturerStream sessionID: %{public}d", streamInfo.sessionId);
             CreateCapturerInputSessionInner(streamInfo);
             SetSessionStateForCapturer(streamInfo.sessionId, HPAE_SESSION_PREPARED);
@@ -200,9 +206,13 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("HpaeInnerCapturerManager::DestroyRendererStream id[" +
+                std::to_string(streamInfo.sessionId) + "]");
             AUDIO_INFO_LOG("DestroyCapRendererStream sessionID: %{public}d", sessionId);
             DeleteRendererInputSessionInner(sessionId);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("HpaeInnerCapturerManager::DestroyCapturerStream id[" +
+                std::to_string(streamInfo.sessionId) + "]");
             AUDIO_INFO_LOG("DestroyCapCapturerStream sessionID: %{public}d", sessionId);
             DeleteCapturerInputSessionInner(sessionId);
         }
@@ -227,6 +237,7 @@ int32_t HpaeInnerCapturerManager::Init()
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this] {
+        Trace trace("HpaeInnerCapturerManager::Init");
         InitSinkInner();
     };
     SendRequestInner(request, true);
@@ -236,6 +247,7 @@ int32_t HpaeInnerCapturerManager::Init()
  
 void HpaeInnerCapturerManager::InitSinkInner()
 {
+    Trace trace("HpaeInnerCapturerManager::InitSinkInner");
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = sinkInfo_.channels;
     nodeInfo.format = sinkInfo_.format;
@@ -263,6 +275,7 @@ bool HpaeInnerCapturerManager::DeactivateThread()
 
 int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
 {
+    Trace trace("HpaeInnerCapturerManager::DeInit[" + std::to_string(isMoveDefault) + "]");
     if (hpaeSignalProcessThread_ != nullptr) {
         hpaeSignalProcessThread_->DeactivateThread();
         hpaeSignalProcessThread_ = nullptr;
@@ -289,6 +302,7 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             SafeGetMap(sourceOutputNodeMap_, sessionId),\
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StartRendererStream");
             AUDIO_INFO_LOG("StartCapRendererStream sessionId %{public}u", sessionId);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
             ConnectRendererInputSessionInner(sessionId);
@@ -297,6 +311,7 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
                 hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
             }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StartCapturerStream");
             AUDIO_INFO_LOG("StartCapCapturerStream sessionId %{public}u", sessionId);
             ConnectCapturerOutputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_RUNNING);
@@ -315,6 +330,7 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
             SafeGetMap(sourceOutputNodeMap_, sessionId),
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseRendererStream");
             AUDIO_INFO_LOG("PauseCapRendererStream sessionId %{public}u", sessionId);
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_PAUSED);
@@ -322,6 +338,7 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
                 rendererSessionNodeMap_[sessionId].state, OPERATION_PAUSED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseCapturerStream");
             AUDIO_INFO_LOG("PauseCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_PAUSED);
@@ -340,12 +357,14 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
             SafeGetMap(sourceOutputNodeMap_, sessionId),\
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushRendererStream");
             AUDIO_INFO_LOG("FlushCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
                 rendererSessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushCapturerStream");
             AUDIO_INFO_LOG("FlushCapCapturerStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(capturerSessionNodeMap_.find(sessionId) != capturerSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
@@ -364,6 +383,7 @@ int32_t HpaeInnerCapturerManager::Drain(uint32_t sessionId)
             SafeGetMap(sourceOutputNodeMap_, sessionId),
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DrainRendererStream");
             AUDIO_INFO_LOG("DrainCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Drain not find sessionId %{public}u", sessionId);
@@ -374,6 +394,7 @@ int32_t HpaeInnerCapturerManager::Drain(uint32_t sessionId)
                     rendererSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
             }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DrainCapturerStream");
             AUDIO_INFO_LOG("DrainCapCapturerStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(capturerSessionNodeMap_.find(sessionId) != capturerSessionNodeMap_.end(),
                 "Drain not find sessionId %{public}u", sessionId);
@@ -392,6 +413,7 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
             SafeGetMap(sourceOutputNodeMap_, sessionId),\
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopRendererStream");
             AUDIO_INFO_LOG("StopCapRendererStream sessionId %{public}u", sessionId);
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_STOPPED);
@@ -399,6 +421,7 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
                 rendererSessionNodeMap_[sessionId].state, OPERATION_STOPPED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
+            Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopCapturerStream");
             AUDIO_INFO_LOG("StopCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_STOPPED);
@@ -417,6 +440,7 @@ int32_t HpaeInnerCapturerManager::Release(uint32_t sessionId)
 
 int32_t HpaeInnerCapturerManager::SuspendStreamManager(bool isSuspend)
 {
+    Trace trace("HpaeInnerCapturerManager::SuspendStreamManager: " + std::to_string(isSuspend));
     auto request = [this, isSuspend]() {
         if (isSuspend) {
             // todo fadout
@@ -432,9 +456,12 @@ int32_t HpaeInnerCapturerManager::SuspendStreamManager(bool isSuspend)
 
 int32_t HpaeInnerCapturerManager::SetMute(bool isMute)
 {
+    Trace trace("HpaeInnerCapturerManager::SetMute: " + std::to_string(isMute));
     auto request = [this, isMute]() {
-        if (isMute_ != isMute) {
-            isMute_ = isMute;  // todo: fadein and fadeout and mute feature
+        if (hapeInnerCapSinkNode_ != nullptr) {
+            hpaeInnerCapSinkNode_->SetMute(isMute);
+        } else {
+            AUDIO_INFO_LOG("hapeInnerCapSinkNode_ is nullptr");
         }
     };
     SendRequestInner(request);
@@ -443,6 +470,7 @@ int32_t HpaeInnerCapturerManager::SetMute(bool isMute)
 
 void HpaeInnerCapturerManager::Process()
 {
+    Trace trace("HpaeInnerCapturerManager::Process");
     if (hpaeInnerCapSinkNode_ != nullptr && !sourceOutputNodeMap_.empty() && IsRunning()) {
         for (const auto& sourceOutputNodePair : sourceOutputNodeMap_) {
             if (capturerSessionNodeMap_[sourceOutputNodePair.first].state == HPAE_SESSION_RUNNING) {
@@ -567,6 +595,8 @@ HpaeSinkInfo HpaeInnerCapturerManager::GetSinkInfo()
 void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operation)
 {
     auto request = [this, sessionId, operation]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone: " +
+            std::to_string(operation));
         DisConnectRendererInputSessionInner(sessionId);
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
         SetSessionStateForRenderer(sessionId, state);
@@ -615,6 +645,8 @@ std::vector<SourceOutput> HpaeInnerCapturerManager::GetAllSourceOutputsInfo()
 
 int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStreamInfo &streamInfo)
 {
+    Trace trace("[" + std::to_string(streamInfo.sessionId) +
+        "]HpaeInnerCapturerManager::CreateRendererInputSessionInner");
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;
@@ -644,6 +676,8 @@ int32_t HpaeInnerCapturerManager::CreateRendererInputSessionInner(const HpaeStre
 
 int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStreamInfo &streamInfo)
 {
+    Trace trace("[" + std::to_string(streamInfo.sessionId) +
+        "]HpaeInnerCapturerManager::CreateCapturerInputSessionInner");
     HpaeNodeInfo nodeInfo;
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;
@@ -666,6 +700,7 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
 
 int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessionId)
 {
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteRendererInputSessionInner");
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), SUCCESS,
         "sessionId %{public}u can not find in sinkInputNodeMap_.", sessionId);
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
@@ -688,6 +723,7 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
 
 int32_t HpaeInnerCapturerManager::DeleteCapturerInputSessionInner(uint32_t sessionId)
 {
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DeleteCapturerInputSessionInner");
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), SUCCESS,
         "sessionId %{public}u can not find in sourceOutputNodeMap_.", sessionId);
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(capturerAudioFormatConverterNodeMap_, sessionId), SUCCESS,

@@ -406,6 +406,8 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001)
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001)
 {
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
@@ -417,6 +419,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(false), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
 }
 
 /**
