@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "hpae_node_common.h"
+#include "audio_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
@@ -54,7 +55,7 @@ void HpaeInnerCapSinkNode::DoProcess()
         outputStream_.WriteDataToOutput(&silenceData_);
 #ifdef ENABLE_HOOK_PCM
         if (outputPcmDumper_) {
-            outputPcmDumper_->Dump((int8_t *)silenceData_->GetPcmDataBuffer(), GetChannelCount() *
+            outputPcmDumper_->Dump((int8_t *)silenceData_.GetPcmDataBuffer(), GetChannelCount() *
                 GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
         }
 #endif

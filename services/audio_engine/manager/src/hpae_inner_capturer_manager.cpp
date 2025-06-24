@@ -456,7 +456,7 @@ int32_t HpaeInnerCapturerManager::SetMute(bool isMute)
 {
     Trace trace("HpaeInnerCapturerManager::SetMute: " + std::to_string(isMute));
     auto request = [this, isMute]() {
-        if (hapeInnerCapSinkNode_ != nullptr) {
+        if (hpaeInnerCapSinkNode_ != nullptr) {
             hpaeInnerCapSinkNode_->SetMute(isMute);
         } else {
             AUDIO_INFO_LOG("hapeInnerCapSinkNode_ is nullptr");
