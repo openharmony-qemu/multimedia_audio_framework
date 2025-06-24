@@ -61,10 +61,10 @@ void HpaeInnerCapSinkNode::DoProcess()
     } else {
         HpaePcmBuffer *outputData = outputVec.front();
 #ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
-            GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
-    }
+        if (outputPcmDumper_) {
+            outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
+                GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
+        }
 #endif
     // no need convert
         outputStream_.WriteDataToOutput(outputVec[0]);

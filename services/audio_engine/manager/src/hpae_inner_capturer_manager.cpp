@@ -206,13 +206,11 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
             "no find sessionId in sinkInputNodeMap and sourceOutputNodeMap");
         AUDIO_INFO_LOG("DestroyStream sessionId %{public}u", sessionId);
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
-            Trace trace("HpaeInnerCapturerManager::DestroyRendererStream id[" +
-                std::to_string(streamInfo.sessionId) + "]");
+            Trace trace("HpaeInnerCapturerManager::DestroyRendererStream id[" + std::to_string(sessionId) + "]");
             AUDIO_INFO_LOG("DestroyCapRendererStream sessionID: %{public}d", sessionId);
             DeleteRendererInputSessionInner(sessionId);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
-            Trace trace("HpaeInnerCapturerManager::DestroyCapturerStream id[" +
-                std::to_string(streamInfo.sessionId) + "]");
+            Trace trace("HpaeInnerCapturerManager::DestroyCapturerStream id[" + std::to_string(sessionId) + "]");
             AUDIO_INFO_LOG("DestroyCapCapturerStream sessionID: %{public}d", sessionId);
             DeleteCapturerInputSessionInner(sessionId);
         }
