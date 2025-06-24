@@ -298,10 +298,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
             GetServerPtr()->audioDeviceLock_.SetCallDeviceActive(deviceType, isConnected,
                 audioDeviceDescriptor.macAddress_);
         }
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
-            CONNECTING_NUMBER);
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
-            (CONNECTING_NUMBER + 1));
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
         GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(
@@ -1724,48 +1720,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceDisconnected_002, TestSize
 }
 
 /**
-* @tc.name  : Test AddAudioCapturerMicrophoneDescriptor and GetAudioCapturerMicrophoneDescriptors.
-* @tc.number: AddAudioCapturerMicrophoneDescriptor_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AddAudioCapturerMicrophoneDescriptor_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-    // clear data
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.clear();
-
-    // call when devType is DEVICE_TYPE_NONE
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_NONE);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // call when devType is DEVICE_TYPE_MIC and connectedMicrophones_ is empty
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_MIC);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // dummy data
-    sptr<MicrophoneDescriptor> microphoneDescriptor = new(std::nothrow) MicrophoneDescriptor();
-    ASSERT_NE(nullptr, microphoneDescriptor) << "microphoneDescriptor is nullptr.";
-    microphoneDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.push_back(
-        microphoneDescriptor);
-
-    // call when devType is DEVICE_TYPE_MIC but connectedMicrophones_ is DEVICE_TYPE_BLUETOOTH_A2DP
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_MIC);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // call when devType is DEVICE_TYPE_BLUETOOTH_A2DP and connectedMicrophones_ is also DEVICE_TYPE_BLUETOOTH_A2DP
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-}
-
-/**
 * @tc.name  : Test UpdateAudioCapturerMicrophoneDescriptor.
 * @tc.number: UpdateAudioCapturerMicrophoneDescriptor_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1882,7 +1836,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.channels = CHANNELS;
 
     GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
-    GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
 
     // dummy data
     AudioAdapterInfo adapterInfo = {};

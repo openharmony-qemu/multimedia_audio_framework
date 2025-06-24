@@ -339,11 +339,6 @@ shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveOutputDeviceDescr
     return make_shared<AudioDeviceDescriptor>(audioActiveDevice_.GetCurrentOutputDevice());
 }
 
-int32_t AudioPolicyService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
-{
-    return audioDeviceLock_.SetAudioScene(audioScene, uid, pid);
-}
-
 void AudioPolicyService::OnUpdateAnahsSupport(std::string anahsShowType)
 {
     AUDIO_INFO_LOG("OnUpdateAnahsSupport show type: %{public}s", anahsShowType.c_str());
@@ -503,35 +498,6 @@ static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerCha
     }
 }
 
-int32_t AudioPolicyService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-    const sptr<IRemoteObject> &object, const int32_t apiVersion)
-{
-    return audioDeviceLock_.RegisterTracker(mode, streamChangeInfo, object, apiVersion);
-}
-
-int32_t AudioPolicyService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
-{
-    return audioDeviceLock_.UpdateTracker(mode, streamChangeInfo);
-}
-
-void AudioPolicyService::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    audioDeviceLock_.FetchOutputDeviceForTrack(streamChangeInfo, reason);
-}
-
-void AudioPolicyService::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
-{
-    audioDeviceLock_.FetchInputDeviceForTrack(streamChangeInfo);
-}
-
-int32_t AudioPolicyService::GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>>
-    &audioRendererChangeInfos, bool hasBTPermission, bool hasSystemPermission)
-{
-    return audioDeviceLock_.GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission,
-        hasSystemPermission);
-}
-
 int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>>
     &audioCapturerChangeInfos, bool hasBTPermission, bool hasSystemPermission)
 {
@@ -556,11 +522,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
     }
 
     return status;
-}
-
-void AudioPolicyService::RegisteredTrackerClientDied(pid_t uid)
-{
-    audioDeviceLock_.RegisteredTrackerClientDied(uid);
 }
 
 int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
@@ -650,32 +611,9 @@ int32_t AudioPolicyService::GetPreferredOutputStreamType(AudioRendererInfo &rend
     return flag;
 }
 
-int32_t AudioPolicyService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
-{
-    // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredDeviceList =
-        GetPreferredInputDeviceDescriptors(capturerInfo);
-    if (preferredDeviceList.size() == 0) {
-        return AUDIO_FLAG_NORMAL;
-    }
-    int32_t flag = audioDeviceCommon_.GetPreferredInputStreamTypeInner(capturerInfo.sourceType,
-        preferredDeviceList[0]->deviceType_,
-        capturerInfo.originalFlag, preferredDeviceList[0]->networkId_, capturerInfo.samplingRate);
-    if (flag == AUDIO_FLAG_VOIP_FAST && audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
-        AUDIO_INFO_LOG("Current scene is phone call, concede incoming voip fast input stream");
-        flag = AUDIO_FLAG_NORMAL;
-    }
-    return flag;
-}
-
 void AudioPolicyService::SetDefaultDeviceLoadFlag(bool isLoad)
 {
     audioVolumeManager_.SetDefaultDeviceLoadFlag(isLoad);
-}
-
-std::vector<sptr<VolumeGroupInfo>> AudioPolicyService::GetVolumeGroupInfos()
-{
-    return audioDeviceLock_.GetVolumeGroupInfos();
 }
 
 void AudioPolicyService::RegiestPolicy()
@@ -904,27 +842,6 @@ int32_t AudioPolicyService::GetHardwareOutputSamplingRate(const std::shared_ptr<
     return rate;
 }
 
-vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAudioCapturerMicrophoneDescriptors(int32_t sessionId)
-{
-    return audioDeviceLock_.GetAudioCapturerMicrophoneDescriptors(sessionId);
-}
-
-vector<sptr<MicrophoneDescriptor>> AudioPolicyService::GetAvailableMicrophones()
-{
-    return audioDeviceLock_.GetAvailableMicrophones();
-}
-
-void AudioPolicyService::OnCapturerSessionRemoved(uint64_t sessionID)
-{
-    audioDeviceLock_.OnCapturerSessionRemoved(sessionID);
-}
-
-int32_t AudioPolicyService::OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo,
-    AudioStreamInfo streamInfo)
-{
-    return audioDeviceLock_.OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
-}
-
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFilterByUsageInner(AudioDeviceUsage usage,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs)
 {
@@ -944,11 +861,6 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::DeviceFi
         deviceDescriptors.push_back(move(tempDec));
     }
     return deviceDescriptors;
-}
-
-std::vector<shared_ptr<AudioDeviceDescriptor>> AudioPolicyService::GetAvailableDevices(AudioDeviceUsage usage)
-{
-    return audioDeviceLock_.GetAvailableDevices(usage);
 }
 
 int32_t AudioPolicyService::OffloadStartPlaying(const std::vector<int32_t> &sessionIds)
@@ -1009,22 +921,12 @@ void AudioPolicyService::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const 
     audioDeviceLock_.OnDeviceInfoUpdated(desc, command);
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioPolicyService::GetActiveBluetoothDevice()
-{
-    return audioDeviceLock_.GetActiveBluetoothDevice();
-}
-
 void AudioPolicyService::NotifyAccountsChanged(const int &id)
 {
     audioPolicyManager_.NotifyAccountsChanged(id);
     RegisterDataObserver();
     SubscribeAccessibilityConfigObserver();
     AudioServerProxy::GetInstance().NotifyAccountsChanged();
-}
-
-void AudioPolicyService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
-{
-    audioDeviceLock_.OnReceiveBluetoothEvent(macAddress, deviceName);
 }
 
 void AudioPolicyService::LoadHdiEffectModel()

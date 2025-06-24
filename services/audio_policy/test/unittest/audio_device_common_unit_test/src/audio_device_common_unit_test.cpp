@@ -1259,61 +1259,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_070, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_071
-* @tc.desc  : Test UpdateTracker interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_071, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
-    RendererState rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    bool ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_STOPPED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_PAUSED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    audioDeviceCommon.enableDualHalToneState_ = true;
-    rendererState = RENDERER_STOPPED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.enableDualHalToneSessionId_ = 0;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = 0;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_072
 * @tc.desc  : Test CheckAndNotifyUserSelectedDevice interface.
 */
@@ -1779,48 +1724,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
 
     state = RENDERER_PAUSED;
     EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_092
-* @tc.desc  : Test UpdateTracker interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_092, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-    RendererState state  = RENDERER_STOPPED;
-    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = false;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    mode = AUDIO_MODE_PLAYBACK;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
 }
 } // namespace AudioStandard
 } // namespace OHOS
