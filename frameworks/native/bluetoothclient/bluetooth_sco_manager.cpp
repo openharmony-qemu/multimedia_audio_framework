@@ -405,7 +405,7 @@ int32_t BluetoothScoManager::DisconnectScoReliable(ScoCategory scoCategory, cons
         AUDIO_WARNING_LOG("DisconnectSco, scoCategory: %{public}d failed", scoCategory);
         ScoCategory tmp = SCO_DEFAULT;
         ret = BluetoothHfpInterface::GetInstance().GetCurrentCategory(tmp);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get sco category failed");
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "get sco category failed");
         ret = DisconnectSco(tmp, device);
         AUDIO_INFO_LOG("DisconnectSco, scoCategory: %{public}d ret: %{public}d", tmp, ret);
     } else if (ret != 0) {
