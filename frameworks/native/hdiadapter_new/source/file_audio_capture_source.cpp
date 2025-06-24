@@ -166,7 +166,7 @@ float FileAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t FileAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t FileAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
     return SUCCESS;
 }

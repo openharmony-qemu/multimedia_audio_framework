@@ -1169,7 +1169,8 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
     DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d", audioScene, activeInputDevice);
+    AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, activeInputDevice, scoExcludeFlag);
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
     DeviceType activeOutputDevice = activeOutputDevices.front();
