@@ -1960,7 +1960,7 @@ HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
  * @tc.number: HandleFetchOutputWhenNoRunningStream_001
  * @tc.desc  : Test AudioCoreService::HandleFetchOutputWhenNoRunningStream, fetch output when no running stream.
  */
-HWTEST(AudioCoreServicePrivateTest, IsFastAllowedTest_002, TestSize.Level1)
+HWTEST(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
