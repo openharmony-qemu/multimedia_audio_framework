@@ -229,7 +229,7 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
     Trace trace("HpaeRendererManager::CreateProcessCluster");
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-    CreateProcessClusterInner(processClusterDecision);
+    CreateProcessClusterInner(nodeInfo, processClusterDecision);
 }
 
 int32_t HpaeRendererManager::AddAllNodesToSink(
