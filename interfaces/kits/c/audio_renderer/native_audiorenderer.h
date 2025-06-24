@@ -333,7 +333,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* rende
  *
  * @since 20
  * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param loudnessGain LoudnessGain to set, -96.0 <= loudnessGain <=24.0.
+ * @param loudnessGain LoudnessGain to set, -90.0 <= loudnessGain <=24.0.
  * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
  */
 OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain);

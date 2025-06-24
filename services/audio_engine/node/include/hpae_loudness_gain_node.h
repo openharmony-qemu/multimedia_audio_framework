@@ -45,6 +45,7 @@ private:
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer loudnessGainOutput_;
     float loudnessGain_ = 0.0f;
+    float linearGain_ = 1.0f;
     void *dlHandle_ = nullptr;
 
 #ifdef ENABLE_HOOK_PCM

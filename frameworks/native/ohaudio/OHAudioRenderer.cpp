@@ -24,7 +24,7 @@ using OHOS::AudioStandard::Timestamp;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
-static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
@@ -299,6 +299,11 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    CHECK_AND_RETURN_RET_LOG((usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
+        usage == AUDIOSTREAM_USAGE_AUDIOBOOK), AUDIOSTREAM_ERROR_INVALID_PARAM, "audio stream type not supported");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
@@ -310,7 +315,16 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(loudnessGain != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain is nullptr");
-    *loudnessGain = audioRenderer->GetLoudnessGain();
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    if (!(usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
+        usage == AUDIOSTREAM_USAGE_AUDIOBOOK)) {
+            *loudnessGain = 0.0f;
+        }
+    else {
+        *loudnessGain = audioRenderer->GetLoudnessGain();
+    }    
     return AUDIOSTREAM_SUCCESS;
 }
 

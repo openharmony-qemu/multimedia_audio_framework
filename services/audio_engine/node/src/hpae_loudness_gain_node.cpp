@@ -101,20 +101,29 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 #endif
 
     CheckUpdateInfo(inputs[0]);
-    CHECK_AND_RETURN_RET(handle_, inputs[0]);
-
-    AudioBuffer inBuffer = {
-        .frameLength = inputs[0]->GetFrameLen(),
-        .raw = inputs[0]->GetPcmDataBuffer(),
-        .metaData = nullptr
-    };
-    AudioBuffer outBuffer = {
-        .frameLength = inputs[0]->GetFrameLen(),
-        .raw = loudnessGainOutput_.GetPcmDataBuffer(),
-        .metaData = nullptr
-    };
-    int32_t ret = (*handle_)->process(handle_, &inBuffer, &outBuffer);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, inputs[0], "loudness algo lib process failed");
+    CHECK_AND_RETURN_RET(IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
+    if (!dlHandle_ || !audioEffectLibHandle_) {
+        float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();
+        size_t bufferSize = inputs[0]->Size();
+        for (size_t i = 0; i < bufferSize; i++) {
+            loudnessGainOutput_.GetPcmDataBuffer()[i] = pcmDataBuffer[i] * linearGain_;
+        }
+    }
+    else {
+        AudioBuffer inBuffer = {
+            .frameLength = inputs[0]->GetFrameLen(),
+            .raw = inputs[0]->GetPcmDataBuffer(),
+            .metaData = nullptr
+        };
+        AudioBuffer outBuffer = {
+            .frameLength = inputs[0]->GetFrameLen(),
+            .raw = loudnessGainOutput_.GetPcmDataBuffer(),
+            .metaData = nullptr
+        };
+        CHECK_AND_RETURN_RET_LOG(handle_, ERROR, "no handle.");
+        int32_t ret = (*handle_)->process(handle_, &inBuffer, &outBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, inputs[0], "loudness algo lib process failed");
+    }
 
 #ifdef ENABLE_HOOK_PCM
     outputPcmDumper_->CheckAndReopenHandlde();
@@ -159,6 +168,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
+        linearGain_ = std::pow(10.0f, loudnessGain_ / 20.0f);
         loudnessGain_ = loudnessGain;
         return SUCCESS;
     }
