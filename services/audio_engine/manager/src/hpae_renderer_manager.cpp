@@ -174,11 +174,8 @@ void HpaeRendererManager::CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo)
     return;
 }
 
-void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
+void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision)
 {
-    Trace trace("HpaeRendererManager::CreateProcessCluster");
-    std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
-    int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
     HpaeNodeInfo temp = nodeInfo;
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster = nullptr;
     switch (processClusterDecision) {
@@ -195,12 +192,15 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             break;
         case CREATE_DEFAULT_PROCESSCLUSTER:
-            CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             temp.sceneType = HPAE_SCENE_DEFAULT;
-            AUDIO_INFO_LOG("begin control, create default processCluster");
-            hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
-            sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
-            sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
+            if (!SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) {
+                AUDIO_INFO_LOG("begin control, create default processCluster");
+                hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(temp, sinkInfo_);
+                sceneClusterMap_[HPAE_SCENE_DEFAULT] = hpaeProcessCluster;
+                sceneClusterMap_[nodeInfo.sceneType] = hpaeProcessCluster;
+            } else {
+                sceneClusterMap_[nodeInfo.sceneType] = sceneClusterMap_[HPAE_SCENE_DEFAULT];
+            }
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]++;
             break;
         case USE_DEFAULT_PROCESSCLUSTER:
@@ -222,6 +222,14 @@ void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
         sessionNodeMap_[nodeInfo.sessionId].bypass = true;
     }
     return;
+}
+
+void HpaeRendererManager::CreateProcessCluster(HpaeNodeInfo &nodeInfo)
+{
+    Trace trace("HpaeRendererManager::CreateProcessCluster");
+    std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
+    int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    CreateProcessClusterInner(processClusterDecision);
 }
 
 int32_t HpaeRendererManager::AddAllNodesToSink(

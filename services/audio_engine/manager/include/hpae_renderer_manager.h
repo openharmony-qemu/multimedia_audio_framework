@@ -115,6 +115,7 @@ private:
     void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
