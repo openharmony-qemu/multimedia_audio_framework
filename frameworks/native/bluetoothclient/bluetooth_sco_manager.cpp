@@ -37,7 +37,16 @@ BluetoothScoManager &BluetoothScoManager::GetInstance()
 
 BluetoothScoManager::BluetoothScoManager()
 {
-    currentScoState_ = AudioScoState::DISCONNECTED;
+    currentScoDevice_ = BluetoothHfpInterface::GetInstance().GetActiveDevice();
+    currentScoState_ = BluetoothHfpInterface::GetInstance().GetScoState(currentScoDevice_);
+    CHECK_AND_RETURN_LOG(currentScoState_ != AudioScoState::DISCONNECTED, "sco state is disconnected");
+    ScoCategory category = SCO_DEFAULT;
+    int32_t ret = BluetoothHfpInterface::GetInstance().GetCurrentCategory(category);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "get sco category failed");
+    currentScoCategory_ = category;
+    AUDIO_INFO_LOG("current sco category %{public}d state %{public}d of device %{public}s",
+        currentScoCategory_, currentScoState_,
+        GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
 }
 
 void BluetoothScoManager::UpdateScoState(HfpScoConnectState scoState,
@@ -76,7 +85,7 @@ void BluetoothScoManager::UpdateScoStateWhenDisconnected(HfpScoConnectState scoS
 {
     WriteScoStateFaultEvent(scoState, device, reason);
     if (scoState == HfpScoConnectState::SCO_CONNECTED) {
-        ForceUpdateScoState();
+        ForceUpdateScoCategory();
     }
 }
 
@@ -87,7 +96,15 @@ void BluetoothScoManager::UpdateScoStateWhenConnected(HfpScoConnectState scoStat
     if (scoState == HfpScoConnectState::SCO_DISCONNECTED) {
         SetAudioScoState(AudioScoState::DISCONNECTED);
     } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
-        ForceUpdateScoState();
+        ScoCategory category = SCO_DEFAULT;
+        int32_t ret = BluetoothHfpInterface::GetInstance().GetCurrentCategory(category);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get sco category failed");
+        if (currentScoCategory_ != category) {
+            AUDIO_INFO_LOG("update sco category from %{public}d to %{public}d of device %{public}s",
+                currentScoCategory_, category,
+                GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
+            currentScoCategory_ = category;
+        }
     }
 }
 
@@ -110,7 +127,7 @@ void BluetoothScoManager::UpdateScoStateWhenDisconnecting(HfpScoConnectState sco
         SetAudioScoState(AudioScoState::DISCONNECTED);
     } else if (scoState == HfpScoConnectState::SCO_CONNECTED) {
         WriteScoStateFaultEvent(scoState, device, reason);
-        ForceUpdateScoState();
+        ForceUpdateScoCategory();
     }
     ProcCacheRequest();
 }
@@ -128,9 +145,17 @@ void BluetoothScoManager::WriteScoStateFaultEvent(HfpScoConnectState scoState,
     }
 }
 
-void BluetoothScoManager::ForceUpdateScoState()
+void BluetoothScoManager::ForceUpdateScoCategory()
 {
     // need query sco type from bluetooth to refresh local
+    ScoCategory category = SCO_DEFAULT;
+    int32_t ret = BluetoothHfpInterface::GetInstance().GetCurrentCategory(category);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "get sco category failed");
+    AUDIO_INFO_LOG("force update sco category from %{public}d to %{public}d of device %{public}s",
+        currentScoCategory_, category,
+        GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
+    currentScoCategory_ = category;
+    SetAudioScoState(AudioScoState::CONNECTED);
 }
 
 void BluetoothScoManager::ProcCacheRequest()
@@ -374,12 +399,17 @@ int32_t BluetoothScoManager::DisconnectSco(ScoCategory scoCategory, const Blueto
 
 int32_t BluetoothScoManager::DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device)
 {
-    int ret = DisconnectSco(scoCategory, device);
+    int32_t ret = DisconnectSco(scoCategory, device);
     if (ret == BT_ERR_VIRTUAL_CALL_NOT_STARTED) {
         // try to get current category form bluetooth
         AUDIO_WARNING_LOG("DisconnectSco, scoCategory: %{public}d failed", scoCategory);
+        ScoCategory tmp = SCO_DEFAULT;
+        ret = BluetoothHfpInterface::GetInstance().GetCurrentCategory(tmp);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "get sco category failed");
+        ret = DisconnectSco(tmp, device);
+        AUDIO_INFO_LOG("DisconnectSco, scoCategory: %{public}d ret: %{public}d", tmp, ret);
     } else if (ret != 0) {
-        AUDIO_ERR_LOG("DisconnectSco, scoCategory: %{public}d ret: %{public}d ", scoCategory, ret);
+        AUDIO_ERR_LOG("DisconnectSco, scoCategory: %{public}d ret: %{public}d", scoCategory, ret);
     } else {
         AUDIO_INFO_LOG("DisconnectSco, scoCategory: %{public}d success", scoCategory);
     }

@@ -28,7 +28,8 @@ public:
     static BluetoothHfpInterface &GetInstance();
 
     virtual int32_t GetDeviceState(const BluetoothRemoteDevice &device, int32_t &state) = 0;
-    virtual int32_t GetScoState(const BluetoothRemoteDevice &device) = 0;
+    virtual AudioScoState GetScoState(const BluetoothRemoteDevice &device) = 0;
+    virtual int32_t GetCurrentCategory(ScoCategory &category) = 0;
     virtual int32_t ConnectSco(uint8_t callType) = 0;
     virtual int32_t DisconnectSco(uint8_t callType) = 0;
     virtual int32_t OpenVoiceRecognition(const BluetoothRemoteDevice &device) = 0;
