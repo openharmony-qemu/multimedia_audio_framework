@@ -159,14 +159,15 @@ void HpaeSinkInputNode::DoProcess()
     
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
-    auto pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
-    uint32_t uid = appUid_;
+    AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType, uid);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
+            static_cast<uint32_t>(appUid_));
         AUDIO_WARNING_LOG("request data is not enough sessionId:%{public}u", GetSessionId());
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType, uid);
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
+            static_cast<uint32_t>(appUid_));
         totalFrames_ = totalFrames_ + GetFrameLen();
         framesWritten_ = totalFrames_;
         if (historyBuffer_) {
