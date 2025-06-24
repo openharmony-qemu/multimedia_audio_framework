@@ -136,8 +136,7 @@ void MoreFuzzTest()
 
 void AddAudioSessionFuzzTest()
 {
-    AudioSessionStrategy sessionStrategy;
-    sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    int32_t sessionStrategy = 0;
     GetServerPtr()->ActivateAudioSession(sessionStrategy);
 
     AudioInterrupt incomingInterrupt;

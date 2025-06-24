@@ -67,28 +67,144 @@ enum FoldState : uint32_t {
     FOLD_STATE_MIDDLE = 3,
 };
 
-struct AudioSpatialDeviceState {
+struct AudioSpatialDeviceState : public Parcelable {
     std::string address;
     bool isSpatializationSupported;
     bool isHeadTrackingSupported;
     AudioSpatialDeviceType spatialDeviceType;
+
+    AudioSpatialDeviceState() = default;
+    AudioSpatialDeviceState(const std::string &address, bool isSpatializationSupported,
+        bool isHeadTrackingSupported, AudioSpatialDeviceType spatialDeviceType)
+        : address(address), isSpatializationSupported(isSpatializationSupported),
+        isHeadTrackingSupported(isHeadTrackingSupported), spatialDeviceType(spatialDeviceType)
+    {
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(address) &&
+            parcel.WriteBool(isSpatializationSupported) &&
+            parcel.WriteBool(isHeadTrackingSupported) &&
+            parcel.WriteInt32(spatialDeviceType);
+    }
+
+    static AudioSpatialDeviceState *Unmarshalling(Parcel &parcel)
+    {
+        auto deviceState = new AudioSpatialDeviceState();
+        if (deviceState == nullptr) {
+            return nullptr;
+        }
+        deviceState->address = parcel.ReadString();
+        deviceState->isSpatializationSupported = parcel.ReadBool();
+        deviceState->isHeadTrackingSupported = parcel.ReadBool();
+        deviceState->spatialDeviceType = static_cast<AudioSpatialDeviceType>(parcel.ReadInt32());
+        return deviceState;
+    }
 };
 
-struct Library {
+struct Library : public Parcelable {
     std::string name;
     std::string path;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(name) && parcel.WriteString(path);
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        name = parcel.ReadString();
+        path = parcel.ReadString();
+    }
+
+    static Library *Unmarshalling(Parcel &parcel)
+    {
+        auto library = new Library();
+        if (library == nullptr) {
+            return nullptr;
+        }
+        library->UnmarshallingSelf(parcel);
+        return library;
+    }
 };
 
-struct Effect {
+struct Effect : public Parcelable {
     std::string name;
     std::string libraryName;
     std::vector<std::string> effectProperty;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteString(name);
+        parcel.WriteString(libraryName);
+        int32_t size = static_cast<int32_t>(effectProperty.size());
+        parcel.WriteInt32(size);
+        for (auto &property : effectProperty) {
+            parcel.WriteString(property);
+        }
+        return true;
+    }
+
+    static Effect *Unmarshalling(Parcel &parcel)
+    {
+        auto effect = new Effect();
+        if (effect == nullptr) {
+            return nullptr;
+        }
+
+        effect->name = parcel.ReadString();
+        effect->libraryName = parcel.ReadString();
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; ++i) {
+            effect->effectProperty.push_back(parcel.ReadString());
+        }
+        return effect;
+    }
 };
 
-struct EffectChain {
+struct EffectChain : public Parcelable {
     std::string name;
     std::vector<std::string> apply;
     std::string label = "";
+    static constexpr int32_t AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT = 16;
+
+    EffectChain() = default;
+    EffectChain(std::string sName, std::vector<std::string> applyVec, std::string sLabel)
+        : name(sName), apply(applyVec), label(sLabel)
+    {
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteString(name);
+        int32_t size = static_cast<int32_t>(apply.size());
+        parcel.WriteInt32(size);
+        for (auto &effect : apply) {
+            parcel.WriteString(effect);
+        }
+        parcel.WriteString(label);
+        return true;
+    }
+
+    static EffectChain *Unmarshalling(Parcel &parcel)
+    {
+        auto effectChain = new EffectChain();
+        if (effectChain == nullptr) {
+            return nullptr;
+        }
+        effectChain->name = parcel.ReadString();
+        int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_COUNT_PER_CHAIN_UPPER_LIMIT) {
+            delete effectChain;
+            return nullptr;
+        }
+        for (int32_t i = 0; i < size; ++i) {
+            effectChain->apply.push_back(parcel.ReadString());
+        }
+        effectChain->label = parcel.ReadString();
+        return effectChain;
+    }
 };
 
 struct Device {
@@ -137,12 +253,72 @@ struct OriginalEffectConfig {
     PostProcessConfig postProcess;
 };
 
-struct EffectChainManagerParam {
+struct EffectChainManagerParam : public Parcelable {
     uint32_t maxExtraNum = 0;
     std::string defaultSceneName;
     std::vector<std::string> priorSceneList;
     std::unordered_map<std::string, std::string> sceneTypeToChainNameMap;
     std::unordered_map<std::string, std::string> effectDefaultProperty;
+
+    EffectChainManagerParam() = default;
+    EffectChainManagerParam(uint32_t maxExtraNum, std::string defaultSceneName, std::vector<std::string> priorSceneList,
+        std::unordered_map<std::string, std::string> sceneTypeToChainNameMap,
+        std::unordered_map<std::string, std::string> effectDefaultProperty)
+        : maxExtraNum(maxExtraNum), defaultSceneName(defaultSceneName), priorSceneList(priorSceneList),
+        sceneTypeToChainNameMap(sceneTypeToChainNameMap), effectDefaultProperty(effectDefaultProperty)
+    {
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(maxExtraNum);
+        parcel.WriteString(defaultSceneName);
+        int32_t size = static_cast<int32_t>(priorSceneList.size());
+        parcel.WriteInt32(size);
+        for (auto &scene : priorSceneList) {
+            parcel.WriteString(scene);
+        }
+        size = static_cast<int32_t>(sceneTypeToChainNameMap.size());
+        parcel.WriteInt32(size);
+        for (const auto &[scene, chain] : sceneTypeToChainNameMap) {
+            parcel.WriteString(scene);
+            parcel.WriteString(chain);
+        }
+        size = static_cast<int32_t>(effectDefaultProperty.size());
+        parcel.WriteInt32(size);
+        for (const auto &[effect, property] : effectDefaultProperty) {
+            parcel.WriteString(effect);
+            parcel.WriteString(property);
+        }
+        return true;
+    }
+
+    static EffectChainManagerParam *Unmarshalling(Parcel &parcel)
+    {
+        auto param = new EffectChainManagerParam();
+        if (param == nullptr) {
+            return nullptr;
+        }
+        param->maxExtraNum = parcel.ReadInt32();
+        param->defaultSceneName = parcel.ReadString();
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; ++i) {
+            param->priorSceneList.push_back(parcel.ReadString());
+        }
+        size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; ++i) {
+            std::string scene = parcel.ReadString();
+            std::string chain = parcel.ReadString();
+            param->sceneTypeToChainNameMap[scene] = chain;
+        }
+        size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; ++i) {
+            std::string effect = parcel.ReadString();
+            std::string property = parcel.ReadString();
+            param->effectDefaultProperty[effect] = property;
+        }
+        return param;
+    }
 };
 
 struct StreamEffectMode {
@@ -166,13 +342,98 @@ struct ProcessNew {
     std::vector<Stream> stream;
 };
 
-struct SupportedEffectConfig {
+struct SupportedEffectConfig : public Parcelable {
     std::vector<EffectChain> effectChains;
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
     std::vector<SceneMappingItem> postProcessSceneMap;
-};
 
+    bool MarshallingStream(Parcel &parcel, const Stream &stream) const
+    {
+        parcel.WriteString(stream.scene);
+        uint32_t count = static_cast<uint32_t>(stream.streamEffectMode.size());
+        parcel.WriteInt32(count);
+        for (const auto &item : stream.streamEffectMode) {
+            parcel.WriteString(item.mode);
+            uint32_t deviceCount = static_cast<uint32_t>(item.devicePort.size());
+            parcel.WriteInt32(deviceCount);
+            for (const auto &device : item.devicePort) {
+                parcel.WriteString(device.type);
+                parcel.WriteString(device.chain);
+            }
+        }
+        return true;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        uint32_t countPre = static_cast<uint32_t>(preProcessNew.stream.size());
+        parcel.WriteInt32(countPre);
+        for (const auto &item : preProcessNew.stream) {
+            MarshallingStream(parcel, item);
+        }
+
+        uint32_t countPost = static_cast<uint32_t>(preProcessNew.stream.size());
+        parcel.WriteInt32(countPost);
+        for (const auto &item : postProcessNew.stream) {
+            MarshallingStream(parcel, item);
+        }
+
+        uint32_t countPostMap = static_cast<uint32_t>(postProcessSceneMap.size());
+        parcel.WriteInt32(countPostMap);
+        for (const auto &item : postProcessSceneMap) {
+            parcel.WriteString(item.name);
+            parcel.WriteString(item.sceneType);
+        }
+        return true;
+    }
+
+    static Stream UnmarshallingStream(Parcel &parcel)
+    {
+        Stream stream;
+        stream.scene = parcel.ReadString();
+        uint32_t count = parcel.ReadUint32();
+        for (uint32_t i = 0; i < count; ++i) {
+            StreamEffectMode mode;
+            mode.mode = parcel.ReadString();
+            uint32_t deviceCount = parcel.ReadUint32();
+            for (uint32_t j = 0; j < deviceCount; ++j) {
+                Device device;
+                device.type = parcel.ReadString();
+                device.chain = parcel.ReadString();
+                mode.devicePort.push_back(device);
+            }
+            stream.streamEffectMode.push_back(mode);
+        }
+        return stream;
+    }
+
+    static SupportedEffectConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new SupportedEffectConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+        uint32_t countPre = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPre; ++i) {
+            config->preProcessNew.stream.push_back(UnmarshallingStream(parcel));
+        }
+
+        uint32_t countPost = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPost; ++i) {
+            config->postProcessNew.stream.push_back(UnmarshallingStream(parcel));
+        }
+
+        uint32_t countPostMap = parcel.ReadUint32();
+        for (uint32_t i = 0; i < countPostMap; ++i) {
+            SceneMappingItem item;
+            item.name = parcel.ReadString();
+            item.sceneType = parcel.ReadString();
+            config->postProcessSceneMap.push_back(item);
+        }
+        return config;
+    }
+};
 
 /**
 * Enumerates the audio scene effect type.
@@ -241,7 +502,7 @@ struct AudioEffectPropertyV3 {
             parcel.WriteString(category)&&
             parcel.WriteInt32(flag);
     };
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         name = parcel.ReadString();
         category = parcel.ReadString();
@@ -249,8 +510,36 @@ struct AudioEffectPropertyV3 {
     };
 };
 
-struct AudioEffectPropertyArrayV3 {
+struct AudioEffectPropertyArrayV3 : public Parcelable {
     std::vector<AudioEffectPropertyV3> property;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        int32_t size = static_cast<int32_t>(property.size());
+        parcel.WriteInt32(size);
+        for (const auto &item : property) {
+            if (!item.Marshalling(parcel)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static AudioEffectPropertyArrayV3 *Unmarshalling(Parcel &parcel)
+    {
+        auto propertyArray = new AudioEffectPropertyArrayV3();
+        if (propertyArray == nullptr) {
+            return nullptr;
+        }
+
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; i++) {
+            AudioEffectPropertyV3 property;
+            property.UnmarshallingSelf(parcel);
+            propertyArray->property.push_back(property);
+        }
+        return propertyArray;
+    }
 };
 
 struct AudioEnhanceProperty {
@@ -265,15 +554,43 @@ struct AudioEnhanceProperty {
         return parcel.WriteString(enhanceClass)&&
             parcel.WriteString(enhanceProp);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         enhanceClass = parcel.ReadString();
         enhanceProp = parcel.ReadString();
     }
 };
 
-struct AudioEnhancePropertyArray {
+struct AudioEnhancePropertyArray : public Parcelable {
     std::vector<AudioEnhanceProperty> property;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        int32_t size = static_cast<int32_t>(property.size());
+        parcel.WriteInt32(size);
+        for (const auto &item : property) {
+            if (!item.Marshalling(parcel)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static AudioEnhancePropertyArray *Unmarshalling(Parcel &parcel)
+    {
+        auto propertyArray = new AudioEnhancePropertyArray();
+        if (propertyArray == nullptr) {
+            return nullptr;
+        }
+
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; i++) {
+            AudioEnhanceProperty property;
+            property.UnmarshallingSelf(parcel);
+            propertyArray->property.push_back(property);
+        }
+        return propertyArray;
+    }
 };
 
 struct AudioEffectProperty {
@@ -288,15 +605,43 @@ struct AudioEffectProperty {
         return parcel.WriteString(effectClass)&&
             parcel.WriteString(effectProp);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         effectClass = parcel.ReadString();
         effectProp = parcel.ReadString();
     }
 };
 
-struct AudioEffectPropertyArray {
+struct AudioEffectPropertyArray : public Parcelable {
     std::vector<AudioEffectProperty> property;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        int32_t size = static_cast<int32_t>(property.size());
+        parcel.WriteInt32(size);
+        for (const auto &item : property) {
+            if (!item.Marshalling(parcel)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static AudioEffectPropertyArray *Unmarshalling(Parcel &parcel)
+    {
+        auto propertyArray = new AudioEffectPropertyArray();
+        if (propertyArray == nullptr) {
+            return nullptr;
+        }
+
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; i++) {
+            AudioEffectProperty property;
+            property.UnmarshallingSelf(parcel);
+            propertyArray->property.push_back(property);
+        }
+        return propertyArray;
+    }
 };
 
 enum AudioEffectChainSetParamIndex {
@@ -405,15 +750,58 @@ struct AudioEffectLibEntry {
     std::vector<std::string> effectName;
 };
 
-struct AudioSpatializationState {
+struct AudioSpatializationState : public Parcelable {
     bool spatializationEnabled = false;
     bool headTrackingEnabled = false;
+
+    AudioSpatializationState() = default;
+    AudioSpatializationState(bool spatializationEnabled, bool headTrackingEnabled)
+    {
+        this->spatializationEnabled = spatializationEnabled;
+        this->headTrackingEnabled = headTrackingEnabled;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(spatializationEnabled)
+            && parcel.WriteBool(headTrackingEnabled);
+    }
+
+    static AudioSpatializationState *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioSpatializationState();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->spatializationEnabled = parcel.ReadBool();
+        info->headTrackingEnabled = parcel.ReadBool();
+        return info;
+    }
 };
 
-struct ConverterConfig {
+struct ConverterConfig : public Parcelable {
     std::string version;
     Library library;
     uint64_t outChannelLayout = 0;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteString(version) &&
+            library.Marshalling(parcel) &&
+            parcel.WriteUint64(outChannelLayout);
+    }
+
+    static ConverterConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new ConverterConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+        config->version = parcel.ReadString();
+        config->library.UnmarshallingSelf(parcel);
+        config->outChannelLayout = parcel.ReadUint64();
+        return config;
+    }
 };
 
 enum AudioSpatializationSceneType {

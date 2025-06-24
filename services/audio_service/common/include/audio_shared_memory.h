@@ -23,7 +23,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioSharedMemory {
+class AudioSharedMemory : public Parcelable {
 public:
     virtual ~AudioSharedMemory() = default;
 
@@ -37,6 +37,8 @@ public:
 
     static int32_t WriteToParcel(const std::shared_ptr<AudioSharedMemory> &memory, MessageParcel &parcel);
     static std::shared_ptr<AudioSharedMemory> ReadFromParcel(MessageParcel &parcel);
+    bool Marshalling(Parcel &parcel) const override;
+    static AudioSharedMemory *Unmarshalling(Parcel &parcel);
 };
 } // namespace AudioStandard
 } // namespace OHOS

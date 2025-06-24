@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_renderer"
 
@@ -24,6 +25,7 @@ ohos_benchmarktest("BenchmarkAudioRendererTest") {
   ]
   sources = [ "benchmark_audiorenderer_test.cpp" ]
   deps = [ "../../../audiorenderer:audio_renderer" ]
+  external_deps = [ "c_utils:utils" ]
   resource_config_file =
       "../../../../../test/resource/audio_renderer/ohos_test.xml"
 }

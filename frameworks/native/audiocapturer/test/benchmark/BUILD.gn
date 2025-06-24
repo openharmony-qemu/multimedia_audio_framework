@@ -24,6 +24,11 @@ ohos_benchmarktest("BenchmarkAudioCapturerTest") {
   ]
   sources = [ "benchmark_audiocapturer_test.cpp" ]
   deps = [ "../../../audiocapturer:audio_capturer" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
 }
 
 group("benchmarktest") {

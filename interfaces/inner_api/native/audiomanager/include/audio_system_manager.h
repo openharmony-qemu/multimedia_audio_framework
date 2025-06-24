@@ -60,7 +60,7 @@ public:
         ConnectType type);
     virtual ~InterruptGroupInfo();
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<InterruptGroupInfo> Unmarshalling(Parcel &parcel);
+    static InterruptGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
 class VolumeGroupInfo;
@@ -108,7 +108,7 @@ public:
      * @since 8
      * @return Returns volume group info
      */
-    static sptr<VolumeGroupInfo> Unmarshalling(Parcel &parcel);
+    static VolumeGroupInfo *Unmarshalling(Parcel &parcel);
 };
 
 /**
@@ -116,9 +116,48 @@ public:
  *
  * @since 13
  */
-struct MicrophoneBlockedInfo {
+struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+
+    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    {
+        for (auto &dev : devices) {
+            if (dev != nullptr) {
+                dev->SetClientInfo(clientInfo);
+            }
+        }
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(blockStatus));
+        int32_t size = static_cast<int32_t>(devices.size());
+        parcel.WriteInt32(size);
+        for (auto &dev : devices) {
+            if (dev == nullptr) {
+                return false;
+            }
+            dev->Marshalling(parcel);
+        }
+        return true;
+    }
+
+    static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new MicrophoneBlockedInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
+        int32_t size = parcel.ReadInt32();
+        for (int32_t i = 0; i < size; i++) {
+            info->devices.emplace_back(
+                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+        }
+        return info;
+    }
 };
 
 /**
@@ -137,7 +176,7 @@ public:
     int32_t streamId = -1;
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioRendererFilter> Unmarshalling(Parcel &in);
+    static AudioRendererFilter* Unmarshalling(Parcel &parcel);
 };
 
 /**
@@ -154,7 +193,7 @@ public:
     AudioCapturerInfo capturerInfo = {SOURCE_TYPE_INVALID, 0};
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<AudioCapturerFilter> Unmarshalling(Parcel &in);
+    static AudioCapturerFilter *Unmarshalling(Parcel &in);
 };
 
 // AudioManagerCallback OnInterrupt is added to handle compilation error in call manager

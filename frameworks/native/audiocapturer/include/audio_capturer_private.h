@@ -112,7 +112,7 @@ public:
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
-    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
+    AudioPlaybackCaptureConfig filterConfig_ = {};
     AudioStreamType audioStreamType_;
     bool abortRestore_ = false;
     AudioSessionStrategy strategy_ = { AudioConcurrencyMode::INVALID };

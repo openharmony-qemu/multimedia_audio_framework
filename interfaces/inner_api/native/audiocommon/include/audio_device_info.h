@@ -388,7 +388,7 @@ enum class AudioStreamDeviceChangeReason {
     OVERRODE = 3
 };
 
-class AudioStreamDeviceChangeReasonExt {
+class AudioStreamDeviceChangeReasonExt : public Parcelable {
 public:
     enum class ExtEnum {
         UNKNOWN = 0,
@@ -417,6 +417,8 @@ public:
         return static_cast<int>(reason_);
     }
 
+    AudioStreamDeviceChangeReasonExt()
+        : reason_(ExtEnum::UNKNOWN) {}
     AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
         : reason_(static_cast<ExtEnum>(reason)) {}
 
@@ -450,6 +452,21 @@ public:
     bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(reason_));
+    }
+
+    static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioStreamDeviceChangeReasonExt();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
+        return info;
     }
 
 private:

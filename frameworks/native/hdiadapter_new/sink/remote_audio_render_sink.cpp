@@ -61,7 +61,7 @@ int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
     AUDIO_INFO_LOG("in");
     attr_ = attr;
     std::vector<AudioCategory> splitStreamVector;
-    InitSplitStream(attr_.aux, splitStreamVector);
+    InitSplitStream(attr_.aux.c_str(), splitStreamVector);
     for (auto &splitStream : splitStreamVector) {
         audioRenderWrapperMap_[splitStream] = {};
     }

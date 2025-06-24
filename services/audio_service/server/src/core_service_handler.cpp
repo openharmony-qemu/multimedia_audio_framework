@@ -78,7 +78,9 @@ int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutpu
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId);
+    std::string ret{};
+    iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId, ret);
+    return ret;
 }
 
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
@@ -91,7 +93,9 @@ int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, 
 uint32_t CoreServiceHandler::GenerateSessionId()
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->GenerateSessionId();
+    uint32_t ret{};
+    iCoreServiceProvider_->GenerateSessionId(ret);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

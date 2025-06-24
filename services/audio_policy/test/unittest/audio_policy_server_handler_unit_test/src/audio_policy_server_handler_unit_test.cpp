@@ -14,6 +14,7 @@
  */
 
 #include "audio_policy_server_handler_unit_test.h"
+#include "istandard_audio_routing_manager_listener.h"
 #include "audio_errors.h"
 #include "audio_info.h"
 #include "audio_policy_log.h"
@@ -47,7 +48,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AddAudioPolicyClientProxyMap_001, TestS
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     int32_t clientPid = 1;
-    sptr<IAudioPolicyClient> cb = nullptr;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
 
@@ -65,11 +66,11 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AddAudioPolicyClientProxyMap_002, TestS
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     int32_t clientPid = 1;
-    sptr<IAudioPolicyClient> cb = nullptr;
+    std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
 
-    sptr<IAudioPolicyClient> cb2 = nullptr;
+    std::shared_ptr<AudioPolicyClientHolder> cb2 = nullptr;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb2);
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
 }
@@ -101,7 +102,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, RemoveAvailableDeviceChangeMap_002, Tes
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     int32_t clientPid = 1;
     AudioDeviceUsage usage = AudioDeviceUsage::D_ALL_DEVICES;
-    sptr<IStandardAudioPolicyManagerListener> cb = nullptr;
+    std::shared_ptr<AudioPolicyManagerListenerCallback> cb = nullptr;
     audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientPid, AudioDeviceUsage::ALL_CALL_DEVICES, cb);
     audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientPid, AudioDeviceUsage::ALL_MEDIA_DEVICES, cb);
     audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientPid, usage);
@@ -119,7 +120,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, RemoveAvailableDeviceChangeMap_003, Tes
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     int32_t clientPid = CLIENT_ID;
     AudioDeviceUsage usage = AudioDeviceUsage::ALL_CALL_DEVICES;
-    sptr<IStandardAudioPolicyManagerListener> cb = nullptr;
+    std::shared_ptr<AudioPolicyManagerListenerCallback> cb = nullptr;
     audioPolicyServerHandler_->AddAvailableDeviceChangeMap(1, AudioDeviceUsage::ALL_CALL_DEVICES, cb);
     audioPolicyServerHandler_->AddAvailableDeviceChangeMap(1, AudioDeviceUsage::ALL_MEDIA_DEVICES, cb);
     audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientPid, AudioDeviceUsage::CALL_INPUT_DEVICES, cb);
@@ -336,7 +337,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleVolumeKeyEvent_Test_002, TestSize
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
 
     int32_t ret =
@@ -358,7 +359,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleAudioSessionDeactiveCallback_001,
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -376,7 +377,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRequestCateGoryEvent_001, TestSiz
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -394,7 +395,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleAbandonCateGoryEvent_001, TestSiz
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -412,7 +413,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleFocusInfoChangeEvent_001, TestSiz
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -430,7 +431,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRingerModeUpdatedEvent_001, TestS
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -448,7 +449,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleMicStateUpdatedEvent_001, TestSiz
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -466,7 +467,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleMicStateUpdatedEventWithClientId_
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -484,7 +485,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleInterruptEventWithStreamId_001, T
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -502,7 +503,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleInterruptEventWithClientId_001, T
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -520,7 +521,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredOutputDeviceUpdated_001,
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     audioPolicyServerHandler_->HandlePreferredOutputDeviceUpdated();
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
@@ -536,7 +537,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandlePreferredInputDeviceUpdated, Test
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     audioPolicyServerHandler_->HandlePreferredInputDeviceUpdated();
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
@@ -552,7 +553,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRendererInfoEvent_001, TestSize.L
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -574,7 +575,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleCapturerInfoEvent_001, TestSize.L
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -596,7 +597,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleRendererDeviceChangeEvent_001, Te
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -618,7 +619,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSendRecreateRendererStreamEvent_0
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -640,7 +641,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSendRecreateCapturerStreamEvent_0
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -662,7 +663,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleNnStateChangeEvent_001, TestSize.
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -684,7 +685,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleHeadTrackingDeviceChangeEvent_001
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -707,7 +708,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatializatonEnabledChangeEvent_0
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -730,7 +731,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleSpatializatonEnabledChangeForAnyD
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -753,7 +754,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleHeadTrackingEnabledChangeEvent_00
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -776,7 +777,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleHeadTrackingEnabledChangeForAnyDe
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -799,7 +800,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleConcurrencyEventWithSessionID_001
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -822,7 +823,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -876,7 +877,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_001, TestSize.L
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -904,7 +905,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, ProcessEvent_001, TestSize.Level2)
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
@@ -1286,7 +1287,7 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleFormatUnsupportedErrorEvent_001, 
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     int32_t clientPid = 1;
-    sptr<AudioPolicyClientStubImpl> cb;
+    std::shared_ptr<AudioPolicyClientHolder> cb;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
     AppExecFwk::InnerEvent::Pointer event =
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR, 0);

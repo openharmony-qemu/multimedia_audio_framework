@@ -36,7 +36,10 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]
 
-  deps = [ "../../../services/audio_service:audio_service_static" ]
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service:audio_service_static",
+  ]
   external_deps = [
     "access_token:libaccesstoken_sdk",
     "c_utils:utils",
@@ -45,8 +48,8 @@ ohos_fuzztest("AudioServerBalanceFuzzTest") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "pulseaudio:pulse",
-    "safwk:system_ability_fwk",
     "qos_manager:concurrent_task_client",
+    "safwk:system_ability_fwk",
   ]
 
   defines = []

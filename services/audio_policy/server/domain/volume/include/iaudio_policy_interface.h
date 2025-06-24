@@ -25,6 +25,7 @@
 #include "volume_data_maintainer.h"
 #include "audio_manager_base.h"
 #include "audio_pipe_info.h"
+#include "istandard_audio_service.h"
 
 #include <memory>
 #include <string>

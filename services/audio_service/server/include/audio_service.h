@@ -29,7 +29,6 @@
 #endif
 
 #include "i_audio_process_stream.h"
-#include "i_audio_process.h"
 #include "audio_info.h"
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"

@@ -22,8 +22,6 @@
 #include "audio_errors.h"
 #include "audio_system_manager.h"
 
-#include "audio_manager_proxy.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_process_proxy.h"
 #include "audio_process_in_client.h"
 #include "fast_audio_stream.h"
@@ -33,15 +31,12 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-std::unique_ptr<AudioManagerProxy> audioManagerProxy;
 std::shared_ptr<AudioProcessInClient> processClient_;
 std::shared_ptr<FastAudioStream> fastAudioStream_;
-const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
 #ifdef HAS_FEATURE_INNERCAPTURER
 const int32_t MEDIA_SERVICE_UID = 1013;
 #endif
-constexpr int32_t ERROR_62980101 = -62980101;
 
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
@@ -81,167 +76,6 @@ void AudioServiceUnitTest::TearDown(void)
 {
     // input testcase teardown step，teardown invoked after each testcases
 }
-
-/**
- * @tc.name  : Test AudioProcessProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessProxy_001
- * @tc.desc  : Test AudioProcessProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
-{
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    EXPECT_NE(nullptr, object);
-    std::unique_ptr<AudioProcessProxy> audioProcessProxy = std::make_unique<AudioProcessProxy>(object);
-
-    int32_t ret = -1;
-    std::shared_ptr<OHAudioBufferBase> buffer;
-    uint32_t spanSizeInFrame = 1000;
-    uint32_t totalSizeInFrame = spanSizeInFrame - 1;
-    uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
-
-    ret=audioProcessProxy->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame);
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Start();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    bool isFlush = true;
-    ret = audioProcessProxy->Pause(isFlush);
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Resume();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Stop();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->RequestHandleInfo();
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioProcessProxy->Release();
-    EXPECT_LT(ret, TEST_RET_NUM);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_001
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    EXPECT_NE(nullptr, object);
-
-    audioManagerProxy = std::make_unique<AudioManagerProxy>(object);
-
-    bool isMute = true;
-    ret = audioManagerProxy->SetMicrophoneMute(isMute);
-    if (ret == ERR_PERMISSION_DENIED) {
-        return ;
-    }
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioManagerProxy->RegiestPolicyProvider(object);
-    EXPECT_EQ(SUCCESS, ret);
-
-    EXPECT_TRUE(ret == ERROR_62980101 || ret == SUCCESS);
-
-    bool result = audioManagerProxy->CreatePlaybackCapturerManager();
-    EXPECT_EQ(result, true);
-
-    int32_t deviceType = 1;
-    std::string sinkName = "test";
-    audioManagerProxy->SetOutputDeviceSink(deviceType, sinkName);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_002
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    float volume = 0.1;
-    ret = audioManagerProxy->SetVoiceVolume(volume);
-
-    const std::string networkId = "LocalDevice";
-    const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
-    int32_t groupId = 0;
-    std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
-        + std::to_string(volumeType) + ";";
-    std::string value = std::to_string(volume);
-    audioManagerProxy->SetAudioParameter(networkId, key, condition, value);
-    const std::string retStr = audioManagerProxy->GetAudioParameter(networkId, key, condition);
-    EXPECT_NE(retStr, value);
-
-    bool connected = true;
-    audioManagerProxy->NotifyDeviceInfo(networkId, connected);
-    ret = audioManagerProxy->CheckRemoteDeviceState(networkId, DeviceRole::OUTPUT_DEVICE, true);
-    EXPECT_LT(ret, TEST_RET_NUM);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_004
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_004, TestSize.Level1)
-{
-    std::vector<Library> libraries;
-    Library library = {};
-    library.name = "testname";
-    library.path ="test.so";
-    libraries.push_back(library);
-
-    std::vector<Effect> effects;
-    Effect effect = {};
-    effect.name = "test";
-    effect.libraryName = "test";
-    effects.push_back(effect);
-
-    std::vector<Effect> successEffects;
-    bool ret = audioManagerProxy->LoadAudioEffectLibraries(libraries, effects, successEffects);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioManagerListenerStub API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerListenerStub_001
- * @tc.desc  : Test AudioManagerListenerStub interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerListenerStub_001, TestSize.Level1)
-{
-    std::unique_ptr<AudioManagerListenerStub> audioManagerListenerStub = std::make_unique<AudioManagerListenerStub>();
-
-    const std::weak_ptr<AudioParameterCallback> callback = std::make_shared<AudioParameterCallbackTest>();
-    audioManagerListenerStub->SetParameterCallback(callback);
-    float volume = 0.1;
-    const std::string networkId = "LocalDevice";
-    const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
-    int32_t groupId = 0;
-    std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
-        + std::to_string(volumeType) + ";";
-    std::string value = std::to_string(volume);
-    audioManagerListenerStub->OnAudioParameterChange(networkId, key, condition, value);
-    EXPECT_NE(value, "");
-}
-
 
 /**
  * @tc.name  : Test AudioProcessInClientInner API

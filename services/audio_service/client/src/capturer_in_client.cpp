@@ -34,7 +34,7 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
@@ -50,6 +50,7 @@
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -418,7 +419,7 @@ void CapturerInClientInner::InitCallbackHandler()
 int32_t CapturerInClientInner::DeinitIpcStream()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS, "IpcStream is already nullptr");
-    ipcStream_->Release();
+    ipcStream_->Release(false);
     // in plan:
     ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
@@ -512,15 +513,17 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        AudioPlaybackCaptureConfig defalutConfig = {};
+        gasp->CreateAudioProcess(config, errorCode, defalutConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?

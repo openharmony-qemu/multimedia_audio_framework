@@ -26,6 +26,30 @@ struct AudioWorkgroupChangeInfo {
     bool startAllowed;
 };
 
+struct AudioWorkgroupChangeInfoIpc : public Parcelable {
+    AudioWorkgroupChangeInfo changeInfo;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(changeInfo.pid) &&
+            parcel.WriteUint32(changeInfo.groupId) &&
+            parcel.WriteBool(changeInfo.startAllowed);
+    }
+
+    static AudioWorkgroupChangeInfoIpc *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioWorkgroupChangeInfoIpc();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->changeInfo.pid = parcel.ReadInt32();
+        info->changeInfo.groupId = parcel.ReadUint32();
+        info->changeInfo.startAllowed = parcel.ReadBool();
+        return info;
+    }
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_WORKGROUP_IPC_H

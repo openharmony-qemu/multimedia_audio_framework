@@ -21,6 +21,7 @@
 
 #include "audio_manager_base.h"
 #include "audio_server.h"
+#include "pulseaudio_ipc_interface_code.h"
 using namespace std;
 
 namespace OHOS {

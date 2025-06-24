@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "audio_shared_memory.h"
-#include "ipc_offline_stream.h"
+#include "iipc_offline_stream.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,7 +29,7 @@ public:
     static int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains);
     static std::shared_ptr<OfflineStreamInClient> Create();
 
-    OfflineStreamInClient(const sptr<IpcOfflineStream> &ipcProxy);
+    OfflineStreamInClient(const sptr<IIpcOfflineStream> &ipcProxy);
     ~OfflineStreamInClient() = default;
 
     /**
@@ -88,7 +88,7 @@ public:
      */
     void ReleaseOfflineEffectChain();
 private:
-    sptr<IpcOfflineStream> streamProxy_ = nullptr;
+    sptr<IIpcOfflineStream> streamProxy_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

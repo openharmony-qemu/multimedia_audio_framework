@@ -19,9 +19,7 @@ ohos_fuzztest("AudioServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../audioservice_fuzzer"
 
-  include_dirs = [
-    "../../../services/audio_service/server/include",
-  ]
+  include_dirs = [ "../../../services/audio_service/server/include" ]
 
   cflags = [
     "-g",
@@ -37,6 +35,7 @@ ohos_fuzztest("AudioServiceFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../services/audio_service:audio_process_service_static",
   ]
   external_deps = [

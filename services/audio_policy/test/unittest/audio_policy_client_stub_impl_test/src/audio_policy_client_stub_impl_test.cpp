@@ -14,6 +14,7 @@
  */
 
 #include "audio_policy_client_stub_impl_test.h"
+#include "audio_policy_client.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -72,39 +73,6 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_002, TestSize.Le
     result = audioPolicyClient->RemoveFocusInfoChangeCallback();
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(audioPolicyClient->focusInfoChangeCallbackList_.size(), 0);
-}
-
-/**
-* @tc.name  : Test AudioPolicyClientStubImpl.
-* @tc.number: AudioPolicyClientStubImpl_003
-* @tc.desc  : Test OnAudioFocusInfoChange/OnAudioFocusRequested/OnAudioFocusAbandoned.
-*/
-HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_003, TestSize.Level1)
-{
-    auto audioPolicyClient = std::make_shared<AudioPolicyClientStubImpl>();
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
-    std::shared_ptr<AudioFocusInfoChangeCallback> callback0 =
-        std::make_shared<ConcreteAudioFocusInfoChangeCallback>();
-    std::shared_ptr<AudioFocusInfoChangeCallback> callback1 =
-        std::make_shared<ConcreteAudioFocusInfoChangeCallback>();
-    int32_t result = audioPolicyClient->AddFocusInfoChangeCallback(callback0);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(audioPolicyClient->focusInfoChangeCallbackList_.size(), 1);
-
-    result = audioPolicyClient->AddFocusInfoChangeCallback(callback1);
-    EXPECT_EQ(result, SUCCESS);
-    EXPECT_EQ(audioPolicyClient->focusInfoChangeCallbackList_.size(), 2);
-
-    audioPolicyClient->OnAudioFocusInfoChange(focusInfoList);
-    EXPECT_NE(audioPolicyClient, nullptr);
-
-    AudioInterrupt requestFocus;
-    audioPolicyClient->OnAudioFocusRequested(requestFocus);
-    EXPECT_NE(audioPolicyClient, nullptr);
-
-    AudioInterrupt abandonFocus;
-    audioPolicyClient->OnAudioFocusAbandoned(abandonFocus);
-    EXPECT_NE(audioPolicyClient, nullptr);
 }
 
 /**
@@ -293,7 +261,7 @@ HWTEST(AudioPolicyClientStubImplTest, AudioPolicyClientStubImpl_014, TestSize.Le
     EXPECT_EQ(audioPolicyClient->AddAudioSessionCallback(cb1), SUCCESS);
     EXPECT_EQ(audioPolicyClient->GetAudioSessionCallbackSize(), 2);
 
-    AudioSessionDeactiveEvent deactiveEvent;
+    int32_t deactiveEvent = 0;
     audioPolicyClient->OnAudioSessionDeactive(deactiveEvent);
     EXPECT_NE(audioPolicyClient, nullptr);
 

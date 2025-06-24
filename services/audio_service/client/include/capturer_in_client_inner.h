@@ -29,7 +29,8 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 
-#include "ipc_stream.h"
+#include "iipc_stream.h"
+#include "istandard_audio_service.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
@@ -277,7 +278,7 @@ private:
     size_t cbBufferSize_ = 0;
     AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
 
-    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
+    AudioPlaybackCaptureConfig filterConfig_ = {};
     bool isInnerCapturer_ = false;
     bool isWakeupCapturer_ = false;
 
@@ -312,7 +313,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
 
     // buffer handle

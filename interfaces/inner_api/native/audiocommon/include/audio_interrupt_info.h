@@ -99,7 +99,33 @@ enum InterruptForceType {
     INTERRUPT_SHARE
 };
 
-struct InterruptEvent {
+struct InterruptEvent : public Parcelable {
+    InterruptEvent() {}
+    InterruptEvent(InterruptType eventTypeIn, InterruptForceType forceTypeIn,
+        InterruptHint hintType, bool callbackToAppIn = true)
+        : eventType(eventTypeIn), forceType(forceTypeIn), hintType(hintType), callbackToApp(callbackToAppIn) {}
+    bool Marshalling(Parcel &parcel) const override
+    {
+        parcel.WriteInt32(static_cast<int32_t>(eventType));
+        parcel.WriteInt32(static_cast<int32_t>(forceType));
+        parcel.WriteInt32(static_cast<int32_t>(hintType));
+        parcel.WriteBool(callbackToApp);
+        return true;
+    }
+
+    static InterruptEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new InterruptEvent();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        info->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        info->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        info->callbackToApp = parcel.ReadBool();
+        return info;
+    }
+
     /**
      * Interrupt event type, begin or end
      */
@@ -121,12 +147,46 @@ struct InterruptEvent {
 };
 
 // Used internally only by AudioFramework
-struct InterruptEventInternal {
+struct InterruptEventInternal : public Parcelable {
     InterruptType eventType;
     InterruptForceType forceType;
     InterruptHint hintType;
     float duckVolume;
     bool callbackToApp = true;
+
+    InterruptEventInternal() = default;
+
+    InterruptEventInternal(InterruptType eventtype, InterruptForceType forcetype,
+        InterruptHint hinttype, float duckvolume)
+    {
+        eventType = eventtype;
+        forceType = forcetype;
+        hintType = hinttype;
+        duckVolume = duckvolume;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(eventType))
+            && parcel.WriteInt32(static_cast<int32_t>(forceType))
+            && parcel.WriteInt32(static_cast<int32_t>(hintType))
+            && parcel.WriteFloat(duckVolume)
+            && parcel.WriteBool(callbackToApp);
+    }
+
+    static InterruptEventInternal *Unmarshalling(Parcel &parcel)
+    {
+        auto interupt = new InterruptEventInternal();
+        if (interupt == nullptr) {
+            return nullptr;
+        }
+        interupt->eventType = static_cast<InterruptType>(parcel.ReadInt32());
+        interupt->forceType = static_cast<InterruptForceType>(parcel.ReadInt32());
+        interupt->hintType = static_cast<InterruptHint>(parcel.ReadInt32());
+        interupt->duckVolume = parcel.ReadFloat();
+        interupt->callbackToApp = parcel.ReadBool();
+        return interupt;
+    }
 };
 
 enum AudioInterruptChangeType {
@@ -222,7 +282,7 @@ enum InterruptEventCallbackType {
     INTERRUPT_EVENT_CALLBACK_DEFAULT = 2
 };
 
-class AudioInterrupt {
+class AudioInterrupt : public Parcelable {
 public:
     static constexpr int32_t MAX_SOURCE_TYPE_NUM = 20;
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
@@ -246,6 +306,26 @@ public:
         uint32_t streamId_) : streamUsage(streamUsage_), contentType(contentType_), audioFocusType(audioFocusType_),
         streamId(streamId_) {}
     ~AudioInterrupt() = default;
+
+    bool operator==(const AudioInterrupt &other) const
+    {
+        return streamId == other.streamId &&
+            streamUsage == other.streamUsage &&
+            audioFocusType == other.audioFocusType &&
+            pid == other.pid &&
+            uid == other.uid;
+    }
+
+    bool operator<(const AudioInterrupt &other) const
+    {
+        return streamId < other.streamId || pid < other.pid || uid < other.uid;
+    }
+
+    bool operator>(const AudioInterrupt &other) const
+    {
+        return streamId > other.streamId || pid > other.pid || uid > other.uid;
+    }
+
     static bool Marshalling(Parcel &parcel, const AudioInterrupt &interrupt)
     {
         bool res = parcel.WriteInt32(static_cast<int32_t>(interrupt.streamUsage));
@@ -298,6 +378,21 @@ public:
         interrupt.state = parcel.ReadInt32();
         interrupt.strategy = static_cast<InterruptStrategy>(parcel.ReadInt32());
         interrupt.callbackType = static_cast<InterruptEventCallbackType>(parcel.ReadInt32());
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return Marshalling(parcel, *this);
+    }
+
+    static AudioInterrupt *Unmarshalling(Parcel &parcel)
+    {
+        auto interrupt = new AudioInterrupt();
+        if (interrupt == nullptr) {
+            return nullptr;
+        }
+        Unmarshalling(parcel, *interrupt);
+        return interrupt;
     }
 };
 } // namespace AudioStandard

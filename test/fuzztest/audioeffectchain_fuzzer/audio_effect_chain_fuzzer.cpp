@@ -451,10 +451,9 @@ void AudioEffectChainUpdateSpatializationEnabledFuzzTest()
         return;
     }
 
-    AudioSpatializationState audioSpatializationState = {
-        .spatializationEnabled = GetData<bool>(),
-        .headTrackingEnabled = GetData<bool>(),
-    };
+    AudioSpatializationState audioSpatializationState = {};
+    audioSpatializationState.spatializationEnabled = GetData<bool>();
+    audioSpatializationState.headTrackingEnabled = GetData<bool>();
     audioEffectChainManager->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
     audioEffectChainManager->UpdateSpatializationEnabled(audioSpatializationState);
 }

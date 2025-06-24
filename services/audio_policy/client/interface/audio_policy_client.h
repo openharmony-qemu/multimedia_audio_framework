@@ -16,13 +16,7 @@
 #ifndef ST_AUDIO_POLICY_CLIENT_H
 #define ST_AUDIO_POLICY_CLIENT_H
 
-#include "ipc_types.h"
-#include "iremote_broker.h"
-#include "iremote_proxy.h"
-#include "iremote_stub.h"
-#include "audio_system_manager.h"
-#include "audio_interrupt_info.h"
-#include "audio_stream_manager.h"
+#include <cstdint>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -61,55 +55,6 @@ enum class AudioPolicyClientCode {
     ON_SYSTEM_VOLUME_CHANGE,
     ON_AUDIO_SESSION_STATE_CHANGED,
     AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_STATE_CHANGED,
-};
-class IAudioPolicyClient : public IRemoteBroker {
-public:
-    virtual void OnVolumeKeyEvent(VolumeEvent volumeEvent) = 0;
-    virtual void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) = 0;
-    virtual void OnAudioFocusRequested(const AudioInterrupt &requestFocus) = 0;
-    virtual void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) = 0;
-    virtual void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) = 0;
-    virtual void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) = 0;
-    virtual void OnRingerModeUpdated(const AudioRingerMode &ringerMode) = 0;
-    virtual void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) = 0;
-    virtual void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType) = 0;
-    virtual void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) = 0;
-    virtual void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-    virtual void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
-        const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) = 0;
-    virtual void OnRendererStateChange(
-        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) = 0;
-    virtual void OnCapturerStateChange(
-        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) = 0;
-    virtual void OnRendererDeviceChange(const uint32_t sessionId,
-        const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) = 0;
-    virtual void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason) = 0;
-    virtual void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason) = 0;
-    virtual void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) = 0;
-    virtual void OnSpatializationEnabledChange(const bool &enabled) = 0;
-    virtual void OnSpatializationEnabledChangeForAnyDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
-    virtual void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) = 0;
-    virtual void OnHeadTrackingEnabledChange(const bool &enabled) = 0;
-    virtual void OnHeadTrackingEnabledChangeForAnyDevice(
-        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
-    virtual void OnNnStateChange(const int32_t &nnState) = 0;
-    virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
-    virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
-    virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
-    virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
-    virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;
-    virtual void OnSystemVolumeChange(VolumeEvent volumeEvent) = 0;
-
-    bool hasBTPermission_ = true;
-    bool hasSystemPermission_ = true;
-    int32_t apiVersion_ = API_VERSION_MAX;
-
-public:
-    DECLARE_INTERFACE_DESCRIPTOR(u"IAudioPolicyClient");
 };
 } // namespace AudioStandard
 } // namespace OHOS

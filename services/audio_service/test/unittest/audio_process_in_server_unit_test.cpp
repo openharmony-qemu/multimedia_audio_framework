@@ -146,8 +146,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_003, TestSize.Level1)
     audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
         TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
     EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
-    bool isAsyncRet = false;
-    auto ret = audioProcessInServerRet.RequestHandleInfo(isAsyncRet);
+    auto ret = audioProcessInServerRet.RequestHandleInfo();
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -592,11 +591,12 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_020, TestSize.Level1)
         spanSizeInFrame, g_audioStreamInfo, buffer);
     audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
 
-    auto ret = audioProcessInServerRet.Stop();
+    int32_t ret = 0;
+    audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
 
     audioProcessInServerRet.needCheckBackground_ = false;
-    ret = audioProcessInServerRet.Stop();
+    audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -620,11 +620,12 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_021, TestSize.Level1)
         spanSizeInFrame, g_audioStreamInfo, buffer);
     audioProcessInServerRet.streamStatus_->store(STREAM_STOPPING);
 
-    auto ret = audioProcessInServerRet.Stop();
+    int32_t ret = 0;
+    audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
 
     audioProcessInServerRet.needCheckBackground_ = true;
-    ret = audioProcessInServerRet.Stop();
+    audioProcessInServerRet.Stop(ret);
     EXPECT_EQ(ret, SUCCESS);
 }
 

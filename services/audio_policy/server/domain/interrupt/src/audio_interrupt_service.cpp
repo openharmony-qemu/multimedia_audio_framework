@@ -20,7 +20,9 @@
 
 #include "audio_focus_parser.h"
 #include "audio_utils_c.h"
-#include "audio_policy_manager_listener_proxy.h"
+#include "standard_audio_policy_manager_listener_proxy.h"
+#include "audio_policy_manager_listener_stub_impl.h"
+#include "audio_policy_manager_listener.h"
 #include "media_monitor_manager.h"
 #include "audio_log.h"
 
@@ -28,6 +30,7 @@
 #include "app_mgr_client.h"
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1539,9 +1542,11 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
 void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,
     AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream)
 {
-    if (isExistMediaStream && isIncomingMediaStream &&
-        queryBundleNameListCallback_ != nullptr &&
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_param") &&
+    bool ret = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_param", ret);
+    }
+    if (isExistMediaStream && isIncomingMediaStream && ret &&
         focusEntry.hintType == INTERRUPT_HINT_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
@@ -1555,9 +1560,11 @@ void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
         AUDIO_INFO_LOG("Not a recording stream access");
         return;
     }
-    if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType)
-        && queryBundleNameListCallback_ != nullptr
-        && queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_micfocus_list")) {
+    bool ret = false;
+    if (queryBundleNameListCallback_ != nullptr) {
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_micfocus_list", ret);
+    }
+    if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType) && ret) {
         focusEntry.hintType = INTERRUPT_HINT_NONE;
         AUDIO_INFO_LOG("audio_micfocus_list : %{public}s update mic focus strategy", bundleName.c_str());
     }
@@ -1798,7 +1805,9 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
 {
     CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
     CHECK_AND_RETURN_LOG(zoneId == ZONEID_DEFAULT, "zoneId %{public}d is not default", zoneId);
-    AudioScene currentAudioScene = policyServer_->GetAudioScene();
+    int32_t scene = AUDIO_SCENE_INVALID;
+    policyServer_->GetAudioScene(scene);
+    AudioScene currentAudioScene = static_cast<AudioScene>(scene);
 
     AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
         currentAudioScene, audioScene, changeType);

@@ -127,7 +127,7 @@ struct SpanInfo {
     int32_t volumeEnd;
 };
 
-class OHAudioBufferBase {
+class OHAudioBufferBase : public Parcelable {
 public:
     friend class OHAudioBuffer;
 
@@ -150,6 +150,10 @@ public:
     // for ipc.
     static int32_t WriteToParcel(const std::shared_ptr<OHAudioBufferBase> &buffer, MessageParcel &parcel);
     static std::shared_ptr<OHAudioBufferBase> ReadFromParcel(MessageParcel &parcel);
+
+    // idl
+    bool Marshalling(Parcel &parcel) const override;
+    static OHAudioBufferBase *Unmarshalling(Parcel &parcel);
 
     uint32_t GetSessionId();
     int32_t SetSessionId(uint32_t sessionId);
@@ -259,17 +263,17 @@ private:
     AudioMode audioMode_;
 
      // for StatusInfo buffer
-    std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
+    mutable std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
     BasicBufferInfo *basicBufferInfo_ = nullptr;
 
     // for audio data buffer
-    std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
+    mutable std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
     uint8_t *dataBase_ = nullptr;
     volatile uint32_t *syncReadFrame_ = nullptr;
     volatile uint32_t *syncWriteFrame_ = nullptr;
 };
 
-class OHAudioBuffer {
+class OHAudioBuffer : public Parcelable {
 public:
     OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
         uint32_t byteSizePerFrame);
@@ -284,6 +288,10 @@ public:
     // for ipc.
     static int32_t WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel);
     static std::shared_ptr<OHAudioBuffer> ReadFromParcel(MessageParcel &parcel);
+
+    // idl
+    bool Marshalling(Parcel &parcel) const override;
+    static OHAudioBuffer *Unmarshalling(Parcel &parcel);
 
     AudioBufferHolder GetBufferHolder();
 
@@ -361,7 +369,7 @@ private:
 
     bool CheckWriteOrReadFrame(uint64_t writeOrReadFrame);
 
-    OHAudioBufferBase ohAudioBufferBase_;
+    mutable OHAudioBufferBase ohAudioBufferBase_;
 
     struct SpanBasicInfo {
         SpanBasicInfo(uint32_t spanSizeInFrame, uint32_t totalSizeInFrame,

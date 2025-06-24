@@ -18,6 +18,7 @@
 #include "audio_zone_client_manager.h"
 #include "audio_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -85,15 +86,16 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
             break;
         case AudioZoneEventType::AUDIO_ZONE_CHANGE_EVENT:
             clients_[event->clientPid]->OnAudioZoneChange(event->zoneId,
-                *(event->descriptor), event->zoneChangeReason);
+                *(event->descriptor), static_cast<int32_t>(event->zoneChangeReason));
             break;
         case AudioZoneEventType::AUDIO_ZONE_INTERRUPT_EVENT:
             if (event->deviceTag.empty()) {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
-                    event->interrupts, event->zoneInterruptReason);
+                    ToIpcInterrupts(event->interrupts), static_cast<int32_t>(event->zoneInterruptReason));
             } else {
                 clients_[event->clientPid]->OnInterruptEvent(event->zoneId,
-                    event->deviceTag, event->interrupts, event->zoneInterruptReason);
+                    event->deviceTag, ToIpcInterrupts(event->interrupts),
+                    static_cast<int32_t>(event->zoneInterruptReason));
             }
             break;
         default:
@@ -201,7 +203,9 @@ int32_t AudioZoneClientManager::GetSystemVolumeLevel(const pid_t clientPid, cons
     }
     AUDIO_DEBUG_LOG("get audio zone %{public}d volume from client %{public}d",
         zoneId, clientPid);
-    return client->GetSystemVolume(zoneId, volumeType);
+    float outVolume = 0.0f;
+    client->GetSystemVolume(zoneId, volumeType, outVolume);
+    return static_cast<int32_t>(outVolume);
 }
 } // namespace AudioStandard
 } // namespace OHOS

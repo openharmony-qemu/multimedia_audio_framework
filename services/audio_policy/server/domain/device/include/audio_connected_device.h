@@ -21,12 +21,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <mutex>
+#include <shared_mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
 #include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_errors.h"
+#include "audio_device_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {

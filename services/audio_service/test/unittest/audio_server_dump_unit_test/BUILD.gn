@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("../../../../../config.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_server"
 
@@ -61,9 +62,10 @@ ohos_unittest("audio_server_dump_unit_test") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../../frameworks/native/audioclock:audio_clock",
     "../../../../../services/audio_service:audio_service_static",
     "../../../../audio_service:audio_process_service_static",
-    "../../../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [
@@ -76,8 +78,8 @@ ohos_unittest("audio_server_dump_unit_test") {
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "pulseaudio:pulse",
+    "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "qos_manager:concurrent_task_client",
   ]
 }

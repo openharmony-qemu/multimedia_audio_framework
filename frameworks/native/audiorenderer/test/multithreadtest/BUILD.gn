@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/test.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 module_output_path =
     "audio_framework/audio_framework_route/audio_renderer_multitest"
@@ -37,12 +38,14 @@ ohos_unittest("audio_renderer_multi_test") {
   deps = [
     "../../../../../services/audio_policy:audio_policy_client",
     "../../../../../services/audio_service:audio_client",
+    "../../../../../services/audio_service:audio_common",
     "../../../audiorenderer:audio_renderer",
   ]
 
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_single",
     "pulseaudio:pulse",
   ]
 

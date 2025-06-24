@@ -20,7 +20,7 @@
 #include "audio_policy_server.h"
 #include "audio_manager_listener_stub.h"
 #include "message_parcel.h"
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 
 using namespace std;
 

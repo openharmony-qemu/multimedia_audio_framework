@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneDescriptor;
+sequenceable audio_interrupt_info..OHOS.AudioStandard.AudioInterrupt;
+interface IStandardAudioZoneClient {
+    [ipccode 0] void OnAudioZoneAdd([in] AudioZoneDescriptor zoneDescriptor);
+    void OnAudioZoneRemove([in] int zoneId);
+    void OnAudioZoneChange([in] int zoneId, [in] AudioZoneDescriptor zoneDescriptor,
+        [in] int reason); // AudioZoneChangeReason reason
+
+    void OnInterruptEvent([in] int zoneId,
+        [in] List<OrderedMap<AudioInterrupt, int>> ipcInterrupts, // std::list<std::pair<AudioInterrupt, AudioFocuState>> ==> List<Map<AudioInterrupt, AudioFocuState>>
+        [in] int reason); // AudioZoneInterruptReason reason
+
+    void OnInterruptEvent([in] int zoneId, [in] String deviceTag,
+        [in] List<OrderedMap<AudioInterrupt, int>> ipcInterrupts, // std::list<std::pair<AudioInterrupt, AudioFocuState>> ==> List<Map<AudioInterrupt, AudioFocuState>>
+        [in] int reason); // AudioZoneInterruptReason reason
+
+    void SetSystemVolume([in] int zoneId, [in] int volumeType, // AudioVolumeType volumeType
+        [in] int volumeLevel, [in] int volumeFlag);
+
+    void GetSystemVolume([in] int zoneId, [in] int volumeType, [out] float outVolume); // AudioVolumeType volumeType
+}

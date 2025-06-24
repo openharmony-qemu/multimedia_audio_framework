@@ -20,7 +20,6 @@
 #include "audio_info.h"
 #include "audio_errors.h"
 #include "audio_zone.h"
-#include "audio_zone_client_proxy.h"
 #include "audio_zone_client_manager.h"
 #include "audio_zone_interrupt_reporter.h"
 #include "audio_device_lock.h"

@@ -23,7 +23,7 @@
 
 #include "audio_policy_log.h"
 #include "audio_system_manager.h"
-#include "i_standard_audio_policy_manager_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {

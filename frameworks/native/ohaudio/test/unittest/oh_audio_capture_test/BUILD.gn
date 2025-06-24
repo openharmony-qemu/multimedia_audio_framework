@@ -64,5 +64,10 @@ ohos_unittest("audio_oh_capture_unit_test") {
     "../../../../ohaudio:ohaudio",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
 }

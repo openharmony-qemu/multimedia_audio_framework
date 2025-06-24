@@ -157,8 +157,7 @@ std::vector<std::string> splitString(const std::string& str, const std::string& 
     return res;
 }
 
-// LCOV_EXCL_START
-int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
+int32_t AudioServer::SetAsrAecMode(int32_t asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -168,7 +167,7 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     std::string keyAec = "ASR_AEC";
     std::string valueAec = "";
 
-    auto it = AEC_MODE_MAP_VERSE.find(asrAecMode);
+    auto it = AEC_MODE_MAP_VERSE.find(static_cast<AsrAecMode>(asrAecMode));
     if (it != AEC_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
         if (it->second == "STANDARD") {
@@ -191,7 +190,7 @@ int32_t AudioServer::SetAsrAecMode(AsrAecMode asrAecMode)
     return 0;
 }
 
-int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
+int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -212,9 +211,9 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         auto itAec = AudioServer::audioParameters.find(keyAec);
         std::string asrAecSink = itAec->second;
         if (asrAecSink == "ASR_AEC=ON") {
-            asrAecMode = AsrAecMode::STANDARD;
+            asrAecMode = static_cast<int>(AsrAecMode::STANDARD);
         } else if (asrAecSink == "ASR_AEC=OFF") {
-            asrAecMode = AsrAecMode::BYPASS;
+            asrAecMode = static_cast<int>(AsrAecMode::BYPASS);
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -229,7 +228,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
         modeString = resMode[1];
         auto itAecMode = AEC_MODE_MAP.find(modeString);
         if (itAecMode != AEC_MODE_MAP.end()) {
-            asrAecMode = itAecMode->second;
+            asrAecMode = static_cast<int>(itAecMode->second);
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -241,7 +240,7 @@ int32_t AudioServer::GetAsrAecMode(AsrAecMode& asrAecMode)
     return 0;
 }
 
-int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoiseSuppressionMode)
+int32_t AudioServer::SetAsrNoiseSuppressionMode(int32_t asrNoiseSuppressionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -249,7 +248,7 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoise
     std::string key = "asr_ns_mode";
     std::string value = key + "=";
 
-    auto it = NS_MODE_MAP_VERSE.find(asrNoiseSuppressionMode);
+    auto it = NS_MODE_MAP_VERSE.find(static_cast<AsrNoiseSuppressionMode>(asrNoiseSuppressionMode));
     if (it != NS_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
     } else {
@@ -265,7 +264,7 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode asrNoise
     return 0;
 }
 
-int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNoiseSuppressionMode)
+int32_t AudioServer::GetAsrNoiseSuppressionMode(int32_t& asrNoiseSuppressionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -291,7 +290,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
         modeString = resMode[1];
         auto itNsMode = NS_MODE_MAP.find(modeString);
         if (itNsMode != NS_MODE_MAP.end()) {
-            asrNoiseSuppressionMode = itNsMode->second;
+            asrNoiseSuppressionMode = static_cast<int>(itNsMode->second);
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -303,7 +302,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(AsrNoiseSuppressionMode& asrNois
     return 0;
 }
 
-int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisperDetectionMode)
+int32_t AudioServer::SetAsrWhisperDetectionMode(int32_t asrWhisperDetectionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -311,7 +310,7 @@ int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisp
     std::string key = "asr_wd_mode";
     std::string value = key + "=";
 
-    auto it = WHISPER_DETECTION_MODE_MAP_VERSE.find(asrWhisperDetectionMode);
+    auto it = WHISPER_DETECTION_MODE_MAP_VERSE.find(static_cast<AsrWhisperDetectionMode>(asrWhisperDetectionMode));
     if (it != WHISPER_DETECTION_MODE_MAP_VERSE.end()) {
         value = key + "=" + it->second;
     } else {
@@ -327,7 +326,7 @@ int32_t AudioServer::SetAsrWhisperDetectionMode(AsrWhisperDetectionMode asrWhisp
     return 0;
 }
 
-int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhisperDetectionMode)
+int32_t AudioServer::GetAsrWhisperDetectionMode(int32_t& asrWhisperDetectionMode)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -353,7 +352,7 @@ int32_t AudioServer::GetAsrWhisperDetectionMode(AsrWhisperDetectionMode& asrWhis
         modeString = resMode[1];
         auto itWhisper = WHISPER_DETECTION_MODE_MAP.find(modeString);
         if (itWhisper != WHISPER_DETECTION_MODE_MAP.end()) {
-            asrWhisperDetectionMode = itWhisper->second;
+            asrWhisperDetectionMode = static_cast<int>(itWhisper->second);
         } else {
             AUDIO_ERR_LOG("get value failed.");
             return ERR_INVALID_PARAM;
@@ -389,8 +388,7 @@ int32_t AudioServer::SetAsrVoiceSuppressionControlMode(
     return 0;
 }
 
-// LCOV_EXCL_START
-int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlMode, bool on)
+int32_t AudioServer::SetAsrVoiceControlMode(int32_t asrVoiceControlMode, bool on)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -398,8 +396,9 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     std::string key = "avcm";
     std::string value = key + "=";
 
-    auto itVerse = VC_MODE_MAP_VERSE.find(asrVoiceControlMode);
-    auto itCallAssistant = VOICE_CALL_ASSISTANT_SUPPRESSION.find(asrVoiceControlMode);
+    AsrVoiceControlMode asrVoiceControlModeTmp = static_cast<AsrVoiceControlMode>(asrVoiceControlMode);
+    auto itVerse = VC_MODE_MAP_VERSE.find(asrVoiceControlModeTmp);
+    auto itCallAssistant = VOICE_CALL_ASSISTANT_SUPPRESSION.find(asrVoiceControlModeTmp);
     auto res = RES_MAP_VERSE.find(on);
     if (itVerse == VC_MODE_MAP_VERSE.end() && itCallAssistant == VOICE_CALL_ASSISTANT_SUPPRESSION.end()) {
         AUDIO_ERR_LOG("get value failed.");
@@ -424,13 +423,13 @@ int32_t AudioServer::SetAsrVoiceControlMode(AsrVoiceControlMode asrVoiceControlM
     int32_t modifyVolume = std::floor(systemVol * VOICE_CALL_MAX_VOLUME);
     modifyVolume = modifyVolume < VOICE_CALL_MIN_VOLUME ? VOICE_CALL_MIN_VOLUME : modifyVolume;
     if ((itCallAssistant != VOICE_CALL_ASSISTANT_SUPPRESSION.end()) && (res != RES_MAP_VERSE.end())) {
-        return SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlMode, on, modifyVolume);
+        return SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlModeTmp, on, modifyVolume);
     }
     
     return 0;
 }
 
-int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool on)
+int32_t AudioServer::SetAsrVoiceMuteMode(int32_t asrVoiceMuteMode, bool on)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
@@ -438,7 +437,7 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
     std::string key = "avmm";
     std::string value = key + "=";
 
-    auto it = VM_MODE_MAP_VERSE.find(asrVoiceMuteMode);
+    auto it = VM_MODE_MAP_VERSE.find(static_cast<AsrVoiceMuteMode>(asrVoiceMuteMode));
     auto res = RES_MAP_VERSE.find(on);
     if ((it != VM_MODE_MAP_VERSE.end()) && (res != RES_MAP_VERSE.end())) {
         value = it->second + "=" + res->second;
@@ -455,8 +454,9 @@ int32_t AudioServer::SetAsrVoiceMuteMode(AsrVoiceMuteMode asrVoiceMuteMode, bool
     return 0;
 }
 
-int32_t AudioServer::IsWhispering()
+int32_t AudioServer::IsWhispering(int32_t& whisperRes)
 {
+    whisperRes = 0;
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_SYSTEM_PERMISSION_DENIED,
         "Check playback permission failed, no system permission");
     std::lock_guard<std::mutex> lockSet(audioParameterMutex_);
@@ -466,11 +466,10 @@ int32_t AudioServer::IsWhispering()
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     std::string isWhisperSink = deviceManager->GetAudioParameter("primary", parmKey, key);
-    int32_t whisperRes = 0;
     if (isWhisperSink == "TRUE") {
         whisperRes = 1;
     }
-    return whisperRes;
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

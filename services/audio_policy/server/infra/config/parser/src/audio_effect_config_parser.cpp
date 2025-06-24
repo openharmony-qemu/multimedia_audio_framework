@@ -120,7 +120,9 @@ static void LoadLibrary(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNo
             if (curNode->GetProp("path", pLibPath) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: library has no path attribute");
             }
-            Library tmp = {pLibName, pLibPath};
+            Library tmp = {};
+            tmp.name = pLibName;
+            tmp.path = pLibPath;
             result.libraries.push_back(tmp);
         } else {
             AUDIO_WARNING_LOG("wrong name: %{public}s, should be library", curNode->GetName().c_str());
@@ -204,7 +206,10 @@ static void LoadEffect(OriginalEffectConfig &result, std::shared_ptr<AudioXmlNod
             if (curNode->GetProp("library", pEffectLib) != SUCCESS) {
                 AUDIO_ERR_LOG("missing information: effect has no library attribute");
             }
-            Effect tmp = {pEffectName, pEffectLib, effectProperty};
+            Effect tmp = {};
+            tmp.name = pEffectName;
+            tmp.libraryName = pEffectLib;
+            tmp.effectProperty = effectProperty;
             result.effects.push_back(tmp);
             LoadEffectProperty(result, curNode->GetCopyNode(), effectIdx);
             effectIdx++;
@@ -287,7 +292,10 @@ static void LoadEffectChain(OriginalEffectConfig &result, std::shared_ptr<AudioX
             if (curNode->GetProp("name", peffectChainName) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: effectChain has no name attribute");
             }
-            EffectChain tmp = {peffectChainName, apply, label};
+             EffectChain tmp = {};
+            tmp.name = peffectChainName;
+            tmp.apply = apply;
+            tmp.label = label;
             result.effectChains.push_back(tmp);
             LoadApply(result, curNode->GetCopyNode(), segInx);
             segInx++;

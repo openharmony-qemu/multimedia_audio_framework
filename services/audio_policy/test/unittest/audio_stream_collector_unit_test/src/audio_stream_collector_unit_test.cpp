@@ -15,7 +15,7 @@
 
 #include "audio_stream_collector_unit_test.h"
 #include "audio_system_manager.h"
-#include "audio_client_tracker_callback_proxy.h"
+#include "standard_client_tracker_proxy.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
@@ -336,15 +336,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_005, TestSize.Level1
 HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_006, TestSize.Level1)
 {
     std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
-    AudioRendererInfo rendererInfo1 = {
-        .contentType = CONTENT_TYPE_MUSIC, .streamUsage = STREAM_USAGE_MEDIA
-    };
-    AudioRendererInfo rendererInfo2 = {
-        .contentType = CONTENT_TYPE_SPEECH, .streamUsage = STREAM_USAGE_VOICE_COMMUNICATION
-    };
-    AudioRendererInfo rendererInfo3 = {
-        .contentType = CONTENT_TYPE_MOVIE, .streamUsage = STREAM_USAGE_MEDIA
-    };
+    AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
+    AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION, 0};
+    AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA, 0};
     std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
     info1->sessionId = 1;
     info1->rendererState = RENDERER_RUNNING;
@@ -1333,9 +1327,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_045, TestSize.Level1
 HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
 {
     std::unique_ptr<AudioStreamCollector> collector = std::make_unique<AudioStreamCollector>();
-    AudioRendererInfo rendererInfo1 = {
-        .contentType = CONTENT_TYPE_MUSIC, .streamUsage = STREAM_USAGE_MEDIA
-    };
+    AudioRendererInfo rendererInfo1 = {CONTENT_TYPE_MUSIC, STREAM_USAGE_MEDIA, 0};
     std::unique_ptr<AudioRendererChangeInfo> info1 = std::make_unique<AudioRendererChangeInfo>();
     info1->sessionId = 1;
     info1->rendererState = RENDERER_PAUSED;
@@ -1345,9 +1337,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
     bool result = collector->IsMediaPlaying();
     EXPECT_FALSE(result);
 
-    AudioRendererInfo rendererInfo2 = {
-        .contentType = CONTENT_TYPE_SPEECH, .streamUsage = STREAM_USAGE_VOICE_COMMUNICATION
-    };
+    AudioRendererInfo rendererInfo2 = {CONTENT_TYPE_SPEECH, STREAM_USAGE_VOICE_COMMUNICATION, 0};
     std::unique_ptr<AudioRendererChangeInfo> info2 = std::make_unique<AudioRendererChangeInfo>();
     info2->sessionId = 2;
     info2->rendererState = RENDERER_RUNNING;
@@ -1357,9 +1347,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, IsMediaPlaying_Test01, TestSize.Level1)
     result = collector->IsMediaPlaying();
     EXPECT_FALSE(result);
 
-    AudioRendererInfo rendererInfo3 = {
-        .contentType = CONTENT_TYPE_MOVIE, .streamUsage = STREAM_USAGE_MEDIA
-    };
+    AudioRendererInfo rendererInfo3 = {CONTENT_TYPE_MOVIE, STREAM_USAGE_MEDIA, 0};
     std::unique_ptr<AudioRendererChangeInfo> info3 = std::make_unique<AudioRendererChangeInfo>();
     info3->sessionId = 3;
     info3->rendererState = RENDERER_RUNNING;

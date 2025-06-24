@@ -16,8 +16,9 @@
 #include <securec.h>
 #include "audio_log.h"
 #include "audio_policy_client_proxy.h"
-#include "audio_client_tracker_callback_proxy.h"
-#include "audio_client_tracker_callback_stub.h"
+#include "audio_stream_manager.h"
+#include "audio_client_tracker_callback_service.h"
+#include "audio_client_tracker_callback_listener.h"
 
 using namespace std;
 
@@ -183,9 +184,11 @@ void AudioPolicyClientProxyOnVolumeKeyEventFuzzTest()
 void AudioPolicyClientProxyOnAudioFocusInfoChangeFuzzTest()
 {
     AudioInterrupt audioInterrupt;
-    AudioFocuState audioFocuState;
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
-    focusInfoList.emplace_back(make_pair(audioInterrupt, audioFocuState));
+    AudioFocuState audioFocuState = AudioFocuState::ACTIVE;
+    std::vector<std::map<AudioInterrupt, int32_t>> focusInfoList;
+    std::map<AudioInterrupt, int32_t> interruptMap;
+    interruptMap[audioInterrupt] = audioFocuState;
+    focusInfoList.emplace_back(interruptMap);
 
     sptr<IRemoteObject> impl = new RemoteObjectFuzzTestStub();
     auto audioPolicyClientProxy = std::make_shared<AudioPolicyClientProxy>(impl);
@@ -421,7 +424,6 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeFuzzTest()
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     bool enabled = GetData<bool>();
     iAudioPolicyClient->OnSpatializationEnabledChange(enabled);
 }
@@ -434,7 +436,6 @@ void AudioPolicyClientProxyOnSpatializationEnabledChangeForAnyDeviceFuzzTest()
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     bool enabled = GetData<bool>();
     iAudioPolicyClient->OnSpatializationEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 }
@@ -458,7 +459,6 @@ void AudioPolicyClientProxyOnHeadTrackingEnabledChangeFuzzTest()
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     iAudioPolicyClient->OnHeadTrackingEnabledChange(enabled);
 }
 
@@ -496,7 +496,6 @@ void AudioPolicyClientProxyOnHeadTrackingEnabledChangeForAnyDeviceFuzzTest()
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    iAudioPolicyClient->hasSystemPermission_ = GetData<bool>();
     iAudioPolicyClient->OnHeadTrackingEnabledChangeForAnyDevice(deviceDescriptor, enabled);
 }
 
@@ -527,7 +526,7 @@ void AudioPolicyClientProxyOnAudioSessionDeactiveFuzzTest()
     if (iAudioPolicyClient == nullptr) {
         return;
     }
-    iAudioPolicyClient->OnAudioSessionDeactive(deactiveEvent);
+    iAudioPolicyClient->OnAudioSessionDeactive(static_cast<int32_t>(deactiveEvent.deactiveReason));
 }
 
 void AudioPolicyClientProxyOnFormatUnsupportedErrorFuzzTest()
@@ -569,7 +568,7 @@ void AudioPolicyClientProxyOnStreamVolumeChangeFuzzTest()
 
 void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     std::weak_ptr<AudioClientTrackerFuzzTest> callback = std::make_shared<AudioClientTrackerFuzzTest>();
     listener->SetClientTrackerCallback(callback);
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
@@ -587,7 +586,7 @@ void AudioClientTrackerCallbackProxyMuteStreamImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
 
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
@@ -604,7 +603,7 @@ void AudioClientTrackerCallbackProxyUnmuteStreamImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
@@ -620,7 +619,7 @@ void AudioClientTrackerCallbackProxyPausedStreamImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyResumeStreamImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr || g_testStreamSetStates.size() == 0
         || g_testAudioStreamUsages.size() == 0) {
@@ -636,7 +635,7 @@ void AudioClientTrackerCallbackProxyResumeStreamImplFuzzTest()
 
 void AudioClientTrackerCallbackProxySetLowPowerVolumeImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr) {
         return;
@@ -647,7 +646,7 @@ void AudioClientTrackerCallbackProxySetLowPowerVolumeImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyGetLowPowerVolumeImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr) {
         return;
@@ -658,7 +657,7 @@ void AudioClientTrackerCallbackProxyGetLowPowerVolumeImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyGetSingleStreamVolumeImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr) {
         return;
@@ -669,7 +668,7 @@ void AudioClientTrackerCallbackProxyGetSingleStreamVolumeImplFuzzTest()
 
 void AudioClientTrackerCallbackProxySetOffloadModeImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr) {
         return;
@@ -681,7 +680,7 @@ void AudioClientTrackerCallbackProxySetOffloadModeImplFuzzTest()
 
 void AudioClientTrackerCallbackProxyUnsetOffloadModeImplFuzzTest()
 {
-    sptr<AudioClientTrackerCallbackStub> listener = new AudioClientTrackerCallbackStub();
+    sptr<AudioClientTrackerCallbackService> listener = new AudioClientTrackerCallbackService();
     auto clientTrackerCallbackListener = std::make_shared<ClientTrackerCallbackListener>(listener);
     if (clientTrackerCallbackListener == nullptr) {
         return;

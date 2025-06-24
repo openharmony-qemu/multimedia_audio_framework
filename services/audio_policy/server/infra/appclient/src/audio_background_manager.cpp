@@ -20,7 +20,6 @@
 #include "audio_policy_log.h"
 #include "audio_log.h"
 #include "audio_policy_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "i_policy_provider.h"
 

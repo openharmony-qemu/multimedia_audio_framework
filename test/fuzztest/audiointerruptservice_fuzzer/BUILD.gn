@@ -14,8 +14,8 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
-import("../../../config.gni")
 import("../../../bluetooth_part.gni")
+import("../../../config.gni")
 
 ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -41,7 +41,10 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
 
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_policy:audio_policy_service_static",
+  ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",

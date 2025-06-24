@@ -67,13 +67,29 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) override;
+    int32_t Stop(int32_t stage) override;
 
-    int32_t RequestHandleInfo(bool isAsync) override;
+    int32_t RequestHandleInfo() override;
 
-    int32_t Release(bool isSwitchStream = false) override;
+    int32_t RequestHandleInfoAsync() override;
 
-    int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
+    int32_t Release(bool isSwitchStream) override;
+
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
+    int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, const std::string& adjustTime,
+        uint32_t code) override;
+
+    int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
+
+    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
+        uint32_t method) override;
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -105,23 +121,13 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
 
-    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-        BoostTriggerMethod method) override;
-
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
-
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
-
-    int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
     std::time_t GetStartMuteTime() override;
     void SetStartMuteTime(std::time_t time) override;
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    int32_t SetSourceDuration(int64_t duration) override;
-
-    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
     void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
@@ -132,8 +138,6 @@ public:
     
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
-    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
-        uint32_t code) override;
 
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;

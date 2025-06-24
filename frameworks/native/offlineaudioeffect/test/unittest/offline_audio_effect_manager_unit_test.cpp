@@ -30,7 +30,7 @@ namespace AudioStandard {
 namespace {
     const std::string INVALID_EFFECT_NAME = "0d000721";
 
-    constexpr AudioStreamInfo NORMAL_STREAM_INFO(
+    AudioStreamInfo NORMAL_STREAM_INFO(
         AudioSamplingRate::SAMPLE_RATE_48000, AudioEncodingType::ENCODING_PCM,
         AudioSampleFormat::SAMPLE_S16LE, AudioChannel::STEREO, AudioChannelLayout::CH_LAYOUT_STEREO);
 }

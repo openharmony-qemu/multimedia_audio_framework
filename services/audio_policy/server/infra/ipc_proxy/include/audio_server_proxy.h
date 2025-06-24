@@ -33,6 +33,7 @@
 #include "audio_errors.h"
 
 #include "ipc_skeleton.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

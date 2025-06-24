@@ -29,6 +29,7 @@
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
+#include "iipc_stream.h"
 #include "volume_ramp.h"
 #include "volume_tools.h"
 #include "callback_handler.h"
@@ -37,6 +38,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -366,7 +368,7 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle

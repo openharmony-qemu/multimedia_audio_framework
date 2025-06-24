@@ -16,9 +16,10 @@
 #include <gtest/gtest.h>
 #include "audio_errors.h"
 #include "policy_handler.h"
-#include "policy_provider_proxy.h"
+#include "policy_provider_ipc_proxy.h"
 
 using namespace testing::ext;
+class PolicyProviderIpcProxy;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,7 @@ public:
     size_t GetSize() override { return 0; };
     int GetFd() override { return 0; };
     std::string GetName() override { return "abc"; };
+    bool Marshalling(Parcel &parcel) const override { return true; };
 };
 
 void PolicyHandlerUnitTest::SetUpTestCase(void) {}
@@ -79,7 +81,7 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_002, TestSize.Level1)
 
     std::string dumpString = "";
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
     policyHandler->policyVolumeMap_ = nullptr;
     policyHandler->volumeVector_ = nullptr;
@@ -101,7 +103,7 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_003, TestSize.Level1)
 
     std::string dumpString = "";
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
 
     policyHandler->policyVolumeMap_ = std::make_shared<AudioSharedMemoryTest>();
@@ -126,7 +128,7 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_004, TestSize.Level1)
 
     std::string dumpString = "";
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
 
     policyHandler->policyVolumeMap_ = std::make_shared<AudioSharedMemoryTest>();
@@ -153,7 +155,7 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_005, TestSize.Level1)
 
     std::string dumpString = "";
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
 
     policyHandler->policyVolumeMap_ = std::make_shared<AudioSharedMemoryTest>();
@@ -177,10 +179,10 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_006, TestSize.Level1)
     EXPECT_NE(policyHandler, nullptr);
 
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
 
-    sptr<IPolicyProviderIpc> policyProvider = new PolicyProviderProxy(impl);
+    sptr<IPolicyProviderIpc> policyProvider = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyProvider, nullptr);
 
     auto ret = policyHandler->ConfigPolicyProvider(policyProvider);
@@ -199,7 +201,7 @@ HWTEST_F(PolicyHandlerUnitTest, PolicyHandler_007, TestSize.Level1)
     EXPECT_NE(policyHandler, nullptr);
 
     sptr<IRemoteObject> impl = nullptr;
-    policyHandler->iPolicyProvider_ = new PolicyProviderProxy(impl);
+    policyHandler->iPolicyProvider_ = new PolicyProviderIpcProxy(impl);
     EXPECT_NE(policyHandler->iPolicyProvider_, nullptr);
 
     Volume volume[IPolicyProvider::GetVolumeVectorSize()];
