@@ -113,6 +113,8 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
 
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock sessionId %{public}u", sessionId);
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
@@ -120,6 +122,7 @@ int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(
     uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock sessionId %{public}u", sessionId);
     return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
 }
 
