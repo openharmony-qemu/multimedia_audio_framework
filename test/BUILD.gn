@@ -185,6 +185,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiomanager_fuzzer:fuzztest",
     "fuzztest/audiopipemanager_fuzzer:fuzztest",
     "fuzztest/audiopipeselector_fuzzer:fuzztest",
+    "fuzztest/audiopnpserver_fuzzer:fuzztest",
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
