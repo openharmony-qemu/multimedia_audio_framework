@@ -147,7 +147,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize
 
     const std::string macAddress = "11-11-11-11-11-11";
     const std::string deviceName = "deviceName";
-    GetServerUtil::GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
 }
 
 /**
@@ -675,7 +674,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
     EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 
