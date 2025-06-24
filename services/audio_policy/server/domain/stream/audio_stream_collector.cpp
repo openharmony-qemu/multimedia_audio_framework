@@ -889,6 +889,18 @@ int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
     return channelCount;
 }
 
+int32_t AudioStreamCollector::GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING) {
+            infos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     std::vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {

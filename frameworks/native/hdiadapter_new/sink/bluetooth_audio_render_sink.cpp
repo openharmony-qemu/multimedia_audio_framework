@@ -291,6 +291,11 @@ int32_t BluetoothAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t
     return ret;
 }
 
+int64_t BluetoothAudioRenderSink::GetVolumeDataCount()
+{
+    return volumeDataCount_;
+}
+
 int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
 {
     AUDIO_INFO_LOG("in");

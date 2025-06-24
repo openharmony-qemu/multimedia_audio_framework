@@ -411,6 +411,15 @@ public:
     virtual float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) = 0;
 
     /**
+     * Get volume data connt of sink.
+     *
+     * @param sinkName specified the sink
+     *
+     * @return volume data connt.
+     */
+    virtual int64_t GetVolumeDataCount(std::string sinkName) = 0;
+
+    /**
      * Release old endpoint and re-create one.
      */
     virtual void ResetAudioEndpoint() = 0;

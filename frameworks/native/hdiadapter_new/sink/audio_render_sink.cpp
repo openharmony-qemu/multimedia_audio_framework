@@ -285,6 +285,11 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     return SUCCESS;
 }
 
+int64_t AudioRenderSink::GetVolumeDataCount()
+{
+    return volumeDataCount_;
+}
+
 int32_t AudioRenderSink::SuspendRenderSink(void)
 {
     return SUCCESS;

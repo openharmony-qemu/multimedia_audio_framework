@@ -738,6 +738,8 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+    bool IsContinueAddVol();
+    void TrigerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
@@ -821,6 +823,8 @@ private:
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::mutex volUpHistoryMutex_;
+    std::deque<int64_t> volUpHistory_;
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;

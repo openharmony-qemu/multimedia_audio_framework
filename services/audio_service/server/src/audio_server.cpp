@@ -2423,6 +2423,20 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass,
     return 0;
 }
 
+int64_t AudioServer::GetVolumeDataCount(std::string sinkName)
+{
+    // this is only called in audio_server, not need to check calling uid
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+    int64_t volumeDataCount = 0;
+    if (sink != nullptr) {
+        volumeDataCount = sink->GetVolumeDataCount();
+    } else {
+        AUDIO_WARNING_LOG("can not find: %{public}s", sinkName.c_str());
+    }
+    return volumeDataCount;
+}
+
 void AudioServer::ResetAudioEndpoint()
 {
 #ifdef SUPPORT_LOW_LATENCY

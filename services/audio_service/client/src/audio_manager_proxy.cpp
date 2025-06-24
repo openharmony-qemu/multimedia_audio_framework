@@ -990,6 +990,12 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, std::string device
     return reply.ReadFloat();
 }
 
+int64_t AudioManagerProxy::GetVolumeDataCount(std::string sinkName)
+{
+    AUDIO_WARNING_LOG("Called in %{public}d, not supported", getuid());
+    return 0;
+}
+
 void AudioManagerProxy::ResetAudioEndpoint()
 {
     int32_t error;
