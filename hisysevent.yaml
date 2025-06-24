@@ -160,6 +160,13 @@ AUDIO_ROUTE_CHANGE:
   DEVICE_LIST: {type: STRING, desc: current device list}
   ROUTER_TYPE: {type: UINT8, desc: device selection routing policy}
 
+DB_ACCESS_EXCEPTION:
+  __BASE: {type: FAULT, level: CRITICAL, desc: database access exception}
+  DB_TYPE: {type: STRING, desc: database access type}
+  ERROR_CASE: {type: UINT32, desc: error case}
+  ERROR_MSG: {type: INT32, desc: error message}
+  ERROR_DESCRIPTION: {type: STRING, desc: error description}
+
 AUDIO_PIPE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio pipe change}
   APP_NAME: {type: STRING, desc: application name}
