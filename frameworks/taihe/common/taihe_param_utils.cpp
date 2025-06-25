@@ -755,6 +755,6 @@ bool TaiheParamUtils::IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<
 {
     std::shared_ptr<taihe::callback<void()>> srcPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(src);
     std::shared_ptr<taihe::callback<void()>> dstPtr = std::reinterpret_pointer_cast<taihe::callback<void()>>(dst);
-    return taihe::same(*srcPtr, *dstPtr);
+    return *srcPtr == *dstPtr;
 }
 } // namespace ANI::Audio
