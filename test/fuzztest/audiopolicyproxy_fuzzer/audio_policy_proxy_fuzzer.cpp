@@ -259,7 +259,6 @@ void AudioPolicyProxyOneFuzzTest()
         return;
     }
 
-    AudioRingerMode ringMode = AudioRingerMode::RINGER_MODE_NORMAL;
     audioPolicyProxy->SetRingerModeLegacy(RINGER_MODE_NORMAL);
     audioPolicyProxy->SetRingerMode(RINGER_MODE_NORMAL);
     audioPolicyProxy->GetPersistentMicMuteState();
