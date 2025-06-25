@@ -87,8 +87,10 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("getActiveVolumeTypeSync", GetActiveVolumeTypeSync),
         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
         DECLARE_NAPI_FUNCTION("getVolumeSync", GetVolumeSync),
+        DECLARE_NAPI_FUNCTION("getSystemVolumeFromUid", GetSystemVolumeFromUid),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
         DECLARE_NAPI_FUNCTION("setVolumeWithFlag", SetVolumeWithFlag),
+        DECLARE_NAPI_FUNCTION("setSystemVolumeFromUid", SetSystemVolumeFromUid),
         DECLARE_NAPI_FUNCTION("getMaxVolume", GetMaxVolume),
         DECLARE_NAPI_FUNCTION("getMaxVolumeSync", GetMaxVolumeSync),
         DECLARE_NAPI_FUNCTION("getMinVolume", GetMinVolume),
@@ -317,6 +319,43 @@ napi_value NapiAudioVolumeGroupManager::GetVolumeSync(napi_env env, napi_callbac
     return result;
 }
 
+napi_value NapiAudioVolumeGroupManager::GetSystemVolumeFromUid(napi_env env, napi_callback_info info)
+{
+    napi_value result = nullptr;
+    size_t argc = ARGS_TWO;
+    napi_value args[ARGS_TWO] = {};
+    auto *napiAudioVolumeGroupManager = GetParamWithSync(env, info, argc, args);
+    CHECK_AND_RETURN_RET_LOG(argc == ARGS_TWO, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+
+    napi_valuetype valueType = napi_undefined;
+    napi_typeof(env, args[PARAM0], &valueType);
+    CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
+        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of volumeType must be number"),
+        "invalid valueType");
+
+    int32_t volType;
+    NapiParamUtils::GetValueInt32(env, volType, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(NapiAudioEnum::IsLegalInputArgumentVolType(volType),
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be enum AudioVolumeType"), "get volType failed");
+    
+    int32_t uid;
+    NapiParamUtils::GetValueInt32(env, uid, args[PARAM1]);
+    CHECK_AND_RETURN_RET_LOG(uid >= 0,
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM,
+        "parameter verification failed: The param of volumeType must be greater than zero"), "get uid failed");
+
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager != nullptr, result, "napiAudioVolumeGroupManager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeGroupManager->audioGroupMngr_ != nullptr, result,
+        "audioGroupMngr_ is nullptr");
+    int32_t volLevel = napiAudioVolumeGroupManager->audioGroupMngr_->GetVolume(
+        NapiAudioEnum::GetNativeAudioVolumeType(volType), uid);
+    NapiParamUtils::SetValueInt32(env, volLevel, result);
+
+    return result;
+}
+
 napi_value NapiAudioVolumeGroupManager::SetVolume(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
@@ -416,6 +455,53 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
         output = NapiParamUtils::GetUndefinedValue(env);
     };
     return NapiAsyncWork::Enqueue(env, context, "SetVolumeWithFlag", executor, complete);
+}
+
+napi_value NapiAudioVolumeGroupManager::SetSystemVolumeFromUid(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("SetSystemVolumeFromUid failed : no memory");
+        NapiAudioError::ThrowError(env, "SetVolumeWithFlag failed : no memory", NAPI_ERR_NO_MEMORY);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+
+    auto inputParser = [env, context](size_t argc, napi_value *argv) {
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_THREE, "invalid arguments",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volType failed",
+            NAPI_ERR_INVALID_PARAM);
+        if (!NapiAudioEnum::IsLegalInputArgumentVolType(context->volType)) {
+            context->SignError(context->errCode == NAPI_ERR_INVALID_PARAM?
+                NAPI_ERR_INVALID_PARAM : NAPI_ERR_UNSUPPORTED);
+        }
+        context->status = NapiParamUtils::GetValueInt32(env, context->volLevel, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volLevel failed",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->uid, argv[PARAM2]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get uid failed",
+            NAPI_ERR_INVALID_PARAM);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeGroupManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeGroupManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeGroupManagerStatus(napiAudioVolumeGroupManager, context),
+            "audio volume group manager state is error.");
+        context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, false, context->uid);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetSystemVolumeFromUid failed",
+            NAPI_ERR_SYSTEM);
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "SetSystemVolumeFromUid", executor, complete);
 }
 
 napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback_info info)

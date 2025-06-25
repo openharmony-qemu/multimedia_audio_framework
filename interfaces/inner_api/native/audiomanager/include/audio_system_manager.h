@@ -462,6 +462,8 @@ public:
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
     /**
      * @brief Check the uid app volume is muted.
      * @param appUid app uid

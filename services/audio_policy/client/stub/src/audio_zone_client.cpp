@@ -63,6 +63,8 @@ int32_t AudioZoneClientStub::OnRemoteRequest(uint32_t code, MessageParcel &data,
 
 void AudioZoneClientStub::HandleAudioZoneAdd(MessageParcel &data, MessageParcel &reply)
 {
+    CHECK_AND_RETURN_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        "AudioZoneClientStub: ReadInterfaceToken failed");
     AudioZoneDescriptor desc;
     desc.Unmarshalling(data);
     OnAudioZoneAdd(desc);
@@ -70,6 +72,8 @@ void AudioZoneClientStub::HandleAudioZoneAdd(MessageParcel &data, MessageParcel 
 
 void AudioZoneClientStub::HandleAudioZoneRemove(MessageParcel &data, MessageParcel &reply)
 {
+    CHECK_AND_RETURN_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        "AudioZoneClientStub: ReadInterfaceToken failed");
     OnAudioZoneRemove(data.ReadInt32());
 }
 

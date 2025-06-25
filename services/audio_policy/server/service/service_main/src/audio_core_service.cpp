@@ -382,7 +382,9 @@ void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDevic
         "current output device is same as new device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
-    audioVolumeManager_.SetVolumeForSwitchDevice(*(desc), sinkName);
+    if (audioDeviceManager_.IsDeviceConnected(desc)) {
+        audioVolumeManager_.SetVolumeForSwitchDevice(*(desc), sinkName);
+    }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
 }
 

@@ -224,6 +224,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     if (zoneId != 0) {
         return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
     }
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUsage(streamUsage);
+    if (zoneId != 0) {
+        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+    }
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
         AUDIO_INFO_LOG("Stream ULTRASONIC always choose spk");

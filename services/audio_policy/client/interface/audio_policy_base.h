@@ -42,7 +42,8 @@ public:
 
     virtual int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0,
+        int32_t uid = 0) = 0;
 
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
@@ -57,11 +58,13 @@ public:
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
 
+    virtual int32_t SetAdjustVolumeForZone(int32_t zoneId) = 0;
+
     virtual int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
     virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
@@ -364,6 +367,10 @@ public:
     virtual int32_t AddUidToAudioZone(int32_t zoneId, int32_t uid) = 0;
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
+
+    virtual int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
+    
+    virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
 
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 

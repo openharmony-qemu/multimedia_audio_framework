@@ -100,53 +100,53 @@ uint32_t GetArrLength(T& arr)
 
 void VolumeDataMaintainerSaveVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType typeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamTypeRet = g_testStreamTypes[index];
     int32_t volumeLevelRet = static_cast<int32_t>(size);
-    volumeDataMaintainerRet.SaveVolume(typeRet, streamTypeRet, volumeLevelRet);
+    volumeDataMaintainerRet->SaveVolume(typeRet, streamTypeRet, volumeLevelRet);
 }
 
 void VolumeDataMaintainerGetVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamTypeRet = g_testStreamTypes[index];
-    volumeDataMaintainerRet.GetVolume(deviceTypeRet, streamTypeRet);
+    volumeDataMaintainerRet->GetVolume(deviceTypeRet, streamTypeRet);
 }
 
 void VolumeDataMaintainerSaveMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamTypeRet = g_testStreamTypes[index];
     bool muteStatusRet = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    volumeDataMaintainerRet.SaveMuteStatus(deviceTypeRet, streamTypeRet, muteStatusRet);
+    volumeDataMaintainerRet->SaveMuteStatus(deviceTypeRet, streamTypeRet, muteStatusRet);
 }
 
 void VolumeDataMaintainerGetMuteStatusInternalFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamTypeRet = g_testStreamTypes[index];
-    volumeDataMaintainerRet.GetMuteStatusInternal(deviceTypeRet, streamTypeRet);
+    volumeDataMaintainerRet->GetMuteStatusInternal(deviceTypeRet, streamTypeRet);
 }
 
 void VolumeDataMaintainerGetMuteTransferStatusFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     int32_t affectedRet;
     bool statusRet;
-    volumeDataMaintainerRet.GetMuteAffected(affectedRet);
-    volumeDataMaintainerRet.GetMuteTransferStatus(statusRet);
+    volumeDataMaintainerRet->GetMuteAffected(affectedRet);
+    volumeDataMaintainerRet->GetMuteTransferStatus(statusRet);
 }
 
 void VolumeDataMaintainerGetSafeStatusFuzzTest(const uint8_t *rawData, size_t size)
@@ -156,200 +156,200 @@ void VolumeDataMaintainerGetSafeStatusFuzzTest(const uint8_t *rawData, size_t si
         SAFE_INACTIVE,
         SAFE_ACTIVE,
     };
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % testSafeStatus.size();
     SafeStatus safeStatusRet = testSafeStatus[index];
-    volumeDataMaintainerRet.SaveSafeStatus(deviceTypeRet, safeStatusRet);
-    volumeDataMaintainerRet.GetSafeStatus(deviceTypeRet, safeStatusRet);
+    volumeDataMaintainerRet->SaveSafeStatus(deviceTypeRet, safeStatusRet);
+    volumeDataMaintainerRet->GetSafeStatus(deviceTypeRet, safeStatusRet);
 }
 
 void VolumeDataMaintainerGetSafeVolumeTimeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     int64_t timeRet = static_cast<int64_t>(size);
-    volumeDataMaintainerRet.SaveSafeVolumeTime(deviceTypeRet, timeRet);
-    volumeDataMaintainerRet.GetSafeVolumeTime(deviceTypeRet, timeRet);
+    volumeDataMaintainerRet->SaveSafeVolumeTime(deviceTypeRet, timeRet);
+    volumeDataMaintainerRet->GetSafeVolumeTime(deviceTypeRet, timeRet);
 }
 
 void VolumeDataMaintainerRegisterClonedFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     std::string keyRet;
     std::string valueRet;
-    volumeDataMaintainerRet.SaveSystemSoundUrl(keyRet, valueRet);
-    volumeDataMaintainerRet.GetSystemSoundUrl(keyRet, valueRet);
-    volumeDataMaintainerRet.RegisterCloned();
+    volumeDataMaintainerRet->SaveSystemSoundUrl(keyRet, valueRet);
+    volumeDataMaintainerRet->GetSystemSoundUrl(keyRet, valueRet);
+    volumeDataMaintainerRet->RegisterCloned();
 }
 
 void VolumeDataMaintainerGetMicMuteStateFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     bool isMuteRet = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    volumeDataMaintainerRet.SaveMicMuteState(isMuteRet);
-    volumeDataMaintainerRet.GetMicMuteState(isMuteRet);
+    volumeDataMaintainerRet->SaveMicMuteState(isMuteRet);
+    volumeDataMaintainerRet->GetMicMuteState(isMuteRet);
 }
 
 void VolumeDataMaintainerGetDeviceTypeNameFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
-    volumeDataMaintainerRet.GetDeviceTypeName(deviceTypeRet);
+    volumeDataMaintainerRet->GetDeviceTypeName(deviceTypeRet);
 }
 
 void VolumeDataMaintainerGetVolumeKeyForDataShareFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceTypeRet = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamTypeRet = g_testStreamTypes[index];
-    volumeDataMaintainerRet.GetVolumeKeyForDataShare(deviceTypeRet, streamTypeRet);
+    volumeDataMaintainerRet->GetVolumeKeyForDataShare(deviceTypeRet, streamTypeRet);
 }
 
 void VolumeDataMaintainerSaveMuteStatusInternalFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceType = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamType = g_testStreamTypes[index];
     bool muteStatus = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    bool result = volumeDataMaintainer.SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    bool result = volumeDataMaintainer->SaveMuteStatusInternal(deviceType, streamType, muteStatus);
 }
 
 void VolumeDataMaintainerGetAppMuteFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     int32_t appUid = static_cast<int32_t>(size);
     bool isMute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    volumeDataMaintainer.appMuteStatusMap_.erase(appUid);
+    volumeDataMaintainer->appMuteStatusMap_.erase(appUid);
 
-    volumeDataMaintainer.GetAppMute(appUid, isMute);
+    volumeDataMaintainer->GetAppMute(appUid, isMute);
 }
 
 void VolumeDataMaintainerGetAppMuteOwnedFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     int32_t appUid = static_cast<int32_t>(size);
     bool isMute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    volumeDataMaintainer.appMuteStatusMap_[appUid][callingUid] = !isMute;
+    volumeDataMaintainer->appMuteStatusMap_[appUid][callingUid] = !isMute;
 
-    volumeDataMaintainer.GetAppMuteOwned(appUid, isMute);
+    volumeDataMaintainer->GetAppMuteOwned(appUid, isMute);
 }
 
 void VolumeDataMaintainerGetDeviceVolumeInternalFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceType = g_testDeviceTypes[index];
     index = static_cast<uint32_t>(size) % g_testStreamTypes.size();
     AudioStreamType streamType = g_testStreamTypes[index];
-    volumeDataMaintainer.GetDeviceVolumeInternal(deviceType, streamType);
+    volumeDataMaintainer->GetDeviceVolumeInternal(deviceType, streamType);
 }
 
 void VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
-    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
-    volumeDataMaintainer.volumeLevelMap_.clear();
-    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
-    volumeDataMaintainer.appVolumeLevelMap_.clear();
-    volumeDataMaintainer.appMuteStatusMap_.clear();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
+    volumeDataMaintainer->volumeLevelMap_.clear();
+    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer->appVolumeLevelMap_.clear();
+    volumeDataMaintainer->appMuteStatusMap_.clear();
 
     int32_t affected = static_cast<int32_t>(size);
-    volumeDataMaintainer.SetMuteAffectedToMuteStatusDataBase(affected);
+    volumeDataMaintainer->SetMuteAffectedToMuteStatusDataBase(affected);
 }
 
 void VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
-    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
-    volumeDataMaintainer.volumeLevelMap_.clear();
-    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
-    volumeDataMaintainer.appVolumeLevelMap_.clear();
-    volumeDataMaintainer.appMuteStatusMap_.clear();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
+    volumeDataMaintainer->volumeLevelMap_.clear();
+    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer->appVolumeLevelMap_.clear();
+    volumeDataMaintainer->appMuteStatusMap_.clear();
 
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceType = g_testDeviceTypes[index];
     int32_t volume = static_cast<int32_t>(size);
-    volumeDataMaintainer.SetRestoreVolumeLevel(deviceType, volume);
+    volumeDataMaintainer->SetRestoreVolumeLevel(deviceType, volume);
 }
 
 void VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainer = VolumeDataMaintainer::GetVolumeDataMaintainer();
-    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer.volumeMutex_);
-    volumeDataMaintainer.volumeLevelMap_.clear();
-    volumeDataMaintainer.remoteVolumeLevelMap_.clear();
-    volumeDataMaintainer.appVolumeLevelMap_.clear();
-    volumeDataMaintainer.appMuteStatusMap_.clear();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
+    volumeDataMaintainer->volumeLevelMap_.clear();
+    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
+    volumeDataMaintainer->appVolumeLevelMap_.clear();
+    volumeDataMaintainer->appMuteStatusMap_.clear();
 
     uint32_t index = static_cast<uint32_t>(size) % g_testDeviceTypes.size();
     DeviceType deviceType = g_testDeviceTypes[index];
     int32_t volume = static_cast<int32_t>(size);
-    volumeDataMaintainer.GetRestoreVolumeLevel(deviceType, volume);
+    volumeDataMaintainer->GetRestoreVolumeLevel(deviceType, volume);
 }
 
 void VolumeDataMaintainerGetRingerModeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     int32_t affectedRet = static_cast<int32_t>(size);
     bool statusRet = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
     uint32_t index = static_cast<uint32_t>(size) % NUM_3;
     AudioRingerMode ringerModeRet = static_cast<AudioRingerMode>(index);
-    volumeDataMaintainerRet.SetMuteAffectedToMuteStatusDataBase(affectedRet);
-    volumeDataMaintainerRet.SaveMuteTransferStatus(statusRet);
-    volumeDataMaintainerRet.SaveRingerMode(ringerModeRet);
-    volumeDataMaintainerRet.GetRingerMode(ringerModeRet);
+    volumeDataMaintainerRet->SetMuteAffectedToMuteStatusDataBase(affectedRet);
+    volumeDataMaintainerRet->SaveMuteTransferStatus(statusRet);
+    volumeDataMaintainerRet->SaveRingerMode(ringerModeRet);
+    volumeDataMaintainerRet->GetRingerMode(ringerModeRet);
 }
 
 void VolumeDataMaintainerGetDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size);
     DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
-    volumeDataMaintainerRet.GetDeviceVolume(deviceType, streamType);
+    volumeDataMaintainerRet->GetDeviceVolume(deviceType, streamType);
 }
 
 void VolumeDataMaintainerSetStreamMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size);
     AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
     bool muteStatus = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    volumeDataMaintainerRet.SetStreamMuteStatus(streamType, muteStatus);
+    volumeDataMaintainerRet->SetStreamMuteStatus(streamType, muteStatus);
 }
 
 void VolumeDataMaintainerGetMuteStatusFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size);
     DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
-    volumeDataMaintainerRet.GetMuteStatus(deviceType, streamType);
+    volumeDataMaintainerRet->GetMuteStatus(deviceType, streamType);
 }
 
 void VolumeDataMaintainerGetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     uint32_t index = static_cast<uint32_t>(size);
     AudioStreamType streamType = g_testStreamTypes[index % g_testStreamTypes.size()];
-    volumeDataMaintainerRet.GetStreamMute(streamType);
+    volumeDataMaintainerRet->GetStreamMute(streamType);
 }
 
 void VolumeDataMaintainerSetAppVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
-    VolumeDataMaintainer &volumeDataMaintainerRet = VolumeDataMaintainer::GetVolumeDataMaintainer();
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
     int32_t appUid = static_cast<int32_t>(size);
     int32_t volumeLevel = static_cast<int32_t>(size / NUM_2);
-    volumeDataMaintainerRet.SetAppVolume(appUid, volumeLevel);
+    volumeDataMaintainerRet->SetAppVolume(appUid, volumeLevel);
 }
 
 } // namespace AudioStandard
