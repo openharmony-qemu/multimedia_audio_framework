@@ -119,10 +119,11 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             MuteSinkPortForSwitchDevice(streamDesc, reason);
         }
     }
-    
-    if (isUpdateActiveDevice) {
+    AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+    std::shared_ptr<AudioDeviceDescriptor> descPtr =
+        std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
+    if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
     }
