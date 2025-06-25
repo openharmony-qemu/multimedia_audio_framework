@@ -46,7 +46,6 @@ private:
     bool fadeInState_ = false;
     FadeOutState fadeOutState_ = FadeOutState::NO_FADEOUT;
     IOperation operation_ = OPERATION_INVALID;
-    uint32_t pushFrameNum_ = 0;
     void DoGain(HpaePcmBuffer *input, uint32_t frameLen, uint32_t channelCount);
     void DoFading(HpaePcmBuffer *input);
     void SilenceData(HpaePcmBuffer *pcmBuffer);

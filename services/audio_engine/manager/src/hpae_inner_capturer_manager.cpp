@@ -672,12 +672,8 @@ int32_t HpaeInnerCapturerManager::DeleteRendererInputSessionInner(uint32_t sessi
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
         sceneTypeToProcessClusterCount_--;
-        if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
-        }
         if (sceneTypeToProcessClusterCount_ == 0) {
-            rendererSceneClusterMap_.erase(sceneType);
-            AUDIO_INFO_LOG("erase rendererSceneCluster, last stream: %{public}u", sessionId);
+            AUDIO_INFO_LOG("need to erase rendererSceneCluster, last stream: %{public}u", sessionId);
         } else {
             AUDIO_INFO_LOG("%{public}u is not last stream, no need erase rendererSceneCluster", sessionId);
         }
@@ -727,6 +723,26 @@ int32_t HpaeInnerCapturerManager::ConnectCapturerOutputSessionInner(uint32_t ses
     return SUCCESS;
 }
 
+void HpaeInnerCapturerManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType)
+{
+    auto request = [this, sceneType]() {
+        AUDIO_INFO_LOG("mixerNode trigger callback");
+        if (SafeGetMap(rendererSceneClusterMap_, sceneType) &&
+            rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+            rendererSceneClusterMap_[sceneType]->DisConnectMixerNode();
+            hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
+        }
+
+        if (sceneTypeToProcessClusterCount_ == 0) {
+            rendererSceneClusterMap_.erase(sceneType);
+            AUDIO_INFO_LOG("erase rendererSceneCluster sceneType[%{public}d]", sceneType);
+        } else {
+            AUDIO_INFO_LOG("no need erase rendererSceneCluster sceneType[%{public}d]", sceneType);
+        }
+    };
+    SendRequestInner(request);
+}
+
 int32_t HpaeInnerCapturerManager::DisConnectRendererInputSessionInner(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), SUCCESS,
@@ -734,9 +750,6 @@ int32_t HpaeInnerCapturerManager::DisConnectRendererInputSessionInner(uint32_t s
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     if (SafeGetMap(rendererSceneClusterMap_, sceneType)) {
         rendererSceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
-        if (rendererSceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
-            hpaeInnerCapSinkNode_->DisConnect(rendererSceneClusterMap_[sceneType]);
-        }
     }
     return SUCCESS;
 }

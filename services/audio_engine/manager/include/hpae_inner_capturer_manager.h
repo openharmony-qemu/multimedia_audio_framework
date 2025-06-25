@@ -91,6 +91,7 @@ public:
     std::string GetThreadName() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     std::string GetDeviceHDFDumpInfo() override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
