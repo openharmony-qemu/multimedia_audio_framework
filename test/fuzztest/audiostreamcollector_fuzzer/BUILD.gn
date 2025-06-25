@@ -31,7 +31,7 @@ ohos_fuzztest("AudioStreamCollectorFuzzTest") {
     "-fno-access-control",
   ]
 
-  sources = [ "audio_stream_collector_fuzz.cpp" ]
+  sources = [ "audio_stream_collector_fuzzer.cpp" ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]
