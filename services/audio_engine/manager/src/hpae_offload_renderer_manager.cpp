@@ -160,25 +160,26 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         return SUCCESS;
     }
 
-    HpaeNodeInfo nodeInfo = sinkInputNode_.GetNodeInfo();
+    HpaeNodeInfo nodeInfo = sinkInputNode_->GetNodeInfo();
     nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.name = "HpaeAudioFormatConverterNode";
+    nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(
         sinkInputNode_->GetNodeInfo(), nodeInfo);
     converterForLoudness_->Connect(sinkInputNode_);
+    converterForLoudness_->RegisterCallback(this);
 
     nodeInfo.nodeName = "HpaeLoudnessGainNode";
     nodeInfo.nodeId = OnGetNodeId();
     std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     loudnessGainNode_->Connect(converterForLoudness_);
-    loudnessGainNode_->SetLoudnessGain(sinkInputInfo_->GetLoudnessGain());
+    loudnessGainNode_->SetLoudnessGain(sinkInputNode_->GetLoudnessGain());
 
     // single stream manager
     HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
     outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
     outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
     sinkOutputNode_->SetNodeInfo(outputNodeInfo);
-    outputNodeInfo.name = "HpaeAudioFormatConverterNode";
+    outputNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
     outputNodeInfo.nodeId = OnGetNodeId();
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
     converterForOutput_->Connect(loudnessGainNode_);
@@ -505,12 +506,6 @@ int32_t HpaeOffloadRendererManager::SetClientVolume(uint32_t sessionId, float vo
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
-{
-    return SUCCESS;
-}
-
-
 int32_t HpaeOffloadRendererManager::SetRate(uint32_t sessionId, int32_t rate)
 {
     return SUCCESS;
@@ -689,19 +684,30 @@ std::string HpaeOffloadRendererManager::GetDeviceHDFDumpInfo()
     return config;
 }
 
-int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
-    CHECK_AND_RETURN_RET_LOG(sinkInputNode_, ERROR, "sessionId %{public}d, sinkInputNode is nullptr", sessionId);
-    CHECK_AND_RETURN_RET_LOG(sinkInputNode_->GetSessionId() == sessionId, ERROR,
-        "sessionId %{public}d is not current sessionid %{public}d for offload",
-        sessionId, sinkInputNode_->GetSessionId());
-    sinkInputNode_->SetLoudnessGain(loudnessGain);
-    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, SUCCESS, "session id %{public}d is not connected", sessionId);
-    loudnessGainNode_->SetLoudnessGain(loudnessGain);
+    auto request = [this, sessionId, loudnessGain]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_, "sessionId %{public}d, sinkInputNode is nullptr", sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNode_->GetSessionId() == sessionId,
+            "sessionId %{public}d is not current sessionid %{public}d for offload",
+            sessionId, sinkInputNode_->GetSessionId());
+        sinkInputNode_->SetLoudnessGain(loudnessGain);
+        CHECK_AND_RETURN_LOG(loudnessGainNode_, "session id %{public}d is not connected", sessionId);
+        loudnessGainNode_->SetLoudnessGain(loudnessGain);
+    };
+    SendRequest(request);
+    return SUCCESS;
 }
 
-int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+int32_t HpaeOffloadRendererManager::GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
+    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR, "sessionId %{public}d, gainNode does not exist", sessionId);
+    CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR, "loudness node id %{public}d,"
+        "set sessionId %{public}d does not match!", loudnessGainNode_->GetSessionId(), sessionId);
+    if (loudnessGainNode_->IsLoudnessAlgoOn()) {
+        // has loudness gain algorithm, should convert to 48k, channels and chanellayout stay same as input
+        basicFormat.rate = SAMPLE_RATE_48000;
+    }
     return SUCCESS;
 }
 }  // namespace HPAE

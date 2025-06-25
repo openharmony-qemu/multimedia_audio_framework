@@ -62,7 +62,6 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -125,6 +124,7 @@ private:
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeProcessCluster>> rendererSceneClusterMap_;
     std::unordered_map<uint32_t, HpaeCapturerSessionInfo> capturerSessionNodeMap_;
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> rendererSessionNodeMap_;
+};
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

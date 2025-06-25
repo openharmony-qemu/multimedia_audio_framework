@@ -20,7 +20,6 @@
 #include "audio_utils.h"
 #include "cinttypes"
 
-static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
@@ -176,14 +175,14 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     nodeFormatInfoCallback_->GetSessionNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
     nodeFormatInfoCallback_->GetEffectNodeInputFormatInfo(basicFormat);
 
-    AudioChannel numChannels = basicFormat.audioChannelInfo.numChannels;
+    uint32_t numChannels = basicFormat.audioChannelInfo.numChannels;
     AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;
-    AudioSamplingRate samplingRate = basicFormat.rate;
+    AudioSamplingRate sampleRate = basicFormat.rate;
     if (numChannels == 0 || channelLayout == CH_LAYOUT_UNKNOWN) {
         // set to node info, which is device output info
         AUDIO_INFO_LOG("Fail to check format into from effect node");
         numChannels = GetChannelCount();
-        channelLayout = (uint64_t)GetChannelLayout();
+        channelLayout = GetChannelLayout();
         sampleRate = GetSampleRate();
     }
 

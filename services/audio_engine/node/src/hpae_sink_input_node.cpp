@@ -276,13 +276,13 @@ bool HpaeSinkInputNode::GetOffloadEnabled()
     return offloadEnable_;
 }
 
-int32_t SetLoudnessGain(float loudnessGain)
+int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
 {
     loudnessGain_ = loudnessGain;
     return SUCCESS;
 }
 
-float GetLoundnessGain()
+float HpaeSinkInputNode::GetLoudnessGain()
 {
     return loudnessGain_;
 }

@@ -800,9 +800,9 @@ int32_t HpaeRendererManager::SetClientVolume(uint32_t sessionId, float volume)
     return SUCCESS;
 }
 
-int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
-    auto request = [this, sessionId] {
+    auto request = [this, sessionId, loudnessGain] {
         AUDIO_INFO_LOG("set loudnessGain %{public}f to sessionId %{public}d", loudnessGain, sessionId);
         std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
         CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
@@ -813,8 +813,8 @@ int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain)
         std::shared_ptr<HpaeProcessCluster> processCluster = SafeGetMap(sceneClusterMap_, processorType);
         CHECK_AND_RETURN_LOG(processCluster != nullptr,
             "session with Id %{public}d not in sceneClusterMap_", sessionId);
-        processCluster->SetLoudnessGain(sessionId, float);
-    }
+        processCluster->SetLoudnessGain(sessionId, loudnessGain);
+    };
     SendRequest(request);
     return SUCCESS;
 }

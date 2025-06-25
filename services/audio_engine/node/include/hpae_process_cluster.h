@@ -19,7 +19,7 @@
 #include "hpae_audio_format_converter_node.h"
 #include "hpae_gain_node.h"
 #include "hpae_render_effect_node.h"
-#include "hape_loudness_gain_node.h"
+#include "hpae_loudness_gain_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,6 +53,9 @@ public:
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
 private:
     void ConnectEffectNodeToMixerNode();
+    void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
+    void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
+    void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     std::shared_ptr<HpaeMixerNode> mixerNode_;
     std::shared_ptr<HpaeRenderEffectNode> renderEffectNode_ = nullptr;
     std::unordered_map<uint32_t, std::shared_ptr<HpaeAudioFormatConverterNode>> idConverterMap_;

@@ -62,7 +62,6 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -83,7 +82,7 @@ public:
         const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs, bool isConnect) override;
 
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
-    void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
+    void OnNodeStatusUpdate(uint32_t sessionId, IOperation operatihon) override;
     void OnFadeDone(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;

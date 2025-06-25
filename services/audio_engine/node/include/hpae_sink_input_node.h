@@ -56,7 +56,7 @@ public:
     void SetOffloadEnabled(bool offloadEnable);
     bool GetOffloadEnabled();
     int32_t SetLoudnessGain(float loudnessGain);
-    float GetLoundnessGain();
+    float GetLoudnessGain();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();

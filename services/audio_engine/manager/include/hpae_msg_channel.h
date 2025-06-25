@@ -20,7 +20,6 @@
 #include "audio_engine_log.h"
 #include "hpae_pcm_buffer.h"
 
-#define NOT_SUPPORT_RET { return ERR_NOT_SUPPORTED; }
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -162,8 +161,14 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 
 class INodeFormatInfoCallback {
 public:
-    virtual int32_t GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat) NOT_SUPPORT_RET;
-    virtual int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) NOT_SUPPORT_RET;
+    virtual int32_t GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat)
+    {
+        return ERROR_UNSUPPORTED;
+    }
+    virtual int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+    {
+        return ERROR_UNSUPPORTED;
+    }
 };
 
 } // namespace HPAE
