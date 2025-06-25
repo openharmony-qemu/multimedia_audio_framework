@@ -504,8 +504,7 @@ void AudioAdapterManager::SetAudioServerProxy(sptr<IStandardAudioService> gsp)
 
 int32_t AudioAdapterManager::SetAppVolumeDb(int32_t appUid)
 {
-    int32_t volumeLevel =
-        volumeDataMaintainer_.GetAppVolume(appUid) * (GetAppMute(appUid) ? 0 : 1);
+    int32_t volumeLevel = volumeDataMaintainer_.GetAppVolume(appUid);
     float volumeDb = 1.0f;
     volumeDb = CalculateVolumeDbNonlinear(STREAM_APP, currentActiveDevice_.deviceType_, volumeLevel);
     AUDIO_INFO_LOG("volumeDb:%{public}f volume:%{public}d devicetype:%{public}d",
