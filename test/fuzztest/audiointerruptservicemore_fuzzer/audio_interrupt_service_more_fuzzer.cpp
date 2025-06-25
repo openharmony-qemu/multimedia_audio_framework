@@ -125,12 +125,13 @@ AudioPolicyServer* GetServerPtr()
 
 void MoreFuzzTest()
 {
-    GetServerPtr()->interruptService_->GetAudioServerProxy();
-    GetServerPtr()->interruptService_->WriteServiceStartupError();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->GetAudioServerProxy();
+    interruptService->WriteServiceStartupError();
 
     int32_t pid = GetData<int32_t>();
-    GetServerPtr()->interruptService_->OnSessionTimeout(pid);
-    GetServerPtr()->interruptService_->HandleSessionTimeOutEvent(pid);
+    interruptService->OnSessionTimeout(pid);
+    interruptService->HandleSessionTimeOutEvent(pid);
 }
 
 void AddAudioSessionFuzzTest()
@@ -147,11 +148,12 @@ void AddAudioSessionFuzzTest()
     AudioFocusEntry focusEntry;
     focusEntry.isReject = false;
 
-    GetServerPtr()->interruptService_->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
-    GetServerPtr()->interruptService_->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
-    GetServerPtr()->interruptService_->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
-    GetServerPtr()->interruptService_->IsIncomingStreamLowPriority(focusEntry);
-    GetServerPtr()->interruptService_->IsActiveStreamLowPriority(focusEntry);
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    interruptService->IsIncomingStreamLowPriority(focusEntry);
+    interruptService->IsActiveStreamLowPriority(focusEntry);
 }
 
 void AddSetAudioManagerInterruptCallbackFuzzTest()
@@ -161,22 +163,24 @@ void AddSetAudioManagerInterruptCallbackFuzzTest()
     data.WriteBuffer(RAW_DATA, g_dataSize);
     data.RewindRead(0);
     sptr<IRemoteObject> object = data.ReadRemoteObject();
-    GetServerPtr()->interruptService_->GetAudioServerProxy();
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->GetAudioServerProxy();
     if (object == nullptr) {
         return;
     }
-    GetServerPtr()->interruptService_->SetAudioManagerInterruptCallback(object);
+    interruptService->SetAudioManagerInterruptCallback(object);
 
     int32_t zoneId = GetData<int32_t>();
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t uid = GetData<uint32_t>();
-    GetServerPtr()->interruptService_->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
+    interruptService->SetAudioInterruptCallback(zoneId, sessionId, object, uid);
 }
 
 void ClearAudioFocusInfoListOnAccountsChangedFuzzTest()
 {
     int id = GetData<int>();
-    GetServerPtr()->interruptService_->ClearAudioFocusInfoListOnAccountsChanged(id);
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    interruptService->ClearAudioFocusInfoListOnAccountsChanged(id);
 }
 
 typedef void (*TestFuncs[4])();
