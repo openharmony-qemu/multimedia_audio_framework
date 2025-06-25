@@ -646,7 +646,6 @@ void AudioPolicyServer::AddAudioServiceOnStart()
     if (!isFirstAudioServiceStart_) {
         RegisterParamCallback();
         ConnectServiceAdapter();
-        sessionProcessor_.Start();
         LoadEffectLibrary();
         isFirstAudioServiceStart_ = true;
     } else {
@@ -2248,21 +2247,6 @@ void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-}
-
-void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
-{
-    AUDIO_DEBUG_LOG("Removed SessionId: %{public}" PRIu64, sessionID);
-}
-
-void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
-{
-    AUDIO_DEBUG_LOG("Added Session");
-}
-
-void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
-{
-    audioCapturerSession_.CloseWakeUpAudioCapturer();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)
