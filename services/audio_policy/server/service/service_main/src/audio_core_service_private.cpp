@@ -227,7 +227,7 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
         return;
     }
 
-    bool isModemCallRunning = audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL;
+    bool isModemCallRunning = audioSceneManager_.IsInPhoneCallScene();
     if (isModemCallRunning) {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
     } else {

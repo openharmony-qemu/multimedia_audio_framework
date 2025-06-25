@@ -184,5 +184,10 @@ bool AudioSceneManager::IsVoiceCallRelatedScene()
         audioScene_ == AUDIO_SCENE_PHONE_CHAT ||
         audioScene_ == AUDIO_SCENE_VOICE_RINGING;
 }
+
+bool AudioSceneManager::IsInPhoneCallScene()
+{
+    return audioScene_ == AUDIO_SCENE_PHONE_CALL;
+}
 }
 }
