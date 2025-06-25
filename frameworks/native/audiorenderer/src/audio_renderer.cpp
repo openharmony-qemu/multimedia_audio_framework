@@ -2090,6 +2090,11 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         }
     }
     InitSwitchInfo(targetClass, switchInfo);
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
+        switchInfo.params.originalSessionId = 0;
+        switchInfo.sessionId = 0;
+    }
     UpdateFramesWritten();
     switchResult = audioStream_->ReleaseAudioStream(true, true);
     if (restoreInfo.restoreReason != SERVER_DIED) {
@@ -2122,6 +2127,10 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
+        if (restoreInfo.restoreReason == SERVER_DIED) {
+            switchInfo.sessionId = switchInfo.params.originalSessionId;
+            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+        }
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId);
@@ -2493,8 +2502,6 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     AUDIO_INFO_LOG("Restore audio renderer when server died, session %{public}u", sessionID_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
-    audioStream_->SetRestoreInfo(restoreInfo);
-    audioStream_->GetRestoreInfo(restoreInfo);
     // When server died, restore client stream by SwitchToTargetStream. Target stream class is
     // the stream class of the old stream.
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
