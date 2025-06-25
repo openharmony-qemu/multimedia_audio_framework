@@ -30,14 +30,17 @@
 namespace OHOS {
 namespace AudioStandard {
 
-const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t MAX_UINT_VOLUME = 65535;
-const uint32_t DEFAULT_NUM_CHANNEL = STEREO;
-const uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
-constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
+static constexpr uint32_t DEFAULT_SAMPLE_RATE = 48000;
+static constexpr uint32_t MAX_UINT_VOLUME = 65535;
+static constexpr uint32_t DEFAULT_NUM_CHANNEL = STEREO;
+static constexpr uint64_t DEFAULT_NUM_CHANNELLAYOUT = CH_LAYOUT_STEREO;
+static constexpr int32_t CROSS_FADE_FRAME_COUNT = 5;
+static constexpr int32_t DEFAULT_FRAME_LEN = 960;
+static constexpr int32_t MAX_CHANNEL_NUM = 16;
 
 #ifdef SENSOR_ENABLE
 AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracker> headTracker)
+    : effectBuffer_(MAX_CHANNEL_NUM * DEFAULT_FRAME_LEN)
 {
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
 
@@ -67,6 +70,7 @@ AudioEffectChain::AudioEffectChain(std::string scene, std::shared_ptr<HeadTracke
 }
 #else
 AudioEffectChain::AudioEffectChain(std::string scene)
+    : effectBuffer_(MAX_CHANNEL_NUM * DEFAULT_FRAME_LEN)
 {
     const std::unordered_map<AudioEffectMode, std::string> &audioSupportedSceneModes = GetAudioSupportedSceneModes();
 
@@ -341,28 +345,29 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
 
     audioBufIn_.frameLength = frameLen;
     audioBufOut_.frameLength = frameLen;
-    uint32_t count = 0;
     std::lock_guard<std::mutex> lock(reloadMutex_);
-    for (AudioEffectHandle handle : standByEffectHandles_) {
+
+    for (size_t i = 0; i < standByEffectHandles_.size(); ++i) {
 #ifdef SENSOR_ENABLE
         if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
-            (*handle)->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
+            (*standByEffectHandles_[i])->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
         }
 #endif
-        if ((count & 1) == 0) {
+        if (i == 0) {
             audioBufIn_.raw = bufIn;
+        } else {
+            audioBufIn_.raw = effectBuffer_.data();
+        }
+
+        if (i == (standByEffectHandles_.size() - 1)) {
             audioBufOut_.raw = bufOut;
         } else {
-            audioBufOut_.raw = bufIn;
-            audioBufIn_.raw = bufOut;
+            audioBufOut_.raw = effectBuffer_.data();
         }
-        int32_t ret = (*handle)->process(handle, &audioBufIn_, &audioBufOut_);
+
+        int32_t ret = (*standByEffectHandles_[i])->process(standByEffectHandles_[i], &audioBufIn_, &audioBufOut_);
         CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
             sceneType_.c_str(), effectMode_.c_str());
-        count++;
-    }
-    if ((count & 1) == 0) {
-        CHECK_AND_RETURN_LOG(memcpy_s(bufOut, outTotlen, bufIn, outTotlen) == 0, "memcpy error when last copy");
     }
 
     CrossFadeProcess(bufOut, frameLen);
