@@ -40,6 +40,27 @@ int32_t AudioRendererImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 constexpr double MIN_VOLUME_IN_DOUBLE = 0.0;
 constexpr double MAX_VOLUME_IN_DOUBLE = 1.0;
 constexpr uint32_t DEFAULT_ARRAY_SIZE = 0;
+constexpr uint64_t SEC_TO_NANOSECOND = 1000000000;
+
+template <typename T>
+static void UnregisterAudioRendererSingletonCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
+    const std::string &cbName, std::shared_ptr<T> cb,
+    std::function<int32_t(std::shared_ptr<T> callbackPtr,
+        std::shared_ptr<uintptr_t> callback)> removeFunction = nullptr)
+{
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+    if (callback != nullptr) {
+        CHECK_AND_RETURN_LOG(cb->ContainSameJsCallbackInner(cbName, callback), "callback not exists!");
+    }
+    cb->RemoveCallbackReference(cbName, callback);
+
+    if (removeFunction == nullptr) {
+        return;
+    }
+    int32_t ret = removeFunction(cb, callback);
+    CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Unset of Renderer info change call failed");
+    return;
+}
 
 AudioRendererImpl::AudioRendererImpl()
     : audioRenderer_(nullptr), contentType_(OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC),
@@ -127,25 +148,6 @@ AudioRenderer AudioRendererImpl::CreateAudioRendererWrapper(OHOS::AudioStandard:
     return make_holder<AudioRendererImpl, AudioRenderer>(impl);
 }
 
-template <typename T>
-static void UnregisterAudioRendererSingletonCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
-    const std::string &cbName, std::shared_ptr<T> cb,
-    std::function<int32_t(std::shared_ptr<T> callbackPtr,
-        std::shared_ptr<uintptr_t> callback)> removeFunction = nullptr)
-{
-    if (callback != nullptr) {
-        CHECK_AND_RETURN_LOG(cb->ContainSameJsCallbackInner(cbName, callback), "callback not exists!");
-    }
-    cb->RemoveCallbackReference(cbName, callback);
-
-    if (removeFunction == nullptr) {
-        return;
-    }
-    int32_t ret = removeFunction(cb, callback);
-    CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Unset of Renderer info change call failed");
-    return;
-}
-
 void AudioRendererImpl::StartSync()
 {
     if (audioRenderer_ == nullptr) {
@@ -172,9 +174,8 @@ int64_t AudioRendererImpl::GetAudioTimeSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetAudioTime failure!");
         return 0;
     }
-    const uint64_t secToNanosecond = 1000000000;
     uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
-        static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
+        static_cast<uint64_t>(timestamp.time.tv_sec) * SEC_TO_NANOSECOND;
     return static_cast<int64_t>(time);
 }
 

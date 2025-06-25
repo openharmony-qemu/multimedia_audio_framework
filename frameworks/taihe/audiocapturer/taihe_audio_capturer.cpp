@@ -41,6 +41,74 @@ int32_t AudioCapturerImpl::isConstructSuccess_ = OHOS::AudioStandard::SUCCESS;
 
 constexpr int64_t DEFAULT_BUFFER_SIZE = 0;
 constexpr uint32_t DEFAULT_ARRAY_SIZE = 0;
+constexpr uint64_t SEC_TO_NANOSECOND = 1000000000;
+
+template <typename T>
+static void GetCapturerTaiheCallback(std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
+    std::list<std::shared_ptr<TaiheAudioCapturerCallbackInner>> audioCapturerCallbacks, std::shared_ptr<T> *cb)
+{
+    if (audioCapturerCallbacks.size() == 0) {
+        AUDIO_ERR_LOG("no callback to get");
+        return;
+    }
+    for (auto &iter:audioCapturerCallbacks) {
+        if (!iter->CheckIfTargetCallbackName(cbName)) {
+            continue;
+        }
+        std::shared_ptr<T> temp = std::static_pointer_cast<T>(iter);
+        if (temp->ContainSameJsCallbackInner(cbName, callback)) {
+            *cb = temp;
+            return;
+        }
+    }
+}
+
+template <typename T>
+static void UnregisterAudioCapturerSingletonCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
+    const std::string &cbName, std::shared_ptr<T> cb,
+    std::function<int32_t(std::shared_ptr<T> callbackPtr,
+        std::shared_ptr<uintptr_t> callback)> removeFunction = nullptr)
+{
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
+    if (callback != nullptr) {
+        CHECK_AND_RETURN_LOG(cb->ContainSameJsCallbackInner(cbName, callback), "callback not exists!");
+    }
+    cb->RemoveCallbackReference(cbName, callback);
+
+    if (removeFunction == nullptr) {
+        return;
+    }
+    int32_t ret = removeFunction(cb, callback);
+    CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Unset of Capturer callback failed");
+    return;
+}
+
+template <typename T>
+static void UnregisterAudioCapturerCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
+    const std::string &cbName,
+    std::function<int32_t(std::shared_ptr<T> callbackPtr, std::shared_ptr<uintptr_t> callback)> removeFunction,
+    AudioCapturerImpl *taiheCapturer)
+{
+    if (callback != nullptr) {
+        std::shared_ptr<T> cb = nullptr;
+        GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerNapiCallback is null");
+        UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
+        return;
+    }
+
+    auto isPresent = [&callback, &cbName, &removeFunction]
+        (std::shared_ptr<TaiheAudioCapturerCallbackInner> &iter) {
+            if (!iter->CheckIfTargetCallbackName(cbName)) {
+                return false;
+            }
+            std::shared_ptr<T> cb = std::static_pointer_cast<T>(iter);
+            UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
+            return true;
+        };
+    taiheCapturer->audioCapturerCallbacks_.remove_if(isPresent);
+    AUDIO_DEBUG_LOG("UnregisterAudioCapturerCallback success");
+}
 
 AudioCapturerImpl::AudioCapturerImpl()
     : audioCapturer_(nullptr), sourceType_(OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC) {}
@@ -124,72 +192,6 @@ AudioCapturer AudioCapturerImpl::CreateAudioCapturerWrapper(OHOS::AudioStandard:
         return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
     }
     return make_holder<AudioCapturerImpl, AudioCapturer>(impl);
-}
-
-template <typename T>
-static void GetCapturerTaiheCallback(std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
-    std::list<std::shared_ptr<TaiheAudioCapturerCallbackInner>> audioCapturerCallbacks, std::shared_ptr<T> *cb)
-{
-    if (audioCapturerCallbacks.size() == 0) {
-        AUDIO_ERR_LOG("no callback to get");
-        return;
-    }
-    for (auto &iter:audioCapturerCallbacks) {
-        if (!iter->CheckIfTargetCallbackName(cbName)) {
-            continue;
-        }
-        std::shared_ptr<T> temp = std::static_pointer_cast<T>(iter);
-        if (temp->ContainSameJsCallbackInner(cbName, callback)) {
-            *cb = temp;
-            return;
-        }
-    }
-}
-
-template <typename T>
-static void UnregisterAudioCapturerSingletonCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
-    const std::string &cbName, std::shared_ptr<T> cb,
-    std::function<int32_t(std::shared_ptr<T> callbackPtr,
-        std::shared_ptr<uintptr_t> callback)> removeFunction = nullptr)
-{
-    if (callback != nullptr) {
-        CHECK_AND_RETURN_LOG(cb->ContainSameJsCallbackInner(cbName, callback), "callback not exists!");
-    }
-    cb->RemoveCallbackReference(cbName, callback);
-
-    if (removeFunction == nullptr) {
-        return;
-    }
-    int32_t ret = removeFunction(cb, callback);
-    CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "Unset of Capturer callback failed");
-    return;
-}
-
-template<typename T>
-static void UnregisterAudioCapturerCallbackTemplate(std::shared_ptr<uintptr_t> &callback,
-    const std::string &cbName,
-    std::function<int32_t(std::shared_ptr<T> callbackPtr, std::shared_ptr<uintptr_t> callback)> removeFunction,
-    AudioCapturerImpl *taiheCapturer)
-{
-    if (callback != nullptr) {
-        std::shared_ptr<T> cb = nullptr;
-        GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerNapiCallback is null");
-        UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
-        return;
-    }
-
-    auto isPresent = [&callback, &cbName, &removeFunction]
-        (std::shared_ptr<TaiheAudioCapturerCallbackInner> &iter) {
-            if (!iter->CheckIfTargetCallbackName(cbName)) {
-                return false;
-            }
-            std::shared_ptr<T> cb = std::static_pointer_cast<T>(iter);
-            UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
-            return true;
-        };
-    taiheCapturer->audioCapturerCallbacks_.remove_if(isPresent);
-    AUDIO_DEBUG_LOG("UnregisterAudioCapturerCallback success");
 }
 
 void AudioCapturerImpl::UnregisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,
@@ -412,9 +414,8 @@ int64_t AudioCapturerImpl::GetAudioTimeSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetAudioTime failure!");
         return resultTime;
     }
-    const uint64_t secToNanosecond = 1000000000;
     uint64_t time = static_cast<uint64_t>(timestamp.time.tv_nsec) +
-        static_cast<uint64_t>(timestamp.time.tv_sec) * secToNanosecond;
+        static_cast<uint64_t>(timestamp.time.tv_sec) * SEC_TO_NANOSECOND;
     resultTime = static_cast<int64_t>(time);
     return resultTime;
 }
