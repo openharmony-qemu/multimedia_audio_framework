@@ -142,7 +142,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
             AUDIO_ERR_LOG("start fail, remain %{public}d attempt(s)", tryCount);
-            HdiMonitor::GetInstance().ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
+            HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
                 "failed:" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             continue;
@@ -811,7 +811,7 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
     }
 
     if (stamp > MONITOR_WRITE_COST) {
-        HdiMonitor::GetInstance().ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_TIMEOUT,
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_TIMEOUT,
             static_cast<int32_t>(stamp), ("call RenderFrame too long!"));
     }
 

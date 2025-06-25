@@ -919,10 +919,14 @@ void AudioCoreService::RecordSelectDevice(const std::string &selectHistory)
 int32_t AudioCoreService::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    // eg. 2025-06-22-21:12:07:666|Uid: 6700 select output device: LOCAL_DEVICE type:2
-    std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " select output "
-        "device:" + selectedDesc[0]->networkId_ + " type:" + std::to_string(selectedDesc[0]->deviceType_);
-    RecordSelectDevice(selectHistory);
+    if (!selectedDesc.empty() && selectedDesc[0] != nullptr) {
+        // eg. 2025-06-22-21:12:07:666|Uid: 6700 select output device: LOCAL_DEVICE type:2
+        std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " Pid:" +
+            std::to_string(IPCSkeleton::GetCallingPid()) + " select output device:" + selectedDesc[0]->networkId_ +
+            " type:" + std::to_string(selectedDesc[0]->deviceType_);
+        RecordSelectDevice(selectHistory);
+    }
+
     return audioRecoveryDevice_.SelectOutputDevice(audioRendererFilter, selectedDesc);
 }
 
@@ -934,10 +938,14 @@ void AudioCoreService::NotifyDistributedOutputChange(const AudioDeviceDescriptor
 int32_t AudioCoreService::SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    // eg. 2025-06-22-21:12:07:666|Uid: 6700 select input device: LOCAL_DEVICE type:15
-    std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " select input "
-        "device:" + selectedDesc[0]->networkId_ + " type:" + std::to_string(selectedDesc[0]->deviceType_);
-    RecordSelectDevice(selectHistory);
+    if (!selectedDesc.empty() && selectedDesc[0] != nullptr) {
+        // eg. 2025-06-22-21:12:07:666|Uid: 6700 select input device: LOCAL_DEVICE type:15
+        std::string selectHistory = GetTime() + "|Uid:" + std::to_string(IPCSkeleton::GetCallingUid()) + " Pid:" +
+            std::to_string(IPCSkeleton::GetCallingPid()) + " select input device:" + selectedDesc[0]->networkId_ +
+            " type:" + std::to_string(selectedDesc[0]->deviceType_);
+        RecordSelectDevice(selectHistory);
+    }
+
     return audioRecoveryDevice_.SelectInputDevice(audioCapturerFilter, selectedDesc);
 }
 

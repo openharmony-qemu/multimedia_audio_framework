@@ -693,16 +693,7 @@ bool RendererInClientInner::IsMutePlaying()
         return true;
     }
 
-    if (GetMute()) {
-        return true;
-    }
-
-    float volume = GetVolume();
-    if (std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon()) {
-        return true;
-    }
-
-    return false;
+    return mutePlaying_;
 }
 
 void RendererInClientInner::MonitorMutePlay(bool isPlayEnd)
@@ -710,14 +701,13 @@ void RendererInClientInner::MonitorMutePlay(bool isPlayEnd)
     int64_t cur = ClockTime::GetRealNano();
     // judge if write mute
     bool isMutePlay = isPlayEnd ? false : IsMutePlaying();
-
     // not write mute or play end
     if (!isMutePlay) {
         if (mutePlayStartTime_ == 0) {
             return;
         }
         if (cur - mutePlayStartTime_ > MUTE_PLAY_MIN_DURAION) {
-            ReportWriteMuteEvent(static_cast<uint32_t>(cur - mutePlayStartTime_));
+            ReportWriteMuteEvent(cur - mutePlayStartTime_);
             return;
         }
         mutePlayStartTime_ = 0;
@@ -731,22 +721,19 @@ void RendererInClientInner::MonitorMutePlay(bool isPlayEnd)
         return;
     }
     if (cur - mutePlayStartTime_ > MUTE_PLAY_MAX_DURAION) {
-        ReportWriteMuteEvent(static_cast<uint32_t>(cur - mutePlayStartTime_));
+        ReportWriteMuteEvent(cur - mutePlayStartTime_);
     }
-    return;
 }
 
-void RendererInClientInner::ReportWriteMuteEvent(uint32_t mutePlayDuration)
+void RendererInClientInner::ReportWriteMuteEvent(int64_t mutePlayDuration)
 {
-    mutePlayStartTime_ = 0; // reset it to 0 for next record
-
     mutePlayDuration /= AUDIO_US_PER_SECOND; // ns -> ms
     bool isMute = GetMute();
     bool isClientMute = muteCmd_ == CMD_FROM_CLIENT;
     uint8_t muteState = (isClientMute ? 0x0 : 0x4) | (isMute ? 0x1 : 0x0);
 
-    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}d ms, muteState:%{public}d", sessionId_, mutePlayDuration,
-        muteState);
+    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64"d ms, muteState:%{public}d", sessionId_,
+        mutePlayDuration, muteState);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::APP_WRITE_MUTE, Media::MediaMonitor::EventType::FAULT_EVENT);
     bean->Add("UID", appUid_); // for APP_BUNDLE_NAME
@@ -755,9 +742,10 @@ void RendererInClientInner::ReportWriteMuteEvent(uint32_t mutePlayDuration)
     bean->Add("STREAM_VOLUME", clientVolume_);
     bean->Add("MUTE_STATE", static_cast<int32_t>(muteState));
     bean->Add("APP_BACKGROUND_STATE", 0);
-    bean->Add("MUTE_PLAY_START_TIME", static_cast<uint64_t>(mutePlayStartTime_));
+    bean->Add("MUTE_PLAY_START_TIME", static_cast<uint64_t>(mutePlayStartTime_ / AUDIO_US_PER_SECOND));
     bean->Add("MUTE_PLAY_DURATION", static_cast<int32_t>(mutePlayDuration));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    mutePlayStartTime_ = 0; // reset it to 0 for next record
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)

@@ -133,7 +133,7 @@ int32_t AudioRenderSink::Start(void)
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     int32_t ret = audioRender_->Start(audioRender_);
     if (ret != SUCCESS) {
-        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret,
             "local start failed, halName_:" + halName_);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
@@ -278,7 +278,7 @@ int32_t AudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &writeLe
     }
 #endif
     if (stamp > RENDER_FRAME_REPORT_LIMIT) {
-        HdiMonitor::GetInstance().ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_TIMEOUT,
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_TIMEOUT,
             static_cast<int32_t>(stamp), "call RenderFrame too long, " + halName_);
     }
 

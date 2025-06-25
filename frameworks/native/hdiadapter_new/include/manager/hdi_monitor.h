@@ -34,8 +34,7 @@ enum ErrorCase : uint32_t {
 
 class HdiMonitor {
 public:
-    static HdiMonitor &GetInstance(void);
-    void ReportHdiException(HdiType hdiType, ErrorCase errorCase, int32_t errorMsg, const std::string &desc);
+    static void ReportHdiException(HdiType hdiType, ErrorCase errorCase, int32_t errorMsg, const std::string &desc);
 };
 
 } // namespace AudioStandard

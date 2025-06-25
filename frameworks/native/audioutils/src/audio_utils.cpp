@@ -52,12 +52,12 @@ const int32_t YEAR_BASE = 1900;
 const size_t MOCK_INTERVAL = 2000;
 const int32_t DETECTED_ZERO_THRESHOLD = 1;
 const int32_t BLANK_THRESHOLD_MS = 100;
-const int32_t SIGNAL_THRESHOLD = 10;
+const int32_t SIGNAL_THRESHOLD = 32;
 const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 const int64_t PCM_MAYBE_SILENT = 1;
 const int64_t PCM_MAYBE_NOT_SILENT = 5;
 const int32_t SIGNAL_DATA_SIZE = 96;
-const int32_t DECIMAL_EXPONENT = 10;
+const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
@@ -1283,7 +1283,6 @@ bool NearZero(int16_t number)
 
 std::string GetTime()
 {
-    std::string curTime;
     struct timeval tv;
     struct timezone tz;
     struct tm *t;
@@ -1293,20 +1292,17 @@ std::string GetTime()
         return "";
     }
 
-    curTime += std::to_string(YEAR_BASE + t->tm_year);
-    curTime += "-" + (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
-        std::to_string(1 + t->tm_mon));
-    curTime += "-" + (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
-        std::to_string(t->tm_mday));
-    curTime += "-" + (t->tm_hour < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_hour) :
-        std::to_string(t->tm_hour));
-    curTime += ":" + (t->tm_min < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_min) :
-        std::to_string(t->tm_min));
-    curTime += ":" + (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
-        std::to_string(t->tm_sec));
     int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
-    curTime += ":" + (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
-        std::to_string(mSec) : std::to_string(mSec));
+
+    // 2025-06-22-21:22:07:666
+    char timeBuf[TIME_TEXT_LENGTH] = {0};
+    int ret = sprintf_s(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d-%02d:%02d:%02d:%03d", (YEAR_BASE + t->tm_year),
+        t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
+    if (ret < 0) {
+        return "";
+    }
+
+    std::string curTime(timeBuf);
     return curTime;
 }
 

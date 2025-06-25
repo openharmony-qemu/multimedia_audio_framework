@@ -411,11 +411,11 @@ public:
     virtual float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) = 0;
 
     /**
-     * Get volume data connt of sink.
+     * Get volume data count of sink.
      *
      * @param sinkName specified the sink
      *
-     * @return volume data connt.
+     * @return volume data count.
      */
     virtual int64_t GetVolumeDataCount(std::string sinkName) = 0;
 

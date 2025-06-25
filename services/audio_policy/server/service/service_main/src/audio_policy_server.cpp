@@ -464,6 +464,7 @@ bool AudioPolicyServer::IsContinueAddVol()
     if (total < ADD_VOL_RECORD_LIMIT) {
         return false;
     }
+    // continue add vol for 3 times
     int64_t first = volUpHistory_.front();
     volUpHistory_.pop_front();
     if (cur - first >= ADD_VOL_DURATION_LIMTI) {

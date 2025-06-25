@@ -461,6 +461,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
+    if (std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
     clientVolume_ = volume;
 
     return SetInnerVolume(volume);
@@ -522,6 +528,12 @@ int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
     AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
+    if (mute) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
     muteCmd_ = cmdType;
     muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");

@@ -248,7 +248,7 @@ private:
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
     bool IsMutePlaying();
     void MonitorMutePlay(bool isPlayEnd);
-    void ReportWriteMuteEvent(uint32_t mutePlayDuration);
+    void ReportWriteMuteEvent(int64_t mutePlayDuration);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
@@ -406,6 +406,7 @@ private:
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
     int64_t mutePlayStartTime_ = 0; // realtime
+    bool mutePlaying_ = false;
 
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;

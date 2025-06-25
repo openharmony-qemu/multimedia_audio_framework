@@ -26,12 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-HdiMonitor &HdiMonitor::GetInstance(void)
-{
-    static HdiMonitor instance;
-    return instance;
-}
-
 void HdiMonitor::ReportHdiException(HdiType hdiType, ErrorCase errorCase, int32_t errorMsg, const std::string &desc)
 {
     AUDIO_WARNING_LOG("hdiType:%{public}d errorCase:%{public}d errorMsg:%{public}d desc:%{public}s", hdiType,
