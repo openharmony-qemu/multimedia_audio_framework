@@ -2177,6 +2177,23 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_RestoreAudioInLoop_001, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test CheckAndRestoreAudioCapturer API in non-running state
+ * @tc.number: Audio_Capturer_CheckAndRestoreAudioCapturer_001
+ * @tc.desc  : Test stream restore when Capturer has released
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_CheckAndRestoreAudioCapturer_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->abortRestore_ = true;
+    auto res = audioCapturer->CheckAndRestoreAudioCapturer("UT-Test");
+    EXPECT_EQ(SUCCESS, res);
+}
+
+/**
 * @tc.name  : Test SwitchToTargetStream API in non-running state
 * @tc.number: Audio_Capturer_SwitchToTargetStream_001
 * @tc.desc  : Test stream switch when capturer is in PREPARED state
