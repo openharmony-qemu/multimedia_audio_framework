@@ -353,17 +353,8 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
             (*standByEffectHandles_[i])->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
         }
 #endif
-        if (i == 0) {
-            audioBufIn_.raw = bufIn;
-        } else {
-            audioBufIn_.raw = effectBuffer_.data();
-        }
-
-        if (i == (standByEffectHandles_.size() - 1)) {
-            audioBufOut_.raw = bufOut;
-        } else {
-            audioBufOut_.raw = effectBuffer_.data();
-        }
+        audioBufIn_.raw = i == 0 ? bufIn : effectBuffer_.data();
+        audioBufOut_.raw = i == (standByEffectHandles_.size() - 1) ? bufOut : effectBuffer_.data();
 
         int32_t ret = (*standByEffectHandles_[i])->process(standByEffectHandles_[i], &audioBufIn_, &audioBufOut_);
         CHECK_AND_CONTINUE_LOG(ret == 0, "[%{public}s] with mode [%{public}s], either one of libs process fail",
