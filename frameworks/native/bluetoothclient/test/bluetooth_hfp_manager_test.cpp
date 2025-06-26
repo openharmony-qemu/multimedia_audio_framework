@@ -71,6 +71,11 @@ public:
  */
 HWTEST_F(BluetoothHfpManagerTest, BluetoothHfpManagerTest_001, TestSize.Level1)
 {
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetScoState(_))
+        .Times(1)
+        .WillOnce(Return(AudioScoState::DISCONNECTED));
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetActiveDevice())
+        .Times(AnyNumber());
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), SetActiveDevice(_))
         .Times(2)
         .WillOnce(Return(SUCCESS))
