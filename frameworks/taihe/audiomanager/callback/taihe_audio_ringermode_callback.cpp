@@ -18,8 +18,6 @@
 
 #include "taihe_audio_ringermode_callback.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioRingerModeCallback::sWorkerMutex_;
 TaiheAudioRingerModeCallback::TaiheAudioRingerModeCallback(ani_env *env)
@@ -65,28 +63,6 @@ void TaiheAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioR
     mainHandler_->PostTask(task, "OnRingerModeChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-static TaiheAudioEnum::AudioRingMode GetJsAudioRingMode(int32_t ringerMode)
-{
-    TaiheAudioEnum::AudioRingMode result;
-
-    switch (ringerMode) {
-        case OHOS::AudioStandard::RINGER_MODE_SILENT:
-            result = TaiheAudioEnum::RINGER_MODE_SILENT;
-            break;
-        case OHOS::AudioStandard::RINGER_MODE_VIBRATE:
-            result = TaiheAudioEnum::RINGER_MODE_VIBRATE;
-            break;
-        case OHOS::AudioStandard::RINGER_MODE_NORMAL:
-            result = TaiheAudioEnum::RINGER_MODE_NORMAL;
-            break;
-        default:
-            result = TaiheAudioEnum::RINGER_MODE_NORMAL;
-            break;
-    }
-
-    return result;
-}
-
 void TaiheAudioRingerModeCallback::SafeJsCallbackRingModeWork(ani_env *env, AudioRingerModeJsCallback *event)
 {
     std::lock_guard<std::mutex> lock(sWorkerMutex_);
@@ -103,7 +79,7 @@ void TaiheAudioRingerModeCallback::SafeJsCallbackRingModeWork(ani_env *env, Audi
         std::shared_ptr<taihe::callback<void(AudioRingMode)>> cacheCallback =
             std::reinterpret_pointer_cast<taihe::callback<void(AudioRingMode)>>(event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
-        (*cacheCallback)(AudioRingMode(static_cast<AudioRingMode::key_t>(GetJsAudioRingMode(event->ringerMode))));
+        (*cacheCallback)(TaiheAudioEnum::ToTaiheAudioRingMode(event->ringerMode));
     } while (0);
 }
 
@@ -131,11 +107,7 @@ bool TaiheAudioRingerModeCallback::IsSameCallback(std::shared_ptr<uintptr_t> &ca
     if (ringerModeCallback_ == nullptr) {
         return false;
     }
-
-    if (callback == ringerModeCallback_->cb_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, ringerModeCallback_->cb_);
 }
 
 void TaiheAudioRingerModeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)

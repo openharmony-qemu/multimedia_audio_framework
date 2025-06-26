@@ -37,6 +37,7 @@ public:
 
     array<AudioRendererChangeInfo> GetCurrentAudioRendererInfoArraySync();
     array<AudioCapturerChangeInfo> GetCurrentAudioCapturerInfoArraySync();
+    array<AudioEffectMode> GetAudioEffectInfoArraySync(StreamUsage usage);
     bool IsActiveSync(AudioVolumeType volumeType);
     void OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback);
     void OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback);

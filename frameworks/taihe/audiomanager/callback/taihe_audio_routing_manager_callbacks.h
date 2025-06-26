@@ -73,7 +73,6 @@ public:
     void SaveCallbackReference(std::shared_ptr<uintptr_t> &callback);
     void OnPreferredOutputDeviceUpdated(
         const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> &desc) override;
-
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
 private:
     struct AudioActiveOutputDeviceChangeJsCallback {

@@ -48,7 +48,7 @@ public:
     void RemoveAllSelfAudioVolumeChangeCbRef();
     int32_t GetAppVolumeChangeForUidListSize();
     int32_t GetSelfAppVolumeChangeListSize();
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
+
 private:
     struct AudioManagerAppVolumeChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -64,6 +64,7 @@ private:
     std::list<std::pair<std::shared_ptr<AutoRef>, int32_t>> appVolumeChangeForUidList_;
     std::list<std::shared_ptr<AutoRef>> selfAppVolumeChangeList_;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 

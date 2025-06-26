@@ -34,7 +34,6 @@ public:
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
     void OnRendererStateChange(const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioRendererChangeInfo>>
         &audioRendererChangeInfos) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioRendererStateJsCallback {
@@ -50,6 +49,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> rendererStateCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_RENDERER_STATE_CALLBACK_H

@@ -17,6 +17,7 @@
 #define TAIHE_AUDIO_SPATIALIZATION_MANAGER_H
 
 #include "audio_spatialization_manager.h"
+#include "audio_utils.h"
 #include "taihe_audio_spatialization_manager_callback.h"
 
 namespace ANI::Audio {
@@ -26,10 +27,23 @@ using namespace ohos::multimedia::audio;
 class AudioSpatializationManagerImpl {
 public:
     AudioSpatializationManagerImpl();
-    explicit AudioSpatializationManagerImpl(OHOS::AudioStandard::AudioSpatializationManager *obj);
+    explicit AudioSpatializationManagerImpl(std::shared_ptr<AudioSpatializationManagerImpl> obj);
     ~AudioSpatializationManagerImpl();
 
     static AudioSpatializationManager CreateSpatializationManagerWrapper();
+
+    bool IsSpatializationSupported();
+    bool IsSpatializationSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
+    bool IsHeadTrackingSupported();
+    bool IsHeadTrackingSupportedForDevice(AudioDeviceDescriptor deviceDescriptor);
+    void SetSpatializationEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
+    bool IsSpatializationEnabled(AudioDeviceDescriptor deviceDescriptor);
+    bool IsSpatializationEnabledForCurrentDevice();
+    void SetHeadTrackingEnabledSync(AudioDeviceDescriptor deviceDescriptor, bool enabled);
+    bool IsHeadTrackingEnabled(AudioDeviceDescriptor deviceDescriptor);
+    void UpdateSpatialDeviceState(AudioSpatialDeviceState spatialDeviceState);
+    void SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
+    AudioSpatializationSceneType GetSpatializationSceneType();
 
     void OnSpatializationEnabledChangeForCurrentDevice(callback_view<void(bool)> callback);
     void OnSpatializationEnabledChangeForAnyDevice(
@@ -57,7 +71,7 @@ private:
         std::shared_ptr<uintptr_t> &callback, AudioSpatializationManagerImpl *taiheSpatializationManager);
 
     OHOS::AudioStandard::AudioSpatializationManager *audioSpatializationMngr_;
-    
+
     std::shared_ptr<OHOS::AudioStandard::AudioSpatializationEnabledChangeForCurrentDeviceCallback>
         spatializationEnabledChangeForCurrentDeviceCallback_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioSpatializationEnabledChangeCallback>

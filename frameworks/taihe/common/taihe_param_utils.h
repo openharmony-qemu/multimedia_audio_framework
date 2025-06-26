@@ -19,7 +19,13 @@
 #include "ohos.multimedia.audio.proj.hpp"
 #include "ohos.multimedia.audio.impl.hpp"
 #include "taihe/runtime.hpp"
+#if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
+#include <securec.h>
+#else
+#include "ability.h"
+#endif
 #include "audio_stream_manager.h"
+#include "timestamp.h"
 
 namespace ANI::Audio {
 using namespace taihe;
@@ -36,16 +42,13 @@ public:
     static int32_t GetStreamInfo(OHOS::AudioStandard::AudioStreamInfo &audioStreamInfo,
         AudioRendererOptions const &options);
     static int32_t GetCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &audioCapturerInfo,
-        AudioCapturerOptions const &options);
-    static int32_t GetCaptureFilterOptionsVector(OHOS::AudioStandard::CaptureFilterOptions &captureFilterOptions,
-        AudioCapturerOptions const &options);
-    static int32_t GetPlaybackCaptureConfig(OHOS::AudioStandard::AudioPlaybackCaptureConfig &audioCaptureConfig,
-        AudioCapturerOptions const &options);
+        AudioCapturerInfo const &in);
     static int32_t GetCapturerOptions(OHOS::AudioStandard::AudioCapturerOptions *opts,
         AudioCapturerOptions const &options);
     static int32_t GetRendererOptions(OHOS::AudioStandard::AudioRendererOptions *opts,
         AudioRendererOptions const &options);
-
+    static int32_t GetSpatialDeviceState(OHOS::AudioStandard::AudioSpatialDeviceState *spatialDeviceState,
+        AudioSpatialDeviceState in);
     static int32_t GetAudioDeviceDescriptor(
         std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> &selectedAudioDevice,
         bool &argTransFlag, AudioDeviceDescriptor in);
@@ -54,6 +57,8 @@ public:
         bool &argTransFlag, array_view<AudioDeviceDescriptor> in);
     static int32_t GetAudioCapturerInfo(OHOS::AudioStandard::AudioCapturerInfo &capturerInfo,
         AudioCapturerInfo const &in);
+    static int32_t GetAudioCapturerFilter(OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> &audioCapturerFilter,
+        AudioCapturerFilter const &in);
     static int32_t GetAudioRendererFilter(OHOS::sptr<OHOS::AudioStandard::AudioRendererFilter> &audioRendererFilter,
         bool &argTransFlag, AudioRendererFilter const &in);
     static int32_t GetAudioSessionStrategy(OHOS::AudioStandard::AudioSessionStrategy &audioSessionStrategy,
@@ -61,9 +66,8 @@ public:
     static int32_t UniqueEffectPropertyData(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray);
     static int32_t GetEffectPropertyArray(OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray,
         array_view<AudioEffectProperty> in);
-    static int32_t GetAudioInterrupt(OHOS::AudioStandard::AudioInterrupt &audioInterrupt,
-        AudioInterrupt const &interrupt);
-    static InterruptAction SetValueInterruptAction(OHOS::AudioStandard::InterruptAction interruptAction);
+    static int32_t GetExtraParametersSubKV(std::vector<std::pair<std::string, std::string>> &subKV,
+        map_view<string, string> in);
 
     static MicStateChangeEvent SetValueMicStateChange(
         const OHOS::AudioStandard::MicStateChangeEvent &micStateChangeEvent);
@@ -80,19 +84,26 @@ public:
         const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioRendererChangeInfo>> &changeInfos);
     static taihe::array<AudioCapturerChangeInfo> SetCapturerChangeInfos(
         const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioCapturerChangeInfo>> &changeInfos);
+    static taihe::array<AudioEffectMode> SetEffectInfo(
+        const OHOS::AudioStandard::AudioSceneEffectInfo &audioSceneEffectInfo);
     static DeviceBlockStatusInfo SetValueBlockedDeviceAction(
         const OHOS::AudioStandard::MicrophoneBlockedInfo &microphoneBlockedInfo);
+    static taihe::array<VolumeGroupInfo> SetVolumeGroupInfos(
+        const std::vector<OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo>> &volumeGroupInfos);
 
+    static string ToTaiheString(const std::string &src);
     static AudioRendererInfo ToTaiheRendererInfo(const OHOS::AudioStandard::AudioRendererInfo &rendererInfo);
     static AudioCapturerInfo ToTaiheCapturerInfo(const OHOS::AudioStandard::AudioCapturerInfo &capturerInfo);
     static AudioSamplingRate ToTaiheAudioSamplingRate(OHOS::AudioStandard::AudioSamplingRate audioSamplingRate);
     static AudioChannel ToTaiheAudioChannel(OHOS::AudioStandard::AudioChannel audioChannel);
     static AudioSampleFormat ToTaiheAudioSampleFormat(OHOS::AudioStandard::AudioSampleFormat audioSampleFormat);
     static AudioStreamInfo ToTaiheAudioStreamInfo(std::shared_ptr<OHOS::AudioStandard::AudioStreamInfo> &src);
+    static AudioTimestampInfo ToTaiheAudioTimestampInfo(OHOS::AudioStandard::Timestamp &src);
     static AudioRendererChangeInfo ToTaiheAudioRendererChangeInfo(
         const std::shared_ptr<OHOS::AudioStandard::AudioRendererChangeInfo> &src);
     static AudioCapturerChangeInfo ToTaiheAudioCapturerChangeInfo(
         const std::shared_ptr<OHOS::AudioStandard::AudioCapturerChangeInfo> &src);
+    static VolumeGroupInfo ToTaiheVolumeGroupInfo(const OHOS::sptr<OHOS::AudioStandard::VolumeGroupInfo> &src);
     static taihe::array<AudioEffectProperty> ToTaiheEffectPropertyArray(
         const OHOS::AudioStandard::AudioEffectPropertyArrayV3 &propertyArray);
     static taihe::array<taihe::string> ToTaiheArrayString(const std::vector<std::string> &src);
@@ -101,6 +112,7 @@ public:
         const OHOS::AudioStandard::AudioSpatialEnabledStateForDevice &audioSpatialEnabledStateForDevice);
     static AudioSessionDeactivatedEvent ToTaiheSessionDeactivatedEvent(
         const OHOS::AudioStandard::AudioSessionDeactiveEvent &audioSessionDeactiveEvent);
+    static bool IsSameRef(std::shared_ptr<uintptr_t> src, std::shared_ptr<uintptr_t> dst);
 
     template<typename E>
     static std::shared_ptr<uintptr_t> TypeCallback(callback_view<void(E)> callback)

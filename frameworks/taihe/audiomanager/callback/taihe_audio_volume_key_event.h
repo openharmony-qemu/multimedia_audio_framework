@@ -36,8 +36,6 @@ public:
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> cacheCallback);
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-
 private:
     struct AudioVolumeKeyEventJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -53,6 +51,7 @@ private:
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
     static std::mutex sWorkerMutex_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_VOLUME_KEY_EVENT_CALLBACK_H

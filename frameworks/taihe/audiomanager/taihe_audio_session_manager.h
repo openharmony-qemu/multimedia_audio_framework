@@ -42,11 +42,11 @@ public:
     void OffAudioSessionDeactivated(optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback);
 
 private:
-    void RegisterAudioSessionCallback(std::shared_ptr<uintptr_t> &callback,
+    static void RegisterAudioSessionCallback(std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
-    void UnregisterCallbackCarryParam(std::shared_ptr<uintptr_t> &callback,
+    static void UnregisterCallbackCarryParam(std::shared_ptr<uintptr_t> &callback,
         AudioSessionManagerImpl *taiheSessionManager);
-    void UnregisterCallback(AudioSessionManagerImpl *taiheSessionManager);
+    static void UnregisterCallback(AudioSessionManagerImpl *taiheSessionManager);
 
     OHOS::AudioStandard::AudioSessionManager *audioSessionMngr_;
     std::shared_ptr<OHOS::AudioStandard::AudioSessionCallback> audioSessionCallbackTaihe_ = nullptr;

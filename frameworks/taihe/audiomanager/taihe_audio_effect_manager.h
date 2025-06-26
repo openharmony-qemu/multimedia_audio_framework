@@ -36,6 +36,7 @@ public:
 
     static AudioEffectManager CreateEffectManagerWrapper();
 
+    array<AudioEffectProperty> GetSupportedAudioEffectProperty();
     void SetAudioEffectProperty(array_view<AudioEffectProperty> propertyArray);
     array<AudioEffectProperty> GetAudioEffectProperty();
 

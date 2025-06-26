@@ -18,8 +18,6 @@
 
 #include "taihe_audio_manager_callbacks.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioManagerCallback::sWorkerMutex_;
 TaiheAudioManagerCallback::TaiheAudioManagerCallback(ani_env *env)
@@ -36,10 +34,7 @@ TaiheAudioManagerCallback::~TaiheAudioManagerCallback()
 bool TaiheAudioManagerCallback::IsSameCallback(std::shared_ptr<uintptr_t> &callback,
     std::shared_ptr<uintptr_t> &listCallback)
 {
-    if (callback == listCallback) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, listCallback);
 }
 
 void TaiheAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(std::shared_ptr<uintptr_t> &callback)

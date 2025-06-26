@@ -33,7 +33,6 @@ public:
 
     void OnAudioSessionDeactive(const OHOS::AudioStandard::AudioSessionDeactiveEvent &deactiveEvent);
     void SaveCallbackReference(std::shared_ptr<uintptr_t> callback);
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioSessionJsCallback {
@@ -49,6 +48,7 @@ private:
     static std::mutex sWorkerMutex_;
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> audioSessionJsCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 }; // namespace ANI::Audio
 }
 #endif // TAIHE_AUDIO_INTERRUPT_MANAGER_H

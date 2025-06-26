@@ -34,7 +34,6 @@ public:
     void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback);
     void OnCapturerStateChange(const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioCapturerChangeInfo>>
         &audioCapturerChangeInfos) override;
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 private:
     struct AudioCapturerStateJsCallback {
@@ -50,6 +49,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> capturerStateCallback_ = nullptr;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif //TAIHE_AUDIO_CAPTURER_STATE_CALLBACK_H

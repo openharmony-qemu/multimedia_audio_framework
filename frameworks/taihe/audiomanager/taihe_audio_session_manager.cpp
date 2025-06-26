@@ -40,8 +40,8 @@ AudioSessionManager AudioSessionManagerImpl::CreateSessionManagerWrapper()
 {
     auto *audioSessionMngr = OHOS::AudioStandard::AudioSessionManager::GetInstance();
     if (audioSessionMngr == nullptr) {
-        AUDIO_ERR_LOG("Failed to get AudioSessionManager instance");
-        return make_holder<AudioSessionManagerImpl, AudioSessionManager>();
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Failed to get AudioSessionManager instance");
+        return make_holder<AudioSessionManagerImpl, AudioSessionManager>(nullptr);
     }
     return make_holder<AudioSessionManagerImpl, AudioSessionManager>(audioSessionMngr);
 }

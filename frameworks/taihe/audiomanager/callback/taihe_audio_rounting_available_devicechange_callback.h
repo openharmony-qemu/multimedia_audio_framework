@@ -41,8 +41,6 @@ public:
     void RemoveAllRoutinAvailbleDeviceChangeCb();
     int32_t GetRoutingAvailbleDeviceChangeCbListSize();
 
-    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
-
 private:
     struct AudioRountingJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -58,6 +56,7 @@ private:
     ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, OHOS::AudioStandard::AudioDeviceUsage>> availableDeviceChangeCbList_;
+    std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_ROUNTING_AVAILABLE_DEVICECHANGE_CALLBACK_H

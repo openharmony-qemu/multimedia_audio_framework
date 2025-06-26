@@ -18,8 +18,6 @@
 
 #include "taihe_audio_routing_manager_callbacks.h"
 
-using namespace ANI::Audio;
-
 namespace ANI::Audio {
 std::mutex TaiheAudioPreferredInputDeviceChangeCallback::sWorkerMutex_;
 TaiheAudioPreferredInputDeviceChangeCallback::TaiheAudioPreferredInputDeviceChangeCallback(ani_env *env)
@@ -35,10 +33,7 @@ TaiheAudioPreferredInputDeviceChangeCallback::~TaiheAudioPreferredInputDeviceCha
 
 bool TaiheAudioPreferredInputDeviceChangeCallback::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
-    if (callback == callback_->cb_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, callback_->cb_);
 }
 
 void TaiheAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(std::shared_ptr<uintptr_t> &callback)
@@ -121,10 +116,7 @@ TaiheAudioPreferredOutputDeviceChangeCallback::~TaiheAudioPreferredOutputDeviceC
 
 bool TaiheAudioPreferredOutputDeviceChangeCallback::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
-    if (callback == callback_->cb_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, callback_->cb_);
 }
 
 void TaiheAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(std::shared_ptr<uintptr_t> &callback)

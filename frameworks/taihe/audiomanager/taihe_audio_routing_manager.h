@@ -37,68 +37,79 @@ public:
 
     static AudioRoutingManager CreateRoutingManagerWrapper();
 
-    array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage deviceUsage);
+#if !defined(IOS_PLATFORM) && !defined(ANDROID_PLATFORM)
+    bool IsMicBlockDetectionSupportedSync();
+#endif
+    array<AudioDeviceDescriptor> GetDevicesSync(DeviceFlag deviceFlag);
+    array<AudioDeviceDescriptor> GetAvailableDevices(DeviceUsage usage);
+    array<AudioDeviceDescriptor> GetExcludedDevices(DeviceUsage usage);
     array<AudioDeviceDescriptor> GetPreferredOutputDeviceForRendererInfoSync(AudioRendererInfo const &rendererInfo);
     array<AudioDeviceDescriptor> GetPreferredInputDeviceForCapturerInfoSync(AudioCapturerInfo const &capturerInfo);
     void SelectOutputDeviceSync(array_view<AudioDeviceDescriptor> outputAudioDevices);
     void SelectOutputDeviceByFilterSync(AudioRendererFilter const &filter,
         array_view<AudioDeviceDescriptor> outputAudioDevices);
+    array<AudioDeviceDescriptor> GetPreferredInputDeviceByFilter(AudioCapturerFilter const &filter);
+    array<AudioDeviceDescriptor> GetPreferredOutputDeviceByFilter(AudioRendererFilter const &filter);
+    void SelectInputDeviceByFilterSync(AudioCapturerFilter const &filter,
+        array_view<AudioDeviceDescriptor> inputAudioDevices);
     void SelectInputDeviceSync(array_view<AudioDeviceDescriptor> inputAudioDevices);
-    array<AudioDeviceDescriptor> GetDevicesSync(DeviceFlag deviceFlag);
-
+    void SetCommunicationDeviceSync(CommunicationDeviceType deviceType, bool active);
+    bool IsCommunicationDeviceActiveSync(CommunicationDeviceType deviceType);
+    void ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
+    void UnexcludeOutputDevicesWithUsageAndDevices(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices);
+    void UnexcludeOutputDevicesWithUsage(DeviceUsage usage);
     void OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
         callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback);
+    void OnDeviceChange(DeviceFlag deviceFlag, callback_view<void(DeviceChangeAction const&)> callback);
+    void OnAvailableDeviceChange(DeviceUsage deviceUsage, callback_view<void(DeviceChangeAction const&)> callback);
+    void OnPreferOutputDeviceChangeForRendererInfo(AudioRendererInfo const &rendererInfo,
+        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
+    void OffMicBlockStatusChanged(optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback);
+    void OffAvailableDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
     void OffPreferredInputDeviceChangeForCapturerInfo(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>>
         callback);
     void OffPreferOutputDeviceChangeForRendererInfo(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>>
         callback);
     void OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
-    void UnregisterDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void OffAvailableDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback);
-    void UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void RegisterPreferredInputDeviceChangeCallback(AudioCapturerInfo const &capturerInfo, std::shared_ptr<uintptr_t>
-        &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void RegisterPreferredOutputDeviceChangeCallback(AudioRendererInfo const &rendererInfo, std::shared_ptr<uintptr_t>
-        &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void UnregisterPreferredInputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void UnregisterPreferredOutputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void RemovePreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
-    void RemovePreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
-    void RemoveAllPrefInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void RemoveAllPrefOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
-
-    void OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback);
-    void OffMicBlockStatusChanged(optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback);
-    void RegisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    void UnregisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
-        AudioRoutingManagerImpl *audioRoutingManagerImpl);
-
-    void AddPreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
-    void AddPreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
-        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
-    std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> GetTaihePrefInputDeviceChangeCb(
-        std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-    std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> GetTaihePrefOutputDeviceChangeCb(
-        std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
-
-    void OnDeviceChange(DeviceFlag deviceFlag, callback_view<void(DeviceChangeAction const&)> callback);
-    void OnAvailableDeviceChange(DeviceUsage deviceUsage, callback_view<void(DeviceChangeAction const&)> callback);
-    void OnPreferOutputDeviceChangeForRendererInfo(AudioRendererInfo const &rendererInfo,
-        callback_view<void(array_view<AudioDeviceDescriptor>)> callback);
 
 private:
     static void RegisterDeviceChangeCallback(DeviceFlag deviceFlag, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRoutingManagerImpl *taiheRoutingMgr);
     static void RegisterAvaiableDeviceChangeCallback(DeviceUsage deviceUsage, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRoutingManagerImpl *taiheRoutingMgr);
+    static void RegisterPreferredInputDeviceChangeCallback(AudioCapturerInfo const &capturerInfo,
+        std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
+            AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void RegisterPreferredOutputDeviceChangeCallback(AudioRendererInfo const &rendererInfo,
+        std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
+            AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void RegisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void UnregisterDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void UnregisterPreferredInputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void UnregisterPreferredOutputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void UnregisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void AddPreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
+        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
+    static void AddPreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
+        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
+    static std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> GetTaihePrefInputDeviceChangeCb(
+        std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> GetTaihePrefOutputDeviceChangeCb(
+        std::shared_ptr<uintptr_t> &callback, AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void RemovePreferredInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
+        std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb);
+    static void RemovePreferredOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl,
+        std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb);
+    static void RemoveAllPrefInputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
+    static void RemoveAllPrefOutputDeviceChangeCallback(AudioRoutingManagerImpl *audioRoutingManagerImpl);
 
     std::mutex preferredOutputDeviceMutex_;
     std::mutex preferredInputDeviceMutex_;

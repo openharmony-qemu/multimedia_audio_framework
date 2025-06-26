@@ -70,15 +70,6 @@ static const std::map<OHOS::AudioStandard::CapturerState, AudioState> CAPTURER_S
     {OHOS::AudioStandard::CapturerState::CAPTURER_PAUSED, AudioState::key_t::STATE_PAUSED},
 };
 
-static const std::map<OHOS::AudioStandard::ContentType, ContentType> CONTENT_TYPE_TAIHE_MAP = {
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_UNKNOWN, ContentType::key_t::CONTENT_TYPE_UNKNOWN},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_SPEECH, ContentType::key_t::CONTENT_TYPE_SPEECH},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC, ContentType::key_t::CONTENT_TYPE_MUSIC},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_MOVIE, ContentType::key_t::CONTENT_TYPE_MOVIE},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_SONIFICATION, ContentType::key_t::CONTENT_TYPE_SONIFICATION},
-    {OHOS::AudioStandard::ContentType::CONTENT_TYPE_RINGTONE, ContentType::key_t::CONTENT_TYPE_RINGTONE},
-};
-
 static const std::map<OHOS::AudioStandard::StreamUsage, StreamUsage> STREAM_USAGE_TAIHE_MAP = {
     {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_UNKNOWN, StreamUsage::key_t::STREAM_USAGE_UNKNOWN},
     {OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MUSIC, StreamUsage::key_t::STREAM_USAGE_MUSIC},
@@ -108,7 +99,6 @@ static const std::map<OHOS::AudioStandard::SourceType, SourceType> SOURCE_TYPE_T
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_INVALID, SourceType::key_t::SOURCE_TYPE_INVALID},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC, SourceType::key_t::SOURCE_TYPE_MIC},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_RECOGNITION, SourceType::key_t::SOURCE_TYPE_VOICE_RECOGNITION},
-    {OHOS::AudioStandard::SourceType::SOURCE_TYPE_PLAYBACK_CAPTURE, SourceType::key_t::SOURCE_TYPE_PLAYBACK_CAPTURE},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_WAKEUP, SourceType::key_t::SOURCE_TYPE_WAKEUP},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_CALL, SourceType::key_t::SOURCE_TYPE_VOICE_CALL},
     {OHOS::AudioStandard::SourceType::SOURCE_TYPE_VOICE_COMMUNICATION,
@@ -168,6 +158,218 @@ static const std::map<OHOS::AudioStandard::AudioSessionDeactiveReason, AudioSess
     {OHOS::AudioStandard::AudioSessionDeactiveReason::TIMEOUT,
         AudioSessionDeactivatedReason::key_t::DEACTIVATED_TIMEOUT},
 };
+
+static const std::map<OHOS::AudioStandard::ConnectType, ConnectType> CONNECT_TYPE_TAIHE_MAP = {
+    {OHOS::AudioStandard::ConnectType::CONNECT_TYPE_LOCAL, ConnectType::key_t::CONNECT_TYPE_LOCAL},
+    {OHOS::AudioStandard::ConnectType::CONNECT_TYPE_DISTRIBUTED, ConnectType::key_t::CONNECT_TYPE_DISTRIBUTED},
+};
+
+static const std::map<::AsrNoiseSuppressionMode, ohos::multimedia::audio::AsrNoiseSuppressionMode>
+    ASR_NOISE_SUPPRESSION_MODE_TAIHE_MAP = {
+    {::AsrNoiseSuppressionMode::BYPASS, ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::BYPASS},
+    {::AsrNoiseSuppressionMode::STANDARD, ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::STANDARD},
+    {::AsrNoiseSuppressionMode::NEAR_FIELD, ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::NEAR_FIELD},
+    {::AsrNoiseSuppressionMode::FAR_FIELD, ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::FAR_FIELD},
+};
+
+static const std::map<::AsrAecMode, ohos::multimedia::audio::AsrAecMode> ASR_AEC_MODE_TAIHE_MAP = {
+    {::AsrAecMode::BYPASS, ohos::multimedia::audio::AsrAecMode::key_t::BYPASS},
+    {::AsrAecMode::STANDARD, ohos::multimedia::audio::AsrAecMode::key_t::STANDARD},
+};
+
+static const std::map<::AsrWhisperDetectionMode, ohos::multimedia::audio::AsrWhisperDetectionMode>
+    ASR_WHISPER_DETECTION_MODE_TAIHE_MAP = {
+    {::AsrWhisperDetectionMode::BYPASS, ohos::multimedia::audio::AsrWhisperDetectionMode::key_t::BYPASS},
+    {::AsrWhisperDetectionMode::STANDARD, ohos::multimedia::audio::AsrWhisperDetectionMode::key_t::STANDARD},
+};
+
+static const std::map<OHOS::AudioStandard::InterruptForceType, InterruptForceType> INTERRUPT_FORCE_TYPE_TAIHE_MAP = {
+    {OHOS::AudioStandard::InterruptForceType::INTERRUPT_FORCE, InterruptForceType::key_t::INTERRUPT_FORCE},
+    {OHOS::AudioStandard::InterruptForceType::INTERRUPT_SHARE, InterruptForceType::key_t::INTERRUPT_SHARE},
+};
+
+static const std::map<OHOS::AudioStandard::AudioSpatializationSceneType, AudioSpatializationSceneType>
+    AUDIO_SPATIALIZATION_SCENE_TYPE_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT,
+        AudioSpatializationSceneType::key_t::DEFAULT},
+    {OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MUSIC,
+        AudioSpatializationSceneType::key_t::MUSIC},
+    {OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MOVIE,
+        AudioSpatializationSceneType::key_t::MOVIE},
+    {OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_AUDIOBOOK,
+        AudioSpatializationSceneType::key_t::AUDIOBOOK},
+};
+
+static const std::map<TaiheAudioEnum::AudioJsVolumeType, AudioVolumeType> AUDIO_VOLUME_TYPE_TAIHE_MAP = {
+    {TaiheAudioEnum::AudioJsVolumeType::VOICE_CALL, AudioVolumeType::key_t::VOICE_CALL},
+    {TaiheAudioEnum::AudioJsVolumeType::RINGTONE, AudioVolumeType::key_t::RINGTONE},
+    {TaiheAudioEnum::AudioJsVolumeType::MEDIA, AudioVolumeType::key_t::MEDIA},
+    {TaiheAudioEnum::AudioJsVolumeType::ALARM, AudioVolumeType::key_t::ALARM},
+    {TaiheAudioEnum::AudioJsVolumeType::ACCESSIBILITY, AudioVolumeType::key_t::ACCESSIBILITY},
+    {TaiheAudioEnum::AudioJsVolumeType::SYSTEM, AudioVolumeType::key_t::SYSTEM},
+    {TaiheAudioEnum::AudioJsVolumeType::VOICE_ASSISTANT, AudioVolumeType::key_t::VOICE_ASSISTANT},
+    {TaiheAudioEnum::AudioJsVolumeType::ULTRASONIC, AudioVolumeType::key_t::ULTRASONIC},
+    {TaiheAudioEnum::AudioJsVolumeType::ALL, AudioVolumeType::key_t::ALL},
+};
+
+static const std::map<OHOS::AudioStandard::AudioRingerMode, AudioRingMode> AUDIO_RING_MODE_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_SILENT,
+        ohos::multimedia::audio::AudioRingMode::key_t::RINGER_MODE_SILENT},
+    {OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_VIBRATE,
+        ohos::multimedia::audio::AudioRingMode::key_t::RINGER_MODE_VIBRATE},
+    {OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL,
+        ohos::multimedia::audio::AudioRingMode::key_t::RINGER_MODE_NORMAL},
+};
+
+static const std::map<OHOS::AudioStandard::AudioEffectMode, AudioEffectMode> AUDIO_EFFECT_MODE_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioEffectMode::EFFECT_NONE, AudioEffectMode::key_t::EFFECT_NONE},
+    {OHOS::AudioStandard::AudioEffectMode::EFFECT_DEFAULT, AudioEffectMode::key_t::EFFECT_DEFAULT},
+};
+
+static const std::map<OHOS::AudioStandard::AudioStreamDeviceChangeReason, AudioStreamDeviceChangeReason>
+    AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::UNKNOWN, AudioStreamDeviceChangeReason::key_t::REASON_UNKNOWN},
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
+        AudioStreamDeviceChangeReason::key_t::REASON_NEW_DEVICE_AVAILABLE},
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE,
+        AudioStreamDeviceChangeReason::key_t::REASON_OLD_DEVICE_UNAVAILABLE},
+    {OHOS::AudioStandard::AudioStreamDeviceChangeReason::OVERRODE,
+        AudioStreamDeviceChangeReason::key_t::REASON_OVERRODE},
+};
+
+static const std::map<OHOS::AudioStandard::AudioChannelLayout, AudioChannelLayout> AUDIO_CHANNEL_LAYOUT_TAIHE_MAP = {
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_UNKNOWN, AudioChannelLayout::key_t::CH_LAYOUT_UNKNOWN},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_MONO, AudioChannelLayout::key_t::CH_LAYOUT_MONO},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_STEREO, AudioChannelLayout::key_t::CH_LAYOUT_STEREO},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX,
+        AudioChannelLayout::key_t::CH_LAYOUT_STEREO_DOWNMIX},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_2POINT1, AudioChannelLayout::key_t::CH_LAYOUT_2POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_3POINT0, AudioChannelLayout::key_t::CH_LAYOUT_3POINT0},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_SURROUND, AudioChannelLayout::key_t::CH_LAYOUT_SURROUND},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_3POINT1, AudioChannelLayout::key_t::CH_LAYOUT_3POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_4POINT0, AudioChannelLayout::key_t::CH_LAYOUT_4POINT0},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_QUAD, AudioChannelLayout::key_t::CH_LAYOUT_QUAD},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_QUAD_SIDE, AudioChannelLayout::key_t::CH_LAYOUT_QUAD_SIDE},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_2POINT0POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_2POINT0POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER1_ACN_N3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER1_ACN_N3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER1_ACN_SN3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER1_ACN_SN3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER1_FUMA,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER1_FUMA},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_4POINT1, AudioChannelLayout::key_t::CH_LAYOUT_4POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT0, AudioChannelLayout::key_t::CH_LAYOUT_5POINT0},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT0_BACK,
+        AudioChannelLayout::key_t::CH_LAYOUT_5POINT0_BACK},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_2POINT1POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_2POINT1POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_3POINT0POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_3POINT0POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT1, AudioChannelLayout::key_t::CH_LAYOUT_5POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT1_BACK,
+        AudioChannelLayout::key_t::CH_LAYOUT_5POINT1_BACK},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_6POINT0, AudioChannelLayout::key_t::CH_LAYOUT_6POINT0},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HEXAGONAL, AudioChannelLayout::key_t::CH_LAYOUT_HEXAGONAL},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_3POINT1POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_3POINT1POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT,
+        AudioChannelLayout::key_t::CH_LAYOUT_6POINT0_FRONT},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_6POINT1, AudioChannelLayout::key_t::CH_LAYOUT_6POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_6POINT1_BACK,
+        AudioChannelLayout::key_t::CH_LAYOUT_6POINT1_BACK},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT,
+        AudioChannelLayout::key_t::CH_LAYOUT_6POINT1_FRONT},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT0, AudioChannelLayout::key_t::CH_LAYOUT_7POINT0},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT,
+        AudioChannelLayout::key_t::CH_LAYOUT_7POINT0_FRONT},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT1, AudioChannelLayout::key_t::CH_LAYOUT_7POINT1},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_OCTAGONAL, AudioChannelLayout::key_t::CH_LAYOUT_OCTAGONAL},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT1POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_5POINT1POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE,
+        AudioChannelLayout::key_t::CH_LAYOUT_7POINT1_WIDE},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK,
+        AudioChannelLayout::key_t::CH_LAYOUT_7POINT1_WIDE_BACK},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_ACN_N3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER2_ACN_N3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_ACN_SN3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER2_ACN_SN3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER2_FUMA,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER2_FUMA},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_5POINT1POINT4,
+        AudioChannelLayout::key_t::CH_LAYOUT_5POINT1POINT4},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT1POINT2,
+        AudioChannelLayout::key_t::CH_LAYOUT_7POINT1POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_7POINT1POINT4,
+        AudioChannelLayout::key_t::CH_LAYOUT_7POINT1POINT4},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_10POINT2, AudioChannelLayout::key_t::CH_LAYOUT_10POINT2},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_9POINT1POINT4,
+        AudioChannelLayout::key_t::CH_LAYOUT_9POINT1POINT4},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_9POINT1POINT6,
+        AudioChannelLayout::key_t::CH_LAYOUT_9POINT1POINT6},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL,
+        AudioChannelLayout::key_t::CH_LAYOUT_HEXADECAGONAL},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_N3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER3_ACN_N3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_ACN_SN3D,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER3_ACN_SN3D},
+    {OHOS::AudioStandard::AudioChannelLayout::CH_LAYOUT_HOA_ORDER3_FUMA,
+        AudioChannelLayout::key_t::CH_LAYOUT_AMB_ORDER3_FUMA},
+
+};
+
+static const std::map<OHOS::AudioStandard::DeviceBlockStatus, DeviceBlockStatus> DEVICE_BLOCK_STATUS_TAIHE_MAP = {
+    {OHOS::AudioStandard::DeviceBlockStatus::DEVICE_UNBLOCKED, DeviceBlockStatus::key_t::UNBLOCKED},
+    {OHOS::AudioStandard::DeviceBlockStatus::DEVICE_BLOCKED, DeviceBlockStatus::key_t::BLOCKED},
+};
+
+bool TaiheAudioEnum::IsLegalInputArgumentInterruptMode(int32_t interruptMode)
+{
+    bool result = false;
+    switch (interruptMode) {
+        case InterruptMode::SHARE_MODE:
+        case InterruptMode::INDEPENDENT_MODE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode)
+{
+    bool result = false;
+    switch (audioEffectMode) {
+        case OHOS::AudioStandard::AudioEffectMode::EFFECT_NONE:
+        case OHOS::AudioStandard::AudioEffectMode::EFFECT_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentChannelBlendMode(int32_t blendMode)
+{
+    bool result = false;
+    switch (blendMode) {
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_DEFAULT:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_BLEND_LR:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_ALL_LEFT:
+        case OHOS::AudioStandard::ChannelBlendMode::MODE_ALL_RIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
 
 bool TaiheAudioEnum::IsLegalCapturerType(int32_t type)
 {
@@ -296,18 +498,36 @@ OHOS::AudioStandard::AudioRingerMode TaiheAudioEnum::GetNativeAudioRingerMode(in
     return result;
 }
 
+OHOS::AudioStandard::InterruptMode TaiheAudioEnum::GetNativeInterruptMode(int32_t interruptMode)
+{
+    OHOS::AudioStandard::InterruptMode result;
+    switch (interruptMode) {
+        case TaiheAudioEnum::InterruptMode::SHARE_MODE:
+            result = OHOS::AudioStandard::InterruptMode::SHARE_MODE;
+            break;
+        case TaiheAudioEnum::InterruptMode::INDEPENDENT_MODE:
+            result = OHOS::AudioStandard::InterruptMode::INDEPENDENT_MODE;
+            break;
+        default:
+            result = OHOS::AudioStandard::InterruptMode::SHARE_MODE;
+            AUDIO_ERR_LOG("Unknown interruptMode type, Set it to default SHARE_MODE!");
+            break;
+    }
+    return result;
+}
+
 AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType)
 {
-    AudioVolumeType result = static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::MEDIA);
+    AudioVolumeType result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
     switch (volumeType) {
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_CALL:
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_COMMUNICATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_CALL_ASSISTANT:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::VOICE_CALL));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::VOICE_CALL);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_RING:
         case OHOS::AudioStandard::AudioStreamType::STREAM_DTMF:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::RINGTONE));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_MUSIC:
         case OHOS::AudioStandard::AudioStreamType::STREAM_MEDIA:
@@ -317,19 +537,19 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioS
         case OHOS::AudioStandard::AudioStreamType::STREAM_NAVIGATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_CAMCORDER:
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_MESSAGE:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::MEDIA));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_ALARM:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::ALARM));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::ALARM);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_ACCESSIBILITY:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::ACCESSIBILITY));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::ACCESSIBILITY);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_ASSISTANT:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::VOICE_ASSISTANT));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::VOICE_ASSISTANT);
             break;
         case OHOS::AudioStandard::AudioStreamType::STREAM_ULTRASONIC:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::ULTRASONIC));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::ULTRASONIC);
             break;
         default:
             result = GetJsAudioVolumeTypeMore(volumeType);
@@ -340,21 +560,35 @@ AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioS
 
 AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType)
 {
-    AudioVolumeType result = static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::MEDIA);
+    AudioVolumeType result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
     switch (volumeType) {
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM:
         case OHOS::AudioStandard::AudioStreamType::STREAM_NOTIFICATION:
         case OHOS::AudioStandard::AudioStreamType::STREAM_SYSTEM_ENFORCED:
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
             result = (OHOS::system::GetBoolParameter("const.multimedia.audio.fwk_ec.enable", 0))?
-                AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::SYSTEM)) :
-                    AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::RINGTONE));
+                TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::SYSTEM) :
+                    TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
 #else
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::RINGTONE));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::RINGTONE);
 #endif
             break;
         default:
-            result = AudioVolumeType(static_cast<AudioVolumeType::key_t>(TaiheAudioEnum::MEDIA));
+            result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType)
+{
+    bool result = false;
+    switch (communicationDeviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+            result = true;
+            break;
+        default:
+            result = false;
             break;
     }
     return result;
@@ -372,6 +606,61 @@ bool TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(int32_t deviceFlag)
         case OHOS::AudioStandard::DeviceFlag::DISTRIBUTED_INPUT_DEVICES_FLAG:
         case OHOS::AudioStandard::DeviceFlag::ALL_DISTRIBUTED_DEVICES_FLAG:
         case OHOS::AudioStandard::DeviceFlag::ALL_L_D_DEVICES_FLAG:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_EARPIECE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_DEFAULT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag)
+{
+    bool result = false;
+    switch (activeDeviceFlag) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool TaiheAudioEnum::IsLegalInputArgumentDeviceType(int32_t deviceType)
+{
+    bool result = false;
+    switch (deviceType) {
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_EARPIECE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_SPEAKER:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_SCO:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_MIC:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_HEADSET:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_USB_DEVICE:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_FILE_SINK:
+        case OHOS::AudioStandard::DeviceType::DEVICE_TYPE_FILE_SOURCE:
             result = true;
             break;
         default:
@@ -502,6 +791,33 @@ bool TaiheAudioEnum::IsLegalDeviceUsage(int32_t usage)
     return result;
 }
 
+bool TaiheAudioEnum::IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType)
+{
+    bool result = false;
+    switch (spatializationSceneType) {
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_DEFAULT:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MUSIC:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_MOVIE:
+        case OHOS::AudioStandard::AudioSpatializationSceneType::SPATIALIZATION_SCENE_TYPE_AUDIOBOOK:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+ConnectType TaiheAudioEnum::ToTaiheConnectType(OHOS::AudioStandard::ConnectType type)
+{
+    auto iter = CONNECT_TYPE_TAIHE_MAP.find(type);
+    if (iter == CONNECT_TYPE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheDeviceRole invalid type: %{public}d", static_cast<int32_t>(type));
+        return ConnectType::key_t::CONNECT_TYPE_LOCAL;
+    }
+    return iter->second;
+}
+
 DeviceRole TaiheAudioEnum::ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type)
 {
     auto iter = DEVICE_ROLE_TAIHE_MAP.find(type);
@@ -548,16 +864,6 @@ AudioState TaiheAudioEnum::ToTaiheAudioState(OHOS::AudioStandard::CapturerState 
     if (iter == CAPTURER_STATE_TAIHE_MAP.end()) {
         AUDIO_WARNING_LOG("ToTaiheAudioState(Capturer) invalid state: %{public}d", static_cast<int32_t>(state));
         return AudioState::key_t::STATE_INVALID;
-    }
-    return iter->second;
-}
-
-ContentType TaiheAudioEnum::ToTaiheContentType(OHOS::AudioStandard::ContentType type)
-{
-    auto iter = CONTENT_TYPE_TAIHE_MAP.find(type);
-    if (iter == CONTENT_TYPE_TAIHE_MAP.end()) {
-        AUDIO_WARNING_LOG("ToTaiheContentType invalid type: %{public}d", static_cast<int32_t>(type));
-        return ContentType::key_t::CONTENT_TYPE_UNKNOWN;
     }
     return iter->second;
 }
@@ -649,6 +955,121 @@ AudioSessionDeactivatedReason TaiheAudioEnum::ToTaiheSessionDeactiveReason(
     if (iter == AUDIO_SESSION_DEACTIVE_REASON_TAIHE_MAP.end()) {
         AUDIO_WARNING_LOG("ToTaiheSessionDeactiveReason invalid mode: %{public}d", static_cast<int32_t>(reason));
         return AudioSessionDeactivatedReason::key_t::DEACTIVATED_TIMEOUT;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::AsrNoiseSuppressionMode TaiheAudioEnum::ToTaiheAsrNoiseSuppressionMode(
+    ::AsrNoiseSuppressionMode mode)
+{
+    auto iter = ASR_NOISE_SUPPRESSION_MODE_TAIHE_MAP.find(mode);
+    if (iter == ASR_NOISE_SUPPRESSION_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAsrNoiseSuppressionMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        return ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::BYPASS;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::AsrAecMode TaiheAudioEnum::ToTaiheAsrAecMode(::AsrAecMode mode)
+{
+    auto iter = ASR_AEC_MODE_TAIHE_MAP.find(mode);
+    if (iter == ASR_AEC_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAsrAecMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        return ohos::multimedia::audio::AsrAecMode::key_t::BYPASS;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::AsrWhisperDetectionMode TaiheAudioEnum::ToTaiheAsrWhisperDetectionMode(
+    ::AsrWhisperDetectionMode mode)
+{
+    auto iter = ASR_WHISPER_DETECTION_MODE_TAIHE_MAP.find(mode);
+    if (iter == ASR_WHISPER_DETECTION_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAsrWhisperDetectionMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        return ohos::multimedia::audio::AsrWhisperDetectionMode::key_t::BYPASS;
+    }
+    return iter->second;
+}
+
+InterruptForceType TaiheAudioEnum::ToTaiheInterruptForceType(OHOS::AudioStandard::InterruptForceType type)
+{
+    auto iter = INTERRUPT_FORCE_TYPE_TAIHE_MAP.find(type);
+    if (iter == INTERRUPT_FORCE_TYPE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheInterruptForceType invalid mode: %{public}d", static_cast<int32_t>(type));
+        return InterruptForceType::key_t::INTERRUPT_FORCE;
+    }
+    return iter->second;
+}
+
+AudioSpatializationSceneType TaiheAudioEnum::ToTaiheAudioSpatializationSceneType(
+    OHOS::AudioStandard::AudioSpatializationSceneType type)
+{
+    auto iter = AUDIO_SPATIALIZATION_SCENE_TYPE_TAIHE_MAP.find(type);
+    if (iter == AUDIO_SPATIALIZATION_SCENE_TYPE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioSpatializationSceneType invalid mode: %{public}d", static_cast<int32_t>(type));
+        return AudioSpatializationSceneType::key_t::DEFAULT;
+    }
+    return iter->second;
+}
+
+AudioVolumeType TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::AudioJsVolumeType type)
+{
+    auto iter = AUDIO_VOLUME_TYPE_TAIHE_MAP.find(type);
+    if (iter == AUDIO_VOLUME_TYPE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioVolumeType invalid mode: %{public}d", static_cast<int32_t>(type));
+        return AudioVolumeType::key_t::VOICE_CALL;
+    }
+    return iter->second;
+}
+
+ohos::multimedia::audio::AudioRingMode TaiheAudioEnum::ToTaiheAudioRingMode(OHOS::AudioStandard::AudioRingerMode mode)
+{
+    auto iter = AUDIO_RING_MODE_TAIHE_MAP.find(mode);
+    if (iter == AUDIO_RING_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioRingMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        return ohos::multimedia::audio::AudioRingMode::key_t::RINGER_MODE_NORMAL;
+    }
+    return iter->second;
+}
+
+AudioEffectMode TaiheAudioEnum::ToTaiheAudioEffectMode(OHOS::AudioStandard::AudioEffectMode mode)
+{
+    auto iter = AUDIO_EFFECT_MODE_TAIHE_MAP.find(mode);
+    if (iter == AUDIO_EFFECT_MODE_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioEffectMode invalid mode: %{public}d", static_cast<int32_t>(mode));
+        return AudioEffectMode::key_t::EFFECT_NONE;
+    }
+    return iter->second;
+}
+
+AudioStreamDeviceChangeReason TaiheAudioEnum::ToTaiheAudioStreamDeviceChangeReason(
+    OHOS::AudioStandard::AudioStreamDeviceChangeReason reason)
+{
+    auto iter = AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP.find(reason);
+    if (iter == AUDIO_STREAM_DEVICE_CHANGE_REASON_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioStreamDeviceChangeReason invalid mode: %{public}d",
+            static_cast<int32_t>(reason));
+        return AudioStreamDeviceChangeReason::key_t::REASON_UNKNOWN;
+    }
+    return iter->second;
+}
+
+AudioChannelLayout TaiheAudioEnum::ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout)
+{
+    auto iter = AUDIO_CHANNEL_LAYOUT_TAIHE_MAP.find(layout);
+    if (iter == AUDIO_CHANNEL_LAYOUT_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheAudioChannelLayout invalid mode: %{public}d", static_cast<int32_t>(layout));
+        return AudioChannelLayout::key_t::CH_LAYOUT_UNKNOWN;
+    }
+    return iter->second;
+}
+
+DeviceBlockStatus TaiheAudioEnum::ToTaiheDeviceBlockStatus(OHOS::AudioStandard::DeviceBlockStatus status)
+{
+    auto iter = DEVICE_BLOCK_STATUS_TAIHE_MAP.find(status);
+    if (iter == DEVICE_BLOCK_STATUS_TAIHE_MAP.end()) {
+        AUDIO_WARNING_LOG("ToTaiheDeviceBlockStatus invalid mode: %{public}d", static_cast<int32_t>(status));
+        return DeviceBlockStatus::key_t::UNBLOCKED;
     }
     return iter->second;
 }

@@ -62,32 +62,46 @@ public:
         RINGER_MODE_NORMAL
     };
 
+    enum InterruptMode {
+        SHARE_MODE = 0,
+        INDEPENDENT_MODE = 1
+    };
+
     enum AudioDataCallbackResult {
         CALLBACK_RESULT_INVALID = -1,
         CALLBACK_RESULT_VALID = 0,
     };
 
+    static bool IsLegalInputArgumentInterruptMode(int32_t interruptMode);
+    static bool IsLegalInputArgumentAudioEffectMode(int32_t audioEffectMode);
+    static bool IsLegalInputArgumentChannelBlendMode(int32_t blendMode);
     static bool IsLegalCapturerType(int32_t type);
     static bool IsLegalInputArgumentVolType(int32_t inputType);
     static bool IsLegalInputArgumentRingMode(int32_t ringMode);
     static OHOS::AudioStandard::AudioVolumeType GetNativeAudioVolumeType(int32_t volumeType);
     static OHOS::AudioStandard::AudioRingerMode GetNativeAudioRingerMode(int32_t ringMode);
+    static OHOS::AudioStandard::InterruptMode GetNativeInterruptMode(int32_t interruptMode);
     static AudioVolumeType GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType);
     static AudioVolumeType GetJsAudioVolumeTypeMore(OHOS::AudioStandard::AudioStreamType volumeType);
     static bool IsLegalInputArgumentDeviceFlag(int32_t deviceFlag);
+    static bool IsLegalInputArgumentActiveDeviceType(int32_t activeDeviceFlag);
+    static bool IsLegalInputArgumentCommunicationDeviceType(int32_t communicationDeviceType);
+    static bool IsLegalInputArgumentDeviceType(int32_t deviceType);
+    static bool IsLegalInputArgumentDefaultOutputDeviceType(int32_t deviceType);
     static bool IsLegalInputArgumentVolumeAdjustType(int32_t adjustType);
     static bool IsLegalInputArgumentVolumeMode(int32_t volumeMode);
     static bool IsLegalInputArgumentStreamUsage(int32_t streamUsage);
     static bool IsLegalInputArgumentConcurrencyMode(int32_t concurrencyMode);
     static bool IsValidSourceType(int32_t intValue);
     static bool IsLegalDeviceUsage(int32_t usage);
+    static bool IsLegalInputArgumentSpatializationSceneType(int32_t spatializationSceneType);
 
+    static ConnectType ToTaiheConnectType(OHOS::AudioStandard::ConnectType type);
     static DeviceRole ToTaiheDeviceRole(OHOS::AudioStandard::DeviceRole type);
     static DeviceType ToTaiheDeviceType(OHOS::AudioStandard::DeviceType type);
     static AudioEncodingType ToTaiheAudioEncodingType(OHOS::AudioStandard::AudioEncodingType type);
     static AudioState ToTaiheAudioState(OHOS::AudioStandard::RendererState state);
     static AudioState ToTaiheAudioState(OHOS::AudioStandard::CapturerState state);
-    static ContentType ToTaiheContentType(OHOS::AudioStandard::ContentType type);
     static StreamUsage ToTaiheStreamUsage(OHOS::AudioStandard::StreamUsage usage);
     static SourceType ToTaiheSourceType(OHOS::AudioStandard::SourceType type);
     static EffectFlag ToTaiheEffectFlag(OHOS::AudioStandard::EffectFlag flag);
@@ -98,6 +112,21 @@ public:
     static DeviceChangeType ToTaiheDeviceChangeType(OHOS::AudioStandard::DeviceChangeType type);
     static AudioSessionDeactivatedReason ToTaiheSessionDeactiveReason(
         OHOS::AudioStandard::AudioSessionDeactiveReason reason);
+    static ohos::multimedia::audio::AsrNoiseSuppressionMode ToTaiheAsrNoiseSuppressionMode(
+        ::AsrNoiseSuppressionMode mode);
+    static ohos::multimedia::audio::AsrAecMode ToTaiheAsrAecMode(::AsrAecMode mode);
+    static ohos::multimedia::audio::AsrWhisperDetectionMode ToTaiheAsrWhisperDetectionMode(
+        ::AsrWhisperDetectionMode mode);
+    static InterruptForceType ToTaiheInterruptForceType(OHOS::AudioStandard::InterruptForceType type);
+    static AudioSpatializationSceneType ToTaiheAudioSpatializationSceneType(
+        OHOS::AudioStandard::AudioSpatializationSceneType type);
+    static AudioVolumeType ToTaiheAudioVolumeType(TaiheAudioEnum::AudioJsVolumeType type);
+    static ohos::multimedia::audio::AudioRingMode ToTaiheAudioRingMode(OHOS::AudioStandard::AudioRingerMode mode);
+    static AudioEffectMode ToTaiheAudioEffectMode(OHOS::AudioStandard::AudioEffectMode mode);
+    static AudioStreamDeviceChangeReason ToTaiheAudioStreamDeviceChangeReason(
+        OHOS::AudioStandard::AudioStreamDeviceChangeReason reason);
+    static AudioChannelLayout ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout);
+    static DeviceBlockStatus ToTaiheDeviceBlockStatus(OHOS::AudioStandard::DeviceBlockStatus status);
 };
 } // namespace ANI::Audio
 
