@@ -643,7 +643,10 @@ ohos_shared_library("audio_sasdk") {
 }
 
 group("audio_service_test_packages") {
-  deps = [ ":audio_hdi_device_test" ]
+  deps = [
+    ":audio_hdi_device_test",
+    "../../frameworks/native/hdiadapter_new:hdi_monitor_test",
+  ]
 
   if (audio_framework_feature_low_latency) {
     deps += [ ":audio_process_client_test" ]

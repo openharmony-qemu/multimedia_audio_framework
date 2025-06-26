@@ -1376,6 +1376,34 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetVolumeDataCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeDataCount_001
+ * @tc.desc  : Test GetVolumeDataCount interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string testName = "testSink";
+    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    EXPECT_EQ(volueDataCount, 0);
+}
+
+/**
+ * @tc.name  : Test GetVolumeDataCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeDataCount_002
+ * @tc.desc  : Test GetVolumeDataCount interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string testName = "primary";
+    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    EXPECT_EQ(volueDataCount, 0);
+}
+
+/**
  * @tc.name  : Test SetDefaultAdapterEnable API
  * @tc.type  : FUNC
  * @tc.number: SetDefaultAdapterEnable_001

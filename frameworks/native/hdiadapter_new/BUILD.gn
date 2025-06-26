@@ -127,6 +127,36 @@ ohos_shared_library("hdiadapter_new") {
   version_script = "libhdiadapter_new.versionscript"
 }
 
+ohos_executable("hdi_monitor_test") {
+  install_enable = false
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/hdiadapter_new/include/sink",
+  ]
+
+  sources = [ "test/unittest/hdi_monitor_test.cpp" ]
+
+  deps = [ ":hdiadapter_new" ]
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
+}
+
 ohos_unittest("hdiadapter_unit_test") {
   module_out_path = "audio_framework/audio_framework_route/hdiadapter_new"
 
