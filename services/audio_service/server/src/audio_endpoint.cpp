@@ -55,6 +55,7 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
+    static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
@@ -844,6 +845,14 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
 {
     AUDIO_INFO_LOG("StartDevice enter.");
     // how to modify the status while unlinked and started?
+
+    AudioXCollie audioXCollie("AudioEndpointInner::StartDevice", START_DEVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] StartDevice timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    // startDevice and unlinkprocess may called in concurrency
+    std::unique_lock<std::mutex> listLock(listLock_);
+
     CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false, "Endpoint status is %{public}s",
         GetStatusStr(endpointStatus_).c_str());
     endpointStatus_ = STARTING;
@@ -869,13 +878,15 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
 
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
-    endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    endpointStatus_ = IsAnyProcessRunningInner() ? RUNNING : IDEL;
     if (preferredState != INVALID) {
         AUDIO_INFO_LOG("Preferred state: %{public}d, current: %{public}d", preferredState, endpointStatus_.load());
         endpointStatus_ = preferredState;
     }
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
+
+    listLock.unlock();
     return true;
 }
 
@@ -883,7 +894,6 @@ void AudioEndpointInner::HandleStartDeviceFailed()
 {
     AUDIO_ERR_LOG("Start failed for %{public}d, endpoint type %{public}u, process list size: %{public}zu.",
         deviceInfo_.deviceRole_, endpointType_, processList_.size());
-    std::lock_guard<std::mutex> lock(listLock_);
     isStarted_ = false;
     if (processList_.size() <= 1) { // The endpoint only has the current stream
         endpointStatus_ = UNLINKED;
