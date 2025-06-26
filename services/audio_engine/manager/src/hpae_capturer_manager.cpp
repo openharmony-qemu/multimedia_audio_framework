@@ -218,7 +218,8 @@ int32_t HpaeCapturerManager::DestroyStream(uint32_t sessionId)
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, sessionId]() {
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Start not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "release not find sessionId %{public}u", sessionId);
         DeleteOutputSession(sessionId);
     };
     SendRequest(request);
@@ -245,7 +246,7 @@ int32_t HpaeCapturerManager::ConnectProcessClusterWithMicRef(HpaeProcessorType &
 {
     HpaeNodeInfo micRefNodeInfo;
     if (CheckSceneTypeNeedMicRef(sceneType) &&
-        sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF)&&
+        sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF) &&
         sourceInfo_.micRef == HPAE_REF_ON) {
         sceneClusterMap_[sceneType]->ConnectWithInfo(
             sourceInputClusterMap_[HPAE_SOURCE_MICREF], micRefNodeInfo); // micref
@@ -346,7 +347,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Pause");
         AUDIO_INFO_LOG("Pause sessionId %{public}u", sessionId);
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Pause not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_PAUSED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
@@ -360,7 +362,8 @@ int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Flush");
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Flush not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Flush not find sessionId %{public}u", sessionId);
         // to do
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             sessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
@@ -373,7 +376,8 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Drain");
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Drain not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Drain not find sessionId %{public}u", sessionId);
         // to do
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             sessionNodeMap_[sessionId].state, OPERATION_DRAINED);
@@ -404,7 +408,8 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
 {
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Stop");
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "Stop not find sessionId %{public}u", sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Stop not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
