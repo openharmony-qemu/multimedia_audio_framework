@@ -31,6 +31,9 @@ IpcOfflineStreamStub::IpcOfflineStreamStub()
         {CONFIGURE_OFFLINE_EFFECT_CHAIN, [this](MessageParcel &data, MessageParcel &reply) {
             return HandleConfigureOfflineEffectChain(data, reply);
         }},
+        {SET_PARAM_OFFLINE_EFFECT_CHAIN, [this](MessageParcel &data, MessageParcel &reply) {
+            return HandleConfigureOfflineEffectChain(data, reply);
+        }},
         {PROCESS_OFFLINE_EFFECT_CHAIN, [this](MessageParcel &data, MessageParcel &reply) {
             return HandleProcessOfflineEffectChain(data, reply);
         }},
@@ -85,6 +88,18 @@ int32_t IpcOfflineStreamStub::HandleConfigureOfflineEffectChain(MessageParcel &d
     inInfo.Unmarshalling(data);
     outInfo.Unmarshalling(data);
     int32_t ret = ConfigureOfflineEffectChain(inInfo, outInfo);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+#endif
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t IpcOfflineStreamStub::HandleSetParamOfflineEffectChain(MessageParcel &data, MessageParcel &reply)
+{
+#ifdef FEATURE_OFFLINE_EFFECT
+    std::vector<uint8_t> param;
+    data.ReadUInt8Vector(&param);
+    int32_t ret = SetParamOfflineEffectChain(param);
     reply.WriteInt32(ret);
     return AUDIO_OK;
 #endif

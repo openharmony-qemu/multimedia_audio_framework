@@ -171,7 +171,7 @@ int32_t OfflineAudioEffectServerChain::Create()
     return SUCCESS;
 }
 
-int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStreamInfo outInfo)
+int32_t OfflineAudioEffectServerChain::SetConfig(AudioStreamInfo inInfo, AudioStreamInfo outInfo)
 {
     AUDIO_INFO_LOG("%{public}d %{public}d %{public}hhu %{public}hhu %{public}" PRIu64 " InStreamInfo set",
         inInfo.samplingRate, inInfo.encoding, inInfo.format, inInfo.channels, inInfo.channelLayout);
@@ -195,6 +195,19 @@ int32_t OfflineAudioEffectServerChain::SetParam(AudioStreamInfo inInfo, AudioStr
         MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
     outBufferSize_ = static_cast<uint32_t>(GetByteSize(outInfo.format)) * outInfo.samplingRate * outInfo.channels *
         MAX_TIME_INTERVAL_MS / AUDIO_MS_PER_SECOND;
+    return SUCCESS;
+}
+
+int32_t OfflineAudioEffectServerChain::SetParam(std::vector<uint8_t> &param)
+{
+    std::lock_guard<std::mutex> lock(offlineChainMutex_);
+    int8_t output[MAX_REPLY_LEN] = {0};
+    uint32_t replyLen = MAX_REPLY_LEN;
+    CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "set param failed, controller is nullptr");
+    int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_PARAM,
+        reinterpret_cast<int8_t *>(param.data()), param.size(), output, &replyLen);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
+        "%{public}s effect COMMAND_SET_PARAM failed, errCode is %{public}d", chainName_.c_str(), ret);
     return SUCCESS;
 }
 

@@ -36,6 +36,8 @@ public:
 
     virtual int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) = 0;
 
+    virtual int32_t SetParamOfflineEffectChain(std::vector<uint8_t> &param) = 0;
+
     virtual int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) = 0;
 
@@ -51,6 +53,7 @@ public:
         PREPARE_OFFLINE_EFFECT_CHAIN,
         PROCESS_OFFLINE_EFFECT_CHAIN,
         RELEASE_OFFLINE_EFFECT_CHAIN,
+        SET_PARAM_OFFLINE_EFFECT_CHAIN,
         IPC_OFFLINE_STREAM_MAX_MSG
     };
     DECLARE_INTERFACE_DESCRIPTOR(u"IpcOfflineStream");

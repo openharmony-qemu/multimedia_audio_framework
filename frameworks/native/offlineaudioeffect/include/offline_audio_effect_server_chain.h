@@ -55,7 +55,8 @@ public:
     static int32_t GetOfflineAudioEffectChains(vector<string> &chainNamesVector);
 
     int32_t Create();
-    int32_t SetParam(AudioStreamInfo inInfo, AudioStreamInfo outInfo);
+    int32_t SetConfig(AudioStreamInfo inInfo, AudioStreamInfo outInfo);
+    int32_t SetParam(std::vector<uint8_t> &param);
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize);
     int32_t Prepare(const shared_ptr<AudioSharedMemory> &bufferIn, const shared_ptr<AudioSharedMemory> &bufferOut);
     int32_t Process(uint32_t inBufferSize, uint32_t outBufferSize);

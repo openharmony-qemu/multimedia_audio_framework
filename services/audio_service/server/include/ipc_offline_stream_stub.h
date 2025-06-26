@@ -33,6 +33,7 @@ private:
 
     int32_t HandleCreateOfflineEffectChain(MessageParcel &data, MessageParcel &reply);
     int32_t HandleConfigureOfflineEffectChain(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleSetParamOfflineEffectChain(MessageParcel &data, MessageParcel &reply);
     int32_t HandlePrepareOfflineEffectChain(MessageParcel &data, MessageParcel &reply);
     int32_t HandleProcessOfflineEffectChain(MessageParcel &data, MessageParcel &reply);
     int32_t HandleReleaseOfflineEffectChain(MessageParcel &data, MessageParcel &reply);

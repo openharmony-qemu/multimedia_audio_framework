@@ -200,6 +200,21 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
     }
 }
 
+/**
+ * @tc.name  : Test OfflineAudioEffectChain API
+ * @tc.type  : FUNC
+ * @tc.number: OfflineAudioEffectChain_004
+ * @tc.desc  : Test OfflineAudioEffectChain interface.
+ */
+HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_004, TestSize.Level1)
+{
+    if (chain_) {
+        std::vector<uint8_t> param(0);
+        int32_t ret = chain_->SetParam(param);
+        EXPECT_EQ(ERROR, chain_->SetParam(param));
+    }
+}
+
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, Create_001, TestSize.Level1)
 {
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
@@ -208,7 +223,7 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Create_001, TestSize.Level1)
     EXPECT_EQ(ret, ERROR);
 }
 
-HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetConfig_001, TestSize.Level1)
 {
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
         std::make_shared<OfflineAudioEffectServerChain>("test");
@@ -223,7 +238,16 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
     outInfo.encoding = AudioEncodingType::ENCODING_PCM;
     outInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     outInfo.channels = AudioChannel::MONO;
-    int32_t ret = serverChain->SetParam(inInfo, outInfo);
+    int32_t ret = serverChain->SetConfig(inInfo, outInfo);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(OfflineAudioEffectServerChainUnitTest, SetParam_001, TestSize.Level1)
+{
+    std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
+        std::make_shared<OfflineAudioEffectServerChain>("test");
+    std::vector<uint8_t> param(0);
+    int32_t ret = serverChain->SetParam(param);
     EXPECT_EQ(ret, ERROR);
 }
 
