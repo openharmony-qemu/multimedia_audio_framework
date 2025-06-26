@@ -494,7 +494,7 @@ void AudioPolicyProxyFiveFuzzTest()
 
     AudioStreamInfo streamInfo;
     audioPolicyProxy->IsFastPlaybackSupported(streamInfo, STREAM_USAGE_MUSIC);
-    audioPolicyProxy->IsFastRecordingSupported(streamInfo, SOURCE_TYPE_MIC); 
+    audioPolicyProxy->IsFastRecordingSupported(streamInfo, SOURCE_TYPE_MIC);
 }
 
 void AudioPolicyZoneFuzzTest()
