@@ -350,7 +350,7 @@ void AudioEffectChain::ApplyEffectChain(float *bufIn, float *bufOut, uint32_t fr
     for (size_t i = 0; i < standByEffectHandles_.size(); ++i) {
 #ifdef SENSOR_ENABLE
         if ((!procInfo.btOffloadEnabled) && procInfo.headTrackingEnabled) {
-            (*standByEffectHandles_[i])->command(handle, EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
+            (*standByEffectHandles_[i])->command(standByEffectHandles_[i], EFFECT_CMD_SET_IMU, &cmdInfo, &replyInfo);
         }
 #endif
         audioBufIn_.raw = i == 0 ? bufIn : effectBuffer_.data();
