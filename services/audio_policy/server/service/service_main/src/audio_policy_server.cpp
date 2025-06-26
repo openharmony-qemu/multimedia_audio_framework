@@ -3810,7 +3810,7 @@ int32_t AudioPolicyServer::SetCallDeviceActive(InternalDeviceType deviceType, bo
             AUDIO_ERR_LOG("device=%{public}d not supported", deviceType);
             return ERR_NOT_SUPPORTED;
     }
-    return audioDeviceLock_.SetCallDeviceActive(deviceType, active, address, uid);
+    return eventEntry_->SetCallDeviceActive(deviceType, active, address, uid);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioPolicyServer::GetActiveBluetoothDevice()
@@ -4419,13 +4419,13 @@ bool AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &captur
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStarting(sessionID);
-    audioDeviceLock_.TriggerFetchDevice();
+    TriggerFetchDevice();
 }
 
 void AudioPolicyServer::UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID)
 {
     audioDeviceManager_.UpdateDefaultOutputDeviceWhenStopping(sessionID);
-    audioDeviceLock_.TriggerFetchDevice();
+    TriggerFetchDevice();
 }
 
 bool AudioPolicyServer::IsAcousticEchoCancelerSupported(SourceType sourceType)

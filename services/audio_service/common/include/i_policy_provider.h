@@ -100,8 +100,6 @@ public:
 
     virtual int32_t NotifyCapturerRemoved(uint64_t sessionId) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) = 0;
 #ifdef HAS_FEATURE_INNERCAPTURER
     virtual int32_t LoadModernInnerCapSink(int32_t innerCapId) = 0;
 

@@ -161,10 +161,11 @@ void HandleActiveBtFuzzTest()
     std::string macAddress = "test";
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->SetCurrentOutputDeviceType(deviceType);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    deviceType = DeviceTypeVec[deviceTypeCount];
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->HandleActiveBt(deviceType, macAddress);
 }
 
@@ -172,10 +173,11 @@ void HandleNegtiveBtFuzzTest()
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    audioActiveDevice->SetCurrentOutputDeviceType(deviceType);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    deviceType = DeviceTypeVec[deviceTypeCount];
+    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->HandleNegtiveBt(deviceType);
 }
 

@@ -293,7 +293,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlag_002, TestSize.Le
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     DeviceType deviceType = DEVICE_TYPE_NONE;
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     std::vector<Bluetooth::A2dpStreamInfo> allActiveSessions;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     a2dpStreamInfo.sessionId = 1;
@@ -359,7 +361,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_001, TestSi
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
@@ -378,7 +382,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_002, TestSi
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP_IN);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
     int32_t result = manager->HandleA2dpDeviceOutOffload(a2dpOffloadFlag);
     EXPECT_EQ(result, SUCCESS);
@@ -396,7 +402,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceInOffload_001, TestSiz
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
     manager->SetA2dpOffloadFlag(A2DP_OFFLOAD);
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->audioA2dpOffloadFlag_.SetCurrentOffloadConnectedState(CONNECTION_STATUS_CONNECTED);
     int32_t result = manager->HandleA2dpDeviceInOffload(A2DP_OFFLOAD);
     EXPECT_EQ(result, SUCCESS);
@@ -427,7 +435,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_001, T
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_SPEAKER);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(manager, nullptr);
 }
@@ -442,7 +452,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, GetA2dpOffloadCodecAndSendToDsp_002, T
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_SPEAKER);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
     EXPECT_NE(manager, nullptr);
 }
@@ -841,7 +853,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_001, TestSize.Level
     manager->Init();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_NONE;
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_NONE);
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->audioConfigManager_.isUpdateRouteSupported_ = true;
     int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
@@ -859,7 +871,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_002, TestSize.Level
     manager->Init();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
+    AudioDeviceDescriptor preDeviceDescriptor;
+    preDeviceDescriptor.deviceType_ = DEVICE_TYPE_EARPIECE;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(preDeviceDescriptor);
     manager->audioConfigManager_.isUpdateRouteSupported_ = false;
     int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, SUCCESS);
@@ -877,7 +891,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleActiveDevice_003, TestSize.Level
     manager->Init();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_EARPIECE);
+    AudioDeviceDescriptor preDeviceDescriptor;
+    preDeviceDescriptor.deviceType_ = DEVICE_TYPE_EARPIECE;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(preDeviceDescriptor);
     manager->audioConfigManager_.isUpdateRouteSupported_ = false;
     int32_t result = manager->HandleActiveDevice(deviceDescriptor);
     EXPECT_EQ(result, SUCCESS);
