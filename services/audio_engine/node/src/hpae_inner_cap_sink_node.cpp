@@ -207,6 +207,16 @@ void HpaeInnerCapSinkNode::SetMute(bool isMute)
         AUDIO_INFO_LOG("SetMute: %{public}d", isMute);
     }
 }
+
+size_t HpaeInnerCapSinkNode::GetPreOutNum()
+{
+    return inputStream_.GetPreOutputNum();
+}
+
+size_t HpaeInnerCapSinkNode::GetOutputPortNum()
+{
+    return outputStream_.GetInputNum();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

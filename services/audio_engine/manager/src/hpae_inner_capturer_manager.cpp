@@ -77,9 +77,6 @@ void HpaeInnerCapturerManager::AddSingleNodeToSinkInner(const std::shared_ptr<Hp
         AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
         ConnectRendererInputSessionInner(sessionId);
-        if (hpaeInnerCapSinkNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
-            hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
-        }
     }
 }
 
@@ -305,12 +302,12 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
             ConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_RUNNING);
-            if (hpaeInnerCapSinkNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
-                hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
-            }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StartCapturerStream");
             AUDIO_INFO_LOG("StartCapCapturerStream sessionId %{public}u", sessionId);
+            if (hpaeInnerCapSinkNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
+                hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
+            }
             ConnectCapturerOutputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_RUNNING);
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
@@ -491,7 +488,8 @@ bool HpaeInnerCapturerManager::IsInit()
 bool HpaeInnerCapturerManager::IsRunning(void)
 {
     if (hpaeInnerCapSinkNode_ != nullptr && hpaeSignalProcessThread_ != nullptr) {
-        return hpaeSignalProcessThread_->IsRunning();
+        return hpaeSignalProcessThread_->IsRunning() && hpaeInnerCapSinkNode_->GetSinkState() ==
+            STREAM_MANAGER_RUNNING;
     } else {
         return false;
     }
@@ -725,7 +723,9 @@ int32_t HpaeInnerCapturerManager::DeleteCapturerInputSessionInner(uint32_t sessi
     // no need process cluster
     sourceOutputNodeMap_[sessionId]->DisConnect(capturerAudioFormatConverterNodeMap_[sessionId]);
     capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
-    // if need disconnect all?
+    if (hpaeInnerCapSinkNode_->GetOutputPortNum() == 0) {
+        hpaeInnerCapSinkNode_->InnerCapturerSinkStop();
+    }
     return SUCCESS;
 }
 
@@ -796,7 +796,9 @@ int32_t HpaeInnerCapturerManager::DisConnectCapturerInputSessionInner(uint32_t s
         "sessionId %{public}u can not find in capturerAudioFormatConverterNodeMap_.", sessionId);
     sourceOutputNodeMap_[sessionId]->DisConnect(capturerAudioFormatConverterNodeMap_[sessionId]);
     capturerAudioFormatConverterNodeMap_[sessionId]->DisConnect(hpaeInnerCapSinkNode_);
-    // todo if need disconnect render
+    if (hpaeInnerCapSinkNode_->GetOutputPortNum() == 0) {
+        hpaeInnerCapSinkNode_->InnerCapturerSinkStop();
+    }
     return SUCCESS;
 }
 
@@ -828,7 +830,13 @@ uint32_t HpaeInnerCapturerManager::GetSinkInputNodeIdInner()
 
 std::string HpaeInnerCapturerManager::GetThreadName()
 {
-    return sinkInfo_.deviceName;
+    std::string threadName = "InnerCap";
+    for (auto ch : sinkInfo_.deviceName) {
+        if (ch >= '0' && ch <= '9') {
+            threadName += ch;
+        }
+    }
+    return threadName;
 }
 
 std::string HpaeInnerCapturerManager::GetDeviceHDFDumpInfo()
