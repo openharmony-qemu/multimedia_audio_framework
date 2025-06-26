@@ -137,8 +137,9 @@ void AudioPolicyServiceEnhanceOneFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     GetServerPtr()->audioPolicyService_.NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
 
-    DeviceType deviceType = GetData<DeviceType>();
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDeviceType(deviceType);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = GetData<DeviceType>();
+    GetServerPtr()->audioPolicyService_.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
 }
 
 void AudioPolicyServiceEnhanceTwoFuzzTest()
@@ -199,21 +200,6 @@ void AudioPolicyServiceEnhanceThreeFuzzTest()
     uint32_t audioPinInt = GetData<uint32_t>() % audioPin.size();
     AudioPin pin = audioPin[audioPinInt];
     AudioPolicyUtils::GetInstance().GetDeviceRole(pin);
-
-    std::vector<DeviceType> DeviceTypeVec = {
-        DEVICE_TYPE_EARPIECE,
-        DEVICE_TYPE_SPEAKER,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-        DEVICE_TYPE_FILE_SINK,
-        DEVICE_TYPE_USB_ARM_HEADSET,
-        DEVICE_TYPE_WIRED_HEADSET,
-        DEVICE_TYPE_USB_HEADSET,
-        DEVICE_TYPE_BLUETOOTH_SCO,
-        DEVICE_TYPE_DEFAULT,
-    };
-    uint32_t deviceTypeInt = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeInt];
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
 }
 
 void AudioPolicyServiceEnhanceFourFuzzTest()

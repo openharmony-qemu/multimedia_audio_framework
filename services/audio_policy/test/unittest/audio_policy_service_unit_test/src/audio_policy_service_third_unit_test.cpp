@@ -1797,36 +1797,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSiz
     EXPECT_EQ(ret, false);
 }
 
-/**
- * @tc.name  : Test SetDefaultOutputDevice.
- * @tc.number: SetDefaultOutputDevice_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    DeviceType deviceType = DEVICE_TYPE_MAX;
-    uint32_t sessionID = 0;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    bool isRunning = false;
-
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = false;
-    auto ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_NE(ret, SUCCESS);
-
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
-
-    isRunning = true;
-    streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 #ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetInputDevice.

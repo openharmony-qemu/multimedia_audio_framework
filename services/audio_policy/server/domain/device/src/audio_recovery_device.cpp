@@ -297,10 +297,8 @@ int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
     if (selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
-        ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
+        Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
+        Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
     } else {
         int32_t result = SleAudioDeviceManager::GetInstance().ConnectAllowedProfiles(selectedDesc->macAddress_);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Nearlink connect failed");

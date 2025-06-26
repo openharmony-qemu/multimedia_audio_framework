@@ -561,41 +561,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test UpdateInputDeviceInfo.
- * @tc.number: UpdateInputDeviceInfo_001
- * @tc.desc  : Test UpdateInputDeviceInfo interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateInputDeviceInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_MIC);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_FILE_SOURCE);
-
-    deviceType = DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_USB_HEADSET);
-
-    deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-
-    deviceType = (DeviceType)777;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-}
-
-
-/**
  * @tc.name  : Test GetDeviceTypeFromPin.
  * @tc.number: GetDeviceTypeFromPin_001
  * @tc.desc  : Test GetDeviceTypeFromPin interfaces.

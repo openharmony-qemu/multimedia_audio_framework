@@ -49,8 +49,6 @@ public:
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 

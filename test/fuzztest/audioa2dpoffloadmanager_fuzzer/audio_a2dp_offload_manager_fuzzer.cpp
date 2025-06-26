@@ -177,7 +177,9 @@ void HandleA2dpDeviceOutOffloadFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState a2dpOffloadFlag = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     AudioDeviceDescriptor deviceDescriptor;
@@ -192,7 +194,9 @@ void HandleA2dpDeviceInOffloadFuzzTest()
     constexpr int32_t stateCount = static_cast<int32_t>(BluetoothOffloadState::A2DP_OFFLOAD) + 1;
     BluetoothOffloadState state = static_cast<BluetoothOffloadState>(GetData<int32_t>() % stateCount);
     manager->SetA2dpOffloadFlag(state);
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_BLUETOOTH_A2DP);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     constexpr int32_t currentOffloadConnectionStateCount =
         static_cast<int32_t>(A2dpOffloadConnectionState::CONNECTION_STATUS_TIMEOUT) + 1;
     A2dpOffloadConnectionState currentOffloadConnectionState =
@@ -208,7 +212,9 @@ void GetA2dpOffloadCodecAndSendToDspFuzzTest()
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_SPEAKER);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->GetA2dpOffloadCodecAndSendToDsp();
 }
 
@@ -274,7 +280,9 @@ void HandleActiveDeviceFuzzTest()
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    manager->audioActiveDevice_.SetCurrentOutputDeviceType(DeviceTypeVec[deviceTypeCount]);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     manager->audioConfigManager_.isUpdateRouteSupported_ = GetData<uint32_t>() % NUM_2;
     manager->HandleActiveDevice(deviceDescriptor);
 }

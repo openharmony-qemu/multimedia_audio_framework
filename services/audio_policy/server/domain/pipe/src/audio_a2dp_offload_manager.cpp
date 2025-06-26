@@ -460,7 +460,6 @@ int32_t AudioA2dpOffloadManager::HandleActiveDevice(AudioDeviceDescriptor device
         audioIOHandleMap_.GetSourceIOHandle(deviceDescriptor.deviceType_);
         audioPolicyManager_.SuspendAudioDevice(sourcePortName, false);
     }
-    audioActiveDevice_.UpdateInputDeviceInfo(deviceDescriptor.deviceType_);
 
     return SUCCESS;
 }
