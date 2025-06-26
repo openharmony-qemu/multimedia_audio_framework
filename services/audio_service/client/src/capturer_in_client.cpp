@@ -691,8 +691,7 @@ float CapturerInClientInner::GetLoudnessGain()
     return 0.0;
 }
 
-
-int32_t CapturerInClientInner::SetMute(bool mute)
+int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;

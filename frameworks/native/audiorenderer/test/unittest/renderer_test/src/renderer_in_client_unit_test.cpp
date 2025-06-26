@@ -380,11 +380,11 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_007, TestSize.Level1
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     bool mute = true;
-    auto ret = ptrRendererInClientInner->SetMute(mute);
+    auto ret = ptrRendererInClientInner->SetMute(mute, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(ret, SUCCESS);
 
     mute = false;
-    ret = ptrRendererInClientInner->SetMute(mute);
+    ret = ptrRendererInClientInner->SetMute(mute, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(ret, ERROR);
 }
 

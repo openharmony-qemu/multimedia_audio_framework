@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_monitor.h"
 
 using namespace testing::ext;
 
@@ -73,6 +74,8 @@ HWTEST_F(ManagerUnitTest, ManagerUnitTest_001, TestSize.Level1)
     EXPECT_NE(deviceManager, nullptr);
 
     manager.ReleaseDeviceManager(HDI_DEVICE_MANAGER_TYPE_NUM);
+
+    HdiMonitor::ReportHdiException(LOCAL, CALL_HDI_FAILED, 0, "test report hdi");
 }
 
 } // namespace AudioStandard

@@ -18,6 +18,7 @@
 #endif
 
 #include "adapter/bluetooth_device_manager.h"
+#include "manager/hdi_monitor.h"
 #include <dlfcn.h>
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
@@ -161,6 +162,8 @@ void *BluetoothDeviceManager::CreateRender(const std::string &adapterName, void 
     int32_t ret = wrapper->adapter_->CreateRender(wrapper->adapter_, bluetoothDeviceDesc, bluetoothParam, &render);
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create render fail, id:" + std::to_string(hdiRenderId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -203,6 +206,8 @@ void *BluetoothDeviceManager::CreateCapture(const std::string &adapterName, void
     int32_t ret = wrapper->adapter_->CreateCapture(wrapper->adapter_, bluetoothDeviceDesc, bluetoothParam, &capture);
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create capture fail, id:" + std::to_string(hdiCaptureId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -251,6 +256,10 @@ void BluetoothDeviceManager::InitAudioManager(void)
     getAudioManager = (struct AudioProxyManager *(*)())(dlsym(handle_, "GetAudioProxyManagerFuncs"));
     CHECK_AND_RETURN_LOG(getAudioManager != nullptr, "dlsym fail");
     audioManager_ = getAudioManager();
+    if (audioManager_ == nullptr) {
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, 0,
+            "get hdi manager fail");
+    }
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "get audio manager fail");
     AUDIO_INFO_LOG("init audio manager succ");
 }

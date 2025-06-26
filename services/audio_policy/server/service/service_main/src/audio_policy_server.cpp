@@ -67,6 +67,9 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
     STREAM_NOTIFICATION
 };
 
+const size_t ADD_VOL_RECORD_LIMIT = 3;
+const int64_t ADD_VOL_DURATION_LIMTI = 800000000; // 800ms
+const int64_t SILENT_FRAME_LIMIT = -50;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
 constexpr int32_t PARAMS_RENDER_STATE_NUM = 2;
@@ -453,8 +456,72 @@ int32_t AudioPolicyServer::RegisterVolumeKeyEvents(const int32_t keyType)
     return keySubId;
 }
 
+bool AudioPolicyServer::IsContinueAddVol()
+{
+    int64_t cur = ClockTime::GetRealNano();
+    // record history
+    std::lock_guard<std::mutex> lock(volUpHistoryMutex_);
+    volUpHistory_.push_back(cur);
+    size_t total = volUpHistory_.size();
+    if (total < ADD_VOL_RECORD_LIMIT) {
+        return false;
+    }
+    // continue add vol for 3 times
+    int64_t first = volUpHistory_.front();
+    volUpHistory_.pop_front();
+    if (cur - first >= ADD_VOL_DURATION_LIMTI) {
+        return false;
+    }
+    AUDIO_WARNING_LOG("add vol %{public}zu times, first %{public}" PRId64" cur %{public}" PRId64 "", total, first, cur);
+    return true;
+}
+
+void AudioPolicyServer::TrigerMuteCheck()
+{
+    Trace trace("AudioPolicyServer::TrigerMuteCheck");
+    // get current running sessionId
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos = {};
+    streamCollector_.GetRunningRendererInfos(infos);
+    if (infos.size() == 0) {
+        AUDIO_WARNING_LOG("no running stream");
+        return;
+    }
+
+    std::set<std::string> deviceClassSet;
+    for (auto info : infos) {
+        if (info->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+            continue;
+        }
+        auto deviceType = info->outputDeviceInfo.getType();
+        std::string sinkPortName = audioPolicyUtils_.GetSinkPortName(deviceType, info->rendererInfo.pipeType);
+        std::string deviceClass = audioPolicyUtils_.GetOutputDeviceClassBySinkPortName(sinkPortName);
+        deviceClassSet.insert(deviceClass);
+        AUDIO_INFO_LOG("uid-%{public}d pid-%{public}d:[%{public}d] running with pipe %{public}d on sink:%{public}s",
+            info->clientUID, info->clientPid, info->sessionId, info->rendererInfo.pipeType, deviceClass.c_str());
+    }
+
+    bool mutePlay = false;
+    for (auto deviceClass : deviceClassSet) {
+        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(deviceClass);
+        if (volumeDataCount < SILENT_FRAME_LIMIT) {
+            mutePlay = true;
+            AUDIO_WARNING_LOG("sink:%{public}s running with mute data", deviceClass.c_str());
+        }
+    }
+
+    if (mutePlay) {
+        // print volume info
+        AudioStreamType streamInFocus = GetStreamInFocus();
+        int32_t volume = GetSystemVolumeLevelInternal(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
+        AUDIO_WARNING_LOG("StreamInFocus is [%{public}d], volume is %{public}d", streamInFocus, volume);
+    }
+}
+
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
 {
+    if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && IsContinueAddVol()) {
+        std::thread([this]() { TrigerMuteCheck(); }).detach();
+    }
     int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
     AUDIO_INFO_LOG("zoneId is %{public}d", zoneId);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
@@ -2400,6 +2467,7 @@ void AudioPolicyServer::InitPolicyDumpMap()
     dumpFuncMap[u"-ms"] = &AudioPolicyServer::MicrophoneMuteInfoDump;
     dumpFuncMap[u"-as"] = &AudioPolicyServer::AudioSessionInfoDump;
     dumpFuncMap[u"-ap"] = &AudioPolicyServer::AudioPipeManagerDump;
+    dumpFuncMap[u"-sd"] = &AudioPolicyServer::SelectDeviceDump;
 }
 
 void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
@@ -2415,6 +2483,7 @@ void AudioPolicyServer::PolicyDataDump(std::string &dumpString)
     MicrophoneMuteInfoDump(dumpString);
     AudioSessionInfoDump(dumpString);
     AudioPipeManagerDump(dumpString);
+    SelectDeviceDump(dumpString);
 }
 
 void AudioPolicyServer::AudioDevicesDump(std::string &dumpString)
@@ -2471,6 +2540,13 @@ void AudioPolicyServer::AudioPipeManagerDump(std::string &dumpString)
 {
     if (coreService_ != nullptr) {
         coreService_->DumpPipeManager(dumpString);
+    }
+}
+
+void AudioPolicyServer::SelectDeviceDump(std::string &dumpString)
+{
+    if (coreService_ != nullptr) {
+        coreService_->DumpSelectHistory(dumpString);
     }
 }
 

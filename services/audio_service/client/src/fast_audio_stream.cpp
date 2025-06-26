@@ -346,8 +346,9 @@ float FastAudioStream::GetLoudnessGain()
     return 0.0;
 }
 
-int32_t FastAudioStream::SetMute(bool mute)
+int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
 {
+    muteCmd_ = cmdType;
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
     int32_t ret = processClient_->SetMute(mute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMute error.");

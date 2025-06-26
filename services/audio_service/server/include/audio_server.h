@@ -173,6 +173,8 @@ public:
 
     float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
 
+    int64_t GetVolumeDataCount(std::string sinkName) override;
+
     void ResetAudioEndpoint() override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
