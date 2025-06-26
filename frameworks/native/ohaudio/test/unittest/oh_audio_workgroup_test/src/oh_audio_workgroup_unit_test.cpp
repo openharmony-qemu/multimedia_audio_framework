@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +14,7 @@ dd
  */
 
 #include "oh_audio_workgroup_unit_test.h"
+#include <pthread.h>
 
 using namespace testing::ext;
 
@@ -35,17 +35,13 @@ void OHAudioWorkgroupUnitTest::TearDown(void) { }
  * @tc.desc  : Test OHAudioWorkgroup.
  */
 
-HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
-{
-    OH_AudioResourceManager *audioResourceManager = nullptr;
-    OH_AudioCommon_Result result = OH_AudioManager_GetAudioResourceManager(&audioResourceManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioResourceManager, nullptr);
-    int32_t test_tid = gettid();
-    OH_AudioWorkgroup *audioWorkgroup = nullptr;
-    result = OH_AudioResourceManager_CreateWorkgroup(audioResourceManager, "testAudioGroup", &audioWorkgroup);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    EXPECT_NE(audioWorkgroup, nullptr);
+OH_AudioResourceManager *audioResourceManager = nullptr;
+OH_AudioCommon_Result result;
+OH_AudioWorkgroup *audioWorkgroup = nullptr;
+
+void* test_func(void* arg) {
+    pthread_t my_tid = pthread_self();
+    pid_t test_tid = (unsigned long)my_tid;
 
     result = OH_AudioWorkgroup_AddCurrentThread(audioWorkgroup, &test_tid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
@@ -56,6 +52,24 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
     result = OH_AudioWorkgroup_RemoveThread(audioWorkgroup, test_tid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioResourceManager_ReleaseWorkgroup(audioResourceManager, audioWorkgroup);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+
+    return NULL;
+}
+
+HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
+{
+    
+    result = OH_AudioManager_GetAudioResourceManager(&audioResourceManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioResourceManager, nullptr);
+    result = OH_AudioResourceManager_CreateWorkgroup(audioResourceManager, "testAudioGroup", &audioWorkgroup);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+    EXPECT_NE(audioWorkgroup, nullptr);
+
+    pthread_t tid;
+    pthread_create(&tid, NULL, test_func, NULL);
+    pthread_join(tid, NULL);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
 
