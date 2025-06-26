@@ -98,9 +98,11 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     }
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_->CheckAndReopenHandlde();
-    inputPcmDumper_->Dump((int8_t *)(srcData),
-        inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
+    if (inputPcmDumper_ != nullptr) {
+        inputPcmDumper_->CheckAndReopenHandle();
+        inputPcmDumper_->Dump((int8_t *)(srcData),
+            inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
+    }
 #endif
     converterOutput_.Reset();
     tmpOutBuf_.Reset();
@@ -119,10 +121,11 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     }
 
 #ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_->CheckAndReopenHandlde();
-    outputPcmDumper_->Dump((int8_t *)dstData,
-        converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
-    
+    if (outputPcmDumper_ != nullptr) {
+        outputPcmDumper_->CheckAndReopenHandle();
+        outputPcmDumper_->Dump((int8_t *)dstData,
+            converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
+    }
 #endif
     converterOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &converterOutput_;
@@ -171,8 +174,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     
     // if there exists an effect node, converter node output is common input of loudness node and effectnode
     // Must check loudness node input before effectnode
-    nodeFormatInfoCallback_->GetSessionNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
-    nodeFormatInfoCallback_->GetEffectNodeInputFormatInfo(basicFormat);
+    nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
 
     uint32_t numChannels = basicFormat.audioChannelInfo.numChannels;
     AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;

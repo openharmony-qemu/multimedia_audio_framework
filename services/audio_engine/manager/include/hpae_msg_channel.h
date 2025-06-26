@@ -161,14 +161,7 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 
 class INodeFormatInfoCallback {
 public:
-    virtual int32_t GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat)
-    {
-        return ERROR_UNSUPPORTED;
-    }
-    virtual int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
-    {
-        return ERROR_UNSUPPORTED;
-    }
+    virtual int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) = 0;
 };
 
 } // namespace HPAE

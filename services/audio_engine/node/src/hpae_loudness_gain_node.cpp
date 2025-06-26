@@ -96,9 +96,9 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->CheckAndReopenHandlde();
-        inputPcmDumper_->Dump((int8_t *)(loudnessGainOutput_.GetPcmDataBuffer()),
-            loudnessGainOutput_.GetChannelCount() * sizeof(float) * loudnessGainOutput_.GetFrameLen());
+        inputPcmDumper_->CheckAndReopenHandle();
+        inputPcmDumper_->Dump((int8_t *)(inputs[0]->GetPcmDataBuffer()),
+            inputs[0]->GetChannelCount() * sizeof(float) * inputs[0]->GetFrameLen());
     }
 #endif
 
@@ -120,7 +120,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_ != nullptr) {
-        outputPcmDumper_->CheckAndReopenHandlde();
+        outputPcmDumper_->CheckAndReopenHandle();
         outputPcmDumper_->Dump((int8_t *)(loudnessGainOutput_.GetPcmDataBuffer()),
             loudnessGainOutput_.GetChannelCount() * sizeof(float) * loudnessGainOutput_.GetFrameLen());
     }

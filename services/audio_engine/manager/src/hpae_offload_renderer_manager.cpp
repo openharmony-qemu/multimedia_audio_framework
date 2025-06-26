@@ -132,10 +132,6 @@ void HpaeOffloadRendererManager::DeleteInputSession()
         sinkOutputNode_->StopStream();
     }
     sinkInputNode_ = nullptr;
-    converterForLoudness_ = nullptr;
-    loudnessGainNode_ = nullptr;
-    converterForOutput_ = nullptr;
-    sinkInputNode_ = nullptr;
 }
 
 int32_t HpaeOffloadRendererManager::DestroyStream(uint32_t sessionId)
@@ -223,6 +219,9 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     OnNotifyDfxNodeInfo(false, loudnessGainNode_->GetNodeId(), converterForLoudness_->GetNodeInfo());
     OnNotifyDfxNodeInfo(false, converterForOutput_->GetNodeId(), loudnessGainNode_->GetNodeInfo());
     OnNotifyDfxNodeInfo(false, sinkOutputNode_->GetNodeId(), converterForOutput_->GetNodeInfo());
+    converterForLoudness_ = nullptr;
+    loudnessGainNode_ = nullptr;
+    converterForOutput_ = nullptr;
     return SUCCESS;
 }
 
@@ -702,7 +701,7 @@ int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float lo
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
+int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR, "sessionId %{public}d, gainNode does not exist", sessionId);
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR, "loudness node id %{public}d,"

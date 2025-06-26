@@ -150,7 +150,7 @@ void HpaeSinkInputNode::DoProcess()
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
-        inputPcmDumper_->CheckAndReopenHandlde();
+        inputPcmDumper_->CheckAndReopenHandle();
         inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
             GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }

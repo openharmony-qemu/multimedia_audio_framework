@@ -23,7 +23,7 @@ public:
     explicit HpaePcmDumper(const std::string &filename);
     ~HpaePcmDumper();
     int32_t Dump(const int8_t *buffer, int32_t length);
-    bool CheckAndReopenHandlde();
+    bool CheckAndReopenHandle();
 private:
     FILE *dumpFile_ = nullptr;
     std::string filename_;

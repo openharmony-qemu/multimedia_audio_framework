@@ -91,7 +91,7 @@ public:
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
-    int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+    int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();

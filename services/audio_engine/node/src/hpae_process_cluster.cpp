@@ -257,7 +257,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idConverterMap_[sessionId]->DisConnect(preNode);
         idLoudnessGainNodeMap_[sessionId]->DisConnect(idConverterMap_[sessionId]);
         idGainMap_[sessionId]->DisConnect(idLoudnessGainNodeMap_[sessionId]);
-        mixerNode_->DisConnect(idConverterMap_[sessionId]);
+        mixerNode_->DisConnect(idGainMap_[sessionId]);
         idConverterMap_.erase(sessionId);
         idLoudnessGainNodeMap_.erase(sessionId);
         idGainMap_.erase(sessionId);
@@ -274,26 +274,23 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
     }
 }
 
-int32_t HpaeProcessCluster::GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat)
+int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
 {
-    CHECK_AND_RETURN_RET(renderEffectNode_, ERR_READ_FAILED);
-    return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
-}
-
-int32_t HpaeProcessCluster::GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)
-{
-    std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode = SafeGetMap(idLoudnessGainNodeMap_, sessionId);
-    CHECK_AND_RETURN_RET(loudnessGainNode, ERR_READ_FAILED);
-    if (loudnessGainNode->IsLoudnessAlgoOn()) { // loundess algorithm needs 48k sample rate
-        basicFormat.rate = SAMPLE_RATE_48000;
-        basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
-        basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
-    } else { // if there is no algorithm, stream into loudness node should may need to be sinkoutput format
-        basicFormat.rate = sinkInfo_.samplingRate;
-        basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
-        basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+    // get format input from loundness gain node
+    if (SafeGetMap(idLoudnessGainNodeMap_, sessionId)) {
+        if (loudnessGainNode->IsLoudnessAlgoOn()) { // loundess algorithm needs 48k sample rate
+            basicFormat.rate = SAMPLE_RATE_48000;
+            basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
+            basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+        } else { // if there is no algorithm, stream into loudness node should may need to be sinkoutput format
+            basicFormat.rate = sinkInfo_.samplingRate;
+            basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
+            basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);
+        }
     }
-    return SUCCESS;
+    // get format info from effect node
+    CHECK_AND_RETURN_RET(renderEffectNode_, SUCCESS);
+    return renderEffectNode_->GetExpectedInputChannelInfo(basicFormat);
 }
 
 int32_t HpaeProcessCluster::AudioRendererCreate(HpaeNodeInfo &nodeInfo)

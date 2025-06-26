@@ -43,8 +43,7 @@ public:
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
-    int32_t GetEffectNodeInputFormatInfo(AudioBasicFormat &basicFormat) override;
-    int32_t GetSessionNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
+    int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) override;
     std::shared_ptr<HpaeGainNode> GetGainNodeById(uint32_t id) const;
     std::shared_ptr<HpaeAudioFormatConverterNode> GetConverterNodeById(uint32_t id) const;
     void SetConnectedFlag(bool flag);
