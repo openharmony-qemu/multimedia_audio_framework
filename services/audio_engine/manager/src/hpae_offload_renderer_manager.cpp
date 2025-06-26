@@ -160,7 +160,13 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
         return SUCCESS;
     }
 
-    HpaeNodeInfo nodeInfo = sinkInputNode_->GetNodeInfo();
+    HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
+    outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
+    outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
+    sinkOutputNode_->SetNodeInfo(outputNodeInfo);
+
+    // if there's no loudness algo, audio format will be converted to output device format at the first converternode
+    HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
     nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
     converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(
@@ -170,15 +176,11 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
 
     nodeInfo.nodeName = "HpaeLoudnessGainNode";
     nodeInfo.nodeId = OnGetNodeId();
-    std::shared_ptr<HpaeLoudnessGainNode> loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
     loudnessGainNode_->Connect(converterForLoudness_);
     loudnessGainNode_->SetLoudnessGain(sinkInputNode_->GetLoudnessGain());
 
     // single stream manager
-    HpaeNodeInfo outputNodeInfo = sinkOutputNode_->GetNodeInfo();
-    outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
-    outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
-    sinkOutputNode_->SetNodeInfo(outputNodeInfo);
     outputNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
     outputNodeInfo.nodeId = OnGetNodeId();
     converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
@@ -212,6 +214,7 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
 
 int32_t HpaeOffloadRendererManager::DisConnectInputSession()
 {
+    CHECK_AND_RETURN_RET_LOG(converterForLoudness_, SUCCESS, "No need to disconnect");
     converterForLoudness_->DisConnect(sinkInputNode_);
     loudnessGainNode_->DisConnect(converterForLoudness_);
     converterForOutput_->DisConnect(loudnessGainNode_);

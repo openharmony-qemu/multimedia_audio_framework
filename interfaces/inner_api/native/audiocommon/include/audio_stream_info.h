@@ -628,8 +628,8 @@ struct AudioChannelInfo {
 struct AudioBasicFormat {
     AudioChannelInfo audioChannelInfo;
     AudioSampleFormat format = INVALID_WIDTH;
-    AudioSamplingRate rate = 0;
-}
+    AudioSamplingRate rate = SAMPLE_RATE_48000;
+};
 
 } // namespace AudioStandard
 } // namespace OHOS

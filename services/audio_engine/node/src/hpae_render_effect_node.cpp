@@ -142,6 +142,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_) {
+        inputPcmDumper_->CheckAndReopenHandlde();
         inputPcmDumper_->Dump((int8_t *)inputs[0]->GetPcmDataBuffer(),
             inputs[0]->GetFrameLen() * sizeof(float) * inputs[0]->GetChannelCount());
     }
@@ -163,6 +164,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
+        outputPcmDumper_->CheckAndReopenHandlde();
         outputPcmDumper_->Dump((int8_t *)effectOutput_.GetPcmDataBuffer(),
             effectOutput_.GetFrameLen() * sizeof(float) * effectOutput_.GetChannelCount());
     }

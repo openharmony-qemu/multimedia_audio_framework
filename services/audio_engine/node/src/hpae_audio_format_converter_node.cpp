@@ -98,10 +98,9 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     }
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
 #ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->Dump((int8_t *)(srcData),
-            inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
-    }
+    inputPcmDumper_->CheckAndReopenHandlde();
+    inputPcmDumper_->Dump((int8_t *)(srcData),
+        inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
 #endif
     converterOutput_.Reset();
     tmpOutBuf_.Reset();
@@ -120,10 +119,10 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     }
 
 #ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_ != nullptr) {
-        outputPcmDumper_->Dump((int8_t *)dstData,
-            converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
-    }
+    outputPcmDumper_->CheckAndReopenHandlde();
+    outputPcmDumper_->Dump((int8_t *)dstData,
+        converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
+    
 #endif
     converterOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &converterOutput_;
