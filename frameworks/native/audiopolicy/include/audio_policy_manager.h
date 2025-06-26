@@ -551,6 +551,9 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
+    int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
+
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,

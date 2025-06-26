@@ -235,6 +235,10 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid) override;
+
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;

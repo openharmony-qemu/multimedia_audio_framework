@@ -56,7 +56,6 @@ static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
-static constexpr const char* VKB_BUNDLE_NAME = ".hmos.virtualkeyboard";
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -321,7 +320,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
+            ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return nullptr;
     }
@@ -2728,15 +2728,6 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
     audioHapticsSyncId_ = audioHapticsSyncId;
 }
 
-bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
-{
-    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
-    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
-        && bundleName.find(VKB_BUNDLE_NAME) != std::string::npos;
-    AUDIO_INFO_LOG("Check VKB flags:%{public}d, isVKB:%{public}s", flags, isVirtualKeyboard ? "T" : "F");
-    return isVirtualKeyboard;
-}
-
 int32_t AudioRendererPrivate::StopDataCallback()
 {
     std::lock_guard<std::shared_mutex> lock(rendererMutex_);
@@ -2749,6 +2740,18 @@ int32_t AudioRendererPrivate::StopDataCallback()
 void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
 {
     audioInterrupt_.callbackType = callbackType;
+}
+
+bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+{
+    bool isBundleNameValid = false;
+    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
+    int32_t ret = AudioSystemManager::GetInstance()->CheckVKBInfo(bundleName, isBundleNameValid);
+    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && isBundleNameValid;
+    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,
+        isVirtualKeyboard ? "T" : "F");
+    return isVirtualKeyboard;
 }
 
 int32_t AudioRendererPrivate::CheckAudioRenderer(std::string callingFunc)

@@ -88,6 +88,9 @@ public:
     void SetAudioSceneOwnerUid(const int32_t uid);
     
     int32_t SetAudioClientInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    
+    int32_t SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback);
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
 
 private:
     AudioStateManager() {};
@@ -110,6 +113,7 @@ private:
     int32_t ownerUid_ = 0;
     std::list<std::map<int32_t, std::shared_ptr<AudioDeviceDescriptor>>> forcedDeviceMapList_;
     sptr<IStandardAudioPolicyManagerListener> audioClientInfoMgrCallback_;
+    sptr<IStandardAudioPolicyManagerListener> audioVKBInfoMgrCallback_;
     void RemoveForcedDeviceMapData(int32_t uid);
 };
 

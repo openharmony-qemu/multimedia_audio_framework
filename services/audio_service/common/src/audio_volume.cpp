@@ -218,17 +218,18 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
     }
 }
 
-void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage,
-    int32_t uid, int32_t pid, bool isSystemApp, int32_t mode, bool isVKB)
+void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
 {
-    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", streamVolumeParams.sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto it = streamVolume_.find(sessionId);
+    auto it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it == streamVolume_.end()) {
-        streamVolume_.emplace(sessionId,
-            StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB));
+        streamVolume_.emplace(streamVolumeParams.sessionId,
+            StreamVolume(streamVolumeParams.sessionId, streamVolumeParams.streamType, streamVolumeParams.streamUsage,
+                streamVolumeParams.uid, streamVolumeParams.pid, streamVolumeParams.isSystemApp, streamVolumeParams.mode,
+                streamVolumeParams.isVKB));
     } else {
-        AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", sessionId);
+        AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", streamVolumeParams.sessionId);
     }
 }
 

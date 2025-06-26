@@ -443,7 +443,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
  *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
  */
@@ -454,7 +453,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
 
@@ -477,7 +475,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
  *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
  */
@@ -488,7 +485,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
 
@@ -511,7 +507,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
  *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
  *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
  *             rendererOptions.streamInfo.channels = MONO;
- *             rendererOptions.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
  *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
  *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
  */
@@ -522,7 +517,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
-    rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
 

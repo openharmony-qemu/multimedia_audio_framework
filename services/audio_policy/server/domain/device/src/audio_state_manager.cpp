@@ -284,6 +284,23 @@ int32_t AudioStateManager::SetAudioClientInfoMgrCallback(sptr<IStandardAudioPoli
     return 0;
 }
 
+int32_t AudioStateManager::SetAudioVKBInfoMgrCallback(sptr<IStandardAudioPolicyManagerListener> &callback)
+{
+    audioVKBInfoMgrCallback_ = callback;
+    AUDIO_INFO_LOG("VKB audioVKBInfoMgrCallback_ is nullptr:%{public}s",
+        audioVKBInfoMgrCallback_ == nullptr ? "T" : "F");
+    return 0;
+}
+
+int32_t AudioStateManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    if (audioVKBInfoMgrCallback_ != nullptr) {
+        isValid = audioVKBInfoMgrCallback_->OnCheckVKBInfo(bundleName);
+    }
+    AUDIO_INFO_LOG("VKB isVKB:%{public}s", isValid ? "T" : "F");
+    return 0;
+}
+
 void AudioStateManager::RemoveForcedDeviceMapData(int32_t uid)
 {
     if (forcedDeviceMapList_.empty()) {

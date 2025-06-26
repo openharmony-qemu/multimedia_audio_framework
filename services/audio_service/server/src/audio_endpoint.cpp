@@ -281,9 +281,10 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
     if (AudioVolume::GetInstance() != nullptr) {
-        AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
+        StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig.streamType,
             processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
-            isSystemApp, processConfig.rendererInfo.volumeMode, processConfig.rendererInfo.isVirtualKeyboard);
+            isSystemApp, processConfig.rendererInfo.volumeMode, processConfig.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     }
         
     return SUCCESS;
@@ -1375,22 +1376,31 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSp
 
     AudioStreamType streamType = processList_[i]->GetAudioStreamType();
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     bool muteFlag = processList_[i]->GetMuteState();
-    bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
     int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
         clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
     if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID && !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet &&
-        !clientConfig_.rendererInfo.isVirtualKeyboard) {
+        volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
         streamData.volumeStart = vol.isMute ? 0 :
             static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat * appVolume * doNotDisturbStatusVolume);
     } else {
         streamData.volumeStart = vol.isMute ? 0 :
             static_cast<int32_t>(curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume);
     }
+    if (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP && volumeType == STREAM_MUSIC
+        && PolicyHandler::GetInstance().IsAbsVolumeSupported()) {
+        streamData.volumeStart = vol.isMute ? 0 :
+            static_cast<int32_t>(curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume);
+    } else if (clientConfig_.rendererInfo.isVirtualKeyboard) {
+        streamData.volumeStart = vol.isMute ? 0 :
+            static_cast<int32_t>(curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume);
+    } else {
+        streamData.volumeStart = vol.isMute ? 0 :
+            static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat * appVolume * doNotDisturbStatusVolume);
+    }
+
     Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
         " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));
     streamData.volumeEnd = curReadSpan->volumeEnd;

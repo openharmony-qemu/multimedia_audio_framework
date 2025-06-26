@@ -324,6 +324,17 @@ struct AdjustStreamVolumeInfo {
     std::string invocationTime;
 };
 
+struct StreamVolumeParams {
+    uint32_t sessionId;
+    int32_t streamType;
+    int32_t streamUsage;
+    int32_t uid;
+    int32_t pid;
+    bool isSystemApp;
+    int32_t mode;
+    bool isVKB;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,

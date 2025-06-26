@@ -122,6 +122,11 @@ int32_t AudioPolicyManagerListenerStub::OnMiddleFirRemoteRequest(
             OnQueryBundleNameIsInList(bundleName);
             return AUDIO_OK;
         }
+        case ON_CHECK_VKB_INFO: {
+            std::string bundleName = data.ReadString();
+            OnCheckVKBInfo(bundleName);
+            return AUDIO_OK;
+        }
         default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -169,6 +174,15 @@ bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundle
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, false, "audioClientInfoMgrCallback is nullptr");
 
     return audioClientInfoMgrCallback->OnCheckClientInfo(bundleName, uid, pid);
+}
+
+bool AudioPolicyManagerListenerStub::OnCheckVKBInfo(const std::string &bundleName)
+{
+    std::shared_ptr<AudioVKBInfoMgrCallback> audioVKBInfoMgrCallback = audioVKBInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioVKBInfoMgrCallback != nullptr, false, "audioVKBInfoMgrCallback is nullptr");
+
+    return audioVKBInfoMgrCallback->OnCheckVKBInfo(bundleName);
 }
 
 bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
@@ -222,6 +236,11 @@ void AudioPolicyManagerListenerStub::SetQueryClientTypeCallback(const std::weak_
 void AudioPolicyManagerListenerStub::SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
 {
     audioClientInfoMgrCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetAudioVKBInfoMgrCallback(const std::weak_ptr<AudioVKBInfoMgrCallback> &cb)
+{
+    audioVKBInfoMgrCallback_ = cb;
 }
 
 void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(

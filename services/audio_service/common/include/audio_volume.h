@@ -51,8 +51,7 @@ public:
     void SetHistoryVolume(uint32_t sessionId, float volume);
 
     // stream volume
-    void AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage, int32_t uid, int32_t pid,
-        bool isSystemApp, int32_t mode, bool isVKB);
+    void AddStreamVolume(StreamVolumeParams &streamVolumeParams);
     void RemoveStreamVolume(uint32_t sessionId);
     void SetStreamVolume(uint32_t sessionId, float volume);
     void SetStreamVolumeDuckFactor(uint32_t sessionId, float duckFactor);

@@ -64,6 +64,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
+    "SET_VKB_INFO_MGR_CALLBACK",
+    "CHECK_VKB_INFO",
     "SET_QUERY_BUNDLE_NAME_LIST_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
@@ -1275,6 +1277,23 @@ void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetAudioVKBInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioVKBInfoMgrCallback is null");
+    int32_t result = SetAudioVKBInfoMgrCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::CheckVKBInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string bundleName = data.ReadString();
+    bool isValid = false;
+    int32_t result = CheckVKBInfo(bundleName, isValid);
+    reply.WriteBool(isValid);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -1361,6 +1380,12 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
             GetStreamUsagesByVolumeTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VKB_INFO_MGR_CALLBACK):
+            SetAudioVKBInfoMgrCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_VKB_INFO):
+            CheckVKBInfoInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

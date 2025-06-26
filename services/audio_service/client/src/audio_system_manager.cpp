@@ -875,6 +875,19 @@ int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<
     return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
 }
 
+int32_t AudioSystemManager::SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioVKBInfoMgrCallback(callback);
+}
+
+int32_t AudioSystemManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().CheckVKBInfo(bundleName, isValid);
+}
+
 int32_t AudioSystemManager::SetQueryBundleNameListCallback(
     const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
 {

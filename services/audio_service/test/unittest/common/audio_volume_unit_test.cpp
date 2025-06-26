@@ -53,7 +53,8 @@ void AudioVolumeUnitTest::SetUp(void)
     int32_t pid = 1000;
     int32_t mode = 1;
     bool isVKB = false;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 }
 
 void AudioVolumeUnitTest::TearDown(void)
@@ -107,13 +108,14 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
     int32_t volumeType = STREAM_MUSIC;
     std::string deviceClass = "speaker";
     int32_t streamType = STREAM_MUSIC;
-    int32_t streamUsage = STREAM_USAGE_SYSTEM;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
     bool isVKB = true;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
     SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
@@ -135,13 +137,14 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
     int32_t volumeType = STREAM_MUSIC;
     std::string deviceClass = "speaker";
     int32_t streamType = STREAM_MUSIC;
-    int32_t streamUsage = STREAM_USAGE_SYSTEM;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
     bool isVKB = true;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
     SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
@@ -398,7 +401,8 @@ HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
     int32_t mode = 1;
     bool isVKB = true;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 }
 
 /**
