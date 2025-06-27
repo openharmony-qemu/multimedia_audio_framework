@@ -514,7 +514,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
         ReportEvent(info);
         if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
             (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) && info.isBackground) {
-            int32_t ret = AudioPolicyManager::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
+            int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
             CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
         }
     }
