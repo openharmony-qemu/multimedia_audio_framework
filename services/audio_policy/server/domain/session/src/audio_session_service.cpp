@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
+#include "ipc_skeleton.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -73,14 +74,20 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
     AUDIO_INFO_LOG("ActivateAudioSession: callerPid %{public}d, concurrencyMode %{public}d",
         callerPid, static_cast<int32_t>(strategy.concurrencyMode));
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    if (sessionMap_.count(callerPid) != 0 && sessionMap_[callerPid] != nullptr) {
+    if (sessionMap_.count(callerPid) != 0) {
         // The audio session of the callerPid is already created. The strategy will be updated.
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
-        sessionMap_[callerPid]->SetSessionStrategy(strategy);
     } else {
         sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
-        sessionMap_[callerPid]->Activate();
     }
+
+    if (sessionMap_[callerPid] == nullptr) {
+        AUDIO_ERR_LOG("Create audio seesion fail, pid: %{public}d!", callerPid);
+        return ERROR;
+    }
+
+    sessionMap_[callerPid]->SetSessionStrategy(strategy);
+    sessionMap_[callerPid]->Activate();
 
     if (sessionMap_[callerPid]->IsAudioSessionEmpty()) {
         StartMonitor(callerPid);
@@ -117,12 +124,13 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
 bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    if (sessionMap_.count(callerPid) == 0) {
+    if (sessionMap_.count(callerPid) == 0 || sessionMap_[callerPid] == nullptr) {
         // The audio session of the callerPid is not existed or has been released.
         AUDIO_WARNING_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
         return false;
+
     }
-    return true;
+    return sessionMap_[callerPid]->IsActivated();
 }
 
 int32_t AudioSessionService::SetSessionTimeOutCallback(
@@ -182,19 +190,14 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
         return;
     }
     for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
+        dumpString += "\n";
         int32_t pid = iterAudioSession->first;
         std::shared_ptr<AudioSession> audioSession = iterAudioSession->second;
         if (audioSession == nullptr) {
             AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
             continue;
         }
-        if (audioSession->IsAudioSessionEmpty()) {
-            AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", pid);
-        } else {
-            AudioSessionState sessionState = audioSession->GetSessionState();
-            AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n", pid,
-                static_cast<uint32_t>(sessionState));
-        }
+        audioSession->Dump(dumpString);
     }
     dumpString += "\n";
 }
@@ -255,10 +258,34 @@ bool AudioSessionService::IsSessionNeedToFetchOutputDevice(const int32_t callerP
     }
 
     return false;
+}
+
+int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
+{
+    if (IsAudioSessionActivated(callerPid)) {
+        AUDIO_ERR_LOG("Scene cannot be modified during AudioSession activation. pid: %{public}d", callerPid);
+        return ERROR;
+    }
+
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    if (sessionMap_.count(callerPid) != 0 && sessionMap_[callerPid] != nullptr) {
+        // The audio session of the callerPid is already created. The strategy will be updated.
+        AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update scene.", callerPid);
+    } else {
+        AudioSessionStrategy strategy;
+        strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
+        CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
+    }
+
+    return sessionMap_[callerPid]->SetAudioSessionScene(scene);
+}
+
 bool AudioSessionService::IsAudioSessionFocusMode(int32_t pid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(pid);
+    auto session = sessionMap_.find(callerPid);
     return session != sessionMap_.end() && session->second->IsSceneParameterSet() && session->second->IsActivated();
 }
 
@@ -268,49 +295,59 @@ bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &incom
         return false;
     }
 
-    bool isExcludedStream = streamUsage == STREAM_USAGE_NOTIFICATION ||
-                            streamUsage == STREAM_USAGE_DTMF ||
-                            streamUsage == STREAM_USAGE_ALARM ||
-                            streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
-                            streamUsage == STREAM_USAGE_ULTRASONIC ||
-                            streamUsage == STREAM_USAGE_ACCESSIBILITY;
+    bool isExcludedStream = incomingInterrupt.streamUsage == STREAM_USAGE_NOTIFICATION ||
+                            incomingInterrupt.streamUsage == STREAM_USAGE_DTMF ||
+                            incomingInterrupt.streamUsage == STREAM_USAGE_ALARM ||
+                            incomingInterrupt.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+                            incomingInterrupt.streamUsage == STREAM_USAGE_ULTRASONIC ||
+                            incomingInterrupt.streamUsage == STREAM_USAGE_ACCESSIBILITY;
     if (isExcludedStream) {
         return false;
     }
 
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(incomingInterrupt.pid);
     session->second->AddStreamInfo(incomingInterrupt);
 
     return true;
 }
 
-std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t pid) const
+std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(pid);
+    auto session = sessionMap_.find(callerPid);
     if (session == sessionMap_.end()) {
         return {};
     }
     return session->second->GetStreams();
 }
 
-AudioInterrupt AudioSessionService::GetFakeAudioInterrupt(int32_t pid)
+static uint32_t g_streamId = 888;
+AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid)
 {
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     AudioInterrupt fakeAudioInterrupt;
-    auto session = sessionMap_.find(pid);
-    if (session == sessionMap_.end()) {
-        AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
-        return fakeAudioInterrupt;
-    }
-    fakeAudioInterrupt.pid = pid;
-    fakeAudioInterrupt.streamUsage = session->second->GetFakeStreamUsage();
+    fakeAudioInterrupt.pid = callerPid;
+    fakeAudioInterrupt.uid = IPCSkeleton::GetCallingUid();
+    fakeAudioInterrupt.streamId = g_streamId++;
     fakeAudioInterrupt.isAudioSessionInterrupt = true;
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
+        fakeAudioInterrupt.audioFocusType.streamType = session->second->GetFakeStreamType();
+    } else {
+        AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
+    }
 
     return fakeAudioInterrupt;
 }
 
 void AudioSessionService::RemoveStreamInfo(const AudioInterrupt &audioInterrupt)
 {
+    // No need to handle fake focus.
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        return;
+    }
+
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(audioInterrupt.pid);
     if (session == sessionMap_.end()) {
