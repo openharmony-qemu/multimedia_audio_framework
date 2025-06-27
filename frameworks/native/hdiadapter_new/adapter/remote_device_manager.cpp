@@ -171,7 +171,7 @@ int32_t RemoteDeviceManager::SetVoiceVolume(const std::string &adapterName, floa
 }
 
 int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId, AudioScene scene)
+    int32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty(), ERR_INVALID_PARAM, "invalid audio devices");
     DeviceType device = devices[0];
@@ -618,5 +618,9 @@ void RemoteDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
     AUDIO_INFO_LOG("not support");
 }
 
+void RemoteDeviceManager::SetAudioScene(const AudioScene scene)
+{
+    AUDIO_INFO_LOG("not support");
+}
 } // namespace AudioStandard
 } // namespace OHOS

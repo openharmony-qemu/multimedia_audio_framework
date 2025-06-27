@@ -61,7 +61,7 @@ public:
         const std::string &condition) override;
     int32_t SetVoiceVolume(const std::string &adapterName, float volume) override;
     int32_t SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-        int32_t streamId, AudioScene scene = AUDIO_SCENE_DEFAULT) override;
+        int32_t streamId) override;
     int32_t SetInputRoute(const std::string &adapterName, DeviceType device, int32_t streamId,
         int32_t inputType) override;
     void SetMicMute(const std::string &adapterName, bool isMute) override;
@@ -74,6 +74,8 @@ public:
     void DumpInfo(std::string &dumpString) override;
 
     void SetDmDeviceType(uint16_t dmDeviceType) override;
+
+    void SetAudioScene(const AudioScene scene) override;
 
 private:
     void InitAudioManager(void);
