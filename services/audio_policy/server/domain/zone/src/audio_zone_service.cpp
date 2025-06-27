@@ -521,7 +521,7 @@ int32_t AudioZoneService::UpdateDeviceFromGlobalForAllZone(std::shared_ptr<Audio
 int32_t AudioZoneService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-    interruptService_->ClearAudioFocusBySessionID(sessionID);
+    return interruptService_->ClearAudioFocusBySessionID(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS
