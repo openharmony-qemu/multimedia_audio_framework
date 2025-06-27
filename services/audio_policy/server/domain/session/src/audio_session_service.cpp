@@ -157,6 +157,10 @@ void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
     DeactivateAudioSessionInternal(callerPid, true);
     lock.unlock();
 
+    if (IsAudioSessionFocusMode(callerPid)) {
+        return;
+    }
+
     auto cb = timeOutCallback_.lock();
     if (cb == nullptr) {
         AUDIO_ERR_LOG("timeOutCallback_ is nullptr!");
@@ -251,6 +255,68 @@ bool AudioSessionService::IsSessionNeedToFetchOutputDevice(const int32_t callerP
     }
 
     return false;
+bool AudioSessionService::IsAudioSessionFocusMode(int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    return session != sessionMap_.end() && session->second->IsSceneParameterSet() && session->second->IsActivated();
+}
+
+bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &incomingInterrupt)
+{
+    if (!IsAudioSessionFocusMode(incomingInterrupt.pid)) {
+        return false;
+    }
+
+    bool isExcludedStream = streamUsage == STREAM_USAGE_NOTIFICATION ||
+                            streamUsage == STREAM_USAGE_DTMF ||
+                            streamUsage == STREAM_USAGE_ALARM ||
+                            streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
+                            streamUsage == STREAM_USAGE_ULTRASONIC ||
+                            streamUsage == STREAM_USAGE_ACCESSIBILITY;
+    if (isExcludedStream) {
+        return false;
+    }
+
+    auto session = sessionMap_.find(incomingInterrupt.pid);
+    session->second->AddStreamInfo(incomingInterrupt);
+
+    return true;
+}
+
+std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t pid) const
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(pid);
+    if (session == sessionMap_.end()) {
+        return {};
+    }
+    return session->second->GetStreams();
+}
+
+AudioInterrupt AudioSessionService::GetFakeAudioInterrupt(int32_t pid)
+{
+    AudioInterrupt fakeAudioInterrupt;
+    auto session = sessionMap_.find(pid);
+    if (session == sessionMap_.end()) {
+        AUDIO_ERR_LOG("This failure should not have occurred, possibly due to calling the function incorrectly!");
+        return fakeAudioInterrupt;
+    }
+    fakeAudioInterrupt.pid = pid;
+    fakeAudioInterrupt.streamUsage = session->second->GetFakeStreamUsage();
+    fakeAudioInterrupt.isAudioSessionInterrupt = true;
+
+    return fakeAudioInterrupt;
+}
+
+void AudioSessionService::RemoveStreamInfo(const AudioInterrupt &audioInterrupt)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(audioInterrupt.pid);
+    if (session == sessionMap_.end()) {
+        return;
+    }
+    return session->second->RemoveStreamInfo(audioInterrupt.streamId);
 }
 
 } // namespace AudioStandard

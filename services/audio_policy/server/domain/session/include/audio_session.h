@@ -17,7 +17,7 @@
 #define ST_AUDIO_SESSION_H
 
 #include <mutex>
-
+#include <vector>
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
 #include "audio_device_info.h"
@@ -31,6 +31,15 @@ enum class AudioSessionState {
     SESSION_DEACTIVE = 2,
     SESSION_RELEASED = 3,
 };
+
+enum class AudioSessionScene {
+    AUDIO_SESSION_SCENE_INVALID = -1,
+    AUDIO_SESSION_SCENE_MEDIA = 0,
+    AUDIO_SESSION_SCENE_GAME = 1,
+    AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
+};
+
+#define AUDIO_SESSION_FAKE_STREAMID = MAX_STREAMID + 1;
 
 class AudioSessionStateMonitor;
 
@@ -54,13 +63,19 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool IsNeedToFetchDefaultDevice();
+    bool IsSceneParameterSet();
+    int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
+    bool IsActivated() const;
+    std::vector<AudioInterrupt> GetStreams() const;
+    StreamUsage GetFakeStreamUsage();
+    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
+    void RemoveStreamInfo(uint32_t streamId);
 
 private:
     StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
     bool IsLegalDevice(const DeviceType deviceType);
     int32_t EnableDefaultDevice();
     std::mutex sessionMutex_;
-
     int32_t callerPid_;
     bool needToFetch = false;
     AudioSessionStrategy strategy_;

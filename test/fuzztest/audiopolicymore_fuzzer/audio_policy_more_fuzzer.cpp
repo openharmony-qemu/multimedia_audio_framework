@@ -216,15 +216,6 @@ void GetStreamTypePriorityFuzzTest()
     interruptService->GetStreamTypePriority(streamType);
 }
 
-void GetStreamPriorityMapFuzzTest()
-{
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->GetStreamPriorityMap();
-}
-
 void SendInterruptEventFuzzTest()
 {
     AudioFocuState oldState = GetData<AudioFocuState>();
@@ -460,7 +451,6 @@ TestFuncs g_testFuncs = {
     AudioInterruptZoneDumpFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
     GetStreamTypePriorityFuzzTest,
-    GetStreamPriorityMapFuzzTest,
     SendInterruptEventFuzzTest,
     IsSameAppInShareModeFuzzTest,
     GetAudioFocusInfoListFuzzTest,

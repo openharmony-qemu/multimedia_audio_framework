@@ -294,6 +294,7 @@ public:
     int32_t uid { -1 };
     std::string deviceTag;
     InterruptMode mode { SHARE_MODE };
+    bool isAudioSessionInterrupt {false};
     AudioFocusConcurrency currencySources;
     AudioSessionStrategy sessionStrategy = { AudioConcurrencyMode::INVALID };
     int32_t api = 0;
@@ -339,6 +340,7 @@ public:
         res = res && parcel.WriteInt32(interrupt.uid);
         res = res && parcel.WriteString(interrupt.deviceTag);
         res = res && parcel.WriteInt32(static_cast<int32_t>(interrupt.mode));
+        res = res && parcel.WriteBool(interrupt.isAudioSessionInterrupt);
         size_t vct = interrupt.currencySources.sourcesTypes.size();
         res = res && parcel.WriteInt32(static_cast<int32_t>(vct));
         for (size_t i = 0; i < vct; i++) {
@@ -364,6 +366,7 @@ public:
         interrupt.uid = parcel.ReadInt32();
         interrupt.deviceTag = parcel.ReadString();
         interrupt.mode = static_cast<InterruptMode>(parcel.ReadInt32());
+        interrupt.isAudioSessionInterrupt = parcel.ReadBool();
         int32_t vct = parcel.ReadInt32();
         if (vct > MAX_SOURCE_TYPE_NUM) {
             return;

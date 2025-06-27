@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+
 AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
     const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor)
 {
@@ -233,6 +234,76 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
     }
 
     return false;
+bool AudioSession::IsSceneParameterSet()
+{
+    return audioSessionScene != AudioSessionScene::AUDIO_SESSION_SCENE_INVALID;
+}
+
+int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
+{
+    if (state_ == AudioSessionState::SESSION_ACTIVE) {
+        AUDIO_ERR_LOG("AudioSessionScene cannot be modified cannot be modified during activation.");
+        return ERROR;
+    }
+
+    if (scene < AudioSessionScene::AUDIO_SESSION_SCENE_MEDIA ||
+        scene > AudioSessionScene::AUDIO_SESSION_SCENE_VOICE_COMMUNICATION) {
+        AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int>(scene));
+        return ERROR;
+    }
+
+    audioSessionScene_ = scene;
+    return SUCCESS;
+}
+
+bool AudioSession::IsActivated() const
+{
+    return state_ != AudioSessionState::SESSION_INVALID;
+}
+
+std::vector<AudioInterrupt> AudioSession::GetStreams() const
+{
+    return bypassStreamInfoVec_;
+}
+
+StreamUsage AudioSession::GetFakeStreamUsage()
+{
+    static const std::unordered_map<AudioSessionScene, StreamUsage> mapping = {
+        {AudioSessionScene::AUDIO_SESSION_SCENE_MEDIA, StreamUsage::STREAM_USAGE_MEDIA},
+        {AudioSessionScene::AUDIO_SESSION_SCENE_GAME, StreamUsage::STREAM_USAGE_GAME},
+        {AudioSessionScene::AUDIO_SESSION_SCENE_VOICE_COMMUNICATION, StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION}
+    };
+
+    auto it = mapping.find(audioSessionScene_);
+    if (it != mapping.end()) {
+        return it->second;
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
+void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (auto stream : bypassStreamInfoVec_) {
+        if (stream.streamId == incomingInterrupt.streamId) {
+            AUDIO_INFO_LOG("stream aready exist.");
+            return;
+        }
+    }
+
+    bypassStreamInfoVec_.push_back(incomingInterrupt);
+}
+
+void AudioSession::RemoveStreamInfo(uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (auto it = bypassStreamInfoVec_.begin(), it != bypassStreamInfoVec_.end(); ++it) {
+        if (it->streamId == streamId) {
+            bypassStreamInfoVec_.ereas(it);
+            break;
+        }
+    }
 }
 
 } // namespace AudioStandard
