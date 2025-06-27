@@ -119,10 +119,11 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             MuteSinkPortForSwitchDevice(streamDesc, reason);
         }
     }
-    
-    if (isUpdateActiveDevice) {
+    AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
+    std::shared_ptr<AudioDeviceDescriptor> descPtr =
+        std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
+    if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
         audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
     }
@@ -226,7 +227,9 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     if (!pipeManager_->IsModemCommunicationIdExist()) {
         return;
     }
-    if (audioSceneManager_.GetAudioScene() == AUDIO_SCENE_PHONE_CALL) {
+
+    bool isModemCallRunning = audioSceneManager_.IsInPhoneCallScene();
+    if (isModemCallRunning) {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STARTED);
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
@@ -247,8 +250,9 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     }
 
     auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second);
-    audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
-
+    if (isModemCallRunning) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+    }
     AudioDeviceDescriptor desc = AudioDeviceDescriptor(descs.front());
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemSessionMap =
         pipeManager_->GetModemCommunicationMap();
@@ -1483,16 +1487,7 @@ void AudioCoreService::TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStr
     AUDIO_INFO_LOG("Trigger recreate capturer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
         streamDesc->sessionId_, streamDesc->callerPid_, streamDesc->routeFlag_);
 
-    SwitchStreamInfo info = {
-        streamDesc->sessionId_,
-        streamDesc->callerUid_,
-        streamDesc->appInfo_.appUid,
-        streamDesc->appInfo_.appPid,
-        streamDesc->appInfo_.appTokenId,
-        HandleStreamStatusToCapturerState(streamDesc->streamStatus_),
-    };
     if (audioPolicyServerHandler_ != nullptr) {
-        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
         audioPolicyServerHandler_->SendRecreateCapturerStreamEvent(streamDesc->appInfo_.appPid,
             streamDesc->sessionId_, streamDesc->routeFlag_, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     } else {
@@ -1706,6 +1701,12 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
         return false;
     }
 
+    if (streamDesc->rendererInfo_.playerType == PLAYER_TYPE_SOUND_POOL ||
+        streamDesc->rendererInfo_.playerType == PLAYER_TYPE_OPENSL_ES) {
+        AUDIO_INFO_LOG("normal stream beacuse playerType %{public}d.", streamDesc->rendererInfo_.playerType);
+        return false;
+    }
+
     AudioSpatializationState spatialState =
         AudioSpatializationService::GetAudioSpatializationService().GetSpatializationState();
     bool effectOffloadFlag = AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
@@ -1758,6 +1759,9 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
     audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+    }
+    if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
+        audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
     }
     OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
     return SUCCESS;

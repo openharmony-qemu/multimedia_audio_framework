@@ -27,36 +27,6 @@ void AudioDeviceCommonUnitNextTest::SetUp(void) {}
 void AudioDeviceCommonUnitNextTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: OnAudioSceneChange_001
-* @tc.desc  : Test OnAudioSceneChange interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, OnAudioSceneChange_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioPolicyServerHandler> testHandler = std::make_shared<AudioPolicyServerHandler>();
-    audioDeviceCommon.audioPolicyServerHandler_ = testHandler;
-    AudioScene testScene = AUDIO_SCENE_RINGING;
-    audioDeviceCommon.OnAudioSceneChange(testScene);
-    EXPECT_NE(audioDeviceCommon.audioPolicyServerHandler_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: OnAudioSceneChange_002
-* @tc.desc  : Test OnAudioSceneChange interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, OnAudioSceneChange_002, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
-    AudioScene testScene = AUDIO_SCENE_RINGING;
-    audioDeviceCommon.OnAudioSceneChange(testScene);
-    EXPECT_EQ(audioDeviceCommon.audioPolicyServerHandler_, nullptr);
-}
-
-/**
 * @tc.name  : Test GetPreferredInputDeviceDescInner.
 * @tc.number: GetPreferredInputDeviceDescInner_001
 * @tc.desc  : Test GetPreferredInputDeviceDescInner interface.

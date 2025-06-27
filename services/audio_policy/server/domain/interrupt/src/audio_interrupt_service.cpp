@@ -698,12 +698,6 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         incomingStreamId, currAudioInterrupt.pid, streamType,
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
 
-    if (currAudioInterrupt.parallelPlayFlag) {
-        updateScene = true;
-        AUDIO_PRERELEASE_LOGI("allow parallel play");
-        return SUCCESS;
-    }
-
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
         AUDIO_INFO_LOG("Stream is active in focus list, no need to active audio interrupt.");
         return SUCCESS;
@@ -806,11 +800,6 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         "usage: %{public}d source: %{public}d",
         currAudioInterrupt.streamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
-
-    if (currAudioInterrupt.parallelPlayFlag) {
-        AUDIO_PRERELEASE_LOGI("allow parallel play");
-        return SUCCESS;
-    }
 
     DeactivateAudioInterruptInternal(zoneId, currAudioInterrupt);
 

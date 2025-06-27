@@ -50,8 +50,9 @@ public:
     bool GetConnectedFlag() const;
     int32_t SetupAudioLimiter();
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
+    void DisConnectMixerNode();
 private:
-    void ConnectEffectNodeToMixerNode();
+    void ConnectMixerNode();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateConverterNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);
     void CreateLoudnessGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);

@@ -36,6 +36,7 @@ private:
     void SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAdjustVolumeForZoneInternal(MessageParcel &data, MessageParcel &reply);
     void SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -171,6 +172,8 @@ private:
     void HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply);
     void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleAddStreamToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleRemoveStreamFromAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);

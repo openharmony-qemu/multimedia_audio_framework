@@ -419,6 +419,65 @@ void AudioVolumeManagerOpenNotPaAudioPortFuzzTest(const uint8_t *rawData, size_t
     audioAdapterManager->OpenNotPaAudioPort(pipeInfo, paIndex);
 }
 
+void AudioVolumeManagerSetAudioVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    float volumeDb = static_cast<float>(size);
+    audioAdapterManager_->SetAudioVolume(streamType, volumeDb);
+}
+
+void AudioVolumeManagerNotifyAccountsChangedFuzzTest(const uint8_t *rawData, size_t size)
+{
+    int id =  static_cast<int>(size);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->NotifyAccountsChanged(id);
+}
+
+void AudioVolumeManagerDoRestoreDataFuzzTest(const uint8_t *rawData, size_t size)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->DoRestoreData();
+    audioAdapterManager->GetSafeVolumeLevel();
+    audioAdapterManager->GetSafeVolumeTimeout();
+}
+
+void AudioVolumeManagerSetFirstBootFuzzTest(const uint8_t *rawData, size_t size)
+{
+    bool isFirst = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->SetFirstBoot(isFirst);
+}
+
+void AudioVolumeManagerSafeVolumeDumpFuzzTest(const uint8_t *rawData, size_t size)
+{
+    std::string dumpString = "test";
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->isSafeBoot_ = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager->SafeVolumeDump(dumpString);
+}
+
+void AudioVolumeManagerSetVgsVolumeSupportedFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    bool isVgsSupported = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioAdapterManager->SetVgsVolumeSupported(isVgsSupported);
+    audioAdapterManager->IsVgsVolumeSupported();
+}
+
+void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest(const uint8_t *rawData, size_t size)
+{
+    uint32_t index = static_cast<uint32_t>(size);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioAdapterManager->UpdateVolumeForLowLatency();
+    audioAdapterManager->RegisterDoNotDisturbStatus();
+    audioAdapterManager->RegisterDoNotDisturbStatusWhiteList();
+}
+
 void AudioVolumeManagerUpdateSinkArgsFuzzTest(const uint8_t *rawData, size_t size)
 {
     AudioModuleInfo info;
@@ -932,6 +991,12 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerUpdateVolumeMapIndexFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeSceneFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetAbsVolumeMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetAudioVolumeFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerNotifyAccountsChangedFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerDoRestoreDataFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetFirstBootFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetVgsVolumeSupportedFuzzTest,
 };
 
 /* Fuzzer entry point */

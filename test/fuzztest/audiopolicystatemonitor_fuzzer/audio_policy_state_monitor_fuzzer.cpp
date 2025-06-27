@@ -38,8 +38,7 @@
 #include "audio_source_clock.h"
 #include "capturer_clock_manager.h"
 #include "hpae_policy_manager.h"
-#include "hpae_no_lock_queue.h"
-#include "i_standard_client_tracker_fuzzer.h"
+#include "audio_policy_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -49,10 +48,15 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 1;
-static int32_t NUM_2 = 2;
+const uint8_t TESTSIZE = 2;
+static const std::time_t AUDIO_SESSION_TIME_OUT_DURATION_TEST_S = 3;
 
 typedef void (*TestFuncs)();
+
+class AudioPolicyStateMonitorCallbackMocker : public AudioPolicyStateMonitorCallback {
+public:
+    void OnTimeOut() override {}
+};
 
 template<class T>
 T GetData()
@@ -80,14 +84,30 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void IStandardClientTrackerFuzzTest()
+void UnRegisterCallbackFuzzTest()
 {
-    IStandardClientTrackerFuzz example;
-    example.~IStandardClientTrackerFuzz();
+    const shared_ptr<AudioPolicyStateMonitor> g_audioPolicyStateMonitor =
+        DelayedSingleton<AudioPolicyStateMonitor>::GetInstance();
+    auto cb = std::make_shared<AudioPolicyStateMonitorCallbackMocker>();
+    int32_t callbackTypeCount = static_cast<int32_t>(CallbackType::REPEAT) + 1;
+    CallbackType callbackType = static_cast<CallbackType>(GetData<uint8_t>() % callbackTypeCount);
+    int32_t cbId = g_audioPolicyStateMonitor->RegisterCallback(
+        cb,
+        AUDIO_SESSION_TIME_OUT_DURATION_TEST_S,
+        callbackType);
+    g_audioPolicyStateMonitor->UnRegisterCallback(cbId);
+}
+
+void FreeCbIdFuzzTest()
+{
+    auto audioPolicyStateMonitor = std::make_shared<AudioPolicyStateMonitor>();
+    int32_t cbId = GetData<int32_t>();
+    audioPolicyStateMonitor->FreeCbId(cbId);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
-    IStandardClientTrackerFuzzTest,
+    UnRegisterCallbackFuzzTest,
+    FreeCbIdFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

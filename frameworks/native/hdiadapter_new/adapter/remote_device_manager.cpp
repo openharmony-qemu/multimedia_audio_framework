@@ -18,6 +18,7 @@
 #endif
 
 #include "adapter/remote_device_manager.h"
+#include "manager/hdi_monitor.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -321,6 +322,8 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
         wrapper->isValid_ = false;
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create render fail, id:" + std::to_string(hdiRenderId)));
         return nullptr;
     }
     IAudioRender *rawRender = render.GetRefPtr();
@@ -371,6 +374,8 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
         wrapper->isValid_ = false;
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create capture fail, id:" + std::to_string(hdiCaptureId)));
         return nullptr;
     }
     IAudioCapture *rawCapture = capture.GetRefPtr();
@@ -420,6 +425,10 @@ void RemoteDeviceManager::InitAudioManager(void)
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("init audio manager");
     audioManager_ = IAudioManager::Get("daudio_primary_service", false);
+    if (audioManager_ == nullptr) {
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, 0,
+            "get hdi manager fail");
+    }
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "get audio manager fail");
 
     AUDIO_INFO_LOG("init audio manager succ");

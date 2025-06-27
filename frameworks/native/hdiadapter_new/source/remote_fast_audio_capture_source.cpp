@@ -296,7 +296,7 @@ float RemoteFastAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
     (void)activeDevice;
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,

@@ -313,9 +313,9 @@ void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, boo
     AudioRendererDataTransferStateChangeInfo callbackInfo;
     InitCallbackInfo(type, callbackInfo);
     callbackInfo.badDataRatio[NO_DATA_TRANS] = (para.noDataFrameNum * TRANS_INTEGER) / para.sumFrameCount;
-    callbackInfo.badDataRatio[SLIENCE_DATA_TRANS] = (para.muteFrameNum * TRANS_INTEGER) / para.sumFrameCount;
-    AUDIO_DEBUG_LOG("NO_DATA_TRANS ration = %{public}d, SLIENCE_DATA_TRANS ratio = %{public}d",
-        callbackInfo.badDataRatio[NO_DATA_TRANS], callbackInfo.badDataRatio[SLIENCE_DATA_TRANS]);
+    callbackInfo.badDataRatio[SILENCE_DATA_TRANS] = (para.muteFrameNum * TRANS_INTEGER) / para.sumFrameCount;
+    AUDIO_DEBUG_LOG("NO_DATA_TRANS ration = %{public}d, SILENCE_DATA_TRANS ratio = %{public}d",
+        callbackInfo.badDataRatio[NO_DATA_TRANS], callbackInfo.badDataRatio[SILENCE_DATA_TRANS]);
     if (isNeedCallback) {
         AUDIO_DEBUG_LOG("Callback stream status, pid = %{public}d, callbackId = %{public}d",
             para.pid, para.callbackId);
@@ -328,7 +328,7 @@ bool AudioStreamChecker::IsMonitorMuteFrame(const CheckerParam &para)
 {
     AUDIO_INFO_LOG("badDataTransferTypeBitMap = %{public}d", para.para.badDataTransferTypeBitMap);
     if (para.hasInitCheck) {
-        return para.para.badDataTransferTypeBitMap & (1 << SLIENCE_DATA_TRANS);
+        return para.para.badDataTransferTypeBitMap & (1 << SILENCE_DATA_TRANS);
     }
     return false;
 }

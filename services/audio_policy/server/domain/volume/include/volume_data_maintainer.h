@@ -28,6 +28,7 @@
 #include "audio_policy_log.h"
 #include "audio_info.h"
 #include "audio_setting_provider.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,11 +51,39 @@ public:
         VT_STREAM_ASSISTANT = 11,
     };
 
-    static VolumeDataMaintainer& GetVolumeDataMaintainer()
-    {
-        static VolumeDataMaintainer volumeDataMainTainer;
-        return volumeDataMainTainer;
-    }
+    enum class VolumeDbAccessExceptionFuncId : int32_t {
+        UNKNOWN = 0,
+        SAVE_VOLUME_INTERNA_A,
+        SAVE_VOLUME_INTERNA_B,
+        GET_VOLUME_INTERNAL_A,
+        GET_VOLUME_INTERNAL_B,
+        SAVE_MUTE_STATUS_INTERNAL,
+        GET_MUTE_STATUS_INTERNAL_A,
+        GET_MUTE_STATUS_INTERNAL_B,
+        GET_MUTE_AFFECTED,
+        GET_MUTE_TRANSFER_STATUS,
+        SAVE_MUTE_TRANSFER_STATUS,
+        SAVE_RINGER_MODE,
+        GET_RINGER_MODE,
+        SAVE_SAFE_STATUS_A,
+        SAVE_SAFE_STATUS_B,
+        GET_SAFE_STATUS_A,
+        GET_SAFE_STATUS_B,
+        SAVE_SAFE_VOLUME_TIME_A,
+        SAVE_SAFE_VOLUME_TIME_B,
+        GET_SAFE_VOLUME_TIME_A,
+        GET_SAFE_VOLUME_TIME_B,
+        SET_RESTORE_VOLUME_LEVEL_A,
+        SET_RESTORE_VOLUME_LEVEL_B,
+        GET_RESTORE_VOLUME_LEVEL_A,
+        GET_RESTORE_VOLUME_LEVEL_B,
+        SAVE_SYSTEM_SOUND_URL,
+        GET_SYSTEM_SOUND_URL,
+        SAVE_MIC_MUTE_STATE,
+        GET_MIC_MUTE_STATE,
+    };
+
+    VolumeDataMaintainer();
     ~VolumeDataMaintainer();
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
@@ -102,7 +131,6 @@ public:
     void LoadRemoteVolumeLevelMap(void);
 
 private:
-    VolumeDataMaintainer();
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = "LocalDevice");
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType);
@@ -115,6 +143,7 @@ private:
     bool GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType);
     bool GetStreamMuteInternal(AudioStreamType streamType);
     int32_t GetStreamVolumeInternal(AudioStreamType streamType);
+    void WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg);
 
     ffrt::mutex volumeMutex_;
     ffrt::mutex volumeForDbMutex_;

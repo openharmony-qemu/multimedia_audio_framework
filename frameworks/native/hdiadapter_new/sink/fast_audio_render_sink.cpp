@@ -252,6 +252,12 @@ int32_t FastAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
 #endif
 }
 
+int64_t FastAudioRenderSink::GetVolumeDataCount()
+{
+    AUDIO_WARNING_LOG("not supported");
+    return 0;
+}
+
 int32_t FastAudioRenderSink::SuspendRenderSink(void)
 {
     return SUCCESS;

@@ -45,6 +45,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int64_t GetVolumeDataCount() override;
 
     int32_t SuspendRenderSink(void) override;
     int32_t RestoreRenderSink(void) override;
@@ -170,7 +171,6 @@ private:
     int32_t muteCount_ = 0;
     std::atomic<bool> switchDeviceMute_ = false;
     // for dfx log
-    int32_t logMode_ = 0;
     std::string logUtilsTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
 #ifdef FEATURE_POWER_MANAGER

@@ -16,8 +16,8 @@
 #define LOG_TAG "NapiActiveVolumeTypeChangeCallback"
 #endif
 
-#include "js_native_api.h"
 #include "napi_active_volume_type_change_callback.h"
+#include "js_native_api.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
 #include "napi_param_utils.h"

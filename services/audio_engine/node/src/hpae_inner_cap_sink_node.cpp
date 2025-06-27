@@ -22,6 +22,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "hpae_node_common.h"
+#include "audio_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
@@ -48,16 +49,23 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
 
 void HpaeInnerCapSinkNode::DoProcess()
 {
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeInnerCapSinkNode::DoProcess " + GetTraceInfo());
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (outputVec.empty()) {
+    if (outputVec.empty() || isMute_ == true) {
         outputStream_.WriteDataToOutput(&silenceData_);
+#ifdef ENABLE_HOOK_PCM
+        if (outputPcmDumper_) {
+            outputPcmDumper_->Dump((int8_t *)silenceData_.GetPcmDataBuffer(), GetChannelCount() *
+                GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
+        }
+#endif
     } else {
         HpaePcmBuffer *outputData = outputVec.front();
 #ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
-            GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
-    }
+        if (outputPcmDumper_) {
+            outputPcmDumper_->Dump((int8_t *)outputData->GetPcmDataBuffer(), GetChannelCount() *
+                GetFrameLen() * GetSizeFromFormat(SAMPLE_F32LE));
+        }
 #endif
     // no need convert
         outputStream_.WriteDataToOutput(outputVec[0]);
@@ -190,6 +198,24 @@ int32_t HpaeInnerCapSinkNode::SetSinkState(StreamManagerState sinkState)
         ConvertStreamManagerState2Str(sinkState).c_str());
     state_ = sinkState;
     return SUCCESS;
+}
+
+void HpaeInnerCapSinkNode::SetMute(bool isMute)
+{
+    if (isMute_ != isMute) {
+        isMute_ = isMute;
+        AUDIO_INFO_LOG("SetMute: %{public}d", isMute);
+    }
+}
+
+size_t HpaeInnerCapSinkNode::GetPreOutNum()
+{
+    return inputStream_.GetPreOutputNum();
+}
+
+size_t HpaeInnerCapSinkNode::GetOutputPortNum()
+{
+    return outputStream_.GetInputNum();
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

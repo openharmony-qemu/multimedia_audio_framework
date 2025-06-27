@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/client_type_manager_unit_test.h"
+#include "client_type_manager_unit_test.h"
 #include "audio_errors.h"
 
 using namespace testing::ext;

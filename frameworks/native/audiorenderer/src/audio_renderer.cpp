@@ -408,7 +408,6 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
-    audioInterrupt_.parallelPlayFlag = false;
 
     state_ = RENDERER_PREPARED;
 }
@@ -1131,7 +1130,7 @@ bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(true);
+    (void)audioStream_->SetMute(true, cmdType);
     return true;
 }
 
@@ -1143,7 +1142,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(false);
+    (void)audioStream_->SetMute(false, cmdType);
     UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
 }
@@ -1748,7 +1747,11 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
     AUDIO_PRERELEASE_LOGI("parallelPlayFlag %{public}d", parallelPlayFlag);
-    audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
+    if (parallelPlayFlag) {
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    } else {
+        audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+    }
     return SUCCESS;
 }
 
@@ -2079,7 +2082,7 @@ bool AudioRendererPrivate::InitTargetStream(IAudioStream::SwitchInfo &info,
 bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
-    audioStream_->SetMute(true); // Do not record this status in recover(InitSwitchInfo)
+    audioStream_->SetMute(true, CMD_FROM_SYSTEM); // Do not record this status in recover(InitSwitchInfo)
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();
@@ -2090,6 +2093,11 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         }
     }
     InitSwitchInfo(targetClass, switchInfo);
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
+        switchInfo.params.originalSessionId = 0;
+        switchInfo.sessionId = 0;
+    }
     UpdateFramesWritten();
     switchResult = audioStream_->ReleaseAudioStream(true, true);
     if (restoreInfo.restoreReason != SERVER_DIED) {
@@ -2122,6 +2130,10 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
+        if (restoreInfo.restoreReason == SERVER_DIED) {
+            switchInfo.sessionId = switchInfo.params.originalSessionId;
+            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+        }
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId);
@@ -2493,8 +2505,6 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     AUDIO_INFO_LOG("Restore audio renderer when server died, session %{public}u", sessionID_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
-    audioStream_->SetRestoreInfo(restoreInfo);
-    audioStream_->GetRestoreInfo(restoreInfo);
     // When server died, restore client stream by SwitchToTargetStream. Target stream class is
     // the stream class of the old stream.
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);

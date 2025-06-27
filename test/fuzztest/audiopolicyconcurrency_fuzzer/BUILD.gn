@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioPolicyConcurrencyFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -25,7 +26,6 @@ ohos_fuzztest("AudioPolicyConcurrencyFuzzTest") {
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include/service/concurrency",
     "../../../services/audio_policy/server/include/service/listener",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
   cflags = [
     "-g",
@@ -90,6 +90,9 @@ ohos_fuzztest("AudioPolicyConcurrencyFuzzTest") {
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
     ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
   }
 }
 

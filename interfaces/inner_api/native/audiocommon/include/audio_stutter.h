@@ -31,7 +31,7 @@ enum DataTransferStateChangeType {
 
 enum BadDataTransferType {
     NO_DATA_TRANS,      // monitor none data transfer
-    SLIENCE_DATA_TRANS, // monitor slience data transfer
+    SILENCE_DATA_TRANS, // monitor silence data transfer
     MAX_DATATRANS_TYPE
 };
 
@@ -74,7 +74,7 @@ struct AudioRendererDataTransferStateChangeInfo {
 struct DataTransferMonitorParam {
     int32_t clientUID;
     int32_t badDataTransferTypeBitMap;
-    int32_t timeInterval;
+    int64_t timeInterval;
     int32_t badFramesRatio;
 
     DataTransferMonitorParam() = default;

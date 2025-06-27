@@ -268,13 +268,15 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
 
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(recordStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Pause(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Flush(recordStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -327,11 +329,13 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Drain(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(recordStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Stop(playStreamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
-    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), false);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSinkInputInfo(playStreamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     EXPECT_EQ(hpaeInnerCapturerManager_->GetSourceOutputInfo(recordStreamInfo.sessionId, sourceOutoputInfo), SUCCESS);
@@ -406,6 +410,8 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001)
  */
 TEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001)
 {
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeStreamInfo recordStreamInfo = GetInCapRecordStreamInfo();
@@ -417,6 +423,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(false), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
 }
 
 /**

@@ -133,11 +133,6 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
     fclose(metaFile);
 }
 
-class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
-public:
-    void OnFastStatusChange(FastStatus status) override { return; }
-};
-
 /**
  * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_001
@@ -4445,5 +4440,44 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     fclose(wavFile);
 }
 
+/**
+ * @tc.name  : Test RestoreAudioInLoop API in non-running state
+ * @tc.number: Audio_Renderer_RestoreAudioInLoop_001
+ * @tc.desc  : Test stream restore when Renderer is in PREPARED state
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreAudioInLoop_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    int32_t tryCounter = 1;
+    bool restoreResult = false;
+    audioRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
+    EXPECT_EQ(false, restoreResult);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test CheckAndRestoreAudioRenderer API in non-running state
+ * @tc.number: Audio_Renderer_CheckAndRestoreAudioRenderer_001
+ * @tc.desc  : Test stream restore when Renderer has released
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckAndRestoreAudioRenderer_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    audioRenderer->abortRestore_ = true;
+    auto res = audioRenderer->CheckAndRestoreAudioRenderer("UT-Test");
+
+    EXPECT_EQ(SUCCESS, res);
+    audioRenderer.reset();
+}
 } // namespace AudioStandard
 } // namespace OHOS

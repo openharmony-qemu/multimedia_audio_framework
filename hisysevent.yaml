@@ -160,6 +160,13 @@ AUDIO_ROUTE_CHANGE:
   DEVICE_LIST: {type: STRING, desc: current device list}
   ROUTER_TYPE: {type: UINT8, desc: device selection routing policy}
 
+DB_ACCESS_EXCEPTION:
+  __BASE: {type: FAULT, level: CRITICAL, desc: database access exception}
+  DB_TYPE: {type: STRING, desc: database access type}
+  ERROR_CASE: {type: UINT32, desc: error case}
+  ERROR_MSG: {type: INT32, desc: error message}
+  ERROR_DESCRIPTION: {type: STRING, desc: error description}
+
 AUDIO_PIPE_CHANGE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: audio pipe change}
   APP_NAME: {type: STRING, desc: application name}
@@ -190,6 +197,24 @@ VOLUME_SUBSCRIBE:
   __BASE: {type: BEHAVIOR, level: MINOR, desc: Subscribe to volume key events}
   SUBSCRIBE_KEY: {type: STRING, desc: Subscribed events}
   SUBSCRIBE_RESULT: {type: UINT32, desc: Subscribed event results}
+
+HDI_EXCEPTION:
+  __BASE: {type: FAULT, level: CRITICAL, desc: hdi exception}
+  HDI_TYPE: {type: UINT8, desc: hdi type}
+  ERROR_CASE: {type: UINT32, desc: error case}
+  ERROR_MSG: {type: INT32, desc: error msg}
+  ERROR_DESCRIPTION: {type: STRING, desc: error description}
+
+APP_WRITE_MUTE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: APP write mute data}
+  APP_BUNDLE_NAME: {type: STRING, desc: the app bundle name}
+  STREAM_TYPE: {type: UINT8, desc: stream type}
+  SESSION_ID: {type: UINT32, desc: the audio stream id like 100001}
+  STREAM_VOLUME: {type: FLOAT, desc: the volume of the steam}
+  MUTE_STATE: {type: UINT8, desc: mute state of the stream}
+  APP_BACKGROUND_STATE: {type: UINT8, desc: background state}
+  MUTE_PLAY_START_TIME: {type: INT64, desc: the time when app starts writing mute data}
+  MUTE_PLAY_DURATION: {type: UINT32, desc: the duration of mute play}
 
 JANK_PLAYBACK:
   __BASE: {type: FAULT, level: CRITICAL, desc: audio playback jank event}

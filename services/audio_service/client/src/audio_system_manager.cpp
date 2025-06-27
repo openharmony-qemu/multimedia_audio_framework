@@ -1549,6 +1549,11 @@ int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     return AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
 }
 
+int32_t AudioSystemManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return AudioPolicyManager::GetInstance().SetAdjustVolumeForZone(zoneId);
+}
+
 int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {

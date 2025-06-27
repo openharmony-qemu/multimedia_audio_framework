@@ -126,6 +126,40 @@ public:
         return desc;
     }
 };
+
+struct AudioZoneStream {
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isPlay = true;
+    bool operator==(const AudioZoneStream &value) const
+    {
+        return streamUsage == value.streamUsage && sourceType == value.sourceType && isPlay == value.isPlay;
+    }
+
+    bool operator<(const AudioZoneStream &value) const
+    {
+        return streamUsage < value.streamUsage || (streamUsage == value.streamUsage && sourceType < value.sourceType);
+    }
+
+    bool operator>(const AudioZoneStream &value) const
+    {
+        return streamUsage > value.streamUsage || (streamUsage == value.streamUsage && sourceType > value.sourceType);
+    }
+
+    bool Marshalling(Parcel &parcel) const
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteBool(isPlay);
+    }
+
+    void Unmarshalling(Parcel &parcel)
+    {
+        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        isPlay = parcel.ReadBool();
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_ZONE_INFO_H

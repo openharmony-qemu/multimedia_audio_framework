@@ -16,9 +16,9 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("IStandardClientTrackerFuzzTest") {
+ohos_fuzztest("AudioPolicyStateMonitorFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../istandardclienttracker_fuzzer"
+  fuzz_config_file = "../audiopolicystatemonitor_fuzzer"
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
@@ -34,12 +34,9 @@ ohos_fuzztest("IStandardClientTrackerFuzzTest") {
     "-fno-omit-frame-pointer",
     "-fno-access-control",
   ]
-  configs = [
-    "../../../services/audio_policy:audio_policy_public_config",
-    "../../../services/audio_engine:audio_engine_node_config",
-  ]
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  sources = [ "i_standard_client_tracker_fuzzer.cpp" ]
+  sources = [ "audio_policy_state_monitor_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
@@ -48,7 +45,6 @@ ohos_fuzztest("IStandardClientTrackerFuzzTest") {
     "../../../services/audio_service:audio_common",
     "../../../frameworks/native/audioclock:audio_clock",
     "../../../services/audio_engine:audio_engine_manager",
-    "../../../services/audio_engine:audio_engine_utils",
   ]
 
   external_deps = [
@@ -114,5 +110,5 @@ ohos_fuzztest("IStandardClientTrackerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":IStandardClientTrackerFuzzTest" ]
+  deps = [ ":AudioPolicyStateMonitorFuzzTest" ]
 }

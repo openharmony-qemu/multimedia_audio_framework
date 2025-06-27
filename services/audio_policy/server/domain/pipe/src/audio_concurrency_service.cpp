@@ -124,24 +124,6 @@ void AudioConcurrencyService::SetCallbackHandler(std::shared_ptr<AudioPolicyServ
 void AudioConcurrencyService::AudioConcurrencyClient::OnConcedeStream()
 {
     if (callback_ != nullptr) {
-        AudioStreamCollector &streamCollector = AudioStreamCollector::GetAudioStreamCollector();
-        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-        streamCollector.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        for (auto &capturerChangeInfo : capturerChangeInfos) {
-            uint32_t tmpSessionId = static_cast<uint32_t>(capturerChangeInfo->sessionId);
-            if (tmpSessionId == sessionID_) {
-                SwitchStreamInfo info = {
-                    sessionID_,
-                    capturerChangeInfo->createrUID,
-                    capturerChangeInfo->clientUID,
-                    capturerChangeInfo->clientPid,
-                    capturerChangeInfo->appTokenId,
-                    capturerChangeInfo->capturerState,
-                };
-                SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
-                break;
-            }
-        }
         callback_->OnConcedeStream();
     }
 }

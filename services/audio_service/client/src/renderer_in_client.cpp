@@ -64,6 +64,8 @@ namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
 const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
+const int64_t MUTE_PLAY_MIN_DURAION = 3000000000; // 3S
+const int64_t MUTE_PLAY_MAX_DURAION = 30000000000; // 30S
 static const size_t MAX_WRITE_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t OFFLOAD_OPERATION_TIMEOUT_IN_MS = 8000; // 8000ms for offload
@@ -367,7 +369,12 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
     if (curStreamParams_.encoding == ENCODING_AUDIOVIVID) {
-        result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+        if (bufferDesc.dataLength != 0) {
+            result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength, bufferDesc.metaBuffer, bufferDesc.metaLength);
+        } else {
+            AUDIO_WARNING_LOG("INVALID AudioVivid buffer");
+            usleep(WAIT_FOR_NEXT_CB);
+        }
     }
     if (curStreamParams_.encoding == ENCODING_PCM) {
         if (bufferDesc.dataLength != 0) {
@@ -653,7 +660,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     }
 
-    return WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
+    int32_t result = WriteRingCache(buffer, bufferSize, speedCached, oriBufferSize);
+    MonitorMutePlay(false);
+    return result;
 }
 
 void RendererInClientInner::ResetFramePosition()
@@ -675,6 +684,68 @@ void RendererInClientInner::ResetFramePosition()
     lastReadIdx_ = 0;
     lastLatency_ = latency;
     lastLatencyPosition_ = latency * speed_;
+}
+
+bool RendererInClientInner::IsMutePlaying()
+{
+    // this is updated in DfxOperation
+    if (volumeDataCount_ < 0) {
+        return true;
+    }
+
+    return mutePlaying_;
+}
+
+void RendererInClientInner::MonitorMutePlay(bool isPlayEnd)
+{
+    int64_t cur = ClockTime::GetRealNano();
+    // judge if write mute
+    bool isMutePlay = isPlayEnd ? false : IsMutePlaying();
+    // not write mute or play end
+    if (!isMutePlay) {
+        if (mutePlayStartTime_ == 0) {
+            return;
+        }
+        if (cur - mutePlayStartTime_ > MUTE_PLAY_MIN_DURAION) {
+            ReportWriteMuteEvent(cur - mutePlayStartTime_);
+            return;
+        }
+        mutePlayStartTime_ = 0;
+        return;
+    }
+
+    // write mute
+    if (mutePlayStartTime_ == 0) {
+        // record first mute play
+        mutePlayStartTime_ = cur;
+        return;
+    }
+    if (cur - mutePlayStartTime_ > MUTE_PLAY_MAX_DURAION) {
+        ReportWriteMuteEvent(cur - mutePlayStartTime_);
+    }
+}
+
+void RendererInClientInner::ReportWriteMuteEvent(int64_t mutePlayDuration)
+{
+    mutePlayDuration /= AUDIO_US_PER_SECOND; // ns -> ms
+    bool isMute = GetMute();
+    bool isClientMute = muteCmd_ == CMD_FROM_CLIENT;
+    uint8_t muteState = (isClientMute ? 0x0 : 0x4) | (isMute ? 0x1 : 0x0);
+
+    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64"d ms, muteState:%{public}d", sessionId_,
+        mutePlayDuration, muteState);
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::APP_WRITE_MUTE, Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("UID", appUid_); // for APP_BUNDLE_NAME
+    bean->Add("STREAM_TYPE", clientConfig_.rendererInfo.streamUsage);
+    bean->Add("SESSION_ID", static_cast<int32_t>(sessionId_));
+    bean->Add("STREAM_VOLUME", clientVolume_);
+    bean->Add("MUTE_STATE", static_cast<int32_t>(muteState));
+    bean->Add("APP_BACKGROUND_STATE", 0);
+    bean->Add("MUTE_PLAY_START_TIME", static_cast<uint64_t>(mutePlayStartTime_ / AUDIO_US_PER_SECOND));
+    bean->Add("MUTE_PLAY_DURATION", static_cast<int32_t>(mutePlayDuration));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+    mutePlayStartTime_ = 0; // reset it to 0 for next record
 }
 
 void RendererInClientInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize)

@@ -255,7 +255,7 @@ ohos_unittest("audio_zone_service_unit_test") {
 ohos_unittest("audio_zone_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
-    "./unittest/audio_zone_unit_test",
+    "./unittest/audio_zone_unit_test/include",
     "../../audio_policy/server/include",
     "../../audio_policy/server/domain/zone/include",
     "../../audio_policy/server/src",
@@ -1975,7 +1975,7 @@ ohos_unittest("stream_filter_router_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/stream_filter_router_test/src/stream_filter_router_unit_test.cpp" ]
+  sources = [ "./unittest/stream_filter_router_unit_test/src/stream_filter_router_unit_test.cpp" ]
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
@@ -2693,7 +2693,7 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
     "safwk:system_ability_fwk",
   ]
 
-  sources = [ "./unittest/audio_policy_server_handler_test/src/audio_policy_server_handler_unit_test.cpp" ]
+  sources = [ "./unittest/audio_policy_server_handler_unit_test/src/audio_policy_server_handler_unit_test.cpp" ]
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
 
@@ -3036,7 +3036,7 @@ ohos_unittest("audio_policy_manager_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "./unittest/audio_policy_manager_unit_test/include",
-    "../../../../frameworks/native/audiopolicy/include",
+    "../../../frameworks/native/audiopolicy/include",
   ]
 
   use_exceptions = true

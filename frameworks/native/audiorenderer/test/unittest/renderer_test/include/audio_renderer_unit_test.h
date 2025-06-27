@@ -111,6 +111,11 @@ public:
     State state_ = State::RUNNING;
 };
 
+class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
+public:
+    void OnFastStatusChange(FastStatus status) override { return; }
+};
+
 class AudioRendererWriteCallbackMock : public AudioRendererWriteCallback {
 public:
     void OnWriteData(size_t length)

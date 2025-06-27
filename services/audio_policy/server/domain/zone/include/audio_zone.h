@@ -34,6 +34,8 @@ public:
     explicit AudioZoneBindKey(int32_t uid);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag);
     AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag);
+    AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+        const StreamUsage &usage);
     AudioZoneBindKey(const AudioZoneBindKey &other);
     AudioZoneBindKey(AudioZoneBindKey &&other);
     AudioZoneBindKey &operator=(const AudioZoneBindKey &other);
@@ -46,13 +48,14 @@ public:
     const std::string GetString() const;
     bool IsContain(const AudioZoneBindKey &other) const;
     const static std::vector<AudioZoneBindKey> GetSupportKeys(int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag);
+        const std::string &streamTag, const StreamUsage &usage);
     const static std::vector<AudioZoneBindKey> GetSupportKeys(const AudioZoneBindKey &key);
 
 private:
     int32_t uid_ = -1;
     std::string deviceTag_ = "";
     std::string streamTag_ = "";
+    StreamUsage usage_ = StreamUsage::STREAM_USAGE_INVALID;
 
     void Assign(const AudioZoneBindKey &other);
     void Swap(AudioZoneBindKey &&other);
@@ -85,6 +88,7 @@ public:
     int32_t SetSystemVolumeLevel(const AudioVolumeType volumeType,
         const int32_t volumeLevel, const int32_t volumeFlag = 0);
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+    bool IsVolumeProxyEnable();
 
     int32_t EnableChangeReport(pid_t clientPid, bool enable);
 
