@@ -42,7 +42,7 @@ OH_AudioWorkgroup *audioWorkgroup = nullptr;
 void* test_func(void* arg)
 {
     pthread_t tmpTid = pthread_self();
-    pid_t testTid = static_cast<unsigned long>tmpTid;
+    pid_t testTid = static_cast<unsigned long>(tmpTid);
     const int32_t startTime = 20;
     const int32_t endTime = 40;
 
