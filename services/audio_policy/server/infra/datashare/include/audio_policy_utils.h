@@ -49,6 +49,8 @@ public:
         return instance;
     }
     void WriteServiceStartupError(std::string reason);
+    void WriteDeviceChangeExceptionEvent(const AudioStreamDeviceChangeReason reason,
+        DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc);
     std::string GetRemoteModuleName(std::string networkId, DeviceRole role);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetAvailableDevicesInner(AudioDeviceUsage usage);
     void SetBtConnecting(bool flag);

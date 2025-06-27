@@ -43,6 +43,7 @@
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_event_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
