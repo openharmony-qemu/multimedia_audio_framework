@@ -2135,6 +2135,10 @@ int32_t AudioPolicyServer::SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> 
 
 int32_t AudioPolicyServer::CheckVKBInfo(const std::string &bundleName, bool &isValid)
 {
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
     return audioStateManager_.CheckVKBInfo(bundleName, isValid);
 }
 
