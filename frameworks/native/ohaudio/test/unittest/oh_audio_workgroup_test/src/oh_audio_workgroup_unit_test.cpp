@@ -39,27 +39,29 @@ OH_AudioResourceManager *audioResourceManager = nullptr;
 OH_AudioCommon_Result result;
 OH_AudioWorkgroup *audioWorkgroup = nullptr;
 
-void* test_func(void* arg) {
-    pthread_t my_tid = pthread_self();
-    pid_t test_tid = (unsigned long)my_tid;
+void* test_func(void* arg)
+{
+    pthread_t tmpTid = pthread_self();
+    pid_t testTid = static_cast<unsigned long>tmpTid;
+    const int32_t startTime = 20;
+    const int32_t endTime = 40;
 
-    result = OH_AudioWorkgroup_AddCurrentThread(audioWorkgroup, &test_tid);
+    result = OH_AudioWorkgroup_AddCurrentThread(audioWorkgroup, &testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    result = OH_AudioWorkgroup_Start(audioWorkgroup, 20, 40);
+    result = OH_AudioWorkgroup_Start(audioWorkgroup, startTime, endTime);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioWorkgroup_Stop(audioWorkgroup);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-    result = OH_AudioWorkgroup_RemoveThread(audioWorkgroup, test_tid);
+    result = OH_AudioWorkgroup_RemoveThread(audioWorkgroup, testTid);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     result = OH_AudioResourceManager_ReleaseWorkgroup(audioResourceManager, audioWorkgroup);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 
-    return NULL;
+    return nullptr;
 }
 
 HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
 {
-    
     result = OH_AudioManager_GetAudioResourceManager(&audioResourceManager);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
     EXPECT_NE(audioResourceManager, nullptr);
