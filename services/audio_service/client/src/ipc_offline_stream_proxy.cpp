@@ -61,14 +61,14 @@ int32_t IpcOfflineStreamProxy::ConfigureOfflineEffectChain(const AudioStreamInfo
     return ret;
 }
 
-int32_t IpcOfflineStreamProxy::SetParamOfflineEffectChain(const std::vector<uint8_t> &param)
+int32_t IpcOfflineStreamProxy::SetParamOfflineEffectChain(std::vector<uint8_t> &param)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WrriteUInt8Vector(param);
+    data.WriteUInt8Vector(param);
     int ret = Remote()->SendRequest(IpcOfflineStreamMsg::SET_PARAM_OFFLINE_EFFECT_CHAIN, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Configure failed, error: %{public}d", ret);
 
