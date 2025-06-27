@@ -361,9 +361,9 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, HandleA2dpDeviceOutOffload_001, TestSi
 {
     std::shared_ptr<AudioA2dpOffloadManager> manager = std::make_shared<AudioA2dpOffloadManager>();
     manager->Init();
-    AudioDeviceDescriptor deviceDescriptor;
-    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    AudioDeviceDescriptor descriptor;
+    descriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    manager->audioActiveDevice_.SetCurrentOutputDevice(descriptor);
     BluetoothOffloadState a2dpOffloadFlag = NO_A2DP_DEVICE;
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;

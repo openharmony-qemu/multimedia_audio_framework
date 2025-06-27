@@ -163,7 +163,7 @@ void HandleActiveBtFuzzTest()
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->HandleActiveBt(deviceType, macAddress);
@@ -175,7 +175,7 @@ void HandleNegtiveBtFuzzTest()
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    manager->audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     audioActiveDevice->HandleNegtiveBt(deviceType);

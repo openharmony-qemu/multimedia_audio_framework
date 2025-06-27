@@ -397,22 +397,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test SetCallDeviceActive.
-* @tc.number: SetCallDeviceActive_001
-* @tc.desc  : Test SetCallDeviceActive.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetCallDeviceActive_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    InternalDeviceType deviceType = DEVICE_TYPE_INVALID;
-    bool active =true;
-    std::string address= "123456";
-
-    GetServerPtr()->audioDeviceLock_.SetCallDeviceActive(deviceType, active, address);
-}
-
-/**
 * @tc.name  : Test GetMaxAmplitude.
 * @tc.number: GetMaxAmplitude_001
 * @tc.desc  : Test GetMaxAmplitude.
