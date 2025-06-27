@@ -77,7 +77,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRenderSink(uint32_t r
             sink = std::make_shared<FileAudioRenderSink>();
             break;
         case HDI_ID_TYPE_MULTICHANNEL:
-            sink = std::make_shared<MultichannelAudioRenderSink>();
+            sink = std::make_shared<MultichannelAudioRenderSink>(info);
             break;
         case HDI_ID_TYPE_OFFLOAD:
             sink = std::make_shared<OffloadAudioRenderSink>();
