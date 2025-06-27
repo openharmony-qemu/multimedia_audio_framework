@@ -211,7 +211,7 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_004, TestSize.
     if (chain_) {
         std::vector<uint8_t> param(0);
         int32_t ret = chain_->SetParam(param);
-        EXPECT_EQ(ERROR, chain_->SetParam(param));
+        EXPECT_EQ(ERROR, ret);
     }
 }
 
