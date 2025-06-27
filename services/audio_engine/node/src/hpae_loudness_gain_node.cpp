@@ -30,6 +30,8 @@ namespace HPAE {
 static const std::string LOUDNESSGAIN_PATH = "/system/lib64/libaudio_integration_loudness.z.so";
 static constexpr float EPSILON = 1e-6f;
 static constexpr uint32_t SAMPLE_RATE = 48000;
+static constexpr float DB_TO_AMPLITUDE_BASE = 10.0f;
+static constexpr float DB_TO_AMPLITUDE_DIVISOR = 20.0f;
 static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
     .libraryName = "loudness",
     .effectName = "loudness",
@@ -38,6 +40,10 @@ static const AudioEffectDescriptor LOUDNESS_DESCRIPTOR = {
 static inline bool IsFloatValueEqual(float a, float b)
 {
     return std::abs(a - b) < EPSILON;
+}
+
+static inline float loudnessDbToLinearGain(float loudnessGainDb) {
+    return std::pow(DB_TO_AMPLITUDE_BASE, loudnessGainDb / DB_TO_AMPLITUDE_DIVISOR);
 }
 
 HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePluginNode(nodeInfo),
@@ -104,12 +110,12 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
     CHECK_AND_RETURN_RET(IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();
-        size_t bufferSize = inputs[0]->Size();
+        int32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
+        float *dataBuffer = loudnessGainOutput_.GetPcmDataBuffer();
         for (size_t i = 0; i < bufferSize; i++) {
-            loudnessGainOutput_.GetPcmDataBuffer()[i] = pcmDataBuffer[i] * linearGain_;
+            dataBuffer[i] = pcmDataBuffer[i] * linearGain_;
         }
-    }
-    else {
+    } else {
         AudioBuffer inBuffer = {
             .frameLength = inputs[0]->GetFrameLen(),
             .raw = inputs[0]->GetPcmDataBuffer(),
@@ -120,7 +126,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
             .raw = loudnessGainOutput_.GetPcmDataBuffer(),
             .metaData = nullptr
         };
-        CHECK_AND_RETURN_RET_LOG(handle_, ERROR, "no handle.");
+        CHECK_AND_RETURN_RET_LOG(handle_, inputs[0], "no handle.");
         int32_t ret = (*handle_)->process(handle_, &inBuffer, &outBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == 0, inputs[0], "loudness algo lib process failed");
     }
@@ -168,7 +174,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
-        linearGain_ = std::pow(10.0f, loudnessGain_ / 20.0f);
+        linearGain_ = loudnessDbToLinearGain(loudnessGain_);
         loudnessGain_ = loudnessGain;
         return SUCCESS;
     }

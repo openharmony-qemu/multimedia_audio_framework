@@ -450,7 +450,7 @@ describe("AudioRendererJsUnitTest", function() {
                 expect(data).BeCloseTo(VALID_LOUDNESS_GAIN, TOLERANCE);
                 done();
             } catch (error) {
-                console.error(`setLoudnessGain ERROR: ${err}`);
+                console.error(`setLoudnessGain ERROR: ${error.code}`);
                 expect(false).assertTrue();
                 done();
             }

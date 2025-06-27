@@ -320,11 +320,10 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
     if (!(usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
         usage == AUDIOSTREAM_USAGE_AUDIOBOOK)) {
-            *loudnessGain = 0.0f;
-        }
-    else {
+        *loudnessGain = 0.0f;
+    } else {
         *loudnessGain = audioRenderer->GetLoudnessGain();
-    }    
+    }
     return AUDIOSTREAM_SUCCESS;
 }
 
