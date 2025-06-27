@@ -39,7 +39,7 @@ OH_AudioResourceManager *audioResourceManager = nullptr;
 OH_AudioCommon_Result result;
 OH_AudioWorkgroup *audioWorkgroup = nullptr;
 
-void* test_func(void* arg)
+void* TestFunc(void* arg)
 {
     pthread_t tmpTid = pthread_self();
     pid_t testTid = static_cast<unsigned long>(tmpTid);
@@ -70,7 +70,7 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
     EXPECT_NE(audioWorkgroup, nullptr);
 
     pthread_t tid;
-    pthread_create(&tid, NULL, test_func, NULL);
+    pthread_create(&tid, NULL, TestFunc, NULL);
     pthread_join(tid, NULL);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
