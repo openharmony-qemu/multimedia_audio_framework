@@ -39,6 +39,7 @@ private:
     int32_t HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply);
     int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
+    int32_t HandleClearAudioFocusBySessionID(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply);
     int32_t HandleUnloadModernInnerCapSink(MessageParcel &data, MessageParcel &reply);
@@ -69,6 +70,7 @@ public:
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 #endif
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 private:
     IPolicyProvider *policyWorker_;
 };

@@ -667,5 +667,41 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_004, TestSize.Level1)
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_EQ(abnormalFrameNum, 0);
 }
+
+/**
+ * @tc.name  : Test UpdateAppState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAppState_001
+ */
+HWTEST(AudioStreamCheckerTest, UpdateAppState_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->UpdateAppState(true);
+    EXPECT_EQ(checker->isBackground_, true);
+}
+
+/**
+ * @tc.name  : Test UpdateAppState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAppState_001
+ */
+HWTEST(AudioStreamCheckerTest, UpdateAppState_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->UpdateAppState(false);
+    EXPECT_EQ(checker->isBackground_, false);
+}
 }
 }

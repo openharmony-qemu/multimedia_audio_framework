@@ -821,6 +821,36 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_039, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioInterruptService.
+* @tc.number: AudioInterruptService_040
+* @tc.desc  : Test ClearAudioFocusBySessionID.
+*/
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_040, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    sptr<AudioPolicyServer> server = nullptr;
+    interruptServiceTest->zonesMap_.clear();
+    interruptServiceTest->ClearAudioFocusBySessionID(0);
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
+    interruptServiceTest->ClearAudioFocusBySessionID(0);
+    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.empty(), true);
+    interruptServiceTest->ClearAudioFocusBySessionID(0);
+    AudioInterrupt a1;
+    a1.streamId = 1;
+    interruptServiceTest->zonesMap_[0]->audioFocusInfoList.push_back({a1, AudioFocuState::ACTIVE});
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 1);
+    interruptServiceTest->ClearAudioFocusBySessionID(0);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 1);
+    interruptServiceTest->ClearAudioFocusBySessionID(-1);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 1);
+    interruptServiceTest->ClearAudioFocusBySessionID(1);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceCanMixForIncomingSession_001
 * @tc.desc  : Test CanMixForIncomingSession. sessionService_ is nullptr.
 */

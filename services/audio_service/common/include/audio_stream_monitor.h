@@ -43,6 +43,7 @@ public:
     void DeleteCheckForMonitor(uint32_t sessionId);
     void SetAudioServerPtr(DataTransferStateChangeCallbackForMonitor *ptr);
     void OnCallbackAppDied(const int32_t pid);
+    void NotifyAppStateChange(const int32_t uid, bool isBackground);
 private:
     AudioStreamMonitor() {}
     ~AudioStreamMonitor() {}

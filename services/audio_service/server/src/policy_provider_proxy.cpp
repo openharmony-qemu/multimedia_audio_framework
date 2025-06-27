@@ -245,5 +245,18 @@ int32_t PolicyProviderProxy::UnloadModernInnerCapSink(int32_t innerCapId)
     return reply.ReadInt32();
 }
 #endif
+
+int32_t PolicyProviderProxy::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(sessionID);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::CLEAR_AUDIO_FOCUS_BY_SESSIONID, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

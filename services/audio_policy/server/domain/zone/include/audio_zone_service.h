@@ -77,6 +77,7 @@ public:
        SourceType sourceType, int32_t clientUid);
     
     const std::string GetZoneStringDescriptor(int32_t zoneId);
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 
 private:
     AudioZoneService() = default;
