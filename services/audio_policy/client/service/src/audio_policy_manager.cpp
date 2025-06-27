@@ -1089,6 +1089,13 @@ int32_t AudioPolicyManager::UnsetAudioManagerInterruptCallback(const int32_t cli
     return gsp->UnsetAudioManagerInterruptCallback(clientId);
 }
 
+int32_t AudioPolicyManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->CheckVKBInfo(bundleName, isValid);
+}
+
 int32_t AudioPolicyManager::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2259,6 +2266,25 @@ int32_t AudioPolicyManager::SetAudioClientInfoMgrCallback(
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
 
     return gsp->SetAudioClientInfoMgrCallback(object);
+}
+
+int32_t AudioPolicyManager::SetAudioVKBInfoMgrCallback(
+    const std::shared_ptr<AudioVKBInfoMgrCallback> &callback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (callback == nullptr) {
+        return ERR_INVALID_PARAM;
+    };
+
+    sptr<AudioPolicyManagerListenerStub> listener = new (std::nothrow) AudioPolicyManagerListenerStub();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetAudioVKBInfoMgrCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetAudioVKBInfoMgrCallback(object);
 }
 
 int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,

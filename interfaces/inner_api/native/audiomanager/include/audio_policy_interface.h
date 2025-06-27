@@ -73,6 +73,12 @@ public:
     virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
 };
 
+class AudioVKBInfoMgrCallback {
+public:
+    virtual ~AudioVKBInfoMgrCallback() = default;
+    virtual bool OnCheckVKBInfo(const std::string &bundleName) = 0;
+};
+
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
