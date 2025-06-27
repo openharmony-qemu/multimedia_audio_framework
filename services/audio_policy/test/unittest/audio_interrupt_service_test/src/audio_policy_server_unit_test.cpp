@@ -1304,52 +1304,6 @@ HWTEST(AudioPolicyUnitTest, SetAudioInterruptCallback_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ProcessSessionRemoved.
-* @tc.number: ProcessSessionRemoved_001
-* @tc.desc  : Test AudioPolicyServer::ProcessSessionRemoved
-*/
-HWTEST(AudioPolicyUnitTest, ProcessSessionRemoved_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    uint64_t sessionID = 0;
-    int32_t zoneID = 0;
-    ptrAudioPolicyServer->ProcessSessionRemoved(sessionID, zoneID);
-}
-
-/**
-* @tc.name  : Test ProcessSessionAdded.
-* @tc.number: ProcessSessionAdded_001
-* @tc.desc  : Test AudioPolicyServer::ProcessSessionAdded
-*/
-HWTEST(AudioPolicyUnitTest, ProcessSessionAdded_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    SessionEvent sessionEvent = {SessionEvent::Type::ADD, 12345};
-    ptrAudioPolicyServer->ProcessSessionAdded(sessionEvent);
-}
-
-/**
-* @tc.name  : Test ProcessorCloseWakeupSource.
-* @tc.number: ProcessorCloseWakeupSource_001
-* @tc.desc  : Test AudioPolicyServer::ProcessorCloseWakeupSource
-*/
-HWTEST(AudioPolicyUnitTest, ProcessorCloseWakeupSource_001, TestSize.Level1)
-{
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
-    EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    uint64_t sessionID = 0;
-    ptrAudioPolicyServer->ProcessorCloseWakeupSource(sessionID);
-}
-
-/**
 * @tc.name  : Test GetStreamVolumeInfoMap.
 * @tc.number: GetStreamVolumeInfoMap_001
 * @tc.desc  : Test AudioPolicyServer::GetStreamVolumeInfoMap

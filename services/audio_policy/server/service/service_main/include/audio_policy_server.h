@@ -261,12 +261,6 @@ public:
 
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
-    void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
-
-    void ProcessSessionAdded(SessionEvent sessionEvent);
-
-    void ProcessorCloseWakeupSource(const uint64_t sessionID);
-
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType) override;
@@ -842,11 +836,6 @@ private:
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
     std::mutex subscribeVolumeKey_;
-
-    SessionProcessor sessionProcessor_{
-        [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
-        [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
-        [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
