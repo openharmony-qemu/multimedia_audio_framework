@@ -350,10 +350,9 @@ void Trace::CountVolume(const std::string &value, uint8_t data)
 
 Trace::Trace(const std::string &value)
 {
-    value_ = value;
     isFinished_ = false;
 #ifdef FEATURE_HITRACE_METER
-    StartTrace(HITRACE_TAG_ZAUDIO, value_);
+    StartTrace(HITRACE_TAG_ZAUDIO, value);
 #endif
 }
 
@@ -369,7 +368,10 @@ void Trace::End()
 
 Trace::~Trace()
 {
-    End();
+    if (!isFinished_) {
+        FinishTrace(HITRACE_TAG_ZAUDIO);
+        isFinished_ = true;
+    }
 }
 
 AudioXCollie::AudioXCollie(const std::string &tag, uint32_t timeoutSeconds,
