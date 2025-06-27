@@ -175,7 +175,6 @@ void HandleArmUsbDeviceFuzzTest()
     uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
     DeviceRole deviceRole = DeviceRoleVec[roleCount];
     std::string address = "00:11:22:33:44:55";
-    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDeviceType(deviceType);
     audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
 
     audioDeviceStatus.DeInit();
