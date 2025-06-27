@@ -21,7 +21,6 @@ namespace OHOS {
 namespace AudioStandard {
 static int32_t NUM_1 = 1;
 static int32_t NUM_2 = 2;
-static int32_t NUM_64 = 64;
 
 void AudioGeneralManagerUnitTest::SetUpTestCase(void) {}
 void AudioGeneralManagerUnitTest::TearDownTestCase(void) {}
