@@ -1103,6 +1103,17 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
     return true;
 }
 
+void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
+{
+    CHECK_AND_RETURN_LOG(pre != true || after != false, "ringdual not cancel by call");
+    AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
+    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+}
+
 bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
@@ -1145,7 +1156,9 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
                 AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
+            bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(descs, sessionId);
+            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
