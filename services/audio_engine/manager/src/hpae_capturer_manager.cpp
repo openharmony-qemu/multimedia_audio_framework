@@ -364,7 +364,7 @@ int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Flush");
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Flush not find sessionId %{public}u", sessionId);
-        // to do
+        // no cache data need to flush
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             sessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
     };
@@ -378,7 +378,7 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Drain");
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Drain not find sessionId %{public}u", sessionId);
-        // to do
+        // no cache data need to drain
         TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
             sessionNodeMap_[sessionId].state, OPERATION_DRAINED);
     };

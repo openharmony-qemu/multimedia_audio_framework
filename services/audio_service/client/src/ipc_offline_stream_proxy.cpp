@@ -61,7 +61,7 @@ int32_t IpcOfflineStreamProxy::ConfigureOfflineEffectChain(const AudioStreamInfo
     return ret;
 }
 
-int32_t IpcOfflineStreamProxy::SetParamOfflineEffectChain(std::vector<uint8_t> &param)
+int32_t IpcOfflineStreamProxy::SetParamOfflineEffectChain(const std::vector<uint8_t> &param)
 {
     MessageParcel data;
     MessageParcel reply;

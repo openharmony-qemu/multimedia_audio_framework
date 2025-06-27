@@ -36,7 +36,7 @@ public:
 
     virtual int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) = 0;
 
-    virtual int32_t SetParamOfflineEffectChain(std::vector<uint8_t> &param) = 0;
+    virtual int32_t SetParamOfflineEffectChain(const std::vector<uint8_t> &param) = 0;
 
     virtual int32_t PrepareOfflineEffectChain(std::shared_ptr<AudioSharedMemory> &inBuffer,
         std::shared_ptr<AudioSharedMemory> &outBuffer) = 0;

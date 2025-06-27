@@ -198,14 +198,15 @@ int32_t OfflineAudioEffectServerChain::SetConfig(AudioStreamInfo inInfo, AudioSt
     return SUCCESS;
 }
 
-int32_t OfflineAudioEffectServerChain::SetParam(std::vector<uint8_t> &param)
+int32_t OfflineAudioEffectServerChain::SetParam(const std::vector<uint8_t> &param)
 {
     std::lock_guard<std::mutex> lock(offlineChainMutex_);
+    std::vector<uint8_t> myParam = param;
     int8_t output[MAX_REPLY_LEN] = {0};
     uint32_t replyLen = MAX_REPLY_LEN;
     CHECK_AND_RETURN_RET_LOG(controller_, ERROR, "set param failed, controller is nullptr");
     int32_t ret = controller_->SendCommand(controller_, AUDIO_EFFECT_COMMAND_SET_PARAM,
-        reinterpret_cast<int8_t *>(param.data()), param.size(), output, &replyLen);
+        reinterpret_cast<int8_t *>(myParam.data()), myParam.size(), output, &replyLen);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR,
         "%{public}s effect COMMAND_SET_PARAM failed, errCode is %{public}d", chainName_.c_str(), ret);
     return SUCCESS;

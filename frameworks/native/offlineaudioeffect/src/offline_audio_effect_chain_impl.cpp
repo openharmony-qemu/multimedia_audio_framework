@@ -69,7 +69,7 @@ int32_t OfflineAudioEffectChainImpl::Configure(const AudioStreamInfo &inInfo, co
     return offlineStreamInClient_->ConfigureOfflineEffectChain(inInfo, outInfo);
 }
 
-int32_t OfflineAudioEffectChainImpl::SetParam(std::vector<uint8_t> &param)
+int32_t OfflineAudioEffectChainImpl::SetParam(const std::vector<uint8_t> &param)
 {
     CHECK_AND_RETURN_RET_LOG(param.size() <= MAX_PARAM_SIZE, ERR_INVALID_PARAM, "param size overflow");
     std::lock_guard<std::mutex> lock(streamClientMutex_);

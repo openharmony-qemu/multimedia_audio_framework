@@ -58,7 +58,7 @@ int32_t OfflineStreamInServer::ConfigureOfflineEffectChain(const AudioStreamInfo
     return effectChain_->SetConfig(inInfo, outInfo);
 }
 
-int32_t OfflineStreamInServer::SetParamOfflineEffectChain(std::vector<uint8_t> &param)
+int32_t OfflineStreamInServer::SetParamOfflineEffectChain(const std::vector<uint8_t> &param)
 {
     CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     return effectChain_->SetParam(param);

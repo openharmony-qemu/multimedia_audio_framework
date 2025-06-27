@@ -58,7 +58,7 @@ public:
      * @return The result of the setparam, 0 for success, other for error code
      * @since 15
      */
-    int32_t SetParamOfflineEffectChain(std::vector<uint8_t> &param);
+    int32_t SetParamOfflineEffectChain(const std::vector<uint8_t> &param);
 
     /**
      * @brief Prepare the offline audio effect chain
