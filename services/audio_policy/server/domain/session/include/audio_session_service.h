@@ -59,10 +59,13 @@ public:
 
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
     bool IsAudioSessionFocusMode(int32_t callerPid);
-    bool ShouldBypassFocusForStream(const AudioInterrupt &incomingInterrupt);
+    bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
+    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
     AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
     void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
+    bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
+    bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

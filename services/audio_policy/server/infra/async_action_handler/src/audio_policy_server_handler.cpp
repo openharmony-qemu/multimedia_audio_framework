@@ -1023,13 +1023,50 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    int32_t clientPid = eventContextObj->audioInterrupt.pid;
+    auto iterator = audioPolicyClientProxyAPSCbsMap_.find(clientPid);
+    if (iterator == audioPolicyClientProxyAPSCbsMap_.end()) {
+        AUDIO_ERR_LOG("No client callback for client pid %{public}d", clientPid);
+        return;
+    }
 
-    std::unique_lock<std::mutex> lock(handleMapMutex_);
-    std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher = interruptEventDispatcher_.lock();
-    lock.unlock();
-    if (dispatcher != nullptr) {
-        dispatcher->DispatchInterruptEventForAudioSession(eventContextObj->interruptEvent,
-            eventContextObj->audioInterrupt);
+    InterruptHint hintType = eventContextObj->interruptEvent.hintType;
+    AudioSessionStateChangedEvent stateChangedEvent;
+    switch (hintType) {
+        case INTERRUPT_HINT_RESUME:
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::RESUME;
+            break;
+        case INTERRUPT_HINT_PAUSE:
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::PAUSE;
+            break;
+        case INTERRUPT_HINT_STOP:
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::STOP;
+            break;
+        case INTERRUPT_HINT_DUCK:
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::DUCK;
+            break;
+        case INTERRUPT_HINT_UNDUCK:
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::UNDUCK;
+            break;
+        default:
+            AUDIO_ERR_LOG("Unspported hintType %{public}d", static_cast<int32_t>(hintType));
+            return;
+    }
+
+    if (clientCallbacksMap_.count(iterator->first) > 0 &&
+        clientCallbacksMap_[iterator->first].count(CALLBACK_AUDIO_SESSION_STATE) > 0 &&
+        clientCallbacksMap_[iterator->first][CALLBACK_AUDIO_SESSION_STATE]) {
+        // the client has registered audio session callback.
+        sptr<IAudioPolicyClient> audioSessionCb = iterator->second;
+        if (audioSessionCb == nullptr) {
+            AUDIO_ERR_LOG("audioSessionCb is nullptr for client pid %{public}d", clientPid);
+            return;
+        }
+        AUDIO_INFO_LOG("Trigger for client pid : %{public}d", clientPid);
+        audioSessionCb->OnAudioSessionStateChanged(stateChangedEvent);
+    } else {
+        AUDIO_ERR_LOG("No registered callback for pid %{public}d", clientPid);
     }
 }
 

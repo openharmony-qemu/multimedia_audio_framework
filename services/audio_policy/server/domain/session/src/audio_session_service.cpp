@@ -289,27 +289,59 @@ bool AudioSessionService::IsAudioSessionFocusMode(int32_t pid)
     return session != sessionMap_.end() && session->second->IsSceneParameterSet() && session->second->IsActivated();
 }
 
-bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &incomingInterrupt)
+// For audio session v2
+bool AudioSessionService::ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt)
 {
-    if (!IsAudioSessionFocusMode(incomingInterrupt.pid)) {
+    bool isExcludedStream = audioInterrupt.audioFocusType.streamType == STREAM_NOTIFICATION ||
+                            audioInterrupt.audioFocusType.streamType == STREAM_DTMF ||
+                            audioInterrupt.audioFocusType.streamType == STREAM_ALARM ||
+                            audioInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL_ASSISTANT ||
+                            audioInterrupt.audioFocusType.streamType == STREAM_ULTRASONIC ||
+                            audioInterrupt.audioFocusType.streamType == STREAM_ACCESSIBILITY;
+    if (isExcludedStream) {
+        return true;
+    }
+
+    bool isExcludedStreamType = audioInterrupt.audioFocusType.sourceType != SOURCE_TYPE_INVALID;
+    if (isExcludedStreamType) {
+        return true;
+    }
+
+    return false;
+}
+
+bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt)
+{
+    if (!IsAudioSessionFocusMode(audioInterrupt.pid)) {
         return false;
     }
 
-    bool isExcludedStream = incomingInterrupt.streamUsage == STREAM_USAGE_NOTIFICATION ||
-                            incomingInterrupt.streamUsage == STREAM_USAGE_DTMF ||
-                            incomingInterrupt.streamUsage == STREAM_USAGE_ALARM ||
-                            incomingInterrupt.streamUsage == STREAM_USAGE_VOICE_CALL_ASSISTANT ||
-                            incomingInterrupt.streamUsage == STREAM_USAGE_ULTRASONIC ||
-                            incomingInterrupt.streamUsage == STREAM_USAGE_ACCESSIBILITY;
-    if (isExcludedStream) {
+    if (ShouldExcludeStreamType(audioInterrupt)) {
         return false;
     }
 
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
-    auto session = sessionMap_.find(incomingInterrupt.pid);
-    session->second->AddStreamInfo(incomingInterrupt);
+    auto session = sessionMap_.find(audioInterrupt.pid);
+    session->second->AddStreamInfo(audioInterrupt);
 
     return true;
+}
+
+bool AudioSessionService::ShouldAudioSessionProcessHintType(InterruptHint hintType)
+{
+    return hintType == INTERRUPT_HINT_RESUME ||
+           hintType == INTERRUPT_HINT_PAUSE ||
+           hintType == INTERRUPT_HINT_STOP ||
+           hintType == INTERRUPT_HINT_DUCK ||
+           hintType == INTERRUPT_HINT_UNDUCK;
+}
+
+bool AudioSessionService::ShouldAudioStreamProcessHintType(InterruptHint hintType)
+{
+    return hintType == INTERRUPT_HINT_PAUSE ||
+           hintType == INTERRUPT_HINT_STOP ||
+           hintType == INTERRUPT_HINT_DUCK ||
+           hintType == INTERRUPT_HINT_UNDUCK;
 }
 
 std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)

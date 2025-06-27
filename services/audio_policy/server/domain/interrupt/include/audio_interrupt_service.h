@@ -118,7 +118,7 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
-    int32_t ProcessFocusEntryForAudioSession(int32_t pid);
+    int32_t ProcessFocusEntryForAudioSession(int32_t callerPid);
     bool ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt);
     void DeactivateAudioSessionFakeInterrupt(int32_t zoneId, int32_t callerPid);
     void DispatchInterruptEventForAudioSession(
@@ -181,6 +181,8 @@ private:
     // modern interrupt interfaces
     int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const bool isUpdatedAudioStrategy, bool &updateScene);
+    int32_t ActivateAudioInterruptCoreProcedure(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
+        const bool isUpdatedAudioStrategy);
     void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingStreamId,
         const int32_t &zoneId, bool &shouldReturnSuccess);
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
