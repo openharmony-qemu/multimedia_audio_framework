@@ -76,7 +76,7 @@ const uint64_t MIN_CBBUF_IN_USEC = 20000;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
-static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)

@@ -230,6 +230,8 @@ private:
     int64_t sourceDuration_ = -1;
     std::unique_ptr<PlayerDfxWriter> playerDfx_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
+
+    float loudnessGain_ = 0.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS
