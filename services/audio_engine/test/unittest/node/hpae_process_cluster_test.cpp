@@ -244,7 +244,6 @@ TEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo)
     EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
     EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
     EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_48000);
-
 }
 } // AudioStandard
 } // OHOS

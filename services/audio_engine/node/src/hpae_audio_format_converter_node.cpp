@@ -164,7 +164,7 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
 
 // return true if output info is updated
 bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
-{   
+{
     if (nodeFormatInfoCallback_ == nullptr) {
         return false;
     }
