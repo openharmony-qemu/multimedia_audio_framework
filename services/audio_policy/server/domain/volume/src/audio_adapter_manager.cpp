@@ -558,12 +558,12 @@ void AudioAdapterManager::HandleSaveVolume(DeviceType deviceType, AudioStreamTyp
 }
 
 void AudioAdapterManager::HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, std::string networkId)
 {
     if (deviceType != DEVICE_TYPE_NONE) {
-        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, mute);
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, mute, networkId);
     } else {
-        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_.deviceType_, streamType, mute);
+        volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_.deviceType_, streamType, mute, networkId);
     }
 }
 
@@ -836,9 +836,9 @@ float AudioAdapterManager::GetSystemVolumeDb(AudioStreamType streamType)
 }
 
 int32_t AudioAdapterManager::SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, std::string networkId)
 {
-    return SetStreamMuteInternal(streamType, mute, streamUsage, deviceType);
+    return SetStreamMuteInternal(streamType, mute, streamUsage, deviceType, networkId);
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device,
@@ -854,7 +854,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(std::shared_ptr<AudioDeviceDe
     volumeDataExtMaintainer_[device->deviceType_]->SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, device->networkId_);
     }
     return SetVolumeDb(device, streamType);
 }
@@ -892,7 +892,7 @@ int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool
 }
 
 int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, bool mute,
-    StreamUsage streamUsage, const DeviceType &deviceType)
+    StreamUsage streamUsage, const DeviceType &deviceType, std::string networkId)
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
@@ -904,7 +904,7 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
 
     if (handler_ != nullptr) {
-        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType);
+        handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, networkId);
     }
 
     // Achieve the purpose of adjusting the mute status by adjusting the stream volume.
@@ -2314,12 +2314,13 @@ void  AudioAdapterManager::CheckAndDealMuteStatus(const DeviceType &deviceType, 
         if (currentActiveDevice_.deviceType_ == deviceType) {
             volumeDataMaintainer_.SetStreamMuteStatus(streamType, muteStateForStreamRing);
         }
-        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStateForStreamRing);
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStateForStreamRing,
+            currentActiveDevice_.networkId_);
     } else if (!volumeDataMaintainer_.GetMuteStatus(deviceType, streamType)) {
         if (currentActiveDevice_.deviceType_ == deviceType) {
             volumeDataMaintainer_.SetStreamMuteStatus(streamType, false);
         }
-        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false);
+        volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, false, currentActiveDevice_.networkId_);
     }
     if (currentActiveDevice_.deviceType_ == deviceType) {
         SetVolumeDb(streamType);
@@ -2362,7 +2363,7 @@ void AudioAdapterManager::CloneMuteStatusMap(void)
             if (currentActiveDevice_.deviceType_ == deviceType) {
                 volumeDataMaintainer_.SetStreamMuteStatus(streamType, muteStatus);
             }
-            volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStatus);
+            volumeDataMaintainer_.SaveMuteStatus(deviceType, streamType, muteStatus, currentActiveDevice_.networkId_);
         }
     }
     isNeedCopyMuteData_ = false;
@@ -2377,7 +2378,8 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
     TransferMuteStatus();
 
     for (auto &streamType: defaultVolumeTypeList_) {
-        bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_.deviceType_, streamType);
+        bool result = volumeDataMaintainer_.GetMuteStatus(currentActiveDevice_.deviceType_, streamType,
+            currentActiveDevice_.networkId_);
         if (!result) {
             AUDIO_WARNING_LOG("Could not load mute status for stream type %{public}d from database.", streamType);
         }
@@ -2391,6 +2393,7 @@ bool AudioAdapterManager::LoadMuteStatusMap(void)
             if (muteStateForStreamRing == GetStreamMute(streamType)) {
                 continue;
             }
+            // set local speaker mute state in ring scene when ringermode change
             volumeDataMaintainer_.SaveMuteStatus(currentActiveDevice_.deviceType_, streamType, muteStateForStreamRing);
             SetStreamMute(streamType, muteStateForStreamRing);
         }
