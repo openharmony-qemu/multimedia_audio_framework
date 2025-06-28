@@ -234,10 +234,10 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             } else {
                 return PIPE_TYPE_DIRECT_OUT;
             }
-        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
-            return PIPE_TYPE_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
             return PIPE_TYPE_MULTICHANNEL;
+        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+            return PIPE_TYPE_OFFLOAD;
         } else {
             return PIPE_TYPE_NORMAL_OUT;
         }
