@@ -107,7 +107,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     }
     return 0;
 }
-static void CrteateHpaeInfo(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
+static void CreateHpaeInfo(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
 {
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
     nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
@@ -124,7 +124,7 @@ TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
 {
     HpaeNodeInfo nodeInfo;
     HpaeSinkInfo dummySinkInfo;
-    CrteateHpaeInfo(nodeInfo, dummySinkInfo);
+    CreateHpaeInfo(nodeInfo, dummySinkInfo);
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
     std::shared_ptr<HpaeSinkInputNode> hpaeSinkInputNode0 = std::make_shared<HpaeSinkInputNode>(nodeInfo);
