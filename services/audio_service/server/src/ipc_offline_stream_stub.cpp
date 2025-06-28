@@ -32,7 +32,7 @@ IpcOfflineStreamStub::IpcOfflineStreamStub()
             return HandleConfigureOfflineEffectChain(data, reply);
         }},
         {SET_PARAM_OFFLINE_EFFECT_CHAIN, [this](MessageParcel &data, MessageParcel &reply) {
-            return HandleConfigureOfflineEffectChain(data, reply);
+            return HandleSetParamOfflineEffectChain(data, reply);
         }},
         {PROCESS_OFFLINE_EFFECT_CHAIN, [this](MessageParcel &data, MessageParcel &reply) {
             return HandleProcessOfflineEffectChain(data, reply);
