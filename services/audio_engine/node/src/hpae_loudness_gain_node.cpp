@@ -169,7 +169,7 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
     CHECK_AND_RETURN_LOG(ret == 0, "Loudness algo lib EFFECT_CMD_SET_CONFIG failed");
 }
 
-int32_t HpaeLoudnessGainNode::ReleaseHandle()
+int32_t HpaeLoudnessGainNode::ReleaseHandle(float loudnessGain)
 {
     AUDIO_INFO_LOG("Releasing handle...");
     CHECK_AND_RETURN_RET_LOG(handle_, ERROR, "no handle.");
@@ -192,7 +192,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
     }
     
     if (IsFloatValueEqual(loudnessGain, 0.0f)) {
-        return ReleaseHandle();
+        return ReleaseHandle(loudnessGain);
     }
 
     uint32_t replyData = 0;
