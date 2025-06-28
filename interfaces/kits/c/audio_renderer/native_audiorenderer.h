@@ -329,6 +329,26 @@ OH_AudioStream_Result OH_AudioRenderer_SetVolume(OH_AudioRenderer* renderer, flo
 OH_AudioStream_Result OH_AudioRenderer_SetVolumeWithRamp(OH_AudioRenderer* renderer, float volume, int32_t durationMs);
 
 /**
+ * Set loudnessGain of current renderer.
+ *
+ * @since 20
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param loudnessGain LoudnessGain to set, -96.0 <= loudnessGain <=24.0.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain);
+
+/**
+ * Get loudnessGain of current renderer.
+ *
+ * @since 20
+ * @param renderer Reference created by OH_AudioStreamBuilder_GenerateRenderer()
+ * @param loudnessGain Pointer to a variable to receive the loudnessGain.
+ * @return {@link #AUDIOSTREAM_SUCCESS} or an undesired error.
+ */
+OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer* renderer, float* loudnessGain);
+
+/**
  * Get Volume of current renderer.
  *
  * @since 12
@@ -498,39 +518,6 @@ typedef void (*OH_AudioRenderer_OnFastStatusChange)(
     void* userData,
     OH_AudioStream_FastStatus status
 );
-
-/**
- * @brief Sets the loudness gain of current renderer.
- * The default loudness gain is 0.0dB. The stream usage of the audio renderer must be
- * {@link OH_AudioStream_Usage#AUDIOSTREAM_USAGE_MUSIC}, {@link OH_AudioStream_Usage#AUDIOSTREAM_USAGE_MOVIE}
- * or {@link OH_AudioStream_Usage#AUDIOSTREAM_USAGE_AUDIOBOOK}.
- * The latency mode of the audio renderer must be {@link OH_AudioStream_LatencyMode#AUDIOSTREAM_LATENCY_MODE_NORMAL}.
- * OH_AudioRenderer routing through the high-resolution playback path does not support this operation.
- *
- * @param renderer AudioRender created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param loudnessGain Loudness gain to set which changes from -90.0 to 24.0, expressing in dB.
- * @return Function result code:
- *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
- *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM}:
- *                                                 1.The param of renderer is nullptr or not supported to set gain;
- *                                                 2.The param of loudnessGain is invalid.
- * @since 20
- */
-OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer* renderer, float loudnessGain);
-
-/**
- * @brief Get the loudness gain of current renderer.
- *
- * @param renderer AudioRender created by OH_AudioStreamBuilder_GenerateRenderer()
- * @param loudnessGain Pointer to a variable to receive the loudness gain.
- * @return Function result code:
- *         {@link AUDIOSTREAM_SUCCESS} If the execution is successful.
- *         {@link AUDIOSTREAM_ERROR_INVALID_PARAM}:
- *                                                 1.The param of renderer is nullptr;
- *                                                 2.The param of loudnessGain is nullptr.
- * @since 20
- */
-OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer* renderer, float* loudnessGain);
 
 #ifdef __cplusplus
 }

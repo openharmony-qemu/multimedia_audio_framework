@@ -323,7 +323,7 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
     OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
     if (usage != AUDIOSTREAM_USAGE_MUSIC && usage != AUDIOSTREAM_USAGE_MOVIE &&
-        usage != AUDIOSTREAM_USAGE_AUDIOBOOK && latencyMode != AUDIOSTREAM_LATENCY_MODE_NORMAL) {
+        usage != AUDIOSTREAM_USAGE_AUDIOBOOK || latencyMode != AUDIOSTREAM_LATENCY_MODE_NORMAL) {
         *loudnessGain = 0.0f;
     } else {
         *loudnessGain = audioRenderer->GetLoudnessGain();
