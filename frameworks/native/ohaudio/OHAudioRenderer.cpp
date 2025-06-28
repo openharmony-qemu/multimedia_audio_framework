@@ -302,8 +302,11 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
     CHECK_AND_RETURN_RET_LOG((usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
         usage == AUDIOSTREAM_USAGE_AUDIOBOOK), AUDIOSTREAM_ERROR_INVALID_PARAM, "audio stream type not supported");
+    CHECK_AND_RETURN_RET_LOG(latencyMode == AUDIOSTREAM_LATENCY_MODE_NORMAL, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "not supported.");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
@@ -318,8 +321,9 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
-    if (!(usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
-        usage == AUDIOSTREAM_USAGE_AUDIOBOOK)) {
+    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
+    if (usage != AUDIOSTREAM_USAGE_MUSIC && usage != AUDIOSTREAM_USAGE_MOVIE &&
+        usage != AUDIOSTREAM_USAGE_AUDIOBOOK && latencyMode != AUDIOSTREAM_LATENCY_MODE_NORMAL) {
         *loudnessGain = 0.0f;
     } else {
         *loudnessGain = audioRenderer->GetLoudnessGain();

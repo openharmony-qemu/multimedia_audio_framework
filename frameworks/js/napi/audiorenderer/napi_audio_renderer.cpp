@@ -1059,7 +1059,7 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc == ARGS_ONE, "set loudnessGain failed, invalid arguments",
             NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueDouble(env, context->loudnessGain, argv[PARAM0]);
         NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "set loudnessGain failed, invalid param type",
@@ -1078,8 +1078,8 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
         AudioRendererInfo rendererInfo = {};
         napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
         StreamUsage streamUsage = rendererInfo.streamUsage;
-        if (streamUsage == STREAM_USAGE_MUSIC || streamUsage == STREAM_USAGE_MOVIE ||
-            streamUsage == STREAM_USAGE_AUDIOBOOK) {
+        if (streamUsage != STREAM_USAGE_MUSIC && streamUsage != STREAM_USAGE_MOVIE &&
+            streamUsage != STREAM_USAGE_AUDIOBOOK) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
             return;
         }

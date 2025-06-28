@@ -20,7 +20,8 @@ const TAG = "[AudioRendererJsUnitTest]";
 
 const VALID_LOUDNESS_GAIN = 10.0;
 const INVALID_LOUDNESS_GAIN = -100.0;
-const TOLERANCE = 5;
+const NAPI_ERROR_INVALID_PARAM = 6800101;
+const NAPI_ERR_INPUT_INVALID = 401;
 
 describe("AudioRendererJsUnitTest", function() {
     let audioStreamInfo = {
@@ -447,7 +448,7 @@ describe("AudioRendererJsUnitTest", function() {
             try {
                 let data = audioRenderer.getLoudnessGain();
                 console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_001 SUCCESS: ${data}`);
-                expect(data).BeCloseTo(VALID_LOUDNESS_GAIN, TOLERANCE);
+                expect(data).assertEqual(VALID_LOUDNESS_GAIN);
                 done();
             } catch (error) {
                 console.error(`setLoudnessGain ERROR: ${error.code}`);
@@ -469,9 +470,47 @@ describe("AudioRendererJsUnitTest", function() {
             console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 FAIL`);
             expect(true).assertFalse();
             done();
-        } catch (err) {
+        } catch (error) {
             console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_002 SUCCESS`);
-            expect(true).assertTrue();
+            expect(error.code).assertEqual(NAPI_ERROR_INVALID_PARAM);
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003
+     * @tc.desc: invalid param count, setLoudnessGain fail
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003', 0, async function (done) {
+        try {
+            await audioRenderer.setLoudnessGain(VALID_LOUDNESS_GAIN, VALID_LOUDNESS_GAIN);
+            console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003 FAIL`);
+            expect(true).assertFalse();
+            done();
+        } catch (error) {
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_003 SUCCESS`);
+            expect(error.code).assertEqual(NAPI_ERR_INPUT_INVALID);
+            done();
+        }
+    })
+
+    /*
+     * @tc.name:SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_004
+     * @tc.desc: invalid param type, setLoudnessGain fail
+     * @tc.type: FUNC
+     * @tc.require: I8OIJL
+     */
+    it('SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_004', 0, async function (done) {
+        try {
+            await audioRenderer.setLoudnessGain("test");
+            console.error(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_004 FAIL`);
+            expect(true).assertFalse();
+            done();
+        } catch (error) {
+            console.info(`${TAG}: SUB_AUDIO_RENDERER_GET_LOUDNESS_GAIN_TEST_004 SUCCESS`);
+            expect(error.code).assertEqual(NAPI_ERR_INPUT_INVALID);
             done();
         }
     })

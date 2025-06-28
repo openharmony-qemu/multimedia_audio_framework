@@ -1431,6 +1431,9 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         AudioVolume::GetInstance()->SetStreamVolumeMute(dupStreamIndex, isMuted);
         AudioVolume::GetInstance()->SetStreamVolumeLowPowerFactor(dupStreamIndex, lowPowerVolume_);
     }
+
+    capInfo.dupStream->SetLoudnessGain(loudnessGain_);
+
     if (status_ == I_STATUS_STARTED) {
         AUDIO_INFO_LOG("Renderer %{public}u is already running, let's start the dup stream", streamIndex_);
         capInfo.dupStream->Start();
@@ -1719,7 +1722,13 @@ int32_t RendererInServer::SetClientVolume()
 
 int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
 {
+    loudnessGain_ = loudnessGain;
     int32_t ret = stream_->SetLoudnessGain(loudnessGain);
+    for (auto &capInfo : captureInfos_) {
+        if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
+            ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
+        }
+    }
     return ret;
 }
 
