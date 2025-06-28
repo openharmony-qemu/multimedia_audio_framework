@@ -670,9 +670,6 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
             gettid(),
             AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
             METHOD_WRITE_OR_READ);
-        } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
-        }
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
