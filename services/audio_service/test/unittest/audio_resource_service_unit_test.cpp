@@ -152,7 +152,7 @@ HWTEST(AudioResourceServiceUnitTest, DeathRecipient_005, TestSize.Level0)
  * @tc.name  : Test deathRecipient OnWorkgroupRemoteDied
  * @tc.type  : FUNC
  * @tc.number: DeathRecipient_006
- * @tc.desc  : Test OnWorkgroupRemoteDied find audioWorkgroupMap 
+ * @tc.desc  : Test OnWorkgroupRemoteDied find audioWorkgroupMap
  */
 HWTEST(AudioResourceServiceUnitTest, DeathRecipient_006, TestSize.Level0)
 {
