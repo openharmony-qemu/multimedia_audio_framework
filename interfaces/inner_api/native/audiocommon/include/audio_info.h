@@ -1369,7 +1369,11 @@ enum WriteDataCallbackType {
     /**
      * Use OH_AudioRenderer_OnWriteDataCallback
      */
-    WRITE_DATA_CALLBACK_WITH_RESULT = 1
+    WRITE_DATA_CALLBACK_WITH_RESULT = 1,
+    /**
+     * Use OH_AudioRenderer_OnWriteDataCallbackAdvanced
+    */
+    WRITE_DATA_CALLBACK_ADVANCED = 2,
 };
 
 enum ReadDataCallbackType {

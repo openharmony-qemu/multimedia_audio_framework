@@ -725,6 +725,14 @@ void OHAudioRenderer::SetWriteDataCallback(RendererCallback rendererCallbacks, v
             audioRenderer_->SetRendererWriteCallback(callback);
             AUDIO_INFO_LOG("The write callback function is for PCM type without result");
         }
+
+        if (writeDataCallbackType_ == WRITE_DATA_CALLBACK_ADVANCED &&
+            rendererCallbacks.onWriteDataCallbackAdavanced != nullptr) {
+            std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
+                rendererCallbacks.onWriteDataCallbackAdavanced, (OH_AudioRenderer*)this, userData, encodingType);
+            audioRenderer_->SetRendererWriteCallback(callback);
+            AUDIO_INFO_LOG("The write callback function is for PCM type advanced");
+        }
     } else {
         AUDIO_WARNING_LOG("The write callback function is not set");
     }
@@ -829,6 +837,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType_ == ENCODING_PCM) && (onWriteDataAdvancedCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
         "pointer to the function is nullptr");
@@ -850,6 +859,20 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
             if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {
                 AUDIO_DEBUG_LOG("Data callback returned invalid, data will not be used.");
                 bufDesc.dataLength = 0; // Ensure that the invalid data is not used.
+            }
+        }
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_ADVANCED &&
+            onWriteDataAdvancedCallback_ != nullptr) {
+            int32_t writeFrameInByte = onWriteDataAdvancedCallback_(ohAudioRenderer_, userData_,
+                (void*)bufDesc.buffer, bufDesc.bufLength);
+            if (writeFrameInByte < 0) {
+                AUDIO_ERR_LOG("app ret : %{public}d", writeFrameInByte);
+                writeFrameInByte = 0;
+            }
+
+            if (writeFrameInByte > bufDesc.bufLength) {
+                AUDIO_ERR_LOG("cbBufferSize is:%{public}d, app ret : %{public}d", bufDesc.bufLength, writeFrameInByte);
+                writeFrameInByte = bufDesc.bufLength;
             }
         }
     }

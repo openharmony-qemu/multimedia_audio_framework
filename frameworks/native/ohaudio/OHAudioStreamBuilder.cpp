@@ -229,6 +229,14 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallback(OH_Audi
     return audioStreamBuilder->SetRendererWriteDataCallback(callback, userData);
 }
 
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnWriteDataCallbackAdvanced callback, void* userData)
+{
+    OHAudioStreamBuilder *audioStreamBuilder = convertBuilder(builder);
+    CHECK_AND_RETURN_RET_LOG(audioStreamBuilder != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert builder failed");
+    return audioStreamBuilder->SetRendererWriteDataCallback(callback, userData);
+}
+
 OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererInterruptCallback(OH_AudioStreamBuilder *builder,
     OH_AudioRenderer_OnInterruptCallback callback, void *userData)
 {
@@ -623,6 +631,17 @@ OH_AudioStream_Result OHAudioStreamBuilder::SetRendererWriteDataCallback(
         "Set renderer callback error, invalid type input.");
     writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITH_RESULT;
     rendererCallbacks_.onWriteDataCallback = callback;
+    userData_ = userData;
+    return AUDIOSTREAM_SUCCESS;
+}
+
+OH_AudioStream_Result OHAudioStreamBuilder::SetRendererWriteDataCallbackAdvanced(
+    OH_AudioRenderer_OnWriteDataCallbackAdvanced callback, void *userData)
+{
+    CHECK_AND_RETURN_RET_LOG(streamType_ != CAPTURER_TYPE, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "Set renderer callback error, invalid type input.");
+    writeDataCallbackType_ = WRITE_DATA_CALLBACK_ADVANCED;
+    rendererCallbacks_.onWriteDataCallbackAdavanced = callback;
     userData_ = userData;
     return AUDIOSTREAM_SUCCESS;
 }
