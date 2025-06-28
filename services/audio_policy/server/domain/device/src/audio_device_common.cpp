@@ -27,6 +27,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_event_utils.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
 
@@ -283,6 +284,9 @@ int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
 {
     size_t targetSize = audioDeviceDescriptors.size();
+    CheckAndWriteDeviceChangeExceptionEvent(targetSize == 1,
+        AudioStreamDeviceChangeReason::OVERRODE, audioDeviceDescriptors[0]->deviceType_,
+        audioDeviceDescriptors[0]->deviceRole_, ERR_INVALID_OPERATION, "device params check: size error");
     CHECK_AND_RETURN_RET_LOG(targetSize == 1, ERR_INVALID_OPERATION,
         "Device error: size[%{public}zu]", targetSize);
 
@@ -295,6 +299,9 @@ int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
             audioDeviceDescriptors[0]->deviceRole_) && IsDeviceConnected(audioDeviceDescriptors[0]);
     }
 
+    CheckAndWriteDeviceChangeExceptionEvent(audioDeviceDescriptors[0]->deviceRole_ == targetRole &&
+        isDeviceTypeCorrect, AudioStreamDeviceChangeReason::OVERRODE, audioDeviceDescriptors[0]->deviceType_,
+        audioDeviceDescriptors[0]->deviceRole_, ERR_INVALID_OPERATION, "device params check: role error");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == targetRole && isDeviceTypeCorrect,
         ERR_INVALID_OPERATION, "Device error: size[%{public}zu] deviceRole[%{public}d] isDeviceCorrect[%{public}d]",
         targetSize, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_), isDeviceTypeCorrect);
