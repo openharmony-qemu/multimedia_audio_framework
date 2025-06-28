@@ -1065,6 +1065,15 @@ error:
     return false;
 }
 
+void FastAudioStream::Join()
+{
+    if (processClient_ != nullptr) {
+        processClient_->Join();
+    } else {
+        AUDIO_WARNING_LOG("processClient_ is nullptr!");
+    }
+}
+
 bool FastAudioStream::GetOffloadEnable()
 {
     AUDIO_WARNING_LOG("not supported in fast audio stream");
