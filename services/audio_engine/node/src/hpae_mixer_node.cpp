@@ -98,7 +98,7 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
             tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
     }
 #ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_->CheckAndReopenHandlde();
+    outputPcmDumper_->CheckAndReopenHandle();
     outputPcmDumper_->Dump((int8_t *)(mixedOutput_.GetPcmDataBuffer()),
         mixedOutput_.GetChannelCount() * sizeof(float) * mixedOutput_.GetFrameLen());
 #endif

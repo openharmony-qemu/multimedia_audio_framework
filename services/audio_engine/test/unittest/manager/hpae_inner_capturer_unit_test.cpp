@@ -511,6 +511,6 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, Other_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->UpdateSpatializationState(playStreamInfo.sessionId, true, true), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->UpdateMaxLength(playStreamInfo.sessionId, testVariable), SUCCESS);
 }
-};
-}  // namespace OHOS::AudioStandard
-}  // namespace OHOS
+} // namespace HPAE
+} // namespace OHOS::AudioStandard
+} // namespace OHOS
