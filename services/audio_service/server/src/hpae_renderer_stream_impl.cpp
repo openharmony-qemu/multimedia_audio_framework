@@ -46,6 +46,7 @@ static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr uint32_t AUDIO_NS_PER_US = 1000;
 static constexpr uint32_t AUDIO_US_PER_MS = 1000;
 static constexpr uint32_t AUDIO_MS_PER_S = 1000;
+static constexpr uint32_t AUDIO_US_PER_S = AUDIO_US_PER_MS * AUDIO_MS_PER_S;
 static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
@@ -236,49 +237,51 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     uint64_t &latency, int32_t base)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
-    uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
-    uint32_t sinkLatency = 0;
-    framePosition = framePosition_;
-    timestamp = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
-        timestamp_[base] :
-        timestamp_[Timestamp::Timestampbase::MONOTONIC];
-    latency = latency_;
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
-        std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-        if (audioRendererSink) {
-            audioRendererSink->GetLatency(sinkLatency);
-        }
-    }
-    latency += (sinkLatency + a2dpOffloadLatency) * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) /
-        AUDIO_MS_PER_S;
-
-    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", totlatency %{public}" PRIu64
-        ", base %{public}d, timestamp %{public}" PRIu64
-        ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        framePosition, latency, base, timestamp, sinkLatency, a2dpOffloadLatency);
+    uint64_t latencyUs = 0;
+    GetCurrentPositionInner(framePosition, timestamp, latencyUs, base);
+    latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     return SUCCESS;
 }
 
 int32_t HpaeRendererStreamImpl::GetLatency(uint64_t &latency)
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+    uint64_t framePosition = 0;
+    uint64_t timestamp = 0;
+    int32_t base = Timestamp::Timestampbase::MONOTONIC;
+    GetCurrentPositionInner(framePosition, timestamp, latency, base);
+    return SUCCESS;
+}
+void HpaeRendererStreamImpl::GetCurrentPositionInner(uint64_t &framePosition, uint64_t &timestamp,
+    uint64_t &latencyUs, int32_t base)
+{
+    int32_t baseUse = base >= 0 && base < Timestamp::Timestampbase::BASESIZE ?
+        base : Timestamp::Timestampbase::MONOTONIC;
+    uint32_t sinkLatency = 0;
+    uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
+    latencyUs = latency_;
     if (deviceClass_ != DEVICE_CLASS_OFFLOAD) {
-        uint32_t sinkLatency = 0;
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
         if (audioRendererSink) {
             audioRendererSink->GetLatency(sinkLatency);
         }
-        latency = sinkLatency + latency_;
-        latency += GetA2dpOffloadLatency() * AUDIO_US_PER_MS;
-        return SUCCESS;
     }
-    auto timestamp = static_cast<uint64_t>(ClockTime::GetCurNano());
-    auto interval = (timestamp - timestamp_[Timestamp::Timestampbase::MONOTONIC]) / AUDIO_NS_PER_US;
-    latency = latency_ > interval ? latency_ - interval : 0;
-    latency += GetA2dpOffloadLatency() * AUDIO_US_PER_MS;
-    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetLatency latency_ %{public}" PRIu64 ", \
-        interval %{public}" PRIu64 ", latency %{public}" PRIu64, latency_, interval, latency);
-    return SUCCESS;
+    latencyUs += sinkLatency * AUDIO_US_PER_MS;
+    latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
+    std::vector<uint64_t> timestampCur = {0};
+    ClockTime::GetAllTimeStamp(timestampCur);
+    auto interval = (timestampCur[baseUse] - timestamp_[baseUse]) / AUDIO_NS_PER_US;
+    interval = interval > latencyUs ? latencyUs : interval;
+    latencyUs -= interval;
+    
+    framePosition = framePosition_ +
+        interval * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S ;
+    timestamp = timestampCur[baseUse];
+
+    AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
+        ", base %{public}d, timestamp %{public}" PRIu64
+        ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms",
+        framePosition, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)
