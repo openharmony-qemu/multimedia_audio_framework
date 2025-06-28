@@ -152,7 +152,7 @@ public:
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 
-    int32_t CreateAudioWorkgroup(int32_t pid) override;
+    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object) override;
     int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
     int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
     int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;

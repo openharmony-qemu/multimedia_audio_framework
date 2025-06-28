@@ -639,7 +639,7 @@ public:
      *
      * @return Returns workgroup id for current process.
      */
-    virtual int32_t CreateAudioWorkgroup(int32_t pid) = 0;
+    virtual int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object) = 0;
     virtual int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) = 0;
     virtual int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;
     virtual int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) = 0;

@@ -215,6 +215,7 @@ ohos_shared_library("audio_client") {
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/audio_workgroup_callback_stub.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
