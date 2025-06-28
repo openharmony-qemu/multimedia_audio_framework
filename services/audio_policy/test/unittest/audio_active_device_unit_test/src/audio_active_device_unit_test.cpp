@@ -101,14 +101,17 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_005, TestSize.Leve
 {
     std::string macAddress = "test";
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    audioActiveDevice->SetCurrentOutputDeviceType(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, macAddress);
     EXPECT_NE(audioActiveDevice, nullptr);
 
     audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_EARPIECE, macAddress);
     EXPECT_NE(audioActiveDevice, nullptr);
 
-    audioActiveDevice->SetCurrentOutputDeviceType(DeviceType::DEVICE_TYPE_EARPIECE);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_EARPIECE;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO, macAddress);
     EXPECT_NE(audioActiveDevice, nullptr);
 
@@ -124,14 +127,17 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_005, TestSize.Leve
 HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_006, TestSize.Level1)
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    audioActiveDevice->SetCurrentOutputDeviceType(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     audioActiveDevice->HandleNegtiveBt(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_NE(audioActiveDevice, nullptr);
 
     audioActiveDevice->HandleNegtiveBt(DeviceType::DEVICE_TYPE_EARPIECE);
     EXPECT_NE(audioActiveDevice, nullptr);
 
-    audioActiveDevice->SetCurrentOutputDeviceType(DeviceType::DEVICE_TYPE_EARPIECE);
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_EARPIECE;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
     audioActiveDevice->HandleNegtiveBt(DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
     EXPECT_NE(audioActiveDevice, nullptr);
 

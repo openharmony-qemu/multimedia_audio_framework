@@ -497,35 +497,6 @@ bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDe
     return false;
 }
 
-bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_INFO_LOG("current pipe type is:%{public}d", rendererChangeInfo->rendererInfo.pipeType);
-    if (!audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            AUDIO_INFO_LOG("old device is arm usb");
-            return false;
-        }
-        AUDIO_DEBUG_LOG("direct stream changed to normal.");
-        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-            AUDIO_OUTPUT_FLAG_NORMAL, reason);
-        return true;
-    } else if (audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC &&
-        streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_DIRECT_MUSIC) == SUCCESS) {
-        AudioRendererInfo info = rendererChangeInfo->rendererInfo;
-        if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
-            info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
-            AUDIO_DEBUG_LOG("stream change to direct.");
-            TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-                AUDIO_OUTPUT_FLAG_DIRECT, reason);
-            return true;
-        }
-    }
-    return false;
-}
-
 void AudioDeviceCommon::SetDeviceConnectedFlagWhenFetchOutputDevice()
 {
     AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
@@ -577,8 +548,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
             needUpdateActiveDevice = !isUpdateActiveDevice;
         }
-        if (!hasDirectChangeDevice && !IsSameDevice(descs.front(), rendererChangeInfo->outputDeviceInfo)
-            && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
+        if (!hasDirectChangeDevice && !IsSameDevice(descs.front(), rendererChangeInfo->outputDeviceInfo)) {
             hasDirectChangeDevice = true;
         }
         NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason);

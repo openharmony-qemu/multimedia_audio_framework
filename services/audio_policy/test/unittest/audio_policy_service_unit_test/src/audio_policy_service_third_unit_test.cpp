@@ -397,22 +397,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, CheckForA2dpSuspend_002, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test SetCallDeviceActive.
-* @tc.number: SetCallDeviceActive_001
-* @tc.desc  : Test SetCallDeviceActive.
-*/
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetCallDeviceActive_001, TestSize.Level1)
-{
-    ASSERT_NE(nullptr, GetServerPtr());
-    GetServerPtr()->audioPolicyService_.audioConnectedDevice_.connectedDevices_.clear();
-    InternalDeviceType deviceType = DEVICE_TYPE_INVALID;
-    bool active =true;
-    std::string address= "123456";
-
-    GetServerPtr()->audioDeviceLock_.SetCallDeviceActive(deviceType, active, address);
-}
-
-/**
 * @tc.name  : Test GetMaxAmplitude.
 * @tc.number: GetMaxAmplitude_001
 * @tc.desc  : Test GetMaxAmplitude.
@@ -1795,36 +1779,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsCurrentActiveDeviceA2dp_001, TestSiz
 
     auto ret = server->audioPolicyManager_.GetActiveDevice() == DEVICE_TYPE_BLUETOOTH_A2DP;
     EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test SetDefaultOutputDevice.
- * @tc.number: SetDefaultOutputDevice_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    DeviceType deviceType = DEVICE_TYPE_MAX;
-    uint32_t sessionID = 0;
-    StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
-    bool isRunning = false;
-
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = false;
-    auto ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_NE(ret, SUCCESS);
-
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
-
-    isRunning = true;
-    streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    server->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    ret = server->audioPolicyService_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 #ifdef TEMP_DISABLE

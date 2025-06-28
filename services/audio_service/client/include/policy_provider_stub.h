@@ -38,7 +38,6 @@ private:
     int32_t HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply);
     int32_t HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply);
     int32_t HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
     int32_t HandleClearAudioFocusBySessionID(MessageParcel &data, MessageParcel &reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply);
@@ -64,8 +63,6 @@ public:
     int32_t GetMaxRendererInstances() override;
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;

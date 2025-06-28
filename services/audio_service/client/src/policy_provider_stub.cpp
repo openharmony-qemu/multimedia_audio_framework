@@ -62,8 +62,6 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleConcurrencyFromServer(data, reply);
         case REMOVE_AUDIO_CAPTURER:
             return HandleNotifyCapturerRemoved(data, reply);
-        case SET_DEFAULT_OUTPUT_DEVICE:
-            return HandleSetDefaultOutputDevice(data, reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
         case LOAD_MODERN_INNER_CAPTURE_SINK:
             return HandleLoadModernInnerCapSink(data, reply);
@@ -187,17 +185,6 @@ int32_t PolicyProviderStub::HandleNotifyCapturerRemoved(MessageParcel &data, Mes
     return AUDIO_OK;
 }
 
-int32_t PolicyProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t deviceType = data.ReadInt32();
-    uint32_t sessionID = data.ReadUint32();
-    int32_t streamUsage = data.ReadInt32();
-    bool isRunning = data.ReadBool();
-    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType),
-        sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
-    return AUDIO_OK;
-}
-
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderStub::HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
 {
@@ -298,12 +285,6 @@ int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyCapturerRemoved(sessionId);
-}
-int32_t PolicyProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
-{
-    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
