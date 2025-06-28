@@ -128,7 +128,7 @@ int32_t BluetoothDeviceManager::SetVoiceVolume(const std::string &adapterName, f
 }
 
 int32_t BluetoothDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId, AudioScene scene)
+    int32_t streamId)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -345,6 +345,11 @@ uint32_t BluetoothDeviceManager::GetHdiCaptureId(const std::string &adapterName)
 }
 
 void BluetoothDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
+void BluetoothDeviceManager::SetAudioScene(const AudioScene scene)
 {
     AUDIO_INFO_LOG("not support");
 }

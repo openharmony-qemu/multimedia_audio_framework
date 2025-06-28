@@ -431,6 +431,102 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
 }
 
 /**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_016
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_017
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_018
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
  * @tc.name  : Test CheckMaxRendererInstances API
  * @tc.number: Audio_Renderer_CheckMaxRendererInstances_001
  * @tc.desc  : Test CheckMaxRendererInstances interface. Returns SUCCESS, if check max renderer instances is successful.

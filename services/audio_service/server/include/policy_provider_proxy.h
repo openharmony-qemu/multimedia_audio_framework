@@ -55,6 +55,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 #endif
 
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
+
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;
 };

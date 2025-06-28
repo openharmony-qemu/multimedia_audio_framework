@@ -97,6 +97,8 @@ public:
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -168,6 +170,11 @@ int32_t MockPolicyProvider::ActivateConcurrencyFromServer(AudioPipeType incoming
 }
 
 int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return SUCCESS;
 }

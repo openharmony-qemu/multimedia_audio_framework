@@ -438,7 +438,107 @@ void AudioPolicyProxyFourFuzzTest()
     audioPolicyProxy->GetStreamMuteByUsage(STREAM_USAGE_MUSIC);
 }
 
-typedef void (*TestFuncs[7])();
+void AudioPolicyProxyFiveFuzzTest()
+{
+    GetServerPtr();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+    if (audioPolicyProxy == nullptr) {
+        return;
+    }
+
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    audioPolicyProxy->GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+
+    AudioStreamChangeInfo streamChangeInfo;
+    AudioMode mode = AUDIO_MODE_PLAYBACK;
+    audioPolicyProxy->RegisterTracker(mode, streamChangeInfo, object);
+    audioPolicyProxy->UpdateTracker(mode, streamChangeInfo);
+
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = GetData<int32_t>();
+    audioPolicyProxy->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+
+    sptr<AudioCapturerFilter> audioCapturerFilter = new AudioCapturerFilter();
+    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    audioDeviceDescriptors.push_back(fuzzAudioDeviceDescriptorSptr);
+    audioPolicyProxy->SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+
+    bool forceNoBTPermission = GetData<bool>();
+    AudioRendererInfo rendererInfo;
+    rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    AudioCapturerInfo captureInfo;
+    captureInfo.sourceType = SOURCE_TYPE_MIC;
+    audioPolicyProxy->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
+    audioPolicyProxy->GetPreferredInputDeviceDescriptors(captureInfo);
+    
+    int32_t ltonetype = GetData<int32_t>();
+    std::string countryCode = "countryCode";
+    audioPolicyProxy->GetToneConfig(ltonetype, countryCode);
+
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> focusInfoList;
+    audioPolicyProxy->GetAudioFocusInfoList(focusInfoList, zoneID);
+
+    sptr <AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
+    audioPolicyProxy->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    audioPolicyProxy->GetSupportedTones(countryCode);
+
+    std::set<StreamUsage> streamUsages;
+    audioPolicyProxy->SetCallbackStreamUsageInfo(streamUsages);
+    audioPolicyProxy->ForceStopAudioStream(STOP_RENDER);
+    AudioCapturerInfo capturerInfo;
+    audioPolicyProxy->IsCapturerFocusAvailable(capturerInfo);
+
+    AudioStreamInfo streamInfo;
+    audioPolicyProxy->IsFastPlaybackSupported(streamInfo, STREAM_USAGE_MUSIC);
+    audioPolicyProxy->IsFastRecordingSupported(streamInfo, SOURCE_TYPE_MIC);
+}
+
+void AudioPolicyZoneFuzzTest()
+{
+    GetServerPtr();
+    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
+
+    std::shared_ptr<AudioPolicyProxy> audioPolicyProxy = std::make_shared<AudioPolicyProxy>(object);
+    if (audioPolicyProxy == nullptr) {
+        return;
+    }
+
+    std::string name = "name";
+    AudioZoneContext context;
+    int32_t zoneId = GetData<int32_t>();
+    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    devices.push_back(fuzzAudioDeviceDescriptorSptr);
+    bool enable = GetData<bool>();
+    int32_t uid = GetData<int32_t>();
+    std::string deviceTag = "deviceTag";
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
+
+    audioPolicyProxy->RegisterAudioZoneClient(object);
+    audioPolicyProxy->CreateAudioZone(name, context);
+    audioPolicyProxy->ReleaseAudioZone(zoneId);
+    audioPolicyProxy->GetAllAudioZone();
+    audioPolicyProxy->GetAudioZone(zoneId);
+    audioPolicyProxy->BindDeviceToAudioZone(zoneId, devices);
+    audioPolicyProxy->UnBindDeviceToAudioZone(zoneId, devices);
+    audioPolicyProxy->EnableAudioZoneReport(enable);
+    audioPolicyProxy->EnableAudioZoneChangeReport(zoneId, enable);
+    audioPolicyProxy->AddUidToAudioZone(zoneId, uid);
+    audioPolicyProxy->RemoveUidFromAudioZone(zoneId, uid);
+    audioPolicyProxy->EnableSystemVolumeProxy(zoneId, enable);
+    audioPolicyProxy->GetAudioInterruptForZone(zoneId);
+    audioPolicyProxy->GetAudioInterruptForZone(zoneId, deviceTag);
+    audioPolicyProxy->EnableAudioZoneInterruptReport(zoneId, deviceTag, enable);
+    audioPolicyProxy->InjectInterruptToAudioZone(zoneId, interrupts);
+    audioPolicyProxy->InjectInterruptToAudioZone(zoneId, interrupts);
+}
+
+typedef void (*TestFuncs[9])();
 
 TestFuncs g_testFuncs = {
     AudioPolicyCallbackFuzzTest,
@@ -448,6 +548,8 @@ TestFuncs g_testFuncs = {
     AudioPolicyProxyTwoFuzzTest,
     AudioPolicyProxyThreeFuzzTest,
     AudioPolicyProxyFourFuzzTest,
+    AudioPolicyProxyFiveFuzzTest,
+    AudioPolicyZoneFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

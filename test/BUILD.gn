@@ -165,6 +165,7 @@ group("audio_fuzz_test") {
   testonly = true
 
   deps = [
+    "fuzztest/audioa2dpdevice_fuzzer:fuzztest",
     "fuzztest/audioa2dpoffloadmanager_fuzzer:fuzztest",
     "fuzztest/audioactivedevice_fuzzer:fuzztest",
     "fuzztest/audioadaptermanager_fuzzer:fuzztest",
@@ -176,12 +177,16 @@ group("audio_fuzz_test") {
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
     "fuzztest/audiodevicelock_fuzzer:fuzztest",
     "fuzztest/audiodevicestatus_fuzzer:fuzztest",
+    "fuzztest/audioecmanager_fuzzer:fuzztest",
     "fuzztest/audioeffect_fuzzer:fuzztest",
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
     "fuzztest/audioeffectenhance_fuzzer:fuzztest",
     "fuzztest/audioeffectservice_fuzzer:fuzztest",
+    "fuzztest/audiointerruptdfxcollector_fuzzer:fuzztest",
+    "fuzztest/audiointerruptgroupinfo_fuzzer:fuzztest",
     "fuzztest/audiointerruptservice_fuzzer:fuzztest",
     "fuzztest/audiointerruptservicemore_fuzzer:fuzztest",
+    "fuzztest/audiointerruptzone_fuzzer:fuzztest",
     "fuzztest/audiolimitermanager_fuzzer:fuzztest",
     "fuzztest/audiomanager_fuzzer:fuzztest",
     "fuzztest/audiopipemanager_fuzzer:fuzztest",
@@ -190,6 +195,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
+    "fuzztest/audiopolicyclient_fuzzer:fuzztest",
     "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
@@ -212,20 +218,23 @@ group("audio_fuzz_test") {
     "fuzztest/audioservicecommonenhance_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
+    "fuzztest/audiospatializationservice_fuzzer:fuzztest",
     "fuzztest/audiostatemanager_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
     "fuzztest/audiostreamcollector_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
     "fuzztest/audiovolumemanager_fuzzer:fuzztest",
+    "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
     "fuzztest/hpaemanager_fuzzer:fuzztest",
     "fuzztest/hpaenolockqueue_fuzzer:fuzztest",
     "fuzztest/hpaepolicymanager_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
-    "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
-    "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/powerstatelistener_fuzzer:fuzztest",
     "fuzztest/streamfilterrouter_fuzzer:fuzztest",
+    "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
   ]
 }
 

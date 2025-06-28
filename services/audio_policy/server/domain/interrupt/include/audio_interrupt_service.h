@@ -81,6 +81,7 @@ public:
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();

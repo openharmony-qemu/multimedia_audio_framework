@@ -46,6 +46,7 @@
 #include "audio_background_manager.h"
 #include "audio_core_service.h"
 #include "audio_policy_datashare_listener.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1264,6 +1265,11 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
         return false;
     }
     return true;
+}
+
+int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

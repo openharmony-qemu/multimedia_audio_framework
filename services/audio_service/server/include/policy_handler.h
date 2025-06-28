@@ -75,6 +75,7 @@ public:
 
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

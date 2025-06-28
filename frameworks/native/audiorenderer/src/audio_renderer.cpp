@@ -320,8 +320,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return nullptr;
     }
@@ -334,9 +333,13 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
+        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
@@ -350,6 +353,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     audioRenderer->strategy_ = rendererOptions.strategy;
     audioRenderer->originalStrategy_ = rendererOptions.strategy;
@@ -974,8 +978,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
-        "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
-        GetVolumeInner(), audioInterrupt_.mode);
+        "volume: %{public}f, interruptMode: %{public}d, isVKB: %{public}s",
+        sessionID_, audioInterrupt_.audioFocusType.streamType,
+        GetVolumeInner(), audioInterrupt_.mode, rendererInfo_.isVirtualKeyboard ? "T" : "F");
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -2763,6 +2768,18 @@ int32_t AudioRendererPrivate::StopDataCallback()
 void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
 {
     audioInterrupt_.callbackType = callbackType;
+}
+
+bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+{
+    bool isBundleNameValid = false;
+    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
+    int32_t ret = AudioSystemManager::GetInstance()->CheckVKBInfo(bundleName, isBundleNameValid);
+    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && isBundleNameValid;
+    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,
+        isVirtualKeyboard ? "T" : "F");
+    return isVirtualKeyboard;
 }
 
 int32_t AudioRendererPrivate::CheckAudioRenderer(std::string callingFunc)

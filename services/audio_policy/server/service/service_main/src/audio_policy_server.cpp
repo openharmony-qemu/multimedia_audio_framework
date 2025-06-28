@@ -715,7 +715,6 @@ void AudioPolicyServer::AddAudioServiceOnStart()
     if (!isFirstAudioServiceStart_) {
         RegisterParamCallback();
         ConnectServiceAdapter();
-        sessionProcessor_.Start();
         LoadEffectLibrary();
         isFirstAudioServiceStart_ = true;
     } else {
@@ -2234,6 +2233,32 @@ int32_t AudioPolicyServer::SetQueryBundleNameListCallback(const sptr<IRemoteObje
 }
 // LCOV_EXCL_STOP
 
+int32_t AudioPolicyServer::SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+
+    sptr<IStandardAudioPolicyManagerListener> callback = iface_cast<IStandardAudioPolicyManagerListener>(object);
+
+    if (callback != nullptr) {
+        return audioStateManager_.SetAudioVKBInfoMgrCallback(callback);
+    } else {
+        AUDIO_ERR_LOG("VKB info manager callback is null");
+    }
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+    return audioStateManager_.CheckVKBInfo(bundleName, isValid);
+}
+
 int32_t AudioPolicyServer::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     if (interruptService_ != nullptr) {
@@ -2317,21 +2342,6 @@ void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
-}
-
-void AudioPolicyServer::ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneID)
-{
-    AUDIO_DEBUG_LOG("Removed SessionId: %{public}" PRIu64, sessionID);
-}
-
-void AudioPolicyServer::ProcessSessionAdded(SessionEvent sessionEvent)
-{
-    AUDIO_DEBUG_LOG("Added Session");
-}
-
-void AudioPolicyServer::ProcessorCloseWakeupSource(const uint64_t sessionID)
-{
-    audioCapturerSession_.CloseWakeUpAudioCapturer();
 }
 
 AudioStreamType AudioPolicyServer::GetStreamInFocus(const int32_t zoneID)

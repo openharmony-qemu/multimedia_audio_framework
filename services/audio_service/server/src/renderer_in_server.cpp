@@ -199,9 +199,10 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
+    StreamVolumeParams streamVolumeParams = { streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -1402,10 +1403,10 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     uint32_t dupStreamIndex = capInfo.dupStream->GetStreamIndex();
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig_.streamType,
+    StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
-
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -1481,9 +1482,10 @@ int32_t RendererInServer::InitDualToneStream()
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-        AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
+        StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
             processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-            isSystemApp, processConfig_.rendererInfo.volumeMode);
+            isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
         isDualToneEnabled_ = true;
     }

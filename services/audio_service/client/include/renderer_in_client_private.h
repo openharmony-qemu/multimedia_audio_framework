@@ -413,6 +413,9 @@ private:
     int64_t offloadStartHandleTime_ = 0;
 
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
