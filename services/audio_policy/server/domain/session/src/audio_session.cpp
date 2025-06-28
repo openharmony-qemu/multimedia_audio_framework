@@ -16,14 +16,13 @@
 #define LOG_TAG "AudioSession"
 
 #include "audio_session.h"
-
+#include "audio_utils.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_manager.h"
 #include "audio_pipe_manager.h"
 #include "audio_stream_descriptor.h"
-#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +40,93 @@ AudioSession::AudioSession(const int32_t callerPid, const AudioSessionStrategy &
 AudioSession::~AudioSession()
 {
     AUDIO_ERR_LOG("~AudioSession()");
+}
+
+bool AudioSession::IsSceneParameterSet()
+{
+    return audioSessionScene_ != AudioSessionScene::INVALID;
+}
+
+int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
+{
+    if (state_ == AudioSessionState::SESSION_ACTIVE) {
+        AUDIO_ERR_LOG("AudioSessionScene cannot be modified cannot be modified during activation.");
+        return ERROR;
+    }
+
+    if (scene < AudioSessionScene::MEDIA ||
+        scene > AudioSessionScene::VOICE_COMMUNICATION) {
+        AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int>(scene));
+        return ERROR;
+    }
+
+    audioSessionScene_ = scene;
+    return SUCCESS;
+}
+
+bool AudioSession::IsActivated() const
+{
+    return state_ != AudioSessionState::SESSION_INVALID;
+}
+
+std::vector<AudioInterrupt> AudioSession::GetStreams() const
+{
+    return bypassStreamInfoVec_;
+}
+
+AudioStreamType AudioSession::GetFakeStreamType()
+{
+    static const std::unordered_map<AudioSessionScene, AudioStreamType> mapping = {
+        {AudioSessionScene::MEDIA, AudioStreamType::STREAM_MUSIC},
+        {AudioSessionScene::GAME, AudioStreamType::STREAM_GAME},
+        {AudioSessionScene::VOICE_COMMUNICATION, AudioStreamType::STREAM_VOICE_COMMUNICATION}
+    };
+
+    auto it = mapping.find(audioSessionScene_);
+    if (it != mapping.end()) {
+        return it->second;
+    }
+
+    return AudioStreamType::STREAM_DEFAULT;
+}
+
+void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (auto stream : bypassStreamInfoVec_) {
+        if (stream.streamId == incomingInterrupt.streamId) {
+            AUDIO_INFO_LOG("stream aready exist.");
+            return;
+        }
+    }
+
+    bypassStreamInfoVec_.push_back(incomingInterrupt);
+}
+
+void AudioSession::RemoveStreamInfo(uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (auto it = bypassStreamInfoVec_.begin(); it != bypassStreamInfoVec_.end(); ++it) {
+        if (it->streamId == streamId) {
+            bypassStreamInfoVec_.erase(it);
+            break;
+        }
+    }
+}
+
+void AudioSession::Dump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    if (interruptMap_.size() == 0) {
+        AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", callerPid_);
+    } else {
+        AppendFormat(dumpString, "    - pid: %d, AudioSession strategy is: %d.\n",
+            callerPid_,static_cast<uint32_t>(strategy_.concurrencyMode));
+        AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
+            callerPid_, static_cast<uint32_t>(audioSessionScene_));
+        AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
+            callerPid_, static_cast<uint32_t>(state_));
+    }
 }
 
 int32_t AudioSession::Activate()
@@ -235,91 +321,6 @@ bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
     }
 
     return false;
-bool AudioSession::IsSceneParameterSet()
-{
-    return audioSessionScene_ != AudioSessionScene::INVALID;
-}
-
-int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
-{
-    if (state_ == AudioSessionState::SESSION_ACTIVE) {
-        AUDIO_ERR_LOG("AudioSessionScene cannot be modified cannot be modified during activation.");
-        return ERROR;
-    }
-
-    if (scene < AudioSessionScene::MEDIA ||
-        scene > AudioSessionScene::VOICE_COMMUNICATION) {
-        AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int>(scene));
-        return ERROR;
-    }
-
-    audioSessionScene_ = scene;
-    return SUCCESS;
-}
-
-bool AudioSession::IsActivated() const
-{
-    return state_ != AudioSessionState::SESSION_INVALID;
-}
-
-std::vector<AudioInterrupt> AudioSession::GetStreams() const
-{
-    return bypassStreamInfoVec_;
-}
-
-AudioStreamType AudioSession::GetFakeStreamType()
-{
-    static const std::unordered_map<AudioSessionScene, AudioStreamType> mapping = {
-        {AudioSessionScene::MEDIA, AudioStreamType::STREAM_MUSIC},
-        {AudioSessionScene::GAME, AudioStreamType::STREAM_GAME},
-        {AudioSessionScene::VOICE_COMMUNICATION, AudioStreamType::STREAM_VOICE_COMMUNICATION}
-    };
-
-    auto it = mapping.find(audioSessionScene_);
-    if (it != mapping.end()) {
-        return it->second;
-    }
-
-    return AudioStreamType::STREAM_DEFAULT;
-}
-
-void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    for (auto stream : bypassStreamInfoVec_) {
-        if (stream.streamId == incomingInterrupt.streamId) {
-            AUDIO_INFO_LOG("stream aready exist.");
-            return;
-        }
-    }
-
-    bypassStreamInfoVec_.push_back(incomingInterrupt);
-}
-
-void AudioSession::RemoveStreamInfo(uint32_t streamId)
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    for (auto it = bypassStreamInfoVec_.begin(); it != bypassStreamInfoVec_.end(); ++it) {
-        if (it->streamId == streamId) {
-            bypassStreamInfoVec_.erase(it);
-            break;
-        }
-    }
-}
-
-void AudioSession::Dump(std::string &dumpString)
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (interruptMap_.size() == 0) {
-        AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", callerPid_);
-    } else {
-        AppendFormat(dumpString, "    - pid: %d, AudioSession strategy is: %d.\n",
-            callerPid_,static_cast<uint32_t>(strategy_.concurrencyMode));
-        AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
-            callerPid_, static_cast<uint32_t>(audioSessionScene_));
-        AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
-            callerPid_, static_cast<uint32_t>(state_));
-    }
 }
 
 } // namespace AudioStandard

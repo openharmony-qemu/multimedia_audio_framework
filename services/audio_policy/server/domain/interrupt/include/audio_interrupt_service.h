@@ -63,9 +63,9 @@ public:
     void OnSessionTimeout(const int32_t pid) override;
 
     // interfaces for AudioSessionService
-    int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
-    int32_t DeactivateAudioSession(const int32_t callerPid);
+    int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
     int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
@@ -114,15 +114,17 @@ public:
     void AudioInterruptZoneDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
+    // for audiosessionv2
+    int32_t ProcessFocusEntryForAudioSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
+    bool ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt);
+    void DeactivateAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
+    void DispatchInterruptEventForAudioSession(
+        InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt) override;
+    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
-    int32_t ProcessFocusEntryForAudioSession(int32_t callerPid);
-    bool ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt);
-    void DeactivateAudioSessionFakeInterrupt(int32_t zoneId, int32_t callerPid);
-    void DispatchInterruptEventForAudioSession(
-        InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt) override;
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -182,7 +184,7 @@ private:
     int32_t ActivateAudioInterruptInternal(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const bool isUpdatedAudioStrategy, bool &updateScene);
     int32_t ActivateAudioInterruptCoreProcedure(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
-        const bool isUpdatedAudioStrategy);
+        const bool isUpdatedAudioStrategy, bool &updateScene);
     void ProcessAudioScene(const AudioInterrupt &audioInterrupt, const uint32_t &incomingStreamId,
         const int32_t &zoneId, bool &shouldReturnSuccess);
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,

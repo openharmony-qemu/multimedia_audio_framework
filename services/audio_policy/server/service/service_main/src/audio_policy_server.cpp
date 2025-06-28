@@ -4516,9 +4516,10 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
         return ERR_INVALID_PARAM;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d",
-        static_cast<int32_t>(strategy.concurrencyMode), callerPid);
-    ret = interruptService_->ActivateAudioSession(callerPid, strategy);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
+        static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
+    ret = interruptService_->ActivateAudioSession(0, callerPid, strategy);
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
         coreService_->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
@@ -4533,8 +4534,9 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d", callerPid);
-    return interruptService_->DeactivateAudioSession(callerPid);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
+    return interruptService_->DeactivateAudioSession(0, callerPid);
 }
 
 int32_t AudioPolicyServer::IsAudioSessionActivated(bool &isActive)

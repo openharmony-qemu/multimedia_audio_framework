@@ -39,7 +39,14 @@ public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
         const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor);
     ~AudioSession();
-
+    bool IsSceneParameterSet();
+    int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
+    bool IsActivated() const;
+    std::vector<AudioInterrupt> GetStreams() const;
+    AudioStreamType GetFakeStreamType();
+    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
+    void RemoveStreamInfo(uint32_t streamId);
+    void Dump(std::string &dumpString);
     int32_t Activate();
     int32_t Deactivate();
     AudioSessionState GetSessionState();
@@ -54,14 +61,6 @@ public:
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
     bool IsNeedToFetchDefaultDevice();
-    bool IsSceneParameterSet();
-    int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
-    bool IsActivated() const;
-    std::vector<AudioInterrupt> GetStreams() const;
-    AudioStreamType GetFakeStreamType();
-    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
-    void RemoveStreamInfo(uint32_t streamId);
-    void Dump(std::string &dumpString);
 
 private:
     StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);

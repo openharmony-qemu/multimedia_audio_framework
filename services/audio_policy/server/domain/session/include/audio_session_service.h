@@ -66,6 +66,9 @@ public:
     void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
+    static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
+    // Dump AudioSession Info
+    void AudioSessionInfoDump(std::string &dumpString);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

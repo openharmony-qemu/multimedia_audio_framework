@@ -200,7 +200,7 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
                                 ERR_INVALID_PARAM,
                                 "no focus cfg, active stream type = %{public}d, incoming stream type = %{public}d",
                                 static_cast<int32_t>(focusPair.first.streamType),
-                                static_cast<int32_t>(focusPair.first.streamType));
+                                static_cast<int32_t>(focusPair.second.streamType));
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);

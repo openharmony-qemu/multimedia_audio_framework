@@ -128,7 +128,6 @@ bool AudioSessionService::IsAudioSessionActivated(const int32_t callerPid)
         // The audio session of the callerPid is not existed or has been released.
         AUDIO_WARNING_LOG("The audio seesion of pid %{public}d is not found!", callerPid);
         return false;
-
     }
     return sessionMap_[callerPid]->IsActivated();
 }
@@ -386,6 +385,26 @@ void AudioSessionService::RemoveStreamInfo(const AudioInterrupt &audioInterrupt)
         return;
     }
     return session->second->RemoveStreamInfo(audioInterrupt.streamId);
+}
+
+void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if (sessionMap_.empty()) {
+        AppendFormat(dumpString, "    - The AudioSessionMap is empty.\n");
+        return;
+    }
+    for (auto iterAudioSession = sessionMap_.begin(); iterAudioSession != sessionMap_.end(); ++iterAudioSession) {
+        dumpString += "\n";
+        int32_t pid = iterAudioSession->first;
+        std::shared_ptr<AudioSession> audioSession = iterAudioSession->second;
+        if (audioSession == nullptr) {
+            AppendFormat(dumpString, "    - pid: %d, AudioSession is null.\n", pid);
+            continue;
+        }
+        audioSession->Dump(dumpString);
+    }
+    dumpString += "\n";
 }
 
 } // namespace AudioStandard
