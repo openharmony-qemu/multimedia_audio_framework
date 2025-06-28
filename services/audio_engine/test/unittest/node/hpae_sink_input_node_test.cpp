@@ -163,8 +163,8 @@ TEST_F(HpaeSinkInputNodeTest, testLoudnessGain)
     nodeInfo.format = SAMPLE_F32LE;
 
     auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    sinkInputNode->SetLoundessGain(LOUDNESS_GAIN);
+    sinkInputNode->SetLoudnessGain(LOUDNESS_GAIN);
 
-    EXPECT_FLOAT_EQ(sinkInputNode->GetLoundessGain(), LOUDNESS_GAIN);
+    EXPECT_FLOAT_EQ(sinkInputNode->GetLoudnessGain(), LOUDNESS_GAIN);
 }
 }

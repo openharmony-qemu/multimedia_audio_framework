@@ -287,7 +287,7 @@ int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasi
 {
     // get format input from loundness gain node
     if (SafeGetMap(idLoudnessGainNodeMap_, sessionId)) {
-        if (loudnessGainNode->IsLoudnessAlgoOn()) { // loundess algorithm needs 48k sample rate
+        if (idLoudnessGainNodeMap_[sessionId]->IsLoudnessAlgoOn()) { // loundess algorithm needs 48k sample rate
             basicFormat.rate = SAMPLE_RATE_48000;
             basicFormat.audioChannelInfo.numChannels = sinkInfo_.channels;
             basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(sinkInfo_.channelLayout);

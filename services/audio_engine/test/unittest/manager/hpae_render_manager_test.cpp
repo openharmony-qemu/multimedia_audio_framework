@@ -245,11 +245,18 @@ static void TestIRendererManagerStartPuaseStream()
 }
 
 template <class RenderManagerType>
-static void TestIRendererManagerSetLoudnessGain(uint32_t sessionId, float loundessGain)
+static void TestIRendererManagerSetLoudnessGain()
 {
     HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceName = "test_device";
-    sinkInfo.deviceClass = "test_class";
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
     std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
 
     EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
@@ -264,19 +271,18 @@ static void TestIRendererManagerSetLoudnessGain(uint32_t sessionId, float lounde
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    hpaeRendererManager->sinkInputNodeMap_[TEST_STREAM_SESSION_ID] = std::make_shared<RenderManagerType>(streamInfo);
 
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     // test set loundess gain before start
-    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(TEST_STREAM_SESSION_ID, LOUDNESS_GAIN) == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 
     // test set loudness gain after start
-    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(TEST_STREAM_SESSION_ID, LOUDNESS_GAIN) == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
