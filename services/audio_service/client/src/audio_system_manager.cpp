@@ -33,6 +33,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
+#include "audio_workgroup_callback_stub.h"
 #include "audio_qosmanager.h"
 #include "rtg_interface.h"
 using namespace OHOS::RME;
@@ -50,6 +51,7 @@ mutex g_asProxyMutex;
 mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStub> g_audioListener = nullptr;
+class AudioWorkgroupClientCallback : public AudioWorkgroupCallbackStub {};
 
 const std::vector<AudioStreamType> workgroupValidStreamType = {
     AudioStreamType::STREAM_MUSIC,
@@ -2077,9 +2079,21 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     AttachAudioRendererEventListener();
     AttachVolumeKeyEventListener();
 
+    sptr<AudioWorkgroupClientCallback> callback = new(std::nothrow) AudioWorkgroupClientCallback();
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    sptr<IRemoteObject> object = callback->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] callback->AsObject is null");
+        return ERR_INVALID_PARAM;
+    }
+
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->CreateAudioWorkgroup(getpid());
+    return gasp->CreateAudioWorkgroup(getpid(), object);
 }
 
 int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)
