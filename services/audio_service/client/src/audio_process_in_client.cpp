@@ -815,14 +815,14 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     Trace trace("AudioProcessInClient::ReadProcessData-<" + std::to_string(curReadPos));
     RingBufferWrapper ringBuffer;
     int32_t ret = audioBuffer_->GetAllReadableBufferFromPosFrame(curReadPos, ringBuffer);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && (ringBuffer.dataLenth > spanSizeInByte_),
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && (ringBuffer.dataLength > spanSizeInByte_),
         ERR_OPERATION_FAILED, "get client mmap read buffer failed, ret %{public}d.", ret);
-    ringBuffer.dataLenth = spanSizeInByte_;
+    ringBuffer.dataLength = spanSizeInByte_;
 
     ret = RingBufferWrapper{{{
         {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
         {.buffer = nullptr, .bufLength = 0}}},
-        .dataLenth = spanSizeInByte_}.MemCopyFrom(ringBuffer);
+        .dataLength = spanSizeInByte_}.MemCopyFrom(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
@@ -830,7 +830,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         .bufLength = spanSizeInByte_, .dataLength = spanSizeInByte_},
         processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
 
-    ringBuffer.SetDataTo(0);
+    ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     return SUCCESS;
 }
 
@@ -1004,25 +1004,25 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
 
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc)
 {
-    if (dstDesc.dataLenth <= dstDesc.basicBufferDescs[0].bufLength) {
+    if (dstDesc.dataLength <= dstDesc.basicBufferDescs[0].bufLength) {
         BufferDesc tmpDstDesc;
         tmpDstDesc.buffer = dstDesc.basicBufferDescs[0].buffer;
-        tmpDstDesc.dataLength = dstDesc.dataLenth;
-        tmpDstDesc.bufLength = dstDesc.dataLenth;
+        tmpDstDesc.dataLength = dstDesc.dataLength;
+        tmpDstDesc.bufLength = dstDesc.dataLength;
         return ProcessData(srcDesc, tmpDstDesc);
     } else {
         std::lock_guard lock(tmpBufferMutex_);
         tmpBuffer_.resize(0);
-        tmpBuffer_.resize(dstDesc.dataLenth);
+        tmpBuffer_.resize(dstDesc.dataLength);
         BufferDesc tmpDstDesc;
         tmpDstDesc.buffer = tmpBuffer_.data();
-        tmpDstDesc.dataLength = dstDesc.dataLenth;
-        tmpDstDesc.bufLength = dstDesc.dataLenth;
+        tmpDstDesc.dataLength = dstDesc.dataLength;
+        tmpDstDesc.bufLength = dstDesc.dataLength;
         int32_t ret = ProcessData(srcDesc, tmpDstDesc);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
 
         RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLenth = tmpDstDesc.dataLength;
+        ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
 
@@ -1064,7 +1064,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
             {.buffer = bufDesc.buffer, .bufLength = clientRemainSizeInFrame * clientByteSizePerFrame_},
             {.buffer = nullptr, .bufLength = 0}
         }},
-        .dataLenth = clientRemainSizeInFrame * clientByteSizePerFrame_
+        .dataLength = clientRemainSizeInFrame * clientByteSizePerFrame_
     };
 
     while (clientRemainSizeInFrame > 0) {
@@ -1083,23 +1083,24 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
         RingBufferWrapper curWriteBuffer;
         int32_t ret = audioBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, curWriteBuffer);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && curWriteBuffer.dataLenth > 0,
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && curWriteBuffer.dataLength > 0,
             ERR_OPERATION_FAILED, "get write buffer fail, ret:%{public}d", ret);
 
-        size_t copySizeInFrame = std::min(clientRemainSizeInFrame, (curWriteBuffer.dataLenth / byteSizePerFrame_));
+        size_t copySizeInFrame = std::min(clientRemainSizeInFrame, (curWriteBuffer.dataLength / byteSizePerFrame_));
         BufferDesc curCallbackBuffer = {nullptr, 0, 0};
         curCallbackBuffer.buffer = inBuffer.basicBufferDescs[0].buffer;
-        curCallbackBuffer.bufLength = inBuffer.dataLenth;
-        curCallbackBuffer.dataLength = inBuffer.dataLenth;
+        curCallbackBuffer.bufLength = inBuffer.dataLength;
+        curCallbackBuffer.dataLength = inBuffer.dataLength;
 
-        curWriteBuffer.dataLenth = copySizeInFrame * byteSizePerFrame_;
+        curWriteBuffer.dataLength = copySizeInFrame * byteSizePerFrame_;
         ret = ProcessData(curCallbackBuffer, curWriteBuffer);
         audioBuffer_->SetCurWriteFrame(curWritePos + copySizeInFrame);
         if (ret != SUCCESS) {
             return ERR_OPERATION_FAILED;
         }
         writeProcessDataTrace.End();
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer), curCallbackBuffer.dataLength);
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer),
+            curCallbackBuffer.dataLength);
         VolumeTools::DfxOperation(curCallbackBuffer, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
 
         clientRemainSizeInFrame -= copySizeInFrame;
@@ -1715,9 +1716,9 @@ void AudioProcessInClientInner::ProcessCallbackFucIndependent()
         } else {
             RingBufferWrapper curWriteBuffer;
             int32_t ret = audioBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, curWriteBuffer);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS && (curWriteBuffer.dataLenth > 0),
+            CHECK_AND_RETURN_LOG(ret == SUCCESS && (curWriteBuffer.dataLength > 0),
                 "ret is fail or buffer is nullptr");
-            curWriteBuffer.SetDataTo(0);
+            curWriteBuffer.SetBuffersValueWithSpecifyDataLen(0);
         }
         bool prepared = true;
         curWritePos = audioBuffer_->GetCurWriteFrame();

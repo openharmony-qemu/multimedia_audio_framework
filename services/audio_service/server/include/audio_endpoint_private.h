@@ -172,10 +172,9 @@ private:
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
-    void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList, std::function<void()> &moveClientIndex);
+    void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList, std::function<void()> &moveClientsIndex);
     void GetAllReadyProcessDataSub(size_t i,
-        std::vector<AudioStreamData> &audioDataList, uint64_t curRead, uint64_t &readFramePosAfterRead,
-        RingBufferWrapper &ringBufferNeedMemset);
+        std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex);
     std::string GetStatusStr(EndpointStatus status);
 
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBufferBase> &procBuf, const BufferDesc &readBuf,

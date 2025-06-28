@@ -196,8 +196,8 @@ public:
     int32_t SetCurWriteFrame(uint64_t writeFrame);
     int32_t SetCurReadFrame(uint64_t readFrame);
 
-    int32_t GetBufferByOffset(size_t offset, size_t dataLenth, RingBufferWrapper &buffer);
-    int32_t TryGetContinuousBufferByOffset(size_t offset, size_t dataLenth, BufferDesc &bufferDesc);
+    int32_t GetBufferByOffset(size_t offset, size_t dataLength, RingBufferWrapper &buffer);
+    int32_t TryGetContinuousBufferByOffset(size_t offset, size_t dataLength, BufferDesc &bufferDesc);
 
     int32_t GetBufferByFrame(uint64_t beginPosInFrame, uint64_t sizeInFrame, RingBufferWrapper &buffer);
 

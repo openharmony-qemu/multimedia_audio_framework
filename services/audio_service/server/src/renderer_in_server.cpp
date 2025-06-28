@@ -630,8 +630,8 @@ int32_t RendererInServer::WriteData()
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        ringBufferDesc.dataLenth = std::min(ringBufferDesc.dataLenth, spanSizeInByte_);
-        if (ringBufferDesc.dataLenth == 0) {
+        ringBufferDesc.dataLength = std::min(ringBufferDesc.dataLength, spanSizeInByte_);
+        if (ringBufferDesc.dataLength == 0) {
             AUDIO_ERR_LOG("not enough data!");
             return ERR_INVALID_PARAM;
         }
@@ -645,23 +645,23 @@ int32_t RendererInServer::WriteData()
         }
 
         BufferDesc bufferDesc;
-        if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLenth) {
+        if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength) {
             bufferDesc.buffer = ringBufferDesc.basicBufferDescs[0].buffer;
-            bufferDesc.bufLength = ringBufferDesc.dataLenth;
-            bufferDesc.dataLength = ringBufferDesc.dataLenth;
+            bufferDesc.bufLength = ringBufferDesc.dataLength;
+            bufferDesc.dataLength = ringBufferDesc.dataLength;
         } else {
             rendererTmpBuffer_.resize(0);
-            rendererTmpBuffer_.resize(ringBufferDesc.dataLenth);
+            rendererTmpBuffer_.resize(ringBufferDesc.dataLength);
 
             RingBufferWrapper ringBufferDescForCotinueData;
-            ringBufferDescForCotinueData.dataLenth = ringBufferDesc.dataLenth;
+            ringBufferDescForCotinueData.dataLength = ringBufferDesc.dataLength;
             ringBufferDescForCotinueData.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
-            ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBufferDesc.dataLenth;
+            ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
             ringBufferDescForCotinueData.MemCopyFrom(ringBufferDesc);
 
             bufferDesc.buffer = rendererTmpBuffer_.data();
-            bufferDesc.bufLength = ringBufferDesc.dataLenth;
-            bufferDesc.dataLength = ringBufferDesc.dataLenth;
+            bufferDesc.bufLength = ringBufferDesc.dataLength;
+            bufferDesc.dataLength = ringBufferDesc.dataLength;
         }
         stream_->EnqueueBuffer(bufferDesc);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
@@ -673,9 +673,9 @@ int32_t RendererInServer::WriteData()
         OtherStreamEnqueue(bufferDesc);
 
         WriteMuteDataSysEvent(bufferDesc);
-        ringBufferDesc.SetDataTo(0); // clear is needed for reuse.
+        ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
         // Client may write the buffer immediately after SetCurReadFrame, so put memset_s before it!
-        uint64_t nextReadFrame = currentReadFrame + (ringBufferDesc.dataLenth / byteSizePerFrame_);
+        uint64_t nextReadFrame = currentReadFrame + (ringBufferDesc.dataLength / byteSizePerFrame_);
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     }
     standByCounter_ = 0;
@@ -715,11 +715,11 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 
     RingBufferWrapper ringBufferDesc; // will be changed in GetReadbuffer
     if (audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc) == SUCCESS) {
-        if (ringBufferDesc.dataLenth < requestDataLen) {
+        if (ringBufferDesc.dataLength < requestDataLen) {
             AUDIO_ERR_LOG("data not enouth");
             return ERR_INVALID_PARAM;
         }
-        ringBufferDesc.dataLenth = requestDataLen;
+        ringBufferDesc.dataLength = requestDataLen;
         if (processConfig_.streamType != STREAM_ULTRASONIC) {
             if (currentReadFrame + requestDataInFrame == currentWriteFrame) {
                 DoFadingOut(ringBufferDesc);
@@ -731,7 +731,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
                 {reinterpret_cast<uint8_t*>(inputData), requestDataLen},
                 {}
             }},
-            .dataLenth = requestDataLen
+            .dataLength = requestDataLen
         };
 
         CHECK_AND_RETURN_RET_LOG(wrapperInputData.MemCopyFrom(ringBufferDesc) == 0,
@@ -752,7 +752,7 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
         OtherStreamEnqueue(bufferDesc);
         audioStreamChecker_->RecordNormalFrame();
         WriteMuteDataSysEvent(bufferDesc);
-        ringBufferDesc.SetDataTo(0); // clear is needed for reuse.
+        ringBufferDesc.SetBuffersValueWithSpecifyDataLen(0); // clear is needed for reuse.
         uint64_t nextReadFrame = currentReadFrame + requestDataInFrame;
         audioServerBuffer_->SetCurReadFrame(nextReadFrame);
     } else {
@@ -1094,7 +1094,7 @@ int32_t RendererInServer::FlushOhAudioBuffer()
     if (readResult != 0) {
         return ERR_OPERATION_FAILED;
     }
-    buffer.SetDataTo(0);
+    buffer.SetBuffersValueWithSpecifyDataLen(0);
     AUDIO_INFO_LOG("On flush, read frame: %{public}" PRIu64 ", nextReadFrame: %{public}zu,"
         "writeFrame: %{public}" PRIu64 "", readFrame, spanSizeInFrame_, writeFrame);
     audioServerBuffer_->SetCurReadFrame(writeFrame);

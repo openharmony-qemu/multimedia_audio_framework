@@ -684,23 +684,23 @@ int32_t OHAudioBufferBase::GetOffsetByFrameForRead(uint64_t readPosInFrame, size
     return GetOffsetByFrame(readPosInFrame, offset);
 }
 
-int32_t OHAudioBufferBase::GetBufferByOffset(size_t offset, size_t dataLenth, RingBufferWrapper &buffer)
+int32_t OHAudioBufferBase::GetBufferByOffset(size_t offset, size_t dataLength, RingBufferWrapper &buffer)
 {
     CHECK_AND_RETURN_RET_LOG(offset < totalSizeInByte_, ERR_INVALID_PARAM, "invalid offset:%{public}zu", offset);
-    CHECK_AND_RETURN_RET_LOG((dataLenth <= totalSizeInByte_) && (dataLenth > 0), ERR_INVALID_PARAM,
-        "invalid dataLenth: %{public}zu", dataLenth);
+    CHECK_AND_RETURN_RET_LOG((dataLength <= totalSizeInByte_) && (dataLength > 0), ERR_INVALID_PARAM,
+        "invalid dataLength: %{public}zu", dataLength);
 
     size_t bufLengthToDataBaseEnd = (totalSizeInByte_ - offset);
 
     RingBufferWrapper bufferWrapper;
-    bufferWrapper.dataLenth = dataLenth;
+    bufferWrapper.dataLength = dataLength;
 
     bufferWrapper.basicBufferDescs[0].buffer = dataBase_ + offset;
-    bufferWrapper.basicBufferDescs[0].bufLength = std::min(bufLengthToDataBaseEnd, dataLenth);
+    bufferWrapper.basicBufferDescs[0].bufLength = std::min(bufLengthToDataBaseEnd, dataLength);
 
-    if (dataLenth > bufLengthToDataBaseEnd) {
+    if (dataLength > bufLengthToDataBaseEnd) {
         bufferWrapper.basicBufferDescs[1].buffer = dataBase_;
-        bufferWrapper.basicBufferDescs[1].bufLength = dataLenth - bufLengthToDataBaseEnd;
+        bufferWrapper.basicBufferDescs[1].bufLength = dataLength - bufLengthToDataBaseEnd;
     } else {
         bufferWrapper.basicBufferDescs[1].buffer = nullptr;
         bufferWrapper.basicBufferDescs[1].bufLength = 0;
@@ -711,20 +711,20 @@ int32_t OHAudioBufferBase::GetBufferByOffset(size_t offset, size_t dataLenth, Ri
     return SUCCESS;
 }
 
-int32_t OHAudioBufferBase::TryGetContinuousBufferByOffset(size_t offset, size_t dataLenth, BufferDesc &bufferDesc)
+int32_t OHAudioBufferBase::TryGetContinuousBufferByOffset(size_t offset, size_t dataLength, BufferDesc &bufferDesc)
 {
     RingBufferWrapper buffer;
-    int32_t ret = GetBufferByOffset(offset, dataLenth, buffer);
+    int32_t ret = GetBufferByOffset(offset, dataLength, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed!");
 
     size_t firstBuffLenth = buffer.basicBufferDescs[0].bufLength;
-    CHECK_AND_RETURN_RET_LOG(dataLenth == firstBuffLenth, ERR_INVALID_PARAM,
-        "err dataLenth: %{public}zu firstBuffLenth: %{public}zu",
-        dataLenth, firstBuffLenth);
+    CHECK_AND_RETURN_RET_LOG(dataLength == firstBuffLenth, ERR_INVALID_PARAM,
+        "err dataLength: %{public}zu firstBuffLenth: %{public}zu",
+        dataLength, firstBuffLenth);
 
     bufferDesc.buffer = buffer.basicBufferDescs[0].buffer;
-    bufferDesc.bufLength = dataLenth;
-    bufferDesc.dataLength = dataLenth;
+    bufferDesc.bufLength = dataLength;
+    bufferDesc.dataLength = dataLength;
     return SUCCESS;
 }
 
@@ -739,9 +739,9 @@ int32_t OHAudioBufferBase::GetBufferByFrame(uint64_t beginPosInFrame, uint64_t s
     int32_t ret = GetOffsetByFrame(beginPosInFrame, offset);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "getOffset err: %{public}d", ret);
 
-    size_t dataLenth = sizeInFrame * byteSizePerFrame_;
+    size_t dataLength = sizeInFrame * byteSizePerFrame_;
 
-    return GetBufferByOffset(offset, dataLenth, buffer);
+    return GetBufferByOffset(offset, dataLength, buffer);
 }
 
 int32_t OHAudioBufferBase::GetAllWritableBufferFromPosFrame(uint64_t writePosInFrame, RingBufferWrapper &buffer)

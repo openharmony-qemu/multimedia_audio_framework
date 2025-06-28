@@ -597,7 +597,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_001, TestSize.Lev
             {bufferDesc.buffer, bufferDesc.bufLength},
             {}
         }},
-        .dataLenth = bufferDesc.dataLength
+        .dataLength = bufferDesc.dataLength
     };
     rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_NE(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
@@ -623,7 +623,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_002, TestSize.Lev
             {bufferDesc.buffer, bufferDesc.bufLength},
             {}
         }},
-        .dataLenth = bufferDesc.dataLength
+        .dataLength = bufferDesc.dataLength
     };
     rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
@@ -649,7 +649,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_003, TestSize.Lev
             {bufferDesc.buffer, bufferDesc.bufLength},
             {}
         }},
-        .dataLenth = bufferDesc.dataLength
+        .dataLength = bufferDesc.dataLength
     };
     rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);

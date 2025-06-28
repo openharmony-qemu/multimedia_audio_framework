@@ -422,7 +422,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
     RingBufferWrapper buffer;
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, totalSizeInBytes);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -430,7 +430,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, 0);
+    EXPECT_EQ(buffer.dataLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -449,7 +449,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, 0);
+    EXPECT_EQ(buffer.dataLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -457,7 +457,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, totalSizeInBytes);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -484,7 +484,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
     RingBufferWrapper buffer;
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, totalSizeInBytes - byteSizePerFrame);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes - byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes - byteSizePerFrame);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -492,7 +492,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, byteSizePerFrame);
+    EXPECT_EQ(buffer.dataLength, byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, byteSizePerFrame);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -511,7 +511,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, 0);
+    EXPECT_EQ(buffer.dataLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
     EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
@@ -519,7 +519,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
 
     ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(buffer.dataLenth, totalSizeInBytes);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[1].buffer, nullptr);

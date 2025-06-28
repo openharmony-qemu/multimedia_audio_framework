@@ -165,7 +165,7 @@ void AudioProcessInServer::EnableStandby()
 }
 
 int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
-        uint32_t &spanSizeInFrame)
+    uint32_t &spanSizeInFrame)
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,

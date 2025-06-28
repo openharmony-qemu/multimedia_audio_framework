@@ -199,13 +199,13 @@ int32_t VolumeTools::Process(const RingBufferWrapper& ringBufferDesc, AudioSampl
     }
     size_t byteSizePerData = GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * vols.channel;
-    if (ringBufferDesc.dataLenth == 0 || ((ringBufferDesc.dataLenth % byteSizePerFrame) != 0) ||
+    if (ringBufferDesc.dataLength == 0 || ((ringBufferDesc.dataLength % byteSizePerFrame) != 0) ||
             ((ringBufferDesc.basicBufferDescs[0].bufLength) % byteSizePerFrame != 0)) {
-        AUDIO_ERR_LOG("Process failed with invalid buffer, size is %{public}zu", ringBufferDesc.dataLenth);
+        AUDIO_ERR_LOG("Process failed with invalid buffer, size is %{public}zu", ringBufferDesc.dataLength);
         return ERR_INVALID_PARAM;
     }
 
-    size_t frameSize = ringBufferDesc.dataLenth / byteSizePerFrame;
+    size_t frameSize = ringBufferDesc.dataLength / byteSizePerFrame;
     if (frameSize < MIN_FRAME_SIZE) {
         AUDIO_ERR_LOG("Process failed with invalid frameSize, size is %{public}zu", frameSize);
         return ERR_INVALID_PARAM;
@@ -246,7 +246,7 @@ int32_t VolumeTools::Process(const BufferDesc &bufferDesc, AudioSampleFormat for
         return ERR_INVALID_PARAM;
     }
     RingBufferWrapper ringBufferDesc;
-    ringBufferDesc.dataLenth = bufferDesc.dataLength;
+    ringBufferDesc.dataLength = bufferDesc.dataLength;
     ringBufferDesc.basicBufferDescs[0].bufLength = bufferDesc.bufLength;
     ringBufferDesc.basicBufferDescs[0].buffer = bufferDesc.buffer;
 

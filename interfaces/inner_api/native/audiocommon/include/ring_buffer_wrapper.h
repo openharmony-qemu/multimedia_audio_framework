@@ -62,7 +62,7 @@ struct RingBufferWrapper {
     static inline constexpr size_t DESC_SIZE = 2;
 
     std::array<BasicBufferDesc, DESC_SIZE> basicBufferDescs = {};
-    size_t dataLenth = 0;
+    size_t dataLength = 0;
 
     size_t GetBufferSize()
     {
@@ -75,15 +75,14 @@ struct RingBufferWrapper {
 
     void Reset()
     {
-        dataLenth = 0;
+        dataLength = 0;
         for (auto &[buffer, bufLength] : basicBufferDescs) {
             buffer = nullptr;
             bufLength = 0;
         }
     }
 
-// use int because memset_s parm is int
-    void SetMemTo(int ch)
+    void SetBuffersValueWithBufLen(int8_t ch)
     {
         for (auto &[buffer, bufLength] : basicBufferDescs) {
             if (buffer != nullptr && bufLength != 0) {
@@ -92,9 +91,9 @@ struct RingBufferWrapper {
         }
     }
 
-    void SetDataTo(int ch)
+    void SetBuffersValueWithSpecifyDataLen(int8_t ch)
     {
-        size_t remainSize = dataLenth;
+        size_t remainSize = dataLength;
         for (auto &[buffer, bufLength] : basicBufferDescs) {
             size_t setSize = std::min(remainSize, bufLength);
             remainSize -= setSize;
@@ -111,7 +110,7 @@ struct RingBufferWrapper {
         }
 
         size_t remainSeek = offset;
-        dataLenth <= offset ? dataLenth = 0 : dataLenth -= offset;
+        dataLength <= offset ? dataLength = 0 : dataLength -= offset;
 
         for (auto &basicBuffer : basicBufferDescs) {
             size_t seekSize = std::min(remainSeek, basicBuffer.bufLength);
@@ -127,15 +126,15 @@ struct RingBufferWrapper {
 
     int32_t MemCopyFrom(const RingBufferWrapper &buffer)
     {
-        if (GetBufferSize() < buffer.dataLenth) {
+        if (GetBufferSize() < buffer.dataLength) {
             return ERR_INVALID_PARAM;
         }
 
         RingBufferWrapper dstBuffer(*this);
         RingBufferWrapper srcBuffer(buffer);
-        dstBuffer.dataLenth = buffer.dataLenth;
+        dstBuffer.dataLength = buffer.dataLength;
 
-        size_t remainSize = buffer.dataLenth;
+        size_t remainSize = buffer.dataLength;
         while (remainSize > 0) {
             auto copySize = std::min({srcBuffer.basicBufferDescs[0].bufLength, dstBuffer.basicBufferDescs[0].bufLength,
                 remainSize});
@@ -151,7 +150,7 @@ struct RingBufferWrapper {
             srcBuffer.SeekFromStart(copySize);
         }
 
-        dataLenth = buffer.dataLenth;
+        dataLength = buffer.dataLength;
         return SUCCESS;
     }
 };

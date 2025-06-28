@@ -65,7 +65,7 @@ AudioProcessProxy::~AudioProcessProxy()
 }
 
 int32_t AudioProcessProxy::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
-        uint32_t &spanSizeInFrame)
+    uint32_t &spanSizeInFrame)
 {
     MessageParcel data;
     MessageParcel reply;

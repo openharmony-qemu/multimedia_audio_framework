@@ -1331,10 +1331,10 @@ void AudioEndpointInner::ProcessSingleData(const AudioStreamData &srcData, const
 
 // call with listLock_ hold
 void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList,
-    std::function<void()> &moveClientIndex)
+    std::function<void()> &moveClientsIndex)
 {
     isExistLoopback_ = false;
-    std::vector<std::tuple<std::shared_ptr<OHAudioBufferBase>, uint64_t, RingBufferWrapper>> readInfo;
+    std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
@@ -1344,24 +1344,23 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
         }
-        uint64_t readFramePosAfterRead = curRead;
-        RingBufferWrapper ringBufferNeedMemset;
-        GetAllReadyProcessDataSub(i, audioDataList, curRead, readFramePosAfterRead, ringBufferNeedMemset);
-        readInfo.push_back({processBufferList_[i], readFramePosAfterRead, ringBufferNeedMemset});
+        std::function<void()> moveClientIndexFunc;
+        GetAllReadyProcessDataSub(i, audioDataList, curRead, moveClientIndexFunc);
+        moveClientIndexVector.push_back(moveClientIndexFunc);
     }
 
-    moveClientIndex =
-        [readInfoVec = std::move(readInfo)] () mutable {
-            for (auto& [ohBuffer, readFramePosAfterRead, ringBufferWrapper] : readInfoVec) {
-                ohBuffer->SetCurReadFrame(readFramePosAfterRead);
-                ringBufferWrapper.SetDataTo(0);
-            };
+    moveClientsIndex =
+        [moveClientIndexVec = std::move(moveClientIndexVector)] () {
+            for (const auto& moveFunc : moveClientIndexVec) {
+                if (moveFunc) {
+                    moveFunc();
+                }
+            }
         };
 }
 
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
-    std::vector<AudioStreamData> &audioDataList, uint64_t curRead, uint64_t &readFramePosAfterRead,
-    RingBufferWrapper &ringBufferNeedMemset)
+    std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex)
 {
     AudioStreamData streamData;
     Volume vol = {true, 1.0f, 0};
@@ -1369,7 +1368,6 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     AudioStreamType streamType = processList_[i]->GetAudioStreamType();
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    bool muteFlag = processList_[i]->GetMuteState();
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
     int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
         clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
@@ -1386,44 +1384,53 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     } else {
         streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume * vol.volumeFloat);
     }
+
+    bool muteFlag = processList_[i]->GetMuteState();
     Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
         " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));
     streamData.volumeEnd = volumeFromOhaudioBuffer;
     streamData.volumeHap = muteFlag ? 0 : volumeFromOhaudioBuffer;
     streamData.streamInfo = processList_[i]->GetStreamInfo();
     streamData.isInnerCapeds = processList_[i]->GetInnerCapState();
+
     RingBufferWrapper ringBuffer;
     int32_t ret = processBufferList_[i]->GetAllReadableBufferFromPosFrame(curRead, ringBuffer);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS && ringBuffer.dataLenth > 0, "ret: %{public}d lenth: %{public}zu",
-        ret, ringBuffer.dataLenth);
-    if (ret == SUCCESS && ringBuffer.dataLenth > 0) {
+    CHECK_AND_RETURN_LOG(ret == SUCCESS && ringBuffer.dataLength > 0, "ret: %{public}d lenth: %{public}zu",
+        ret, ringBuffer.dataLength);
+    if (ret == SUCCESS && ringBuffer.dataLength > 0) {
         auto byteSizePerFrame = processList_[i]->GetByteSizePerFrame();
         CHECK_AND_RETURN_LOG(byteSizePerFrame != 0, "byteSizePerFrame is 0");
         size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * byteSizePerFrame;
-        if (ringBuffer.dataLenth > spanSizeInByte) {
-            ringBuffer.dataLenth = spanSizeInByte;
-        }
-        readFramePosAfterRead = curRead + (ringBuffer.dataLenth / byteSizePerFrame);
-        ringBufferNeedMemset = ringBuffer;
-        if (muteFlag) {
-            ringBuffer.SetDataTo(0);
+        if (ringBuffer.dataLength > spanSizeInByte) {
+            ringBuffer.dataLength = spanSizeInByte;
         }
 
-        if (ringBuffer.dataLenth > ringBuffer.basicBufferDescs[0].bufLength) {
+        uint64_t readFramePosAfterRead = curRead + (ringBuffer.dataLength / byteSizePerFrame);
+        auto ohAudioBuffer = processBufferList_[i];
+        moveClientIndex = [readFramePosAfterRead, ringBuffer, ohAudioBuffer] () mutable {
+            ohAudioBuffer->SetCurReadFrame(readFramePosAfterRead);
+            ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
+        };
+
+        if (muteFlag) {
+            ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
+        }
+
+        if (ringBuffer.dataLength > ringBuffer.basicBufferDescs[0].bufLength) {
             processTmpBufferList_[i].resize(0);
-            processTmpBufferList_[i].resize(ringBuffer.dataLenth);
+            processTmpBufferList_[i].resize(ringBuffer.dataLength);
             RingBufferWrapper ringBufferDescForCotinueData;
-            ringBufferDescForCotinueData.dataLenth = ringBuffer.dataLenth;
+            ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
             ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
-            ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLenth;
+            ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
             ringBufferDescForCotinueData.MemCopyFrom(ringBuffer);
             streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
-            streamData.bufferDesc.bufLength = ringBuffer.dataLenth;
-            streamData.bufferDesc.dataLength = ringBuffer.dataLenth;
+            streamData.bufferDesc.bufLength = ringBuffer.dataLength;
+            streamData.bufferDesc.dataLength = ringBuffer.dataLength;
         } else {
             streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
-            streamData.bufferDesc.bufLength = ringBuffer.dataLenth;
-            streamData.bufferDesc.dataLength = ringBuffer.dataLenth;
+            streamData.bufferDesc.bufLength = ringBuffer.dataLength;
+            streamData.bufferDesc.dataLength = ringBuffer.dataLength;
         }
 
         CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
@@ -1433,7 +1440,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         WriteMuteDataSysEvent(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength, i);
         HandleMuteWriteData(streamData.bufferDesc, i);
     } else {
-        AUDIO_INFO_LOG("getreadbuffer failed ret: %{public}d lenth: %{public}zu", ret, ringBuffer.dataLenth);
+        AUDIO_INFO_LOG("getreadbuffer failed ret: %{public}d lenth: %{public}zu", ret, ringBuffer.dataLength);
         auto tempProcess = processList_[i];
         CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
         if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
@@ -1826,13 +1833,13 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
     uint32_t byteSizePerFrame;
     procBuf->GetSizeParameter(totalSizeInFrame, byteSizePerFrame);
     CHECK_AND_RETURN_RET_LOG(byteSizePerFrame > 0, ERR_OPERATION_FAILED, "byteSizePerFrame is 0");
-    uint32_t writeableSizeInFrame = ringBuffer.dataLenth / byteSizePerFrame;
+    uint32_t writeableSizeInFrame = ringBuffer.dataLength / byteSizePerFrame;
     if (writeableSizeInFrame > dstSpanSizeInframe_) {
-        ringBuffer.dataLenth = dstSpanSizeInframe_ * byteSizePerFrame;
+        ringBuffer.dataLength = dstSpanSizeInframe_ * byteSizePerFrame;
     }
 
     if (muteFlag) {
-        ringBuffer.SetDataTo(0);
+        ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     } else {
         ret = HandleCapturerDataParams(ringBuffer, readBuf, convertedBuffer);
     }
@@ -1856,9 +1863,8 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(RingBufferWrapper &writeBuf
         return writeBuf.MemCopyFrom(RingBufferWrapper{
             .basicBufferDescs = {{
                 {.buffer = readBuf.buffer, .bufLength = readBuf.bufLength},
-                {.buffer = nullptr, .bufLength = 0}
-            }},
-            .dataLenth = readBuf.bufLength
+                {.buffer = nullptr, .bufLength = 0}}},
+            .dataLength = readBuf.bufLength
         });
     }
     if (clientConfig_.streamInfo.format == SAMPLE_S16LE && clientConfig_.streamInfo.channels == MONO) {
@@ -1867,9 +1873,8 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(RingBufferWrapper &writeBuf
         ret = writeBuf.MemCopyFrom(RingBufferWrapper{
             .basicBufferDescs = {{
                 {.buffer = convertedBuffer.buffer, .bufLength = convertedBuffer.bufLength},
-                {.buffer = nullptr, .bufLength = 0}
-            }},
-            .dataLenth = convertedBuffer.bufLength
+                {.buffer = nullptr, .bufLength = 0}}},
+            .dataLength = convertedBuffer.bufLength
         });
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "memcpy_s failed");
         ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,
@@ -1894,9 +1899,8 @@ int32_t AudioEndpointInner::HandleCapturerDataParams(RingBufferWrapper &writeBuf
         ret = writeBuf.MemCopyFrom(RingBufferWrapper{
             .basicBufferDescs = {{
                 {.buffer = convertedBuffer.buffer, .bufLength = convertedBuffer.bufLength},
-                {.buffer = nullptr, .bufLength = 0}
-            }},
-            .dataLenth = convertedBuffer.bufLength
+                {.buffer = nullptr, .bufLength = 0}}},
+            .dataLength = convertedBuffer.bufLength
         });
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "memcpy_s failed");
         ret = memset_s(static_cast<void *>(convertedBuffer.buffer), convertedBuffer.bufLength, 0,

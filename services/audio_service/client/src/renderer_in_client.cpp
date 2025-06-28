@@ -528,7 +528,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
             {.buffer = buffer, .bufLength = remainSize},
             {.buffer = nullptr, .bufLength = 0}
         }},
-        .dataLenth = 0
+        .dataLength = 0
     };
 
     while (remainSize >= sizePerFrameInByte_) {
@@ -550,9 +550,9 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
             writePos, readPos);
         RingBufferWrapper ringBuffer;
         int32_t ret = clientBuffer_->GetAllWritableBufferFromPosFrame(writePos, ringBuffer);
-        CHECK_AND_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLenth > 0), ERROR);
-        auto copySize = std::min(remainSize, ringBuffer.dataLenth);
-        inBuffer.dataLenth = copySize;
+        CHECK_AND_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR);
+        auto copySize = std::min(remainSize, ringBuffer.dataLength);
+        inBuffer.dataLength = copySize;
         ret = ringBuffer.MemCopyFrom(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
         clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
