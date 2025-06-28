@@ -100,6 +100,8 @@ public:
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
         const StreamUsage streamUsage, bool isRunning) override;
 
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
+
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
 
@@ -180,6 +182,12 @@ int32_t MockPolicyProvider::SetDefaultOutputDevice(const DeviceType defaultOutpu
 {
     return SUCCESS;
 }
+
+int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    return SUCCESS;
+}
+
 void AudioFuzzTestGetPermission()
 {
     uint64_t tokenId;

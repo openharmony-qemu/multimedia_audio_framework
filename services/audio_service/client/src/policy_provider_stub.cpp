@@ -70,6 +70,8 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
         case UNLOAD_MODERN_INNER_CAPTURE_SINK:
             return HandleUnloadModernInnerCapSink(data, reply);
 #endif
+        case CLEAR_AUDIO_FOCUS_BY_SESSIONID:
+            return HandleClearAudioFocusBySessionID(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -211,6 +213,15 @@ int32_t PolicyProviderStub::HandleUnloadModernInnerCapSink(MessageParcel &data, 
     return AUDIO_OK;
 }
 #endif
+
+int32_t PolicyProviderStub::HandleClearAudioFocusBySessionID(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t ret = ClearAudioFocusBySessionID(sessionID);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -308,5 +319,11 @@ int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
     return policyWorker_->UnloadModernInnerCapSink(innerCapId);
 }
 #endif
+
+int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->ClearAudioFocusBySessionID(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS
