@@ -1063,7 +1063,8 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType);
+    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType,
+        audioActiveDevice_.GetCurrentOutputDevice().networkId_);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
