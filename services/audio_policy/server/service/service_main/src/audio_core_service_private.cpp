@@ -1330,6 +1330,17 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
     }
 }
 
+void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after)
+{
+    CHECK_AND_RETURN_LOG(pre != true || after != false, "ringdual not cancel by call");
+    AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
+    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+}
+
 bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
@@ -1362,20 +1373,20 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
-
-            if ((audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && streamUsage != STREAM_USAGE_ALARM) ||
-                (VolumeUtils::IsPCVolumeEnable() && audioVolumeManager_.GetStreamMute(STREAM_MUSIC))) {
-                AUDIO_INFO_LOG("no normal ringer mode and no alarm, dont dual hal tone.");
-                return false;
-            }
+            CHECK_AND_RETURN_RET_LOG(AudioCoreServiceUtils::NeedDualHalToneInStatus(
+                audioPolicyManager_.GetRingerMode(), streamUsage,
+                VolumeUtils::IsPCVolumeEnable(), audioVolumeManager_.GetStreamMute(STREAM_MUSIC)),
+                false, "no normal ringer mode and no alarm, dont dual hal tone.");
             UpdateDualToneState(true, sessionId);
         } else {
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
                 AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
+            bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
                 streamDesc->newDeviceDescs_, sessionId);
+            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;

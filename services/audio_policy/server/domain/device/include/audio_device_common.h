@@ -191,6 +191,7 @@ private:
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
