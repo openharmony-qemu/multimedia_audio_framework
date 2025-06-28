@@ -383,6 +383,13 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
+    if (callbackLoop_.joinable()) {
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
+        callbackLoop_.join();
+    }
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -657,30 +664,23 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
         int64_t curTime = 0;
         int64_t wakeUpTime = ClockTime::GetCurNano();
         int64_t clientWriteCost = 0;
-        std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
         strongStream->SetCallbackLoopTid(gettid());
-        if (strongProcess != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
-            strongProcess->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid),
-                METHOD_WRITE_OR_READ);
+        AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
+        processProxy_->RegisterThreadPriority(
+            gettid(),
+            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ);
         } else {
             AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
         }
-        strongProcess = nullptr;
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
-            strongProcess = weakProcess.lock();
             // Check if FastAudioStream or AudioProcessInClientInner is already destroyed to avoid use after free.
             CHECK_AND_BREAK_LOG(strongStream != nullptr, "FastAudioStream destroyed, exit AudioPlayCb");
-            CHECK_AND_BREAK_LOG(strongProcess != nullptr, "AudioProcessInClientInner destroyed, exit AudioPlayCb");
             // Main operation in callback loop
-            keepRunning = strongProcess->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
-        }
-        if (strongProcess != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongProcess->sessionId_);
+            keepRunning = ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
@@ -695,35 +695,25 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
     fastStream->ResetCallbackLoopTid();
 #endif
-    callbackLoop_ = std::thread([weakStream, weakProcess] {
+    callbackLoop_ = std::thread([this, weakStream] {
         bool keepRunning = true;
         uint64_t curReadPos = 0;
         int64_t wakeUpTime = ClockTime::GetCurNano();
         int64_t clientReadCost = 0;
-        std::shared_ptr<AudioProcessInClientInner> strongProcess = weakProcess.lock();
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
         strongStream->SetCallbackLoopTid(gettid());
-        if (strongProcess != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u start", strongProcess->sessionId_);
-            strongProcess->processProxy_->RegisterThreadPriority(gettid(),
-                AudioSystemManager::GetInstance()->GetSelfBundleName(strongProcess->processConfig_.appInfo.appUid),
-                    METHOD_WRITE_OR_READ);
-        } else {
-            AUDIO_WARNING_LOG("Strong ref is nullptr, could cause error");
-        }
-        strongProcess = nullptr;
+        AUDIO_INFO_LOG("Callback loop of session %{public}u start", sessionId_);
+        processProxy_->RegisterThreadPriority(
+            gettid(),
+            AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid),
+            METHOD_WRITE_OR_READ);
         // Callback loop
         while (keepRunning) {
             strongStream = weakStream.lock();
-            strongProcess = weakProcess.lock();
             // Check if FastAudioStream or AudioProcessInClientInner is already destroyed to avoid use after free.
             CHECK_AND_BREAK_LOG(strongStream != nullptr, "FastAudioStream destroyed, exit AudioPlayCb");
-            CHECK_AND_BREAK_LOG(strongProcess != nullptr, "AudioProcessInClientInner destroyed, exit AudioPlayCb");
             // Main operation in callback loop
-            keepRunning = strongProcess->RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
-        }
-        if (strongProcess != nullptr) {
-            AUDIO_INFO_LOG("Callback loop of session %{public}u end", strongProcess->sessionId_);
+            keepRunning = RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
@@ -1228,14 +1218,6 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
-
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.join();
-    }
 
     return SUCCESS;
 }
