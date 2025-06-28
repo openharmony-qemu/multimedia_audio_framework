@@ -55,6 +55,7 @@ public:
     void RegisteredTrackerClientDied(int32_t uid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     void HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask);
+    void HandleKaraokeAppToBack(int32_t uid, int32_t pid);
     void HandleForegroundUnmute(int32_t uid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
