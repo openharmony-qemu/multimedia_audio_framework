@@ -652,13 +652,12 @@ static size_t GetFormatSize(const AudioStreamInfo &info)
 void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream)
 {
     logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
-    auto weakProcess = weak_from_this();
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
     fastStream->ResetCallbackLoopTid();
 #endif
-    callbackLoop_ = std::thread([weakStream, weakProcess] {
+    callbackLoop_ = std::thread([this, weakStream] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
         int64_t curTime = 0;
@@ -689,7 +688,6 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
 void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> weakStream)
 {
     logUtilsTag_ = "ProcessRec::" + std::to_string(sessionId_);
-    auto weakProcess = weak_from_this();
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<FastAudioStream> fastStream = weakStream.lock();
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
