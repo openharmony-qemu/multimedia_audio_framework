@@ -193,7 +193,6 @@ int32_t HpaeOffloadRendererManager::Start(uint32_t sessionId)
             sinkOutputNode_->RenderSinkStart();
         }
         sessionInfo_.state = HPAE_SESSION_RUNNING;
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STARTED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -467,8 +466,7 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
     sinkOutputNode_->RenderSinkStop();
-    int32_t ret = sinkOutputNode_->RenderSinkDeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "RenderSinkDeInit error, ret %{public}d.", ret);
+    sinkOutputNode_->RenderSinkDeInit();
     sinkOutputNode_->ResetAll();
     isInit_.store(false);
     return SUCCESS;
@@ -496,6 +494,12 @@ int32_t HpaeOffloadRendererManager::SetClientVolume(uint32_t sessionId, float vo
 {
     return SUCCESS;
 }
+
+int32_t HpaeOffloadRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
+{
+    return SUCCESS;
+}
+
 
 int32_t HpaeOffloadRendererManager::SetRate(uint32_t sessionId, int32_t rate)
 {

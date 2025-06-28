@@ -48,6 +48,7 @@ public:
     void SetConnectedFlag(bool flag);
     bool GetConnectedFlag() const;
     int32_t SetupAudioLimiter();
+    void DisConnectMixerNode();
 private:
     void ConnectMixerNode();
     std::shared_ptr<HpaeMixerNode> mixerNode_;

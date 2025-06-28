@@ -55,6 +55,7 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
+    static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
     constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
     constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
@@ -281,9 +282,10 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig.appInfo.appUid);
     if (AudioVolume::GetInstance() != nullptr) {
-        AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig.streamType,
+        StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig.streamType,
             processConfig.rendererInfo.streamUsage, processConfig.appInfo.appUid, processConfig.appInfo.appPid,
-            isSystemApp, processConfig.rendererInfo.volumeMode);
+            isSystemApp, processConfig.rendererInfo.volumeMode, processConfig.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     }
         
     return SUCCESS;
@@ -539,7 +541,7 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
 
 bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 {
-    AUDIO_INFO_LOG("Config enter, deviceRole %{public}d.", deviceInfo.deviceRole_);
+    AUDIO_INFO_LOG("Role %{public}d, format %{public}d", deviceInfo.deviceRole_, deviceInfo.audioStreamInfo_.format);
     deviceInfo_ = deviceInfo;
     bool res = deviceInfo_.audioStreamInfo_.CheckParams();
     CHECK_AND_RETURN_RET_LOG(res, false, "samplingRate or channels size is 0");
@@ -581,8 +583,15 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
         return false;
     }
 
-    float initVolume = 1.0; // init volume to 1.0
-    sink->SetVolume(initVolume, initVolume);
+    Volume vol = {true, 1.0f, 0};
+    DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
+    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+        sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
+        AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
+    } else {
+        sink->SetVolume(1.0f, 1.0f);
+        AUDIO_INFO_LOG("Init Volume 1.0 with Device %{public}d", deviceType);
+    }
 
     bool ret = readTimeModel_.ConfigSampleRate(dstStreamInfo_.samplingRate);
     CHECK_AND_RETURN_RET_LOG(ret != false, false, "Config LinearPosTimeModel failed.");
@@ -667,7 +676,8 @@ int32_t AudioEndpointInner::GetAdapterBufferInfo(const AudioDeviceDescriptor &de
             ret, dstBufferFd_, dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
         return ERR_ILLEGAL_STATE;
     }
-    AUDIO_DEBUG_LOG("end, fd %{public}d.", dstBufferFd_);
+    AUDIO_INFO_LOG("mmap buffer info: dstTotalSizeInframe %{public}d, dstSpanSizeInframe %{public}d,"
+        "dstByteSizePerFrame %{public}d.", dstTotalSizeInframe_, dstSpanSizeInframe_, dstByteSizePerFrame_);
     return SUCCESS;
 }
 
@@ -836,6 +846,14 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
 {
     AUDIO_INFO_LOG("StartDevice enter.");
     // how to modify the status while unlinked and started?
+
+    AudioXCollie audioXCollie("AudioEndpointInner::StartDevice", START_DEVICE_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] StartDevice timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    // startDevice and unlinkprocess may called in concurrency
+    std::unique_lock<std::mutex> listLock(listLock_);
+
     CHECK_AND_RETURN_RET_LOG(endpointStatus_ == IDEL, false, "Endpoint status is %{public}s",
         GetStatusStr(endpointStatus_).c_str());
     endpointStatus_ = STARTING;
@@ -861,13 +879,15 @@ bool AudioEndpointInner::StartDevice(EndpointStatus preferredState)
 
     std::unique_lock<std::mutex> lock(loopThreadLock_);
     needReSyncPosition_ = true;
-    endpointStatus_ = IsAnyProcessRunning() ? RUNNING : IDEL;
+    endpointStatus_ = IsAnyProcessRunningInner() ? RUNNING : IDEL;
     if (preferredState != INVALID) {
         AUDIO_INFO_LOG("Preferred state: %{public}d, current: %{public}d", preferredState, endpointStatus_.load());
         endpointStatus_ = preferredState;
     }
     workThreadCV_.notify_all();
     AUDIO_DEBUG_LOG("StartDevice out, status is %{public}s", GetStatusStr(endpointStatus_).c_str());
+
+    listLock.unlock();
     return true;
 }
 
@@ -875,7 +895,6 @@ void AudioEndpointInner::HandleStartDeviceFailed()
 {
     AUDIO_ERR_LOG("Start failed for %{public}d, endpoint type %{public}u, process list size: %{public}zu.",
         deviceInfo_.deviceRole_, endpointType_, processList_.size());
-    std::lock_guard<std::mutex> lock(listLock_);
     isStarted_ = false;
     if (processList_.size() <= 1) { // The endpoint only has the current stream
         endpointStatus_ = UNLINKED;
@@ -1232,27 +1251,24 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
 
+    std::vector<AudioStreamData> tempList;
     for (size_t i = 0; i < srcDataList.size(); i++) {
         if (!srcDataList[i].isInnerCapeds.count(innerCapId) ||
             !srcDataList[i].isInnerCapeds.at(innerCapId)) {
             continue;
         }
-        size_t dataLength = dupBufferSize_;
-        dataLength /= 2; // SAMPLE_S16LE--> 2 byte
-        int16_t *dstPtr = reinterpret_cast<int16_t *>(dupBuffer_.get());
-
-        for (size_t offset = 0; dataLength > 0; dataLength--) {
-            int32_t sum = *dstPtr;
-            sum += *(reinterpret_cast<int16_t *>(srcDataList[i].bufferDesc.buffer) + offset);
-            *dstPtr = sum > INT16_MAX ? INT16_MAX : (sum < INT16_MIN ? INT16_MIN : sum);
-            dstPtr++;
-            offset++;
-        }
+        AudioStreamData cur = srcDataList[i];
+        cur.volumeStart = cur.volumeHap;
+        tempList.push_back(cur);
     }
     BufferDesc temp;
     temp.buffer = dupBuffer_.get();
     temp.bufLength = dupBufferSize_;
     temp.dataLength = dupBufferSize_;
+    AudioStreamData dstStream;
+    dstStream.streamInfo = dstStreamInfo_;
+    dstStream.bufferDesc = temp;
+    FormatConverter::DataAccumulationFromVolume(tempList, dstStream);
 
     int32_t engineFlag = GetEngineFlag();
     int32_t ret;
@@ -1271,26 +1287,14 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
 
 void AudioEndpointInner::ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData)
 {
-    size_t srcListSize = srcDataList.size();
-    for (size_t i = 0; i < srcListSize; i++) {
-        if (srcDataList[i].streamInfo.format != SAMPLE_S16LE || srcDataList[i].streamInfo.channels != STEREO ||
-            srcDataList[i].bufferDesc.bufLength != dstData.bufferDesc.bufLength ||
-            srcDataList[i].bufferDesc.dataLength != dstData.bufferDesc.dataLength) {
-            AUDIO_ERR_LOG("ProcessData failed, streamInfo are different");
-            return;
-        }
-    }
-    // Assum using the same format and same size
-    CHECK_AND_RETURN_LOG(dstData.streamInfo.format == SAMPLE_S16LE && dstData.streamInfo.channels == STEREO,
-        "ProcessData failed, streamInfo are not support");
-
-    FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+    bool ret = FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+    CHECK_AND_RETURN_LOG(ret, "Format may not match");
 
     ChannelVolumes channelVolumes = VolumeTools::CountVolumeLevel(
         dstData.bufferDesc, dstData.streamInfo.format, dstData.streamInfo.channels);
     if (!isExistLoopback_) {
-        ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart + channelVolumes.channel, 0) /
-            channelVolumes.channel);
+        ZeroVolumeCheck(std::accumulate(channelVolumes.volStart, channelVolumes.volStart +
+            channelVolumes.channel, static_cast<int64_t>(0)) / channelVolumes.channel);
     }
 }
 
@@ -1382,17 +1386,19 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i, SpanInfo *curReadSp
         clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
-    if (deviceInfo_.networkId_ == LOCAL_NETWORK_ID && !(deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP &&
-        volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) && getVolumeRet) {
-        streamData.volumeStart = vol.isMute ? 0 :
-            static_cast<int32_t>(curReadSpan->volumeStart * vol.volumeFloat * appVolume * doNotDisturbStatusVolume);
+    float baseVolume = curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume;
+    if (deviceInfo_.networkId_ != LOCAL_NETWORK_ID || (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
+        && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet) {
+        streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
+    } else if (clientConfig_.rendererInfo.isVirtualKeyboard) {
+        streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else {
-        streamData.volumeStart = vol.isMute ? 0 :
-            static_cast<int32_t>(curReadSpan->volumeStart * appVolume * doNotDisturbStatusVolume);
+        streamData.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume * vol.volumeFloat);
     }
     Trace traceVol("VolumeProcess " + std::to_string(streamData.volumeStart) +
         " sessionid:" + std::to_string(processList_[i]->GetAudioSessionId()) + (muteFlag ? " muted" : " unmuted"));
     streamData.volumeEnd = curReadSpan->volumeEnd;
+    streamData.volumeHap = muteFlag ? 0 : curReadSpan->volumeStart;
     streamData.streamInfo = processList_[i]->GetStreamInfo();
     streamData.isInnerCapeds = processList_[i]->GetInnerCapState();
     SpanStatus targetStatus = SpanStatus::SPAN_WRITE_DONE;

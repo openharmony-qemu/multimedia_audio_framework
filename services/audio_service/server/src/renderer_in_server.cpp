@@ -199,9 +199,10 @@ int32_t RendererInServer::Init()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && stream_ != nullptr, ERR_OPERATION_FAILED,
         "Construct rendererInServer failed: %{public}d", ret);
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(streamIndex_, processConfig_.streamType,
+    StreamVolumeParams streamVolumeParams = { streamIndex_, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     traceTag_ = "[" + std::to_string(streamIndex_) + "]RendererInServer"; // [100001]RendererInServer:
     ret = ConfigServerBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
@@ -322,6 +323,7 @@ void RendererInServer::HandleOperationStarted()
     lastWriteMuteFrame_ = 0;
 }
 
+// LCOV_EXCL_START
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
@@ -364,6 +366,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
             status_ = I_STATUS_INVALID;
     }
 }
+// LCOV_EXCL_STOP
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
@@ -418,6 +421,7 @@ void RendererInServer::StandByCheck()
 
     // call enable stand by
     standByEnable_ = true;
+    RecordStandbyTime(standByEnable_, true);
     enterStandbyTime_ = ClockTime::GetCurNano();
     // PaAdapterManager::PauseRender will hold mutex, may cause dead lock with pa_lock
     if (managerType_ == PLAYBACK) {
@@ -904,7 +908,7 @@ int32_t RendererInServer::StartInnerDuringStandby()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Policy start client failed, reason: %{public}d", ret);
     ret = (managerType_ == DIRECT_PLAYBACK || managerType_ == VOIP_PLAYBACK) ?
         IStreamManager::GetPlaybackManager(managerType_).StartRender(streamIndex_) : stream_->Start();
-    audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    RecordStandbyTime(true, false);
     return ret;
 }
 
@@ -970,6 +974,15 @@ void RendererInServer::dualToneStreamInStart()
             dualToneStream_->Start();
         }
     }
+}
+
+void RendererInServer::RecordStandbyTime(bool isStandby, bool isStandbyStart)
+{
+    if (!isStandby) {
+        AUDIO_DEBUG_LOG("Not in standby, no need record time");
+        return;
+    }
+    audioStreamChecker_->RecordStandbyTime(isStandbyStart);
 }
 
 int32_t RendererInServer::Pause()
@@ -1390,10 +1403,10 @@ int32_t RendererInServer::InitDupStream(int32_t innerCapId)
         ERR_OPERATION_FAILED, "Failed: %{public}d", ret);
     uint32_t dupStreamIndex = capInfo.dupStream->GetStreamIndex();
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(dupStreamIndex, processConfig_.streamType,
+    StreamVolumeParams streamVolumeParams = { dupStreamIndex, processConfig_.streamType,
         processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-        isSystemApp, processConfig_.rendererInfo.volumeMode);
-
+        isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     innerCapIdToDupStreamCallbackMap_[innerCapId] = std::make_shared<StreamCallbacks>(dupStreamIndex);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
@@ -1469,9 +1482,10 @@ int32_t RendererInServer::InitDualToneStream()
         dualToneStreamIndex_ = dualToneStream_->GetStreamIndex();
         AUDIO_INFO_LOG("init dual tone renderer:[%{public}u]", dualToneStreamIndex_);
         bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processConfig_.appInfo.appUid);
-        AudioVolume::GetInstance()->AddStreamVolume(dualToneStreamIndex_, processConfig_.streamType,
+        StreamVolumeParams streamVolumeParams = { dualToneStreamIndex_, processConfig_.streamType,
             processConfig_.rendererInfo.streamUsage, processConfig_.appInfo.appUid, processConfig_.appInfo.appPid,
-            isSystemApp, processConfig_.rendererInfo.volumeMode);
+            isSystemApp, processConfig_.rendererInfo.volumeMode, processConfig_.rendererInfo.isVirtualKeyboard };
+        AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
         isDualToneEnabled_ = true;
     }
@@ -1702,6 +1716,12 @@ int32_t RendererInServer::SetClientVolume()
 
     RendererStage stage = clientVolume == 0 ? RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
     playerDfx_->WriteDfxActionMsg(streamIndex_, stage);
+    return ret;
+}
+
+int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
+{
+    int32_t ret = stream_->SetLoudnessGain(loudnessGain);
     return ret;
 }
 

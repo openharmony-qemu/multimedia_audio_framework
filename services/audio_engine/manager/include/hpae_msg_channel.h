@@ -130,6 +130,7 @@ public:
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
     virtual void OnRewindAndFlush(uint64_t rewindTime){};
     virtual void OnNotifyQueue(){};
+    virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
     // add callback
     virtual uint32_t OnGetNodeId()
     {

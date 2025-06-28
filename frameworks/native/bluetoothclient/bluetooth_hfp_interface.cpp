@@ -33,7 +33,8 @@ public:
     ~BluetoothHfpWrapInterface() override;
 
     int32_t GetDeviceState(const BluetoothRemoteDevice &device, int32_t &state) override;
-    int32_t GetScoState(const BluetoothRemoteDevice &device) override;
+    AudioScoState GetScoState(const BluetoothRemoteDevice &device) override;
+    int32_t GetCurrentCategory(ScoCategory &category) override;
     int32_t ConnectSco(uint8_t callType) override;
     int32_t DisconnectSco(uint8_t callType) override;
     int32_t OpenVoiceRecognition(const BluetoothRemoteDevice &device) override;
@@ -86,12 +87,26 @@ int32_t BluetoothHfpWrapInterface::GetDeviceState(const BluetoothRemoteDevice &d
     return error;
 }
 
-int32_t BluetoothHfpWrapInterface::GetScoState(const BluetoothRemoteDevice &device)
+AudioScoState BluetoothHfpWrapInterface::GetScoState(const BluetoothRemoteDevice &device)
+{
+    CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, AudioScoState::DISCONNECTED, "HFP AG profile unavailable");
+    SetLastOprInfo(0, __func__);
+    HfpScoConnectState state = static_cast<HfpScoConnectState>(g_hfpInstance->GetScoState(device));
+    if (state == HfpScoConnectState::SCO_CONNECTED) {
+        return AudioScoState::CONNECTED;
+    }
+    return AudioScoState::DISCONNECTED;
+}
+
+int32_t BluetoothHfpWrapInterface::GetCurrentCategory(ScoCategory &category)
 {
     CHECK_AND_RETURN_RET_LOG(g_hfpInstance != nullptr, ERROR, "HFP AG profile unavailable");
-    int32_t error = g_hfpInstance->GetScoState(device);
+    int callType = 0;
+    int32_t error = g_hfpInstance->GetCurrentCallType(callType);
     SetLastOprInfo(error, __func__);
-    return error;
+    CHECK_AND_RETURN_RET_LOG(error == SUCCESS, ERROR, "GetCurrentCallType failed ret is %{public}d", error);
+    category = static_cast<ScoCategory>(callType);
+    return SUCCESS;
 }
 
 int32_t BluetoothHfpWrapInterface::ConnectSco(uint8_t callType)

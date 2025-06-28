@@ -49,6 +49,7 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
     }
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
@@ -125,6 +126,7 @@ int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDevic
         return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, float volume)
 {
@@ -144,6 +146,7 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
     return SUCCESS;
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -158,6 +161,7 @@ int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spa
         return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
     }
 }
+// LCOV_EXCL_STOP
 
 uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
 {
@@ -166,6 +170,7 @@ uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
     return audioEffectChainManager->GetLatency(sessionId);
 }
 
+// LCOV_EXCL_START
 bool AudioServer::GetEffectOffloadEnabled()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -286,6 +291,7 @@ int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &property
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetAudioEffectChainProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
@@ -328,6 +334,7 @@ int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &pr
     return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
 }
 
+// LCOV_EXCL_START
 void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -363,6 +370,7 @@ void AudioServer::SetRotationToEffect(const uint32_t rotate)
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType)
 {
@@ -398,6 +406,7 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
     }
 }
 
+// LCOV_EXCL_START
 bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
     std::vector<Effect>& successEffectList)
 {
@@ -470,8 +479,15 @@ bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
         "IsAudioLoopbackSupported refused for %{public}d", callingUid);
-    AUDIO_INFO_LOG("IsAudioLoopbackSupported support %{public}d", mode);
-    return true;
+#ifdef SUPPORT_LOW_LATENCY
+    if (mode == AudioLoopbackMode::LOOPBACK_HARDWARE) {
+        AUDIO_INFO_LOG("IsAudioLoopbackSupported support");
+        return true;
+    }
+#endif
+    AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
+    return false;
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

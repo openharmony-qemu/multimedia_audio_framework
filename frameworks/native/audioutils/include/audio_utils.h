@@ -83,7 +83,6 @@ public:
     void End();
     ~Trace();
 private:
-    std::string value_;
     bool isFinished_;
 };
 

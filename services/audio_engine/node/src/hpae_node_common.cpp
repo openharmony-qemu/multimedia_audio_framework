@@ -114,6 +114,23 @@ static std::map<uint32_t, std::string> g_formatFromParserEnumToStr = {
     {SAMPLE_F32LE, "f32le"},
 };
 
+static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
+    {"primary", PIPE_TYPE_NORMAL_OUT},
+    {"a2dp", PIPE_TYPE_NORMAL_OUT},
+    {"remote", PIPE_TYPE_NORMAL_OUT},
+    {"offload", PIPE_TYPE_OFFLOAD},
+    {"dp", PIPE_TYPE_NORMAL_OUT},
+    {"multichannel", PIPE_TYPE_MULTICHANNEL},
+};
+
+AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass)
+{
+    if (g_deviceClassToPipeMap.find(deviceClass) == g_deviceClassToPipeMap.end()) {
+        return PIPE_TYPE_UNKNOWN;
+    }
+    return g_deviceClassToPipeMap[deviceClass];
+}
+
 std::string ConvertSessionState2Str(HpaeSessionState state)
 {
     if (g_sessionStateToStrMap.find(state) == g_sessionStateToStrMap.end()) {

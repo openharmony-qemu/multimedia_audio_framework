@@ -273,6 +273,11 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     return RenderFrame(data, len, writeLen, AUDIO_IN_MEDIA);
 }
 
+int64_t RemoteAudioRenderSink::GetVolumeDataCount()
+{
+    return volumeDataCount_;
+}
+
 int32_t RemoteAudioRenderSink::SuspendRenderSink(void)
 {
     return SUCCESS;
@@ -655,11 +660,12 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_REMOTE, ClockTime::GetCurNano());
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_WRITE_FAILED, "fail, ret: %{public}x", ret);
     writeLen = len;
-
-    FILE *dumpFile = audioRenderWrapperMap_[type].dumpFile_;
-    DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
-    std::string dumpFileName = audioRenderWrapperMap_[type].dumpFileName_;
-    AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
+    if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
+        FILE *dumpFile = audioRenderWrapperMap_[type].dumpFile_;
+        DumpFileUtil::WriteDumpFile(dumpFile, static_cast<void *>(&data), len);
+        std::string dumpFileName = audioRenderWrapperMap_[type].dumpFileName_;
+        AudioCacheMgr::GetInstance().CacheData(dumpFileName, static_cast<void *>(&data), len);
+    }
     CheckUpdateState(&data, len);
 
     stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;

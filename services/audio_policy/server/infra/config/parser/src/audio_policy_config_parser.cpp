@@ -418,6 +418,9 @@ void AudioPolicyConfigParser::ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNo
             uint64_t convertValue = 0;
 
             switch (GetPaConfigType(name)) {
+                case PolicyPAConfigType::FAST_FORMAT:
+                    configManager_->OnFastFormatParsed(ConvertToFormat(value));
+                    break;
                 case PolicyPAConfigType::AUDIO_LATENCY:
                     CHECK_AND_RETURN_LOG(StringConverter(value, convertValue),
                         "convert invalid value: %{public}s", value.c_str());
@@ -439,6 +442,19 @@ void AudioPolicyConfigParser::ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNo
     }
 }
 
+// only support s16le and s32le
+AudioSampleFormat AudioPolicyConfigParser::ConvertToFormat(std::string value)
+{
+    AudioSampleFormat format = SAMPLE_S16LE;
+    if (value == "s16le") {
+        format = SAMPLE_S16LE;
+    }
+
+    if (value == "s32le") {
+        format = SAMPLE_S32LE;
+    }
+    return format;
+}
 
 PolicyPAConfigType AudioPolicyConfigParser::GetPaConfigType(std::string &name)
 {
@@ -446,6 +462,8 @@ PolicyPAConfigType AudioPolicyConfigParser::GetPaConfigType(std::string &name)
         return PolicyPAConfigType::AUDIO_LATENCY;
     } else if (name =="sinkLatency") {
         return PolicyPAConfigType::SINK_LATENCY;
+    } else if (name =="fastFormat") {
+        return PolicyPAConfigType::FAST_FORMAT;
     } else {
         return PolicyPAConfigType::UNKNOWN;
     }

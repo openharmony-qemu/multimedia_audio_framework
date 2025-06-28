@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
 ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -23,7 +24,6 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../frameworks/native/hdiadapter_new/include",
   ]
   cflags = [
@@ -84,6 +84,10 @@ ohos_fuzztest("AudioAdaptorBluetoothFuzzTest") {
   defines = []
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
+    defines += [ "BLUETOOTH_PART_ENABLE" ]
   }
 }
 

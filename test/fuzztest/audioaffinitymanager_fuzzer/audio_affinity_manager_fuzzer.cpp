@@ -45,8 +45,15 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 5;
+const uint8_t TESTSIZE = 12;
 static int32_t NUM_2 = 2;
+static int32_t NUM_3 = 3;
+constexpr int32_t K_HUNDRED = 100;
+constexpr int32_t K_TIME_SPAN_IN_MILLISECONDS_FOR_SELECTION = 200;
+const bool FALSE_FLAG = false;
+const bool NOT_SUPPORTED = false;
+const int32_t DEVICE_INFO_INDEX_1 = 1;
+const int32_t DEVICE_INFO_INDEX_2 = 2;
 
 typedef void (*TestFuncs)();
 
@@ -124,6 +131,27 @@ vector<DeviceRole> DeviceRoleVec = {
     DEVICE_ROLE_MAX,
 };
 
+void PrepareTestData(AffinityDeviceInfo& deviceInfo1, AffinityDeviceInfo& deviceInfo2,
+                     std::unordered_map<int32_t, AffinityDeviceInfo>& testDeviceInfoMap)
+{
+    deviceInfo1.groupName = "group1";
+    deviceInfo1.deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    deviceInfo1.networkID = "network1";
+    deviceInfo1.chooseTimeStamp = K_HUNDRED;
+    deviceInfo1.isPrimary = true;
+    deviceInfo1.SupportedConcurrency = true;
+
+    deviceInfo2.groupName = "group1";
+    deviceInfo2.deviceType = DeviceType::DEVICE_TYPE_EARPIECE;
+    deviceInfo2.networkID = "network2";
+    deviceInfo2.chooseTimeStamp = K_TIME_SPAN_IN_MILLISECONDS_FOR_SELECTION;
+    deviceInfo2.isPrimary = FALSE_FLAG;
+    deviceInfo2.SupportedConcurrency = NOT_SUPPORTED;
+
+    testDeviceInfoMap[DEVICE_INFO_INDEX_1] = deviceInfo1;
+    testDeviceInfoMap[DEVICE_INFO_INDEX_2] = deviceInfo2;
+}
+
 void ParseAffinityXmlFuzzTest()
 {
     std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
@@ -191,12 +219,197 @@ void DelSelectRendererDeviceFuzzTest()
     audioAffinityManager->DelSelectRendererDevice(clientUID1);
 }
 
+void DelSelectCapturerDeviceFuzzTest()
+{
+    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
+    int32_t clientUID1 = GetData<int32_t>();
+    int32_t clientUID2 = GetData<int32_t>();
+    std::string networkId = "test_network";
+    std::string groupName = "test_group";
+    audioAffinityManager->activeCapturerDeviceMap_.count(clientUID1);
+    audioAffinityManager->activeCapturerDeviceMap_.count(clientUID2);
+    audioAffinityManager->DelSelectCapturerDevice(clientUID1);
+}
+
+void RemoveOfflineRendererDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType testDeviceType = DeviceTypeVec[deviceTypeCount];
+    uint32_t deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
+    DeviceRole testDeviceRole = DeviceRoleVec[deviceRoleCount];
+    int32_t testInterruptGroupId = 1;
+    int32_t testVolumeGroupId = 1;
+    std::string testNetworkID = "test_network_id";
+    AudioDeviceDescriptor updateDesc(
+        testDeviceType,
+        testDeviceRole,
+        testInterruptGroupId,
+        testVolumeGroupId,
+        testNetworkID
+    );
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>(updateDesc);
+    int32_t testClientUID = GetData<int32_t>();
+    affinityManager.activeRendererDeviceMap_[testClientUID] = deviceDesc;
+    AffinityDeviceInfo affinityInfo;
+    affinityInfo.deviceType = testDeviceType;
+    affinityInfo.networkID = testNetworkID;
+    affinityInfo.groupName = "test_group";
+    affinityManager.rendererAffinityDeviceArray_.push_back(affinityInfo);
+    affinityManager.RemoveOfflineRendererDevice(updateDesc);
+}
+
+void RemoveOfflineCapturerDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType testDeviceType = DeviceTypeVec[deviceTypeCount];
+    uint32_t deviceRoleCount = GetData<uint32_t>() % DeviceRoleVec.size();
+    DeviceRole testDeviceRole = DeviceRoleVec[deviceRoleCount];
+    int32_t testInterruptGroupId = 1;
+    int32_t testVolumeGroupId = 1;
+    std::string testNetworkID = "test_capturer_network_id";
+    AudioDeviceDescriptor updateDesc(
+        testDeviceType,
+        testDeviceRole,
+        testInterruptGroupId,
+        testVolumeGroupId,
+        testNetworkID
+    );
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>(updateDesc);
+    int32_t testClientUID = GetData<int32_t>();
+    affinityManager.activeCapturerDeviceMap_[testClientUID] = deviceDesc;
+    AffinityDeviceInfo affinityInfo;
+    affinityInfo.deviceType = testDeviceType;
+    affinityInfo.networkID = testNetworkID;
+    affinityInfo.groupName = "test_capturer_group";
+    affinityManager.capturerAffinityDeviceArray_.push_back(affinityInfo);
+    affinityManager.RemoveOfflineCapturerDevice(updateDesc);
+}
+
+void GetAffinityDeviceInfoByDeviceTypeFuzzTest()
+{
+    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
+    DeviceType targetType = DEVICE_TYPE_SPEAKER;
+    std::string targetNetwork = "network1";
+    uint32_t deviceFlagCount = GetData<uint32_t>() % DeviceFlagVec.size();
+    DeviceFlag deviceFlag = DeviceFlagVec[deviceFlagCount];
+    AffinityDeviceInfo device1 = {
+        .groupName = "group1",
+        .deviceType = DEVICE_TYPE_SPEAKER,
+        .deviceFlag = deviceFlag,
+        .networkID = "network1",
+        .chooseTimeStamp = GetData<int32_t>(),
+        .isPrimary = GetData<uint8_t>() % NUM_2,
+        .SupportedConcurrency = GetData<uint8_t>() % NUM_2
+    };
+    deviceFlagCount = GetData<uint32_t>() % DeviceFlagVec.size();
+    deviceFlag = DeviceFlagVec[deviceFlagCount];
+    AffinityDeviceInfo device2 = {
+        .groupName = "group2",
+        .deviceType = DEVICE_TYPE_BLUETOOTH_A2DP,
+        .deviceFlag = deviceFlag,
+        .networkID = "network2",
+        .chooseTimeStamp = GetData<int32_t>(),
+        .isPrimary = GetData<uint8_t>() % NUM_2,
+        .SupportedConcurrency = GetData<uint8_t>() % NUM_2
+    };
+    std::vector<AffinityDeviceInfo> testDevices_ = {device1, device2};
+    AffinityDeviceInfo result = audioAffinityManager->GetAffinityDeviceInfoByDeviceType(
+        testDevices_, targetType, targetNetwork);
+}
+
+void GetActiveAffinityDeviceMapByGroupNameFuzzTest()
+{
+    std::unique_ptr <AudioAffinityManager> audioAffinityManager = std::make_unique<AudioAffinityManager>();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    uint32_t deviceFlagCount = GetData<uint32_t>() % DeviceFlagVec.size();
+    std::string targetGroup = "group1";
+    AffinityDeviceInfo device1 = {
+        .groupName = "group1",
+        .deviceType = DeviceTypeVec[deviceTypeCount],
+        .deviceFlag = DeviceFlagVec[deviceFlagCount],
+        .networkID = "network1",
+        .chooseTimeStamp = GetData<uint64_t>(),
+        .isPrimary = GetData<uint8_t>() % NUM_2,
+        .SupportedConcurrency = GetData<uint8_t>() % NUM_2
+    };
+    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    deviceFlagCount = GetData<uint32_t>() % DeviceFlagVec.size();
+    AffinityDeviceInfo device2 = {
+        .groupName = "group2",
+        .deviceType = DeviceTypeVec[deviceTypeCount],
+        .deviceFlag = DeviceFlagVec[deviceFlagCount],
+        .networkID = "network2",
+        .chooseTimeStamp = GetData<uint64_t>(),
+        .isPrimary = GetData<uint8_t>() % NUM_2,
+        .SupportedConcurrency = GetData<uint8_t>() % NUM_2
+    };
+    std::unordered_map<int32_t, AffinityDeviceInfo> group1Devices = {
+        {1, device1},
+        {NUM_2, device2}
+    };
+    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    deviceFlagCount = GetData<uint32_t>() % DeviceFlagVec.size();
+    AffinityDeviceInfo device3 = {
+        .groupName = "group2",
+        .deviceType = DeviceTypeVec[deviceTypeCount],
+        .deviceFlag = DeviceFlagVec[deviceFlagCount],
+        .networkID = "network3",
+        .chooseTimeStamp = GetData<uint64_t>(),
+        .isPrimary = GetData<uint8_t>() % NUM_2,
+        .SupportedConcurrency = GetData<uint8_t>() % NUM_2
+    };
+    std::unordered_map<int32_t, AffinityDeviceInfo> group2Devices = {
+        {NUM_3, device3}
+    };
+    AFFINITYDEVINFOMAP testActiveGroupMap_ = {
+        {"group1", group1Devices},
+        {"group2", group2Devices}
+    };
+    audioAffinityManager->GetActiveAffinityDeviceMapByGroupName(testActiveGroupMap_, targetGroup);
+}
+
+void GetAffinityClientUIDFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    std::unordered_map<int32_t, AffinityDeviceInfo> affinityDeviceInfoMap;
+    AffinityDeviceInfo deviceInfo1;
+    deviceInfo1.SupportedConcurrency = GetData<uint8_t>() % NUM_2;
+    deviceInfo1.chooseTimeStamp = GetData<uint64_t>();
+    AffinityDeviceInfo deviceInfo2;
+    deviceInfo2.SupportedConcurrency = GetData<uint8_t>() % NUM_2;
+    deviceInfo2.chooseTimeStamp = GetData<uint64_t>();
+    int32_t clientUID = GetData<int32_t>();
+    affinityDeviceInfoMap[clientUID] = deviceInfo1;
+    affinityDeviceInfoMap[clientUID + 1] = deviceInfo2;
+    int32_t result = affinityManager.GetAffinityClientUID(clientUID, affinityDeviceInfoMap);
+}
+
+void DelActiveGroupAffinityMapFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    AffinityDeviceInfo deviceInfo1;
+    AffinityDeviceInfo deviceInfo2;
+    std::unordered_map<int32_t, AffinityDeviceInfo> testDeviceInfoMap;
+    PrepareTestData(deviceInfo1, deviceInfo2, testDeviceInfoMap);
+    int32_t clientUID = GetData<int32_t>();
+    affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     ParseAffinityXmlFuzzTest,
     OnXmlParsingCompletedFuzzTest,
     GetRendererDeviceFuzzTest,
     GetCapturerDeviceFuzzTest,
     DelSelectRendererDeviceFuzzTest,
+    DelSelectCapturerDeviceFuzzTest,
+    RemoveOfflineRendererDeviceFuzzTest,
+    RemoveOfflineCapturerDeviceFuzzTest,
+    GetAffinityDeviceInfoByDeviceTypeFuzzTest,
+    GetActiveAffinityDeviceMapByGroupNameFuzzTest,
+    GetAffinityClientUIDFuzzTest,
+    DelActiveGroupAffinityMapFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

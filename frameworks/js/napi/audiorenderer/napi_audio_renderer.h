@@ -64,6 +64,7 @@ private:
         size_t bufferSize;
         int32_t volType;
         double volLevel;
+        double loudnessGain;
         uint32_t rendererSampleRate;
         uint32_t audioStreamId;
         size_t totalBytesWritten;
@@ -108,6 +109,8 @@ private:
     static napi_value GetAudioStreamIdSync(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
+    static napi_value SetLoudnessGain(napi_env env, napi_callback_info info);
+    static napi_value GetLoudnessGain(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfo(napi_env env, napi_callback_info info);
     static napi_value GetRendererInfoSync(napi_env env, napi_callback_info info);
     static napi_value GetStreamInfo(napi_env env, napi_callback_info info);

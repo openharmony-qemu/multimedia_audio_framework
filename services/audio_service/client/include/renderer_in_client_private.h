@@ -76,9 +76,11 @@ public:
     int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
     int32_t SetVolume(float volume) override;
     float GetVolume() override;
+    int32_t SetLoudnessGain(float loudnessGain) override;
+    float GetLoudnessGain() override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
-    int32_t SetMute(bool mute) override;
+    int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -244,6 +246,9 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool IsMutePlaying();
+    void MonitorMutePlay(bool isPlayEnd);
+    void ReportWriteMuteEvent(int64_t mutePlayDuration);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
@@ -351,8 +356,11 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
+    StateChangeCmdType muteCmd_ = CMD_FROM_CLIENT;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
+
+    float loudnessGain_ = 0.0f;
     
     bool flushAfterStop_ = false;
 
@@ -397,6 +405,9 @@ private:
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
+    int64_t mutePlayStartTime_ = 0; // realtime
+    bool mutePlaying_ = false;
+
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
@@ -419,6 +430,7 @@ private:
     uint64_t lastLatency_ = 0;
     uint64_t lastLatencyPosition_ = 0;
     uint64_t lastReadIdx_ = 0;
+    float lastSpeed_ = 1.0;
 
     enum {
         STATE_CHANGE_EVENT = 0,

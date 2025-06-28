@@ -144,6 +144,25 @@ int32_t AudioPolicyProxy::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT,
+        "SetAudioVKBInfoMgrCallback object is null");
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    (void)data.WriteRemoteObject(object);
+    int error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VKB_INFO_MGR_CALLBACK), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error,
+        "set callback failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
@@ -465,7 +484,9 @@ int32_t AudioPolicyProxy::UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDesc
     bool ret = data.WriteInterfaceToken(GetDescriptor());
     CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
 
-    deviceDesc->Marshalling(data);
+    bool result = deviceDesc->Marshalling(data);
+    CHECK_AND_RETURN_RET_LOG(result, -1, "AudioDeviceDescriptor Marshalling failed");
+
     data.WriteInt32(static_cast<int32_t>(command));
 
     int error = Remote()->SendRequest(

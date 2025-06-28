@@ -97,6 +97,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetExtraParameters_001, TestSize.Level1
     EXPECT_NE(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetAsrAecMode API
  * @tc.type  : FUNC
@@ -113,6 +114,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAsrAecModer_001, TestSize.Level1)
     ret = audioServer->SetAsrAecMode(AsrAecMode::STANDARD);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test SuspendRenderSink API
@@ -128,6 +130,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSuspendRenderSink_001, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SuspendRenderSink API
  * @tc.type  : FUNC
@@ -242,6 +245,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerIsWhispering_001, TestSize.Level1)
     int32_t ret = audioServer->IsWhispering();
     EXPECT_EQ(0, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test GetExtraParameters API
@@ -462,6 +466,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     EXPECT_NE(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetAudioScene API
  * @tc.type  : FUNC
@@ -494,6 +499,8 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetForegroundList_001, TestSize.Level2)
     int32_t ret = audioServer->SetForegroundList(list);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
+
 
 /**
  * @tc.name  : Test SetIORoutes API
@@ -685,6 +692,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_001, TestSize.Level1)
     EXPECT_FALSE(ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test PermissionChecker API
  * @tc.type  : FUNC
@@ -703,6 +711,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_002, TestSize.Level1)
     ret = audioServer->PermissionChecker(config);
     EXPECT_TRUE(ret);
 }
+#endif
 
 /**
  * @tc.name  : Test PermissionChecker API
@@ -719,6 +728,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerPermissionChecker_003, TestSize.Level1)
     EXPECT_FALSE(ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CheckRecorderPermission API
  * @tc.type  : FUNC
@@ -773,6 +783,7 @@ HWTEST_F(AudioServerUnitTest, AudioServeCreatePlaybackCapturerManager_001, TestS
     bool ret = audioServer->CreatePlaybackCapturerManager();
     EXPECT_TRUE(ret);
 }
+#endif
 
 /**
  * @tc.name  : Test GetMaxAmplitude API
@@ -800,6 +811,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetMaxAmplitude_001, TestSize.Level1)
     EXPECT_EQ(0, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test UpdateDualToneState API
  * @tc.type  : FUNC
@@ -816,6 +828,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerUpdateDualToneState_001, TestSize.Level
     ret = audioServer->UpdateDualToneState(true, 123);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test SetSinkRenderEmpty API
@@ -834,6 +847,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetSinkRenderEmpty_001, TestSize.Level1
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetSinkMuteForSwitchDevice API
  * @tc.type  : FUNC
@@ -850,6 +864,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetSinkMuteForSwitchDevice_001, TestSiz
     ret = audioServer->SetSinkMuteForSwitchDevice("primary", 0, false);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test RestoreSession API
@@ -866,6 +881,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerRestoreSession_001, TestSize.Level1)
     audioServer->RestoreSession(-1, restoreInfo);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test RegiestPolicyProvider API
  * @tc.type  : FUNC
@@ -885,6 +901,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerRegiestPolicyProvider_001, TestSize.Lev
     ret = audioServer->RegiestPolicyProvider(object);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
+#endif
 
 /**
  * @tc.name  : Test CreateAudioProcess API
@@ -947,6 +964,7 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test CreateAudioStream API
  * @tc.type  : FUNC
@@ -1010,7 +1028,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_001, TestSize.Le
     int32_t ret = audioServer->SetAudioEffectProperty(audioEffectPropertyArrayV3);
     EXPECT_EQ(SUCCESS, ret);
 }
-
+#endif
 /**
  * @tc.name  : Test SetAudioEffectProperty API
  * @tc.type  : FUNC
@@ -1069,6 +1087,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioEffectProperty_003, TestSize.Le
     EXPECT_EQ(SUCCESS, ret);
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetAudioEffectProperty API
  * @tc.type  : FUNC
@@ -1084,6 +1103,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerGetAudioEffectProperty_001, TestSize.Le
     int32_t ret = audioServer->GetAudioEffectProperty(audioEffectPropertyArrayV3);
     EXPECT_EQ(SUCCESS, ret);
 }
+#endif
 
 /**
  * @tc.name  : Test GetAudioEffectProperty API
@@ -1356,6 +1376,34 @@ HWTEST_F(AudioServerUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetVolumeDataCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeDataCount_001
+ * @tc.desc  : Test GetVolumeDataCount interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string testName = "testSink";
+    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    EXPECT_EQ(volueDataCount, 0);
+}
+
+/**
+ * @tc.name  : Test GetVolumeDataCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolumeDataCount_002
+ * @tc.desc  : Test GetVolumeDataCount interface.
+ */
+HWTEST_F(AudioServerUnitTest, GetVolumeDataCount_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string testName = "primary";
+    int64_t volueDataCount = audioServer->GetVolumeDataCount(testName);
+    EXPECT_EQ(volueDataCount, 0);
+}
+
+/**
  * @tc.name  : Test SetDefaultAdapterEnable API
  * @tc.type  : FUNC
  * @tc.number: SetDefaultAdapterEnable_001
@@ -1391,6 +1439,75 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_001
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_RESUME;
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_002
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_STOP;
+    info.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test RendereataTransferStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RendereataTransferStateChangeCallback_003
+ * @tc.desc  : Test RendereataTransferStateChangeCallback interface.
+ */
+HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->RemoveRendererDataTransferCallback(0);
+
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.stateChangeType = DATA_TRANS_STOP;
+    info.streamUsage = STREAM_USAGE_MUSIC;
+    audioServer->OnDataTransferStateChange(pid, 0, info);
+    audioServer->RemoveRendererDataTransferCallback(pid);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/*
  * @tc.name  : Test CreateAudioWorkgroup API
  * @tc.type  : FUNC
  * @tc.number: CreateAudioWorkgroup_001

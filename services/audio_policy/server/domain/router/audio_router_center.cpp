@@ -208,6 +208,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     if (descs.size() > 0 && descs[0] != nullptr) {
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
+        descs[0]->routerType_ = routerType;
         AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
             "id:[%{public}d], router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
     }
@@ -220,6 +221,10 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
+    if (zoneId != 0) {
+        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+    }
+    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUsage(streamUsage);
     if (zoneId != 0) {
         return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
     }
@@ -295,7 +300,11 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
             return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+            return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        } else {
+            return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+        }
     }
     return make_shared<AudioDeviceDescriptor>();
 }

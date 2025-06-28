@@ -62,6 +62,7 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -95,6 +96,8 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
+
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
@@ -110,9 +113,10 @@ private:
         MoveSessionType moveType);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
-    void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
+    void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
@@ -122,6 +126,7 @@ private:
     int32_t HandlePriPaPower(uint32_t sessionId);
     bool CheckIsStreamRunning();
     HpaeProcessorType GetProcessorType(uint32_t sessionId);
+    HpaeProcessorType TransToProperSceneType(StreamUsage streamUsage, AudioEffectScene effectScene);
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();

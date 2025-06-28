@@ -889,6 +889,18 @@ int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
     return channelCount;
 }
 
+int32_t AudioStreamCollector::GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING) {
+            infos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     std::vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
@@ -1080,7 +1092,7 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool m
                 changeInfo->rendererInfo.streamUsage) == 0) {
                 continue;
             }
-            CHECK_AND_CONTINUE(!hasBackTask);
+            CHECK_AND_CONTINUE(hasBackTask || mute);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);

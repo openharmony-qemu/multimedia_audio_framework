@@ -50,6 +50,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
 
 void HpaeSinkOutputNode::HandleRemoteTiming()
 {
+    CHECK_AND_RETURN(GetDeviceClass() == "remote");
     auto now = std::chrono::high_resolution_clock::now();
     remoteTimePoint_ += std::chrono::milliseconds(20);  // 20ms frameLen, need optimize
     if (remoteTimePoint_ > now) {
@@ -89,12 +90,11 @@ void HpaeSinkOutputNode::DoProcess()
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
+        if (GetDeviceClass() != "remote") {
+            usleep(SLEEP_TIME_IN_US); // others failed to RenderFrame, need sleep 20ms
+        }
     }
-    if (GetDeviceClass() == "remote") {
-        HandleRemoteTiming(); // used to control remote RenderFrame tempo.
-    } else if (ret != SUCCESS) {
-        usleep(SLEEP_TIME_IN_US); // others failed to RenderFrame, need sleep 20ms
-    }
+    HandleRemoteTiming(); // used to control remote RenderFrame tempo.
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
     int64_t elapsed = timer.Elapsed();

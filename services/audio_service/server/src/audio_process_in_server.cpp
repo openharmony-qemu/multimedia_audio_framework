@@ -95,6 +95,28 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
+static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
@@ -139,7 +161,7 @@ void AudioProcessInServer::EnableStandby()
     CHECK_AND_RETURN_LOG(processBuffer_ != nullptr && processBuffer_->GetStreamStatus() != nullptr, "failed: nullptr");
     processBuffer_->GetStreamStatus()->store(StreamStatus::STREAM_STAND_BY);
     enterStandbyTime_ = ClockTime::GetCurNano();
-
+    audioStreamChecker_->RecordStandbyTime(true);
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
@@ -211,7 +233,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", sessionId_);
         isMicIndicatorOn_ = true;
     }
@@ -292,7 +314,7 @@ int32_t AudioProcessInServer::StartInner()
         WriterRenderStreamStandbySysEvent(sessionId_, 0);
         streamStatus_->store(STREAM_STARTING);
         enterStandbyTime_ = 0;
-        audioStreamChecker_->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+        audioStreamChecker_->RecordStandbyTime(false);
     } else {
         audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
     }
@@ -802,6 +824,21 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            SwitchStreamInfo info = {
+                sessionId_,
+                processConfig_.callerUid,
+                processConfig_.appInfo.appUid,
+                processConfig_.appInfo.appPid,
+                processConfig_.appInfo.appTokenId,
+                HandleStreamStatusToCapturerState(streamStatus_->load())
+            };
+            AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+                sessionId_, info.callerUid, info.appTokenId);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        }
+
         processBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;

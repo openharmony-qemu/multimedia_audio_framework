@@ -19,15 +19,29 @@
 #include <vector>
 #include <mutex>
 #include <map>
+#include <memory>
 
 #include "audio_effect.h"
+#include "audio_effect_common.h"
+#include "thread_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
+struct EnhanceModulePara {
+    std::string enhanceName;
+    std::string enhanceProp;
+    std::string libName;
+    AudioEffectLibrary *libHandle { nullptr };
+};
+
+struct EnhanceModule {
+    std::string enhanceName;
+    AudioEffectHandle enhanceHandle { nullptr };
+    AudioEffectLibrary *libHandle { nullptr };
+};
 
 struct EnhanceBuffer {
-    std::vector<uint8_t> micBufferIn;
-    std::vector<uint8_t> micBufferOut;
+    std::vector<uint8_t> micBuffer;
     std::vector<uint8_t> ecBuffer;
     std::vector<uint8_t> micRefBuffer;
 };
@@ -43,81 +57,81 @@ struct AlgoCache {
     std::vector<uint8_t> output;
 };
 
-struct AudioEnhanceDeviceAttr {
-    uint32_t micRate;
-    uint32_t micChannels;
-    uint32_t micFormat;
-    bool needEc;
-    uint32_t ecRate;
-    uint32_t ecChannels;
-    uint32_t ecFormat;
-    bool needMicRef;
-    uint32_t micRefRate;
-    uint32_t micRefChannels;
-    uint32_t micRefFormat;
-};
-
 struct AudioEnhanceParamAdapter {
-    uint32_t muteInfo;
-    uint32_t volumeInfo;
-    uint32_t foldState;
+    uint32_t muteInfo { 0 };
+    uint32_t volumeInfo { 0 };
+    uint32_t foldState { FOLD_STATE_MIDDLE };
     std::string preDevice;
     std::string postDevice;
     std::string sceneType;
     std::string preDeviceName;
 };
 
-class AudioEnhanceChain {
+class AudioEnhanceChain : public std::enable_shared_from_this<AudioEnhanceChain> {
 public:
-    AudioEnhanceChain(const std::string &scene, const AudioEnhanceParamAdapter &algoParam,
-        const AudioEnhanceDeviceAttr &deviceAttr, const bool defaultFlag);
+    AudioEnhanceChain(uint64_t chainId, const std::string &scene, ScenePriority scenePriority,
+        const AudioEnhanceParamAdapter &algoParam, const AudioEnhanceDeviceAttr &deviceAttr);
     ~AudioEnhanceChain();
-    int32_t AddEnhanceHandle(AudioEffectHandle handle, AudioEffectLibrary *libHandle, const std::string &enhance,
-        const std::string &property);
+
     bool IsEmptyEnhanceHandles();
     void GetAlgoConfig(AudioBufferConfig &micConfig, AudioBufferConfig &ecConfig, AudioBufferConfig &micRefConfig);
-    uint32_t GetAlgoBufferSize();
-    uint32_t GetAlgoBufferSizeEc();
-    uint32_t GetAlgoBufferSizeMicRef();
-    int32_t ApplyEnhanceChain(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
+    uint64_t GetChainId(void) const;
+    ScenePriority GetScenePriority(void) const;
+    int32_t CreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas);
     int32_t SetEnhanceProperty(const std::string &effect, const std::string &property);
     int32_t SetEnhanceParam(bool mute, uint32_t systemVol);
-    int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
-    bool IsDefaultChain();
     int32_t SetInputDevice(const std::string &inputDevice, const std::string &deviceName);
     int32_t SetFoldState(uint32_t foldState);
+    int32_t SetThreadHandler(const std::shared_ptr<ThreadHandler> &threadHandler);
+    int32_t GetOutputDataFromChain(void *buf, size_t bufSize);
+    int32_t ApplyEnhanceChain(const EnhanceTransBuffer &transBuf);
     int32_t InitCommand();
 
 private:
     void InitAudioEnhanceChain();
-    void InitDump();
-    void ReleaseEnhanceChain();
-    void WriteDumpFile(std::unique_ptr<EnhanceBuffer> &enhanceBuffer, uint32_t length);
-    int32_t GetOneFrameInputData(std::unique_ptr<EnhanceBuffer> &enhanceBuffer);
+    void ReleaseAllEnhanceModule();
     int32_t DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset);
     int32_t SetPropertyToHandle(AudioEffectHandle handle, const std::string &property);
-    static AudioSampleFormat ConvertFormat(uint32_t format);
+    int32_t SetEnhanceParamToHandle(AudioEffectHandle handle);
+    int32_t PrepareChainInputData(void);
+    int32_t ProcessInitCommand(void);
+    int32_t ProcessSetFoldState(uint32_t foldState);
+    int32_t ProcessSetEnhanceParam(bool mute, uint32_t systemVol);
+    int32_t ProcessCreateAllEnhanceModule(const std::vector<EnhanceModulePara> &moduleParas);
+    int32_t ProcessSetInputDevice(const std::string &inputDevice, const std::string &deviceName);
+    int32_t ProcessSetEnhanceProperty(const std::string &enhance, const std::string &property);
+    int32_t ProcessApplyEnhanceChain(void);
+    int32_t WriteChainOutputData(void *buf, size_t bufSize);
+    int32_t CacheChainInputData(const EnhanceTransBuffer &transBuf);
+    int32_t InitSingleEnhanceModule(AudioEffectHandle enhanceHandle, const std::string &enhanceProp);
+    void ScheduleAudioTask(const ThreadHandler::Task &task);
 
-    bool setConfigFlag_;
-    std::mutex chainMutex_;
-    std::string sceneType_;
     AlgoAttr algoAttr_;
     AlgoConfig algoSupportedConfig_;
     AlgoCache algoCache_;
+    EnhanceBuffer enhanceBuf_;
+    uint64_t chainId_ { 0 };
+    std::string sceneType_;
+    ScenePriority scenePriority_ { DEFAULT_SCENE };
     AudioEnhanceParamAdapter algoParam_;
     AudioEnhanceDeviceAttr deviceAttr_;
-    FILE *dumpFileIn_ = nullptr;
-    FILE *dumpFileOut_ = nullptr;
-    FILE *dumpFileDeinterLeaver_ = nullptr;
-    bool needEcFlag_;
-    bool needMicRefFlag_;
-    bool defaultFlag_;
-    std::vector<AudioEffectHandle> standByEnhanceHandles_;
-    std::vector<std::string> enhanceNames_;
-    std::vector<AudioEffectLibrary*> enhanceLibHandles_;
-    mutable int64_t volumeDataCount_ = 0;
+    bool needEcFlag_ { false };
+    bool needMicRefFlag_ { false };
+    bool hasTask_ { false };
+    bool chainIsReady_ { false };
+    std::vector<EnhanceModule> enhanceModules_;
+    std::vector<uint8_t> outputCache_;
+    std::shared_ptr<ThreadHandler> threadHandler_ { nullptr };
+    std::mutex chainMutex_;
+    FILE *dumpFileIn_ { nullptr };
+    FILE *dumpFileOut_ { nullptr };
+    std::string traceTagIn_;
+    std::string traceTagOut_;
+    AudioStreamInfo dfxStreamInfo_ {};
+    mutable int64_t volumeDataCountIn_ { 0 };
+    mutable int64_t volumeDataCountOut_ { 0 };
 };
 
-}  // namespace AudioStandard
-}  // namespace OHOS
+} // namespace AudioStandard
+} // namespace OHOS
 #endif // AUDIO_ENHANCE_CHAIN_H

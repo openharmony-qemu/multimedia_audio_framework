@@ -43,7 +43,7 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     // so we need to make a prediction here on the output of the formatConverter node.
     // don't worry, Nodeinfo will still be modified during DoProcess.
     mixerNode_ = std::make_shared<HpaeMixerNode>(nodeInfo);
-    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA" && nodeInfo.deviceClass != "remote") {
+    if (TransProcessorTypeToSceneType(nodeInfo.sceneType) != "SCENE_EXTRA") {
         renderEffectNode_ = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     } else {
         renderEffectNode_ = nullptr;
@@ -195,6 +195,7 @@ void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer 
     idGainMap_[sessionId]->Connect(preNode);
     idConverterMap_[sessionId]->Connect(idGainMap_[sessionId]);
     mixerNode_->Connect(idConverterMap_[sessionId]);
+    mixerNode_->EnableProcess(true);
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
         callBack->OnNotifyDfxNodeInfo(true, mixerNode_->GetNodeId(), idConverterMap_[sessionId]->GetNodeInfo());
@@ -228,7 +229,15 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
         idGainMap_.erase(sessionId);
         AUDIO_INFO_LOG("Process DisConnect Exist converterNode preOutNum is %{public}zu", mixerNode_->GetPreOutNum());
     }
-    if (renderEffectNode_ != nullptr && mixerNode_->GetPreOutNum() == 0) {
+    if (mixerNode_->GetPreOutNum() == 0) {
+        mixerNode_->EnableProcess(false);
+        AUDIO_INFO_LOG("Set mixerNode EnableProcess false");
+    }
+}
+
+void HpaeProcessCluster::DisConnectMixerNode()
+{
+    if (renderEffectNode_) {
         renderEffectNode_->DisConnect(mixerNode_);
         AUDIO_INFO_LOG("Process DisConnect mixerNode_");
 #ifdef ENABLE_HIDUMP_DFX

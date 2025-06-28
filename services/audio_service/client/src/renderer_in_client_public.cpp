@@ -76,6 +76,8 @@ const uint64_t MIN_CBBUF_IN_USEC = 20000;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
+static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -459,6 +461,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
+    if (std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
     clientVolume_ = volume;
 
     return SetInnerVolume(volume);
@@ -468,6 +476,27 @@ float RendererInClientInner::GetVolume()
 {
     Trace trace("RendererInClientInner::GetVolume:" + std::to_string(clientVolume_));
     return clientVolume_;
+}
+
+int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
+{
+    AUDIO_INFO_LOG("[%{public}s]sessionId:%{public}d loudnessGain:%{public}f", (offloadEnable_ ? "offload" : "normal"),
+        sessionId_, loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(loudnessGain <= MAX_LOUDNESS_GAIN && loudnessGain >= MIN_LOUDNESS_GAIN, ERR_INVALID_PARAM,
+        "SetLoudnessGain with invalid volume %{public}f", loudnessGain);
+    loudnessGain_ = loudnessGain;
+
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetLoudnessGain(loudnessGain);
+    
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set loudnessGain failed:%{public}u", ret);
+    return SUCCESS;
+}
+
+float RendererInClientInner::GetLoudnessGain()
+{
+    AUDIO_INFO_LOG("loudnessGain: %{public}f", loudnessGain_);
+    return loudnessGain_;
 }
 
 int32_t RendererInClientInner::SetDuckVolume(float volume)
@@ -495,10 +524,17 @@ float RendererInClientInner::GetDuckVolume()
     return duckVolume_;
 }
 
-int32_t RendererInClientInner::SetMute(bool mute)
+int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
     AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
+    if (mute) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
+    muteCmd_ = cmdType;
     muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetMuteFactor(muteVolume_);
@@ -896,6 +932,7 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
+    mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
@@ -967,6 +1004,7 @@ void RendererInClientInner::FlushBeforeStart()
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::PauseAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("State is not RUNNING. Illegal state:%{public}u", state_.load());
@@ -1007,6 +1045,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
@@ -1063,6 +1102,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 {
     (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1733,9 +1773,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     uint64_t framePosition = lastFramePosition_[base].first;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
-        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * speed_;
+        framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * lastSpeed_;
         lastLatency_ = latency;
-        lastLatencyPosition_ = latency * speed_;
+        lastLatencyPosition_ = latency * lastSpeed_;
         lastReadIdx_ = readIdx;
     } else { // happen when last speed latency not consumed
         if (lastLatency_ + readIdx > latency + lastReadIdx_) {
@@ -1744,6 +1784,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
             lastLatency_ = latency + lastReadIdx_ - readIdx;
         }
     }
+    lastSpeed_ = speed_;
     // add MCR latency
     uint32_t mcrLatency = 0;
     if (converter_ != nullptr) {

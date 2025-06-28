@@ -39,11 +39,17 @@ public:
 
     void TearDown(void) override
     {
-        BluetoothScoManager::GetInstance().scoTimer_ = nullptr;
-        BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTED;
-        BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
-        BluetoothScoManager::GetInstance().cacheReq_ = nullptr;
         BluetoothHfpMockInterface::mockInterface_ = nullptr;
+    }
+
+private:
+    void SetDefaultExpectCall()
+    {
+        EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetScoState(_))
+            .Times(1)
+            .WillOnce(Return(AudioScoState::DISCONNECTED));
+        EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetActiveDevice())
+            .Times(AnyNumber());
     }
 };
 
@@ -54,6 +60,7 @@ public:
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
@@ -61,24 +68,25 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTED);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_VIRTUAL), true);
 
-    ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device);
+    ret = scoManager.HandleScoDisconnect(device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), false);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_VIRTUAL), false);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_VIRTUAL), false);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTED);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_VIRTUAL), false);
 }
 
 /**
@@ -88,17 +96,19 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_001, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_VIRTUAL;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_VIRTUAL;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_VIRTUAL, device);
     EXPECT_EQ(ret, SUCCESS);
-    ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_DEFAULT, device);
+    ret = scoManager.HandleScoConnect(ScoCategory::SCO_DEFAULT, device);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -109,18 +119,20 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_002, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), CloseVoiceRecognition(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_RECOGNITION;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_RECOGNITION;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -131,18 +143,20 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_003, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_CALLULAR;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_CALLULAR;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_RECOGNITION, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_RECOGNITION, device);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -153,26 +167,28 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_004, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_005, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTING;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_CALLULAR;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTING;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_CALLULAR;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
-    ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device);
+    ret = scoManager.HandleScoDisconnect(device);
     EXPECT_EQ(ret, SUCCESS);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTED);
 }
 
 /**
@@ -182,6 +198,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_005, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), OpenVoiceRecognition(_))
@@ -194,29 +211,30 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_RECOGNITION, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_RECOGNITION, device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_DEFAULT), false);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_DEFAULT), false);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTED);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_RECOGNITION), true);
 
-    ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device);
+    ret = scoManager.HandleScoDisconnect(device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTED);
 }
 
 /**
@@ -226,22 +244,24 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_006, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_007, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(0);
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTING;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTING;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
 }
 
 /**
@@ -251,17 +271,19 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_007, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_008, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(0);
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTING;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTING;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device);
+    int ret = scoManager.HandleScoDisconnect(device);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -272,6 +294,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_008, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_009, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
@@ -279,18 +302,19 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_009, TestSize.Level1)
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device1(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device1;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_CALLULAR;
+    scoManager.currentScoDevice_ = device1;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_CALLULAR;
 
     BluetoothRemoteDevice device2("01:02:03:04:05:06");
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device2);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device2);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
 
-    BluetoothScoManager::GetInstance().UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device1);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_DISCONNECTED, device1);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
 }
 
 /**
@@ -300,21 +324,23 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_009, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_010, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
-    
+
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device1(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device1;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_CALLULAR;
+    scoManager.currentScoDevice_ = device1;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_CALLULAR;
 
     BluetoothRemoteDevice device2("01:02:03:04:05:06");
-    int ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device2);
+    int ret = scoManager.HandleScoDisconnect(device2);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTING);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
 }
 
 /**
@@ -324,18 +350,20 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_010, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_011, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(BT_ERR_SCO_HAS_BEEN_CONNECTED));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTED);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTED);
 }
 
 /**
@@ -345,6 +373,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_011, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_012, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(2)
         .WillOnce(Return(BT_ERR_SCO_HAS_BEEN_CONNECTED + 1))
@@ -353,15 +382,16 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_012, TestSize.Level1)
         .Times(1)
         .WillOnce(Return(SUCCESS));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
 }
 
 /**
@@ -371,20 +401,22 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_012, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_013, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(0);
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(1)
         .WillOnce(Return(BT_ERR_VIRTUAL_CALL_NOT_STARTED + 1));
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::CONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoDisconnect(device);
+    int ret = scoManager.HandleScoDisconnect(device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::DISCONNECTED);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTED);
 }
 
 /**
@@ -394,25 +426,155 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_013, TestSize.Level1)
  */
 HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_014, TestSize.Level1)
 {
+    SetDefaultExpectCall();
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
         .Times(1)
         .WillOnce(Return(SUCCESS));
     EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
         .Times(0);
 
+    BluetoothScoManager scoManager;
     BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
-    BluetoothScoManager::GetInstance().currentScoDevice_ = device;
-    BluetoothScoManager::GetInstance().currentScoState_ = AudioScoState::DISCONNECTED;
-    BluetoothScoManager::GetInstance().currentScoCategory_ = ScoCategory::SCO_DEFAULT;
-    BluetoothScoManager::GetInstance().scoStateDuration_ = 1;
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.scoStateDuration_ = 1;
 
-    int ret = BluetoothScoManager::GetInstance().HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
+    int ret = scoManager.HandleScoConnect(ScoCategory::SCO_CALLULAR, device);
     EXPECT_EQ(ret, SUCCESS);
-    EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
     for (int32_t i = 0; i < 15; i++) { /* 15: 1.5s */
-        EXPECT_EQ(BluetoothScoManager::GetInstance().GetAudioScoState(), AudioScoState::CONNECTING);
+        EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
         usleep(100000); /* 100000: 100ms */
     }
+}
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_020
+ * @tc.desc  : Test connect sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_020, TestSize.Level1)
+{
+    SetDefaultExpectCall();
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
+        .Times(1)
+        .WillOnce(Invoke([](ScoCategory &category) ->int32_t {
+            category = ScoCategory::SCO_CALLULAR;
+            return SUCCESS;
+        }));
+
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), ConnectSco(_))
+        .Times(0);
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), DisconnectSco(_))
+        .Times(2)
+        .WillOnce(Return(BT_ERR_VIRTUAL_CALL_NOT_STARTED))
+        .WillOnce(Return(SUCCESS));
+
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+
+    int ret = scoManager.HandleScoDisconnect(device);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTING);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_021
+ * @tc.desc  : Test connect sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_021, TestSize.Level1)
+{
+    SetDefaultExpectCall();
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
+        .Times(1)
+        .WillOnce(Invoke([](ScoCategory &category) ->int32_t {
+            category = ScoCategory::SCO_CALLULAR;
+            return SUCCESS;
+        }));
+
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_022
+ * @tc.desc  : Test connect sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_022, TestSize.Level1)
+{
+    SetDefaultExpectCall();
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
+        .Times(1)
+        .WillOnce(Invoke([](ScoCategory &category) ->int32_t {
+            category = ScoCategory::SCO_CALLULAR;
+            return SUCCESS;
+        }));
+
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTED;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_023
+ * @tc.desc  : Test connect sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_023, TestSize.Level1)
+{
+    SetDefaultExpectCall();
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
+        .Times(1)
+        .WillOnce(Invoke([](ScoCategory &category) ->int32_t {
+            category = ScoCategory::SCO_CALLULAR;
+            return SUCCESS;
+        }));
+
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::DISCONNECTING;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+    scoManager.UpdateScoState(HfpScoConnectState::SCO_CONNECTED, device);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
+}
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_024
+ * @tc.desc  : Test connect sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
+{
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetScoState(_))
+        .Times(1)
+        .WillOnce(Return(AudioScoState::CONNECTED));
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetActiveDevice())
+        .Times(1);
+    EXPECT_CALL(*(BluetoothHfpMockInterface::mockInterface_.get()), GetCurrentCategory(_))
+        .Times(1)
+        .WillOnce(Invoke([](ScoCategory &category) ->int32_t {
+            category = ScoCategory::SCO_CALLULAR;
+            return SUCCESS;
+        }));
+
+    BluetoothScoManager scoManager;
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTED);
+    EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
 }
 } // namespace Bluetooth
 } // namespace OHOS

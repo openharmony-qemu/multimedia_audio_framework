@@ -43,6 +43,7 @@ constexpr int32_t SYSTEM_PID = 1;
 constexpr int32_t CLEAR_UID = 0;
 constexpr int32_t SYSTEM_UID = 1;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t INVALID_ZONEID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
@@ -53,6 +54,8 @@ constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
+constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
@@ -322,6 +325,17 @@ struct AdjustStreamVolumeInfo {
     std::string invocationTime;
 };
 
+struct StreamVolumeParams {
+    uint32_t sessionId;
+    int32_t streamType;
+    int32_t streamUsage;
+    int32_t uid;
+    int32_t pid;
+    bool isSystemApp;
+    int32_t mode;
+    bool isVKB;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
@@ -362,6 +376,7 @@ struct VolumeEvent {
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
+    bool notifyRssWhenAccountsChange = false;
 
     VolumeEvent(AudioVolumeType volType, int32_t volLevel, bool isUiUpdated) : volumeType(volType),
         volume(volLevel), updateUi(isUiUpdated) {}
@@ -374,16 +389,18 @@ struct VolumeEvent {
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
-            && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
+            && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
+            && parcel.WriteBool(notifyRssWhenAccountsChange);
     }
     void Unmarshalling(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
-        updateUi = parcel.ReadInt32();
+        updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        notifyRssWhenAccountsChange = parcel.ReadBool();
     }
 };
 
@@ -508,6 +525,7 @@ struct AudioRendererInfo {
     int32_t effectMode = 1;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool isVirtualKeyboard = false;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -529,7 +547,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(effectMode)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
-            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
+            && parcel.WriteBool(isVirtualKeyboard);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -552,6 +571,7 @@ struct AudioRendererInfo {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        isVirtualKeyboard = parcel.ReadBool();
     }
 };
 

@@ -36,6 +36,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "SET_SYSTEM_VOLUMELEVEL",
     "SET_APP_VOLUMELEVEL",
     "SET_APP_VOLUME_MUTED",
+    "SET_ADJUST_VOLUME_FOR_ZONE",
     "IS_APP_MUTE",
     "SET_SELF_APP_VOLUMELEVEL",
     "SET_SYSTEM_VOLUMELEVEL_WITH_DEVICE",
@@ -64,6 +65,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "UNSET_CALLBACK",
     "SET_QUERY_CLIENT_TYPE_CALLBACK",
     "SET_CLIENT_INFO_MGR_CALLBACK",
+    "SET_VKB_INFO_MGR_CALLBACK",
+    "CHECK_VKB_INFO",
     "SET_QUERY_BUNDLE_NAME_LIST_CALLBACK",
     "ACTIVATE_INTERRUPT",
     "DEACTIVATE_INTERRUPT",
@@ -88,8 +91,9 @@ const char *g_audioPolicyCodeStrs[] = {
     "UPDATE_TRACKER",
     "GET_RENDERER_CHANGE_INFOS",
     "GET_CAPTURER_CHANGE_INFOS",
-    "SET_LOW_POWER_STREM_VOLUME",
-    "GET_LOW_POWRR_STREM_VOLUME",
+    "SET_LOW_POWER_STREAM_VOLUME",
+    "GET_FAST_STREAM_INFO",
+    "GET_LOW_POWER_STREAM_VOLUME",
     "UPDATE_STREAM_STATE",
     "GET_SINGLE_STREAM_VOLUME",
     "GET_VOLUME_GROUP_INFO",
@@ -158,6 +162,8 @@ const char *g_audioPolicyCodeStrs[] = {
     "ENABLE_AUDIO_ZONE_CHANGE_REPORT",
     "ADD_UID_TO_AUDIO_ZONE",
     "REMOVE_UID_FROM_AUDIO_ZONE",
+    "ADD_STREAM_TO_AUDIO_ZONE",
+    "REMOVE_STREAM_FROM_AUDIO_ZONE",
     "ENABLE_SYSTEM_VOLUME_PROXY",
     "GET_AUDIO_INTERRUPT_FOR_ZONE",
     "GET_AUDIO_INTERRUPT_OF_DEVICE_FOR_ZONE",
@@ -294,7 +300,8 @@ void AudioPolicyManagerStub::SetSystemVolumeLevelInternal(MessageParcel &data, M
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     int32_t volumeLevel = data.ReadInt32();
     int32_t volumeFlag = data.ReadInt32();
-    int result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag);
+    int32_t uid = data.ReadInt32();
+    int32_t result = SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
     reply.WriteInt32(result);
 }
 
@@ -322,6 +329,13 @@ void AudioPolicyManagerStub::SetAppVolumeMutedInternal(MessageParcel &data, Mess
     bool muted = data.ReadBool();
     int32_t volumeFlag = data.ReadInt32();
     int result = SetAppVolumeMuted(appUid, muted, volumeFlag);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::SetAdjustVolumeForZoneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    int result = SetAdjustVolumeForZone(zoneId);
     reply.WriteInt32(result);
 }
 
@@ -436,7 +450,8 @@ void AudioPolicyManagerStub::GetSystemActiveVolumeTypeInternal(MessageParcel& da
 void AudioPolicyManagerStub::GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply)
 {
     AudioStreamType streamType = static_cast<AudioStreamType>(data.ReadInt32());
-    int32_t volumeLevel = GetSystemVolumeLevel(streamType);
+    int32_t uid = data.ReadInt32();
+    int32_t volumeLevel = GetSystemVolumeLevel(streamType, uid);
     reply.WriteInt32(volumeLevel);
 }
 
@@ -468,6 +483,12 @@ void AudioPolicyManagerStub::SetLowPowerVolumeInternal(MessageParcel &data, Mess
         reply.WriteInt32(AUDIO_ERR);
 }
 
+void AudioPolicyManagerStub::GetFastStreamInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioStreamInfo streamInfo = GetFastStreamInfo();
+    streamInfo.Marshalling(reply);
+}
+
 void AudioPolicyManagerStub::GetLowPowerVolumeInternal(MessageParcel &data, MessageParcel &reply)
 {
     int32_t streamId = data.ReadInt32();
@@ -496,7 +517,7 @@ void AudioPolicyManagerStub::SetStreamMuteInternal(MessageParcel &data, MessageP
     AudioVolumeType volumeType = static_cast<AudioVolumeType>(data.ReadInt32());
     bool mute = data.ReadBool();
     DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
-    int result = SetStreamMute(volumeType, mute, deviceType);
+    int32_t result = SetStreamMute(volumeType, mute, deviceType);
     reply.WriteInt32(result);
 }
 
@@ -1029,6 +1050,7 @@ void AudioPolicyManagerStub::IsAbsVolumeSceneInternal(MessageParcel &data, Messa
 void AudioPolicyManagerStub::ConfigDistributedRoutingRoleInternal(MessageParcel &data, MessageParcel &reply)
 {
     std::shared_ptr<AudioDeviceDescriptor> descriptor = AudioDeviceDescriptor::UnmarshallingPtr(data);
+    CHECK_AND_RETURN_LOG(descriptor != nullptr, "Unmarshalling fail.");
     MapExternalToInternalDeviceType(*descriptor);
     CastType type = static_cast<CastType>(data.ReadInt32());
     int32_t result = ConfigDistributedRoutingRole(descriptor, type);
@@ -1275,6 +1297,23 @@ void AudioPolicyManagerStub::SetAudioClientInfoMgrCallbackInternal(MessageParcel
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::SetAudioVKBInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply)
+{
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    CHECK_AND_RETURN_LOG(object != nullptr, "AudioVKBInfoMgrCallback is null");
+    int32_t result = SetAudioVKBInfoMgrCallback(object);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::CheckVKBInfoInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string bundleName = data.ReadString();
+    bool isValid = false;
+    int32_t result = CheckVKBInfo(bundleName, isValid);
+    reply.WriteBool(isValid);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetQueryBundleNameListCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -1361,6 +1400,12 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_STREAM_USAGES_BY_VOLUME_TYPE):
             GetStreamUsagesByVolumeTypeInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_VKB_INFO_MGR_CALLBACK):
+            SetAudioVKBInfoMgrCallbackInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_VKB_INFO):
+            CheckVKBInfoInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
@@ -1733,6 +1778,9 @@ void AudioPolicyManagerStub::OnMiddleFouRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
     switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_FAST_STREAM_INFO):
+            GetFastStreamInfoInternal(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SYSTEM_SOUND_URI):
             GetSystemSoundUriInternal(data, reply);
             break;
@@ -1851,10 +1899,10 @@ void AudioPolicyManagerStub::OnMiddleSecRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_CAPTURER_CHANGE_INFOS):
             GetCapturerChangeInfosInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREM_VOLUME):
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_LOW_POWER_STREAM_VOLUME):
             SetLowPowerVolumeInternal(data, reply);
             break;
-        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWRR_STREM_VOLUME):
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_LOW_POWER_STREAM_VOLUME):
             GetLowPowerVolumeInternal(data, reply);
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::UPDATE_STREAM_STATE):
@@ -2054,6 +2102,9 @@ int AudioPolicyManagerStub::OnRemoteRequest(
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_APP_VOLUME_MUTED):
                 SetAppVolumeMutedInternal(data, reply);
+                break;
+            case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ADJUST_VOLUME_FOR_ZONE):
+                SetAdjustVolumeForZoneInternal(data, reply);
                 break;
             case static_cast<uint32_t>(AudioPolicyInterfaceCode::IS_APP_MUTE):
                 GetAppVolumeIsMuteInternal(data, reply);

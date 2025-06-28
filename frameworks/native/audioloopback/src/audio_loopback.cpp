@@ -25,6 +25,7 @@
 #include "access_token.h"
 #include "accesstoken_kit.h"
 #include "ipc_skeleton.h"
+#include "audio_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace {
@@ -70,11 +71,12 @@ AudioLoopbackPrivate::~AudioLoopbackPrivate()
     CHECK_AND_RETURN_LOG(currentState_ == LOOPBACK_STATE_RUNNING, "AudioLoopback not Running");
     currentState_ = LOOPBACK_STATE_DESTROYING;
     stateLock.unlock();
-    DestroyAudioLoopback();
+    DestroyAudioLoopbackInner();
 }
 
 bool AudioLoopbackPrivate::Enable(bool enable)
 {
+    Trace trace("AudioLoopbackPrivate::Enable");
     std::lock_guard<std::mutex> lock(loopbackMutex_);
     CHECK_AND_RETURN_RET_LOG(IsAudioLoopbackSupported(), false, "AudioLoopback not support");
     AUDIO_INFO_LOG("Enable %{public}d, currentState_ %{public}d", enable, currentState_);
@@ -91,7 +93,8 @@ bool AudioLoopbackPrivate::Enable(bool enable)
         CHECK_AND_RETURN_RET_LOG(currentState_ == LOOPBACK_STATE_RUNNING, true, "AudioLoopback not Running");
         currentState_ = LOOPBACK_STATE_DESTROYING;
         stateLock.unlock();
-        DestroyAudioLoopback();
+        DestroyAudioLoopbackInner();
+        currentState_ = LOOPBACK_STATE_IDLE;
     }
     return true;
 }
@@ -111,9 +114,10 @@ void AudioLoopbackPrivate::InitStatus()
 
 AudioLoopbackStatus AudioLoopbackPrivate::GetStatus()
 {
+    Trace trace("AudioLoopbackPrivate::GetStatus");
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     AudioLoopbackStatus status = StateToStatus(currentState_);
-    if (status == LOOPBACK_UNAVAILABLE_SCENE) {
+    if (status == LOOPBACK_UNAVAILABLE_SCENE || status == LOOPBACK_UNAVAILABLE_DEVICE) {
         currentState_ = LOOPBACK_STATE_IDLE;
     }
     return status;
@@ -136,6 +140,7 @@ AudioLoopbackStatus AudioLoopbackPrivate::StateToStatus(AudioLoopbackState state
 
 int32_t AudioLoopbackPrivate::SetVolume(float volume)
 {
+    Trace trace("AudioLoopbackPrivate::SetVolume");
     if (volume < 0.0 || volume > 1.0) {
         AUDIO_ERR_LOG("SetVolume with invalid volume %{public}f", volume);
         return ERR_INVALID_PARAM;
@@ -166,6 +171,7 @@ int32_t AudioLoopbackPrivate::RemoveAudioLoopbackCallback()
 
 void AudioLoopbackPrivate::CreateAudioLoopback()
 {
+    Trace trace("AudioLoopbackPrivate::CreateAudioLoopback");
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions_, appInfo_);
     CHECK_AND_RETURN_LOG(audioRenderer_ != nullptr, "CreateRenderer failed");
     CHECK_AND_RETURN_LOG(audioRenderer_->IsFastRenderer(), "CreateFastRenderer failed");
@@ -195,8 +201,9 @@ void AudioLoopbackPrivate::DisableLoopback()
     }
 }
 
-void AudioLoopbackPrivate::DestroyAudioLoopback()
+void AudioLoopbackPrivate::DestroyAudioLoopbackInner()
 {
+    Trace trace("AudioLoopbackPrivate::DestroyAudioLoopbackInner");
     DisableLoopback();
     if (audioCapturer_) {
         audioCapturer_->Stop();
@@ -212,6 +219,13 @@ void AudioLoopbackPrivate::DestroyAudioLoopback()
     } else {
         AUDIO_WARNING_LOG("audioRenderer is nullptr");
     }
+}
+
+void AudioLoopbackPrivate::DestroyAudioLoopback()
+{
+    Trace trace("AudioLoopbackPrivate::DestroyAudioLoopback");
+    std::lock_guard<std::mutex> lock(loopbackMutex_);
+    DestroyAudioLoopbackInner();
 }
 
 AudioRendererOptions AudioLoopbackPrivate::GenerateRendererConfig()
@@ -245,7 +259,8 @@ AudioCapturerOptions AudioLoopbackPrivate::GenerateCapturerConfig()
 
 bool AudioLoopbackPrivate::IsAudioLoopbackSupported()
 {
-    return true;
+    Trace trace("AudioLoopbackPrivate::IsAudioLoopbackSupported");
+    return AudioPolicyManager::GetInstance().IsAudioLoopbackSupported(mode_);
 }
 
 bool AudioLoopbackPrivate::CheckDeviceSupport()
@@ -257,6 +272,7 @@ bool AudioLoopbackPrivate::CheckDeviceSupport()
 
 bool AudioLoopbackPrivate::EnableLoopback()
 {
+    Trace trace("AudioLoopbackPrivate::EnableLoopback");
     karaokeParams_["Karaoke_enable"] = "enable";
     std::string parameters = "";
     for (auto &param : karaokeParams_) {
@@ -350,6 +366,7 @@ AudioLoopbackState AudioLoopbackPrivate::GetCurrentState()
 
 void AudioLoopbackPrivate::UpdateStatus()
 {
+    Trace trace("AudioLoopbackPrivate::UpdateStatus");
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     CHECK_AND_RETURN(currentState_ == LOOPBACK_STATE_RUNNING || currentState_ == LOOPBACK_STATE_PREPARED);
     AudioLoopbackState oldState = currentState_;
@@ -368,8 +385,10 @@ void AudioLoopbackPrivate::UpdateStatus()
         AUDIO_INFO_LOG("UpdateState: %{public}d -> %{public}d", oldState, newState);
         if (newState == LOOPBACK_STATE_DESTROYED) {
             currentState_ = LOOPBACK_STATE_DESTROYING;
-            stateLock.unlock();
-            DestroyAudioLoopback();
+            auto self = shared_from_this();
+            std::thread([self] {
+                self->DestroyAudioLoopback();
+            }).detach();
         }
         currentState_ = newState;
         if (statusCallback_) {

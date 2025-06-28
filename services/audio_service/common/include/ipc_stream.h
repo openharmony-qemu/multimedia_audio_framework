@@ -92,6 +92,8 @@ public:
 
     virtual int32_t SetClientVolume() = 0;
 
+    virtual int32_t SetLoudnessGain(float loudnessGain) = 0;
+
     virtual int32_t SetMute(bool isMute) = 0;
 
     virtual int32_t SetDuckFactor(float duckFactor) = 0;
@@ -141,6 +143,7 @@ public:
         ON_SET_DEFAULT_OUTPUT_DEVICE,
         ON_SET_SOURCE_DURATION,
         ON_SET_OFFLOAD_DATA_CALLBACK_STATE,
+        ON_SET_LOUDNESSGAIN,
         IPC_STREAM_MAX_MSG
     };
 

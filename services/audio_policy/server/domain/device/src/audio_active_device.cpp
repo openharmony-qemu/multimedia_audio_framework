@@ -36,6 +36,7 @@
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "sle_audio_device_manager.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -103,6 +104,7 @@ bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
+    AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
 }
 
@@ -122,6 +124,7 @@ DeviceType AudioActiveDevice::GetCurrentInputDeviceType()
 void AudioActiveDevice::SetCurrentInputDeviceType(DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
+    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
     currentActiveInputDevice_.deviceType_ = deviceType;
 }
 
@@ -134,12 +137,14 @@ std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
 void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
+    AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
 }
 
 void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
+    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
     currentActiveDevice_.deviceType_ = deviceType;
 }
 
@@ -461,5 +466,44 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
+bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs)
+{
+    for (auto &it : descs) {
+        CHECK_AND_RETURN_RET(!it->IsSameDeviceDesc(desc), true);
+    }
+    return false;
+}
+
+void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
+{
+    AUDIO_INFO_LOG("update for %{public}s", source.c_str());
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    activeOutputDevices_.clear();
+    for (auto &desc :descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        AUDIO_INFO_LOG("session: %{public}d, uid %{public}d, usage:%{public}d devices:%{public}s",
+            desc->sessionId_, desc->callerUid_, desc->rendererInfo_.streamUsage,
+            desc->GetNewDevicesTypeString().c_str());
+        AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
+        streamTypeDeviceMap_[streamType] = desc->newDeviceDescs_.back();
+        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage] = desc->newDeviceDescs_.front();
+        for (const auto &device : desc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(!IsDeviceInVector(device, activeOutputDevices_));
+            activeOutputDevices_.push_back(device);
+        }
+    }
+
+    for (auto &pair : streamTypeDeviceMap_) {
+        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
+        streamTypeDeviceMap_[pair.first] = nullptr;
+    }
+
+    for (auto &pair : streamUsageDeviceMap_) {
+        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
+        streamUsageDeviceMap_[pair.first] = nullptr;
+    }
+}
 }
 }

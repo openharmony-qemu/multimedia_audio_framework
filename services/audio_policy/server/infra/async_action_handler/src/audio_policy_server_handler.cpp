@@ -22,6 +22,8 @@
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t RSS_UID = 1096;
+
 static std::string GeneratePidsStrForPrinting(
     const std::unordered_map<int32_t, sptr<IAudioPolicyClient>> &unorderedMap)
 {
@@ -729,11 +731,36 @@ void AudioPolicyServerHandler::HandleVolumeChangeCallback(int32_t clientId, sptr
     }
 }
 
+void AudioPolicyServerHandler::HandleVolumeKeyEventToRssWhenAccountsChange(
+    std::shared_ptr<EventContextObj> &eventContextObj)
+{
+    auto it = audioPolicyClientProxyAPSCbsMap_.find(pidOfRss_);
+    if (it != audioPolicyClientProxyAPSCbsMap_.end()) {
+        sptr<IAudioPolicyClient> volumeChangeCb = it->second;
+        if (volumeChangeCb == nullptr) {
+            AUDIO_ERR_LOG("volumeChangeCb: nullptr for client : %{public}d", it->first);
+            return;
+        }
+        AUDIO_PRERELEASE_LOGI("Trigger volumeChangeCb clientPid : %{public}d, volumeType : %{public}d," \
+            " volume : %{public}d, updateUi : %{public}d ", it->first,
+            static_cast<int32_t>(eventContextObj->volumeEvent.volumeType), eventContextObj->volumeEvent.volume,
+            static_cast<int32_t>(eventContextObj->volumeEvent.updateUi));
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_KEY_EVENT) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_KEY_EVENT]) {
+            volumeChangeCb->OnVolumeKeyEvent(eventContextObj->volumeEvent);
+        }
+    }
+}
+
 void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
     std::lock_guard<std::mutex> lock(handleMapMutex_);
+    if (eventContextObj->volumeEvent.notifyRssWhenAccountsChange) {
+        return HandleVolumeKeyEventToRssWhenAccountsChange(eventContextObj);
+    }
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         sptr<IAudioPolicyClient> volumeChangeCb = it->second;
         if (volumeChangeCb == nullptr) {
@@ -1508,6 +1535,9 @@ int32_t AudioPolicyServerHandler::SetClientCallbacksEnable(const CallbackChange 
     }
 
     int32_t clientId = IPCSkeleton::GetCallingPid();
+    if (IPCSkeleton::GetCallingUid() == RSS_UID) {
+        pidOfRss_ = clientId;
+    }
     lock_guard<mutex> runnerlock(handleMapMutex_);
     clientCallbacksMap_[clientId][callbackchange] = enable;
     string str = (enable ? "true" : "false");
@@ -1575,6 +1605,7 @@ bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioZoneEvent = event;
     AUDIO_INFO_LOG("send audio zone event");
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_ZONE_EVENT,

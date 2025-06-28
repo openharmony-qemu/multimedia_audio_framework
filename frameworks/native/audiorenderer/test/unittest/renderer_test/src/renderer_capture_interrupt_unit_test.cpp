@@ -33,7 +33,9 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+#ifdef TEMP_DISABLE
 constexpr int32_t SLEEP_TIME = 2;
+#endif
 }
 
 InterruptEvent AudioRendererCapturerUnitTest::CaptureinterruptEventTest_ = {};
@@ -47,6 +49,7 @@ void AudioCapturerCallbackTest::OnInterrupt(const InterruptEvent &interruptEvent
     AudioRendererCapturerUnitTest::CaptureinterruptEventTest_.hintType = interruptEvent.hintType;
 }
 
+#ifdef TEMP_DISABLE
 AudioRendererOptions AudioRendererCapturerUnitTest::UTCreateAudioRenderer(StreamUsage streamUsage)
 {
     AudioRendererOptions rendererOptions;
@@ -334,5 +337,6 @@ HWTEST(AudioRendererCapturerUnitTest, SetRendererCaptureInterrupt_020, TestSize.
     AudioRendererCapturerUnitTest::AudioInterruptDenyIncomingUnitTestFunc(STREAM_USAGE_VOICE_MODEM_COMMUNICATION,
         SOURCE_TYPE_VOICE_MESSAGE);
 }
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

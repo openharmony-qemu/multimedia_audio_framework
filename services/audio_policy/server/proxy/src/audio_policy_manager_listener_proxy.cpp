@@ -141,6 +141,23 @@ bool AudioPolicyManagerListenerProxy::OnCheckClientInfo(const std::string &bundl
     return reply.ReadBool();
 }
 
+bool AudioPolicyManagerListenerProxy::OnCheckVKBInfo(const std::string &bundleName)
+{
+    AUDIO_DEBUG_LOG("In");
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
+        "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
+    data.WriteString(bundleName);
+
+    int error = Remote()->SendRequest(ON_CHECK_VKB_INFO, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnCheckVKBInfo failed, error: %{public}d", error);
+    return reply.ReadBool();
+}
+
 bool AudioPolicyManagerListenerProxy::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
 {
     AUDIO_DEBUG_LOG("In");

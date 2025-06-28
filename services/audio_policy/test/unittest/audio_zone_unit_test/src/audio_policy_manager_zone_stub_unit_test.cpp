@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/audio_policy_manager_zone_stub_unit_test.h"
+#include "audio_policy_manager_zone_stub_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_zone_service.h"

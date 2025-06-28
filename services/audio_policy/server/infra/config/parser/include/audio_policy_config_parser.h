@@ -72,6 +72,7 @@ private:
     void ParseGlobalConfigs(std::shared_ptr<AudioXmlNode> curNode);
     void ParsePAConfigs(std::shared_ptr<AudioXmlNode> curNode);
     void ParseCommonConfigs(std::shared_ptr<AudioXmlNode> curNode);
+    AudioSampleFormat ConvertToFormat(std::string value);
     void HandleUpdateRouteSupportParsed(std::string &value);
     void HandleUpdateAnahsSupportParsed(std::string &value);
     void HandleDefaultAdapterSupportParsed(std::string &value);

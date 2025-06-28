@@ -79,7 +79,7 @@ private:
     int32_t DisconnectScoReliable(ScoCategory scoCategory, const BluetoothRemoteDevice &device);
     void SetAudioScoState(AudioScoState state);
     void OnScoStateTimeOut();
-    void ForceUpdateScoState();
+    void ForceUpdateScoCategory();
     void ProcCacheRequest();
 };
 }
