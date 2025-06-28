@@ -82,7 +82,7 @@ struct RingBufferWrapper {
         }
     }
 
-    void SetBuffersValueWithBufLen(int8_t ch)
+    void SetBuffersValueWithBufLen(int8_t ch) const
     {
         for (auto &[buffer, bufLength] : basicBufferDescs) {
             if (buffer != nullptr && bufLength != 0) {
@@ -91,7 +91,7 @@ struct RingBufferWrapper {
         }
     }
 
-    void SetBuffersValueWithSpecifyDataLen(int8_t ch)
+    void SetBuffersValueWithSpecifyDataLen(int8_t ch) const
     {
         size_t remainSize = dataLength;
         for (auto &[buffer, bufLength] : basicBufferDescs) {

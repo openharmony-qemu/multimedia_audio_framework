@@ -172,6 +172,15 @@ private:
     bool ProcessToEndpointDataHandle(uint64_t curWritePos, std::function<void()> &moveClientIndex);
     void ProcessToDupStream(const std::vector<AudioStreamData> &audioDataList, AudioStreamData &dstStreamData,
         int32_t innerCapId);
+
+    struct VolumeResult {
+        int32_t volumeStart;
+        float volumeEnd;
+        float volumeHap;
+        bool muteFlag;
+    };
+
+    VolumeResult CalculateVolume(size_t i);
     void GetAllReadyProcessData(std::vector<AudioStreamData> &audioDataList, std::function<void()> &moveClientsIndex);
     void GetAllReadyProcessDataSub(size_t i,
         std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex);
@@ -215,6 +224,12 @@ private:
     void HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index);
     int32_t CreateDupBufferInner(int32_t innerCapId);
     int32_t WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId);
+    bool PrepareRingBuffer(size_t i, uint64_t curRead, RingBufferWrapper& ringBuffer);
+    int32_t WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer);
+    void SetupMoveCallback(size_t i, uint64_t curRead, const RingBufferWrapper& ringBuffer,
+        std::function<void()>& moveClientIndex);
+    void AddProcessStreamToList(IAudioProcessStream *processStream,
+        const std::shared_ptr<OHAudioBufferBase> &processBuffer);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms

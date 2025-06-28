@@ -370,6 +370,32 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+void RendererInClientInner::WaitForBufferNeedWrite()
+{
+    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
+    FutexCode futexRes = clientBuffer_->WaitFor(
+        static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
+        [this] () {
+            if (state_ != RUNNING) {
+                return true;
+            }
+            uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
+            size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
+            int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
+            size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+            if ((writableInFrame <= 0) || (cbBufferSize_ > totalSizeInByte) ||
+                // readable >= engineTotalSizeInFrame_
+                (writableInFrame < (totalSizeInFrame - engineTotalSizeInFrame_)) ||
+                (writableSizeInByte < cbBufferSize_)) {
+                return false;
+            }
+            return true;
+        });
+    if (futexRes != SUCCESS) {
+        AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
+    }
+}
+
 bool RendererInClientInner::WriteCallbackFunc()
 {
     CHECK_AND_RETURN_RET_LOG(!cbThreadReleased_, false, "Callback thread released");
@@ -402,28 +428,7 @@ bool RendererInClientInner::WriteCallbackFunc()
         }
     }
 
-    FutexCode futexRes = FUTEX_OPERATION_FAILED;
-    int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
-    futexRes = clientBuffer_->WaitFor(static_cast<int64_t>(timeout) * AUDIO_US_PER_SECOND,
-        [this] () {
-            if (state_ != RUNNING) {
-                return true;
-            }
-            uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
-            size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-            int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-            size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
-            if ((writableInFrame <= 0) || (cbBufferSize_ > totalSizeInByte) ||
-                // readable >= engineTotalSizeInFrame_
-                (writableInFrame < (totalSizeInFrame - engineTotalSizeInFrame_)) ||
-                (writableSizeInByte < cbBufferSize_)) {
-                return false;
-            }
-            return true;
-        });
-    if (futexRes != SUCCESS) {
-        AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
-    }
+    WaitForBufferNeedWrite();
 
     if (state_ != RUNNING) {
         return true;

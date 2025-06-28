@@ -189,6 +189,10 @@ private:
     bool CheckAndWaitBufferReadyForPlayback();
 
     bool CheckAndWaitBufferReadyForRecord();
+
+    void WaitForWritableSpace();
+
+    int32_t WriteDataChunk(const BufferDesc &bufDesc, size_t clientRemainSizeInFrame);
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -1031,6 +1035,66 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
     }
 }
 
+void AudioProcessInClientInner::WaitForWritableSpace()
+{
+    FutexCode futexRes = FUTEX_OPERATION_FAILED;
+    int64_t timeout = FAST_WRITE_CACHE_TIMEOUT_IN_MS;
+    futexRes = audioBuffer_->WaitFor(timeout * AUDIO_US_PER_SECOND,
+        [this] () {
+            return (streamStatus_->load() != StreamStatus::STREAM_RUNNING) ||
+                (static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames()) > 0);
+        });
+    if (futexRes != SUCCESS) {
+        AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
+    }
+}
+
+int32_t AudioProcessInClientInner::WriteDataChunk(const BufferDesc &bufDesc, size_t clientRemainSizeInFrame)
+{
+    RingBufferWrapper inBuffer = {
+        .basicBufferDescs = {{
+            {.buffer = bufDesc.buffer, .bufLength = clientRemainSizeInFrame * clientByteSizePerFrame_},
+            {.buffer = nullptr, .bufLength = 0}
+        }},
+        .dataLength = clientRemainSizeInFrame * clientByteSizePerFrame_
+    };
+
+    while (clientRemainSizeInFrame > 0) {
+        WaitForWritableSpace();
+
+        uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
+        Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
+        RingBufferWrapper curWriteBuffer;
+        int32_t ret = audioBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, curWriteBuffer);
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && curWriteBuffer.dataLength > 0,
+            ERR_OPERATION_FAILED, "get write buffer fail, ret:%{public}d", ret);
+
+        size_t copySizeInFrame = std::min(clientRemainSizeInFrame, (curWriteBuffer.dataLength / byteSizePerFrame_));
+        CHECK_AND_RETURN_RET_LOG(copySizeInFrame > 0, ERR_OPERATION_FAILED, "copysize is 0");
+
+        BufferDesc curCallbackBuffer = {nullptr, 0, 0};
+        curCallbackBuffer.buffer = inBuffer.basicBufferDescs[0].buffer;
+        curCallbackBuffer.bufLength = inBuffer.dataLength;
+        curCallbackBuffer.dataLength = inBuffer.dataLength;
+
+        curWriteBuffer.dataLength = copySizeInFrame * byteSizePerFrame_;
+        ret = ProcessData(curCallbackBuffer, curWriteBuffer);
+        audioBuffer_->SetCurWriteFrame(curWritePos + copySizeInFrame);
+        if (ret != SUCCESS) {
+            return ERR_OPERATION_FAILED;
+        }
+        writeProcessDataTrace.End();
+        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer),
+            curCallbackBuffer.dataLength);
+        VolumeTools::DfxOperation(curCallbackBuffer, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
+
+        clientRemainSizeInFrame -= copySizeInFrame;
+        inBuffer.SeekFromStart(copySizeInFrame * clientByteSizePerFrame_);
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("AudioProcessInClient::Enqueue");
@@ -1059,53 +1123,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         clientByteSizePerFrame_, byteSizePerFrame_);
     size_t clientRemainSizeInFrame = bufDesc.dataLength / clientByteSizePerFrame_;
 
-    RingBufferWrapper inBuffer = {
-        .basicBufferDescs = {{
-            {.buffer = bufDesc.buffer, .bufLength = clientRemainSizeInFrame * clientByteSizePerFrame_},
-            {.buffer = nullptr, .bufLength = 0}
-        }},
-        .dataLength = clientRemainSizeInFrame * clientByteSizePerFrame_
-    };
-
-    while (clientRemainSizeInFrame > 0) {
-        FutexCode futexRes = FUTEX_OPERATION_FAILED;
-        int64_t timeout = FAST_WRITE_CACHE_TIMEOUT_IN_MS;
-        futexRes = audioBuffer_->WaitFor(timeout * AUDIO_US_PER_SECOND,
-            [this] () {
-                return (streamStatus_->load() != StreamStatus::STREAM_RUNNING) ||
-                    (static_cast<uint32_t>(audioBuffer_->GetWritableDataFrames()) > 0);
-            });
-        if (futexRes != SUCCESS) {
-            AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
-        }
-
-        uint64_t curWritePos = audioBuffer_->GetCurWriteFrame();
-        Trace writeProcessDataTrace("AudioProcessInClient::WriteProcessData->" + std::to_string(curWritePos));
-        RingBufferWrapper curWriteBuffer;
-        int32_t ret = audioBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, curWriteBuffer);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && curWriteBuffer.dataLength > 0,
-            ERR_OPERATION_FAILED, "get write buffer fail, ret:%{public}d", ret);
-
-        size_t copySizeInFrame = std::min(clientRemainSizeInFrame, (curWriteBuffer.dataLength / byteSizePerFrame_));
-        BufferDesc curCallbackBuffer = {nullptr, 0, 0};
-        curCallbackBuffer.buffer = inBuffer.basicBufferDescs[0].buffer;
-        curCallbackBuffer.bufLength = inBuffer.dataLength;
-        curCallbackBuffer.dataLength = inBuffer.dataLength;
-
-        curWriteBuffer.dataLength = copySizeInFrame * byteSizePerFrame_;
-        ret = ProcessData(curCallbackBuffer, curWriteBuffer);
-        audioBuffer_->SetCurWriteFrame(curWritePos + copySizeInFrame);
-        if (ret != SUCCESS) {
-            return ERR_OPERATION_FAILED;
-        }
-        writeProcessDataTrace.End();
-        DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(curCallbackBuffer.buffer),
-            curCallbackBuffer.dataLength);
-        VolumeTools::DfxOperation(curCallbackBuffer, processConfig_.streamInfo, logUtilsTag_, volumeDataCount_);
-
-        clientRemainSizeInFrame -= copySizeInFrame;
-        inBuffer.SeekFromStart(copySizeInFrame * clientByteSizePerFrame_);
-    }
+    int32_t ret = WriteDataChunk(bufDesc, clientRemainSizeInFrame);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "writedataChunk failed, err: %{public}d", ret);
 
     if (memset_s(callbackBuffer_.get(), clientSpanSizeInByte_, 0, clientSpanSizeInByte_) != EOK) {
         AUDIO_WARNING_LOG("reset callback buffer fail.");

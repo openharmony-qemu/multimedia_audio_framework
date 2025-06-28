@@ -611,6 +611,28 @@ void RendererInServer::VolumeHandle(BufferDesc &desc)
     }
 }
 
+BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc)
+{
+    BufferDesc bufferDesc;
+    if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength) {
+        bufferDesc.buffer = ringBufferDesc.basicBufferDescs[0].buffer;
+        bufferDesc.bufLength = ringBufferDesc.dataLength;
+        bufferDesc.dataLength = ringBufferDesc.dataLength;
+    } else {
+        rendererTmpBuffer_.resize(ringBufferDesc.dataLength);
+        RingBufferWrapper tmpWrapper;
+        tmpWrapper.dataLength = ringBufferDesc.dataLength;
+        tmpWrapper.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
+        tmpWrapper.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
+        tmpWrapper.MemCopyFrom(ringBufferDesc);
+
+        bufferDesc.buffer = rendererTmpBuffer_.data();
+        bufferDesc.bufLength = ringBufferDesc.dataLength;
+        bufferDesc.dataLength = ringBufferDesc.dataLength;
+    }
+    return bufferDesc;
+}
+
 int32_t RendererInServer::WriteData()
 {
     uint64_t currentReadFrame = audioServerBuffer_->GetCurReadFrame();
@@ -644,25 +666,7 @@ int32_t RendererInServer::WriteData()
             }
         }
 
-        BufferDesc bufferDesc;
-        if (ringBufferDesc.basicBufferDescs[0].bufLength >= ringBufferDesc.dataLength) {
-            bufferDesc.buffer = ringBufferDesc.basicBufferDescs[0].buffer;
-            bufferDesc.bufLength = ringBufferDesc.dataLength;
-            bufferDesc.dataLength = ringBufferDesc.dataLength;
-        } else {
-            rendererTmpBuffer_.resize(0);
-            rendererTmpBuffer_.resize(ringBufferDesc.dataLength);
-
-            RingBufferWrapper ringBufferDescForCotinueData;
-            ringBufferDescForCotinueData.dataLength = ringBufferDesc.dataLength;
-            ringBufferDescForCotinueData.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
-            ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
-            ringBufferDescForCotinueData.MemCopyFrom(ringBufferDesc);
-
-            bufferDesc.buffer = rendererTmpBuffer_.data();
-            bufferDesc.bufLength = ringBufferDesc.dataLength;
-            bufferDesc.dataLength = ringBufferDesc.dataLength;
-        }
+        BufferDesc bufferDesc = PrepareOutputBuffer(ringBufferDesc);
         stream_->EnqueueBuffer(bufferDesc);
         if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
             DumpFileUtil::WriteDumpFile(dumpC2S_, static_cast<void *>(bufferDesc.buffer), bufferDesc.bufLength);
@@ -695,6 +699,31 @@ int32_t RendererInServer::GetAvailableSize(size_t &length)
     return SUCCESS;
 }
 
+void RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
+    const RingBufferWrapper& ringBufferDesc)
+{
+    RingBufferWrapper wrapperInputData = {
+        .basicBufferDescs = {{
+            {reinterpret_cast<uint8_t*>(inputData), requestDataLen},
+            {}
+        }},
+        .dataLength = requestDataLen
+    };
+
+    CHECK_AND_RETURN_LOG(wrapperInputData.MemCopyFrom(ringBufferDesc) == 0,
+        "memcpy error");
+}
+
+void RendererInServer::ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc,
+    uint64_t currentReadFrame, uint64_t currentWriteFrame,
+    size_t requestDataInFrame)
+{
+    if (processConfig_.streamType != STREAM_ULTRASONIC &&
+        currentReadFrame + requestDataInFrame == currentWriteFrame) {
+        DoFadingOut(ringBufferDesc);
+    }
+}
+
 int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     size_t requestDataInFrame = requestDataLen / byteSizePerFrame_;
@@ -720,22 +749,9 @@ int32_t RendererInServer::OnWriteData(int8_t *inputData, size_t requestDataLen)
             return ERR_INVALID_PARAM;
         }
         ringBufferDesc.dataLength = requestDataLen;
-        if (processConfig_.streamType != STREAM_ULTRASONIC) {
-            if (currentReadFrame + requestDataInFrame == currentWriteFrame) {
-                DoFadingOut(ringBufferDesc);
-            }
-        }
+        ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
 
-        RingBufferWrapper wrapperInputData = {
-            .basicBufferDescs = {{
-                {reinterpret_cast<uint8_t*>(inputData), requestDataLen},
-                {}
-            }},
-            .dataLength = requestDataLen
-        };
-
-        CHECK_AND_RETURN_RET_LOG(wrapperInputData.MemCopyFrom(ringBufferDesc) == 0,
-            ERROR, "memcpy error");
+        CopyDataToInputBuffer(inputData, requestDataLen, ringBufferDesc);
 
         BufferDesc bufferDesc = {
             .buffer = reinterpret_cast<uint8_t*>(inputData),

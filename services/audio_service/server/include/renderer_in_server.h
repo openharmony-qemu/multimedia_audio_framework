@@ -157,6 +157,11 @@ private:
     int32_t StartInnerDuringStandby();
     void RecordStandbyTime(bool isStandby, bool isStart);
     int32_t FlushOhAudioBuffer();
+    BufferDesc PrepareOutputBuffer(const RingBufferWrapper& ringBufferDesc);
+    void CopyDataToInputBuffer(int8_t* inputData, size_t requestDataLen,
+        const RingBufferWrapper& ringBufferDesc);
+    void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
+        uint64_t currentWriteFrame, size_t requestDataInFrame);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;
