@@ -165,7 +165,7 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     int32_t volumeValue = 0;
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
     if (ret != SUCCESS) {
-        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_B),
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_VOLUME_INTERNAL_B),
             static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
             streamType, deviceType);
@@ -515,13 +515,11 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
             ret = settingProvider.PutIntValue(AUDIO_SAFE_VOLUME_STATE, static_cast<int32_t>(safeStatus));
             break;
         default:
-            WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_STATUS_A),
-                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
     }
     if (ret != SUCCESS) {
-        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_STATUS_B),
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_STATUS),
             static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed, safe status:%{public}d", deviceType, safeStatus);
         return false;
