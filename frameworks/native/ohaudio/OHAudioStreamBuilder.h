@@ -53,6 +53,8 @@ public:
         void* userData);
     OH_AudioStream_Result SetRendererInterruptEventCallback(OH_AudioRenderer_OnInterruptCallback callback,
         void* userData);
+    OH_AudioStream_Result SetRendererWriteDataCallbackAdvanced(OH_AudioRenderer_OnWriteDataCallbackAdvanced callback,
+        void *userData);
     OH_AudioStream_Result SetRendererErrorCallback(OH_AudioRenderer_OnErrorCallback callback, void* userData);
     OH_AudioStream_Result SetRendererFastStatusChangeCallback(
         OH_AudioRenderer_OnFastStatusChange callback, void* userData);

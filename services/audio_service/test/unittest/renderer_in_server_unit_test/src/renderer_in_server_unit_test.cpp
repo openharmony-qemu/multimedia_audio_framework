@@ -15,22 +15,6 @@
 
 #include "renderer_in_server_unit_test.h"
 
-#include "accesstoken_kit.h"
-#include "audio_device_info.h"
-#include "audio_errors.h"
-#include "audio_info.h"
-#include "audio_process_config.h"
-#include "audio_server.h"
-#include "audio_service.h"
-#include "audio_stream_info.h"
-#include "audio_utils.h"
-#include "policy_handler.h"
-#include "renderer_in_server.h"
-#include "pro_audio_stream_manager.h"
-#include "i_renderer_stream.h"
-#include "audio_service_log.h"
-#include "ipc_stream_in_server.h"
-
 using namespace testing::ext;
 
 namespace OHOS {
@@ -592,7 +576,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_001, TestSize.Lev
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->fadeoutFlag_ = NO_FADING;
-    rendererInServer->DoFadingOut(bufferDesc);
+    RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLength = bufferDesc.dataLength
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_NE(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -611,7 +602,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_002, TestSize.Lev
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->fadeoutFlag_ = DO_FADINGOUT;
-    rendererInServer->DoFadingOut(bufferDesc);
+    RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLength = bufferDesc.dataLength
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -630,7 +628,14 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerDoFadingOut_003, TestSize.Lev
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->fadeoutFlag_ = DO_FADINGOUT;
-    rendererInServer->DoFadingOut(bufferDesc);
+        RingBufferWrapper bufferWrapper = {
+        .basicBufferDescs = {{
+            {bufferDesc.buffer, bufferDesc.bufLength},
+            {}
+        }},
+        .dataLength = bufferDesc.dataLength
+    };
+    rendererInServer->DoFadingOut(bufferWrapper);
     EXPECT_EQ(FADING_OUT_DONE, rendererInServer->fadeoutFlag_);
 }
 
@@ -769,7 +774,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerVolumeHandle_002, TestSize.Le
     int32_t ret = rendererInServer->Init();
     ASSERT_EQ(SUCCESS, ret);
     rendererInServer->lowPowerVolume_ = 0.0f;
-    rendererInServer->audioServerBuffer_-> basicBufferInfo_->duckFactor.store(0.0f);
+    rendererInServer->audioServerBuffer_->basicBufferInfo_->duckFactor.store(0.0f);
     rendererInServer->silentModeAndMixWithOthers_ = 0;
 
     rendererInServer->VolumeHandle(bufferDesc);

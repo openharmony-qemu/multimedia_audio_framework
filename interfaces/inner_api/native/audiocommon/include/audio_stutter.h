@@ -17,6 +17,7 @@
 
 #include <parcel.h>
 #include <audio_stream_info.h>
+#include <audio_buffer_desc.h>
 
 namespace OHOS {
 namespace AudioStandard {

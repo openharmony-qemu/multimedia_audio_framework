@@ -25,6 +25,7 @@ class IWriteCallback {
 public:
     virtual int32_t OnWriteData(size_t length) = 0;
     virtual int32_t OnWriteData(int8_t *inputData, size_t requestDataLen) = 0;
+    virtual int32_t GetAvailableSize(size_t &length) = 0;
 };
 
 class IStreamCallback {
