@@ -2133,16 +2133,12 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
 
         std::function<void()> moveClientIndex;
         // then do mix & write to hdi buffer and prepare next loop
-        if (!ProcessToEndpointDataHandle(curWritePos, moveClientIndex)) {
-            AUDIO_ERR_LOG("ProcessToEndpointDataHandle failed!");
-            break;
-        }
+        CHECK_AND_BREAK_LOG(ProcessToEndpointDataHandle(curWritePos, moveClientIndex),
+            "ProcessToEndpointDataHandle failed!");
 
         // prepare info of next loop
-        if (!PrepareNextLoop(curWritePos, wakeUpTime, moveClientIndex)) {
-            AUDIO_ERR_LOG("PrepareNextLoop failed!");
-            break;
-        }
+        CHECK_AND_BREAK_LOG(PrepareNextLoop(curWritePos, wakeUpTime, moveClientIndex),
+            "ProcessToEndpointDataHandle failed!");
 
         ProcessUpdateAppsUidForPlayback();
 

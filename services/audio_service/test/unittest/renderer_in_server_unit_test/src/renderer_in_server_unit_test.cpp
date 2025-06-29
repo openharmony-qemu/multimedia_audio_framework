@@ -15,22 +15,6 @@
 
 #include "renderer_in_server_unit_test.h"
 
-#include "accesstoken_kit.h"
-#include "audio_device_info.h"
-#include "audio_errors.h"
-#include "audio_info.h"
-#include "audio_process_config.h"
-#include "audio_server.h"
-#include "audio_service.h"
-#include "audio_stream_info.h"
-#include "audio_utils.h"
-#include "policy_handler.h"
-#include "renderer_in_server.h"
-#include "pro_audio_stream_manager.h"
-#include "i_renderer_stream.h"
-#include "audio_service_log.h"
-#include "ipc_stream_in_server.h"
-
 using namespace testing::ext;
 
 namespace OHOS {
