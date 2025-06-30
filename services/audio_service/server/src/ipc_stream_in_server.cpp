@@ -232,7 +232,7 @@ int32_t IpcStreamInServer::Stop()
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::Release()
+int32_t IpcStreamInServer::Release(bool isSwitchStream)
 {
     {
         std::lock_guard lock(scheduleGuardsMutex_);
@@ -241,10 +241,10 @@ int32_t IpcStreamInServer::Release()
     }
 
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
-        return rendererInServer_->Release();
+        return rendererInServer_->Release(isSwitchStream);
     }
     if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
-        return capturerInServer_->Release();
+        return capturerInServer_->Release(isSwitchStream);
     }
     AUDIO_ERR_LOG("Release failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;

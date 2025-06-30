@@ -162,14 +162,14 @@ int32_t IpcStreamProxy::Stop()
     return reply.ReadInt32();
 }
 
-int32_t IpcStreamProxy::Release()
+int32_t IpcStreamProxy::Release(bool isSwitchStream)
 {
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-
+    data.WriteBool(isSwitchStream);
     int ret = Remote()->SendRequest(IpcStreamMsg::ON_RELEASE, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "Release failed, error: %{public}d", ret);
 

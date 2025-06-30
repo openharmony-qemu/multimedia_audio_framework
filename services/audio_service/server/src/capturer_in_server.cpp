@@ -690,11 +690,11 @@ int32_t CapturerInServer::Stop()
     return SUCCESS;
 }
 
-int32_t CapturerInServer::Release()
+int32_t CapturerInServer::Release(bool isSwitchStream)
 {
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveCapturer(streamIndex_);
+    AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {
         AUDIO_INFO_LOG("Already released");

@@ -234,8 +234,8 @@ int32_t IpcStreamStub::HandleStop(MessageParcel &data, MessageParcel &reply)
 }
 int32_t IpcStreamStub::HandleRelease(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Release());
+    bool isSwitchStream = data.ReadBool();
+    reply.WriteInt32(Release(isSwitchStream));
     return AUDIO_OK;
 }
 
