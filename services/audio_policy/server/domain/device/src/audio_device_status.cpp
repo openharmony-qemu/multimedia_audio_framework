@@ -72,12 +72,11 @@ static std::string GetField(const std::string &src, const char* field, const cha
 
 static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
+    auto rate_begin = deviceInfo.find("rate=");
+    auto rate_end = deviceInfo.find_first_of(" ", rate_begin);
+    moduleInfo.rate = deviceInfo.substr(rate_begin + std::strlen("rate="),
+        rate_end - rate_begin - std::strlen("rate="));
     if (moduleInfo.role == "sink") {
-        auto sinkRate_begin = deviceInfo.find("rate=");
-        auto sinkRate_end = deviceInfo.find_first_of(" ", sinkRate_begin);
-        moduleInfo.rate = deviceInfo.substr(sinkRate_begin + std::strlen("rate="),
-            sinkRate_end - sinkRate_begin - std::strlen("rate="));
-
         auto sinkFormat_begin = deviceInfo.find("format=");
         auto sinkFormat_end = deviceInfo.find_first_of(" ", sinkFormat_begin);
         string format = deviceInfo.substr(sinkFormat_begin + std::strlen("format="),
@@ -373,15 +372,21 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
 {
     Trace trace("AudioDeviceStatus::HandleAccessoryDevice");
     std::string defaulyAccessoryInfo = "";
-    std::string getAccessoryInfo = "";
     GetModuleInfo(ClassType::TYPE_ACCESSORY, defaulyAccessoryInfo);
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
+    char sampleRate[10] = {0};
+    // default samplerate of accessory is 16000
+    GetParameter("hw.pencil.samplerate", "16000", sampleRate, sizeof(sampleRate));
+
+    auto rate_begin = defaulyAccessoryInfo.find("rate=");
+    auto rate_end = defaulyAccessoryInfo.find_first_of(" ", rate_begin);
+    defaulyAccessoryInfo.replace(rate_begin + std::strlen("rate="),
+        rate_end - rate_begin - std::strlen("rate="), sampleRate);
 
     AUDIO_INFO_LOG("device info from accessory hal is defaulyAccessoryInfo: %{public}s",
         defaulyAccessoryInfo.c_str());
 
-    getAccessoryInfo = defaulyAccessoryInfo;
-    int32_t ret = LoadAccessoryModule(getAccessoryInfo);
+    int32_t ret = LoadAccessoryModule(defaulyAccessoryInfo);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG ("load accessory module failed");
         return ERR_OPERATION_FAILED;
