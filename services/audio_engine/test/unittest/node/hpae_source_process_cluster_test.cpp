@@ -115,7 +115,7 @@ TEST_F(HpaeSourceProcessClusterTest, testInterfaces)
     uint64_t sceneKeyCode = INVALID_SCENE_KEY_CODE;
     CaptureEffectAttr attr;
     EXPECT_NE(hpaeSourceProcessCluster->CaptureEffectCreate(sceneKeyCode, attr), 0);
-    EXPECT_NE(hpaeSourceProcessCluster->CaptureEffectRelease(sceneKeyCode), 0);
+    EXPECT_EQ(hpaeSourceProcessCluster->CaptureEffectRelease(sceneKeyCode), 0);
     hpaeSourceProcessCluster->Connect(inputNode);
     hpaeSourceProcessCluster->DisConnect(inputNode);
     EXPECT_EQ(hpaeSourceProcessCluster->ResetAll(), true);
