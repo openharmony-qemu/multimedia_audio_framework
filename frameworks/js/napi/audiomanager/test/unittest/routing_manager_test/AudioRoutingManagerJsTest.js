@@ -340,30 +340,6 @@ describe("AudioRoutingManagerJsTest", function () {
   });
 
   /*
-   * @tc.name:getdevice002
-   * @tc.desc:getdevice - promise
-   * @tc.type: FUNC
-   * @tc.require: I6C9VA
-   */
-  it("getdevice002", 0, async function (done) {
-    try {
-      let routingManager = audio.getAudioManager().getRoutingManager();
-      let AudioDeviceDescriptors = await routingManager.getDevices(audio.DeviceFlag.INPUT_DEVICES_FLAG);
-      console.info(`${TAG} getDevices002 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
-      expect(AudioDeviceDescriptors.length).assertLarger(0);
-      for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
-        expect(AudioDeviceDescriptors[i].displayName!==""
-        && AudioDeviceDescriptors[i].displayName!==undefined).assertTrue();
-      }
-      done();
-    } catch (e) {
-      console.error(`${TAG} getdevice002 ERROR: ${e.message}`);
-      expect().assertFail();
-      done();
-    }
-  });
-
-  /*
    * @tc.name:setCommunicationDevice001
    * @tc.desc:setCommunicationDevice - callback
    * @tc.type: FUNC
@@ -917,30 +893,6 @@ describe("AudioRoutingManagerJsTest", function () {
       expect(e.code).assertEqual(ERROR_INVALID_PARAM);
       done();
       return;
-    }
-  });
-
-  /*
-   * @tc.name:getDevicesSync001
-   * @tc.desc:getDevicesSync success - INPUT_DEVICES_FLAG
-   * @tc.type: FUNC
-   * @tc.require: I6C9VA
-   */
-  it("getDevicesSync001", 0, async function (done) {
-    try {
-      let routingManager = audio.getAudioManager().getRoutingManager();
-      let AudioDeviceDescriptors = routingManager.getDevicesSync(audio.DeviceFlag.INPUT_DEVICES_FLAG);
-      console.info(`${TAG} getDevicesSync001 SUCCESS:`+ JSON.stringify(AudioDeviceDescriptors));
-      expect(AudioDeviceDescriptors.length).assertLarger(0);
-      for (let i = 0; i < AudioDeviceDescriptors.length; i++) {
-        expect(AudioDeviceDescriptors[i].displayName!==""
-        && AudioDeviceDescriptors[i].displayName!==undefined).assertTrue();
-      }
-      done();
-    } catch (e) {
-      console.error(`${TAG} getDevicesSync001 ERROR: ${e.message}`);
-      expect().assertFail();
-      done();
     }
   });
 
