@@ -778,10 +778,14 @@ AudioDeviceDescriptor HfpBluetoothDeviceManager::HandleConnectDeviceInner(const 
     // If the device was virtual connected, remove it from the negativeDevices_ list.
     RemoveDeviceInConfigVector(device, negativeDevices_);
     DeviceCategory bluetoothCategory = GetDeviceCategory(device);
+    HandsFreeAudioGateway *hfpInstance = HandsFreeAudioGateway::GetProfile();
+    CHECK_AND_RETURN_RET_LOG(hfpInstance != nullptr, ERROR, "HFP AG profile instance unavailable");
     AudioDeviceDescriptor desc;
     desc.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     desc.macAddress_ = device.GetDeviceAddr();
     desc.deviceCategory_ = bluetoothCategory;
+    hfpInstance->IsVoiceRecognitionSupported(device, desc.isVrSupported_);
+    AUDIO_INFO_LOG("Device supports recognition = %{public}d", desc.isVrSupported_);
     switch (bluetoothCategory) {
         case BT_GLASSES:
         case BT_HEADPHONE:

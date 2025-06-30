@@ -127,6 +127,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role)
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
+    isVrSupported_ = true;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, int32_t interruptGroupId,
@@ -152,6 +153,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(DeviceType type, DeviceRole role, i
     a2dpOffloadFlag_ = 0;
     descriptorType_ = AUDIO_DEVICE_DESCRIPTOR;
     spatializationSupported_ = false;
+    isVrSupported_ = true;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &deviceDescriptor)
@@ -183,6 +185,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     descriptorType_ = deviceDescriptor.descriptorType_;
     hasPair_ = deviceDescriptor.hasPair_;
     spatializationSupported_ = deviceDescriptor.spatializationSupported_;
+    isVrSupported_ = deviceDescriptor.isVrSupported_;
 }
 
 AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor)
@@ -215,6 +218,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     descriptorType_ = deviceDescriptor->descriptorType_;
     hasPair_ = deviceDescriptor->hasPair_;
     spatializationSupported_ = deviceDescriptor->spatializationSupported_;
+    isVrSupported_ = deviceDescriptor->isVrSupported_;
 }
 
 AudioDeviceDescriptor::~AudioDeviceDescriptor()

@@ -165,6 +165,7 @@ public:
     bool spatializationSupported_ = false;
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
+    bool isVrSupported_ = true;
 
 private:
     bool IsOutput()
