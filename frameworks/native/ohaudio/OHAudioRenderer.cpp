@@ -310,7 +310,10 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
-    return ConvertError(err);
+    if (err == OHOS::AudioStandard::ERR_NOT_SUPPORTED) {
+        return AUDIOSTREAM_ERROR_INVALID_PARAM;
+    }
+    return AUDIOSTREAM_SUCCESS;
 }
 
 OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *renderer, float *loudnessGain)

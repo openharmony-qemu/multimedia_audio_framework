@@ -483,7 +483,7 @@ int32_t RendererInClientInner::SetLoudnessGain(float loudnessGain)
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetLoudnessGain(loudnessGain);
     
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "Set loudnessGain failed:%{public}u", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Set loudnessGain failed:%{public}u", ret);
     return SUCCESS;
 }
 

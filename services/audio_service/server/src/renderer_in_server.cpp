@@ -1729,6 +1729,7 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
             ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
         }
     }
+    // to-do: return error code for pro stream
     return ret;
 }
 
