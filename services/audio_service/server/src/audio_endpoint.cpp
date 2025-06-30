@@ -1027,12 +1027,7 @@ int32_t AudioEndpointInner::OnUpdateHandleInfo(IAudioProcessStream *processStrea
         CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_OPERATION_FAILED, "Process found but buffer is null");
         uint64_t proHandleFrame = 0;
         int64_t proHandleTime = 0;
-        if (deviceInfo_.deviceRole_ == INPUT_DEVICE) {
-            processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
-        } else {
-            // For output device, handle info is updated in CheckAllBufferReady
-            processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
-        }
+        processBuffer->GetHandleInfo(proHandleFrame, proHandleTime);
 
         isFind = true;
         break;
@@ -1372,8 +1367,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
         clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
-    float volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
-        processBufferList_[i]->GetDuckFactor() * processBufferList_[i]->GetMuteFactor();
+    int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *
+        processBufferList_[i]->GetDuckFactor() * processBufferList_[i]->GetMuteFactor() * (1 << VOLUME_SHIFT_NUMBER);
     float baseVolume = volumeFromOhaudioBuffer * appVolume * doNotDisturbStatusVolume;
 
     VolumeResult result;

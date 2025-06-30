@@ -176,7 +176,7 @@ private:
 
     bool ProcessCallbackFuc(uint64_t &curWritePos);
     void ProcessCallbackFucIndependent();
-    bool RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime, int64_t clientReadCost);
+    bool RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t clientReadCost);
     void InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream);
     void InitRecordThread(std::weak_ptr<FastAudioStream> weakStream);
     void CopyWithVolume(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const;
@@ -706,7 +706,6 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
     callbackLoop_ = std::thread([this, weakStream] {
         bool keepRunning = true;
         uint64_t curReadPos = 0;
-        int64_t wakeUpTime = ClockTime::GetCurNano();
         int64_t clientReadCost = 0;
         std::shared_ptr<FastAudioStream> strongStream = weakStream.lock();
         strongStream->SetCallbackLoopTid(gettid());
@@ -721,7 +720,7 @@ void AudioProcessInClientInner::InitRecordThread(std::weak_ptr<FastAudioStream> 
             // Check if FastAudioStream or AudioProcessInClientInner is already destroyed to avoid use after free.
             CHECK_AND_BREAK_LOG(strongStream != nullptr, "FastAudioStream destroyed, exit AudioPlayCb");
             // Main operation in callback loop
-            keepRunning = RecordProcessCallbackFuc(curReadPos, wakeUpTime, clientReadCost);
+            keepRunning = RecordProcessCallbackFuc(curReadPos, clientReadCost);
         }
     });
     pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioRecCb");
@@ -803,7 +802,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     Trace trace("AudioProcessInClient::ReadProcessData-<" + std::to_string(curReadPos));
     RingBufferWrapper ringBuffer;
     int32_t ret = audioBuffer_->GetAllReadableBufferFromPosFrame(curReadPos, ringBuffer);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && (ringBuffer.dataLength > spanSizeInByte_),
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && (ringBuffer.dataLength >= spanSizeInByte_),
         ERR_OPERATION_FAILED, "get client mmap read buffer failed, ret %{public}d.", ret);
     ringBuffer.dataLength = spanSizeInByte_;
 
@@ -956,16 +955,14 @@ void AudioProcessInClientInner::ProcessVolume(const AudioStreamData &targetData)
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const BufferDesc &dstDesc) const
 {
     int32_t ret = 0;
-    size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
-    size_t offSet = clientSpanSizeInByte_ / round;
     if (!needConvert_) {
         Trace traceNoConvert("APIC::NoFormatConvert:CopyData");
         AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
         if (bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
             CopyWithVolume(srcDesc, dstDesc);
         } else {
-            ret = memcpy_s(static_cast<void *>(dstDesc.buffer), spanSizeInByte_,
-                static_cast<void *>(srcDesc.buffer), offSet);
+            ret = memcpy_s(static_cast<void *>(dstDesc.buffer), dstDesc.dataLength,
+                static_cast<void *>(srcDesc.buffer), srcDesc.dataLength);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Copy data failed!");
         }
         return SUCCESS;
@@ -1084,7 +1081,7 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
     Trace trace("AudioProcessInClient::Enqueue");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
-    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength == clientSpanSizeInByte_ &&
+    CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength <= clientSpanSizeInByte_ &&
         bufDesc.dataLength <= clientSpanSizeInByte_, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
@@ -1102,8 +1099,8 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
 
     DoFadeInOut(bufDesc);
 
-    CHECK_AND_RETURN_RET_LOG(clientByteSizePerFrame_ > 0 && byteSizePerFrame_ >0, ERROR,
-        "clientsizePerFrameInByte :%{public}zu byteSizePerFrame_ :%{public}zu",
+    CHECK_AND_RETURN_RET_LOG(clientByteSizePerFrame_ > 0 && byteSizePerFrame_ > 0, ERROR,
+        "clientsizePerFrameInByte :%{public}zu byteSizePerFrame_ :%{public}u",
         clientByteSizePerFrame_, byteSizePerFrame_);
     size_t clientRemainSizeInFrame = bufDesc.dataLength / clientByteSizePerFrame_;
 
@@ -1515,8 +1512,7 @@ bool AudioProcessInClientInner::KeepLoopRunning()
     return false;
 }
 
-bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t &wakeUpTime,
-    int64_t clientReadCost)
+bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t clientReadCost)
 {
     if (isCallbackLoopEnd_ || audioBuffer_ == nullptr) {
         return false;
@@ -1527,15 +1523,8 @@ bool AudioProcessInClientInner::RecordProcessCallbackFuc(uint64_t &curReadPos, i
     threadStatus_ = INRUNNING;
     Trace traceLoop("AudioProcessInClient Record InRunning");
     if (needReSyncPosition_ && RecordReSyncServicePos() == SUCCESS) {
-        wakeUpTime = ClockTime::GetCurNano();
         needReSyncPosition_ = false;
         return true;
-    }
-    int64_t curTime = ClockTime::GetCurNano();
-    int64_t wakeupCost = curTime - wakeUpTime;
-    if (wakeupCost > ONE_MILLISECOND_DURATION) {
-        AUDIO_WARNING_LOG("loop wake up too late, cost %{public}" PRId64"us", wakeupCost / AUDIO_MS_PER_SECOND);
-        wakeUpTime = curTime;
     }
 
     if (!CheckAndWaitBufferReadyForRecord()) {
@@ -1636,36 +1625,36 @@ void AudioProcessInClientInner::DoFadeInOut(const BufferDesc &buffDesc)
 
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
 {
-    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS, [this] () {
+    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
             return true;
         }
 
         int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if (wriableSizeInframe > 0 && ((totalSizeInFrame_ - wriableSizeInframe) < spanSizeInFrame_)) {
+        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) < spanSizeInFrame_)) {
             return true;
         }
         return false;
     });
 
-    return (ret == FUTEX_SUCCESS || ret == FUTEX_TIMEOUT);
+    return (ret == FUTEX_SUCCESS);
 }
 
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
 {
-    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS, [this] () {
+    FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
             return true;
         }
 
         int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if (wriableSizeInframe > 0 && ((totalSizeInFrame_ - wriableSizeInframe) >= spanSizeInFrame_)) {
+        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) >= spanSizeInFrame_)) {
             return true;
         }
         return false;
     });
 
-    return (ret == FUTEX_SUCCESS || ret == FUTEX_TIMEOUT);
+    return (ret == FUTEX_SUCCESS);
 }
 
 bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)

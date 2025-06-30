@@ -555,7 +555,7 @@ int32_t OHAudioBufferBase::GetReadableDataFrames()
     uint32_t temp = write - read;
     CHECK_AND_RETURN_RET_LOG(temp <= INT32_MAX && temp <= totalSizeInFrame_,
         result, "failed to GetWritableDataFrames.");
-    result = temp;
+    result = static_cast<int32_t>(temp);
     return result;
 }
 

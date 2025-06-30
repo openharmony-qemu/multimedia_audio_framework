@@ -130,7 +130,7 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
     audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
+    std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
     processStream->ConfigProcessBuffer(totalSizeInFrame, spanSizeInFrame, audioStreamInfo, buffer);
@@ -776,8 +776,6 @@ HWTEST_F(AudioEndpointUnitTest, GetEndpointName_001, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t ret = audioEndpointInner->SetVolume(streamType, 0.0f);
     EXPECT_EQ(0, ret);
-    std::shared_ptr<OHAudioBuffer> buffer = nullptr;
-    ret = audioEndpointInner->ResolveBuffer(buffer);
     std::string dumpString = "";
     audioEndpointInner->Dump(dumpString);
     uint32_t totalSizeInframe = 0;

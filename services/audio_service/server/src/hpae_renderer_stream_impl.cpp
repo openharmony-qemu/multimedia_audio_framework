@@ -44,6 +44,7 @@ static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
 static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
+static constexpr uint64_t OFFLOAD_LATENCY_THRESHOLD = 40000; // 40ms latency threshold in microseconds
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
@@ -348,6 +349,11 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
                 memset_s(callBackStreamInfo.inputData + requestDataLen,
                     callBackStreamInfo.requestDataLen - requestDataLen, chToFill,
                     callBackStreamInfo.requestDataLen - requestDataLen);
+            }
+            // offload latency < 40ms, force output remain data.
+            if (offloadEnable_ && callBackStreamInfo.latency > OFFLOAD_LATENCY_THRESHOLD &&
+                callBackStreamInfo.requestDataLen > requestDataLen) {
+                requestDataLen = 0;
             }
             return writeCallback->OnWriteData(callBackStreamInfo.inputData,
                 std::min(requestDataLen, callBackStreamInfo.requestDataLen));
