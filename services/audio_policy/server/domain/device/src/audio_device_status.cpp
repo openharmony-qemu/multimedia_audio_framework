@@ -28,6 +28,7 @@
 #include "common/hdi_adapter_info.h"
 
 #include "audio_policy_utils.h"
+#include "audio_event_utils.h"
 #include "audio_server_proxy.h"
 #include "audio_core_service.h"
 #include "audio_utils_c.h"
@@ -118,6 +119,8 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(DeviceType devType, bool isConnect
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
 
     int32_t result = HandleSpecialDeviceType(devType, isConnected, macAddress, role);
+    CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS, reason, devType, role, result,
+        "handle special deviceType failed.");
     CHECK_AND_RETURN_LOG(result == SUCCESS, "handle special deviceType failed.");
 
     AUDIO_WARNING_LOG("[ADeviceEvent] device[%{public}d] address[%{public}s] role[%{public}d] connect[%{public}d]",
@@ -397,12 +400,18 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         A2dpDeviceConfigInfo configInfo = {updatedDesc.audioStreamInfo_, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {               // DP device only for output.
+        CheckAndWriteDeviceChangeExceptionEvent(!audioDeviceCommon_.GetHasDpFlag(),
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, updatedDesc.deviceType_,
+            updatedDesc.deviceRole_, ERROR, "DP device already exists, ignore this one.");
         CHECK_AND_RETURN_RET_LOG(!audioDeviceCommon_.GetHasDpFlag(), ERROR,
             "DP device already exists, ignore this one.");
         int32_t result = HandleDpDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         if (result != SUCCESS) {
             result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
         }
+        CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
+            updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load dp failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
         audioDeviceCommon_.SetHasDpFlag(true);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
@@ -410,6 +419,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         int32_t result = HandleAccessoryDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
+        CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
+            updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load accessory failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load accessory failed.");
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().AddNearlinkDevice(updatedDesc);
@@ -569,6 +581,9 @@ int32_t AudioDeviceStatus::HandleSpecialDeviceType(DeviceType &devType, bool &is
                 condition);
         }
     } else if (devType == DEVICE_TYPE_EXTERN_CABLE) {
+        CheckAndWriteDeviceChangeExceptionEvent(isConnected,
+            AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE,
+            devType, role, ERROR, "Extern cable disconnected, do nothing");
         CHECK_AND_RETURN_RET_LOG(isConnected, ERROR, "Extern cable disconnected, do nothing");
         DeviceType connectedHeadsetType = audioConnectedDevice_.FindConnectedHeadset();
         if (connectedHeadsetType == DEVICE_TYPE_NONE) {
@@ -850,8 +865,9 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb, AudioStreamDeviceChangeReasonExt &reason)
 {
     DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    DeviceRole devRole = AudioPolicyUtils::GetInstance().GetDeviceRole(devType);
     const std::string networkId = statusInfo.networkId;
-    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    AudioDeviceDescriptor deviceDesc(devType, devRole);
     deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
     deviceDesc.SetDeviceCapability(statusInfo.streamInfo, 0);
     deviceDesc.networkId_ = networkId;
@@ -865,6 +881,9 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         }
         int32_t ret = ActivateNewDevice(statusInfo.networkId, devType,
             statusInfo.connectType == ConnectType::CONNECT_TYPE_DISTRIBUTED);
+        CheckAndWriteDeviceChangeExceptionEvent(ret == SUCCESS,
+            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, devType, devRole, ret,
+            "DEVICE online but open audio device failed.");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "DEVICE online but open audio device failed.");
         audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(deviceDesc, descForCb);
 

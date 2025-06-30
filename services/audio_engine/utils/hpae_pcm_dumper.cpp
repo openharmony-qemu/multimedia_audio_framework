@@ -43,7 +43,7 @@ int32_t HpaePcmDumper::Dump(const int8_t *buffer, int32_t length)
     return SUCCESS;
 }
 
-bool HpaePcmDumper::CheckAndReopenHandlde()
+bool HpaePcmDumper::CheckAndReopenHandle()
 {
     if (dumpFile_ != nullptr) {
         return true;

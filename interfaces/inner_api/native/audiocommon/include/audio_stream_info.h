@@ -23,6 +23,9 @@
 
 #include "audio_source_type.h"
 #include "timestamp.h"
+#include "securec.h"
+
+#include "audio_buffer_desc.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -550,16 +553,6 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
-struct BufferDesc {
-    uint8_t *buffer;
-    size_t bufLength;
-    size_t dataLength;
-    uint8_t *metaBuffer;
-    size_t metaLength;
-    uint64_t position;
-    uint64_t timeStampInNs;
-};
-
 class AudioStreamInfo {
 public:
     AudioSamplingRate samplingRate;
@@ -621,10 +614,15 @@ struct AudioCallBackCapturerStreamInfo {
 };
 
 struct AudioChannelInfo {
-    AudioChannelLayout channelLayout;
-    uint32_t numChannels;
+    AudioChannelLayout channelLayout = CH_LAYOUT_UNKNOWN;
+    uint32_t numChannels = 0;
 };
 
+struct AudioBasicFormat {
+    AudioChannelInfo audioChannelInfo;
+    AudioSampleFormat format = INVALID_WIDTH;
+    AudioSamplingRate rate = SAMPLE_RATE_48000;
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_STREAM_INFO_H

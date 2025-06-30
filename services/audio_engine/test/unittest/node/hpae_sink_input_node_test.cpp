@@ -39,6 +39,7 @@ void HpaeSinkInputNodeTest::TearDown()
 namespace {
 constexpr int32_t NORMAL_FRAME_LEN = 960;
 constexpr int32_t NORMAL_ID = 1243;
+constexpr float LOUDNESS_GAIN = 1.0f;
 TEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode)
 {
     HpaeNodeInfo nodeInfo;
@@ -150,5 +151,20 @@ TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase)
 
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
+}
+
+TEST_F(HpaeSinkInputNodeTest, testLoudnessGain)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->SetLoudnessGain(LOUDNESS_GAIN);
+
+    EXPECT_FLOAT_EQ(sinkInputNode->GetLoudnessGain(), LOUDNESS_GAIN);
 }
 }

@@ -701,6 +701,10 @@ HWTEST(IpcStreamStubUnitTest, IpcStreamStub_026, TestSize.Level1)
     result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_FLUSH,
         data, reply, option);
     EXPECT_NE(result, AUDIO_OK);
+
+    result = ptrIpcStreamStub->OnRemoteRequest(IpcStream::IpcStreamMsg::ON_RESOLVE_BUFFER_BASE,
+            data, reply, option);
+    EXPECT_NE(result, AUDIO_OK);
 }
 
 /**

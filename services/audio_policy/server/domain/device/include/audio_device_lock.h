@@ -63,13 +63,10 @@ public:
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescriptors(
         AudioCapturerInfo &captureInfo, std::string networkId = LOCAL_NETWORK_ID);
-    int32_t SetCallDeviceActive(DeviceType deviceType, bool active, std::string address,
-        const int32_t uid = INVALID_UID);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(
         AudioDeviceUsage audioDevUsage);
-    int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void UpdateSpatializationSupported(const std::string macAddress, const bool support);
     /*****IDeviceStatusObserver*****/
     void OnMicrophoneBlockedUpdate(DeviceType devType, DeviceBlockStatus status);

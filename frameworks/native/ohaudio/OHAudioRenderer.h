@@ -41,6 +41,12 @@ public:
         userData_(userData), encodingType_(encodingType)
     {
     }
+    OHAudioRendererModeCallback(OH_AudioRenderer_OnWriteDataCallbackAdvanced callbackAdvanced,
+        OH_AudioRenderer *audioRenderer, void *userData, AudioEncodingType encodingType)
+        : onWriteDataAdvancedCallback_(callbackAdvanced), ohAudioRenderer_(audioRenderer), userData_(userData),
+        encodingType_(encodingType)
+    {
+    }
 
     void OnWriteData(size_t length) override;
 
@@ -48,6 +54,7 @@ private:
     OH_AudioRenderer_Callbacks callbacks_ = {};
     OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback_ = nullptr;
     OH_AudioRenderer_WriteDataWithMetadataCallback writeDataWithMetadataCallback_ = nullptr;
+    OH_AudioRenderer_OnWriteDataCallbackAdvanced onWriteDataAdvancedCallback_ = nullptr;
     OH_AudioRenderer *ohAudioRenderer_ = nullptr;
     void *userData_ = nullptr;
     void *metadataUserData_ = nullptr;
@@ -185,6 +192,8 @@ struct RendererCallback {
     OH_AudioRenderer_Callbacks callbacks = {};
 
     OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback = {};
+
+    OH_AudioRenderer_OnWriteDataCallbackAdvanced onWriteDataCallbackAdavanced = {};
 
     OH_AudioRenderer_OnInterruptCallback onInterruptEventCallback = {};
 

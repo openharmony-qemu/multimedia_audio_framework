@@ -43,6 +43,7 @@
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_event_utils.h"
 namespace OHOS {
 namespace AudioStandard {
 class AudioA2dpOffloadManager;
@@ -400,6 +401,7 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

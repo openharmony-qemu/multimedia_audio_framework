@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
+#include "audio_effect.h"
 
 using namespace OHOS;
 using namespace AudioStandard;
@@ -37,6 +38,7 @@ const size_t DEFAULT_FRAMELEN_FIRST = 820;
 const size_t DEFAULT_FRAMELEN_SECOND = 960;
 const int32_t DEFAULT_TEST_VALUE_FIRST = 100;
 const int32_t DEFAULT_TEST_VALUE_SECOND = 200;
+const float LOUDNESS_GAIN = 1.0f;
 
 
 class HpaeProcessClusterTest : public testing::Test {
@@ -191,13 +193,57 @@ TEST_F(HpaeProcessClusterTest, testEffectNode_001)
     nodeInfo.sceneType = HPAE_SCENE_SPLIT_MEDIA;
     hpaeProcessCluster =
         std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
-    uint32_t channels = 0;
-    uint64_t channelLayout = 0;
-    hpaeProcessCluster->GetEffectNodeInputChannelInfo(channels, channelLayout);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStart(nodeInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererStop(nodeInfo), 0);
     EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
+}
+
+TEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo)
+{
+    // test processCluster without effectnode and loundess algorithm handle
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
+    nodeInfo.frameLen = DEFAULT_FRAMELEN_SECOND;
+    nodeInfo.sessionId = DEFAULT_SESSIONID_NUM_FIRST;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.channels = CHANNEL_6;
+    nodeInfo.channelLayout = CH_LAYOUT_5POINT1;
+    nodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
+
+    HpaeSinkInfo dummySinkInfo;
+    dummySinkInfo.samplingRate = SAMPLE_RATE_96000;
+    dummySinkInfo.channels = STEREO;
+    dummySinkInfo.channelLayout = CH_LAYOUT_STEREO;
+
+    auto dummySinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    
+    hpaeProcessCluster->Connect(dummySinkInputNode);
+    
+    AudioBasicFormat basicFormat;
+    hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, 0.0f);
+    int32_t ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
+
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
+    EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_96000);
+
+    // test processCluster with effectnode and loundess algorithm handle
+    hpaeProcessCluster = nullptr;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeProcessCluster = std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    hpaeProcessCluster->Connect(dummySinkInputNode);
+    EXPECT_EQ(hpaeProcessCluster->AudioRendererCreate(nodeInfo), SUCCESS);
+    
+    hpaeProcessCluster->SetLoudnessGain(DEFAULT_NODEID_NUM_FIRST, LOUDNESS_GAIN);
+    ret = hpaeProcessCluster->GetNodeInputFormatInfo(nodeInfo.sessionId, basicFormat);
+    EXPECT_EQ(basicFormat.audioChannelInfo.channelLayout, CH_LAYOUT_STEREO);
+    EXPECT_EQ(basicFormat.audioChannelInfo.numChannels, static_cast<uint32_t>(STEREO));
+    EXPECT_EQ(basicFormat.rate, SAMPLE_RATE_48000);
 }
 } // AudioStandard
 } // OHOS

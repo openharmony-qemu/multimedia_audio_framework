@@ -72,6 +72,25 @@ int32_t IpcStreamProxy::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
     return SUCCESS;
 }
 
+int32_t IpcStreamProxy::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IpcStreamMsg::ON_RESOLVE_BUFFER_BASE, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG((ret == AUDIO_OK && reply.ReadInt32() == AUDIO_OK), ERR_OPERATION_FAILED,
+        "ResolveBuffer failed, error: %{public}d", ret);
+    buffer = OHAudioBufferBase::ReadFromParcel(reply);
+    spanSizeInFrame = reply.ReadUint32();
+    engineTotalSizeInFrame = reply.ReadUint64();
+    CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_OPERATION_FAILED, "ReadFromParcel failed");
+    return SUCCESS;
+}
+
 int32_t IpcStreamProxy::UpdatePosition()
 {
     MessageParcel data;

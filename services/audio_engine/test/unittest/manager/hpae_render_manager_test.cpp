@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_inner_capturer_manager.h"
 #include "hpae_co_buffer_node.h"
 #include <thread>
 #include <chrono>
@@ -37,6 +38,7 @@ constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
+constexpr uint32_t LOUDNESS_GAIN = 1.0f;
 class HpaeRendererManagerTest : public testing::Test {
 public:
     void SetUp();
@@ -239,6 +241,48 @@ static void TestIRendererManagerStartPuaseStream()
     EXPECT_EQ(
         hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+template <class RenderManagerType>
+static void TestIRendererManagerSetLoudnessGain()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    // test SetLoundessGain when session is created but not connected
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    // test set loundess gain before start
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    // test set loudness gain after start
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
@@ -826,5 +870,15 @@ TEST_F(HpaeRendererManagerTest, ReloadRenderManager_001)
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+TEST_F(HpaeRendererManagerTest, HpaeRendererSetLoudnessGain_001)
+{
+    std::cout << "test renderer manager" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeRendererManager>();
+    std::cout << "test offload" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeOffloadRendererManager>();
+    std::cout << "test innercapture manager" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeInnerCapturerManager>();
 }
 }  // namespace

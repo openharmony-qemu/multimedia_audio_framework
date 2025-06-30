@@ -601,98 +601,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_037, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_038
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_039
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_040
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_040, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_48000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_041
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_041, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_8000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_042
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_042, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_8000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_043
 * @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
 */
@@ -1024,7 +932,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_061, TestSize.Level1)
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "test";
     bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
         capturerChangeInfo, reason);
@@ -1044,7 +954,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
     bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
         capturerChangeInfo, reason);

@@ -65,7 +65,7 @@ void HpaeRemoteSinkOutputNode::HandlePcmDumping(HpaeSplitStreamType streamType, 
 {
     auto handleDump = [&](auto& dumper) {
         if (dumper) {
-            dumper->CheckAndReopenHandlde();
+            dumper->CheckAndReopenHandle();
             dumper->Dump(reinterpret_cast<int8_t*>(data), size);
         }
     };

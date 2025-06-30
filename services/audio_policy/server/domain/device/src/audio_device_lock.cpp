@@ -71,20 +71,6 @@ void AudioDeviceLock::OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const Dev
     audioDeviceStatus_.OnDeviceInfoUpdated(desc, command);
 }
 
-int32_t AudioDeviceLock::SetCallDeviceActive(InternalDeviceType deviceType, bool active, std::string address,
-    const int32_t uid)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-
-    CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
-
-    int32_t ret = audioActiveDevice_.SetCallDeviceActive(deviceType, active, address, uid);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetCallDeviceActive failed");
-    audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReason::OVERRODE);
-    audioDeviceCommon_.FetchDevice(false);
-    return SUCCESS;
-}
-
 void AudioDeviceLock::OnDeviceStatusUpdated(DeviceType devType, bool isConnected, const std::string& macAddress,
     const std::string& deviceName, const AudioStreamInfo& streamInfo, DeviceRole role, bool hasPair)
 {
@@ -177,17 +163,6 @@ void AudioDeviceLock::UpdateSpatializationSupported(const std::string macAddress
 {
     std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
     audioConnectedDevice_.UpdateSpatializationSupported(macAddress, support);
-}
-
-int32_t AudioDeviceLock::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
-{
-    std::lock_guard<std::shared_mutex> deviceLock(deviceStatusUpdateSharedMutex_);
-    audioDeviceCommon_.FetchDevice(true, reason);
-    audioDeviceCommon_.FetchDevice(false, reason);
-
-    // update a2dp offload
-    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
-    return SUCCESS;
 }
 
 }

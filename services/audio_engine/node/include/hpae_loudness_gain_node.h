@@ -40,11 +40,13 @@ protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
     void CheckUpdateInfo(HpaePcmBuffer *input);
+    int32_t ReleaseHandle(float loudnessGain);
     AudioEffectLibrary *audioEffectLibHandle_ = nullptr;
     AudioEffectHandle handle_ = nullptr;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer loudnessGainOutput_;
     float loudnessGain_ = 0.0f;
+    float linearGain_ = 1.0f;
     void *dlHandle_ = nullptr;
 
 #ifdef ENABLE_HOOK_PCM

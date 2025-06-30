@@ -36,6 +36,8 @@ public:
     int32_t OnReadData(int8_t *outputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();

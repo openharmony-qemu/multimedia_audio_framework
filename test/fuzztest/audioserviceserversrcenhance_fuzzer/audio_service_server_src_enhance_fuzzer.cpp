@@ -218,6 +218,7 @@ void AudioIpcStreamStubFuzzTest()
         IpcStream::ON_GET_LATENCY,
         IpcStream::ON_SET_RATE,
         IpcStream::ON_GET_RATE,
+        IpcStream::ON_RESOLVE_BUFFER_BASE,
     };
     uint32_t sourceTypeInt = GetData<uint32_t>();
     sourceTypeInt = sourceTypeInt % ipcStreamType.size();

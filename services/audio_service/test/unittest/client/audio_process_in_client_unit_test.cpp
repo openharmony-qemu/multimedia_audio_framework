@@ -1501,8 +1501,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_072, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->curReadFrame.store(UINT32_MAX + 1);
@@ -1546,8 +1546,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_073, TestSize.Lev
         AUDIO_MODE_RECORD, config.appInfo.appUid);
     ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
     ptrAudioProcessInClientInner->processConfig_.audioMode = AUDIO_MODE_PLAYBACK;
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->curWriteFrame.store(0);
@@ -1584,8 +1584,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_074, TestSize.Lev
     auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
         AUDIO_MODE_RECORD, config.appInfo.appUid);
     ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->curReadFrame.store(0);
@@ -1928,8 +1928,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_087, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -1963,8 +1963,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_088, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -1998,8 +1998,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_089, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -2037,8 +2037,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_090, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -2074,8 +2074,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_091, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -2111,8 +2111,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_092, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
@@ -2179,8 +2179,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_094, TestSize.Lev
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
-    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
-    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->ohAudioBufferBase_.basicBufferInfo_;
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->curWriteFrame.store(0);

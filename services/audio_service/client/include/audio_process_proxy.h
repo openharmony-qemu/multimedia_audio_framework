@@ -28,7 +28,8 @@ public:
     virtual ~AudioProcessProxy();
 
     // override for AudioProcess
-    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame) override;
 
     int32_t GetSessionId(uint32_t &sessionId) override;
 
@@ -58,7 +59,6 @@ public:
 
     int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
         uint32_t code) override;
-
 private:
     static inline BrokerDelegator<AudioProcessProxy> delegator_;
 };

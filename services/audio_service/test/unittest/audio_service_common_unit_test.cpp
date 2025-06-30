@@ -20,14 +20,14 @@
 #include "audio_process_config.h"
 #include "linear_pos_time_model.h"
 #include "oh_audio_buffer.h"
+#include <thread>
 #include <gtest/gtest.h>
 
 using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
-std::unique_ptr<LinearPosTimeModel> linearPosTimeModel;
-std::unique_ptr<AudioSharedMemory> audioSharedMemory;
-std::shared_ptr<OHAudioBuffer> oHAudioBuffer;
+std::unique_ptr<LinearPosTimeModel> g_linearPosTimeModel;
+std::shared_ptr<OHAudioBuffer> g_oHAudioBuffer;
 const int32_t TEST_NUM = 1000;
 const int32_t TEST_RET_NUM = 0;
 const int64_t NANO_COUNT_PER_SECOND = 1000000000;
@@ -80,22 +80,22 @@ HWTEST(AudioServiceCommonUnitTest, ProcessConfigTest_001, TestSize.Level1)
 */
 HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_001, TestSize.Level1)
 {
-    linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
+    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
 
     uint64_t posInFrame = 20;
     int64_t invalidTime = -1;
-    int64_t retPos = linearPosTimeModel->GetTimeOfPos(posInFrame);
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
     EXPECT_EQ(invalidTime, retPos);
 
     int32_t sampleRate = -1;
-    bool isConfig = linearPosTimeModel->ConfigSampleRate(sampleRate);
+    bool isConfig = g_linearPosTimeModel->ConfigSampleRate(sampleRate);
     EXPECT_EQ(false, isConfig);
 
     sampleRate = (int32_t)AudioSamplingRate::SAMPLE_RATE_44100;
-    isConfig = linearPosTimeModel->ConfigSampleRate(sampleRate);
+    isConfig = g_linearPosTimeModel->ConfigSampleRate(sampleRate);
     EXPECT_EQ(true, isConfig);
 
-    isConfig = linearPosTimeModel->ConfigSampleRate(sampleRate);
+    isConfig = g_linearPosTimeModel->ConfigSampleRate(sampleRate);
     EXPECT_EQ(false, isConfig);
 }
 
@@ -110,13 +110,13 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
     int64_t deltaFrame = 0;
     uint64_t frame = 0;
     int64_t nanoTime = 0;
-    linearPosTimeModel->ResetFrameStamp(frame, nanoTime);
+    g_linearPosTimeModel->ResetFrameStamp(frame, nanoTime);
 
     uint64_t spanCountInFrame = 2;
-    linearPosTimeModel->SetSpanCount(spanCountInFrame);
+    g_linearPosTimeModel->SetSpanCount(spanCountInFrame);
 
     uint64_t posInFrame = 20;
-    int64_t retPos = linearPosTimeModel->GetTimeOfPos(posInFrame);
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
 
     deltaFrame = posInFrame - frame;
     int64_t retPosCal1 = nanoTime + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)AudioSamplingRate::SAMPLE_RATE_44100;
@@ -124,9 +124,9 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 
     frame = 40;
     nanoTime = 50;
-    linearPosTimeModel->UpdataFrameStamp(frame, nanoTime);
+    g_linearPosTimeModel->UpdataFrameStamp(frame, nanoTime);
 
-    retPos = linearPosTimeModel->GetTimeOfPos(posInFrame);
+    retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
     deltaFrame = frame - posInFrame;
     int64_t retPosCal2 = nanoTime + deltaFrame * NANO_COUNT_PER_SECOND / (int64_t)AudioSamplingRate::SAMPLE_RATE_44100;
     EXPECT_NE(retPos, retPosCal2);
@@ -143,8 +143,8 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_001, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    EXPECT_EQ(nullptr, oHAudioBuffer);
+    g_oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    EXPECT_EQ(nullptr, g_oHAudioBuffer);
 }
 
 /**
@@ -158,14 +158,14 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_002, TestSize.Level1)
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
     uint32_t byteSizePerFrame = 1000;
-    oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    EXPECT_NE(nullptr, oHAudioBuffer);
+    g_oHAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(nullptr, g_oHAudioBuffer);
 
     uint32_t totalSizeInFrameRet;
     uint32_t spanSizeInFrameRet;
     uint32_t byteSizePerFrameRet;
 
-    int32_t ret = oHAudioBuffer->GetSizeParameter(totalSizeInFrameRet, spanSizeInFrameRet, byteSizePerFrameRet);
+    int32_t ret = g_oHAudioBuffer->GetSizeParameter(totalSizeInFrameRet, spanSizeInFrameRet, byteSizePerFrameRet);
     EXPECT_EQ(spanSizeInFrame, spanSizeInFrameRet);
     EXPECT_EQ(totalSizeInFrame, totalSizeInFrameRet);
     EXPECT_EQ(byteSizePerFrame, byteSizePerFrameRet);
@@ -182,8 +182,8 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_003, TestSize.Level1)
 {
     uint64_t frames = 1000;
     int64_t nanoTime = NANO_COUNT_PER_SECOND;
-    oHAudioBuffer->SetHandleInfo(frames, nanoTime);
-    bool ret = oHAudioBuffer->GetHandleInfo(frames, nanoTime);
+    g_oHAudioBuffer->SetHandleInfo(frames, nanoTime);
+    bool ret = g_oHAudioBuffer->GetHandleInfo(frames, nanoTime);
     EXPECT_EQ(true, ret);
 }
 
@@ -199,40 +199,40 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_004, TestSize.Level1)
     uint64_t writeFrame = 3000;
     uint64_t readFrame = writeFrame - 1001;
 
-    ret = oHAudioBuffer->ResetCurReadWritePos(readFrame, writeFrame);
+    ret = g_oHAudioBuffer->ResetCurReadWritePos(readFrame, writeFrame);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
-    ret = oHAudioBuffer->GetAvailableDataFrames();
+    ret = g_oHAudioBuffer->GetWritableDataFrames();
     EXPECT_EQ(TEST_NUM, ret);
 
     writeFrame = 1001;
     readFrame = 1000;
 
-    ret = oHAudioBuffer->ResetCurReadWritePos(readFrame, writeFrame);
+    ret = g_oHAudioBuffer->ResetCurReadWritePos(readFrame, writeFrame);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = oHAudioBuffer->GetAvailableDataFrames();
+    ret = g_oHAudioBuffer->GetWritableDataFrames();
     EXPECT_EQ(TEST_NUM - 1, ret);
 
-    uint64_t writeFrameRet = oHAudioBuffer->GetCurWriteFrame();
-    uint64_t readFrameRet = oHAudioBuffer->GetCurReadFrame();
+    uint64_t writeFrameRet = g_oHAudioBuffer->GetCurWriteFrame();
+    uint64_t readFrameRet = g_oHAudioBuffer->GetCurReadFrame();
     EXPECT_EQ(writeFrame, writeFrameRet);
     EXPECT_EQ(readFrame, readFrameRet);
 
     writeFrame = 5000;
-    ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
+    ret = g_oHAudioBuffer->SetCurWriteFrame(writeFrame);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     writeFrame = readFrame - 1;
-    ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
+    ret = g_oHAudioBuffer->SetCurWriteFrame(writeFrame);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     writeFrame = 1000;
-    ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
+    ret = g_oHAudioBuffer->SetCurWriteFrame(writeFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     writeFrame = 3000 + 2;
-    ret = oHAudioBuffer->SetCurWriteFrame(writeFrame);
+    ret = g_oHAudioBuffer->SetCurWriteFrame(writeFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 }
 
@@ -246,23 +246,23 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_005, TestSize.Level1)
 {
     int32_t ret = -1;
     uint64_t writeFrame = 5000;
-    ret = oHAudioBuffer->SetCurReadFrame(writeFrame);
+    ret = g_oHAudioBuffer->SetCurReadFrame(writeFrame);
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     uint64_t readFrame = 1000;
-    ret = oHAudioBuffer->SetCurReadFrame(readFrame);
+    ret = g_oHAudioBuffer->SetCurReadFrame(readFrame);
     EXPECT_EQ(SUCCESS, ret);
 
     readFrame = 1000;
-    ret = oHAudioBuffer->SetCurReadFrame(readFrame);
+    ret = g_oHAudioBuffer->SetCurReadFrame(readFrame);
     EXPECT_EQ(SUCCESS, ret);
 
     readFrame = 2000;
-    ret = oHAudioBuffer->SetCurReadFrame(readFrame);
+    ret = g_oHAudioBuffer->SetCurReadFrame(readFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     readFrame = 3000 + 2;
-    ret = oHAudioBuffer->SetCurReadFrame(readFrame);
+    ret = g_oHAudioBuffer->SetCurReadFrame(readFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 }
 
@@ -277,28 +277,30 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
     int32_t ret = -1;
     BufferDesc bufferDesc;
     uint64_t posInFrame = 1000;
+    uint64_t spanSizeInFrame = 1000;
 
-    ret = oHAudioBuffer->GetBufferByFrame(posInFrame, bufferDesc);
+    RingBufferWrapper ringbufferWrapper;
+    ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
     EXPECT_EQ(SUCCESS, ret);
 
     posInFrame = 3000 + 1;
-    ret = oHAudioBuffer->GetBufferByFrame(posInFrame, bufferDesc);
+    ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     uint64_t writePosInFrame = 1000;
-    ret = oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
+    ret = g_oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
     EXPECT_EQ(SUCCESS, ret);
 
-    writePosInFrame = 3000 +1;
-    ret = oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
+    writePosInFrame = 3000 + 1;
+    ret = g_oHAudioBuffer->GetWriteBuffer(writePosInFrame, bufferDesc);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     uint64_t readPosInFrame = 1000;
-    ret = oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
+    ret = g_oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
     EXPECT_EQ(SUCCESS, ret);
 
     readPosInFrame = 3000;
-    ret = oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
+    ret = g_oHAudioBuffer->GetReadbuffer(readPosInFrame, bufferDesc);
     EXPECT_LT(ret, TEST_RET_NUM);
 }
 
@@ -311,22 +313,22 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
 HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_007, TestSize.Level1)
 {
     uint64_t posInFrame = 4000;
-    SpanInfo *spanInfo = oHAudioBuffer->GetSpanInfo(posInFrame);
+    SpanInfo *spanInfo = g_oHAudioBuffer->GetSpanInfo(posInFrame);
     EXPECT_EQ(NULL, spanInfo);
 
     uint32_t spanIndex = 2;
-    SpanInfo *spanInfoFromIndex = oHAudioBuffer->GetSpanInfoByIndex(spanIndex);
+    SpanInfo *spanInfoFromIndex = g_oHAudioBuffer->GetSpanInfoByIndex(spanIndex);
     EXPECT_EQ(NULL, spanInfoFromIndex);
 
-    uint32_t spanCount = oHAudioBuffer->GetSpanCount();
+    uint32_t spanCount = g_oHAudioBuffer->GetSpanCount();
     uint32_t spanCountExpect = 1;
     EXPECT_EQ(spanCountExpect, spanCount);
 
 
-    size_t totalSize = oHAudioBuffer->GetDataSize();
+    size_t totalSize = g_oHAudioBuffer->GetDataSize();
     EXPECT_EQ(totalSize > TEST_RET_NUM, true);
 
-    uint8_t * dataBase = oHAudioBuffer->GetDataBase();
+    uint8_t * dataBase = g_oHAudioBuffer->GetDataBase();
     EXPECT_NE(nullptr, dataBase);
 }
 
@@ -340,11 +342,188 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_008, TestSize.Level1)
 {
     MessageParcel parcel;
 
-    int32_t ret = oHAudioBuffer->WriteToParcel(oHAudioBuffer, parcel);
+    int32_t ret = g_oHAudioBuffer->WriteToParcel(g_oHAudioBuffer, parcel);
     EXPECT_EQ(SUCCESS, ret);
 
-    oHAudioBuffer = oHAudioBuffer->ReadFromParcel(parcel);
-    EXPECT_NE(nullptr, oHAudioBuffer);
+    g_oHAudioBuffer = g_oHAudioBuffer->ReadFromParcel(parcel);
+    EXPECT_NE(nullptr, g_oHAudioBuffer);
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
+* @tc.number: OHAudioBuffer_009
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_009, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(nullptr, ohAudioBuffer);
+
+    int32_t ret = ohAudioBuffer->SetCurWriteFrame(totalSizeInFrame);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // 200ms
+    FutexCode futexCode = ohAudioBuffer->WaitFor(200000000, [&ohAudioBuffer] () {
+        return ohAudioBuffer->GetWritableDataFrames() > 0;
+    });
+    EXPECT_EQ(futexCode, FUTEX_TIMEOUT);
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
+* @tc.number: OHAudioBuffer_010
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(nullptr, ohAudioBuffer);
+
+    int32_t ret = ohAudioBuffer->SetCurWriteFrame(totalSizeInFrame);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::thread threadSetReadIndex([ohAudioBuffer, totalSizeInFrame] () {
+        ohAudioBuffer->SetCurReadFrame(totalSizeInFrame);
+    });
+
+    // 200ms
+    FutexCode futexCode = ohAudioBuffer->WaitFor(200000000, [&ohAudioBuffer] () {
+        return ohAudioBuffer->GetWritableDataFrames() > 0;
+    });
+    EXPECT_EQ(futexCode, FUTEX_SUCCESS);
+    threadSetReadIndex.join();
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
+* @tc.number: OHAudioBufferBase_001
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_001, TestSize.Level1)
+{
+    uint32_t totalSizeInFrame = 1000;
+    uint32_t byteSizePerFrame = 100;
+    size_t totalSizeInBytes = totalSizeInFrame * byteSizePerFrame;
+    auto ohAudioBufferBase = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(nullptr, ohAudioBufferBase);
+
+    int32_t ret = ohAudioBufferBase->SetCurWriteFrame(totalSizeInFrame);
+    EXPECT_EQ(ret, SUCCESS);
+
+    RingBufferWrapper buffer;
+    ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
+    EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    std::thread threadSetReadIndex([ohAudioBufferBase, totalSizeInFrame] () {
+        ohAudioBufferBase->SetCurReadFrame(totalSizeInFrame);
+    });
+
+    // 200ms
+    FutexCode futexCode = ohAudioBufferBase->WaitFor(200000000, [&ohAudioBufferBase] () {
+        return ohAudioBufferBase->GetWritableDataFrames() > 0;
+    });
+    EXPECT_EQ(futexCode, FUTEX_SUCCESS);
+    threadSetReadIndex.join();
+
+    ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
+    EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
+* @tc.number: OHAudioBufferBase_002
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
+{
+    uint32_t totalSizeInFrame = 1000;
+    uint32_t byteSizePerFrame = 100;
+    size_t totalSizeInBytes = totalSizeInFrame * byteSizePerFrame;
+    auto ohAudioBufferBase = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    EXPECT_NE(nullptr, ohAudioBufferBase);
+
+    int32_t ret = ohAudioBufferBase->SetCurWriteFrame(totalSizeInFrame - 1);
+    EXPECT_EQ(ret, SUCCESS);
+
+    RingBufferWrapper buffer;
+    ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes - byteSizePerFrame);
+    EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes - byteSizePerFrame);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, byteSizePerFrame);
+    EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, byteSizePerFrame);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    std::thread threadSetReadIndex([ohAudioBufferBase, totalSizeInFrame] () {
+        ohAudioBufferBase->SetCurReadFrame(totalSizeInFrame - 1);
+    });
+
+    // 200ms
+    FutexCode futexCode = ohAudioBufferBase->WaitFor(200000000, [&ohAudioBufferBase] () {
+        return ohAudioBufferBase->GetWritableDataFrames() > 0;
+    });
+    EXPECT_EQ(futexCode, FUTEX_SUCCESS);
+    threadSetReadIndex.join();
+
+    ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, 0);
+    EXPECT_EQ(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, 0);
+
+    ret = ohAudioBufferBase->GetAllWritableBuffer(buffer);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(buffer.dataLength, totalSizeInBytes);
+    EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, byteSizePerFrame);
+    EXPECT_NE(buffer.basicBufferDescs[1].buffer, nullptr);
+    EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, totalSizeInBytes - byteSizePerFrame);
 }
 
 /**

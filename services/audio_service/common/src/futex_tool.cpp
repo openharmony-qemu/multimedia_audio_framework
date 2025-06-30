@@ -82,7 +82,7 @@ FutexCode FutexTool::FutexWait(std::atomic<uint32_t> *futexPtr, int64_t timeout,
             TimeoutToRelativeTime(timeout - cost, waitTime);
         }
 
-        Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect) + "cost: " + std::to_string(cost));
+        Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect));
         res = syscall(__NR_futex, futexPtr, FUTEX_WAIT, IS_NOT_READY, (timeout <= 0 ? NULL : &waitTime), NULL, 0);
         auto sysErr = errno;
 
@@ -121,6 +121,7 @@ FutexCode FutexTool::FutexWake(std::atomic<uint32_t> *futexPtr, uint32_t wakeVal
     }
     uint32_t expect = IS_NOT_READY;
     if (futexPtr->compare_exchange_strong(expect, IS_READY)) {
+        Trace traceSyscall(std::string("syscall expect: ") + std::to_string(expect));
         long res = syscall(__NR_futex, futexPtr, FUTEX_WAKE, INT_MAX, NULL, NULL, 0);
         if (res < 0) {
             AUDIO_ERR_LOG("failed:%{public}ld, errno[%{public}d]:%{public}s", res, errno, strerror(errno));

@@ -27,6 +27,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_event_utils.h"
 #include "audio_recovery_device.h"
 #include "audio_bundle_manager.h"
 
@@ -283,6 +284,9 @@ int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors) const
 {
     size_t targetSize = audioDeviceDescriptors.size();
+    CheckAndWriteDeviceChangeExceptionEvent(targetSize == 1,
+        AudioStreamDeviceChangeReason::OVERRODE, audioDeviceDescriptors[0]->deviceType_,
+        audioDeviceDescriptors[0]->deviceRole_, ERR_INVALID_OPERATION, "device params check: size error");
     CHECK_AND_RETURN_RET_LOG(targetSize == 1, ERR_INVALID_OPERATION,
         "Device error: size[%{public}zu]", targetSize);
 
@@ -295,6 +299,9 @@ int32_t AudioDeviceCommon::DeviceParamsCheck(DeviceRole targetRole,
             audioDeviceDescriptors[0]->deviceRole_) && IsDeviceConnected(audioDeviceDescriptors[0]);
     }
 
+    CheckAndWriteDeviceChangeExceptionEvent(audioDeviceDescriptors[0]->deviceRole_ == targetRole &&
+        isDeviceTypeCorrect, AudioStreamDeviceChangeReason::OVERRODE, audioDeviceDescriptors[0]->deviceType_,
+        audioDeviceDescriptors[0]->deviceRole_, ERR_INVALID_OPERATION, "device params check: role error");
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptors[0]->deviceRole_ == targetRole && isDeviceTypeCorrect,
         ERR_INVALID_OPERATION, "Device error: size[%{public}zu] deviceRole[%{public}d] isDeviceCorrect[%{public}d]",
         targetSize, static_cast<int32_t>(audioDeviceDescriptors[0]->deviceRole_), isDeviceTypeCorrect);
@@ -497,35 +504,6 @@ bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDe
     return false;
 }
 
-bool AudioDeviceCommon::NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    const AudioStreamDeviceChangeReasonExt reason)
-{
-    AUDIO_INFO_LOG("current pipe type is:%{public}d", rendererChangeInfo->rendererInfo.pipeType);
-    if (!audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        if (rendererChangeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
-            AUDIO_INFO_LOG("old device is arm usb");
-            return false;
-        }
-        AUDIO_DEBUG_LOG("direct stream changed to normal.");
-        TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-            AUDIO_OUTPUT_FLAG_NORMAL, reason);
-        return true;
-    } else if (audioActiveDevice_.IsDirectSupportedDevice() &&
-        rendererChangeInfo->rendererInfo.pipeType != PIPE_TYPE_DIRECT_MUSIC &&
-        streamCollector_.ActivateAudioConcurrency(PIPE_TYPE_DIRECT_MUSIC) == SUCCESS) {
-        AudioRendererInfo info = rendererChangeInfo->rendererInfo;
-        if (info.streamUsage == STREAM_USAGE_MUSIC && info.rendererFlags == AUDIO_FLAG_NORMAL &&
-            info.samplingRate >= SAMPLE_RATE_48000 && info.format >= SAMPLE_S24LE) {
-            AUDIO_DEBUG_LOG("stream change to direct.");
-            TriggerRecreateRendererStreamCallback(rendererChangeInfo->callerPid, rendererChangeInfo->sessionId,
-                AUDIO_OUTPUT_FLAG_DIRECT, reason);
-            return true;
-        }
-    }
-    return false;
-}
-
 void AudioDeviceCommon::SetDeviceConnectedFlagWhenFetchOutputDevice()
 {
     AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
@@ -577,8 +555,7 @@ void AudioDeviceCommon::FetchOutputDevice(std::vector<std::shared_ptr<AudioRende
             isUpdateActiveDevice = audioActiveDevice_.UpdateDevice(descs.front(), reason, rendererChangeInfo);
             needUpdateActiveDevice = !isUpdateActiveDevice;
         }
-        if (!hasDirectChangeDevice && !IsSameDevice(descs.front(), rendererChangeInfo->outputDeviceInfo)
-            && NotifyRecreateDirectStream(rendererChangeInfo, reason)) {
+        if (!hasDirectChangeDevice && !IsSameDevice(descs.front(), rendererChangeInfo->outputDeviceInfo)) {
             hasDirectChangeDevice = true;
         }
         NotifyRecreateRendererStream(descs.front(), rendererChangeInfo, reason);
@@ -1103,6 +1080,17 @@ bool AudioDeviceCommon::IsRingDualToneOnPrimarySpeaker(const vector<std::shared_
     return true;
 }
 
+void AudioDeviceCommon::ClearRingMuteWhenCallStart(bool pre, bool after)
+{
+    CHECK_AND_RETURN_LOG(pre != true || after != false, "ringdual not cancel by call");
+    AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
+    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetStreamMute(stream.first, false, stream.second);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioPolicyManager_.SetStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+}
+
 bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo)
 {
@@ -1145,7 +1133,9 @@ bool AudioDeviceCommon::SelectRingerOrAlarmDevices(const vector<std::shared_ptr<
                 AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
+            bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = IsRingDualToneOnPrimarySpeaker(descs, sessionId);
+            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;

@@ -106,6 +106,9 @@ public:
 
     virtual int32_t SetOffloadDataCallbackState(int32_t state) = 0;
 
+    virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) = 0;
+
     // IPC code.
     enum IpcStreamMsg : uint32_t {
         ON_REGISTER_STREAM_LISTENER = 0,
@@ -144,6 +147,7 @@ public:
         ON_SET_SOURCE_DURATION,
         ON_SET_OFFLOAD_DATA_CALLBACK_STATE,
         ON_SET_LOUDNESSGAIN,
+        ON_RESOLVE_BUFFER_BASE,
         IPC_STREAM_MAX_MSG
     };
 
