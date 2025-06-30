@@ -56,15 +56,20 @@ int32_t HpaeMixerNode::SetupAudioLimiter()
         AUDIO_INFO_LOG("NodeId: %{public}d, limiter has already been setup!", GetNodeId());
         return ERROR;
     }
+    return InitAudioLimiter();
+}
+
+int32_t HpaeMixerNode::InitAudioLimiter()
+{
     limiter_ = std::make_unique<AudioLimiter>(GetNodeId());
     // limiter only supports float format
     int32_t ret = limiter_->SetConfig(GetFrameLen() * GetChannelCount() * sizeof(float), sizeof(float), GetSampleRate(),
         GetChannelCount());
     if (ret == SUCCESS) {
-        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup sucess!", GetNodeId());
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter init sucess!", GetNodeId());
     } else {
         limiter_ = nullptr;
-        AUDIO_INFO_LOG("NodeId: %{public}d, limiter setup fail!!", GetNodeId());
+        AUDIO_INFO_LOG("NodeId: %{public}d, limiter init fail!!", GetNodeId());
     }
     return ret;
 }

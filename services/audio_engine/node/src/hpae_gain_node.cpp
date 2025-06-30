@@ -174,9 +174,6 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("GainNode: fade out started!");
         ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
-        return;
-    }
-    if (fadeOutState_ == FadeOutState::DONE_FADEOUT) {
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
