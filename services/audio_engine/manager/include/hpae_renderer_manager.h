@@ -104,6 +104,7 @@ private:
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
+    int32_t DeleteInputSessionForMove(uint32_t sessionId);
     bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);

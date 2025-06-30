@@ -307,6 +307,45 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
+
+int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
+{
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSessionForMove");
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        AUDIO_INFO_LOG("could not find session:%{public}d", sessionId);
+        return SUCCESS;
+    }
+    HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    auto &processCluster = SafeGetMap(sceneClusterMap_, sceneType);
+
+    if (processCluster) {
+        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+        if (processCluster->GetPreOutNum() == 0) {
+        processCluster->DisConnectMixerNode();
+        outputCluster_->DisConnect(processCluster);
+        // for collaboration
+        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+            hpaeCoBufferNode_->DisConnect(processCluster);
+            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+        }
+        processCluster->SetConnectedFlag(false);
+        }
+    }
+
+    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
+        sceneClusterMap_.erase(sceneType);
+        sceneTypeToProcessClusterCountMap_.erase(sceneType);
+    }
+    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
+        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
+    }
+    sinkInputNodeMap_.erase(sessionId);
+    sessionNodeMap_.erase(sessionId);
+    return SUCCESS;
+}
+
 void HpaeRendererManager::DeleteProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
@@ -401,7 +440,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         }
     }
     for (const auto &it : sessionIds) {
-        DisConnectInputSession(it);
+        DeleteInputSessionForMove(it);
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
@@ -455,7 +494,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
             operation);
         // todo: do fade out
     }
-    DeleteInputSession(sessionId);
+    DeleteInputSessionForMove(sessionId);
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
 }
