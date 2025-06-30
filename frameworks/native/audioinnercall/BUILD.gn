@@ -34,7 +34,7 @@ ohos_shared_library("audio_inner_call") {
   ]
 
   cflags_cc = cflags
-  cflags_cc += [ "-std=c++23" ]
+  cflags_cc += [ "-std=c++20" ]
 
   sources = [ "./src/audio_inner_call.cpp" ]
 

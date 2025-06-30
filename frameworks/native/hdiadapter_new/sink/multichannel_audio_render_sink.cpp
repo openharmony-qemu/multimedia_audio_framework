@@ -28,10 +28,13 @@
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 
+namespace {
+const std::string DEFAULT_NAME = "multichannel";
+}
 namespace OHOS {
 namespace AudioStandard {
 MultichannelAudioRenderSink::MultichannelAudioRenderSink(const std::string &halName)
-    : halName_(halName)
+    : halName_(halName == HDI_ID_INFO_DEFAULT ? DEFAULT_NAME : halName)
 {
     AUDIO_INFO_LOG("construction");
 }
@@ -579,6 +582,9 @@ void MultichannelAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttribut
     param.frameSize = PcmFormatToBit(attr_.format) * param.channelCount / PCM_8_BIT;
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
+    }
+    if (halName_ == HDI_ID_INFO_DP) {
+        param.type = AUDIO_DP;
     }
 }
 

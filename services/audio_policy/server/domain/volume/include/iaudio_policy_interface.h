@@ -78,7 +78,8 @@ public:
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        std::string networkId = LOCAL_NETWORK_ID) = 0;
 
     virtual int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
@@ -196,7 +197,8 @@ public:
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+        const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        std::string networkId = LOCAL_NETWORK_ID) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 

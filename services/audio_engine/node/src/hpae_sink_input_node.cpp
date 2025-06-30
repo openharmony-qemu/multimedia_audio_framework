@@ -89,6 +89,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .requestDataLen = interleveData_.size(),
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
+        .latency = streamInfo_.latency,
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
     auto writeCallback = writeCallback_.lock();
@@ -151,7 +152,7 @@ void HpaeSinkInputNode::DoProcess()
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
-        inputPcmDumper_->CheckAndReopenHandlde();
+        inputPcmDumper_->CheckAndReopenHandle();
         inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
             GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
@@ -280,6 +281,17 @@ void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
 bool HpaeSinkInputNode::GetOffloadEnabled()
 {
     return offloadEnable_;
+}
+
+int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
+{
+    loudnessGain_ = loudnessGain;
+    return SUCCESS;
+}
+
+float HpaeSinkInputNode::GetLoudnessGain()
+{
+    return loudnessGain_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

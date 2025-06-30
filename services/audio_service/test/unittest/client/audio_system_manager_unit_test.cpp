@@ -884,5 +884,21 @@ HWTEST(AudioSystemManagerUnitTest, RegisterRendererDataTransfer_001, TestSize.Le
     EXPECT_EQ(result, SUCCESS);
 }
 #endif
+
+/**
+ * @tc.name   : Test CreateGroup API
+ * @tc.number : CreateGroup_001
+ * @tc.desc   : Test CreateGroup interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
+{
+    AudioSystemManager audioSystemManager;
+    audioSystemManager.InitWorkgroupState();
+    audioSystemManager.AttachAudioRendererEventListener();
+    audioSystemManager.AttachVolumeKeyEventListener();
+
+    int32_t result = audioSystemManager.CreateAudioWorkgroup();
+    EXPECT_GT(result, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

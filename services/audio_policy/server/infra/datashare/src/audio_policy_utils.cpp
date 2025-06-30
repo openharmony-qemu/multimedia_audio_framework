@@ -91,6 +91,23 @@ void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+void AudioPolicyUtils::WriteDeviceChangeExceptionEvent(const AudioStreamDeviceChangeReason reason,
+    DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DEVICE_CHANGE_EXCEPTION,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+
+    std::string fullErrorDesc = "DeviceRole:" + std::to_string(static_cast<uint32_t>(deviceRole)) +
+        ", errorDesc:" + errorDesc;
+    bean->Add("CHANGE", static_cast<int32_t>(reason));
+    bean->Add("DEVICE_TYPE", static_cast<int32_t>(deviceType));
+    bean->Add("ERROR_CASE", 0);
+    bean->Add("ERROR_MSG", errorMsg);
+    bean->Add("ERROR_DESCRIPTION", fullErrorDesc);
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 std::string AudioPolicyUtils::GetRemoteModuleName(std::string networkId, DeviceRole role)
 {
     return networkId + (role == DeviceRole::OUTPUT_DEVICE ? "_out" : "_in");

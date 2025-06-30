@@ -234,10 +234,10 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             } else {
                 return PIPE_TYPE_DIRECT_OUT;
             }
-        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
-            return PIPE_TYPE_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
             return PIPE_TYPE_MULTICHANNEL;
+        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+            return PIPE_TYPE_OFFLOAD;
         } else {
             return PIPE_TYPE_NORMAL_OUT;
         }
@@ -369,6 +369,11 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
         info.moduleInfo_.offloadEnable = "1";
         info.moduleInfo_.fixedLatency = "1";
         info.moduleInfo_.fileName = "offload_dump_file";
+    } else if (pipeInfoPtr->name_ == "dp_multichannel_output") {
+        info.moduleInfo_.className = "dp_multichannel";
+        info.moduleInfo_.fileName = "mch_dump_file";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
     }
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);

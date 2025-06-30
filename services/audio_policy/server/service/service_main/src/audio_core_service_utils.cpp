@@ -64,5 +64,17 @@ bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std
     return true;
 }
 
+
+bool AudioCoreServiceUtils::NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,
+    bool isPcVolumeEnable, bool isMusicMute)
+{
+    if (mode != RINGER_MODE_NORMAL && usage != STREAM_USAGE_ALARM) {
+        return false;
+    }
+    if (isPcVolumeEnable && isMusicMute) {
+        return false;
+    }
+    return true;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1474,7 +1474,8 @@ int AudioManagerStub::HandleOnMuteStateChange(MessageParcel &data, MessageParcel
 int AudioManagerStub::HandleCreateAudioWorkgroup(MessageParcel &data, MessageParcel &reply)
 {
     int32_t pid = data.ReadInt32();
-    int32_t workgroupId = CreateAudioWorkgroup(pid);
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
+    int32_t workgroupId = CreateAudioWorkgroup(pid, object);
     reply.WriteInt32(workgroupId);
     return AUDIO_OK;
 }

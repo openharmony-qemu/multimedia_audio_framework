@@ -78,6 +78,7 @@ ohos_shared_library("audio_common") {
     "common/src/limiter/audio_limiter_manager.cpp",
     "common/src/linear_pos_time_model.cpp",
     "common/src/oh_audio_buffer.cpp",
+    "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
   ]
 
@@ -215,6 +216,7 @@ ohos_shared_library("audio_client") {
     "client/src/policy_provider_stub.cpp",
     "client/src/renderer_in_client.cpp",
     "client/src/renderer_in_client_public.cpp",
+    "client/src/audio_workgroup_callback_stub.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {

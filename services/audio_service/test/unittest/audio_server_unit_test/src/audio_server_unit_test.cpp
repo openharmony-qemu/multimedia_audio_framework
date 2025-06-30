@@ -1528,5 +1528,19 @@ HWTEST_F(AudioServerUnitTest, RendereataTransferStateChangeCallback_005, TestSiz
     info.isBackground = true;
     callback->OnDataTransferStateChange(pid, info);
 }
+
+/*
+ * @tc.name  : Test CreateAudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: CreateAudioWorkgroup_001
+ * @tc.desc  : Test CreateAudioWorkgroup interface when null object
+ */
+HWTEST_F(AudioServerUnitTest, CreateAudioWorkgroup_001, TestSize.Level1)
+{
+    int32_t pid = 123;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t result = audioServer->CreateAudioWorkgroup(pid, object);
+    EXPECT_NE(result, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

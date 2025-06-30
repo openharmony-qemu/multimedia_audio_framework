@@ -51,6 +51,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_MIC_REF "mic_ref"
 #define HDI_ID_INFO_MMAP "mmap"
 #define HDI_ID_INFO_ACCESSORY "accessory"
+#define HDI_ID_INFO_DP_MULITCHANNEL "dp_multichannel"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

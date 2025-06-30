@@ -75,6 +75,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "multichannel") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_MULTICHANNEL, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "dp_multichannel") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_MULTICHANNEL, HDI_ID_INFO_DP);
     } else if (deviceClass == "primary_direct_voip") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOIP);
     } else if (deviceClass == "primary_mmap_voip") {

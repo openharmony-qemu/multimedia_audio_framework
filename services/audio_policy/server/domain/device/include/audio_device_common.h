@@ -191,6 +191,7 @@ private:
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
@@ -219,8 +220,6 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void SetVoiceCallMuteForSwitchDevice();
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
-    bool NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

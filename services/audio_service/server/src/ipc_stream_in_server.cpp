@@ -519,5 +519,21 @@ int32_t IpcStreamInServer::SetOffloadDataCallbackState(int32_t state)
     }
     return rendererInServer_->SetOffloadDataCallbackState(state);
 }
+
+int32_t IpcStreamInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
+{
+    AUDIO_INFO_LOG("Resolve bufferbase, mode: %{public}d", mode_);
+    if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
+        return rendererInServer_->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame,
+            engineTotalSizeInFrame);
+    }
+    if (mode_ == AUDIO_MODE_RECORD && capturerInServer_!= nullptr) {
+        return capturerInServer_->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame,
+            engineTotalSizeInFrame);
+    }
+    AUDIO_ERR_LOG("GetAudioSessionID failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
+    return ERR_OPERATION_FAILED;
+}
 } // namespace AudioStandard
 } // namespace OHOS

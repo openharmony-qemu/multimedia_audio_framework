@@ -34,7 +34,6 @@ const float GAIN_ATTACK = 0.1f;
 const float GAIN_RELEASE = 0.6f;
 const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
 const int32_t PROC_COUNT = 4;  // process 4 times
-const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
 AudioLimiter::AudioLimiter(int32_t sinkIndex)

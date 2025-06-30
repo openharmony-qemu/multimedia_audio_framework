@@ -33,7 +33,6 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
-constexpr int32_t AUDIO_US_PER_MS = 1000;
 constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
 constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
