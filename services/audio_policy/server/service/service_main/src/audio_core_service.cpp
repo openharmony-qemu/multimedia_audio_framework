@@ -38,6 +38,14 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 }
 
+static bool IsRemoteOffloadActive(uint32_t remoteOffloadStreamPropSize, int32_t streamUsage)
+{
+    CHECK_AND_RETURN_RET_LOG(remoteOffloadStreamPropSize != 0 && streamUsage == STREAM_USAGE_MUSIC, false,
+        "Use normal for remote device or remotecast");
+    AUDIO_INFO_LOG("remote offload active, music use offload");
+    return true;
+}
+
 bool AudioCoreService::isBtListenerRegistered = false;
 bool AudioCoreService::isBtCrashed = false;
 #ifdef BLUETOOTH_ENABLE
@@ -281,9 +289,11 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     }
 
     if (streamDesc->newDeviceDescs_.back()->deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
-        streamDesc->newDeviceDescs_.back()->networkId_ == "REMOTE_NETWORK_ID") {
-        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("Use normal for remote device or remotecast");
+        streamDesc->newDeviceDescs_.back()->networkId_ != LOCAL_NETWORK_ID) {
+        auto remoteOffloadStreamPropSize = policyConfigMananger_.GetStreamPropInfoSize("remote",
+            "offload_distributed_output");
+        streamDesc->audioFlag_ = IsRemoteOffloadActive(remoteOffloadStreamPropSize,
+            streamDesc->rendererInfo_.streamUsage) ? AUDIO_OUTPUT_FLAG_LOWPOWER : AUDIO_OUTPUT_FLAG_NORMAL;
         return;
     }
 
@@ -1236,5 +1246,16 @@ void AudioCoreService::BluetoothServiceCrashedCallback(pid_t pid, pid_t uid)
     Bluetooth::AudioHfpManager::DisconnectBluetoothHfpSink();
 }
 #endif
+
+void AudioCoreService::UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+    const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices)
+{
+    policyConfigMananger_.UpdateStreamPropInfo(adapterName, pipeName, deviceStreamInfo, supportDevices);
+}
+
+void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName)
+{
+    policyConfigMananger_.ClearStreamPropInfo(adapterName, pipeName);
+}
 } // namespace AudioStandard
 } // namespace OHOS

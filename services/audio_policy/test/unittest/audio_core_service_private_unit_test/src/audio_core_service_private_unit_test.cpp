@@ -2049,5 +2049,36 @@ HWTEST(AudioCoreServicePrivateTest, IsStreamSupportLowpower_002, TestSize.Level1
     bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
     EXPECT_EQ(isSupportLowPower, false);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_122
+ * @tc.desc  : Test AudioCoreService::ReConfigOffloadStatus
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_122, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipeInfo, nullptr);
+    std::string sinkName = "test";
+
+    pipeInfo->moduleInfo_.name = "test";
+    pipeInfo->moduleInfo_.className = "test";
+    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
+
+    pipeInfo->moduleInfo_.name = "test";
+    pipeInfo->moduleInfo_.className = "remote_offload";
+    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
+
+    pipeInfo->moduleInfo_.name = "Offload_Speaker";
+    pipeInfo->moduleInfo_.className = "test";
+    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
+
+    pipeInfo->moduleInfo_.name = "Offload_Speaker";
+    pipeInfo->moduleInfo_.className = "remote_offload";
+    audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
+    EXPECT_EQ(audioCoreService->audioOffloadStream_.offloadSessionID_.has_value(), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -798,7 +798,9 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
-    CHECK_AND_RETURN_RET_LOG(*deviceInfo.audioStreamInfo_.samplingRate.rbegin() > 0, nullptr,
+
+    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
+    CHECK_AND_RETURN_RET_LOG(*audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
         "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
@@ -807,7 +809,7 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 
     std::shared_ptr<OHAudioBufferBase> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo_, buffer);
+    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -989,15 +991,16 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             } else {
                 AUDIO_INFO_LOG("VoIP 48K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             }
         } else {
             AUDIO_INFO_LOG("Fast stream");
-            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-            deviceInfo.audioStreamInfo_ = targetStreamInfo;
+            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+                CH_LAYOUT_STEREO};
+            deviceInfo.audioStreamInfo_ = { targetStreamInfo };
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1015,8 +1018,9 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
-    deviceInfo.audioStreamInfo_ = targetStreamInfo;
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+        CH_LAYOUT_STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
     deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
 }

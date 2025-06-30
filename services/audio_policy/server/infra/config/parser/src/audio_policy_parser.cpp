@@ -155,7 +155,7 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(PipeInfo &pipeInfo, AudioModul
         audioModuleInfo.supportedRate_.insert(sampleRate);
     }
     for (auto channelLayout : pipeInfo.channelLayouts_) {
-        audioModuleInfo.supportedChannels_.insert(channelLayout);
+        audioModuleInfo.supportedChannelLayout_.insert(channelLayout);
     }
 
     audioModuleInfo.lib = pipeInfo.lib_;

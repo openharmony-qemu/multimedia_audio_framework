@@ -45,6 +45,7 @@ private:
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     std::shared_ptr<IAudioRenderSink> CreateRemoteRenderSink(const std::string &info);
     std::shared_ptr<IAudioRenderSink> CreateRemoteFastRenderSink(const std::string &info);
+    std::shared_ptr<IAudioRenderSink> CreateRemoteOffloadRenderSink(const std::string &info);
 #endif
     std::shared_ptr<IAudioCaptureSource> CreatePrimaryCaptureSource(const uint32_t captureId, const std::string &info);
 #ifdef FEATURE_DISTRIBUTE_AUDIO
