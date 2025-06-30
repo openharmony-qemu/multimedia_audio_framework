@@ -83,7 +83,7 @@ private:
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
-    void GetCurrentPositionInner(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
+    void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
