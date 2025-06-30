@@ -75,7 +75,6 @@ static constexpr int32_t ONE_MINUTE = 60;
 static const int32_t MAX_WRITE_INTERVAL_MS = 40;
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
-static constexpr float EPSILON = 1e-6f;
 } // namespace
 
 static AppExecFwk::BundleInfo gBundleInfo_;
@@ -621,6 +620,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
+    totalBytesWrittenNoSpeed_ += bufferSize;
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
@@ -635,11 +635,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     // hold lock
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
-    }
-
-    if (abs(speed_ - lastSpeed_) > EPSILON) {
-        Timestamp timestamp;
-        GetAudioTimestampInfo(timestamp, Timestamp::Timestampbase::MONOTONIC);
     }
 
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
@@ -663,9 +658,6 @@ void RendererInClientInner::ResetFramePosition()
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosition_[base].first = 0;
     }
-    lastReadIdx_ = 0;
-    lastLatency_ = latency;
-    lastLatencyPosition_ = latency * speed_;
 }
 
 bool RendererInClientInner::IsMutePlaying()

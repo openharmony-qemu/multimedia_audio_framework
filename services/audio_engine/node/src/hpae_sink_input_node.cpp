@@ -89,6 +89,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .requestDataLen = interleveData_.size(),
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
+        .latency = streamInfo_.latency,
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
     auto writeCallback = writeCallback_.lock();

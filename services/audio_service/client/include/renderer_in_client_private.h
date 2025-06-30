@@ -372,6 +372,7 @@ private:
 
     // Mark reach and period reach callback
     int64_t totalBytesWritten_ = 0;
+    int64_t totalBytesWrittenNoSpeed_ = 0;
     std::mutex markReachMutex_;
     bool rendererMarkReached_ = false;
     int64_t rendererMarkPosition_ = 0;
