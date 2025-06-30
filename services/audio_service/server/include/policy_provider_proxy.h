@@ -41,6 +41,8 @@ public:
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
 
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue) override;
+
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 
     int32_t GetMaxRendererInstances() override;

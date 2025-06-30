@@ -208,6 +208,8 @@ public:
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
+
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
     DistributedRoutingInfo GetDistributedRoutingRoleInfo();

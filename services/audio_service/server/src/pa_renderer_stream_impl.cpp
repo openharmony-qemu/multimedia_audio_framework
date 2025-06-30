@@ -487,6 +487,9 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
     // Processing data for a2dpoffload time delays
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * sampleSpec->rate / AUDIO_MS_PER_S;
+    // Processing data for nearlink time delays
+    uint32_t nearlinkLatency = GetNearlinkLatency();
+    latency += nearlinkLatency * sampleSpec->rate / AUDIO_MS_PER_S;
 
     int64_t stamp = 0;
     stamp = base == Timestamp::BOOTTIME ? ClockTime::GetBootNano() : ClockTime::GetCurNano();
@@ -494,8 +497,8 @@ int32_t PaRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ",readIndex %{public}" PRIu64
         ", base %{public}d, timestamp %{public}" PRIu64
-        ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        framePosition, readIndex, base, timestamp, algorithmLatency, a2dpOffloadLatency);
+        ", effect latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+        framePosition, readIndex, base, timestamp, algorithmLatency, a2dpOffloadLatency, nearlinkLatency);
     return SUCCESS;
 }
 
@@ -544,13 +547,15 @@ int32_t PaRendererStreamImpl::GetLatency(uint64_t &latency)
     latency += offloadEnable_ ? 0 : algorithmLatency * AUDIO_US_PER_MS;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     latency += a2dpOffloadLatency * AUDIO_US_PER_MS;
+    uint32_t nearlinkLatency = GetNearlinkLatency();
+    latency += nearlinkLatency * AUDIO_US_PER_MS;
     uint32_t limiterLatency = GetLimiterLatency();
     latency += limiterLatency * AUDIO_US_PER_MS;
 
     AUDIO_DEBUG_LOG("total latency: %{public}" PRIu64 ", pa latency: %{public}" PRIu64 ", algo latency: %{public}u ms"
-        ", a2dp offload latency: %{public}u ms, lmt latency: %{public}u ms, write: %{public}" PRIu64 ""
-        ", read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency, algorithmLatency,
-        a2dpOffloadLatency, limiterLatency, writeIndex, readIndex, info->sink_usec);
+        ", a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms, lmt latency: %{public}u ms"
+        ", write: %{public}" PRIu64 ", read: %{public}" PRIu64 ", sink:%{public}" PRIu64 "", latency, paLatency,
+        algorithmLatency, a2dpOffloadLatency, nearlinkLatency, limiterLatency, writeIndex, readIndex, info->sink_usec);
 
     preLatency_ = latency;
     preTimeGetLatency_ = curTimeGetLatency;
@@ -580,6 +585,17 @@ uint32_t PaRendererStreamImpl::GetA2dpOffloadLatency()
         AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
     }
     return a2dpOffloadLatency;
+}
+
+uint32_t PaRendererStreamImpl::GetNearlinkLatency()
+{
+    Trace trace("PaRendererStreamImpl::GetNearlinkLatency");
+    uint32_t nearlinkLatency = 0;
+    auto& handle = PolicyHandler::GetInstance();
+    int32_t ret = handle.NearlinkGetRenderPosition(nearlinkLatency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nearlinkLatency, "NearlinkGetRenderPosition failed");
+
+    return nearlinkLatency;
 }
 
 uint32_t PaRendererStreamImpl::GetLimiterLatency()

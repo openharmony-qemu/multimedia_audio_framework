@@ -141,6 +141,21 @@ int32_t PolicyProviderProxy::OffloadGetRenderPosition(uint32_t &delayValue, uint
     return ret;
 }
 
+int32_t PolicyProviderProxy::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::NEARLINK_GET_RENDER_POSITION, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    delayValue = reply.ReadUint32();
+    return ret;
+}
+
 int32_t PolicyProviderProxy::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
 {
     MessageParcel data;
