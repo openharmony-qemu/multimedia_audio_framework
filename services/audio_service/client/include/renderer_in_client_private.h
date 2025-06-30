@@ -197,7 +197,7 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     bool RestoreAudioStream(bool needStoreState = true) override;
-    void Join() override;
+    void JoinCallbackLoop() override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     FastStatus GetFastStatus() override;

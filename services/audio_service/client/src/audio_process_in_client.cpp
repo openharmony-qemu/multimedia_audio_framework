@@ -146,7 +146,7 @@ public:
 
     bool GetStopFlag() const override;
 
-    void Join() override;
+    void JoinCallbackLoop() override;
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
@@ -394,13 +394,8 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.join();
-    }
+
+    JoinCallbackLoop();
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -761,7 +756,6 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak
         InitRecordThread(weakStream);
     } else if (isIndependent) {
         logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
-        std::unique_lock<std::mutex> statusLock(loopMutex_);
         callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
         pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
@@ -1285,7 +1279,7 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
     return SUCCESS;
 }
 
-void AudioProcessInClientInner::Join()
+void AudioProcessInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     if (callbackLoop_.joinable() && !isCallbackLoopEnd_) {
@@ -1326,7 +1320,6 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
 
-    Join();
     return SUCCESS;
 }
 

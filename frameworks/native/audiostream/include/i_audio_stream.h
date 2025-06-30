@@ -261,7 +261,7 @@ public:
         return 0;
     }
 
-    virtual void Join() = 0;
+    virtual void JoinCallbackLoop() = 0;
 
     virtual void SetState() {}
 

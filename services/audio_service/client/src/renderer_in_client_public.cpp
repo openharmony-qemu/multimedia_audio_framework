@@ -1093,7 +1093,7 @@ bool RendererInClientInner::StopAudioStream()
     return true;
 }
 
-void RendererInClientInner::Join()
+void RendererInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
     if (renderMode_ == RENDER_MODE_CALLBACK && !cbThreadReleased_) {
@@ -1137,7 +1137,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     runnerlock.unlock();
 
     //clear write callback
-    Join();
+    JoinCallbackLoop();
     paramsIsSet_ = false;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);

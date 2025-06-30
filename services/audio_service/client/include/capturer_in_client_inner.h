@@ -128,7 +128,7 @@ public:
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
     bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
-    void Join() override;
+    void JoinCallbackLoop() override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;

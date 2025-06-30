@@ -1758,7 +1758,7 @@ error:
     return false;
 }
 
-void CapturerInClientInner::Join()
+void CapturerInClientInner::JoinCallbackLoop()
 {
     AUDIO_INFO_LOG("Not Support");
 }

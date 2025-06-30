@@ -1065,10 +1065,10 @@ error:
     return false;
 }
 
-void FastAudioStream::Join()
+void FastAudioStream::JoinCallbackLoop()
 {
     if (processClient_ != nullptr) {
-        processClient_->Join();
+        processClient_->JoinCallbackLoop();
     } else {
         AUDIO_WARNING_LOG("processClient_ is nullptr!");
     }

@@ -926,7 +926,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         oldStream = audioStream_;
     }
     // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
-    oldStream->Join();
+    oldStream->JoinCallbackLoop();
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;

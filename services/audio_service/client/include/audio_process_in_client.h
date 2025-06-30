@@ -138,7 +138,7 @@ public:
 
     virtual bool GetStopFlag() const = 0;
 
-    virtual void Join() = 0;
+    virtual void JoinCallbackLoop() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
