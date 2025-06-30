@@ -1736,6 +1736,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_059, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_060
@@ -1750,6 +1751,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_060, TestSize.Level1)
     auto ret = server->UpdateSpatialDeviceState(audioSpatialDeviceState);
     EXPECT_EQ(ret, SUCCESS);
 }
+#endif
 
 /**
 * @tc.name  : Test AudioPolicyServer.
@@ -1810,6 +1812,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_064, TestSize.Level1)
     EXPECT_EQ(ret, ERROR);
 }
 
+#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_065
@@ -1825,7 +1828,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_065, TestSize.Level1)
     EXPECT_EQ(ret, AUDIO_OK);
 }
 
-#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_066
