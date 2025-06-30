@@ -1302,7 +1302,7 @@ static int32_t UpdateFilterMemory(SingleStagePolyphaseResamplerState* state, uin
                 "first time requiredInputMemorySize %{public}d alloc failed", requiredInputMemorySize);
         } else {
             float* inputMemory = (float*)malloc(state->numChannels * requiredInputMemorySize * sizeof(float));
-            CHECK_AND_RETURN_RET_LOG(state->inputMemory, RESAMPLER_ERR_ALLOC_FAILED,
+            CHECK_AND_RETURN_RET_LOG(inputMemory, RESAMPLER_ERR_ALLOC_FAILED,
                 "requiredInputMemorySize %{public}d alloc failed", requiredInputMemorySize);
             int32_t ret = memcpy_s(inputMemory, requiredInputMemorySize * state->numChannels * sizeof(float),
                 state->inputMemory, state->inputMemorySize * state->numChannels * sizeof(float));
