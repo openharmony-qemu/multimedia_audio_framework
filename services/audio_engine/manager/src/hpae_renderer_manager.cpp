@@ -317,19 +317,18 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
     }
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
-    auto &processCluster = SafeGetMap(sceneClusterMap_, sceneType);
 
-    if (processCluster) {
+    if (SafeGetMap(sceneClusterMap_, sceneType)) {
         DeleteProcessCluster(nodeInfo, sceneType, sessionId);
-        if (processCluster->GetPreOutNum() == 0) {
-        processCluster->DisConnectMixerNode();
-        outputCluster_->DisConnect(processCluster);
-        // for collaboration
-        if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
-            hpaeCoBufferNode_->DisConnect(processCluster);
-            TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
-        }
-        processCluster->SetConnectedFlag(false);
+        if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+            sceneClusterMap_[sceneType]->DisConnectMixerNode();
+            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+            // for collaboration
+            if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+                hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+                TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+            }
+            sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
     }
 
