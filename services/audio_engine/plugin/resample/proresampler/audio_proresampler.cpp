@@ -169,8 +169,8 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
 
 ProResampler::ProResampler(ProResampler &&other) noexcept
     : inRate_(other.inRate_), outRate_(other.outRate_), channels_(other.channels_),
-    quality_(other.quality_), state_(other.state_), expectedOutFrameLen_(other.expectedOutFrameLen_),
-    expectedInFrameLen_(other.expectedInFrameLen_)
+    quality_(other.quality_), expectedOutFrameLen_(other.expectedOutFrameLen_),
+    expectedInFrameLen_(other.expectedInFrameLen_), state_(other.state_)
 {
     other.state_ = nullptr;
 }
