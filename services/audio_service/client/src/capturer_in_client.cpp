@@ -1758,6 +1758,11 @@ error:
     return false;
 }
 
+void CapturerInClientInner::JoinCallbackLoop()
+{
+    AUDIO_INFO_LOG("Not Support");
+}
+
 int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
 {
     (void)defaultOutputDevice;

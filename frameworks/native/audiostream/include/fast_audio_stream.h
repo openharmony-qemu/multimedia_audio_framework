@@ -182,6 +182,7 @@ public:
     IAudioStream::StreamClass GetStreamClass() override;
 
     bool RestoreAudioStream(bool needStoreState = true) override;
+    void JoinCallbackLoop() override;
 
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;

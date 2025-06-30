@@ -197,6 +197,7 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     bool RestoreAudioStream(bool needStoreState = true) override;
+    void JoinCallbackLoop() override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     FastStatus GetFastStatus() override;
@@ -323,6 +324,7 @@ private:
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
     std::thread callbackLoop_; // thread for callback to client and write.
+    std::mutex loopMutex_;
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;

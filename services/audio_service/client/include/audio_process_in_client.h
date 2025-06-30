@@ -137,6 +137,8 @@ public:
     virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) = 0;
 
     virtual bool GetStopFlag() const = 0;
+
+    virtual void JoinCallbackLoop() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

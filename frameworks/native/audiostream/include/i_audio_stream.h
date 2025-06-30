@@ -261,6 +261,8 @@ public:
         return 0;
     }
 
+    virtual void JoinCallbackLoop() = 0;
+
     virtual void SetState() {}
 
     bool IsFormatValid(uint8_t format);

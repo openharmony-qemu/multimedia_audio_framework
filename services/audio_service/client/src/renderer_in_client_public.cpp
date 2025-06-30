@@ -654,6 +654,7 @@ void RendererInClientInner::InitCallbackLoop()
     auto weakRef = weak_from_this();
     ResetCallbackLoopTid();
     // OS_AudioWriteCB
+    std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([weakRef] {
         bool keepRunning = true;
         std::shared_ptr<RendererInClientInner> strongRef = weakRef.lock();
@@ -1092,6 +1093,20 @@ bool RendererInClientInner::StopAudioStream()
     return true;
 }
 
+void RendererInClientInner::JoinCallbackLoop()
+{
+    std::unique_lock<std::mutex> statusLock(loopMutex_);
+    if (renderMode_ == RENDER_MODE_CALLBACK && !cbThreadReleased_) {
+        cbThreadReleased_ = true; // stop loop
+        cbThreadCv_.notify_all();
+        CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");
+        FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
+        if (callbackLoop_.joinable()) {
+            callbackLoop_.join();
+        }
+    }
+}
+
 bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
     (void)isSwitchStream;
@@ -1121,15 +1136,8 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     }
     runnerlock.unlock();
 
-    // clear write callback
-    if (renderMode_ == RENDER_MODE_CALLBACK) {
-        cbThreadReleased_ = true; // stop loop
-        cbThreadCv_.notify_all();
-        FutexTool::FutexWake(clientBuffer_->GetFutex(), IS_PRE_EXIT);
-        if (callbackLoop_.joinable()) {
-            callbackLoop_.join();
-        }
-    }
+    //clear write callback
+    JoinCallbackLoop();
     paramsIsSet_ = false;
 
     std::unique_lock<std::mutex> lock(streamCbMutex_);

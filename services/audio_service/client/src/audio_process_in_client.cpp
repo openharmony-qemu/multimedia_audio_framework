@@ -146,6 +146,8 @@ public:
 
     bool GetStopFlag() const override;
 
+    void JoinCallbackLoop() override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -247,6 +249,7 @@ private:
     LinearPosTimeModel handleTimeModel_;
 
     std::thread callbackLoop_; // thread for callback to client and write.
+    std::mutex loopMutex_;
     bool isCallbackLoopEnd_ = false;
     std::atomic<ThreadStatus> threadStatus_ = INVALID;
     std::mutex loopThreadLock_;
@@ -391,13 +394,8 @@ std::shared_ptr<AudioProcessInClient> AudioProcessInClient::Create(const AudioPr
 AudioProcessInClientInner::~AudioProcessInClientInner()
 {
     AUDIO_INFO_LOG("AudioProcessInClient deconstruct.");
-    if (callbackLoop_.joinable()) {
-        std::unique_lock<std::mutex> lock(loopThreadLock_);
-        isCallbackLoopEnd_ = true; // change it with lock to break the loop
-        threadStatusCV_.notify_all();
-        lock.unlock(); // should call unlock before join
-        callbackLoop_.join();
-    }
+
+    JoinCallbackLoop();
     if (isInited_) {
         AudioProcessInClientInner::Release();
     }
@@ -674,6 +672,7 @@ void AudioProcessInClientInner::InitPlaybackThread(std::weak_ptr<FastAudioStream
     CHECK_AND_RETURN_LOG(fastStream != nullptr, "fast stream is null");
     fastStream->ResetCallbackLoopTid();
 #endif
+    std::unique_lock<std::mutex> statusLock(loopMutex_);
     callbackLoop_ = std::thread([this, weakStream] {
         bool keepRunning = true;
         uint64_t curWritePos = 0;
@@ -1278,6 +1277,18 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
     AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
         processConfig_.audioMode, GetStatusInfo(oldStatus).c_str());
     return SUCCESS;
+}
+
+void AudioProcessInClientInner::JoinCallbackLoop()
+{
+    std::unique_lock<std::mutex> statusLock(loopMutex_);
+    if (callbackLoop_.joinable() && !isCallbackLoopEnd_) {
+        std::unique_lock<std::mutex> lock(loopThreadLock_);
+        isCallbackLoopEnd_ = true; // change it with lock to break the loop
+        threadStatusCV_.notify_all();
+        lock.unlock(); // should call unlock before join
+        callbackLoop_.join();
+    }
 }
 
 int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
