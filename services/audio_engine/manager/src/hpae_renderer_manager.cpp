@@ -317,7 +317,6 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
     }
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
-
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
         DeleteProcessCluster(nodeInfo, sceneType, sessionId);
         if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
@@ -331,7 +330,6 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
     }
-
     if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
         sceneClusterMap_.erase(sceneType);
         sceneTypeToProcessClusterCountMap_.erase(sceneType);
