@@ -35,9 +35,11 @@ NapiAudioRendererDeviceChangeCallback::~NapiAudioRendererDeviceChangeCallback()
     AUDIO_INFO_LOG("instance destroy");
 }
 
-void NapiAudioRendererDeviceChangeCallback::SaveCallbackReference(const std::string &callbackName, napi_value args)
+void NapiAudioRendererDeviceChangeCallback::AddCallbackReference(napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    napi_ref callback;
+    const int32_t refCount = 1;
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
@@ -47,13 +49,14 @@ void NapiAudioRendererDeviceChangeCallback::SaveCallbackReference(const std::str
             "get napi_strict_equals failed");
         CHECK_AND_RETURN_LOG(!isEquals, "js callback already exits");
     }
-    // create function that will operate while save callback reference success.
-    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
-        [this](std::shared_ptr<AutoRef> generatedCallback) {
-        callbacks_.push_back(generatedCallback);
-    };
-    NapiAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, args, successed);
-    AUDIO_DEBUG_LOG("SaveAudioRendererDeviceChangeCallback sucessful");
+
+    napi_status status = napi_create_reference(env_, args, refCount, &callback);
+    CHECK_AND_RETURN_LOG(status == napi_ok && callback != nullptr,
+        "NapiAudioRendererDeviceChangeCallback: create reference for callback fail");
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    callbacks_.push_back(cb);
+    AUDIO_DEBUG_LOG("AddAudioRendererDeviceChangeCallback sucessful");
 }
 
 void NapiAudioRendererDeviceChangeCallback::CreateRendererDeviceChangeTsfn(napi_env env)
@@ -71,14 +74,18 @@ bool NapiAudioRendererDeviceChangeCallback::GetRendererDeviceChangeTsfnFlag()
     return regArDevInfoTsfn_;
 }
 
-void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(const std::string &callbackName,
-    napi_env env, napi_value callback, napi_value args)
+void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(napi_env env, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
     napi_value copyValue = nullptr;
 
     if (args == nullptr) {
+        for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+            napi_status ret = napi_delete_reference(env, (*autoRef)->cb_);
+            CHECK_AND_RETURN_LOG(napi_ok == ret, "delete callback reference failed");
+            (*autoRef)->cb_ = nullptr;
+        }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
         return;
@@ -93,29 +100,13 @@ void NapiAudioRendererDeviceChangeCallback::RemoveCallbackReference(const std::s
         if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
             callbacks_.remove(*autoRef);
+            napi_status status = napi_delete_reference(env, (*autoRef)->cb_);
+            CHECK_AND_RETURN_LOG(status == napi_ok, "deleting callback reference failed");
+            (*autoRef)->cb_ = nullptr;
             return;
         }
     }
     AUDIO_INFO_LOG("RemoveCallbackReference success");
-}
-
-napi_env &NapiAudioRendererDeviceChangeCallback::GetEnv()
-{
-    return env_;
-}
-
-std::shared_ptr<AutoRef> &NapiAudioRendererDeviceChangeCallback::GetCallback(const std::string &callbackName)
-{
-    std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
-    return callbackCur;
-}
-
-bool NapiAudioRendererDeviceChangeCallback::CheckIfTargetCallbackName(const std::string &callbackName)
-{
-    if (callbackName == DEVICECHANGE_CALLBACK_NAME) {
-        return true;
-    }
-    return false;
 }
 
 void NapiAudioRendererDeviceChangeCallback::RemoveAllCallbacks()
@@ -204,8 +195,7 @@ NapiAudioRendererOutputDeviceChangeWithInfoCallback::~NapiAudioRendererOutputDev
     AUDIO_INFO_LOG("instance destroy");
 }
 
-void NapiAudioRendererOutputDeviceChangeWithInfoCallback::SaveCallbackReference(const std::string &callbackName,
-    napi_value args)
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     napi_ref callback = nullptr;
@@ -244,29 +234,7 @@ bool NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetOutputDeviceChangeT
     return regArOutputDevChg_;
 }
 
-napi_env &NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetEnv()
-{
-    return env_;
-}
-
-std::shared_ptr<AutoRef> &NapiAudioRendererOutputDeviceChangeWithInfoCallback::GetCallback(
-    const std::string &callbackName)
-{
-    std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
-    return callbackCur;
-}
-
-bool NapiAudioRendererOutputDeviceChangeWithInfoCallback::CheckIfTargetCallbackName(
-    const std::string &callbackName)
-{
-    if (callbackName == OUTPUT_DEVICECHANGE_WITH_INFO) {
-        return true;
-    }
-    return false;
-}
-
-void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(const std::string &callbackName,
-    napi_env env, napi_value callback, napi_value args)
+void NapiAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(napi_env env, napi_value args)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
