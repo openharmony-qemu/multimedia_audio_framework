@@ -193,7 +193,7 @@ private:
 class AudioQueryBundleNameListCallback {
 public:
     virtual ~AudioQueryBundleNameListCallback() = default;
-    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName) = 0;
+    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) = 0;
 };
 
 class AudioManagerAvailableDeviceChangeCallback {
