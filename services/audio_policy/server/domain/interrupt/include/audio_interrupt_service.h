@@ -63,8 +63,11 @@ public:
 
     // interfaces for AudioSessionService
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);

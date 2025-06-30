@@ -154,6 +154,12 @@ public:
 
     bool IsAudioSessionActivated() override;
 
+    int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene) override;
+
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType) override;
+
+    int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const SourceType sourceType, bool isRunning) override;
 

@@ -621,6 +621,24 @@ void AudioPolicyClientProxy::OnAudioSessionDeactive(const AudioSessionDeactiveEv
     reply.ReadInt32();
 }
 
+void AudioPolicyClientProxy::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option(MessageOption::TF_ASYNC | MessageOption::TF_ASYNC_WAKEUP_LATER);
+    if (!data.WriteInterfaceToken(GetDescriptor())) {
+        AUDIO_ERR_LOG("WriteInterfaceToken failed");
+        return;
+    }
+    data.WriteInt32(static_cast<int32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_STATE_CHANGED));
+    data.WriteInt32(static_cast<int32_t>(stateChangedEvent.stateChangeHint));
+    int error = Remote()->SendRequest(static_cast<uint32_t>(UPDATE_CALLBACK_CLIENT), data, reply, option);
+    if (error != 0) {
+        AUDIO_ERR_LOG("Error while sending volume key event %{public}d", error);
+    }
+    reply.ReadInt32();
+}
+
 void AudioPolicyClientProxy::OnFormatUnsupportedError(const AudioErrors &errorCode)
 {
     MessageParcel data;

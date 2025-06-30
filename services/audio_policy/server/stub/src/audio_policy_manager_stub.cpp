@@ -255,7 +255,10 @@ const char *g_audioPolicyCodeStrs[] = {
     "IS_AUDIO_LOOPBACK_SUPPORTED",
     "SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE",
     "IS_COLLABORATIVE_PALYBACK_SUPPORTED",
-    "IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE"
+    "IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE",
+    "SET_AUDIO_SESSION_SCENE",
+    "GET_SESSION_DEFAULT_OUTPUT_DEVICE",
+    "SET_SESSION_DEFAULT_OUTPUT_DEVICE"
 };
 
 constexpr size_t codeNums = sizeof(g_audioPolicyCodeStrs) / sizeof(const char *);
@@ -1362,6 +1365,26 @@ void AudioPolicyManagerStub::SetBackgroundMuteCallbackInternal(MessageParcel &da
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::OnMiddleThiRemoteRequest(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SESSION_SCENE):
+            SetAudioSessionSceneInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_DEFAULT_OUTPUT_DEVICE):
+            GetDefaultOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SESSION_DEFAULT_OUTPUT_DEVICE):
+            SetDefaultOutputDeviceInternal(data, reply);
+            break;
+        default:
+            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
+            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            break;
+    }
+}
+
 void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
     uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
 {
@@ -1409,8 +1432,7 @@ void AudioPolicyManagerStub::OnMiddleTweRemoteRequest(
             CheckVKBInfoInternal(data, reply);
             break;
         default:
-            AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");
-            IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+            OnMiddleThiRemoteRequest(code, data, reply, option);
             break;
     }
 }
@@ -2594,5 +2616,30 @@ void AudioPolicyManagerStub::IsCollaborativePlaybackEnabledForDeviceInternal(Mes
     bool result = IsCollaborativePlaybackEnabledForDevice(audioDeviceDescriptor);
     reply.WriteBool(result);
 }
+
+void AudioPolicyManagerStub::SetAudioSessionSceneInternal(MessageParcel &data, MessageParcel &reply)
+{
+    AudioSessionScene audioSessionScene = static_cast<AudioSessionScene>(data.ReadInt32());
+    int32_t result = SetAudioSessionScene(audioSessionScene);
+    reply.WriteInt32(result);
+}
+
+void AudioPolicyManagerStub::GetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType;
+    int32_t ret = GetDefaultOutputDevice(deviceType);
+    if (ret != SUCCESS) {
+        deviceType = static_cast<DeviceType>(DEVICE_TYPE_NONE);
+    }
+    reply.WriteInt32(static_cast<int32_t>(deviceType));
+}
+
+void AudioPolicyManagerStub::SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply)
+{
+    DeviceType deviceType = static_cast<DeviceType>(data.ReadInt32());
+    int32_t ret = SetDefaultOutputDevice(deviceType);
+    reply.WriteInt32(ret);
+}
+
 } // namespace audio_policy
 } // namespace OHOS

@@ -257,7 +257,11 @@ private:
     void IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioSessionSceneInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleThiRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

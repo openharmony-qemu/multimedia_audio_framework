@@ -4192,6 +4192,7 @@ bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &se
 
 int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &strategy)
 {
+    int32_t ret = SUCCESS;
     if (interruptService_ == nullptr) {
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
@@ -4203,7 +4204,12 @@ int32_t AudioPolicyServer::ActivateAudioSession(const AudioSessionStrategy &stra
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid);
-    return interruptService_->ActivateAudioSession(callerPid, strategy);
+    ret = interruptService_->ActivateAudioSession(callerPid, strategy);
+    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
+        coreService_->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+    }
+
+    return ret;
 }
 
 int32_t AudioPolicyServer::DeactivateAudioSession()
@@ -4227,6 +4233,38 @@ bool AudioPolicyServer::IsAudioSessionActivated()
     bool isActive = interruptService_->IsAudioSessionActivated(callerPid);
     AUDIO_INFO_LOG("callerPid %{public}d, isSessionActive: %{public}d.", callerPid, isActive);
     return isActive;
+}
+
+int32_t AudioPolicyServer::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    return 0;
+}
+
+int32_t AudioPolicyServer::GetDefaultOutputDevice(DeviceType &deviceType)
+{
+    if (interruptService_ != nullptr) {
+        int32_t callerPid = IPCSkeleton::GetCallingPid();
+        return interruptService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
+    }
+
+    return ERR_ILLEGAL_STATE;
+}
+
+int32_t AudioPolicyServer::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    int32_t ret = ERR_ILLEGAL_STATE;
+
+    if (interruptService_ != nullptr) {
+        int32_t callerPid = IPCSkeleton::GetCallingPid();
+        ret = interruptService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+        if (ret == NEED_TO_FETCH) {
+            coreService_->FetchOutputDeviceAndRoute(
+                AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+            return SUCCESS;
+        }
+    }
+
+    return ret;
 }
 
 int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)

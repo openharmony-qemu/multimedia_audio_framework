@@ -71,6 +71,7 @@ AudioCoreService::AudioCoreService()
       audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
       sleAudioDeviceManager_(SleAudioDeviceManager::GetInstance()),
       audioPipeSelector_(AudioPipeSelector::GetPipeSelector()),
+      audioSessionService_(AudioSessionService::GetAudioSessionService()),
       pipeManager_(AudioPipeManager::GetPipeManager())
 {
     AUDIO_INFO_LOG("Ctor");

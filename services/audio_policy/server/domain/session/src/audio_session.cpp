@@ -20,6 +20,9 @@
 #include "audio_policy_log.h"
 #include "audio_errors.h"
 #include "audio_session_state_monitor.h"
+#include "audio_device_manager.h"
+#include "audio_pipe_manager.h"
+#include "audio_stream_descriptor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +47,7 @@ int32_t AudioSession::Activate()
     state_ = AudioSessionState::SESSION_ACTIVE;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
+    needToFetch = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
     return SUCCESS;
 }
 
@@ -52,9 +56,47 @@ int32_t AudioSession::Deactivate()
     std::lock_guard<std::mutex> lock(sessionMutex_);
     state_ = AudioSessionState::SESSION_DEACTIVE;
     interruptMap_.clear();
+    needToFetch = false;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     return SUCCESS;
+}
+
+int32_t AudioSession::EnableDefaultDevice()
+{
+    if (defaultDeviceType_ == DEVICE_TYPE_INVALID) {
+        return SUCCESS;
+    }
+
+    int32_t ret = AudioDeviceManager::GetAudioDeviceManager().SetDefaultOutputDevice(defaultDeviceType_, 888,
+        GetStreamUsageByAudioSessionScene(audioSessionScene_), true);
+    if ((ret != NEED_TO_FETCH) && (ret != SUCCESS)) {
+        AUDIO_ERR_LOG("SetDefaultOutputDevice for session failed, ret is %{public}d", ret);
+    }
+
+    return ret;
+}
+
+bool AudioSession::IsNeedToFetchDefaultDevice()
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    return needToFetch;
+}
+
+StreamUsage AudioSession::GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    static const std::unordered_map<AudioSessionScene, StreamUsage> mapping = {
+        {AudioSessionScene::MEDIA, StreamUsage::STREAM_USAGE_MEDIA},
+        {AudioSessionScene::GAME, StreamUsage::STREAM_USAGE_GAME},
+        {AudioSessionScene::VOICE_COMMUNICATION, StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION},
+    };
+
+    auto it = mapping.find(audioSessionScene_);
+    if (it != mapping.end()) {
+        return it->second;
+    }
+
+    return StreamUsage::STREAM_USAGE_UNKNOWN;
 }
 
 AudioSessionState AudioSession::GetSessionState()
@@ -149,5 +191,49 @@ bool AudioSession::IsAudioRendererEmpty()
     }
     return true;
 }
+
+bool AudioSession::IsLegalDevice(const DeviceType deviceType)
+{
+    return (deviceType == DEVICE_TYPE_EARPIECE) ||
+            (deviceType == DEVICE_TYPE_SPEAKER) ||
+            (deviceType == DEVICE_TYPE_DEFAULT);
+}
+
+int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    AUDIO_INFO_LOG("The session default output device is set to %{public}d", deviceType);
+    if (!IsLegalDevice(deviceType)) {
+        AUDIO_INFO_LOG("The deviceType is illegal, the default device will not be changed.");
+        return ERROR_INVALID_PARAM;
+    }
+
+    defaultDeviceType_ = deviceType;
+
+    if (state_ == AudioSessionState::SESSION_ACTIVE) {
+        return EnableDefaultDevice();
+    }
+
+    return SUCCESS;
+}
+
+void AudioSession::GetSessionDefaultOutputDevice(DeviceType &deviceType)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    deviceType = defaultDeviceType_;
+}
+
+bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
+{
+    std::lock_guard<std::mutex> lock(sessionMutex_);
+    for (auto streamInfo : bypassStreamInfoVec_) {
+        if (streamInfo.streamId == streamId) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

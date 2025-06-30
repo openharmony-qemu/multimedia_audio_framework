@@ -64,6 +64,7 @@ public:
         const bool &enabled) override;
     void OnNnStateChange(const int32_t &state) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
 

@@ -136,7 +136,7 @@ void AudioInterruptService::Init(sptr<AudioPolicyServer> server)
     zoneManager_.CreateAudioInterruptZone(ZONEID_DEFAULT,
         AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY, false);
 
-    sessionService_ = std::make_shared<AudioSessionService>();
+    sessionService_ = AudioSessionService::GetAudioSessionService();
     sessionService_->SetSessionTimeOutCallback(shared_from_this());
     dfxCollector_ = std::make_unique<AudioInterruptDfxCollector>();
 }
@@ -208,6 +208,17 @@ int32_t AudioInterruptService::ActivateAudioSession(const int32_t callerPid, con
         AddActiveInterruptToSession(callerPid);
     }
     return SUCCESS;
+}
+
+bool AudioInterruptService::IsSessionNeedToFetchOutputDevice(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (sessionService_ == nullptr) {
+        AUDIO_ERR_LOG("sessionService_ is nullptr!");
+        return false;
+    }
+
+    return sessionService_->IsSessionNeedToFetchOutputDevice(callerPid);
 }
 
 void AudioInterruptService::AddActiveInterruptToSession(const int32_t callerPid)
@@ -295,6 +306,31 @@ bool AudioInterruptService::IsAudioSessionActivated(const int32_t callerPid)
         return false;
     }
     return sessionService_->IsAudioSessionActivated(callerPid);
+}
+
+int32_t AudioInterruptService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyConfigManager::GetInstance().GetHasEarpiece(), ERR_NOT_SUPPORTED,
+        "the device has no earpiece");
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (sessionService_ == nullptr) {
+        AUDIO_ERR_LOG("sessionService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    return sessionService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioInterruptService::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (sessionService_ == nullptr) {
+        AUDIO_ERR_LOG("GetSessionDefaultOutputDevice sessionService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    deviceType = sessionService_->GetSessionDefaultOutputDevice(callerPid);
+    return SUCCESS;
 }
 
 bool AudioInterruptService::IsCanMixInterrupt(const AudioInterrupt &incomingInterrupt,

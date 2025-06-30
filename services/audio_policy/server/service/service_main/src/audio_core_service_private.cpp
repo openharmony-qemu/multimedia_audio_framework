@@ -1745,6 +1745,11 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
         "sessionId is not exist");
 
+    if ((audioSessionService_ != nullptr) && (!audioSessionService_->IsStreamAllowedToSetDevice(sessionID))) {
+        AUDIO_ERR_LOG("current stream is contained in a session which had set default output device");
+        return ERR_NOT_SUPPORTED;
+    }
+
     AUDIO_INFO_LOG("[ADeviceEvent] device %{public}d for %{public}s stream %{public}u", deviceType,
         isRunning ? "running" : "not running", sessionID);
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);

@@ -52,6 +52,12 @@ AudioSessionService::~AudioSessionService()
 {
 }
 
+std::shared_ptr<AudioSessionService> AudioSessionService::GetAudioSessionService()
+{
+    static std::shared_ptr<AudioSessionService> audioSessionService = std::make_shared<AudioSessionService>();
+    return audioSessionService;
+}
+
 bool AudioSessionService::IsSameTypeForAudioSession(const AudioStreamType incomingType,
     const AudioStreamType existedType)
 {
@@ -187,6 +193,64 @@ void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
         }
     }
     dumpString += "\n";
+}
+
+int32_t AudioSessionService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if ((sessionMap_.count(callerPid) > 0) && (sessionMap_[callerPid] != nullptr)) {
+        AUDIO_INFO_LOG("SetSessionDefaultOutputDevice: callerPid %{public}d, deviceType %{public}d",
+            callerPid, static_cast<int32_t>(deviceType));
+    } else {
+        AudioSessionStrategy strategy;
+        strategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+        sessionMap_[callerPid] = std::make_shared<AudioSession>(callerPid, strategy, shared_from_this());
+        CHECK_AND_RETURN_RET_LOG(sessionMap_[callerPid] != nullptr, ERROR, "Create AudioSession fail");
+    }
+
+    return sessionMap_[callerPid]->SetSessionDefaultOutputDevice(deviceType);
+}
+
+DeviceType AudioSessionService::GetSessionDefaultOutputDevice(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if ((sessionMap_.count(callerPid) > 0) && (sessionMap_[callerPid] != nullptr)) {
+        DeviceType deviceType;
+        sessionMap_[callerPid]->GetSessionDefaultOutputDevice(deviceType);
+        return deviceType;
+    }
+
+    return DEVICE_TYPE_INVALID;
+}
+
+bool AudioSessionService::IsStreamAllowedToSetDevice(const uint32_t streamId)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    for (const auto& pair : sessionMap_) {
+        if ((pair.second != nullptr) && (pair.second->IsStreamContainedInCurrentSession(streamId))) {
+            // for inactivate session, its default device cannot be used, so set it to DEVICE_TYPE_INVALID
+            if (pair.second->GetSessionState() != AudioSessionState::SESSION_ACTIVE) {
+                return true;
+            } else {
+                DeviceType deviceType;
+                pair.second->GetSessionDefaultOutputDevice(deviceType);
+                return deviceType == DEVICE_TYPE_INVALID;
+            }
+            return true;
+        }
+    }
+
+    return true;
+}
+
+bool AudioSessionService::IsSessionNeedToFetchOutputDevice(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if ((sessionMap_.count(callerPid) != 0) && (sessionMap_[callerPid] != nullptr)) {
+        return sessionMap_[callerPid]->IsNeedToFetchDefaultDevice();
+    }
+
+    return false;
 }
 
 } // namespace AudioStandard

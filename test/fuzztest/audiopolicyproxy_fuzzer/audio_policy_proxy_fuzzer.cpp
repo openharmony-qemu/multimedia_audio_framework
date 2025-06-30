@@ -383,6 +383,10 @@ void AudioPolicyProxyThreeFuzzTest()
     audioPolicyProxy->SetCallDeviceActive(DEVICE_TYPE_SPEAKER, active, address, uid);
     audioPolicyProxy->GetActiveBluetoothDevice();
     audioPolicyProxy->GetConverterConfig();
+    audioPolicyProxy->SetAudioSessionScene(AudioSessionScene::MEDIA);
+    audioPolicyProxy->SetDefaultOutputDevice(DeviceType::DEVICE_TYPE_DEFAULT);
+    DeviceType deviceType;
+    audioPolicyProxy->GetDefaultOutputDevice(deviceType);
 }
 
 void AudioPolicyProxyFourFuzzTest()
