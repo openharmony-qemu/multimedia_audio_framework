@@ -47,6 +47,7 @@ public:
     int32_t SetAudioSceneProxy(AudioScene audioScene, std::vector<DeviceType> activeOutputDevices,
         DeviceType deviceType, BluetoothOffloadState state);
     float GetMaxAmplitudeProxy(bool flag, std::string portName, SourceType sourceType = SOURCE_TYPE_INVALID);
+    int64_t GetVolumeDataCount(std::string sinkName);
     void UpdateEffectBtOffloadSupportedProxy(const bool &isSupported);
     void SetOutputDeviceSinkProxy(DeviceType deviceType, std::string sinkName);
     void SetActiveOutputDeviceProxy(DeviceType deviceType);

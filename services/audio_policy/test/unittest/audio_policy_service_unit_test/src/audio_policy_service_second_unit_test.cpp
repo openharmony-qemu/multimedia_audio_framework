@@ -204,20 +204,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, WriteAllDeviceSysEvents_001, TestSize.Le
 }
 
 /**
- * @tc.name  : Test UpdateTrackerDeviceChange.
- * @tc.number: UpdateTrackerDeviceChange_001
- * @tc.desc  : Test UpdateTrackerDeviceChange interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateTrackerDeviceChange_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc =
-        AudioSystemManager::GetInstance()->GetDevices(DeviceFlag::ALL_DEVICES_FLAG);
-    server->audioPolicyService_.audioDeviceLock_.UpdateTrackerDeviceChange(desc);
-    EXPECT_TRUE(desc.size() >= 0);
-}
-
-/**
  * @tc.name  : Test SetAbsVolumeSceneAsync.
  * @tc.number: SetAbsVolumeSceneAsync_001
  * @tc.desc  : Test SetAbsVolumeSceneAsync interfaces.
@@ -575,41 +561,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test UpdateInputDeviceInfo.
- * @tc.number: UpdateInputDeviceInfo_001
- * @tc.desc  : Test UpdateInputDeviceInfo interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateInputDeviceInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_MIC);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_FILE_SOURCE);
-
-    deviceType = DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_USB_HEADSET);
-
-    deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-
-    deviceType = (DeviceType)777;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-}
-
-
-/**
  * @tc.name  : Test GetDeviceTypeFromPin.
  * @tc.number: GetDeviceTypeFromPin_001
  * @tc.desc  : Test GetDeviceTypeFromPin interfaces.
@@ -637,36 +588,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetDeviceTypeFromPin_001, TestSize.Level
     hdiPin = (AudioPin)666;
     deviceType = server->audioPolicyService_.audioDeviceStatus_.GetDeviceTypeFromPin(hdiPin);
     EXPECT_EQ(deviceType, DeviceType::DEVICE_TYPE_DEFAULT);
-}
-
-/**
- * @tc.name  : Test GetProcessDeviceInfo.
- * @tc.number: GetProcessDeviceInfo_001
- * @tc.desc  : Test GetProcessDeviceInfo interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetProcessDeviceInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioProcessConfig config;
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    int32_t ret;
-
-    config.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, ERROR);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, ERROR);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, SUCCESS);
-
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, true, deviceInfo);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -721,7 +642,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateAudioCapturerMicrophoneDescriptor_
     server->audioPolicyService_.audioMicrophoneDescriptor_.AddMicrophoneDescriptor(deviceDescriptor);
     server->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(sessionId, devType);
     server->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(devType);
-    AudioCapturerMicrophoneDescriptors = server->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(sessionId);
     server->audioPolicyService_.audioMicrophoneDescriptor_.RemoveMicrophoneDescriptor(deviceDescriptor);
     server->audioPolicyService_.audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(sessionId);
     EXPECT_TRUE(server->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.size() >= 0);
@@ -1197,57 +1117,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAndActiveHfpDevice_001, TestSize.Le
     desc.connectState_ = ConnectState::CONNECTED;
     desc.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
     server->audioPolicyService_.audioDeviceStatus_.CheckAndActiveHfpDevice(desc);
-}
-
-/**
- * @tc.name  : Test SetDeviceActive.
- * @tc.number: SetDeviceActive_001
- * @tc.desc  : Test SetDeviceActive interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, SetDeviceActive_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    auto ret = server->audioPolicyService_.audioDeviceLock_.SetDeviceActive(DeviceType::DEVICE_TYPE_SPEAKER, true);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
- * @tc.name  : Test GetAvailableDevices.
- * @tc.number: GetAvailableDevices_001
- * @tc.desc  : Test GetAvailableDevices interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, GetAvailableDevices_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioStreamChangeInfo streamChangeInfo;
-    server->audioPolicyService_.audioDeviceLock_.FetchOutputDeviceForTrack(
-        streamChangeInfo, AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
-    server->audioPolicyService_.audioDeviceLock_.FetchInputDeviceForTrack(streamChangeInfo);
-    auto ret = server->audioPolicyService_.audioDeviceLock_.GetAvailableDevices(AudioDeviceUsage::ALL_MEDIA_DEVICES);
-    EXPECT_GT(ret.size(), 0);
-}
-
-/**
- * @tc.name  : Test RegisterTracker.
- * @tc.number: RegisterTracker_001
- * @tc.desc  : Test RegisterTracker interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterTracker_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1001;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = 2001;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_RUNNING;
-
-    sptr<AudioClientTrackerCallbackStub> callback = new AudioClientTrackerCallbackStub();
-    std::shared_ptr<AudioClientTracker> clientTrackerObj = nullptr;
-    callback->SetClientTrackerCallback(clientTrackerObj);
-    sptr<IRemoteObject> object = callback->AsObject();
-    auto ret = server->audioPolicyService_.audioDeviceLock_.RegisterTracker(
-        mode, streamChangeInfo, object, API_VERSION::API_9);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

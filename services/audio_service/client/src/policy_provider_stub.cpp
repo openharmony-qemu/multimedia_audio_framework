@@ -62,14 +62,14 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleConcurrencyFromServer(data, reply);
         case REMOVE_AUDIO_CAPTURER:
             return HandleNotifyCapturerRemoved(data, reply);
-        case SET_DEFAULT_OUTPUT_DEVICE:
-            return HandleSetDefaultOutputDevice(data, reply);
 #ifdef HAS_FEATURE_INNERCAPTURER
         case LOAD_MODERN_INNER_CAPTURE_SINK:
             return HandleLoadModernInnerCapSink(data, reply);
         case UNLOAD_MODERN_INNER_CAPTURE_SINK:
             return HandleUnloadModernInnerCapSink(data, reply);
 #endif
+        case CLEAR_AUDIO_FOCUS_BY_SESSIONID:
+            return HandleClearAudioFocusBySessionID(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -185,17 +185,6 @@ int32_t PolicyProviderStub::HandleNotifyCapturerRemoved(MessageParcel &data, Mes
     return AUDIO_OK;
 }
 
-int32_t PolicyProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t deviceType = data.ReadInt32();
-    uint32_t sessionID = data.ReadUint32();
-    int32_t streamUsage = data.ReadInt32();
-    bool isRunning = data.ReadBool();
-    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType),
-        sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
-    return AUDIO_OK;
-}
-
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderStub::HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
 {
@@ -211,6 +200,15 @@ int32_t PolicyProviderStub::HandleUnloadModernInnerCapSink(MessageParcel &data, 
     return AUDIO_OK;
 }
 #endif
+
+int32_t PolicyProviderStub::HandleClearAudioFocusBySessionID(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t sessionID = data.ReadInt32();
+    int32_t ret = ClearAudioFocusBySessionID(sessionID);
+    reply.WriteInt32(ret);
+    return AUDIO_OK;
+}
+
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
     policyWorker_ = nullptr;
@@ -288,12 +286,6 @@ int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyCapturerRemoved(sessionId);
 }
-int32_t PolicyProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
-{
-    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
-}
 
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderWrapper::LoadModernInnerCapSink(int32_t innerCapId)
@@ -308,5 +300,11 @@ int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
     return policyWorker_->UnloadModernInnerCapSink(innerCapId);
 }
 #endif
+
+int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->ClearAudioFocusBySessionID(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

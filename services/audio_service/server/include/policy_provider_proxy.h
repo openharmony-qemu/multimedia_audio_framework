@@ -49,13 +49,13 @@ public:
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 #endif
+
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 
 private:
     static inline BrokerDelegator<PolicyProviderProxy> delegator_;

@@ -17,7 +17,7 @@
 #define CAPTURER_CLOCK_MANAGER_H
 
 #include "capturer_clock.h"
-#include "../../audioclock/include/audio_source_clock.h"
+#include "audio_source_clock.h"
 
 namespace OHOS {
 namespace AudioStandard {

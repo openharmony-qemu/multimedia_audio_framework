@@ -64,7 +64,8 @@ AudioProcessProxy::~AudioProcessProxy()
 {
 }
 
-int32_t AudioProcessProxy::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+int32_t AudioProcessProxy::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -75,7 +76,8 @@ int32_t AudioProcessProxy::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
     int ret = Remote()->SendRequest(IAudioProcessMsg::ON_RESOLVE_BUFFER, data, reply, option);
     CHECK_AND_RETURN_RET_LOG((ret == AUDIO_OK && reply.ReadInt32() == AUDIO_OK), ERR_OPERATION_FAILED,
         "ResolveBuffer failed, error: %{public}d", ret);
-    buffer = OHAudioBuffer::ReadFromParcel(reply);
+    buffer = OHAudioBufferBase::ReadFromParcel(reply);
+    spanSizeInFrame = reply.ReadUint32();
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_OPERATION_FAILED, "ReadFromParcel failed");
     return SUCCESS;
 }

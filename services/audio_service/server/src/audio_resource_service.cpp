@@ -14,6 +14,8 @@
  */
 
 #include "audio_resource_service.h"
+
+#include <memory>
 #include "rtg_interface.h"
 #include "audio_common_log.h"
 #include "audio_errors.h"
@@ -56,7 +58,7 @@ int32_t AudioResourceService::CreateAudioWorkgroupCheck(int32_t inPid)
     return SUCCESS;
 }
 
-int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid)
+int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object)
 {
     std::lock_guard<std::mutex> lock(workgroupLock_);
     CHECK_AND_RETURN_RET_LOG(pid > 0, ERR_INVALID_PARAM, "CreateAudioWorkgroup for pid < 0");
@@ -70,7 +72,15 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid)
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_CREATE_GRP, -1, -1, reply);
     if (reply.rtgId != -1) {
-        audioWorkgroupMap[pid][reply.rtgId] = std::make_shared<AudioWorkgroup>(reply.rtgId);
+        auto workgroup = std::make_shared<AudioWorkgroup>(reply.rtgId);
+        audioWorkgroupMap[pid][reply.rtgId] = workgroup;
+ 
+        sptr<AudioWorkgroupDeathRecipient> deathRecipient = new AudioWorkgroupDeathRecipient();
+        deathRecipient->SetNotifyCb([this, workgroup, object]() {
+            this->OnWorkgroupRemoteDied(workgroup, object);
+        });
+        object->AddDeathRecipient(deathRecipient);
+        deathRecipientMap_[workgroup] = std::make_pair(object, deathRecipient);
     }
     Trace trace("[WorkgroupInServer] CreateAudioWorkgroup pid:" + std::to_string(pid) +
         " groupId:" + std::to_string(reply.rtgId));
@@ -96,6 +106,23 @@ int32_t AudioResourceService::ReleaseAudioWorkgroup(int32_t pid, int32_t workgro
         AUDIO_ERR_LOG("[WorkgroupInServer] ReleaseAudioWorkgroup failed, workgroupId:%{public}d", workgroupId);
         return ERR_OPERATION_FAILED;
     }
+
+    std::shared_ptr<AudioWorkgroup> workgroupPtr;
+    auto it = audioWorkgroupMap.find(pid);
+    if (it != audioWorkgroupMap.end()) {
+        auto wgIt = it->second.find(workgroupId);
+        if (wgIt != it->second.end()) {
+            workgroupPtr = wgIt->second;
+        }
+    }
+ 
+    if (workgroupPtr) {
+        auto deathIt = deathRecipientMap_.find(workgroupPtr);
+        if (deathIt != deathRecipientMap_.end()) {
+            ReleaseWorkgroupDeathRecipient(workgroupPtr, deathIt->second.first);
+        }
+    }
+
     audioWorkgroupMap[pid].erase(workgroupId);
     if (audioWorkgroupMap[pid].size() == 0) {
         audioWorkgroupMap.erase(pid);
@@ -161,6 +188,58 @@ AudioWorkgroup *AudioResourceService::GetAudioWorkgroupPtr(int32_t pid, int32_t 
         return nullptr;
     }
     return group_ptr.get();
+}
+
+AudioResourceService::AudioWorkgroupDeathRecipient::AudioWorkgroupDeathRecipient()
+{
+    AUDIO_ERR_LOG("[WorkgroupInServer] AudioWorkgroupDeathRecipient ctor");
+}
+ 
+void AudioResourceService::AudioWorkgroupDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
+{
+    if (diedCb_ != nullptr) {
+        diedCb_();
+    }
+}
+ 
+void AudioResourceService::AudioWorkgroupDeathRecipient::SetNotifyCb(NotifyCbFunc func)
+{
+    diedCb_ = func;
+}
+ 
+void AudioResourceService::OnWorkgroupRemoteDied(const std::shared_ptr<AudioWorkgroup> &workgroup,
+    const sptr<IRemoteObject> &remoteObj)
+{
+    std::lock_guard<std::mutex> lock(workgroupLock_);
+    ReleaseWorkgroupDeathRecipient(workgroup, remoteObj);
+ 
+    for (auto pidIt = audioWorkgroupMap.begin(); pidIt != audioWorkgroupMap.end();) {
+        for (auto groupIt = pidIt->second.begin(); groupIt != pidIt->second.end();) {
+            if (groupIt->second == workgroup) {
+                groupIt = pidIt->second.erase(groupIt);
+            } else {
+                ++groupIt;
+            }
+        }
+        if (pidIt->second.empty()) {
+            AUDIO_INFO_LOG("[WorkgroupInServer] All workgroups for pid:%{public}d released", pidIt->first);
+            pidIt = audioWorkgroupMap.erase(pidIt);
+        } else {
+            ++pidIt;
+        }
+    }
+}
+ 
+void AudioResourceService::ReleaseWorkgroupDeathRecipient(const std::shared_ptr<AudioWorkgroup> &workgroup,
+    const sptr<IRemoteObject> &remoteObj)
+{
+    auto it = deathRecipientMap_.find(workgroup);
+    if (it != deathRecipientMap_.end()) {
+        if (it->second.first == remoteObj) {
+            remoteObj->RemoveDeathRecipient(it->second.second);
+            deathRecipientMap_.erase(it);
+        }
+    }
 }
 
 } // namespce AudioStandard

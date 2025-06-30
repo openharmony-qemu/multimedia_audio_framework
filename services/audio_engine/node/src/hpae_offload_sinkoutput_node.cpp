@@ -60,7 +60,7 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
         "HpaeOffloadSinkOutputNode_Out_bit_" + std::to_string(GetBitWidth()) + "_ch_" +
         std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
-    frameLenMs_ = nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate;
+    frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
 }
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()

@@ -267,5 +267,43 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
     int32_t res = ProcessActiveStreamFocus(audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
     return res == SUCCESS && incomingState < PAUSE;
 }
+
+int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "No Permission");
+
+    AUDIO_INFO_LOG("start clear audio focus, target sessionID:%{public}d", sessionID);
+
+    int32_t targetZoneId = -1;
+    AudioInterrupt targetInterrupt;
+    const uint32_t targetSessionID = static_cast<uint32_t>(sessionID);
+    bool clearFlag = false;
+
+    {
+        std::unique_lock<std::mutex> lock(mutex_);
+        for (const auto&[zoneId, audioInterruptZone] : zonesMap_) {
+            CHECK_AND_CONTINUE_LOG(audioInterruptZone != nullptr, "audioInterruptZone is nullptr");
+
+            auto match = [&](const auto& item) {
+                return sessionID >= 0 && item.first.streamId == targetSessionID;
+            };
+
+            auto it = std::find_if(audioInterruptZone->audioFocusInfoList.begin(),
+                audioInterruptZone->audioFocusInfoList.end(), match);
+            if (it != audioInterruptZone->audioFocusInfoList.end()) {
+                targetZoneId = zoneId;
+                targetInterrupt = it->first;
+                clearFlag = true;
+                break;
+            }
+        }
+    }
+
+    if (clearFlag) {
+        (void)DeactivateAudioInterrupt(targetZoneId, targetInterrupt);
+    }
+
+    return SUCCESS;
+}
 }
 } // namespace OHOS

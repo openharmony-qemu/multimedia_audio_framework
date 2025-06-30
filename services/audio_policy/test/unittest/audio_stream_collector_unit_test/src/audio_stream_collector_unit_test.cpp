@@ -27,10 +27,11 @@
 #include <cerrno>
 #include <fstream>
 #include <algorithm>
+#include <gmock/gmock.h>
 using namespace std;
 using namespace std::chrono;
 using namespace testing::ext;
-
+using ::testing::_;
 namespace OHOS {
 namespace AudioStandard {
 
@@ -41,6 +42,81 @@ void AudioStreamCollectorUnitTest::TearDown(void) {}
 
 
 #define PRINT_LINE printf("debug __LINE__:%d\n", __LINE__)
+
+class MockAudioClientTracker : public AudioClientTracker {
+public:
+    MOCK_METHOD(void, MuteStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
+    MOCK_METHOD(void, UnmuteStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
+    MOCK_METHOD(void, PausedStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
+    MOCK_METHOD(void, ResumeStreamImpl, (const StreamSetStateEventInternal& streamSetStateEventInternal), (override));
+
+    MOCK_METHOD(void, SetLowPowerVolumeImpl, (float volume), (override));
+    MOCK_METHOD(void, GetLowPowerVolumeImpl, (float& volume), (override));
+
+    MOCK_METHOD(void, SetOffloadModeImpl, (int32_t state, bool isAppBack), (override));
+    MOCK_METHOD(void, UnsetOffloadModeImpl, (), (override));
+
+    MOCK_METHOD(void, GetSingleStreamVolumeImpl, (float& volume), (override));
+};
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleKaraokeAppToBack_001
+* @tc.desc  : Test HandleKaraokeAppToBack.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t testUid = 1001;
+    int32_t testPid = 2001;
+    int32_t invalidUid = 1002;
+    int32_t invalidPid = 2002;
+    auto validInfo = std::make_unique<AudioRendererChangeInfo>();
+    validInfo->clientUID = testUid;
+    validInfo->clientPid = testPid;
+    validInfo->rendererInfo.isLoopback = true;
+    validInfo->sessionId = 1;
+    auto mockCallback = std::make_shared<MockAudioClientTracker>();
+    audioStreamCollector_.clientTracker_[validInfo->sessionId] = mockCallback;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(validInfo));
+    EXPECT_CALL(*mockCallback, PausedStreamImpl(_)).Times(1);
+    audioStreamCollector_.HandleKaraokeAppToBack(testUid, testPid);
+    audioStreamCollector_.HandleKaraokeAppToBack(testUid, invalidPid);
+    audioStreamCollector_.HandleKaraokeAppToBack(invalidUid, testPid);
+    audioStreamCollector_.HandleKaraokeAppToBack(invalidUid, invalidPid);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleKaraokeAppToBack_002
+* @tc.desc  : Test HandleKaraokeAppToBack.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_002, TestSize.Level1)
+{
+    AudioStreamCollector audioStreamCollector_;
+    int32_t testUid = 1001;
+    int32_t testPid = 2001;
+    auto invalidInfo = std::make_unique<AudioRendererChangeInfo>();
+    invalidInfo->clientUID = testUid;
+    invalidInfo->clientPid = testPid;
+    invalidInfo->rendererInfo.isLoopback = false;
+    invalidInfo->sessionId = 1;
+    auto mockCallback = std::make_shared<MockAudioClientTracker>();
+    audioStreamCollector_.clientTracker_[invalidInfo->sessionId] = mockCallback;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(invalidInfo));
+
+    int32_t testUid2 = 1002;
+    int32_t testPid2 = 2002;
+    auto invalidInfo2 = std::make_unique<AudioRendererChangeInfo>();
+    invalidInfo2->clientUID = testUid2;
+    invalidInfo2->clientPid = testPid2;
+    invalidInfo2->rendererInfo.isLoopback = true;
+    invalidInfo2->sessionId = 2;
+    audioStreamCollector_.audioRendererChangeInfos_.push_back(std::move(invalidInfo2));
+    EXPECT_CALL(*mockCallback, PausedStreamImpl(_)).Times(0);
+    audioStreamCollector_.HandleKaraokeAppToBack(testUid, testPid);
+    audioStreamCollector_.HandleKaraokeAppToBack(testUid2, testPid2);
+}
 
 /**
 * @tc.name  : Test AudioStreamCollector.

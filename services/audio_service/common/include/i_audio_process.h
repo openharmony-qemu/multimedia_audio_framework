@@ -30,7 +30,8 @@ namespace OHOS {
 namespace AudioStandard {
 class AudioProcess {
 public:
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) = 0;
+    virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame) = 0;
 
     virtual int32_t GetSessionId(uint32_t &sessionId) = 0;
 

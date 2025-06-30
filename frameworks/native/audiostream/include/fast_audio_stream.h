@@ -87,7 +87,7 @@ public:
     int32_t SetVolume(float volume) override;
     int32_t SetLoudnessGain(float loudnessGain) override;
     float GetLoudnessGain() override;
-    int32_t SetMute(bool mute) override;
+    int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     bool GetMute() override;
     int32_t SetSourceDuration(int64_t duration) override;
     float GetVolume() override;
@@ -243,6 +243,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     bool silentModeAndMixWithOthers_ = false;
     DeviceType defaultOutputDevice_ = DEVICE_TYPE_NONE;
+    StateChangeCmdType muteCmd_ = CMD_FROM_CLIENT;
 
     std::mutex streamCbMutex_;
     std::weak_ptr<AudioStreamCallback> streamCallback_;

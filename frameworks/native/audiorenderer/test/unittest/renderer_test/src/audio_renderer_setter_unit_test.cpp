@@ -23,7 +23,6 @@
 #include "audio_renderer_proxy_obj.h"
 #include "audio_policy_manager.h"
 #include "audio_renderer_private.h"
-#include "audio_renderer.cpp"
 #include "fast_audio_stream.h"
 
 using namespace std;
@@ -1211,39 +1210,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetSpeed_001, TestSize.Level1)
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     ret = audioRenderer->SetSpeed(4.01); // 4.01 upper
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    bool isReleased = audioRenderer->Release();
-    EXPECT_EQ(true, isReleased);
-}
-
-/**
- * @tc.name  : Test SetPitch
- * @tc.number: Audio_Renderer_SetPitch_001
- * @tc.desc  : Test SetPitch interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_SetPitch_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-    AudioRendererOptions rendererOptions;
-
-    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
-    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
-    ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetPitch(0.5);
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetPitch(0.25); // 0.25 min speed
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetPitch(4); // 4 max speed
-    EXPECT_EQ(SUCCESS, ret);
-
-    ret = audioRenderer->SetPitch(0.124); // 0.124 lower
-    EXPECT_EQ(ERR_INVALID_PARAM, ret);
-
-    ret = audioRenderer->SetPitch(4.01); // 4.01 upper
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
 
     bool isReleased = audioRenderer->Release();

@@ -210,7 +210,6 @@ void AudioEndPointGetPreferBufferInfoFuzzTest(std::shared_ptr<AudioEndpointSepar
     if (audioEndpoint == nullptr) {
         return;
     }
-    audioEndpoint->ResolveBuffer(oHAudioBuffer);
     audioEndpoint->GetBuffer();
     audioEndpoint->GetStatus();
     audioEndpoint->OnStart(processStream);

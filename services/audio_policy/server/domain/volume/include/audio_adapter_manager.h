@@ -32,6 +32,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "hdi_adapter_type.h"
+#include "audio_device_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -97,12 +98,26 @@ public:
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
+    int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel);
+
+    int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType);
+
+    int32_t SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+
+    bool GetZoneMute(int32_t zoneId, AudioStreamType streamType);
+
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
+    int32_t GetVolumeAdjustZoneId();
+
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
 
     float GetSystemVolumeDb(AudioStreamType streamType);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
@@ -232,13 +247,13 @@ public:
 
     int32_t SetPersistMicMuteState(const bool isMute);
 
-    int32_t GetPersistMicMuteState(bool &isMute) const;
+    int32_t GetPersistMicMuteState(bool &isMute);
 
     void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId);
 
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
 
@@ -304,7 +319,7 @@ private:
         : ringerMode_(RINGER_MODE_NORMAL),
           audioPolicyKvStore_(nullptr),
           audioPolicyServerHandler_(DelayedSingleton<AudioPolicyServerHandler>::GetInstance()),
-          volumeDataMaintainer_(VolumeDataMaintainer::GetVolumeDataMaintainer())
+          volumeDataMaintainer_()
     {
         InitVolumeMapIndex();
     }
@@ -314,10 +329,12 @@ private:
     bool InitAudioPolicyKvStore(bool& isFirstBoot);
     void InitVolumeMap(bool isFirstBoot);
     bool LoadVolumeMap(void);
+    bool LoadVolumeMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetVolumeKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     void InitRingerMode(bool isFirstBoot);
     void InitMuteStatusMap(bool isFirstBoot);
     bool LoadMuteStatusMap(void);
+    bool LoadMuteStatusMap(std::shared_ptr<AudioDeviceDescriptor> &device);
     std::string GetMuteKeyForKvStore(DeviceType deviceType, AudioStreamType streamType);
     std::string GetMuteKeyForDeviceType(DeviceType deviceType, std::string &type);
     void InitSystemSoundUriMap();
@@ -329,14 +346,25 @@ private:
     uint32_t GetPositionInVolumePoints(std::vector<VolumePoint> &volumePoints, int32_t idx);
     void SaveRingtoneVolumeToLocal(AudioVolumeType volumeType, int32_t volumeLevel);
     int32_t SetVolumeDb(AudioStreamType streamType);
+    int32_t SetVolumeDb(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetAppVolumeDb(int32_t appUid);
     void SetAudioVolume(AudioStreamType streamType, float volumeDb);
+    void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
+    void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
     void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
+    int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
+        bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+    bool GetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
+    int32_t GetStreamVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     bool GetStreamMuteInternal(AudioStreamType streamType);
+    bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
+    int32_t SetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     int32_t GetDefaultVolumeLevel(std::unordered_map<AudioStreamType, int32_t> &volumeLevelMapTemp,
         AudioVolumeType volumeType, DeviceType deviceType) const;
     void InitKVStoreInternal(void);
@@ -401,6 +429,7 @@ private:
     bool isWiredBoot_ = true;
     bool isBtBoot_ = true;
     int32_t curActiveCount_ = 0;
+    int32_t volumeAdjustZoneId_ = 0;
     bool isSafeBoot_ = true;
     bool isVgsVolumeSupported_ = false;
     std::shared_ptr<AudioAdapterManagerHandler> handler_ = nullptr;
@@ -408,7 +437,8 @@ private:
     std::shared_ptr<SingleKvStore> audioPolicyKvStore_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
-    VolumeDataMaintainer &volumeDataMaintainer_;
+    VolumeDataMaintainer volumeDataMaintainer_;
+    std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
@@ -426,6 +456,7 @@ private:
     std::optional<uint32_t> offloadSessionID_;
     std::mutex audioVolumeMutex_;
     std::mutex activeDeviceMutex_;
+    std::mutex volumeDataMapMutex_;
     AppConfigVolume appConfigVolume_;
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);

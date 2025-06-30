@@ -58,7 +58,11 @@ ohos_unittest("audio_oh_render_unit_test") {
     ":audio_ohaudio_config",
   ]
 
-  sources = [ "src/oh_audio_render_unit_test.cpp" ]
+  sources = [
+    "src/oh_audio_render_unit_test.cpp",
+    "src/oh_audio_render_getter_unit_test.cpp",
+    "src/oh_audio_render_setter_unit_test.cpp"
+  ]
 
   deps = [
     "../../../../../../services/audio_service:audio_client",

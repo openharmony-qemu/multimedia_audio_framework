@@ -62,7 +62,6 @@ public:
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -91,6 +90,8 @@ public:
     std::string GetThreadName() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
     std::string GetDeviceHDFDumpInfo() override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
@@ -113,7 +114,6 @@ private:
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;
-    std::atomic<bool> isMute_ = false;
     HpaeSinkInfo sinkInfo_;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::shared_ptr<HpaeInnerCapSinkNode> hpaeInnerCapSinkNode_ = nullptr;

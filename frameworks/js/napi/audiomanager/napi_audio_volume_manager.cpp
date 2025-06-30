@@ -1352,7 +1352,7 @@ void NapiAudioVolumeManager::UnregisterActiveVolumeTypeChangeCallback(napi_env e
     if (napiAudioVolumeManager == nullptr ||
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ == nullptr) {
         AUDIO_ERR_LOG("napiAudioVolumeManager is nullptr");
-        NapiAudioError::ThrowError(env, "UnregisterActiveVolumeTypeChangeCallback failed", NAPI_ERR_SYSTEM);
+        NapiAudioError::ThrowError(env, "unregister activeVolumeType callback failed", NAPI_ERR_SYSTEM);
         return;
     }
     std::shared_ptr<NapiAudioManagerActiveVolumeTypeChangeCallback> cb =

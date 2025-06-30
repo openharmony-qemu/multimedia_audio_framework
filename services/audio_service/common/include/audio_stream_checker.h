@@ -61,6 +61,7 @@ public:
     void StopCheckStreamThread();
     void OnRemoteAppDied(const int32_t pid);
     void RecordStandbyTime(bool isStart);
+    void UpdateAppState(bool isBackground);
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);
@@ -70,7 +71,9 @@ private:
     void CalculateFrameAfterStandby(CheckerParam &para, int64_t &abnormalFrameNum);
     std::vector<CheckerParam> checkParaVector_;
     bool monitorSwitch_ = false;
+    bool isBackground_ = false;
     std::recursive_mutex checkLock_;
+    std::recursive_mutex backgroundStateLock_;
     AudioProcessConfig streamConfig_;
     std::thread checkThread_;
     std::atomic<bool> isKeepCheck_ = false;

@@ -133,11 +133,6 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
     fclose(metaFile);
 }
 
-class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
-public:
-    void OnFastStatusChange(FastStatus status) override { return; }
-};
-
 /**
  * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_001
@@ -432,6 +427,102 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_015, TestSize.Level0)
 {
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MEDIA);
     EXPECT_NE(nullptr, audioRenderer);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_016
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_016, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_NORMAL;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_EQ(AUDIO_FLAG_NORMAL, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_017
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_017, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_VKB_FAST;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test Create API via legal input for virtual keyboard
+ * @tc.number: Audio_Renderer_Create_018
+ * @tc.desc  : Test Create interface with AudioRendererOptions below to see if rendererInfo is set properly
+ *             rendererOptions.streamInfo.samplingRate = SAMPLE_RATE_12000;
+ *             rendererOptions.streamInfo.encoding = ENCODING_PCM;
+ *             rendererOptions.streamInfo.format = SAMPLE_S24LE;
+ *             rendererOptions.streamInfo.channels = MONO;
+ *             rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+ *             rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_018, TestSize.Level1)
+{
+    AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_12000;
+    rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_SYSTEM;
+    rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    EXPECT_NE(AUDIO_FLAG_VKB_FAST, rendererInfo.rendererFlags);
+    EXPECT_FALSE(rendererInfo.isVirtualKeyboard);
+
     audioRenderer->Release();
 }
 
@@ -4445,5 +4536,44 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     fclose(wavFile);
 }
 
+/**
+ * @tc.name  : Test RestoreAudioInLoop API in non-running state
+ * @tc.number: Audio_Renderer_RestoreAudioInLoop_001
+ * @tc.desc  : Test stream restore when Renderer is in PREPARED state
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreAudioInLoop_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    int32_t tryCounter = 1;
+    bool restoreResult = false;
+    audioRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
+    EXPECT_EQ(false, restoreResult);
+
+    bool isReleased = audioRenderer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test CheckAndRestoreAudioRenderer API in non-running state
+ * @tc.number: Audio_Renderer_CheckAndRestoreAudioRenderer_001
+ * @tc.desc  : Test stream restore when Renderer has released
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckAndRestoreAudioRenderer_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    audioRenderer->abortRestore_ = true;
+    auto res = audioRenderer->CheckAndRestoreAudioRenderer("UT-Test");
+
+    EXPECT_EQ(SUCCESS, res);
+    audioRenderer.reset();
+}
 } // namespace AudioStandard
 } // namespace OHOS

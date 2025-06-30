@@ -40,8 +40,7 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
-// LCOV_EXCL_START
-int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
+int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag, int32_t uid)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
@@ -77,7 +76,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag, uid);
 }
 
 AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
@@ -85,7 +84,7 @@ AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
     return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
 }
 
-int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
+int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
@@ -120,7 +119,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)

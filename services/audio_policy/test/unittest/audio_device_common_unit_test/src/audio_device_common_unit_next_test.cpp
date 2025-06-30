@@ -27,36 +27,6 @@ void AudioDeviceCommonUnitNextTest::SetUp(void) {}
 void AudioDeviceCommonUnitNextTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: OnAudioSceneChange_001
-* @tc.desc  : Test OnAudioSceneChange interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, OnAudioSceneChange_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioPolicyServerHandler> testHandler = std::make_shared<AudioPolicyServerHandler>();
-    audioDeviceCommon.audioPolicyServerHandler_ = testHandler;
-    AudioScene testScene = AUDIO_SCENE_RINGING;
-    audioDeviceCommon.OnAudioSceneChange(testScene);
-    EXPECT_NE(audioDeviceCommon.audioPolicyServerHandler_, nullptr);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: OnAudioSceneChange_002
-* @tc.desc  : Test OnAudioSceneChange interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, OnAudioSceneChange_002, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
-    audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
-    AudioScene testScene = AUDIO_SCENE_RINGING;
-    audioDeviceCommon.OnAudioSceneChange(testScene);
-    EXPECT_EQ(audioDeviceCommon.audioPolicyServerHandler_, nullptr);
-}
-
-/**
 * @tc.name  : Test GetPreferredInputDeviceDescInner.
 * @tc.number: GetPreferredInputDeviceDescInner_001
 * @tc.desc  : Test GetPreferredInputDeviceDescInner interface.
@@ -230,50 +200,6 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, UpdateConnectedDevicesWhenDisconnecting_
 
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     EXPECT_EQ(desc->deviceType_, DEVICE_TYPE_USB_ARM_HEADSET);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_001
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, NotifyRecreateDirectStream_001, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_002
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitNextTest, NotifyRecreateDirectStream_002, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_SPATIALIZATION;
-    rendererChangeInfo->rendererInfo.streamUsage == STREAM_USAGE_MUSIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-
-    rendererChangeInfo->rendererInfo.rendererFlags == AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate == SAMPLE_RATE_44100;
-    ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-
-    rendererChangeInfo->rendererInfo.samplingRate == SAMPLE_RATE_48000;
-    rendererChangeInfo->rendererInfo.format == SAMPLE_S16LE;
-    ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
 }
 
 /**

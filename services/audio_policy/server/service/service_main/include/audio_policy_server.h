@@ -96,7 +96,8 @@ public:
 
     int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) override;
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+        int32_t volumeFlag = 0, int32_t uid = 0) override;
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0) override;
@@ -107,11 +108,13 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
+
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType) override;
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t uid = 0) override;
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) override;
 
@@ -240,6 +243,10 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid) override;
+
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt) override;
@@ -253,12 +260,6 @@ public:
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneId = 0) override;
 
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
-
-    void ProcessSessionRemoved(const uint64_t sessionID, const int32_t zoneId = 0);
-
-    void ProcessSessionAdded(SessionEvent sessionEvent);
-
-    void ProcessorCloseWakeupSource(const uint64_t sessionID);
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
 
@@ -451,6 +452,10 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
+    int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) override;
+
+    int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) override;
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
@@ -563,10 +568,12 @@ public:
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
 
-    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
-    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false);
+    void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0);
+    void SendMuteKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
+        int32_t zoneId = 0);
     void UpdateMuteStateAccordingToVolLevel(AudioStreamType streamType, int32_t volumeLevel,
-        bool mute, const bool& isUpdateUi = false);
+        bool mute, const bool& isUpdateUi = false, int32_t zoneId = 0);
 
     void ProcUpdateRingerMode();
     uint32_t TranslateErrorCode(int32_t result);
@@ -629,6 +636,7 @@ public:
     void MicrophoneMuteInfoDump(std::string &dumpString);
     void AudioSessionInfoDump(std::string &dumpString);
     void AudioPipeManagerDump(std::string &dumpString);
+    void SelectDeviceDump(std::string &dumpString);
 
     // for hibernate callback
     void CheckHibernateState(bool hibernate);
@@ -688,27 +696,29 @@ private:
 
     // for audio volume and mute status
     int32_t SetRingerModeInternal(AudioRingerMode inputRingerMode, bool hasUpdatedVolume = false);
-    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi);
+    int32_t SetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t volumeLevel,
+        bool isUpdateUi, int32_t zoneId = 0);
     int32_t SetAppVolumeLevelInternal(int32_t appUid, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi);
     int32_t SetSystemVolumeLevelWithDeviceInternal(AudioStreamType streamType, int32_t volumeLevel,
         bool isUpdateUi, DeviceType deviceType);
-    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi, bool mute);
+    int32_t SetSingleStreamVolume(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
+        bool mute, int32_t zoneId = 0);
     int32_t SetAppSingleStreamVolume(int32_t streamType, int32_t volumeLevel, bool isUpdateUi);
     int32_t SetSingleStreamVolumeWithDevice(AudioStreamType streamType, int32_t volumeLevel, bool isUpdateUi,
         DeviceType deviceType);
     AudioStreamType GetSystemActiveVolumeTypeInternal(const int32_t clientUid);
-    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevelInternal(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevelInternal(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
     float GetSystemVolumeDb(AudioStreamType streamType);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
     void UpdateSystemMuteStateAccordingMusicState(AudioStreamType streamType, bool mute, bool isUpdateUi);
     void ProcUpdateRingerModeForMute(bool updateRingerMode, bool mute);
     int32_t SetSingleStreamMute(AudioStreamType streamType, bool mute, bool isUpdateUi,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-    bool GetStreamMuteInternal(AudioStreamType streamType);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, int32_t zoneId = 0);
+    bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
@@ -726,6 +736,8 @@ private:
     int32_t RegisterVolumeKeyEvents(const int32_t keyType);
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
+    bool IsContinueAddVol();
+    void TrigerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
@@ -809,6 +821,8 @@ private:
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
+    std::mutex volUpHistoryMutex_;
+    std::deque<int64_t> volUpHistory_;
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
@@ -822,11 +836,6 @@ private:
     std::mutex micStateChangeMutex_;
     std::mutex clientDiedListenerStateMutex_;
     std::mutex subscribeVolumeKey_;
-
-    SessionProcessor sessionProcessor_{
-        [this] (const uint64_t sessionID, const int32_t zoneID) { this->ProcessSessionRemoved(sessionID, zoneID); },
-        [this] (SessionEvent sessionEvent) { this->ProcessSessionAdded(sessionEvent); },
-        [this] (const uint64_t sessionID) {this->ProcessorCloseWakeupSource(sessionID); }};
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;

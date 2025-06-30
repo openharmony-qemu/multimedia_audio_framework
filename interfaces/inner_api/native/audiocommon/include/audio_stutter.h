@@ -17,6 +17,7 @@
 
 #include <parcel.h>
 #include <audio_stream_info.h>
+#include <audio_buffer_desc.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,7 +32,7 @@ enum DataTransferStateChangeType {
 
 enum BadDataTransferType {
     NO_DATA_TRANS,      // monitor none data transfer
-    SLIENCE_DATA_TRANS, // monitor slience data transfer
+    SILENCE_DATA_TRANS, // monitor silence data transfer
     MAX_DATATRANS_TYPE
 };
 
@@ -41,6 +42,7 @@ struct AudioRendererDataTransferStateChangeInfo {
     int32_t sessionId;                              // session id
     StreamUsage streamUsage;                        // stream type
     DataTransferStateChangeType stateChangeType;
+    bool isBackground;
     int32_t badDataRatio[MAX_DATATRANS_TYPE];
 
     AudioRendererDataTransferStateChangeInfo() = default;
@@ -49,7 +51,8 @@ struct AudioRendererDataTransferStateChangeInfo {
     {
         bool ret =  parcel.WriteInt32(clientPid) && parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
-            parcel.WriteUint32(static_cast<int32_t>(stateChangeType));
+            parcel.WriteUint32(static_cast<int32_t>(stateChangeType)) &&
+            parcel.WriteBool(isBackground);
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             ret = ret && parcel.WriteInt32(badDataRatio[i]);
@@ -64,6 +67,7 @@ struct AudioRendererDataTransferStateChangeInfo {
         sessionId = parcel.ReadInt32();
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
+        isBackground = parcel.ReadBool();
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             badDataRatio[i] = parcel.ReadInt32();
@@ -74,7 +78,7 @@ struct AudioRendererDataTransferStateChangeInfo {
 struct DataTransferMonitorParam {
     int32_t clientUID;
     int32_t badDataTransferTypeBitMap;
-    int32_t timeInterval;
+    int64_t timeInterval;
     int32_t badFramesRatio;
 
     DataTransferMonitorParam() = default;

@@ -70,13 +70,12 @@ public:
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId);
 
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

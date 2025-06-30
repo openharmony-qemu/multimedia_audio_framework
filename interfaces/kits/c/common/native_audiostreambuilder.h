@@ -303,6 +303,25 @@ OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallback(OH_Audi
     OH_AudioRenderer_OnWriteDataCallback callback, void* userData);
 
 /**
+ * @brief Set the callback of writing data to renderer client.
+ *
+ * This function is similar with {@link OH_AudioStreamBuilder_SetRendererWriteDataCallback}. Only the last callback set
+ * by OH_AudioStreamBuilder_SetRendererWriteDataCallback or this function will become effective. Different with
+ * OH_AudioStreamBuilder_SetRendererWriteDataCallback, the callback in this function can return audio data of any
+ * length.
+ *
+ * @param builder Builder provided by OH_AudioStreamBuilder_Create()
+ * @param callback Callback to functions that will write audio data to renderer client.
+ * @param userData Pointer to an application data structure that will be passed to the callback functions.
+ * @return Result code.
+ *     {@link AUDIOSTREAM_SUCCESS} Success.
+ *     {@link AUDIOSTREAM_ERROR_INVALID_PARAM} Parameter is invalid, e.g. builder is nullptr, e.t.c.
+ * @since 20
+ */
+OH_AudioStream_Result OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(OH_AudioStreamBuilder* builder,
+    OH_AudioRenderer_OnWriteDataCallbackAdvanced callback, void* userData);
+
+/**
  * @brief Set the callback of interrupt event to renderer client.
  *
  * This function is similar with {@link OH_AudioStreamBuilder_SetRendererCallback}. Only the last callback set by

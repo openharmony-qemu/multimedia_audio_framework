@@ -202,6 +202,38 @@ int32_t AudioPolicyProxy::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(zoneId);
+    stream.Marshalling(data);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::ADD_STREAM_TO_AUDIO_ZONE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "sendrequest, error: %d", error);
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteInt32(zoneId);
+    stream.Marshalling(data);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::REMOVE_STREAM_FROM_AUDIO_ZONE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "sendrequest, error: %d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     MessageParcel data;

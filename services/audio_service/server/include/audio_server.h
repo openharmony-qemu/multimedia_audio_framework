@@ -173,6 +173,8 @@ public:
 
     float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
 
+    int64_t GetVolumeDataCount(std::string sinkName) override;
+
     void ResetAudioEndpoint() override;
 
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
@@ -295,6 +297,7 @@ private:
     void RegisterPolicyServerDeathRecipient();
     void RegisterAudioCapturerSourceCallback();
     void RegisterAudioRendererSinkCallback();
+    void RegisterDataTransferStateChangeCallback();
 
     int32_t SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> &activeDevices,
         BluetoothOffloadState a2dpOffloadFlag, const std::string &deviceName = "");
@@ -334,7 +337,7 @@ private:
     bool SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params);
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result);
-    int32_t CreateAudioWorkgroup(int32_t pid) override;
+    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject>& object) override;
     int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
     int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
     int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
@@ -388,6 +391,19 @@ private:
 
     std::mutex audioDataTransferMutex_;
     std::map<int32_t, std::shared_ptr<DataTransferStateChangeCallbackInner>> audioDataTransferCbMap_;
+};
+
+class DataTransferStateChangeCallbackInnerImpl : public DataTransferStateChangeCallbackInner {
+public:
+    DataTransferStateChangeCallbackInnerImpl() = default;
+    virtual ~DataTransferStateChangeCallbackInnerImpl() = default;
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override;
+    void SetDataTransferMonitorParam(const DataTransferMonitorParam &param);
+private:
+    void ReportEvent(const AudioRendererDataTransferStateChangeInfo &info);
+
+    DataTransferMonitorParam param_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

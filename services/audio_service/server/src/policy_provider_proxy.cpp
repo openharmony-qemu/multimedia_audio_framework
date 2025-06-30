@@ -201,23 +201,6 @@ int32_t PolicyProviderProxy::NotifyCapturerRemoved(uint64_t sessionId)
     return reply.ReadInt32();
 }
 
-int32_t PolicyProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    MessageParcel data;
-    MessageParcel reply;
-    MessageOption option;
-
-    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
-    data.WriteInt32(defaultOutputDevice);
-    data.WriteUint32(sessionID);
-    data.WriteInt32(streamUsage);
-    data.WriteBool(isRunning);
-    int ret = Remote()->SendRequest(IPolicyProviderMsg::SET_DEFAULT_OUTPUT_DEVICE, data, reply, option);
-    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);
-    return reply.ReadInt32();
-}
-
 #ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderProxy::LoadModernInnerCapSink(int32_t innerCapId)
 {
@@ -245,5 +228,18 @@ int32_t PolicyProviderProxy::UnloadModernInnerCapSink(int32_t innerCapId)
     return reply.ReadInt32();
 }
 #endif
+
+int32_t PolicyProviderProxy::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
+    data.WriteInt32(sessionID);
+    int ret = Remote()->SendRequest(IPolicyProviderMsg::CLEAR_AUDIO_FOCUS_BY_SESSIONID, data, reply, option);
+    CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+    return reply.ReadInt32();
+}
 } // namespace AudioStandard
 } // namespace OHOS

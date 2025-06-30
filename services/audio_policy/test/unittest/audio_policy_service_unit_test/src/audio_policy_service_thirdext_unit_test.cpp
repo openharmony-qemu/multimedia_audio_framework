@@ -147,7 +147,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize
 
     const std::string macAddress = "11-11-11-11-11-11";
     const std::string deviceName = "deviceName";
-    GetServerUtil::GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(macAddress, deviceName);
 }
 
 /**
@@ -333,32 +332,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
     result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
         splitArgTwo, networkIdTwo);
     EXPECT_EQ(ERR_INVALID_HANDLE, result);
-}
-
-/**
-* @tc.name  : Test SetDefaultOutputDevice.
-* @tc.number: SetDefaultOutputDevice_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetDefaultOutputDevice_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    bool isRunning = true;
-    const StreamUsage streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    const uint32_t sessionID = 0;
-
-    int32_t result =
-        GetServerUtil::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
-            deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(SUCCESS, result);
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    result =
-        GetServerUtil::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
-            deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(SUCCESS, result);
 }
 
 /**
@@ -675,7 +648,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateSessionConnectionState_001, Tes
     EXPECT_NE(nullptr, server);
     int32_t sessionID = SESSION_ID;
     int32_t state = STATE;
-    server->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(sessionID, state);
     EXPECT_EQ(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 

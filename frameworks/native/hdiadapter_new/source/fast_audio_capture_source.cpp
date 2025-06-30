@@ -243,7 +243,7 @@ float FastAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t FastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t FastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");

@@ -98,6 +98,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
         config.rendererInfo.volumeMode = rendererInfo_.volumeMode;
+        config.rendererInfo.isVirtualKeyboard = rendererInfo_.isVirtualKeyboard;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
         config.rendererInfo.playerType = rendererInfo_.playerType;
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
@@ -346,8 +347,9 @@ float FastAudioStream::GetLoudnessGain()
     return 0.0;
 }
 
-int32_t FastAudioStream::SetMute(bool mute)
+int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
 {
+    muteCmd_ = cmdType;
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
     int32_t ret = processClient_->SetMute(mute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMute error.");

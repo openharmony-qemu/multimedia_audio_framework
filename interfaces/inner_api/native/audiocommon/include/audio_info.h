@@ -43,6 +43,7 @@ constexpr int32_t SYSTEM_PID = 1;
 constexpr int32_t CLEAR_UID = 0;
 constexpr int32_t SYSTEM_UID = 1;
 constexpr int32_t INVALID_UID = -1;
+constexpr int32_t INVALID_ZONEID = -1;
 constexpr int32_t NETWORK_ID_SIZE = 80;
 constexpr int32_t DEFAULT_VOLUME_GROUP_ID = 1;
 constexpr int32_t AUDIO_FLAG_INVALID = -1;
@@ -53,6 +54,8 @@ constexpr int32_t AUDIO_FLAG_DIRECT = 3;
 constexpr int32_t AUDIO_FLAG_VOIP_DIRECT = 4;
 constexpr int32_t AUDIO_FLAG_PCM_OFFLOAD = 5;
 constexpr int32_t AUDIO_FLAG_FORCED_NORMAL = 10;
+constexpr int32_t AUDIO_FLAG_VKB_NORMAL = 1024;
+constexpr int32_t AUDIO_FLAG_VKB_FAST = 1025;
 constexpr int32_t AUDIO_USAGE_NORMAL = 0;
 constexpr int32_t AUDIO_USAGE_VOIP = 1;
 constexpr uint32_t STREAM_FLAG_FAST = 1;
@@ -65,6 +68,14 @@ constexpr int32_t AUDIO_DIRECT_MANAGER_TYPE = 2;
 
 constexpr uint32_t MIN_STREAMID = 100000;
 constexpr uint32_t MAX_STREAMID = UINT32_MAX - MIN_STREAMID;
+
+constexpr uint64_t AUDIO_US_PER_MS = 1000;
+constexpr uint64_t AUDIO_NS_PER_US = 1000;
+constexpr uint64_t AUDIO_US_PER_S = 1000000;
+constexpr uint64_t AUDIO_MS_PER_S = 1000;
+
+constexpr uint64_t MAX_CBBUF_IN_USEC = 100000;
+constexpr uint64_t MIN_CBBUF_IN_USEC = 20000;
 
 const float MIN_FLOAT_VOLUME = 0.0f;
 const float MAX_FLOAT_VOLUME = 1.0f;
@@ -322,6 +333,17 @@ struct AdjustStreamVolumeInfo {
     std::string invocationTime;
 };
 
+struct StreamVolumeParams {
+    uint32_t sessionId;
+    int32_t streamType;
+    int32_t streamUsage;
+    int32_t uid;
+    int32_t pid;
+    bool isSystemApp;
+    int32_t mode;
+    bool isVKB;
+};
+
 constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_UNKNOWN,
     CALLBACK_FOCUS_INFO_CHANGE,
@@ -511,6 +533,7 @@ struct AudioRendererInfo {
     int32_t effectMode = 1;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    bool isVirtualKeyboard = false;
 
     bool Marshalling(Parcel &parcel) const
     {
@@ -532,7 +555,8 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(effectMode)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
-            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
+            && parcel.WriteBool(isVirtualKeyboard);
     }
     void Unmarshalling(Parcel &parcel)
     {
@@ -555,6 +579,7 @@ struct AudioRendererInfo {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        isVirtualKeyboard = parcel.ReadBool();
     }
 };
 
@@ -1344,7 +1369,11 @@ enum WriteDataCallbackType {
     /**
      * Use OH_AudioRenderer_OnWriteDataCallback
      */
-    WRITE_DATA_CALLBACK_WITH_RESULT = 1
+    WRITE_DATA_CALLBACK_WITH_RESULT = 1,
+    /**
+     * Use OH_AudioRenderer_OnWriteDataCallbackAdvanced
+    */
+    WRITE_DATA_CALLBACK_ADVANCED = 2,
 };
 
 enum ReadDataCallbackType {

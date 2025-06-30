@@ -80,7 +80,7 @@ public:
     float GetLoudnessGain() override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
-    int32_t SetMute(bool mute) override;
+    int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -229,14 +229,8 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
-    int32_t InitCacheBuffer(size_t targetSize);
 
-    int32_t FlushRingCache();
-    int32_t DrainRingCache();
-
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
-        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
-    int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
+    int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool WriteCallbackFunc();
@@ -246,6 +240,9 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool IsMutePlaying();
+    void MonitorMutePlay(bool isPlayEnd);
+    void ReportWriteMuteEvent(int64_t mutePlayDuration);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
@@ -256,8 +253,6 @@ private:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
-
-    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void ResetFramePosition();
 
@@ -276,6 +271,8 @@ private:
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     void ResetCallbackLoopTid();
+
+    void WaitForBufferNeedWrite();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -309,6 +306,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
+    uint64_t engineTotalSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -353,6 +351,7 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
+    StateChangeCmdType muteCmd_ = CMD_FROM_CLIENT;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 
@@ -365,7 +364,7 @@ private:
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IpcStream> ipcStream_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
@@ -401,11 +400,17 @@ private:
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
+    int64_t mutePlayStartTime_ = 0; // realtime
+    bool mutePlaying_ = false;
+
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";

@@ -1010,6 +1010,24 @@ int32_t AudioPolicyProxy::DeactivatePreemptMode()
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteString(bundleName);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_VKB_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "CheckVKBInfo failed, error: %d", error);
+    isValid = reply.ReadBool();
+
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::RequestAudioFocus(const int32_t clientId, const AudioInterrupt &audioInterrupt)
 {
     MessageParcel data;

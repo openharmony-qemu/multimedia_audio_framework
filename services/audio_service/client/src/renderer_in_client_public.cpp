@@ -64,19 +64,13 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const uint64_t OLD_BUF_DURATION_IN_USEC = 92880; // This value is used for compatibility purposes.
-const uint64_t AUDIO_US_PER_MS = 1000;
-const uint64_t AUDIO_NS_PER_US = 1000;
-const uint64_t AUDIO_US_PER_S = 1000000;
-const uint64_t AUDIO_MS_PER_S = 1000;
 static constexpr int CB_QUEUE_CAPACITY = 3;
 const uint64_t AUDIO_FIRST_FRAME_LATENCY = 120; //ms
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
-const uint64_t MAX_CBBUF_IN_USEC = 100000;
-const uint64_t MIN_CBBUF_IN_USEC = 20000;
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
-static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
@@ -461,6 +455,12 @@ int32_t RendererInClientInner::SetVolume(float volume)
     if (volumeRamp_.IsActive()) {
         volumeRamp_.Terminate();
     }
+    if (std::abs(volume - 0.0f) <= std::numeric_limits<float>::epsilon()) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
     clientVolume_ = volume;
 
     return SetInnerVolume(volume);
@@ -518,10 +518,17 @@ float RendererInClientInner::GetDuckVolume()
     return duckVolume_;
 }
 
-int32_t RendererInClientInner::SetMute(bool mute)
+int32_t RendererInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::SetMute:" + std::to_string(mute));
     AUDIO_INFO_LOG("sessionId:%{public}d SetMute:%{public}d", sessionId_, mute);
+    if (mute) {
+        mutePlaying_ = true;
+    } else {
+        MonitorMutePlay(true); // if report mute play event, will use mutePlaying_ state inside
+        mutePlaying_ = false;
+    }
+    muteCmd_ = cmdType;
     muteVolume_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, ERR_OPERATION_FAILED, "buffer is not inited");
     clientBuffer_->SetMuteFactor(muteVolume_);
@@ -919,6 +926,7 @@ void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 bool RendererInClientInner::StartAudioStream(StateChangeCmdType cmdType,
     AudioStreamDeviceChangeReasonExt reason)
 {
+    mutePlayStartTime_ = 0;
     Trace trace("RendererInClientInner::StartAudioStream " + std::to_string(sessionId_));
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != PREPARED && state_ != STOPPED && state_ != PAUSED) {
@@ -990,6 +998,7 @@ void RendererInClientInner::FlushBeforeStart()
 bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 {
     Trace trace("RendererInClientInner::PauseAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ != RUNNING) {
         AUDIO_ERR_LOG("State is not RUNNING. Illegal state:%{public}u", state_.load());
@@ -1030,6 +1039,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
 bool RendererInClientInner::StopAudioStream()
 {
     Trace trace("RendererInClientInner::StopAudioStream " + std::to_string(sessionId_));
+    MonitorMutePlay(true);
     AUDIO_INFO_LOG("Stop begin for sessionId %{public}d uid: %{public}d", sessionId_, clientUid_);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     std::unique_lock<std::mutex> lock(writeMutex_, std::defer_lock);
@@ -1086,6 +1096,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 {
     (void)isSwitchStream;
     AUDIO_PRERELEASE_LOGI("Enter");
+    MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already released, do nothing");
@@ -1156,8 +1167,6 @@ bool RendererInClientInner::FlushAudioStream()
             AUDIO_ERR_LOG("memset_s buffer failed");
         }
     }
-
-    CHECK_AND_RETURN_RET_LOG(FlushRingCache() == SUCCESS, false, "Flush cache failed");
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
@@ -1754,7 +1763,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-    uint64_t framePosition = lastFramePosition_[base].first;
+    uint64_t framePosition = lastFramePositionWithSpeed_[base].first;
     if (readIdx >= latency + lastReadIdx_) { // happen when last speed latency consumed
         framePosition += lastLatencyPosition_ + (readIdx - lastReadIdx_ - latency) * lastSpeed_;
         lastLatency_ = latency;
@@ -1776,12 +1785,12 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     }
 
     // reset the timestamp
-    if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
-        lastFramePosition_[base] = {framePosition, timestampVal};
+    if (lastFramePositionWithSpeed_[base].first < framePosition || lastFramePositionWithSpeed_[base].second == 0) {
+        lastFramePositionWithSpeed_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
-        framePosition = lastFramePosition_[base].first;
-        timestampVal = lastFramePosition_[base].second;
+        framePosition = lastFramePositionWithSpeed_[base].first;
+        timestampVal = lastFramePositionWithSpeed_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", lastLatencyPosition_ %{public}" PRIu64 ", totlatency %{public}" PRIu64,

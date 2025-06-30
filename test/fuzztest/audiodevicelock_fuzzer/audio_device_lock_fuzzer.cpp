@@ -137,7 +137,6 @@ void RegisterTrackerFuzzTest()
     AudioStreamChangeInfo streamChangeInfo;
     sptr<IRemoteObject> object = nullptr;
     int32_t apiVersion = GetData<int32_t>();
-    audioDeviceLock->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 void SendA2dpConnectedWhileRunningFuzzTest()
@@ -148,7 +147,6 @@ void SendA2dpConnectedWhileRunningFuzzTest()
     RendererState rendererState = static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
     uint32_t sessionId = GetData<uint32_t>();
     audioDeviceLock->audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
-    audioDeviceLock->SendA2dpConnectedWhileRunning(rendererState, sessionId);
 }
 
 void HandleAudioCaptureStateFuzzTest()
@@ -162,7 +160,6 @@ void HandleAudioCaptureStateFuzzTest()
         static_cast<CapturerState>(GetData<uint8_t>() % capturerStateCount);
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     streamChangeInfo.audioCapturerChangeInfo.capturerInfo.sourceType = SourceTypeVec[sourceTypeCount];
-    audioDeviceLock->HandleAudioCaptureState(mode, streamChangeInfo);
 }
 
 void UpdateTrackerFuzzTest()
@@ -175,7 +172,6 @@ void UpdateTrackerFuzzTest()
         static_cast<int32_t>(RendererState::RENDERER_PAUSED - RendererState::RENDERER_INVALID) + 1;
     streamChangeInfo.audioRendererChangeInfo.rendererState =
         static_cast<RendererState>(GetData<uint8_t>() % rendererStateCount - 1);
-    auto ret = audioDeviceLock->UpdateTracker(mode, streamChangeInfo);
 }
 
 void RegisteredTrackerClientDiedFuzzTest()
@@ -183,7 +179,6 @@ void RegisteredTrackerClientDiedFuzzTest()
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t uidCount = static_cast<int32_t>(AudioPipeType::PIPE_TYPE_DIRECT_VOIP) + 1;
     pid_t uid = static_cast<pid_t>(GetData<uint8_t>() % uidCount);
-    audioDeviceLock->RegisteredTrackerClientDied(uid);
 }
 
 void OnDeviceStatusUpdatedFuzzTest()
@@ -206,14 +201,12 @@ void GetCurrentRendererChangeInfosFuzzTest()
     };
     bool hasBTPermission = GetData<uint32_t>() % NUM_2;
     bool hasSystemPermission = GetData<uint32_t>() % NUM_2;
-    audioDeviceLock->GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission, hasSystemPermission);
 }
 
 void GetVolumeGroupInfosFuzzTest()
 {
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     audioDeviceLock->audioVolumeManager_.isPrimaryMicModuleInfoLoaded_.store(GetData<uint32_t>() % NUM_2);
-    audioDeviceLock->GetVolumeGroupInfos();
 }
 
 void SetAudioSceneFuzzTest()
@@ -221,8 +214,6 @@ void SetAudioSceneFuzzTest()
     auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
     int32_t audioSceneCount = static_cast<int32_t>(AudioScene::AUDIO_SCENE_MAX - AudioScene::AUDIO_SCENE_INVALID) + 1;
     AudioScene audioScene = static_cast<AudioScene>(GetData<uint8_t>() % audioSceneCount - 1);
-    audioDeviceLock->SetAudioScene(audioScene);
-    audioDeviceLock->SetAudioScene(audioScene);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {

@@ -889,6 +889,18 @@ int32_t AudioStreamCollector::GetChannelCount(int32_t sessionId)
     return channelCount;
 }
 
+int32_t AudioStreamCollector::GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo->rendererState == RENDERER_RUNNING) {
+            infos.push_back(make_shared<AudioRendererChangeInfo>(*changeInfo));
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioStreamCollector::GetCurrentRendererChangeInfos(
     std::vector<shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos)
 {
@@ -1099,6 +1111,26 @@ void AudioStreamCollector::HandleAppStateChange(int32_t uid, int32_t pid, bool m
                 callback->UnmuteStreamImpl(setStateEvent);
                 changeInfo->backMute = false;
             }
+        }
+    }
+}
+
+void AudioStreamCollector::HandleKaraokeAppToBack(int32_t uid, int32_t pid)
+{
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
+    for (const auto &changeInfo : audioRendererChangeInfos_) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid &&
+            changeInfo->rendererInfo.isLoopback) {
+            AUDIO_INFO_LOG("KaraokeApp to back uid=%{public}d", uid);
+            std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
+            if (callback == nullptr) {
+                AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
+                continue;
+            }
+            StreamSetStateEventInternal setStateEvent = {};
+            setStateEvent.streamSetState = StreamSetState::STREAM_PAUSE;
+            setStateEvent.streamUsage = changeInfo->rendererInfo.streamUsage;
+            callback->PausedStreamImpl(setStateEvent);
         }
     }
 }

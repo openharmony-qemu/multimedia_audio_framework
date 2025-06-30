@@ -52,6 +52,15 @@ public:
     int32_t ConfigureOfflineEffectChain(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo);
 
     /**
+     * @brief Set parameter for the offline audio effect chain
+     *
+     * @param param Input offline audio effect parameter
+     * @return The result of the setparam, 0 for success, other for error code
+     * @since 15
+     */
+    int32_t SetParamOfflineEffectChain(const std::vector<uint8_t> &param);
+
+    /**
      * @brief Prepare the offline audio effect chain
      *
      * @param bufIn Input audio sharedmemory buffer

@@ -19,7 +19,9 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
+#ifdef BLUETOOTH_PART_ENABLE
 #include "audio_bluetooth_manager.h"
+#endif
 #include "audio_device_info.h"
 using namespace std;
 
@@ -120,7 +122,7 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    
+
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
@@ -129,8 +131,6 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
     AudioPolicyServer AudioPolicyServerPtr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioPolicyServerPtr.audioPolicyService_.FetchOutputDeviceForTrack(streamChangeInfo,
-        AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

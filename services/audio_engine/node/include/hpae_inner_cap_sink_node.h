@@ -50,6 +50,7 @@ public:
     int32_t InnerCapturerSinkStop();
     StreamManagerState GetSinkState();
     int32_t SetSinkState(StreamManagerState sinkState);
+    void SetMute(bool isMute);
 private:
     OutputPort<HpaePcmBuffer*> outputStream_;
     InputPort<HpaePcmBuffer*> inputStream_;
@@ -60,6 +61,7 @@ private:
     std::chrono::high_resolution_clock::time_point historyTime_;
     std::chrono::high_resolution_clock::time_point endTime_;
     std::chrono::nanoseconds sleepTime_;
+    std::atomic<bool> isMute_ = false;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif

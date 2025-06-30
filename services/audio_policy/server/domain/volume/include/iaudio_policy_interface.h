@@ -59,12 +59,27 @@ public:
 
     virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;
 
+    virtual int32_t SetAdjustVolumeForZone(int32_t zoneId) = 0;
+
+    virtual int32_t GetVolumeAdjustZoneId() = 0;
+
+    virtual int32_t SetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType, int32_t volumeLevel) = 0;
+
+    virtual int32_t GetZoneVolumeLevel(int32_t zoneId, AudioStreamType streamType) = 0;
+
+    virtual int32_t SetZoneMute(int32_t zoneId, AudioStreamType streamType, bool mute,
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
+        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+
+    virtual bool GetZoneMute(int32_t zoneId, AudioStreamType streamType) = 0;
+
     virtual int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType) = 0;
 
     virtual float GetSystemVolumeDb(AudioStreamType streamType) = 0;
 
     virtual int32_t SetStreamMute(AudioStreamType streamType, bool mute,
-        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+        StreamUsage streamUsage = STREAM_USAGE_UNKNOWN, const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        std::string networkId = LOCAL_NETWORK_ID) = 0;
 
     virtual int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN) = 0;
@@ -175,14 +190,15 @@ public:
 
     virtual int32_t SetPersistMicMuteState(const bool isMute) = 0;
 
-    virtual int32_t GetPersistMicMuteState(bool &isMute) const = 0;
+    virtual int32_t GetPersistMicMuteState(bool &isMute) = 0;
 
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId) = 0;
 
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE) = 0;
+        const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        std::string networkId = LOCAL_NETWORK_ID) = 0;
 
     virtual void HandleRingerMode(AudioRingerMode ringerMode) = 0;
 

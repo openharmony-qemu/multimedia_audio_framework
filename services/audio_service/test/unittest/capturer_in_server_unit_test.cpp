@@ -192,7 +192,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
 
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->spanConut_ = 5;
+    capturerInServer_->audioServerBuffer_->spanBasicInfo_.spanConut_ = 5;
     capturerInServer_->InitBufferStatus();
     EXPECT_NE(capturerInServer_, nullptr);
 }
@@ -309,7 +309,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_008, TestSize.Level1
         processConfig, mainloop);
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = new BasicBufferInfo();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = new BasicBufferInfo();
     capturerInServer_->spanSizeInFrame_ = 1000;
 
     capturerInServer_->IsReadDataOverFlow(length, currentWriteFrame, stateListener);
@@ -318,7 +318,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_008, TestSize.Level1
     capturerInServer_->overFlowLogFlag_ = 1;
     capturerInServer_->IsReadDataOverFlow(length, currentWriteFrame, stateListener);
     EXPECT_NE(capturerInServer_, nullptr);
-    delete capturerInServer_->audioServerBuffer_->basicBufferInfo_;
+    delete capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_;
 }
 #endif
 /**
@@ -981,9 +981,9 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_031, TestSize.Level1
     capturerInServer_->status_ = I_STATUS_PAUSED;
 
     auto bufferInfo = std::make_shared<BasicBufferInfo>();
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = bufferInfo.get();
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_->curWriteFrame.store(1);
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_->curReadFrame.store(0);
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curWriteFrame.store(1);
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_->curReadFrame.store(0);
     auto ret = capturerInServer_->Flush();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
@@ -1036,11 +1036,11 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_033, TestSize.Level1
     RestoreInfo restoreInfo;
     capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
         totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = nullptr;
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = nullptr;
     capturerInServer_->RestoreSession(restoreInfo);
 
     auto bufferInfo = std::make_shared<BasicBufferInfo>();
-    capturerInServer_->audioServerBuffer_->basicBufferInfo_ = bufferInfo.get();
+    capturerInServer_->audioServerBuffer_->ohAudioBufferBase_.basicBufferInfo_ = bufferInfo.get();
     capturerInServer_->RestoreSession(restoreInfo);
 }
 

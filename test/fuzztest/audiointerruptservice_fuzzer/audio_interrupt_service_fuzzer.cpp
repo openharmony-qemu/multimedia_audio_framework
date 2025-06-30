@@ -146,7 +146,7 @@ void ReleaseAudioInterruptZoneFuzzTest(const uint8_t *rawData, size_t size)
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag)->int32_t {
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
         return 0;
     };
 
@@ -170,7 +170,7 @@ void RemoveAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag)->int32_t {
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
         return 0;
     };
     interruptService->MigrateAudioInterruptZone(zoneId, getZoneFunc);
@@ -310,7 +310,7 @@ void AddAudioInterruptZonePidsFuzzTest(const uint8_t *rawData, size_t size)
     pids.insert(data.ReadInt32());
 
     auto getZoneFunc = [](int32_t uid, const std::string &deviceTag,
-        const std::string &streamTag)->int32_t {
+        const std::string &streamTag, const StreamUsage &usage)->int32_t {
         return 0;
     };
     interruptService->MigrateAudioInterruptZone(zoneId, getZoneFunc);

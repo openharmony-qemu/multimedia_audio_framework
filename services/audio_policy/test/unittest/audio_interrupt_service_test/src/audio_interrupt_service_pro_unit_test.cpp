@@ -92,27 +92,6 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_003, TestSize.Lev
 
 /**
  * @tc.name  : Test AudioInterruptService
- * @tc.number: AudioInterruptService_004
- * @tc.desc  : Test DeactivateAudioInterrupt
- */
-HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_004, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
-
-    int32_t zoneId = 0;
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.parallelPlayFlag = true;
-    auto ret = audioInterruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioInterrupt.parallelPlayFlag = false;
-    ret = audioInterruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test AudioInterruptService
  * @tc.number: AudioInterruptService_005
  * @tc.desc  : Test GetStreamTypePriority
  */

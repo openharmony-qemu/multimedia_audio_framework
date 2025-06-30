@@ -990,6 +990,12 @@ float AudioManagerProxy::GetMaxAmplitude(bool isOutputDevice, std::string device
     return reply.ReadFloat();
 }
 
+int64_t AudioManagerProxy::GetVolumeDataCount(std::string sinkName)
+{
+    AUDIO_WARNING_LOG("Called in %{public}d, not supported", getuid());
+    return 0;
+}
+
 void AudioManagerProxy::ResetAudioEndpoint()
 {
     int32_t error;
@@ -1886,7 +1892,7 @@ int32_t AudioManagerProxy::ForceStopAudioStream(StopAudioType audioType)
     return reply.ReadInt32();
 }
 
-int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid)
+int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -1896,6 +1902,7 @@ int32_t AudioManagerProxy::CreateAudioWorkgroup(int32_t pid)
     CHECK_AND_RETURN_RET_LOG(ret, AUDIO_ERR, "WriteInterfaceToken failed");
 
     data.WriteInt32(pid);
+    (void)data.WriteRemoteObject(object);
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_AUDIOWORKGROUP), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, AUDIO_ERR, "CreateAudioWorkgroup failed, error: %{public}d", error);

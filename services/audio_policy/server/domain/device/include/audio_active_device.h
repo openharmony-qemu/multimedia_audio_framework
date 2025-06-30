@@ -59,7 +59,6 @@ public:
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsDeviceActive(DeviceType deviceType);
     float GetMaxAmplitude(const int32_t deviceId, const AudioInterrupt audioInterrupt);
-    void UpdateInputDeviceInfo(DeviceType deviceType);
     std::string GetActiveBtDeviceMac();
     void SetActiveBtDeviceMac(const std::string macAddress);
     void SetActiveBtInDeviceMac(const std::string macAddress);
@@ -71,10 +70,8 @@ public:
     void SetCurrentInputDevice(const AudioDeviceDescriptor &desc);
     const AudioDeviceDescriptor GetCurrentInputDevice();
     DeviceType GetCurrentInputDeviceType();
-    void SetCurrentInputDeviceType(DeviceType deviceType);
     std::string GetCurrentInputDeviceMacAddr();
     void SetCurrentOutputDevice(const AudioDeviceDescriptor &desc);
-    void SetCurrentOutputDeviceType(DeviceType deviceType);
     const AudioDeviceDescriptor GetCurrentOutputDevice();
     DeviceType GetCurrentOutputDeviceType();
     DeviceCategory GetCurrentOutputDeviceCategory();
@@ -84,6 +81,9 @@ public:
         const std::string &deviceName = "");
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
         const std::string &deviceName = "");
+    bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
+    void UpdateStreamDeviceMap(std::string source);
 private:
     AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
@@ -104,6 +104,9 @@ private:
 
     std::string activeBTDevice_;
     std::string activeBTInDevice_;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> activeOutputDevices_;
+    std::unordered_map<AudioStreamType, std::shared_ptr<AudioDeviceDescriptor>> streamTypeDeviceMap_;
+    std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>> streamUsageDeviceMap_;
 
     IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;

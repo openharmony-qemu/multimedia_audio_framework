@@ -515,7 +515,7 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     }
 }
 
-void AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType)
+void AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType)
 {
     std::lock_guard<std::mutex> lockCbMap(activeVolumeTypeChangeMutex_);
     for (auto it = activeVolumeTypeChangeCallbackList_.begin(); it != activeVolumeTypeChangeCallbackList_.end(); ++it) {

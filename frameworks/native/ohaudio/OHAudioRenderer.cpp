@@ -24,7 +24,7 @@ using OHOS::AudioStandard::Timestamp;
 
 static const int64_t SECOND_TO_NANOSECOND = 1000000000;
 
-static constexpr float MIN_LOUDNESS_GAIN = -96.0;
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static OHOS::AudioStandard::OHAudioRenderer *convertRenderer(OH_AudioRenderer *renderer)
 {
@@ -299,6 +299,14 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
+    CHECK_AND_RETURN_RET_LOG((usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
+        usage == AUDIOSTREAM_USAGE_AUDIOBOOK), AUDIOSTREAM_ERROR_INVALID_PARAM, "audio stream type not supported");
+    CHECK_AND_RETURN_RET_LOG(latencyMode == AUDIOSTREAM_LATENCY_MODE_NORMAL, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "not supported.");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
@@ -310,7 +318,16 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(loudnessGain != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain is nullptr");
-    *loudnessGain = audioRenderer->GetLoudnessGain();
+    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
+    audioRenderer->GetRendererInfo(rendererInfo);
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
+    if ((usage != AUDIOSTREAM_USAGE_MUSIC && usage != AUDIOSTREAM_USAGE_MOVIE &&
+        usage != AUDIOSTREAM_USAGE_AUDIOBOOK) || latencyMode != AUDIOSTREAM_LATENCY_MODE_NORMAL) {
+        *loudnessGain = 0.0f;
+    } else {
+        *loudnessGain = audioRenderer->GetLoudnessGain();
+    }
     return AUDIOSTREAM_SUCCESS;
 }
 
@@ -708,6 +725,14 @@ void OHAudioRenderer::SetWriteDataCallback(RendererCallback rendererCallbacks, v
             audioRenderer_->SetRendererWriteCallback(callback);
             AUDIO_INFO_LOG("The write callback function is for PCM type without result");
         }
+
+        if (writeDataCallbackType_ == WRITE_DATA_CALLBACK_ADVANCED &&
+            rendererCallbacks.onWriteDataCallbackAdavanced != nullptr) {
+            std::shared_ptr<AudioRendererWriteCallback> callback = std::make_shared<OHAudioRendererModeCallback>(
+                rendererCallbacks.onWriteDataCallbackAdavanced, (OH_AudioRenderer*)this, userData, encodingType);
+            audioRenderer_->SetRendererWriteCallback(callback);
+            AUDIO_INFO_LOG("The write callback function is for PCM type advanced");
+        }
     } else {
         AUDIO_WARNING_LOG("The write callback function is not set");
     }
@@ -812,6 +837,7 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
     audioRenderer = objectGuard.GetPtr();
     CHECK_AND_RETURN_LOG(audioRenderer != nullptr, "renderer client is nullptr");
     CHECK_AND_RETURN_LOG(((encodingType_ == ENCODING_PCM) && (callbacks_.OH_AudioRenderer_OnWriteData != nullptr)) ||
+        ((encodingType_ == ENCODING_PCM) && (onWriteDataAdvancedCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_PCM) && (onWriteDataCallback_ != nullptr)) ||
         ((encodingType_ == ENCODING_AUDIOVIVID) && (writeDataWithMetadataCallback_ != nullptr)),
         "pointer to the function is nullptr");
@@ -833,6 +859,20 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
             if (result == AUDIO_DATA_CALLBACK_RESULT_INVALID) {
                 AUDIO_DEBUG_LOG("Data callback returned invalid, data will not be used.");
                 bufDesc.dataLength = 0; // Ensure that the invalid data is not used.
+            }
+        }
+        if (audioRenderer->GetRendererWriteDataCallbackType() == WRITE_DATA_CALLBACK_ADVANCED &&
+            onWriteDataAdvancedCallback_ != nullptr) {
+            int32_t writeFrameInByte = onWriteDataAdvancedCallback_(ohAudioRenderer_, userData_,
+                (void*)bufDesc.buffer, bufDesc.bufLength);
+            if (writeFrameInByte < 0) {
+                AUDIO_ERR_LOG("app ret : %{public}d", writeFrameInByte);
+                writeFrameInByte = 0;
+            }
+
+            if (writeFrameInByte > bufDesc.bufLength) {
+                AUDIO_ERR_LOG("cbBufferSize is:%{public}d, app ret : %{public}d", bufDesc.bufLength, writeFrameInByte);
+                writeFrameInByte = bufDesc.bufLength;
             }
         }
     }

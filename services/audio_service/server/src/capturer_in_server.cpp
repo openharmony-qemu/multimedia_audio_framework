@@ -152,7 +152,7 @@ int32_t CapturerInServer::Init()
     stream_->RegisterStatusCallback(shared_from_this());
     stream_->RegisterReadCallback(shared_from_this());
 
-    traceTag_ = "[" + std::to_string(streamIndex_) + "]CapturerInServer"; // [100001]CapturerInServer
+    traceTag_ = "[" + std::to_string(streamIndex_) + "]CapturerServerOut"; // [100001]CapturerServerOut
     // eg: /data/data/.pulse_dir/10000_100009_capturer_server_out_48000_2_1.pcm
     AudioStreamInfo tempInfo = processConfig_.streamInfo;
     dumpFileName_ = std::to_string(processConfig_.appInfo.appPid) + "_" + std::to_string(streamIndex_)
@@ -240,7 +240,7 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
 {
-    if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
+    if (audioServerBuffer_->GetWritableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
         } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
@@ -256,6 +256,32 @@ bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFr
         return true;
     }
     return false;
+}
+
+
+static CapturerState HandleStreamStatusToCapturerState(const IStatus &status)
+{
+    switch (status) {
+        case I_STATUS_IDLE:
+            return CAPTURER_PREPARED;
+        case I_STATUS_STARTING:
+        case I_STATUS_STARTED:
+        case I_STATUS_FLUSHING_WHEN_STARTED:
+            return CAPTURER_RUNNING;
+        case I_STATUS_PAUSING:
+        case I_STATUS_PAUSED:
+        case I_STATUS_FLUSHING_WHEN_PAUSED:
+            return CAPTURER_PAUSED;
+        case I_STATUS_STOPPING:
+        case I_STATUS_STOPPED:
+        case I_STATUS_FLUSHING_WHEN_STOPPED:
+            return CAPTURER_STOPPED;
+        case I_STATUS_RELEASING:
+        case I_STATUS_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
 }
 
 static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
@@ -423,8 +449,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
-    AUDIO_DEBUG_LOG("audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
-        audioServerBuffer_->GetAvailableDataFrames(), needStart);
+    AUDIO_DEBUG_LOG("audioServerBuffer_->GetWritableDataFrames(): %{public}d, needStart: %{public}d",
+        audioServerBuffer_->GetWritableDataFrames(), needStart);
     return SUCCESS;
 }
 
@@ -831,6 +857,19 @@ RestoreStatus CapturerInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = audioServerBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        SwitchStreamInfo info = {
+            streamIndex_,
+            processConfig_.callerUid,
+            processConfig_.appInfo.appUid,
+            processConfig_.appInfo.appPid,
+            processConfig_.appInfo.appTokenId,
+            HandleStreamStatusToCapturerState(status_)
+        };
+        AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+            "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+            streamIndex_, info.callerUid, info.appTokenId);
+        SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
@@ -847,6 +886,12 @@ int32_t CapturerInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
+{
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

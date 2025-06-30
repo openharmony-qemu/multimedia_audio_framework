@@ -1605,6 +1605,7 @@ bool AudioPolicyServerHandler::SendAudioZoneEvent(std::shared_ptr<AudioZoneEvent
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->audioZoneEvent = event;
     AUDIO_INFO_LOG("send audio zone event");
     lock_guard<mutex> runnerlock(runnerMutex_);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_ZONE_EVENT,

@@ -39,7 +39,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -95,6 +94,28 @@ AudioProcessInServer::~AudioProcessInServer()
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
 }
 
+static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
+}
+
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
 {
     sessionId = sessionId_;
@@ -143,7 +164,8 @@ void AudioProcessInServer::EnableStandby()
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
-int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame)
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,
@@ -153,6 +175,7 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
         AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr.");
     }
     buffer = processBuffer_;
+    spanSizeInFrame = spanSizeInframe_;
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 
     return SUCCESS;
@@ -211,7 +234,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", sessionId_);
         isMicIndicatorOn_ = true;
     }
@@ -516,7 +539,7 @@ void AudioProcessInServer::Dump(std::string &dumpString)
     dumpString += "\n";
 }
 
-std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
+std::shared_ptr<OHAudioBufferBase> AudioProcessInServer::GetStreamBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_ && processBuffer_ != nullptr,
         nullptr, "GetStreamBuffer failed:process buffer not config.");
@@ -566,30 +589,12 @@ int32_t AudioProcessInServer::InitBufferStatus()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE,
         "InitBufferStatus failed, null buffer.");
 
-    uint32_t spanCount = processBuffer_->GetSpanCount();
-    for (uint32_t i = 0; i < spanCount; i++) {
-        SpanInfo *spanInfo = processBuffer_->GetSpanInfoByIndex(i);
-        CHECK_AND_RETURN_RET_LOG(spanInfo != nullptr, ERR_ILLEGAL_STATE,
-            "InitBufferStatus failed, null spaninfo");
-        spanInfo->spanStatus = SPAN_READ_DONE;
-        spanInfo->offsetInFrame = 0;
-
-        spanInfo->readStartTime = 0;
-        spanInfo->readDoneTime = 0;
-
-        spanInfo->writeStartTime = 0;
-        spanInfo->writeDoneTime = 0;
-
-        spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->isMute = false;
-    }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
-    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &buffer)
+    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -623,7 +628,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
 
     if (buffer == nullptr) {
         // create OHAudioBuffer in server.
-        processBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+        processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
         CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
@@ -802,6 +807,21 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            SwitchStreamInfo info = {
+                sessionId_,
+                processConfig_.callerUid,
+                processConfig_.appInfo.appUid,
+                processConfig_.appInfo.appPid,
+                processConfig_.appInfo.appTokenId,
+                HandleStreamStatusToCapturerState(streamStatus_->load())
+            };
+            AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+                sessionId_, info.callerUid, info.appTokenId);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        }
+
         processBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
@@ -819,6 +839,16 @@ int32_t AudioProcessInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_PARAM, "processBuffer_ is nullptr");
     processBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+uint32_t AudioProcessInServer::GetSpanSizeInFrame()
+{
+    return spanSizeInframe_;
+}
+
+uint32_t AudioProcessInServer::GetByteSizePerFrame()
+{
+    return byteSizePerFrame_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -165,5 +165,14 @@ void AudioStreamMonitor::ReportStreamFreezen(int64_t intervalTime)
     // To do report
 }
 
+void AudioStreamMonitor::NotifyAppStateChange(const int32_t uid, bool isBackground)
+{
+    for (auto iter = audioStreamCheckers_.begin(); iter != audioStreamCheckers_.end();) {
+        if (iter->second->GetAppUid() == uid) {
+            iter->second->UpdateAppState(isBackground);
+        }
+        iter++;
+    }
+}
 }
 }
