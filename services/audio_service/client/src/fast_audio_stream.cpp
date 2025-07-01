@@ -51,7 +51,7 @@ FastAudioStream::~FastAudioStream()
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}d "
+    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
         "fullTokenId:%{public}" PRIu64, clientPid, clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
