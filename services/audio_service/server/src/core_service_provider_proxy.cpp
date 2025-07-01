@@ -79,7 +79,8 @@ std::string CoreServiceProviderProxy::GetAdapterNameBySessionId(uint32_t session
     return reply.ReadString();
 }
 
-int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+    bool isReloadProcess)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -87,6 +88,7 @@ int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessi
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteUint32(sessionId);
+    data.WriteBool(isReloadProcess);
     int ret = Remote()->SendRequest(
         ICoreServiceProviderMsg::GET_PROCESS_DEVICE_INFO_BY_SESSION_ID, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);

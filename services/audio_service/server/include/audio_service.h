@@ -87,7 +87,7 @@ public:
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
-    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
 

@@ -278,6 +278,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_012, TestSize.Level1)
 
     auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
+
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, true);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
