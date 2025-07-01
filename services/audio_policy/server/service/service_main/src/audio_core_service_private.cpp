@@ -2385,7 +2385,8 @@ bool AudioCoreService::IsFastAllowed(std::string &bundleName)
     return true;
 }
 
-int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_INVALID_PARAM, "Stream desc is nullptr");
     auto deviceDesc = streamDesc->newDeviceDescs_.front();
@@ -2407,9 +2408,17 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
         };
 
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERROR,
-            "Nearlink device activation failed, macAddress: %{public}s",
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",
                 GetEncryptAddr(deviceDesc->macAddress_).c_str());
+            deviceDesc->exceptionFlag_ = true;
+            audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
+            if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
+                FetchOutputDeviceAndRoute(reason);
+            } else {
+                FetchInputDeviceAndRoute();
+            }
+        }
     }
     return SUCCESS;
 }

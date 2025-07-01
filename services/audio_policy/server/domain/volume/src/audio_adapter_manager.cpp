@@ -107,7 +107,6 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
     {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
-    {DEVICE_TYPE_NEARLINK, {PRIMARY_CLASS}},
 };
 } // namespace
 

@@ -1373,7 +1373,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
 
     VolumeResult result;
     if (deviceInfo_.networkId_ != LOCAL_NETWORK_ID || (deviceInfo_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP
-        && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet) {
+        && volumeType == STREAM_MUSIC && PolicyHandler::GetInstance().IsAbsVolumeSupported()) || !getVolumeRet ||
+        IsNearlinkAbsVolSupportStream(deviceInfo_.deviceType_, volumeType)) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
     } else if (clientConfig_.rendererInfo.isVirtualKeyboard) {
         result.volumeStart = vol.isMute ? 0 : static_cast<int32_t>(baseVolume);
@@ -1418,6 +1419,14 @@ void AudioEndpointInner::SetupMoveCallback(size_t i, uint64_t curRead, const Rin
         ohAudioBuffer->SetCurReadFrame(readFramePosAfterRead);
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     };
+}
+
+bool AudioEndpointInner::IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType)
+{
+    bool isNearlink = deviceType == DEVICE_TYPE_NEARLINK;
+    bool isMusicStream = volumeType == STREAM_MUSIC;
+    bool isVoiceCallStream = volumeType == STREAM_VOICE_CALL;
+    return isNearlink && (isMusicStream || isVoiceCallStream);
 }
 
 void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
