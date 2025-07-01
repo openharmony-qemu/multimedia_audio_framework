@@ -118,6 +118,7 @@ private:
     int32_t fadingCounts_ = 0;
     uint32_t currChannelNoCheck_ = STEREO;
     uint64_t currchannelLayoutNoCheck_ = CH_LAYOUT_STEREO;
+    std::vector<float> effectBuffer_;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;
