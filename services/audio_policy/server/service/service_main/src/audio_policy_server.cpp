@@ -3016,7 +3016,9 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         audioMicrophoneDescriptor_.SetMicrophoneMute(false);
     }
     if (interruptService_ != nullptr && interruptService_->IsAudioSessionActivated(pid)) {
-        interruptService_->DeactivateAudioSession(pid);
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
+        interruptService_->DeactivateAudioSession(0, pid);
     }
 
     if (audioPolicyServerHandler_ != nullptr) {

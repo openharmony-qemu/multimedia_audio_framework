@@ -17,7 +17,7 @@
 #define ST_AUDIO_SESSION_SERVICE_H
 
 #include <mutex>
-
+#include <vector>
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
@@ -28,7 +28,7 @@ class SessionTimeOutCallback {
 public:
     virtual ~SessionTimeOutCallback() = default;
 
-    virtual void OnSessionTimeout(const int32_t pid) = 0; // 超时释放
+    virtual void OnSessionTimeout(const int32_t pid, const std::vector<AudioInterrupt> &streamsInSession) = 0;
 };
 
 class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {

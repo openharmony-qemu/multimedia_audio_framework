@@ -44,18 +44,21 @@ AudioSession::~AudioSession()
 
 bool AudioSession::IsSceneParameterSet()
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     return audioSessionScene_ != AudioSessionScene::INVALID;
 }
 
 int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     if (state_ == AudioSessionState::SESSION_ACTIVE) {
         AUDIO_ERR_LOG("AudioSessionScene cannot be modified cannot be modified during activation.");
         return ERROR;
     }
 
-    if (scene < AudioSessionScene::MEDIA ||
-        scene > AudioSessionScene::VOICE_COMMUNICATION) {
+    if (scene != AudioSessionScene::MEDIA &&
+        scene != AudioSessionScene::GAME &&
+        scene != AudioSessionScene::VOICE_COMMUNICATION) {
         AUDIO_ERR_LOG("AudioSessionScene = %{public}d out of range.", static_cast<int>(scene));
         return ERROR;
     }
@@ -64,13 +67,15 @@ int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
     return SUCCESS;
 }
 
-bool AudioSession::IsActivated() const
+bool AudioSession::IsActivated()
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     return state_ != AudioSessionState::SESSION_INVALID;
 }
 
-std::vector<AudioInterrupt> AudioSession::GetStreams() const
+std::vector<AudioInterrupt> AudioSession::GetStreams()
 {
+    std::lock_guard<std::mutex> lock(sessionMutex_);
     return bypassStreamInfoVec_;
 }
 
@@ -117,15 +122,21 @@ void AudioSession::RemoveStreamInfo(uint32_t streamId)
 void AudioSession::Dump(std::string &dumpString)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (interruptMap_.size() == 0) {
-        AppendFormat(dumpString, "    - pid: %d, AudioSession is empty.\n", callerPid_);
-    } else {
-        AppendFormat(dumpString, "    - pid: %d, AudioSession strategy is: %d.\n",
-            callerPid_,static_cast<uint32_t>(strategy_.concurrencyMode));
-        AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
-            callerPid_, static_cast<uint32_t>(audioSessionScene_));
-        AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
-            callerPid_, static_cast<uint32_t>(state_));
+    AppendFormat(dumpString, "    - pid: %d, AudioSession strategy is: %d.\n",
+        callerPid_,static_cast<uint32_t>(strategy_.concurrencyMode));
+    AppendFormat(dumpString, "    - pid: %d, AudioSession scene is: %d.\n",
+        callerPid_, static_cast<uint32_t>(audioSessionScene_));
+    AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
+        callerPid_, static_cast<uint32_t>(state_));
+    AppendFormat(dumpString, "    - pid: %d, Stream in interruptMap are:\n", callerPid_);
+    for (auto &it : interruptMap_) {
+        AppendFormat(dumpString, "        - streamId is: %u, streamType is: %u\n",
+            it.first, static_cast<uint32_t>(it.second.first.audioFocusType.streamType));
+    }
+    AppendFormat(dumpString, "    - pid: %d, Bypass streams are:\n", callerPid_);
+    for (auto &it : bypassStreamInfoVec_) {
+        AppendFormat(dumpString, "        - streamId is: %u, streamType is: %u\n",
+            it.streamId, static_cast<uint32_t>(it.audioFocusType.streamType));
     }
 }
 
@@ -210,6 +221,10 @@ AudioSessionStrategy AudioSession::GetSessionStrategy()
 
 int32_t AudioSession::AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair)
 {
+    if (interruptPair.first.isAudioSessionInterrupt) {
+        return SUCCESS;
+    }
+
     uint32_t streamId = interruptPair.first.streamId;
     AUDIO_INFO_LOG("AddAudioInterrpt: streamId %{public}u", streamId);
 

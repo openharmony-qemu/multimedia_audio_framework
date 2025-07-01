@@ -22,6 +22,8 @@
 #include "audio_utils.h"
 #include "ipc_skeleton.h"
 
+#define MAX_SESSION_NUM 50
+
 namespace OHOS {
 namespace AudioStandard {
 static const std::unordered_map<AudioStreamType, AudioSessionType> SESSION_TYPE_MAP = {
@@ -74,6 +76,12 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
     AUDIO_INFO_LOG("ActivateAudioSession: callerPid %{public}d, concurrencyMode %{public}d",
         callerPid, static_cast<int32_t>(strategy.concurrencyMode));
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+
+    if (sessionMap_.size() > MAX_SESSION_NUM) {
+        AUDIO_ERR_LOG("Exceeding the maximum number limit of audiosession. num %{public}u", sessionMap_.size());
+        return ERROR;
+    }
+
     if (sessionMap_.count(callerPid) != 0) {
         // The audio session of the callerPid is already created. The strategy will be updated.
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
@@ -161,6 +169,11 @@ void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
 {
     AUDIO_INFO_LOG("OnAudioSessionTimeOut: callerPid %{public}d", callerPid);
     std::unique_lock<std::mutex> lock(sessionServiceMutex_);
+    std::vector<AudioInterrupt> streamsInSession;
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
+        streamsInSession = sessionMap_[callerPid]->GetStreams();
+    }
     DeactivateAudioSessionInternal(callerPid, true);
     lock.unlock();
 
@@ -173,7 +186,8 @@ void AudioSessionService::OnAudioSessionTimeOut(int32_t callerPid)
         AUDIO_ERR_LOG("timeOutCallback_ is nullptr!");
         return;
     }
-    cb->OnSessionTimeout(callerPid);
+
+    cb->OnSessionTimeout(callerPid, streamsInSession);
 }
 
 std::shared_ptr<AudioSessionStateMonitor> AudioSessionService::GetSelfSharedPtr()
@@ -321,7 +335,10 @@ bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &audio
 
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     auto session = sessionMap_.find(audioInterrupt.pid);
-    session->second->AddStreamInfo(audioInterrupt);
+    if (session != sessionMap_.end() && sessionMap_[audioInterrupt.pid] != nullptr) {
+        sessionMap_[audioInterrupt.pid]->AddStreamInfo(audioInterrupt);
+        sessionMap_[audioInterrupt.pid]->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
+    }
 
     return true;
 }
@@ -353,7 +370,7 @@ std::vector<AudioInterrupt> AudioSessionService::GetStreams(int32_t callerPid)
     return session->second->GetStreams();
 }
 
-static uint32_t g_streamId = 888;
+static uint32_t g_streamId = 888; // 888 is the start fake stream id.
 AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

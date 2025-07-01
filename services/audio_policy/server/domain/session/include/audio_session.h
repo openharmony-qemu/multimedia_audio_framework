@@ -41,8 +41,8 @@ public:
     ~AudioSession();
     bool IsSceneParameterSet();
     int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
-    bool IsActivated() const;
-    std::vector<AudioInterrupt> GetStreams() const;
+    bool IsActivated();
+    std::vector<AudioInterrupt> GetStreams();
     AudioStreamType GetFakeStreamType();
     void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
     void RemoveStreamInfo(uint32_t streamId);

@@ -225,6 +225,7 @@ bool AudioPolicyServerHandler::SendAudioSessionDeactiveCallback(
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->sessionDeactivePair = sessionDeactivePair;
     lock_guard<mutex> runnerlock(runnerMutex_);
+    AUDIO_INFO_LOG("Send AudioSessionDeactiveCallback pid %{public}d", sessionDeactivePair.first);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudioSessionDeactiveCallback event failed");
@@ -334,7 +335,7 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with streamId callback");
+    AUDIO_INFO_LOG("Send interrupt event with streamId callback, streamId = %{public}u", streamId);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
@@ -349,7 +350,7 @@ bool AudioPolicyServerHandler::SendInterruptEventCallbackForAudioSession(const I
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->audioInterrupt = audioInterrupt;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with streamId callback");
+    AUDIO_INFO_LOG("Send InterruptEventCallbackForAudioSession pid %{public}d", audioInterrupt.pid);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_FOR_AUDIO_SESSION,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_FOR_AUDIO_SESSION event failed");
@@ -1041,8 +1042,14 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
             stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::PAUSE;
             break;
         case INTERRUPT_HINT_STOP:
+        // duckVolume = -1.0f, means timeout stop
+        if (eventContextObj->interruptEvent.duckVolume == -1.0f) {
+            eventContextObj->interruptEvent.duckVolume = 1.0f;
+            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::TIME_OUT_STOP;
+        } else {
             stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::STOP;
-            break;
+        }
+        break;
         case INTERRUPT_HINT_DUCK:
             stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::DUCK;
             break;
