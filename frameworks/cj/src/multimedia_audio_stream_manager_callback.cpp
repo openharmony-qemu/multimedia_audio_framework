@@ -21,6 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 void CjAudioCapturerStateChangeCallback::RegisterFunc(std::function<void(CArrAudioCapturerChangeInfo)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -60,6 +61,7 @@ void CjAudioCapturerStateChangeCallback::OnCapturerStateChange(
 
 void CjAudioRendererStateChangeCallback::RegisterFunc(std::function<void(CArrAudioRendererChangeInfo)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
