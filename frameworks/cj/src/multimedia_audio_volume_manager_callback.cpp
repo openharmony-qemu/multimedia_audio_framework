@@ -22,6 +22,7 @@ namespace AudioStandard {
 
 void CjVolumeKeyEventCallback::RegisterFunc(std::function<void(CVolumeEvent)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
