@@ -73,7 +73,7 @@ public:
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-            bool isReloadProcess) override;
+            bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
 
         // IDeviceStatusObserver
