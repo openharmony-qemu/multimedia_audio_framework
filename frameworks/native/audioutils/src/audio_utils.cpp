@@ -714,7 +714,7 @@ std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StartUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
@@ -725,7 +725,7 @@ int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char*
 int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StopUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
@@ -746,7 +746,7 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         }
     } else {
         AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
             "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
@@ -781,7 +781,7 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
         g_tokenIdRecordMap.erase(targetTokenId);
         AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
