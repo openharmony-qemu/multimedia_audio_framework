@@ -87,7 +87,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
     config.appInfo.appTokenId = appTokenId_;
-    config.appInfo.fullTokenId = fullTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
     config.audioMode = eMode_;
     config.streamInfo.channels = static_cast<AudioChannel>(info.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(info.encoding);
