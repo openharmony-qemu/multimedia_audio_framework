@@ -870,10 +870,13 @@ void OHAudioRendererModeCallback::OnWriteData(size_t length)
                 writeFrameInByte = 0;
             }
 
-            if (writeFrameInByte > bufDesc.bufLength) {
-                AUDIO_ERR_LOG("cbBufferSize is:%{public}d, app ret : %{public}d", bufDesc.bufLength, writeFrameInByte);
-                writeFrameInByte = bufDesc.bufLength;
+            if (writeFrameInByte > static_cast<int32_t>(bufDesc.bufLength)) {
+                AUDIO_ERR_LOG("cbBufferSize is:%{public}zu, app ret : %{public}d", bufDesc.bufLength, writeFrameInByte);
+                writeFrameInByte = static_cast<int32_t>(bufDesc.bufLength);
             }
+
+            bufDesc.dataLength = static_cast<size_t>(writeFrameInByte);
+            bufDesc.bufLength = static_cast<size_t>(writeFrameInByte);
         }
     }
     audioRenderer->Enqueue(bufDesc);
