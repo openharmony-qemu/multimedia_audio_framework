@@ -108,7 +108,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
 #endif
 
     CheckUpdateInfo(inputs[0]);
-    CHECK_AND_RETURN_RET(IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
+    CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();
         int32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
@@ -127,7 +127,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
             .raw = loudnessGainOutput_.GetPcmDataBuffer(),
             .metaData = nullptr
         };
-        CHECK_AND_RETURN_RET_LOG(handle_, inputs[0], "no handle.");
+        CHECK_AND_RETURN_RET(handle_, inputs[0]);
         int32_t ret = (*handle_)->process(handle_, &inBuffer, &outBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == 0, inputs[0], "loudness algo lib process failed");
     }

@@ -1724,12 +1724,12 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
 {
     loudnessGain_ = loudnessGain;
     int32_t ret = stream_->SetLoudnessGain(loudnessGain);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed");
     for (auto &capInfo : captureInfos_) {
         if (capInfo.second.isInnerCapEnabled && capInfo.second.dupStream != nullptr) {
             ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
         }
     }
-    // to-do: return error code for pro stream
     return ret;
 }
 

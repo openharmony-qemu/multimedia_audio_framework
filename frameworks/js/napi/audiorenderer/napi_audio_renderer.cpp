@@ -1090,7 +1090,7 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
         }
         context->intValue = napiAudioRenderer->audioRenderer_->
             SetLoudnessGain(static_cast<float>(context->loudnessGain));
-        if (context->intValue == ERR_NOT_SUPPORTED) {
+        if (context->intValue == ERR_PRO_STREAM_NOT_SUPPORTED) {
             context->SignError(NAPI_ERR_UNSUPPORTED);
             return;
         }
