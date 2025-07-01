@@ -862,7 +862,7 @@ void AudioService::ReLinkProcessToEndpoint()
 
             // get new endpoint
             const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
+            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, true);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
             if (audioEndpoint == nullptr) {
@@ -981,12 +981,12 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     return;
 }
 
-AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config)
+AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    int32_t ret =
-        CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId, deviceInfo);
+    int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
+        deviceInfo, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
