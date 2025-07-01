@@ -51,7 +51,7 @@ public:
 
     virtual int32_t Stop() { return 0; }
 
-    virtual int32_t Release() { return 0; }
+    virtual int32_t Release(bool isSwitchStream = false) { return 0; }
 
     virtual int32_t Flush() { return 0; }
 
