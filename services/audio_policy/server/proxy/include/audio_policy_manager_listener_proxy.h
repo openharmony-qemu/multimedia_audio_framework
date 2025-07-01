@@ -34,7 +34,7 @@ public:
     bool OnCheckVKBInfo(const std::string &bundleName) override;
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
     void OnBackgroundMute(const int32_t uid) override;
-    bool OnQueryBundleNameIsInList(const std::string &bundleName) override;
+    bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) override;
 
 private:
     static inline BrokerDelegator<AudioPolicyManagerListenerProxy> delegator_;

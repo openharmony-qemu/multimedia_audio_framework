@@ -1038,5 +1038,27 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_051, TestSize.Level1
     activeInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
     audioInterruptService->ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt, RECORD_ERROR_GET_FOCUS_FAIL);
 }
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_052
+* @tc.desc  : Test UpdateMicFocusStrategy
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_052, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    SourceType existSourceType;
+    SourceType incomingSourceType;
+    std::string bundleName = "";
+    AudioFocusEntry focusEntry;
+
+    existSourceType = SOURCE_TYPE_INVALID;
+    incomingSourceType = SOURCE_TYPE_MIC;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->UpdateMicFocusStrategy(existSourceType, incomingSourceType, bundleName, focusEntry);
+    EXPECT_NE(focusEntry.hintType, INTERRUPT_HINT_NONE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

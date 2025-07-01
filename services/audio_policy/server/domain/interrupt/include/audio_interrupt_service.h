@@ -178,6 +178,8 @@ private:
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
+    void UpdateFocusStrategy(const std::string &bundleName,
+        AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     bool IsMediaStream(AudioStreamType audioStreamType);
     std::string GetRealBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
@@ -221,6 +223,9 @@ private:
         std::shared_ptr<AudioInterruptZone> &zoneInfo,
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
+    void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
+        const std::string &bundleName, AudioFocusEntry &focusEntry);
+    bool IsMicSource(SourceType sourceType);
 
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
