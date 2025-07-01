@@ -1282,7 +1282,7 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
 void AudioProcessInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
-    if (callbackLoop_.joinable() && !isCallbackLoopEnd_) {
+    if (callbackLoop_.joinable()) {
         std::unique_lock<std::mutex> lock(loopThreadLock_);
         isCallbackLoopEnd_ = true; // change it with lock to break the loop
         threadStatusCV_.notify_all();
