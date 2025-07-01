@@ -373,7 +373,7 @@ int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int6
     return ERR_INVALID_PARAM;
 }
 
-void AudioService::RemoveRenderer(uint32_t sessionId)
+void AudioService::RemoveRenderer(uint32_t sessionId, bool isSwitchStream)
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Renderer:%{public}u will be removed.", sessionId);
@@ -382,7 +382,9 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
-    RemoveIdFromMuteControlSet(sessionId);
+    if (!isSwitchStream) {
+        RemoveIdFromMuteControlSet(sessionId);
+    }
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
@@ -393,7 +395,7 @@ void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerIn
     allCapturerMap_[sessionId] = capturer;
 }
 
-void AudioService::RemoveCapturer(uint32_t sessionId)
+void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
 {
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Capturer: %{public}u will be removed.", sessionId);
@@ -403,7 +405,9 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
     }
     allCapturerMap_.erase(sessionId);
     muteStateCallbacks_.erase(sessionId);
-    RemoveIdFromMuteControlSet(sessionId);
+    if (!isSwitchStream) {
+        RemoveIdFromMuteControlSet(sessionId);
+    }
 }
 
 void AudioService::AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer)

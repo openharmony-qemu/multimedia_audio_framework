@@ -1613,8 +1613,24 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
 
     audioService->allRendererMap_.clear();
 
-    uint32_t sessionId = 0;
-    audioService->RemoveRenderer(sessionId);
+    uint32_t sessionId = 100001;
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    std::set<uint32_t>::iterator end = audioService->mutedSessions_.end();
+    std::set<uint32_t>::iterator it = end;
+    audioService->RemoveRenderer(sessionId, true);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_NE(it, end);
+    }
+
+    audioService->RemoveRenderer(sessionId, false);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_EQ(it, end);
+    }
 }
 
 /**

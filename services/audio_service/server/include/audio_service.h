@@ -99,8 +99,8 @@ public:
     void Dump(std::string &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
 
-    void RemoveRenderer(uint32_t sessionId);
-    void RemoveCapturer(uint32_t sessionId);
+    void RemoveRenderer(uint32_t sessionId, bool isSwitchStream = false);
+    void RemoveCapturer(uint32_t sessionId, bool isSwitchStream = false);
     int32_t EnableDualToneList(uint32_t sessionId);
     int32_t DisableDualToneList(uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);

@@ -1271,7 +1271,7 @@ int32_t RendererInServer::StopInner()
     return SUCCESS;
 }
 
-int32_t RendererInServer::Release()
+int32_t RendererInServer::Release(bool isSwitchStream)
 {
     AUDIO_INFO_LOG("Start release");
     AudioXCollie audioXCollie(
@@ -1296,7 +1296,7 @@ int32_t RendererInServer::Release()
     ret = IStreamManager::GetPlaybackManager(managerType_).ReleaseRender(streamIndex_);
 
     AudioVolume::GetInstance()->RemoveStreamVolume(streamIndex_);
-    AudioService::GetInstance()->RemoveRenderer(streamIndex_);
+    AudioService::GetInstance()->RemoveRenderer(streamIndex_, isSwitchStream);
     if (ret < 0) {
         AUDIO_ERR_LOG("Release stream failed, reason: %{public}d", ret);
         status_ = I_STATUS_INVALID;

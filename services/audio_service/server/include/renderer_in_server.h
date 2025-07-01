@@ -65,7 +65,7 @@ public:
     int32_t Flush();
     int32_t Drain(bool stopFlag = false);
     int32_t Stop();
-    int32_t Release();
+    int32_t Release(bool isSwitchStream = false);
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base);

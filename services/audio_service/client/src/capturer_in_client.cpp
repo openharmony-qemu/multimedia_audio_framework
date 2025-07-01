@@ -1241,7 +1241,6 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)isSwitchStream;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");
@@ -1252,7 +1251,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release();
+        ipcStream_->Release(isSwitchStream);
     } else {
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }

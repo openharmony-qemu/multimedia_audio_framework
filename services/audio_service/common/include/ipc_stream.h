@@ -47,7 +47,7 @@ public:
 
     virtual int32_t Stop() = 0;
 
-    virtual int32_t Release() = 0;
+    virtual int32_t Release(bool isSwitchStream = false) = 0;
 
     virtual int32_t Flush() = 0;
 

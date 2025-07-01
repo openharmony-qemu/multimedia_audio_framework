@@ -41,7 +41,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release() override;
+    int32_t Release(bool isSwitchStream = false) override;
 
     int32_t Flush() override;
 

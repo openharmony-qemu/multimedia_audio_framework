@@ -1122,7 +1122,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("RendererInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release();
+        ipcStream_->Release(isSwitchStream);
     } else {
         AUDIO_WARNING_LOG("release while ipcStream is null");
     }
