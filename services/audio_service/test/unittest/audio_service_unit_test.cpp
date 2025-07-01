@@ -17,7 +17,6 @@
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
 
-#include "audio_info.h"
 #include "audio_service.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
@@ -1614,7 +1613,7 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
 
     audioService->allRendererMap_.clear();
 
-    uint32_t sessionId = MIN_SESSIONID + 1;
+    uint32_t sessionId = 100001;
     audioService->UpdateMuteControlSet(sessionId, true);
 
     std::set<uint32_t>::iterator end = audioService->mutedSessions_.end();
