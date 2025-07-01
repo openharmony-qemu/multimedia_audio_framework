@@ -311,7 +311,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
     CHECK_AND_RETURN_RET_LOG(err != OHOS::AudioStandard::ERR_PRO_STREAM_NOT_SUPPORTED, AUDIOSTREAM_ERROR_INVALID_PARAM,
-        "pro stream not supported.")
+        "pro stream not supported.");
     return ConvertError(err);
 }
 

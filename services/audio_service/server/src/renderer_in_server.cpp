@@ -1730,7 +1730,8 @@ int32_t RendererInServer::SetLoudnessGain(float loudnessGain)
             ret += capInfo.second.dupStream->SetLoudnessGain(loudnessGain);
         }
     }
-    return ret;
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "setloudnessGain failed during capture, error: %{public}d", ret);
+    return SUCCESS;
 }
 
 int32_t RendererInServer::SetMute(bool isMute)
