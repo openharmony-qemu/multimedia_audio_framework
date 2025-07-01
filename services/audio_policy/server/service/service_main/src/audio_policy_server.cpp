@@ -68,7 +68,7 @@ const std::list<AudioStreamType> CAN_MIX_MUTED_STREAM = {
 };
 
 const size_t ADD_VOL_RECORD_LIMIT = 3;
-const int64_t ADD_VOL_DURATION_LIMTI = 800000000; // 800ms
+constexpr int64_t ADD_VOL_DURATION_LIMIT = 800 * 1000 * 1000; // 800ms
 const int64_t SILENT_FRAME_LIMIT = -50;
 constexpr int32_t PARAMS_VOLUME_NUM = 5;
 constexpr int32_t PARAMS_INTERRUPT_NUM = 4;
@@ -469,16 +469,16 @@ bool AudioPolicyServer::IsContinueAddVol()
     // continue add vol for 3 times
     int64_t first = volUpHistory_.front();
     volUpHistory_.pop_front();
-    if (cur - first >= ADD_VOL_DURATION_LIMTI) {
+    if (cur - first >= ADD_VOL_DURATION_LIMIT) {
         return false;
     }
     AUDIO_WARNING_LOG("add vol %{public}zu times, first %{public}" PRId64" cur %{public}" PRId64 "", total, first, cur);
     return true;
 }
 
-void AudioPolicyServer::TrigerMuteCheck()
+void AudioPolicyServer::TriggerMuteCheck()
 {
-    Trace trace("AudioPolicyServer::TrigerMuteCheck");
+    Trace trace("AudioPolicyServer::TriggerMuteCheck");
     // get current running sessionId
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> infos = {};
     streamCollector_.GetRunningRendererInfos(infos);
@@ -489,7 +489,7 @@ void AudioPolicyServer::TrigerMuteCheck()
 
     std::set<std::string> deviceClassSet;
     for (auto info : infos) {
-        if (info->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
+        if (info == nullptr || info->outputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
             continue;
         }
         auto deviceType = info->outputDeviceInfo.getType();
@@ -501,11 +501,11 @@ void AudioPolicyServer::TrigerMuteCheck()
     }
 
     bool mutePlay = false;
-    for (auto deviceClass : deviceClassSet) {
-        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(deviceClass);
+    for (auto sinkName : deviceClassSet) {
+        int64_t volumeDataCount = AudioServerProxy::GetInstance().GetVolumeDataCount(sinkName);
         if (volumeDataCount < SILENT_FRAME_LIMIT) {
             mutePlay = true;
-            AUDIO_WARNING_LOG("sink:%{public}s running with mute data", deviceClass.c_str());
+            AUDIO_WARNING_LOG("sink:%{public}s running with mute data", sinkName.c_str());
         }
     }
 
@@ -520,7 +520,7 @@ void AudioPolicyServer::TrigerMuteCheck()
 int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
 {
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && IsContinueAddVol()) {
-        std::thread([this]() { TrigerMuteCheck(); }).detach();
+        std::thread([this]() { TriggerMuteCheck(); }).detach();
     }
     int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
     AUDIO_INFO_LOG("zoneId is %{public}d", zoneId);

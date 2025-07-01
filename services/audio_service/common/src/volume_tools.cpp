@@ -29,6 +29,7 @@ static const int32_t UINT8_SHIFT = 0x80;
 static const int32_t INT24_SHIFT = 8;
 static const int32_t INT24_MAX_VALUE = 8388607;
 static const uint32_t SHIFT_EIGHT = 8;
+static const int32_t RIGHT_SHIFT_8 = 256;
 static const uint32_t SHIFT_SIXTEEN = 16;
 static const uint32_t ARRAY_INDEX_TWO = 2;
 static const size_t MIN_FRAME_SIZE = 1;
@@ -390,13 +391,12 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         volMaps.volStart[index] = 0;
         volMaps.volEnd[index] = 0;
     }
+    int64_t volSums[CHANNEL_MAX] = {0};
     uint8_t *raw8 = buffer.buffer;
     for (size_t frameIndex = 0; frameIndex < frameSize - (split - 1); frameIndex += split) {
         for (size_t channelIdx = 0; channelIdx < channel; channelIdx++) {
-            int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8));
-            uint32_t sampleAbs = (sample >= 0 ? static_cast<uint32_t>(sample) : static_cast<uint32_t>(-sample)) >>
-                SHIFT_EIGHT;
-            volMaps.volStart[channelIdx] += static_cast<int32_t>(sampleAbs);
+            int32_t sample = static_cast<int32_t>(ReadInt24LE(raw8) << INT24_SHIFT);
+            volSums[channelIdx] += std::abs(sample);
             raw8 += byteSizePerData;
         }
         raw8 += (split - 1) * channel * byteSizePerData;
@@ -408,7 +408,8 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     for (size_t index = 0; index < channel; index++) {
-        volMaps.volStart[index] /= static_cast<int32_t>(size);
+        volSums[index] /= RIGHT_SHIFT_8; // equal to " >> INT24_SHIFT"
+        volMaps.volStart[index] = static_cast<int32_t>(volSums[index] / size);
     }
     return;
 }
@@ -502,7 +503,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     for (size_t index = 0; index < channel; index++) {
-        volSums[index] /= static_cast<int32_t>(size);
+        volSums[index] = (volSums[index] * INT32_MAX) / static_cast<double>(size);
         volMaps.volStart[index] = static_cast<int32_t>(volSums[index]);
     }
     return;

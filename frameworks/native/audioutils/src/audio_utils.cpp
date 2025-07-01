@@ -1299,7 +1299,7 @@ std::string GetTime()
     // 2025-06-22-21:22:07:666
     char timeBuf[TIME_TEXT_LENGTH] = {0};
     int ret = sprintf_s(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d-%02d:%02d:%02d:%03d", (YEAR_BASE + t->tm_year),
-        t->tm_mon, t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
+        (1 + t->tm_mon), t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
     if (ret < 0) {
         return "";
     }

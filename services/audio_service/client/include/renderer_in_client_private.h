@@ -353,7 +353,7 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
-    StateChangeCmdType muteCmd_ = CMD_FROM_CLIENT;
+    std::atomic<StateChangeCmdType> muteCmd_ = CMD_FROM_CLIENT;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 
@@ -403,8 +403,8 @@ private:
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
-    int64_t mutePlayStartTime_ = 0; // realtime
-    bool mutePlaying_ = false;
+    std::atomic<int64_t> mutePlayStartTime_ = 0; // realtime
+    std::atomic<bool> mutePlaying_ = false;
 
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;

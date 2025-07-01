@@ -706,7 +706,7 @@ void RendererInClientInner::ReportWriteMuteEvent(int64_t mutePlayDuration)
     bool isClientMute = muteCmd_ == CMD_FROM_CLIENT;
     uint8_t muteState = (isClientMute ? 0x0 : 0x4) | (isMute ? 0x1 : 0x0);
 
-    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64"d ms, muteState:%{public}d", sessionId_,
+    AUDIO_WARNING_LOG("[%{public}d]MutePlaying for %{public}" PRId64" ms, muteState:%{public}d", sessionId_,
         mutePlayDuration, muteState);
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::APP_WRITE_MUTE, Media::MediaMonitor::EventType::FAULT_EVENT);

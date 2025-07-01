@@ -35,7 +35,7 @@ ohos_shared_library("audio_common") {
     cfi_cross_dso = true
     cfi_vcall_icall_only = true
     debug = false
-    integer_overflow = true
+    integer_overflow = false
     ubsan = true
     boundary_sanitize = true
   }

@@ -36,7 +36,7 @@ using namespace OHOS::HDI::Audio_Bluetooth;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-constexpr int64_t MONITOR_WRITE_COST = 1000000000; // 1s
+constexpr int64_t MONITOR_WRITE_COST = 1 * 1000 * 1000 * 1000; // 1s
 }
 BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency)
     : isBluetoothLowLatency_(isBluetoothLowLatency)
