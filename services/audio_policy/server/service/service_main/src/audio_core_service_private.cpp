@@ -1346,7 +1346,7 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
 
 void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after)
 {
-    CHECK_AND_RETURN_LOG(pre != true || after != false, "ringdual not cancel by call");
+    CHECK_AND_RETURN_LOG(pre == true && after == false, "ringdual not cancel by call");
     AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
     for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
         audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
