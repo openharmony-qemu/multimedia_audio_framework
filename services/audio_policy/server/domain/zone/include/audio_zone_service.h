@@ -55,6 +55,8 @@ public:
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid);
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
+    void SetZoneDeviceVisible(bool visible);
+    bool IsZoneDeviceVisible();
     int32_t FindAudioZoneByUid(int32_t uid);
     int32_t FindAudioZoneByUsage(StreamUsage usage);
 
@@ -94,7 +96,7 @@ private:
     std::unordered_map<int32_t, std::shared_ptr<AudioZone>> zoneMaps_;
     std::set<pid_t> zoneReportClientList_;
     std::mutex zoneMutex_;
-    bool isAppCast = false;
+    bool zoneDeviceVisible_ = true;
 
     std::shared_ptr<AudioZone> FindZone(int32_t zoneId);
     int32_t AddKeyToAudioZone(int32_t zoneId, int32_t uid, const std::string &deviceTag,

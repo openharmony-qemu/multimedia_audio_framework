@@ -124,6 +124,13 @@ int32_t AudioPolicyManager::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream
     return gsp->AddStreamToAudioZone(zoneId, stream);
 }
 
+void AudioPolicyManager::SetZoneDeviceVisible(bool visible)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
+    gsp->SetZoneDeviceVisible(visible);
+}
+
 int32_t AudioPolicyManager::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

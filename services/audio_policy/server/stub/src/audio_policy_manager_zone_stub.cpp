@@ -96,6 +96,9 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequestExt(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPT_OF_DEVICE_TO_AUDIO_ZONE):
             HandleInjectInterruptToAudioZoneDevice(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ZONE_DEVICE_VISIBLE):
+            HandleSetZoneDeviceVisible(data, reply);
+            break;
         default:
             break;
     }
@@ -222,6 +225,12 @@ void AudioPolicyManagerStub::HandleRemoveStreamFromAudioZone(MessageParcel &data
     AudioZoneStream stream;
     stream.Unmarshalling(data);
     reply.WriteInt32(RemoveStreamFromAudioZone(zoneId, stream));
+}
+
+void AudioPolicyManagerStub::HandleSetZoneDeviceVisible(MessageParcel &data, MessageParcel &reply)
+{
+    bool visible = data.ReadBool();
+    SetZoneDeviceVisible(visible);
 }
 
 void AudioPolicyManagerStub::HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply)

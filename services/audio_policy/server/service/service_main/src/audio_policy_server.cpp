@@ -3763,6 +3763,12 @@ int32_t AudioPolicyServer::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneSt
     return AudioZoneService::GetInstance().RemoveStreamFromAudioZone(zoneId, stream);
 }
 
+void AudioPolicyServer::SetZoneDeviceVisible(bool visible)
+{
+    CHECK_AND_RETURN_LOG(PermissionUtil::VerifySystemPermission(), "no system permission");
+    AudioZoneService::GetInstance().SetZoneDeviceVisible(visible);
+}
+
 int32_t AudioPolicyServer::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");

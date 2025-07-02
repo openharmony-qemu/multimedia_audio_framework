@@ -376,6 +376,8 @@ public:
     
     virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
 
+    virtual void SetZoneDeviceVisible(bool visible) = 0;
+
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;

@@ -365,6 +365,8 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
 
+    void SetZoneDeviceVisible(bool visible) override;
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId,
