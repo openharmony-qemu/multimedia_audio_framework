@@ -83,7 +83,7 @@ void HpaeSinkOutputNode::DoProcess()
     timer.Start();
     intervalTimer_.Stop();
     if (outputPcmDumper_) {
-        outputPcmDumper_->CheckAndReopenHandlde();
+        outputPcmDumper_->CheckAndReopenHandle();
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
 #endif

@@ -132,6 +132,9 @@ class AdapterPipeInfo {
 public:
     void SelfCheck();
 
+    void UpdateDynamicStreamProps(const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);
+    void ClearDynamicStreamProps();
+
     std::string name_ = STR_INITED;
     AudioPipeRole role_ = PIPE_ROLE_NONE;
     PaPropInfo paProp_ {};
@@ -144,6 +147,11 @@ public:
     std::weak_ptr<PolicyAdapterInfo> adapterInfo_;
     std::list<std::shared_ptr<PipeStreamPropInfo>> streamPropInfos_ {};
     std::list<std::shared_ptr<AttributeInfo>> attributeInfos_ {};
+
+    // for dynamic
+    std::mutex dynamicMtx_;
+    std::list<std::shared_ptr<PipeStreamPropInfo>> dynamicStreamPropInfos_ {};
+    std::list<std::string> supportDevices_ {};
 };
 
 class AdapterDeviceInfo {
@@ -206,6 +214,15 @@ public:
     std::string GetVersion();
     std::shared_ptr<AdapterDeviceInfo> GetAdapterDeviceInfo(DeviceType type_, DeviceRole role_,
         const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag = 0);
+
+    void UpdateDynamicStreamProps(const std::string adapterName, const std::string &pipeName,
+        const std::list<std::shared_ptr<PipeStreamPropInfo>> &streamProps);
+    void ClearDynamicStreamProps(const std::string adapterName, const std::string &pipeName);
+    uint32_t GetConfigStreamPropsSize(const std::string adapterName, const std::string &pipeName) const;
+    uint32_t GetDynamicStreamPropsSize(const std::string adapterName, const std::string &pipeName) const;
+
+    std::weak_ptr<AdapterPipeInfo> pipeInfo_;
+    std::list<std::string> supportDevices_ {};
 
     std::unordered_map<AudioAdapterType, std::shared_ptr<PolicyAdapterInfo>> adapterInfoMap {};
     std::unordered_map<std::pair<DeviceType, DeviceRole>,

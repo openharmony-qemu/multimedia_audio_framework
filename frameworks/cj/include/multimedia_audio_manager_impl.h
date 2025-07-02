@@ -36,7 +36,7 @@ public:
 
     int64_t GetRoutingManager(int32_t* errorCode);
 
-    int64_t GetStreamManger(int32_t* errorCode);
+    int64_t GetStreamManager(int32_t* errorCode);
 
     int64_t GetVolumeManager(int32_t* errorCode);
 

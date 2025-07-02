@@ -612,8 +612,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
-    // When the fast stream creation fails, a normal stream is created
-    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+    if (ret != SUCCESS) {
+        // if the normal stream creation fails, return fail, other try create normal stream
+        CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams, audioStreamType);
     }
 
@@ -883,35 +884,49 @@ std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
     return audioStream_;
 }
 
-int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+void AudioRendererPrivate::SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+    RestoreStatus restoreStatus)
 {
-    std::unique_lock<std::shared_mutex> lock;
-    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-    }
-
-    if (abortRestore_) {
-        return SUCCESS;
-    }
-    // Return in advance if there's no need for restore.
-    CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
-    if (restoreStatus == NO_NEED_FOR_RESTORE) {
-        return SUCCESS;
-    }
-    if (restoreStatus == RESTORING) {
-        AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
-        return ERR_ILLEGAL_STATE;
-    }
-
     // Get restore info and target stream class for switching.
-    RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     SetClientInfo(restoreInfo.routeFlag, targetClass);
     if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
         restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
+}
+
+int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    RestoreInfo restoreInfo;
+    std::shared_ptr<IAudioStream> oldStream = nullptr;
+    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+    {
+        std::unique_lock<std::shared_mutex> lock;
+        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        }
+
+        // Return in advance if there's no need for restore.
+        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
+        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
+            return SUCCESS;
+        }
+        if (restoreStatus == RESTORING) {
+            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
+            return ERR_ILLEGAL_STATE;
+        }
+
+        SetRestoreInfo(restoreInfo, targetClass, restoreStatus);
+        // Check if split stream. If true, fetch output device and return.
+        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
+        // Check if continue to switch after some concede operation.
+        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
+            true, "No need for switch");
+        oldStream = audioStream_;
+    }
+    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
+    oldStream->JoinCallbackLoop();
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -1359,6 +1374,8 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    int32_t ret = currentStream->SetRenderRate(renderRate);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     float speed = 1.0f;
     switch (renderRate) {
         case RENDER_RATE_NORMAL:
@@ -1373,11 +1390,15 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
         default:
             speed = 1.0f;
     }
-    int32_t ret = currentStream->SetPitch(speed);
+    ret = currentStream->SetSpeed(speed);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetSpeed Failed, error: %{public}d", ret);
+    }
+    ret = currentStream->SetPitch(speed);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetPitch Failed, error: %{public}d", ret);
     }
-    return currentStream->SetSpeed(speed);
+    return SUCCESS;
 }
 
 AudioRendererRate AudioRendererPrivate::GetRenderRate() const
@@ -2215,11 +2236,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     AUDIO_INFO_LOG("Restore AudioRenderer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
-    // Check if split stream. If true, fetch output device and return.
-    CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-    // Check if continue to switch after some concede operation.
-    CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-        true, "No need for switch");
+
     isSwitching_ = true;
     audioStream_->SetSwitchingStatus(true);
     AudioScopeExit scopeExit([this] () {

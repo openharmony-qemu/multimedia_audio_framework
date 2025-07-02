@@ -16,6 +16,7 @@
 #ifndef VOLUME_TOOLS_H
 #define VOLUME_TOOLS_H
 #include "audio_log_utils.h"
+#include "ring_buffer_wrapper.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -39,11 +40,12 @@ public:
     // Data size should be rounded to each sample size
     // There will be significant sound quality loss when process uint8_t samples.
     static int32_t Process(const BufferDesc &buffer, AudioSampleFormat format, ChannelVolumes vols);
+    static int32_t Process(const RingBufferWrapper& ringBufferDesc, AudioSampleFormat format, ChannelVolumes vols);
 
     // will count volume for each channel, vol sum will be kept in volStart
     static ChannelVolumes CountVolumeLevel(const BufferDesc &buffer, AudioSampleFormat format, AudioChannel channel,
         size_t split = 1);
-    static void DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+    static void DfxOperation(const BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
         int64_t &volumeDataCount, size_t split = 1);
 
     static void CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,

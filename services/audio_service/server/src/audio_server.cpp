@@ -2847,9 +2847,9 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
     primarySink->SetDeviceConnectedFlag(flag);
 }
 
-int32_t AudioServer::CreateAudioWorkgroup(int32_t pid)
+int32_t AudioServer::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject>& object)
 {
-    return audioResourceService_->CreateAudioWorkgroup(pid);
+    return audioResourceService_->CreateAudioWorkgroup(pid, object);
 }
 
 int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)

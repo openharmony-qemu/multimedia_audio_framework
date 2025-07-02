@@ -208,6 +208,8 @@ public:
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
+
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
     DistributedRoutingInfo GetDistributedRoutingRoleInfo();
@@ -240,9 +242,6 @@ public:
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);

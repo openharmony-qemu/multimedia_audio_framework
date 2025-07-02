@@ -105,11 +105,13 @@ int32_t AudioProcessStub::HandleResolveBuffer(MessageParcel &data, MessageParcel
 {
     AUDIO_INFO_LOG("HandleResolveBuffer");
     (void)data;
-    std::shared_ptr<OHAudioBuffer> buffer;
-    int32_t ret = ResolveBuffer(buffer);
+    std::shared_ptr<OHAudioBufferBase> buffer;
+    uint32_t spanSizeInFrame;
+    int32_t ret = ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame);
     reply.WriteInt32(ret);
     if (ret == AUDIO_OK && buffer != nullptr) {
-        OHAudioBuffer::WriteToParcel(buffer, reply);
+        OHAudioBufferBase::WriteToParcel(buffer, reply);
+        reply.WriteUint32(spanSizeInFrame);
     } else {
         AUDIO_ERR_LOG("error: ResolveBuffer failed.");
         return AUDIO_INVALID_PARAM;

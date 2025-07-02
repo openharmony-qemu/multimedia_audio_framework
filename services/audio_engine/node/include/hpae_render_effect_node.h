@@ -37,7 +37,7 @@ public:
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStop(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererRelease(HpaeNodeInfo &nodeInfo);
-    int32_t GetExpectedInputChannelInfo(uint32_t &channels, uint64_t &channelLayout);
+    int32_t GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat);
 protected:
     HpaePcmBuffer* SignalProcess(const std::vector<HpaePcmBuffer*> &inputs) override;
 private:

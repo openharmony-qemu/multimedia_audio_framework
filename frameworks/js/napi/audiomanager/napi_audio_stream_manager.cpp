@@ -868,13 +868,13 @@ napi_value NapiAudioStreamMgr::IsRecordingAvailable(napi_env env, napi_callback_
         napiStreamMgr->audioStreamMngr_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INVALID_PARAM,
         "parameter verification failed: mandatory parameters are left unspecified"), "argcCount invalid");
-    AudioCapturerInfo changeInfo = {};
-    napi_status status = NapiParamUtils::GetAudioCapturerInfo(env, &changeInfo, args[PARAM0]);
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok,
+    AudioCapturerInfo capturerInfo = {};
+    napi_status status = NapiParamUtils::GetAudioCapturerInfo(env, &capturerInfo, args[PARAM0]);
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok && capturerInfo.sourceType != SourceType::SOURCE_TYPE_INVALID,
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "parameter verification failed"),
         "get audioCapturerChangeInfo failed");
 
-    bool isAvailable = napiStreamMgr->audioStreamMngr_->IsCapturerFocusAvailable(changeInfo);
+    bool isAvailable = napiStreamMgr->audioStreamMngr_->IsCapturerFocusAvailable(capturerInfo);
     NapiParamUtils::SetValueBoolean(env, isAvailable, result);
     return result;
 }

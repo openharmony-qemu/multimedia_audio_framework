@@ -118,6 +118,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
             }
             bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
             streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
+            streamCollector_.HandleKaraokeAppToBack(uid, pid);
         }
         if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);

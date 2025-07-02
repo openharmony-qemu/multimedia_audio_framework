@@ -303,8 +303,9 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
     }
     ret = InitAudioStream(audioStreamParams);
-    // When the fast stream creation fails, a normal stream is created
-    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+    if (ret != SUCCESS) {
+        // if the normal stream creation fails, return fail, other try create normal stream
+        CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");

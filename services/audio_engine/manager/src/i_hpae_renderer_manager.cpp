@@ -24,11 +24,12 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
+static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_NAME_INNER_CAP = "InnerCapturerSink";
 static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
-    if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD) {
+    if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD || sinkInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {
         return std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
     } else if ((sinkInfo.deviceName.compare(0, DEVICE_NAME_INNER_CAP.length(), DEVICE_NAME_INNER_CAP) == 0)
         || sinkInfo.deviceName == DEVICE_NAME_CAST_INNER_CAP) {

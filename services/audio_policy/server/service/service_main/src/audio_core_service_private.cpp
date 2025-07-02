@@ -129,6 +129,16 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     }
 }
 
+void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->streamDescriptors_.size() > 0);
+    CHECK_AND_RETURN(pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER ||
+        pipeInfo->moduleInfo_.className == "remote_offload");
+    OffloadType type = pipeInfo->moduleInfo_.className == "remote_offload" ? REMOTE_OFFLOAD : LOCAL_OFFLOAD;
+    isOffloadOpened_[type].store(true);
+    offloadCloseCondition_[type].notify_all();
+}
+
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -141,11 +151,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
-        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
-            pipeInfo->streamDescriptors_.size() > 0) {
-            isOffloadOpened_.store(true);
-            offloadCloseCondition_.notify_all();
-        }
+        UpdateOffloadState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
@@ -591,11 +597,7 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Scan Pipe adapter: %{public}s, name: %{public}s, action: %{public}d",
             pipeInfo->moduleInfo_.adapterName.c_str(), pipeInfo->name_.c_str(), pipeInfo->pipeAction_);
-        if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER &&
-            pipeInfo->streamDescriptors_.size() > 0) {
-            isOffloadOpened_.store(true);
-            offloadCloseCondition_.notify_all();
-        }
+        UpdateOffloadState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
         } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
@@ -776,7 +778,8 @@ void AudioCoreService::RemoveUnusedPipe()
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) {
-            DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_);
+            OffloadType type = pipeInfo->moduleInfo_.className == "remote_offload" ? REMOTE_OFFLOAD : LOCAL_OFFLOAD;
+            DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
             continue;
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
@@ -878,9 +881,11 @@ void AudioCoreService::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc,
     bool isActualConnection = (updatedDesc.connectState_ != VIRTUAL_CONNECTED);
     AUDIO_INFO_LOG("Device connection is actual connection: %{public}d", isActualConnection);
 
-    AudioStreamInfo streamInfo = updatedDesc.audioStreamInfo_.CheckParams() ?
-        AudioStreamInfo(*updatedDesc.audioStreamInfo_.samplingRate.rbegin(), updatedDesc.audioStreamInfo_.encoding,
-        updatedDesc.audioStreamInfo_.format, *updatedDesc.audioStreamInfo_.channels.rbegin()) : AudioStreamInfo();
+    DeviceStreamInfo audioStreamInfo = updatedDesc.GetDeviceStreamInfo();
+    std::set<AudioChannel> channels = audioStreamInfo.GetChannels();
+    AudioStreamInfo streamInfo = audioStreamInfo.CheckParams() ?
+        AudioStreamInfo(*audioStreamInfo.samplingRate.rbegin(), audioStreamInfo.encoding,
+        audioStreamInfo.format, *channels.rbegin()) : AudioStreamInfo();
 #ifdef BLUETOOTH_ENABLE
     if (devType == DEVICE_TYPE_BLUETOOTH_A2DP && isActualConnection && isConnected) {
         int32_t ret = Bluetooth::AudioA2dpManager::GetA2dpDeviceStreamInfo(macAddress, streamInfo);
@@ -924,7 +929,7 @@ void AudioCoreService::MoveStreamSink(std::shared_ptr<AudioStreamDescriptor> str
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
-        : MoveToRemoteOutputDevice(targetSinkInputs, newDeviceDesc);
+        : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
     audioIOHandleMap_.NotifyUnmutePort();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Move sink input %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, newDeviceDesc->deviceType_);
@@ -979,7 +984,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
-        : MoveToRemoteOutputDevice(targetSinkInputs, newDeviceDesc);
+        : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
     if (ret != SUCCESS) {
         AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(oldDeviceType);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
@@ -1025,7 +1030,15 @@ void AudioCoreService::OnForcedDeviceSelected(DeviceType devType, const std::str
     audioDeviceStatus_.OnForcedDeviceSelected(devType, macAddress);
 }
 
+void AudioCoreService::UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName)
+{
+    CHECK_AND_RETURN(pipeInfo && pipeInfo->moduleInfo_.className == "remote_offload");
+    moduleName = pipeInfo->moduleInfo_.name;
+    AUDIO_INFO_LOG("remote offload, set module name %{public}s", moduleName.c_str());
+}
+
 int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkInputIds,
+    std::shared_ptr<AudioPipeInfo> pipeInfo,
     std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor)
 {
     AUDIO_INFO_LOG("Start for [%{public}zu] sink-inputs", sinkInputIds.size());
@@ -1040,6 +1053,7 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
 
     uint32_t sinkId = -1; // invalid sink id, use sink name instead.
     std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, deviceRole);
+    UpdateRemoteOffloadModuleName(pipeInfo, moduleName);
     AUDIO_ERR_LOG("moduleName %{public}s", moduleName.c_str());
 
     AudioIOHandle moduleId;
@@ -1349,6 +1363,17 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
     }
 }
 
+void AudioCoreService::ClearRingMuteWhenCallStart(bool pre, bool after)
+{
+    CHECK_AND_RETURN_LOG(pre != true || after != false, "ringdual not cancel by call");
+    AUDIO_INFO_LOG("disable primary speaker dual tone when call start and ring not over");
+    for (std::pair<AudioStreamType, StreamUsage> stream : streamsWhenRingDualOnPrimarySpeaker_) {
+        audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
+    }
+    streamsWhenRingDualOnPrimarySpeaker_.clear();
+    audioPolicyManager_.SetInnerStreamMute(STREAM_MUSIC, false, STREAM_USAGE_MUSIC);
+}
+
 bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc->newDeviceDescs_.size() > 0 &&
@@ -1381,20 +1406,20 @@ bool AudioCoreService::SelectRingerOrAlarmDevices(std::shared_ptr<AudioStreamDes
                 AUDIO_INFO_LOG("sesion changed, disable old dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
-
-            if ((audioPolicyManager_.GetRingerMode() != RINGER_MODE_NORMAL && streamUsage != STREAM_USAGE_ALARM) ||
-                (VolumeUtils::IsPCVolumeEnable() && audioVolumeManager_.GetStreamMute(STREAM_MUSIC))) {
-                AUDIO_INFO_LOG("no normal ringer mode and no alarm, dont dual hal tone.");
-                return false;
-            }
+            CHECK_AND_RETURN_RET_LOG(AudioCoreServiceUtils::NeedDualHalToneInStatus(
+                audioPolicyManager_.GetRingerMode(), streamUsage,
+                VolumeUtils::IsPCVolumeEnable(), audioVolumeManager_.GetStreamMute(STREAM_MUSIC)),
+                false, "no normal ringer mode and no alarm, dont dual hal tone.");
             UpdateDualToneState(true, sessionId);
         } else {
             if (enableDualHalToneState_ && enableDualHalToneSessionId_ == sessionId) {
                 AUDIO_INFO_LOG("device unavailable, disable dual hal tone.");
                 UpdateDualToneState(false, enableDualHalToneSessionId_);
             }
+            bool pre = isRingDualToneOnPrimarySpeaker_;
             isRingDualToneOnPrimarySpeaker_ = AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(
                 streamDesc->newDeviceDescs_, sessionId);
+            ClearRingMuteWhenCallStart(pre, isRingDualToneOnPrimarySpeaker_);
             audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
         }
         return true;
@@ -2023,33 +2048,31 @@ void AudioCoreService::HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &
     }
 }
 
-void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+void AudioCoreService::DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
     AUDIO_INFO_LOG("In");
-    CHECK_AND_RETURN_LOG(isOffloadOpened_.load(), "Offload is already released");
-    isOffloadOpened_.store(false);
-    auto unloadOffloadThreadFuc = [this, id, paIndex] { this->ReleaseOffloadPipe(id, paIndex); };
+    CHECK_AND_RETURN_LOG(type < OFFLOAD_TYPE_NUM && isOffloadOpened_[type].load(), "Offload is already released");
+    isOffloadOpened_[type].store(false);
+    auto unloadOffloadThreadFuc = [this, id, paIndex, type] { this->ReleaseOffloadPipe(id, paIndex, type); };
     std::thread unloadOffloadThread(unloadOffloadThreadFuc);
     unloadOffloadThread.detach();
 }
 
-int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex)
+int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
 {
     AUDIO_INFO_LOG("unload offload module");
     std::unique_lock<std::mutex> lock(offloadCloseMutex_);
     // Try to wait 10 seconds before unloading the module, because the audio driver takes some time to process
     // the shutdown process..
-    offloadCloseCondition_.wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this] () {
-        return isOffloadOpened_.load();
+    CHECK_AND_RETURN_RET_LOG(type < OFFLOAD_TYPE_NUM, ERR_INVALID_PARAM, "invalid type");
+    offloadCloseCondition_[type].wait_for(lock, std::chrono::seconds(WAIT_OFFLOAD_CLOSE_TIME_SEC), [this, type] () {
+        return isOffloadOpened_[type].load();
     });
 
     {
         std::lock_guard<std::mutex> lk(offloadReOpenMutex_);
-        AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_.load());
-        if (isOffloadOpened_.load()) {
-            AUDIO_INFO_LOG("offload restart");
-            return ERROR;
-        }
+        AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_[type].load());
+        CHECK_AND_RETURN_RET_LOG(!isOffloadOpened_[type].load(), ERROR, "offload restart");
         AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
         audioPolicyManager_.CloseAudioPort(id, paIndex);
         pipeManager_->RemoveAudioPipeInfo(id);
@@ -2081,7 +2104,7 @@ void AudioCoreService::ReConfigOffloadStatus(uint32_t sessionId,
 {
     AUDIO_INFO_LOG("new sink: %{public}s, old sink: %{public}s, sessionId: %{public}u",
         pipeInfo->moduleInfo_.name.c_str(), oldSinkName.c_str(), sessionId);
-    if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER) {
+    if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER || pipeInfo->moduleInfo_.className == "remote_offload") {
         audioOffloadStream_.SetOffloadStatus(sessionId);
     } else if (oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
         audioOffloadStream_.ResetOffloadStatus(sessionId);
@@ -2242,9 +2265,13 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
 
     std::string encryptMacAddr = GetEncryptAddr(deviceDesc->macAddress_);
     int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc, reason, encryptMacAddr);
+    CheckAndWriteDeviceChangeExceptionEvent(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, reason,
+        deviceDesc->deviceType_, deviceDesc->deviceRole_, bluetoothFetchResult, "bluetooth fetch output device failed");
     CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
+    CheckAndWriteDeviceChangeExceptionEvent(nearlinkFetchResult == SUCCESS, reason,
+        deviceDesc->deviceType_, deviceDesc->deviceRole_, nearlinkFetchResult, "nearlink fetch output device failed");
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, ERROR, "nearlink fetch output device failed");
 
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {

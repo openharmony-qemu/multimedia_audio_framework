@@ -51,7 +51,8 @@ FastAudioStream::~FastAudioStream()
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
+        "fullTokenId:%{public}" PRIu64, clientPid, clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
@@ -85,6 +86,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
 {
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
+    config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
     config.audioMode = eMode_;
     config.streamInfo.channels = static_cast<AudioChannel>(info.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(info.encoding);
@@ -1063,6 +1066,15 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void FastAudioStream::JoinCallbackLoop()
+{
+    if (processClient_ != nullptr) {
+        processClient_->JoinCallbackLoop();
+    } else {
+        AUDIO_WARNING_LOG("processClient_ is nullptr!");
+    }
 }
 
 bool FastAudioStream::GetOffloadEnable()

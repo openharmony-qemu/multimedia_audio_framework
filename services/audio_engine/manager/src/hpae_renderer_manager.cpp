@@ -321,6 +321,42 @@ int32_t HpaeRendererManager::DeleteInputSession(uint32_t sessionId)
     return SUCCESS;
 }
 
+
+int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
+{
+    Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::DeleteInputSessionForMove");
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
+        AUDIO_INFO_LOG("could not find session:%{public}d", sessionId);
+        return SUCCESS;
+    }
+    HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
+    HpaeProcessorType sceneType = GetProcessorType(sessionId);
+    if (SafeGetMap(sceneClusterMap_, sceneType)) {
+        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+        if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
+            sceneClusterMap_[sceneType]->DisConnectMixerNode();
+            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
+            // for collaboration
+            if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
+                hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
+                TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
+            }
+            sceneClusterMap_[sceneType]->SetConnectedFlag(false);
+        }
+    }
+    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
+        sceneClusterMap_.erase(sceneType);
+        sceneTypeToProcessClusterCountMap_.erase(sceneType);
+    }
+    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
+        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
+    }
+    sinkInputNodeMap_.erase(sessionId);
+    sessionNodeMap_.erase(sessionId);
+    return SUCCESS;
+}
+
 void HpaeRendererManager::DeleteProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
@@ -392,6 +428,9 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         hpaeCoBufferNode_->Connect(sceneClusterMap_[sceneType]);
         TriggerCallback(CONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
     }
+    std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+    CHECK_AND_RETURN_LOG(sinkInputNode != nullptr, "sinkInputNode is nullptr");
+    sceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNode->GetLoudnessGain());
 }
 
 void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
@@ -412,7 +451,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         }
     }
     for (const auto &it : sessionIds) {
-        DisConnectInputSession(it);
+        DeleteInputSessionForMove(it);
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
@@ -466,7 +505,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
             operation);
         // todo: do fade out
     }
-    DeleteInputSession(sessionId);
+    DeleteInputSessionForMove(sessionId);
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
 }
@@ -832,6 +871,20 @@ int32_t HpaeRendererManager::SetClientVolume(uint32_t sessionId, float volume)
 
 int32_t HpaeRendererManager::SetLoudnessGain(uint32_t sessionId, float loudnessGain)
 {
+    auto request = [this, sessionId, loudnessGain] {
+        AUDIO_INFO_LOG("set loudnessGain %{public}f to sessionId %{public}d", loudnessGain, sessionId);
+        std::shared_ptr<HpaeSinkInputNode> sinkInputNode = SafeGetMap(sinkInputNodeMap_, sessionId);
+        CHECK_AND_RETURN_LOG(sinkInputNode != nullptr,
+            "session with Id %{public}d not in sinkInputNodeMap_", sessionId);
+        sinkInputNode->SetLoudnessGain(loudnessGain);
+
+        HpaeProcessorType processorType = GetProcessorType(sessionId);
+        std::shared_ptr<HpaeProcessCluster> processCluster = SafeGetMap(sceneClusterMap_, processorType);
+        CHECK_AND_RETURN_LOG(processCluster != nullptr,
+            "session with Id %{public}d not in sceneClusterMap_", sessionId);
+        processCluster->SetLoudnessGain(sessionId, loudnessGain);
+    };
+    SendRequest(request);
     return SUCCESS;
 }
 

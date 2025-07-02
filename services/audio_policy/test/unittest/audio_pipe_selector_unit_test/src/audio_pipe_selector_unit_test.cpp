@@ -336,6 +336,16 @@ HWTEST_F(AudioPipeSelectorUnitTest, ConvertStreamDescToPipeInfo_001, TestSize.Le
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+
+    pipeInfoPtr->name_ = "multichannel_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
+    pipeInfoPtr->name_ = "offload_distributed_output";
+    audioPipeSelector->ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
+    EXPECT_EQ(info.pipeRole_, PIPE_ROLE_OUTPUT);
 }
 
 /**

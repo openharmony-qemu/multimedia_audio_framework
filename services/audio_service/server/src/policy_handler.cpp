@@ -192,6 +192,12 @@ int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &
     return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
 
+int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->NearlinkGetRenderPosition(delayValue);
+}
+
 bool PolicyHandler::GetHighResolutionExist()
 {
     return isHighResolutionExist_;
@@ -224,13 +230,6 @@ int32_t PolicyHandler::NotifyCapturerRemoved(uint64_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
     return iPolicyProvider_->NotifyCapturerRemoved(sessionId);
-}
-
-int32_t PolicyHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
-    return iPolicyProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER

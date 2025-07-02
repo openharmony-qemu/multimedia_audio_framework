@@ -23,6 +23,7 @@
 
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
+#include "audio_event_utils.h"
 #include "audio_core_service.h"
 
 namespace OHOS {
@@ -207,11 +208,15 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
     }
     SetRenderDeviceForUsage(strUsage, selectedDesc[0]);
+    CheckAndWriteDeviceChangeExceptionEvent(res == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
+        selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, res, "SetRenderDeviceForUsage fail");
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
 
     // If the selected device is virtual device, connect it.
     if (isVirtualDevice) {
         int32_t ret = ConnectVirtualDevice(selectedDesc[0]);
+        CheckAndWriteDeviceChangeExceptionEvent(ret == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
+            selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, ret, "Connect virtual device fail");
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Connect device [%{public}s] failed",
             GetEncryptStr(selectedDesc[0]->macAddress_).c_str());
         return SUCCESS;
@@ -248,9 +253,13 @@ int32_t AudioRecoveryDevice::SelectOutputDeviceForFastInner(sptr<AudioRendererFi
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
     int32_t res = SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
+    CheckAndWriteDeviceChangeExceptionEvent(res == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
+        selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, res, "SetRenderDeviceForUsage fail");
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "SetRenderDeviceForUsage fail");
     SetRenderDeviceForUsage(audioRendererFilter->rendererInfo.streamUsage, selectedDesc[0]);
     res = SelectFastOutputDevice(audioRendererFilter, selectedDesc[0]);
+    CheckAndWriteDeviceChangeExceptionEvent(res == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
+        selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, res, "AddFastRouteMapInfo failed");
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res,
         "AddFastRouteMapInfo failed! fastRouteMap is too large!");
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReason::OVERRODE);
@@ -297,10 +306,8 @@ int32_t AudioRecoveryDevice::ConnectVirtualDevice(std::shared_ptr<AudioDeviceDes
     AUDIO_INFO_LOG("Connect virtual device[%{public}s]", GetEncryptAddr(selectedDesc->macAddress_).c_str());
     if (selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
         selectedDesc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        int32_t ret = Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "A2dp connect failed");
-        ret = Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Hfp connect failed");
+        Bluetooth::AudioA2dpManager::Connect(selectedDesc->macAddress_);
+        Bluetooth::AudioHfpManager::Connect(selectedDesc->macAddress_);
     } else {
         int32_t result = SleAudioDeviceManager::GetInstance().ConnectAllowedProfiles(selectedDesc->macAddress_);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Nearlink connect failed");
@@ -393,6 +400,8 @@ int32_t AudioRecoveryDevice::SelectInputDevice(sptr<AudioCapturerFilter> audioCa
     if (audioCapturerFilter->capturerInfo.capturerFlags == STREAM_FLAG_FAST && selectedDesc.size() == 1) {
         SetCaptureDeviceForUsage(audioSceneManager_.GetAudioScene(true), srcType, selectedDesc[0]);
         int32_t result = SelectFastInputDevice(audioCapturerFilter, selectedDesc[0]);
+        CheckAndWriteDeviceChangeExceptionEvent(result == SUCCESS, AudioStreamDeviceChangeReason::OVERRODE,
+            selectedDesc[0]->deviceType_, selectedDesc[0]->deviceRole_, result, "AddFastRouteMapInfo failed!");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
             "AddFastRouteMapInfo failed! fastRouteMap is too large!");
         AUDIO_INFO_LOG("Success for uid[%{public}d] device[%{public}s]",

@@ -127,6 +127,12 @@ int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device, uint
     return callback_->SendUserSelection(device, streamType);
 }
 
+int32_t SleAudioDeviceManager::GetRenderPosition(const std::string &device, uint32_t &delayValue)
+{
+    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return callback_->GetRenderPosition(device, delayValue);
+}
+
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const
 {
     for (const auto &pair : STREAM_USAGE_TO_SLE_STREAM_TYPE) {

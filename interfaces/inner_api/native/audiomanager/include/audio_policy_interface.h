@@ -282,6 +282,14 @@ public:
      * @return int32_t
      */
     virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+
+    /**
+     * @brief Get the delay from a device.
+     * @param device Address of the peer NearLink device.
+     * @param delayValue Render delay.
+     * @return int32_t
+     */
+    virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

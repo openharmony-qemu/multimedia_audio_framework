@@ -81,6 +81,20 @@ int SleAudioOperationCallbackStub::OnRemoteRequest(
             return AUDIO_OK;
         }
         default: {
+            return OnRemoteRequestSecondPartCode(code, data, reply, option);
+        }
+    }
+}
+
+int SleAudioOperationCallbackStub::OnRemoteRequestSecondPartCode(
+    uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option)
+{
+    switch (code) {
+        case GET_RENDER_POSITION: {
+            GetRenderPositionInternal(data, reply);
+            return AUDIO_OK;
+        }
+        default: {
             AUDIO_ERR_LOG("default case, need check AudioListenerStub");
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
         }
@@ -178,6 +192,15 @@ void SleAudioOperationCallbackStub::SendUserSelectionInternal(MessageParcel &dat
     uint32_t streamType = data.ReadUint32();
     int32_t result = SendUserSelection(device, streamType);
     reply.WriteInt32(result);
+}
+
+void SleAudioOperationCallbackStub::GetRenderPositionInternal(MessageParcel &data, MessageParcel &reply)
+{
+    std::string device = data.ReadString();
+    uint32_t delayValue = 0;
+    int32_t result = GetRenderPosition(device, delayValue);
+    reply.WriteInt32(result);
+    reply.WriteUint32(delayValue);
 }
 
 void SleAudioOperationCallbackStub::GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices)
@@ -280,6 +303,16 @@ int32_t SleAudioOperationCallbackStub::SendUserSelection(const std::string &devi
     lock.unlock();
 
     return sleAudioOperationCallback->SendUserSelection(device, streamType);
+}
+
+int32_t SleAudioOperationCallbackStub::GetRenderPosition(const std::string &device, uint32_t &delayValue)
+{
+    std::unique_lock lock(sleAudioOperationCallbackMutex_);
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
+    lock.unlock();
+
+    return sleAudioOperationCallback->GetRenderPosition(device, delayValue);
 }
 } // namespace AudioStandard
 } // namespace OHOS

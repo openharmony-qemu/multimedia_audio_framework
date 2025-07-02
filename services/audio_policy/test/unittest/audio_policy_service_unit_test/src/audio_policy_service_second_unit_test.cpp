@@ -561,41 +561,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, GetVoipRendererFlag_002, TestSize.Level1
 }
 
 /**
- * @tc.name  : Test UpdateInputDeviceInfo.
- * @tc.number: UpdateInputDeviceInfo_001
- * @tc.desc  : Test UpdateInputDeviceInfo interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, UpdateInputDeviceInfo_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_MIC);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_FILE_SOURCE);
-
-    deviceType = DeviceType::DEVICE_TYPE_USB_ARM_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_USB_HEADSET);
-
-    deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-
-    deviceType = (DeviceType)777;
-    server->audioPolicyService_.audioActiveDevice_.UpdateInputDeviceInfo(deviceType);
-    EXPECT_EQ(server->audioPolicyService_.audioActiveDevice_.currentActiveInputDevice_.deviceType_,
-        DeviceType::DEVICE_TYPE_WIRED_HEADSET);
-}
-
-
-/**
  * @tc.name  : Test GetDeviceTypeFromPin.
  * @tc.number: GetDeviceTypeFromPin_001
  * @tc.desc  : Test GetDeviceTypeFromPin interfaces.
@@ -1077,6 +1042,33 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadGetRenderPosition_001, TestSize.L
         = DeviceType::DEVICE_TYPE_SPEAKER;
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.networkId_ = REMOTE_NETWORK_ID;
     ret = server->audioPolicyService_.OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NearlinkGetRenderPosition.
+ * @tc.number: NearlinkGetRenderPosition_001
+ * @tc.desc  : Test NearlinkGetRenderPosition interfaces.
+ */
+HWTEST_F(AudioPolicyServiceExtUnitTest, NearlinkGetRenderPosition_001, TestSize.Level1)
+{
+    auto server = GetServerUtil::GetServerPtr();
+    ASSERT_TRUE(server != nullptr);
+    uint32_t delayValue = 0;
+    int32_t ret;
+
+    sptr<IStandardSleAudioOperationCallback> callback = new(std::nothrow) MockSleAudioOperationCallback();
+    ASSERT_TRUE(callback != nullptr);
+    server->audioPolicyService_.sleAudioDeviceManager_.SetSleAudioOperationCallback(callback);
+
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_NEARLINK;
+    ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
+    EXPECT_EQ(ret, SUCCESS);
+
+    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
+        = DeviceType::DEVICE_TYPE_SPEAKER;
+    ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
     EXPECT_EQ(ret, SUCCESS);
 }
 

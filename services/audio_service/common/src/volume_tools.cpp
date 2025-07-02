@@ -190,7 +190,7 @@ void ProcessOneFrame(uint8_t *ptr, AudioSampleFormat format, int32_t vol)
 
 // |---------frame1--------|---------frame2--------|---------frame3--------|
 // |ch1-ch2-ch3-ch4-ch5-ch6|ch1-ch2-ch3-ch4-ch5-ch6|ch1-ch2-ch3-ch4-ch5-ch6|
-int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format, ChannelVolumes vols)
+int32_t VolumeTools::Process(const RingBufferWrapper& ringBufferDesc, AudioSampleFormat format, ChannelVolumes vols)
 {
     // parms check
     if (format > SAMPLE_F32LE || !IsVolumeValid(vols)) {
@@ -199,12 +199,13 @@ int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format,
     }
     size_t byteSizePerData = GetByteSize(format);
     size_t byteSizePerFrame = byteSizePerData * vols.channel;
-    if (buffer.buffer == nullptr || buffer.bufLength % byteSizePerFrame != 0) {
-        AUDIO_ERR_LOG("Process failed with invalid buffer, size is %{public}zu", buffer.bufLength);
+    if (ringBufferDesc.dataLength == 0 || ((ringBufferDesc.dataLength % byteSizePerFrame) != 0) ||
+            ((ringBufferDesc.basicBufferDescs[0].bufLength) % byteSizePerFrame != 0)) {
+        AUDIO_ERR_LOG("Process failed with invalid buffer, size is %{public}zu", ringBufferDesc.dataLength);
         return ERR_INVALID_PARAM;
     }
 
-    size_t frameSize = buffer.bufLength / byteSizePerFrame;
+    size_t frameSize = ringBufferDesc.dataLength / byteSizePerFrame;
     if (frameSize < MIN_FRAME_SIZE) {
         AUDIO_ERR_LOG("Process failed with invalid frameSize, size is %{public}zu", frameSize);
         return ERR_INVALID_PARAM;
@@ -219,16 +220,37 @@ int32_t VolumeTools::Process(const BufferDesc &buffer, AudioSampleFormat format,
                 (frameSize - MIN_FRAME_SIZE);
         }
     }
+
+    RingBufferWrapper srcBuffer = ringBufferDesc;
     for (size_t frameIndex = 0; frameIndex < frameSize; frameIndex++) {
         for (size_t channelIdx = 0; channelIdx < vols.channel; channelIdx++) {
             int32_t vol = volStep[channelIdx] * frameIndex + vols.volStart[channelIdx];
             vol = VolumeFlatten(vol);
-            uint8_t *samplePtr = buffer.buffer + frameIndex * byteSizePerFrame + channelIdx * byteSizePerData;
+            uint8_t *samplePtr = srcBuffer.basicBufferDescs[0].buffer + channelIdx * byteSizePerData;
             ProcessOneFrame(samplePtr, format, vol);
+        }
+        if (srcBuffer.SeekFromStart(byteSizePerFrame) != SUCCESS) {
+            // This branch should never be executed under any valid conditions. Consider let it crash?
+            AUDIO_ERR_LOG("Seek err");
+            return ERR_INVALID_PARAM;
         }
     }
 
     return SUCCESS;
+}
+
+int32_t VolumeTools::Process(const BufferDesc &bufferDesc, AudioSampleFormat format, ChannelVolumes vols)
+{
+    if (bufferDesc.dataLength > bufferDesc.bufLength || bufferDesc.buffer == nullptr || bufferDesc.dataLength == 0) {
+        AUDIO_ERR_LOG("invalid bufferDesc");
+        return ERR_INVALID_PARAM;
+    }
+    RingBufferWrapper ringBufferDesc;
+    ringBufferDesc.dataLength = bufferDesc.dataLength;
+    ringBufferDesc.basicBufferDescs[0].bufLength = bufferDesc.bufLength;
+    ringBufferDesc.basicBufferDescs[0].buffer = bufferDesc.buffer;
+
+    return Process(ringBufferDesc, format, vols);
 }
 
 double VolumeTools::GetVolDb(AudioSampleFormat format, int32_t vol)
@@ -518,7 +540,7 @@ ChannelVolumes VolumeTools::CountVolumeLevel(const BufferDesc &buffer, AudioSamp
     return channelVols;
 }
 
-void VolumeTools::DfxOperation(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
+void VolumeTools::DfxOperation(const BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
     int64_t &volumeDataCount, size_t split)
 {
     size_t byteSizePerData = GetByteSize(streamInfo.format);

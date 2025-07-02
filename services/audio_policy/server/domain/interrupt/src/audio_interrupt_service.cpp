@@ -1482,15 +1482,50 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     CHECK_AND_RETURN_LOG(!bundleName.empty(), "bundleName is empty");
     AudioStreamType existStreamType = existAudioFocusType.streamType;
     AudioStreamType incomingStreamType = incomingAudioFocusType.streamType;
-    if (IsMediaStream(existStreamType) && IsMediaStream(incomingStreamType) &&
+    SourceType existSourceType = existAudioFocusType.sourceType;
+    SourceType incomingSourceType = incomingAudioFocusType.sourceType;
+    UpdateFocusStrategy(bundleName, focusEntry, IsMediaStream(existStreamType), IsMediaStream(incomingStreamType));
+    if (uid == static_cast<int32_t>(AUDIO_ID)) {
+        AUDIO_INFO_LOG("lake app:%{public}s access", std::to_string(uid).c_str());
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, std::to_string(uid), focusEntry);
+    } else {
+        UpdateMicFocusStrategy(existSourceType, incomingSourceType, bundleName, focusEntry);
+    }
+    UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+}
+
+void AudioInterruptService::UpdateFocusStrategy(const std::string &bundleName,
+    AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream)
+{
+    if (isExistMediaStream && isIncomingMediaStream &&
         queryBundleNameListCallback_ != nullptr &&
-        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName) &&
+        queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_param") &&
         focusEntry.hintType == INTERRUPT_HINT_STOP) {
         focusEntry.hintType = INTERRUPT_HINT_PAUSE;
         AUDIO_INFO_LOG("%{public}s update audio focus strategy", bundleName.c_str());
     }
+}
 
-    UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+void AudioInterruptService::UpdateMicFocusStrategy(SourceType existSourceType,
+    SourceType incomingSourceType, const std::string &bundleName, AudioFocusEntry &focusEntry)
+{
+    if (incomingSourceType == SOURCE_TYPE_INVALID || existSourceType == SOURCE_TYPE_INVALID) {
+        AUDIO_INFO_LOG("Not a recording stream access");
+        return;
+    }
+    if (existSourceType == SOURCE_TYPE_MIC && IsMicSource(incomingSourceType)
+        && queryBundleNameListCallback_ != nullptr
+        && queryBundleNameListCallback_->OnQueryBundleNameIsInList(bundleName, "audio_micfocus_list")) {
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        AUDIO_INFO_LOG("audio_micfocus_list : %{public}s update mic focus strategy", bundleName.c_str());
+    }
+}
+
+bool AudioInterruptService::IsMicSource(SourceType sourceType)
+{
+    return (sourceType == SOURCE_TYPE_VOICE_CALL ||
+            sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION||
+            sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator

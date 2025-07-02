@@ -26,7 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr uint64_t AUDIO_US_PER_S = 1000000;
 constexpr uint64_t AUDIO_NS_PER_S = 1000000000;
 constexpr int32_t SECOND_TO_MILLISECOND = 1000;
 constexpr int32_t DEFAULT_BUFFER_MILLISECOND = 20;
@@ -588,7 +587,7 @@ int32_t ProRendererStreamImpl::SetClientVolume(float clientVolume)
 int32_t ProRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
     AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
-    return ERROR;
+    return ERR_PRO_STREAM_NOT_SUPPORTED;
 }
 
 int32_t ProRendererStreamImpl::UpdateMaxLength(uint32_t maxLength)

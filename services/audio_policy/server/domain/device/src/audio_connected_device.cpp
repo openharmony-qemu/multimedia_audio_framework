@@ -308,7 +308,7 @@ void AudioConnectedDevice::UpdateConnectDevice(DeviceType deviceType, const std:
     auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (it != connectedDevices_.end()) {
         (*it)->deviceName_ = deviceName;
-        (*it)->audioStreamInfo_ = streamInfo;
+        (*it)->audioStreamInfo_ = { streamInfo };
     }
 }
 

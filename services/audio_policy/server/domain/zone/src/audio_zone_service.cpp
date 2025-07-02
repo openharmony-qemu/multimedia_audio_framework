@@ -154,11 +154,14 @@ int32_t AudioZoneService::BindDeviceToAudioZone(int32_t zoneId,
 
 void AudioZoneService::RemoveDeviceFromGlobal(std::shared_ptr<AudioDeviceDescriptor> device)
 {
+    CHECK_AND_RETURN_LOG(device != nullptr, "device is nullptr");
+    std::string networkId = device->networkId_;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> connectDevices;
     AudioConnectedDevice::GetInstance().GetAllConnectedDeviceByType(device->networkId_,
         device->deviceType_, device->macAddress_, device->deviceRole_, connectDevices);
     CHECK_AND_RETURN_LOG(connectDevices.size() != 0, "connectDevices is empty.");
     AudioDeviceLock::GetInstance().OnDeviceStatusUpdated(*device, false);
+    device->networkId_ = networkId;
 }
 
 int32_t AudioZoneService::UnBindDeviceToAudioZone(int32_t zoneId,

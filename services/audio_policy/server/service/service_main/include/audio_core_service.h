@@ -43,8 +43,15 @@
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_event_utils.h"
 namespace OHOS {
 namespace AudioStandard {
+enum OffloadType {
+    LOCAL_OFFLOAD,
+    REMOTE_OFFLOAD,
+    OFFLOAD_TYPE_NUM,
+};
+
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
@@ -65,7 +72,8 @@ public:
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
-        int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo) override;
+        int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+            bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
 
         // IDeviceStatusObserver
@@ -243,6 +251,9 @@ private:
     void SetAudioServerProxy();
     bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
+    void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -298,7 +309,8 @@ private:
         std::shared_ptr<AudioPipeInfo> pipeInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t MoveToRemoteOutputDevice(
-        std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+        std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioPipeInfo> pipeInfo,
+        std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t MoveToLocalInputDevice(
@@ -367,8 +379,8 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
-    void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
-    int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
+    void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+    int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
@@ -400,6 +412,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
+    void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
+    void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -460,8 +475,8 @@ private:
     std::mutex serviceFlagMutex_;
 
     // offload delay release
-    std::atomic<bool> isOffloadOpened_ = false;
-    std::condition_variable offloadCloseCondition_;
+    std::atomic<bool> isOffloadOpened_[OFFLOAD_TYPE_NUM] = {};
+    std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
 

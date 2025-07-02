@@ -64,7 +64,7 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release() override;
+    int32_t Release(bool isSwitchStream = false) override;
 
     int32_t Flush() override;
 
@@ -122,6 +122,9 @@ public:
     int32_t SetSourceDuration(int64_t duration) override;
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
+
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override;
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

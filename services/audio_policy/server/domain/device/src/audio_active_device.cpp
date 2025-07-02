@@ -53,7 +53,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpDeviceInfo(activeBTDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
@@ -61,7 +61,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     }
@@ -121,13 +121,6 @@ DeviceType AudioActiveDevice::GetCurrentInputDeviceType()
     return currentActiveInputDevice_.deviceType_;
 }
 
-void AudioActiveDevice::SetCurrentInputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
-    currentActiveInputDevice_.deviceType_ = deviceType;
-}
-
 std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -139,13 +132,6 @@ void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc
     std::lock_guard<std::mutex> lock(curOutputDevice_);
     AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curOutputDevice_);
-    AUDIO_INFO_LOG("Just set type: %{public}d", deviceType);
-    currentActiveDevice_.deviceType_ = deviceType;
 }
 
 const AudioDeviceDescriptor AudioActiveDevice::GetCurrentOutputDevice()
@@ -335,35 +321,6 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
     AUDIO_DEBUG_LOG("type [%{public}d]", deviceType);
     CHECK_AND_RETURN_RET(GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID, false);
     return GetCurrentOutputDeviceType() == deviceType;
-}
-
-void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
-{
-    DeviceType curType = GetCurrentInputDeviceType();
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            curType = DEVICE_TYPE_MIC;
-            break;
-        case DEVICE_TYPE_FILE_SINK:
-            curType = DEVICE_TYPE_FILE_SOURCE;
-            break;
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            curType = DEVICE_TYPE_USB_HEADSET;
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            curType = deviceType;
-            break;
-        default:
-            break;
-    }
-
-    SetCurrentInputDeviceType(curType);
-
-    AUDIO_INFO_LOG("Input device updated to %{public}d", curType);
 }
 
 int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid)

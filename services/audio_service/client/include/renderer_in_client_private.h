@@ -197,6 +197,7 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     bool RestoreAudioStream(bool needStoreState = true) override;
+    void JoinCallbackLoop() override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     FastStatus GetFastStatus() override;
@@ -229,14 +230,8 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
-    int32_t InitCacheBuffer(size_t targetSize);
 
-    int32_t FlushRingCache();
-    int32_t DrainRingCache();
-
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
-        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
-    int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
+    int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool WriteCallbackFunc();
@@ -260,8 +255,6 @@ private:
 
     void FirstFrameProcess();
 
-    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
-
     void ResetFramePosition();
 
     int32_t SetInnerVolume(float volume);
@@ -279,6 +272,8 @@ private:
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     void ResetCallbackLoopTid();
+
+    void WaitForBufferNeedWrite();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -312,6 +307,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
+    uint64_t engineTotalSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -328,6 +324,7 @@ private:
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
     std::thread callbackLoop_; // thread for callback to client and write.
+    std::mutex loopMutex_;
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;
@@ -369,7 +366,7 @@ private:
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
     sptr<IpcStream> ipcStream_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
@@ -377,6 +374,7 @@ private:
 
     // Mark reach and period reach callback
     int64_t totalBytesWritten_ = 0;
+    int64_t totalBytesWrittenNoSpeed_ = 0;
     std::mutex markReachMutex_;
     bool rendererMarkReached_ = false;
     int64_t rendererMarkPosition_ = 0;
@@ -413,6 +411,9 @@ private:
     int64_t offloadStartHandleTime_ = 0;
 
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";

@@ -32,6 +32,7 @@ public:
     HpaeMixerNode(HpaeNodeInfo &nodeInfo);
     virtual bool Reset() override;
     int32_t SetupAudioLimiter();
+    int32_t InitAudioLimiter();
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:

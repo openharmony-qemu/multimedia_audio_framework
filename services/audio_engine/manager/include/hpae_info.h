@@ -35,13 +35,13 @@ enum HpaeNodeType {
 };
 
 struct HpaeEffectInfo {
-    StreamUsage streamUsage;
-    AudioVolumeType volumeType;
-    AudioEffectScene effectScene;
-    AudioEffectMode effectMode;
-    AudioEnhanceScene enhanceScene;
-    AudioEnhanceMode enhanceMode;
-    AudioEffectScene lastEffectScene;
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    AudioVolumeType volumeType = STREAM_DEFAULT;
+    AudioEffectScene effectScene = SCENE_OTHERS;
+    AudioEffectMode effectMode = EFFECT_NONE;
+    AudioEnhanceScene enhanceScene = SCENE_NONE;
+    AudioEnhanceMode enhanceMode = ENHANCE_NONE;
+    AudioEffectScene lastEffectScene = SCENE_OTHERS;
 };
 
 enum FadeType {

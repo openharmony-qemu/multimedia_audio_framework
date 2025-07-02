@@ -335,32 +335,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetDefaultOutputDevice.
-* @tc.number: SetDefaultOutputDevice_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetDefaultOutputDevice_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_WIRED_HEADSET;
-    bool isRunning = true;
-    const StreamUsage streamUsage = STREAM_USAGE_VOICE_MESSAGE;
-    const uint32_t sessionID = 0;
-
-    int32_t result =
-        GetServerUtil::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
-            deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(SUCCESS, result);
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioConfigManager_.hasEarpiece_ = true;
-    result =
-        GetServerUtil::GetServerPtr()->audioPolicyService_.SetDefaultOutputDevice(
-            deviceType, sessionID, streamUsage, isRunning);
-    EXPECT_EQ(SUCCESS, result);
-}
-
-/**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1590,5 +1564,30 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, DfxMsgManagerActionTest_001, TestSize
     manager.reportQueue_.clear();
 }
 
+/**
+* @tc.name  : Test AudioDeviceDescriptor.
+* @tc.number: AudioDeviceDescriptor_001
+* @tc.desc  : Test AudioDeviceDescriptor.
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
+{
+    Parcel parcel;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    EXPECT_NE(audioDeviceDescriptor, nullptr);
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_NONE;
+    audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
+    EXPECT_NE(audioDeviceDescriptor->audioStreamInfo_.size(), 0);
+
+    DeviceStreamInfo streamInfo;
+    audioDeviceDescriptor->audioStreamInfo_.push_back(streamInfo);
+    audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
+    EXPECT_NE(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
+
+    streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
+    streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    audioDeviceDescriptor->audioStreamInfo_.push_back(streamInfo);
+    audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
+    EXPECT_NE(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

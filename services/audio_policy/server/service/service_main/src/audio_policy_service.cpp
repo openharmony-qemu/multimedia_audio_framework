@@ -685,7 +685,7 @@ int32_t AudioPolicyService::GetProcessDeviceInfo(const AudioProcessConfig &confi
     // check process in routerMap, return target device for it
     // put the currentActiveDevice_ in deviceinfo, so it can create with current using device.
     // genarate the unique deviceid?
-    deviceInfo.audioStreamInfo_ = targetStreamInfo;
+    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
     deviceInfo.deviceName_ = "mmap_device";
     audioRouteMap_.GetNetworkIDInFastRouterMap(config.appInfo.appUid, deviceInfo.deviceRole_, deviceInfo.networkId_);
     deviceInfo.a2dpOffloadFlag_ = GetA2dpOffloadFlag();
@@ -704,9 +704,9 @@ int32_t AudioPolicyService::GetVoipDeviceInfo(const AudioProcessConfig &config, 
     deviceInfo.deviceType_ = preferredDeviceList[0]->deviceType_;
     deviceInfo.deviceName_ = preferredDeviceList[0]->deviceName_;
     if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
-        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+        deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
     } else {
-        deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+        deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
     }
     if (type == AUDIO_FLAG_VOIP_DIRECT) {
         AUDIO_INFO_LOG("Direct VoIP stream, deviceInfo has been updated: deviceInfo.deviceType %{public}d",
@@ -907,6 +907,21 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 #else
     return SUCCESS;
 #endif
+}
+
+int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    Trace trace("AudioPolicyService::NearlinkGetRenderPosition");
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d", curOutputDevice.deviceType_);
+    int32_t ret = SUCCESS;
+    delayValue = 0;
+
+    CHECK_AND_RETURN_RET_LOG(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret,
+        "current output device is not nearlink");
+
+    ret = sleAudioDeviceManager_.GetRenderPosition(curOutputDevice.macAddress_, delayValue);
+    return ret;
 }
 
 int32_t AudioPolicyService::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
@@ -1184,18 +1199,6 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
     AUDIO_INFO_LOG("fetch device after split stream and open port.");
     return openRet;
-}
-
-int32_t AudioPolicyService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
-{
-    CHECK_AND_RETURN_RET_LOG(audioConfigManager_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
-    int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
-    if (ret == NEED_TO_FETCH) {
-        audioDeviceCommon_.FetchDevice(true, AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-        return SUCCESS;
-    }
-    return ret;
 }
 
 BluetoothOffloadState AudioPolicyService::GetA2dpOffloadFlag()

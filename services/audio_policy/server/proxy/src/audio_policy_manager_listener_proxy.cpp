@@ -192,7 +192,8 @@ void AudioPolicyManagerListenerProxy::OnBackgroundMute(const int32_t uid)
     CHECK_AND_RETURN_LOG(error == ERR_NONE, "OnBackgroundMute failed, error: %{public}d", error);
 }
 
-bool AudioPolicyManagerListenerProxy::OnQueryBundleNameIsInList(const std::string &bundleName)
+bool AudioPolicyManagerListenerProxy::OnQueryBundleNameIsInList(const std::string &bundleName,
+    const std::string &listType)
 {
     AUDIO_DEBUG_LOG("In");
 
@@ -203,6 +204,7 @@ bool AudioPolicyManagerListenerProxy::OnQueryBundleNameIsInList(const std::strin
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), false,
         "AudioPolicyManagerListenerProxy: WriteInterfaceToken failed");
     data.WriteString(bundleName);
+    data.WriteString(listType);
 
     int error = Remote()->SendRequest(ON_QUERY_BUNDLE_NAME_LIST, data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, false, "OnQueryClientType failed, error: %{public}d", error);

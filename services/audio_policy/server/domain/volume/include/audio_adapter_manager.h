@@ -117,7 +117,7 @@ public:
     float GetSystemVolumeDb(AudioStreamType streamType);
 
     int32_t SetStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     int32_t SetInnerStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
 
@@ -255,7 +255,7 @@ public:
         std::string networkId);
 
     void HandleStreamMuteStatus(AudioStreamType streamType, bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
 
     void HandleRingerMode(AudioRingerMode ringerMode);
 
@@ -364,7 +364,7 @@ private:
     bool GetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType);
     int32_t SetRingerModeInternal(AudioRingerMode ringerMode);
     int32_t SetStreamMuteInternal(AudioStreamType streamType, bool mute, StreamUsage streamUsage,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
+        const DeviceType &deviceType = DEVICE_TYPE_NONE, std::string networkId = LOCAL_NETWORK_ID);
     int32_t SetStreamMuteInternal(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, bool mute,
         StreamUsage streamUsage, const DeviceType &deviceType = DEVICE_TYPE_NONE);
     int32_t GetDefaultVolumeLevel(std::unordered_map<AudioStreamType, int32_t> &volumeLevelMapTemp,

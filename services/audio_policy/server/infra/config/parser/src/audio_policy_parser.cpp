@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr int32_t AUDIO_MS_PER_S = 1000;
 constexpr uint32_t LAYOUT_MONO_CHANNEL_ENUM = 1;
 constexpr uint32_t LAYOUT_STEREO_CHANNEL_ENUM = 2;
 constexpr uint32_t LAYOUT_QUAD_CHANNEL_ENUM = 4;
@@ -156,7 +155,7 @@ void AudioPolicyParser::GetCommontAudioModuleInfo(PipeInfo &pipeInfo, AudioModul
         audioModuleInfo.supportedRate_.insert(sampleRate);
     }
     for (auto channelLayout : pipeInfo.channelLayouts_) {
-        audioModuleInfo.supportedChannels_.insert(channelLayout);
+        audioModuleInfo.supportedChannelLayout_.insert(channelLayout);
     }
 
     audioModuleInfo.lib = pipeInfo.lib_;
