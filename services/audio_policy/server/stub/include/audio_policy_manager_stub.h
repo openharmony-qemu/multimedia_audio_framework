@@ -174,6 +174,7 @@ private:
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleAddStreamToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveStreamFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleSetZoneDeviceVisible(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);

@@ -234,6 +234,20 @@ int32_t AudioPolicyProxy::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStr
     return reply.ReadInt32();
 }
 
+void AudioPolicyProxy::SetZoneDeviceVisible(bool visible)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_LOG(ret, "WriteInterfaceToken failed");
+
+    data.WriteBool(visible);
+    int32_t error = Remote()->SendRequest(static_cast<uint32_t>(
+        AudioPolicyInterfaceCode::SET_ZONE_DEVICE_VISIBLE), data, reply, option);
+    CHECK_AND_RETURN_LOG(error == ERR_NONE, "sendrequest, error: %d", error);
+}
+
 int32_t AudioPolicyProxy::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     MessageParcel data;

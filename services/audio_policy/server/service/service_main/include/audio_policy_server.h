@@ -456,6 +456,8 @@ public:
 
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) override;
 
+    void SetZoneDeviceVisible(bool visible) override;
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(

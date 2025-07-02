@@ -61,6 +61,8 @@ public:
 
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) override;
 
+    void SetZoneDeviceVisible(bool visible) override;
+
     int32_t RegisterSystemVolumeProxy(int32_t zoneId,
         const std::shared_ptr<AudioZoneVolumeProxy> &proxy) override;
 
@@ -260,6 +262,12 @@ int32_t AudioZoneManagerInner::AddStreamToAudioZone(int32_t zoneId, AudioZoneStr
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
         "AddStreamToAudioZone result:%{public}d", result);
     return result;
+}
+
+void AudioZoneManagerInner::SetZoneDeviceVisible(bool visible)
+{
+    AUDIO_INFO_LOG("in");
+    AudioPolicyManager::GetInstance().SetZoneDeviceVisible(visible);
 }
 
 int32_t AudioZoneManagerInner::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream)

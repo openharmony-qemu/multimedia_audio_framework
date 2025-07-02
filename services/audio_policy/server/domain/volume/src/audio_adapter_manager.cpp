@@ -1121,6 +1121,12 @@ void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
+    if (!AudioZoneService::GetInstance().IsZoneDeviceVisible()) {
+        std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDescriptor);
+        if (!audioDeviceManager_.IsDeviceConnected(desc)) {
+            return;
+        }
+    }
     // The same device does not set the volume
     bool isSameVolumeGroup = ((GetVolumeGroupForDevice(currentActiveDevice_.deviceType_) ==
         GetVolumeGroupForDevice(deviceDescriptor.deviceType_)) &&
