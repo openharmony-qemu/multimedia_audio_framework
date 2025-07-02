@@ -1232,7 +1232,7 @@ TEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001)
 
     EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t portId = callback->GetPortId();
+    portId = callback->GetPortId();
 
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
@@ -1240,14 +1240,14 @@ TEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001)
 
     EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
-    int32_t portId = callback->GetPortId();
+    portId = callback->GetPortId();
 
     hpaeManager_->DeInit();
     EXPECT_EQ(hpaeManager_->IsInit(), false);
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-TEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001)
+TEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();

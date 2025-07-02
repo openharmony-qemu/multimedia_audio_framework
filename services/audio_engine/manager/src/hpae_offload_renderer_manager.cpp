@@ -398,6 +398,7 @@ void HpaeOffloadRendererManager::HandleMsg()
 int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
     if (IsInit()) {
+        AUDIO_INFO_LOG("deinit offload renderer first.");
         DeInit();
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();

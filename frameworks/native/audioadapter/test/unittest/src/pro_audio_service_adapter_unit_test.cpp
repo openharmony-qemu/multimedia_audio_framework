@@ -345,11 +345,11 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize
 }
 
 /**
- * @tc.name: Pro_Audio_ReloadAudioPort_003
+ * @tc.name: Pro_Audio_ReloadAudioPort_004
  * @tc.desc: test reload audio port sink
  * @tc.type: FUNC
  */
-HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_004, TestSize.Level1)
 {
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
@@ -359,11 +359,11 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize
 }
 
 /**
- * @tc.name: Pro_Audio_ReloadAudioPort_003
+ * @tc.name: Pro_Audio_ReloadAudioPort_005
  * @tc.desc: test reload audio port sink
  * @tc.type: FUNC
  */
-HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_005, TestSize.Level1)
 {
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
     int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
@@ -373,6 +373,5 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize
     portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
     EXPECT_GE(0, portId);
 }
-
 }  // namespace AudioStandard
 }  // namespace OHOS

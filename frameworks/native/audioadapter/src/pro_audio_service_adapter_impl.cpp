@@ -73,8 +73,8 @@ int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPort
         [](void *) {
             AUDIO_ERR_LOG("[xcollie] ReloadAudioPort timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    lock_guard<mutex> lock(lock_);
     Trace trace("ReloadAudioPort");
+    lock_guard<mutex> lock(lock_);
     isFinishReloadAudioPort_ = false;
     IHpaeManager::GetHpaeManager().ReloadAudioPort(audioModuleInfo);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -431,8 +431,8 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhanceProperty
 
 void ProAudioServiceAdapterImpl::OnReloadAudioPortCb(int32_t portId)
 {
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     AUDIO_INFO_LOG("OnReloadAudioPortCb portId: %{public}d", portId);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
     isFinishReloadAudioPort_= true;
     AudioPortIndex_ = portId;
     callbackCV_.notify_all();

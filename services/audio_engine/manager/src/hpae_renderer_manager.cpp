@@ -131,18 +131,18 @@ void HpaeRendererManager::CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool is
     CreateProcessCluster(processNodeInfo);
     if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-            "[FinishMove] could not find processorType %{public}d", nodeInfo.sceneType);
+            "could not find processorType %{public}d", nodeInfo.sceneType);
         sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
         int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
         if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("[FinishMove] session:%{public}u update audio effect when creating failed ret %{public}d",
+            AUDIO_WARNING_LOG("session:%{public}u update audio effect when creating failed ret %{public}d",
                 sessionId, ret);
         }
     }
 
-    CHECK_AND_RETURN_LOG(isConnect == true, "[FinishMove] not need connect session:%{public}d", sessionId);
+    CHECK_AND_RETURN_LOG(isConnect == true, "not need connect session:%{public}d", sessionId);
     if (sessionNodeMap_[sessionId].state == HPAE_SESSION_RUNNING) {
-        AUDIO_INFO_LOG("[FinishMove] session:%{public}u connect to sink:%{public}s",
+        AUDIO_INFO_LOG("session:%{public}u connect to sink:%{public}s",
             sessionId, sinkInfo_.deviceClass.c_str());
         ConnectInputSession(sessionId);
     }
@@ -720,6 +720,7 @@ void HpaeRendererManager::HandleMsg()
 int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
     if (IsInit()) {
+        AUDIO_INFO_LOG("deinit:%{public}s renderer first.", sinkInfo.deviceName.c_str());
         DeInit();
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();

@@ -523,7 +523,7 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
-    ++playSencondStreamInfo.sessionId;
+    ++playStreamInfo.sessionId;
     EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();

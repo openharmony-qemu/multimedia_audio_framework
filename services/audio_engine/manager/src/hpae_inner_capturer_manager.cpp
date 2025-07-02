@@ -219,6 +219,7 @@ int32_t HpaeInnerCapturerManager::DestroyStream(uint32_t sessionId)
 int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload)
 {
     if (IsInit()) {
+        AUDIO_INFO_LOG("deinit inner capture first.");
         DeInit();
     }
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
