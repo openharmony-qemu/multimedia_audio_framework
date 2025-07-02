@@ -24,17 +24,18 @@
 #include <sstream>
 #include <unistd.h>
 #include <thread>
+#include <set>
+#include <unordered_map>
+
+#include "hisysevent.h"
+#include "media_monitor_manager.h"
+#include "event_bean.h"
 
 #include "audio_errors.h"
 #include "audio_pulseaudio_log.h"
 #include "audio_utils.h"
-#include "hisysevent.h"
-#include <set>
-#include <unordered_map>
-
-#include "media_monitor_manager.h"
-#include "event_bean.h"
 #include "pa_adapter_tools.h"
+#include "audio_schedule.h"
 
 using namespace std;
 
@@ -704,6 +705,9 @@ void PulseAudioServiceAdapterImpl::PaContextStateCb(pa_context *c, void *userdat
             }
             pa_operation_unref(operation);
             pa_threaded_mainloop_signal(thiz->mMainLoop, 0);
+
+            // raise thread priority
+            thiz->SetThreadPriority();
             break;
         }
 
@@ -716,6 +720,18 @@ void PulseAudioServiceAdapterImpl::PaContextStateCb(pa_context *c, void *userdat
         default:
             return;
     }
+}
+
+bool PulseAudioServiceAdapterImpl::SetThreadPriority()
+{
+    static bool setPriorityFlag = false;
+    if (!setPriorityFlag) {
+        AUDIO_INFO_LOG("set priority for pulse audio adapter mainloop thread");
+        ScheduleThreadInServer(getpid(), gettid());
+        setPriorityFlag = true;
+        return setPriorityFlag;
+    }
+    return setPriorityFlag;
 }
 
 void PulseAudioServiceAdapterImpl::PaModuleLoadCb(pa_context *c, uint32_t idx, void *userdata)

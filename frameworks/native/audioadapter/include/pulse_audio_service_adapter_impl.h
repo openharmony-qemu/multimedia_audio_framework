@@ -86,6 +86,7 @@ private:
 
     bool ConnectToPulseAudio();
     AudioStreamType GetIdByStreamType(std::string streamType);
+    bool SetThreadPriority();
 
     static constexpr uint32_t PA_CONNECT_RETRY_SLEEP_IN_MICRO_SECONDS = 500000;
     pa_context *mContext = NULL;

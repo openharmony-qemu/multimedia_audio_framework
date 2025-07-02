@@ -667,5 +667,25 @@ HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTes
     pulseAudioServiceAdapterImpl->PaSubscribeCb(c, t, idx, userdata);
     ASSERT_NE(userdata, nullptr);
 }
+
+/**
+ * @tc.name  : Test PulseAudioServiceAdapterImpl API
+ * @tc.number: PulseAudioServiceAdapterImplUnitTest_024
+ * @tc.desc  : Test SetThreadPriority interface.
+ */
+HWTEST(PulseAudioServiceAdapterImplUnitTest, PulseAudioServiceAdapterImplUnitTest_024, TestSize.Level3)
+{
+    std::unique_ptr<AudioServiceAdapterCallback> audioServiceAdapterCallback =
+        std::make_unique<AudioServiceAdapterCallbackTest>();
+    auto pulseAudioServiceAdapterImpl = std::make_shared<PulseAudioServiceAdapterImpl>(audioServiceAdapterCallback);
+    ASSERT_NE(pulseAudioServiceAdapterImpl, nullptr);
+
+    // start test
+    bool res = pulseAudioServiceAdapterImpl->SetThreadPriority();
+    EXPECT_EQ(res, true);
+    res = pulseAudioServiceAdapterImpl->SetThreadPriority();
+    EXPECT_EQ(res, true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
