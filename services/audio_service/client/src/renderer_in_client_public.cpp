@@ -72,6 +72,7 @@ static const int32_t SHORT_TIMEOUT_IN_MS = 20; // ms
 static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
+constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -373,13 +374,6 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t framePosition = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
 
-    // add MCR latency
-    uint32_t mcrLatency = 0;
-    if (converter_ != nullptr) {
-        mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
-        framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
-    }
-
     // reset the timestamp
     if (lastFramePosition_[base].first < framePosition || lastFramePosition_[base].second == 0) {
         lastFramePosition_[base] = {framePosition, timestampVal};
@@ -389,8 +383,8 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         timestampVal = lastFramePosition_[base].second;
     }
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
-        ", timestamp %{public}" PRIu64 ", mcrLatency %{public}u, Sinklatency %{public}" PRIu64, framePosition,
-        lastFlushReadIndex_, timestampVal, mcrLatency, latency);
+        ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64, framePosition,
+        lastFlushReadIndex_, timestampVal, latency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -622,6 +616,10 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
+    if (abs(speed - writtenAtSpeedChange_.second.load()) > EPS) {
+        writtenAtSpeedChange_.first = totalBytesWrittenAfterFlush_.load();
+        writtenAtSpeedChange_.second = speed_;
+    }
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
@@ -1318,7 +1316,6 @@ void RendererInClientInner::SetRendererPeriodPositionCallback(int64_t periodPosi
     rendererPeriodSize_ = periodPosition;
     totalBytesWritten_ = 0;
     rendererPeriodWritten_ = 0;
-    totalBytesWrittenNoSpeed_ = 0;
 }
 
 void RendererInClientInner::UnsetRendererPeriodPositionCallback()
@@ -1329,7 +1326,6 @@ void RendererInClientInner::UnsetRendererPeriodPositionCallback()
     rendererPeriodSize_ = 0;
     totalBytesWritten_ = 0;
     rendererPeriodWritten_ = 0;
-    totalBytesWrittenNoSpeed_ = 0;
 }
 
 void RendererInClientInner::SetCapturerPositionCallback(int64_t markPosition,
@@ -1569,6 +1565,7 @@ void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodS
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
     totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
+    totalBytesWrittenAfterFlush_.add(static_cast<int64_t>(bytesWritten));
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1772,17 +1769,29 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
     int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
-    uint64_t frameWrite = static_cast<uint64_t>(totalBytesWrittenNoSpeed_ / sizePerFrameInByte_);
-    uint64_t deepReadIdx = GetFramesWritten() > readIdx ? GetFramesWritten() - readIdx : 0;
-    uint64_t frameLatency = (latency + deepReadIdx) * speed_;
-    uint64_t framePosition = frameWrite > frameLatency ? frameWrite - frameLatency : 0;
-    // add MCR latency
-    uint32_t mcrLatency = 0;
-    if (converter_ != nullptr) {
-        mcrLatency = converter_->GetLatency() * curStreamParams_.samplingRate / AUDIO_MS_PER_S;
-        framePosition = framePosition > mcrLatency ? framePosition - mcrLatency : 0;
+
+    uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
+    // cal latency between readIdx and framesWritten
+    uint64_t framesWrittenAfterFlush = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
+    uint64_t deepLatency = framesWrittenAfterFlush > readIdx ? framesWrittenAfterFlush - readIdx : 0;
+    // get position and speed since last change
+    uint64_t lastSpeedPosition = writtenAtSpeedChange_.first.load();
+    float lastSpeed = writtenAtSpeedChange_.second.load();
+
+    uint64_t frameLatency = 0;
+    if (readIdx < latency + lastSpeedPosition) {
+        // cache before speed change
+        frameLatency = lastSpeed * (latency - readIdx + lastSpeedPosition) +
+            (framesWrittenAfterFlush - lastSpeedPosition) * speed_;
+    } else {
+        frameLatency = (deepLatency + latency) * speed_;
     }
+    // between unprocessSamples and framesWritten there is sonic
+    frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
+    // real frameposition
+    uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
 
     // reset the timestamp
     if (lastFramePositionWithSpeed_[base].first < framePosition || lastFramePositionWithSpeed_[base].second == 0) {
@@ -1792,9 +1801,11 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         framePosition = lastFramePositionWithSpeed_[base].first;
         timestampVal = lastFramePositionWithSpeed_[base].second;
     }
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: frameWrite %{public}" PRIu64 ", framesWrittenAfterFlush %{public}" PRIu64
+        ", lastSpeedPosition %{public}" PRIu64, frameWrite, framesWrittenAfterFlush, lastSpeedPosition);
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", totlatency %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, latency + mcrLatency);
+        framePosition, lastFlushReadIndex_, timestampVal, frameLatency);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);

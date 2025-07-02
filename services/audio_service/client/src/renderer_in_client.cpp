@@ -620,7 +620,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    totalBytesWrittenNoSpeed_ += bufferSize;
+    unprocessedFramesBytes_.add(bufferSize);
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
@@ -658,6 +658,8 @@ void RendererInClientInner::ResetFramePosition()
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosition_[base].first = 0;
     }
+    unprocessedFramesBytes_ = 0;
+    totalBytesWrittenAfterFlush_ = 0;
 }
 
 bool RendererInClientInner::IsMutePlaying()

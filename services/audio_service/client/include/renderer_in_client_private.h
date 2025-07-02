@@ -374,7 +374,8 @@ private:
 
     // Mark reach and period reach callback
     int64_t totalBytesWritten_ = 0;
-    int64_t totalBytesWrittenNoSpeed_ = 0;
+    std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
+    std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
     std::mutex markReachMutex_;
     bool rendererMarkReached_ = false;
     int64_t rendererMarkPosition_ = 0;
@@ -410,10 +411,12 @@ private:
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
+    std::mutex framePositionMutex_;
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
+    std::pair<std::atomic<uint64_t>, std::atomic<float>> writtenAtSpeedChange_ = {0, 1.0};
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
@@ -427,11 +430,6 @@ private:
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
-
-    uint64_t lastLatency_ = 0;
-    uint64_t lastLatencyPosition_ = 0;
-    uint64_t lastReadIdx_ = 0;
-    float lastSpeed_ = 1.0;
 
     enum {
         STATE_CHANGE_EVENT = 0,
