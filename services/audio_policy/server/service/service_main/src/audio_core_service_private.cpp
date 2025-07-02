@@ -2290,6 +2290,12 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
 
     int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(nearlinkFetchResult == SUCCESS, ERROR, "nearlink fetch input device failed");
+
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = streamDesc->newDeviceDescs_.front();
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
+        audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
+    }
+    
     return SUCCESS;
 }
 
