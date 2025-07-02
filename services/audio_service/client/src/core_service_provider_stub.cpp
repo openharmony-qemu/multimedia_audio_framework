@@ -119,6 +119,12 @@ int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, S
     return coreServiceWorker_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
+int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->ReloadCaptureSession(sessionId, operation);
+}
+
 int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
     const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
 {

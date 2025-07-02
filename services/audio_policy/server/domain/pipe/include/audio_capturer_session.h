@@ -40,6 +40,7 @@
 #include "audio_device_common.h"
 #include "audio_volume_manager.h"
 #include "audio_a2dp_offload_manager.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -66,6 +67,8 @@ public:
         const AudioEffectPropertyArrayV3 &newPropertyArray);
     void ReloadSourceForEffect(const AudioEnhancePropertyArray &oldPropertyArray,
         const AudioEnhancePropertyArray &newPropertyArray);
+    CapturerState GetCapturerState();
+    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
 private:
     AudioCapturerSession() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
@@ -96,6 +99,7 @@ private:
     void SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice);
     const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
+    bool FindRunningNormalSession(uint32_t sessionId, AudioCapturerChangeInfo &runingSessionInfo);
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
