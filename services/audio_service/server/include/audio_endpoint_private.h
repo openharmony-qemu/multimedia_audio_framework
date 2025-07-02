@@ -186,6 +186,8 @@ private:
         std::vector<AudioStreamData> &audioDataList, uint64_t curRead, std::function<void()> &moveClientIndex);
     std::string GetStatusStr(EndpointStatus status);
 
+    bool IsNearlinkAbsVolSupportStream(DeviceType deviceType, AudioVolumeType volumeType);
+
     int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBufferBase> &procBuf, const BufferDesc &readBuf,
         const BufferDesc &convertedBuffer, bool muteFlag);
     void WriteToProcessBuffers(const BufferDesc &readBuf);

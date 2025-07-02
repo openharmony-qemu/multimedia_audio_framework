@@ -257,7 +257,8 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
 {
     Trace trace("IsStreamSupportDirect");
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
-        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET) {
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
+        streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
             AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
                 streamDesc->newDeviceDescs_[0]->deviceType_);
             return false;
