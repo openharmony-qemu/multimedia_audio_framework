@@ -515,7 +515,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
 }
 
 AudioIOHandle AudioCoreService::ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
-        uint32_t &paIndex)
+    uint32_t &paIndex)
 {
     AudioIOHandle ioHandle;
     if (engineFlag == 1) {

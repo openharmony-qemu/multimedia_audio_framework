@@ -274,7 +274,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
 }
 
 int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInfo,
-    uint32_t sinkSourceIndex,bool isReload)
+    uint32_t sinkSourceIndex, bool isReload)
 {
     sinkSourceIndex_.fetch_add(1);
     HpaeSinkInfo sinkInfo;
