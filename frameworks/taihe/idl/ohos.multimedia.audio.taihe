@@ -335,20 +335,20 @@ enum DeviceBlockStatus: i32 {
 
 struct DeviceBlockStatusInfo {
   blockStatus: DeviceBlockStatus;
-  devices: Array<@readonly AudioDeviceDescriptor>;
+  devices: Array<AudioDeviceDescriptor>;
 }
 
 interface AudioRoutingManager {
   @gen_async("getDevices")
   @gen_promise("getDevices")
-  GetDevicesSync(deviceFlag: DeviceFlag): Array<@readonly AudioDeviceDescriptor>;
+  GetDevicesSync(deviceFlag: DeviceFlag): Array<AudioDeviceDescriptor>;
 
-  GetAvailableDevices(deviceUsage: DeviceUsage): Array<@readonly AudioDeviceDescriptor>;
-  GetExcludedDevices(deviceUsage: DeviceUsage): Array<@readonly AudioDeviceDescriptor>;
+  GetAvailableDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
+  GetExcludedDevices(deviceUsage: DeviceUsage): Array<AudioDeviceDescriptor>;
 
   @gen_async("selectOutputDevice")
   @gen_promise("selectOutputDevice")
-  SelectOutputDeviceSync(outputAudioDevices: Array<@readonly AudioDeviceDescriptor>): void;
+  SelectOutputDeviceSync(outputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
   @gen_async("setCommunicationDevice")
   @gen_promise("setCommunicationDevice")
@@ -361,35 +361,35 @@ interface AudioRoutingManager {
   @gen_async("selectOutputDeviceByFilter")
   @gen_promise("selectOutputDeviceByFilter")
   SelectOutputDeviceByFilterSync(filter: AudioRendererFilter, outputAudioDevices:
-      Array<@readonly AudioDeviceDescriptor>): void;
+      Array<AudioDeviceDescriptor>): void;
 
   @gen_async("selectInputDevice")
   @gen_promise("selectInputDevice")
-  SelectInputDeviceSync(inputAudioDevices: Array<@readonly AudioDeviceDescriptor>): void;
+  SelectInputDeviceSync(inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
   @gen_async("getPreferOutputDeviceForRendererInfo")
   @gen_promise("getPreferOutputDeviceForRendererInfo")
-  GetPreferredOutputDeviceForRendererInfoSync(rendererInfo: AudioRendererInfo): Array<@readonly AudioDeviceDescriptor>;
+  GetPreferredOutputDeviceForRendererInfoSync(rendererInfo: AudioRendererInfo): Array<AudioDeviceDescriptor>;
 
   @gen_async("getPreferredInputDeviceForCapturerInfo")
   @gen_promise("getPreferredInputDeviceForCapturerInfo")
-  GetPreferredInputDeviceForCapturerInfoSync(capturerInfo: AudioCapturerInfo): Array<@readonly AudioDeviceDescriptor>;
+  GetPreferredInputDeviceForCapturerInfoSync(capturerInfo: AudioCapturerInfo): Array<AudioDeviceDescriptor>;
 
-  GetPreferredInputDeviceByFilter(filter: AudioCapturerFilter): Array<@readonly AudioDeviceDescriptor>;
+  GetPreferredInputDeviceByFilter(filter: AudioCapturerFilter): Array<AudioDeviceDescriptor>;
 
-  GetPreferredOutputDeviceByFilter(filter: AudioRendererFilter): Array<@readonly AudioDeviceDescriptor>;
+  GetPreferredOutputDeviceByFilter(filter: AudioRendererFilter): Array<AudioDeviceDescriptor>;
 
   @gen_promise("selectInputDeviceByFilter")
-  SelectInputDeviceByFilterSync(filter: AudioCapturerFilter, inputAudioDevices: Array<@readonly AudioDeviceDescriptor>): void;
+  SelectInputDeviceByFilterSync(filter: AudioCapturerFilter, inputAudioDevices: Array<AudioDeviceDescriptor>): void;
 
   @gen_promise("isMicBlockDetectionSupported")
   IsMicBlockDetectionSupportedSync(): bool;
 
   @gen_promise("excludeOutputDevices")
-  ExcludeOutputDevicesSync(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
+  ExcludeOutputDevicesSync(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
 
   @gen_promise("unexcludeOutputDevices")
-  UnexcludeOutputDevicesWithUsageAndDevices(usage: DeviceUsage, devices: Array<@readonly AudioDeviceDescriptor>): void;
+  UnexcludeOutputDevicesWithUsageAndDevices(usage: DeviceUsage, devices: Array<AudioDeviceDescriptor>): void;
 
   @gen_promise("unexcludeOutputDevices")
   UnexcludeOutputDevicesWithUsage(usage: DeviceUsage): void;
@@ -401,7 +401,7 @@ interface AudioRoutingManager {
             }
         }
   """)
-  OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<@readonly AudioDeviceDescriptor>) => void): void;
+  OnPreferredInputDeviceChangeForCapturerInfo(capturerInfo: AudioCapturerInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
 
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
@@ -428,8 +428,8 @@ interface AudioRoutingManager {
         }
   """)
   OffMicBlockStatusChanged(callback: Optional<(data: DeviceBlockStatusInfo) => void>): void;
-  OffPreferredInputDeviceChangeForCapturerInfo(callback: Optional<(data: Array<@readonly AudioDeviceDescriptor>) => void>): void;
-  OffPreferOutputDeviceChangeForRendererInfo(callback: Optional<(data: Array<@readonly AudioDeviceDescriptor>) => void>): void;
+  OffPreferredInputDeviceChangeForCapturerInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
+  OffPreferOutputDeviceChangeForRendererInfo(callback: Optional<(data: Array<AudioDeviceDescriptor>) => void>): void;
   OffDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
   OffAvailableDeviceChange(callback: Optional<(data: DeviceChangeAction) => void>): void;
 
@@ -458,21 +458,21 @@ interface AudioRoutingManager {
   """)
   OnDeviceChange(deviceFlag: DeviceFlag, callback: (data: DeviceChangeAction) => void): void;
   OnAvailableDeviceChange(deviceUsage: DeviceUsage, callback: (data: DeviceChangeAction) => void): void;
-  OnPreferOutputDeviceChangeForRendererInfo(rendererInfo: AudioRendererInfo, callback: (data: Array<@readonly AudioDeviceDescriptor>) => void): void;
+  OnPreferOutputDeviceChangeForRendererInfo(rendererInfo: AudioRendererInfo, callback: (data: Array<AudioDeviceDescriptor>) => void): void;
 }
 
 interface AudioStreamManager {
   @gen_async("getCurrentAudioRendererInfoArray")
   @gen_promise("getCurrentAudioRendererInfoArray")
-  GetCurrentAudioRendererInfoArraySync(): Array<@readonly AudioRendererChangeInfo>;
+  GetCurrentAudioRendererInfoArraySync(): Array<AudioRendererChangeInfo>;
 
   @gen_async("getCurrentAudioCapturerInfoArray")
   @gen_promise("getCurrentAudioCapturerInfoArray")
-  GetCurrentAudioCapturerInfoArraySync(): Array<@readonly AudioCapturerChangeInfo>;
+  GetCurrentAudioCapturerInfoArraySync(): Array<AudioCapturerChangeInfo>;
 
   @gen_async("getAudioEffectInfoArray")
   @gen_promise("getAudioEffectInfoArray")
-  GetAudioEffectInfoArraySync(usage: StreamUsage): Array<@readonly AudioEffectMode>;
+  GetAudioEffectInfoArraySync(usage: StreamUsage): Array<AudioEffectMode>;
 
   @gen_async("isActive")
   @gen_promise("isActive")
@@ -487,8 +487,8 @@ interface AudioStreamManager {
             }
         }
   """)
-  OnAudioRendererChange(callback: (data: Array<@readonly AudioRendererChangeInfo>) => void): void;
-  OnAudioCapturerChange(callback: (data: Array<@readonly AudioCapturerChangeInfo>) => void): void;
+  OnAudioRendererChange(callback: (data: Array<AudioRendererChangeInfo>) => void): void;
+  OnAudioCapturerChange(callback: (data: Array<AudioCapturerChangeInfo>) => void): void;
 
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
@@ -499,14 +499,14 @@ interface AudioStreamManager {
             }
         }
   """)
-  OffAudioRendererChange(callback: Optional<(data: Array<@readonly AudioRendererChangeInfo>) => void>): void;
-  OffAudioCapturerChange(callback: Optional<(data: Array<@readonly AudioCapturerChangeInfo>) => void>): void;
+  OffAudioRendererChange(callback: Optional<(data: Array<AudioRendererChangeInfo>) => void>): void;
+  OffAudioCapturerChange(callback: Optional<(data: Array<AudioCapturerChangeInfo>) => void>): void;
 }
 
 interface AudioVolumeManager {
   @gen_async("getVolumeGroupInfos")
   @gen_promise("getVolumeGroupInfos")
-  GetVolumeGroupInfosSync(networkId: String): Array<@readonly VolumeGroupInfo>;
+  GetVolumeGroupInfosSync(networkId: String): Array<VolumeGroupInfo>;
 
   @gen_async("getVolumeGroupManager")
   @gen_promise("getVolumeGroupManager")
@@ -682,7 +682,7 @@ struct AudioRendererChangeInfo {
   @readonly clientUid: i32;
   @readonly rendererInfo: AudioRendererInfo;
   @readonly rendererState: AudioState;
-  @readonly deviceDescriptors: Array<@readonly AudioDeviceDescriptor>;
+  @readonly deviceDescriptors: Array<AudioDeviceDescriptor>;
 }
 
 struct AudioCapturerChangeInfo {
@@ -690,7 +690,7 @@ struct AudioCapturerChangeInfo {
   @readonly clientUid: i32;
   @readonly capturerInfo: AudioCapturerInfo;
   @readonly capturerState: AudioState;
-  @readonly deviceDescriptors: Array<@readonly AudioDeviceDescriptor>;
+  @readonly deviceDescriptors: Array<AudioDeviceDescriptor>;
   @readonly muted: Optional<bool>;
 }
 
@@ -727,7 +727,7 @@ struct MicStateChangeEvent {
 
 struct DeviceChangeAction {
   type: DeviceChangeType;
-  deviceDescriptors: Array<@readonly AudioDeviceDescriptor>;
+  deviceDescriptors: Array<AudioDeviceDescriptor>;
 }
 
 enum ChannelBlendMode: i32 {
@@ -745,7 +745,7 @@ enum AudioStreamDeviceChangeReason: i32 {
 }
 
 struct AudioStreamDeviceChangeInfo {
-  devices: Array<@readonly AudioDeviceDescriptor>;
+  devices: Array<AudioDeviceDescriptor>;
   changeReason: AudioStreamDeviceChangeReason;
 }
 
@@ -929,7 +929,7 @@ interface AudioCapturer {
   @gen_promise("getOverflowCount")
   GetOverflowCountSync(): i64;
 
-  GetCurrentInputDevices(): Array<@readonly AudioDeviceDescriptor>;
+  GetCurrentInputDevices(): Array<AudioDeviceDescriptor>;
 
   GetCurrentAudioCapturerChangeInfo(): AudioCapturerChangeInfo;
 
@@ -950,7 +950,7 @@ interface AudioCapturer {
   """)
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
-  OnInputDeviceChange(callback: (data: Array<@readonly AudioDeviceDescriptor>) => void): void;
+  OnInputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
   OnAudioCapturerChange(callback: (data: AudioCapturerChangeInfo) => void): void;
   OnReadData(callback: (data: @arraybuffer Array<u8>) => void): void;
 
@@ -987,7 +987,7 @@ interface AudioCapturer {
   """)
   OffStateChange(callback: Optional<(data: AudioState) => void>): void;
   OffAudioInterrupt(callback: Optional<(data: InterruptEvent) => void>): void;
-  OffInputDeviceChange(callback: Optional<(data:  Array<@readonly AudioDeviceDescriptor>) => void>): void;
+  OffInputDeviceChange(callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
   OffAudioCapturerChange(callback: Optional<(data: AudioCapturerChangeInfo) => void>): void;
   OffReadData(callback: Optional<(data: @arraybuffer Array<u8>) => void>): void;
   OffPeriodReach(callback: Optional<(data: i64) => void>): void;
@@ -1091,7 +1091,7 @@ interface AudioRenderer {
 
   @gen_async("getCurrentOutputDevices")
   @gen_promise("getCurrentOutputDevices")
-  GetCurrentOutputDevicesSync(): Array<@readonly AudioDeviceDescriptor>;
+  GetCurrentOutputDevicesSync(): Array<AudioDeviceDescriptor>;
 
   SetChannelBlendMode(mode: ChannelBlendMode): void;
 
@@ -1119,7 +1119,7 @@ interface AudioRenderer {
   """)
   OnAudioInterrupt(callback: (data: InterruptEvent) => void): void;
   OnStateChange(callback: (data: AudioState) => void): void;
-  OnOutputDeviceChange(callback: (data: Array<@readonly AudioDeviceDescriptor>) => void): void;
+  OnOutputDeviceChange(callback: (data: Array<AudioDeviceDescriptor>) => void): void;
   OnOutputDeviceChangeWithInfo(callback: (data: AudioStreamDeviceChangeInfo) => void): void;
   OnWriteData(callback: (data: @arraybuffer Array<u8>) => AudioDataCallbackResult): void;
 
@@ -1156,7 +1156,7 @@ interface AudioRenderer {
   """)
   OffAudioInterrupt(callback: Optional<(data: InterruptEvent) => void>): void;
   OffStateChange(callback: Optional<(data: AudioState) => void>): void;
-  OffOutputDeviceChange(callback: Optional<(data:  Array<@readonly AudioDeviceDescriptor>) => void>): void;
+  OffOutputDeviceChange(callback: Optional<(data:  Array<AudioDeviceDescriptor>) => void>): void;
   OffOutputDeviceChangeWithInfo(callback: Optional<(data: AudioStreamDeviceChangeInfo) => void>): void;
   OffPeriodReach(callback: Optional<(data: i64) => void>): void;
   OffMarkReach(callback: Optional<(data: i64) => void>): void;
