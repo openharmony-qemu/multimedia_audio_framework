@@ -54,6 +54,8 @@ int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, Mess
             return HandleIsAbsVolumeSupported(data, reply);
         case OFFLOAD_GET_RENDER_POSITION:
             return HandleOffloadGetRenderPosition(data, reply);
+        case NEARLINK_GET_RENDER_POSITION:
+            return HandleNearlinkGetRenderPosition(data, reply);
         case GET_AND_SAVE_CLIENT_TYPE:
             return HandleGetAndSaveClientType(data, reply);
         case GET_MAX_RENDERER_INSTANCES:
@@ -150,6 +152,15 @@ int32_t PolicyProviderStub::HandleOffloadGetRenderPosition(MessageParcel &data, 
     reply.WriteUint32(delayValue);
     reply.WriteUint64(sendDataSize);
     reply.WriteUint32(timeStamp);
+    return AUDIO_OK;
+}
+
+int32_t PolicyProviderStub::HandleNearlinkGetRenderPosition(MessageParcel &data, MessageParcel &reply)
+{
+    uint32_t delayValue = 0;
+    int32_t ret = NearlinkGetRenderPosition(delayValue);
+    reply.WriteInt32(ret);
+    reply.WriteUint32(delayValue);
     return AUDIO_OK;
 }
 
@@ -261,6 +272,12 @@ int32_t PolicyProviderWrapper::OffloadGetRenderPosition(uint32_t &delayValue, ui
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
+}
+
+int32_t PolicyProviderWrapper::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
+    return policyWorker_->NearlinkGetRenderPosition(delayValue);
 }
 
 int32_t PolicyProviderWrapper::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)

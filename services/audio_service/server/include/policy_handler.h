@@ -58,6 +58,8 @@ public:
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
 
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
+
     bool GetHighResolutionExist();
 
     void SetHighResolutionExist(bool isHighResExist);

@@ -37,6 +37,7 @@ public:
     virtual int32_t ConnectAllowedProfiles(const std::string &remoteAddr) = 0;
     virtual int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) = 0;
     virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+    virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
 
     enum AudioSleAudioOperationCallbackMsg {
         ON_ERROR = 0,
@@ -50,6 +51,7 @@ public:
         CONNECT_ALLOWED_PROFILES,
         SET_DEVICE_ABS_VOLUME,
         SEND_USER_SELECTION,
+        GET_RENDER_POSITION,
     };
 
     DECLARE_INTERFACE_DESCRIPTOR(u"IStandardSleAudioOperationCallback");

@@ -909,6 +909,21 @@ int32_t AudioPolicyService::OffloadGetRenderPosition(uint32_t &delayValue, uint6
 #endif
 }
 
+int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    Trace trace("AudioPolicyService::NearlinkGetRenderPosition");
+    AudioDeviceDescriptor curOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    AUDIO_DEBUG_LOG("GetRenderPosition, deviceType: %{public}d", curOutputDevice.deviceType_);
+    int32_t ret = SUCCESS;
+    delayValue = 0;
+
+    CHECK_AND_RETURN_RET_LOG(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret,
+        "current output device is not nearlink");
+
+    ret = sleAudioDeviceManager_.GetRenderPosition(curOutputDevice.macAddress_, delayValue);
+    return ret;
+}
+
 int32_t AudioPolicyService::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
 {
 #ifdef FEATURE_APPGALLERY

@@ -98,6 +98,7 @@ private:
 
     uint32_t GetEffectChainLatency();
     uint32_t GetA2dpOffloadLatency();
+    uint32_t GetNearlinkLatency();
     uint32_t GetLimiterLatency();
 
     void UpdatePaTimingInfo();

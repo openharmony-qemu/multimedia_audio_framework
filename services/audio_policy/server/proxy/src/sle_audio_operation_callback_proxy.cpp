@@ -204,5 +204,22 @@ int32_t SleAudioOperationCallbackProxy::SendUserSelection(const std::string &dev
 
     return reply.ReadInt32();
 }
+
+int32_t SleAudioOperationCallbackProxy::GetRenderPosition(const std::string &device, uint32_t &delayValue)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "WriteInterfaceToken failed");
+
+    data.WriteString(device);
+    int32_t ret = Remote()->SendRequest(GET_RENDER_POSITION, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == ERR_NONE, ret, "Failed, error: %{public}d", ret);
+    ret = reply.ReadInt32();
+    delayValue = reply.ReadUint32();
+
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

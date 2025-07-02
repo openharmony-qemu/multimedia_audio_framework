@@ -192,6 +192,12 @@ int32_t PolicyHandler::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &
     return iPolicyProvider_->OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
 }
 
+int32_t PolicyHandler::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->NearlinkGetRenderPosition(delayValue);
+}
+
 bool PolicyHandler::GetHighResolutionExist()
 {
     return isHighResolutionExist_;
