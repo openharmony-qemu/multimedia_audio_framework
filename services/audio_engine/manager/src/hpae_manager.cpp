@@ -99,6 +99,7 @@ HpaeManager::HpaeManager() : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT)  // todo Me
     RegisterHandler(MOVE_SESSION_FAILED, &HpaeManager::HandleMoveSessionFailed);
     RegisterHandler(CONNECT_CO_BUFFER_NODE, &HpaeManager::HandleConnectCoBufferNode);
     RegisterHandler(DISCONNECT_CO_BUFFER_NODE, &HpaeManager::HandleDisConnectCoBufferNode);
+    RegisterHandler(RELOAD_AUDIO_SINK_RESULT, &HpaeManager::HandleReloadDeviceResult);
 }
 
 HpaeManager::~HpaeManager()
@@ -247,19 +248,56 @@ void HpaeManager::PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
         audioModuleInfo.offloadEnable.c_str());
 }
 
-int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo)
+void HpaeManager::OnCallbackOpenOrReloadFailed(bool isReload)
+{
+    if (auto serviceCallback = serviceCallback_.lock()) {
+        if (isReload) {
+            serviceCallback->OnReloadAudioPortCb(SINK_INVALID_ID);
+        } else {
+            serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
+        }
+    }
+}
+
+int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkNameSinkIdMap_[audioModuleInfo.name];
     sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     if (ret != SUCCESS) {
-        if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
-        }
+        OnCallbackOpenOrReloadFailed(isReload);
         return ret;
     }
-    rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo);
+    rendererManagerMap_[audioModuleInfo.name]->ReloadRenderManager(sinkInfo, isReload);
+    return SUCCESS;
+}
+
+int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInfo,
+    uint32_t sinkSourceIndex, bool isReload)
+{
+    sinkSourceIndex_.fetch_add(1);
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.sinkId = sinkSourceIndex;
+    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
+    int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
+    if (ret != SUCCESS) {
+        OnCallbackOpenOrReloadFailed(isReload);
+        return ret;
+    }
+    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->RegisterSendMsgCallback(weak_from_this());
+    rendererManagerMap_[audioModuleInfo.name] = rendererManager;
+    sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
+    sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
+    if (defaultSink_ == "" && coreSink_ == "") {
+        defaultSink_ = audioModuleInfo.name;
+        coreSink_ = audioModuleInfo.name;
+        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
+    }
+    rendererManager->Init(isReload);
+    AUDIO_INFO_LOG(
+        "open sink name: %{public}s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
     return SUCCESS;
 }
 
@@ -276,31 +314,8 @@ int32_t HpaeManager::OpenOutputAudioPort(const AudioModuleInfo &audioModuleInfo,
         }
         return sinkNameSinkIdMap_[audioModuleInfo.name];
     }
-    sinkSourceIndex_.fetch_add(1);
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.sinkId = sinkSourceIndex;
-    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
-    int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
-    if (ret != SUCCESS) {
-        if (auto serviceCallback = serviceCallback_.lock()) {
-            serviceCallback->OnOpenAudioPortCb(SINK_INVALID_ID);
-        }
-        return ret;
-    }
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->RegisterSendMsgCallback(weak_from_this());
-    rendererManagerMap_[audioModuleInfo.name] = rendererManager;
-    sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
-    sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
-    if (defaultSink_ == "" && coreSink_ == "") {
-        defaultSink_ = audioModuleInfo.name;
-        coreSink_ = audioModuleInfo.name;
-        AUDIO_INFO_LOG("SetDefaultSink name: %{public}s", defaultSink_.c_str());
-    }
-    rendererManager->Init();
-    AUDIO_INFO_LOG(
-        "open sink name: %{public}s end sinkIndex is %{public}u", audioModuleInfo.name.c_str(), sinkSourceIndex);
-    return SUCCESS;
+    
+    return CreateRendererManager(audioModuleInfo, sinkSourceIndex);
 }
 
 int32_t HpaeManager::OpenInputAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t sinkSourceIndex)
@@ -396,6 +411,29 @@ uint32_t HpaeManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
     auto request = [this, audioModuleInfo]() {
         PrintAudioModuleInfo(audioModuleInfo);
         OpenAudioPortInner(audioModuleInfo);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
+uint32_t HpaeManager::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
+{
+    auto request = [this, audioModuleInfo]() {
+        if (audioModuleInfo.lib != "libmodule-hdi-sink.z.so") {
+            AUDIO_ERR_LOG("currect device:%{public}s not support reload.", audioModuleInfo.name.c_str());
+            OnCallbackOpenOrReloadFailed(true);
+            return;
+        }
+
+        PrintAudioModuleInfo(audioModuleInfo);
+        if (SafeGetMap(rendererManagerMap_, audioModuleInfo.name)) {
+            ReloadRenderManager(audioModuleInfo, true);
+            return;
+        }
+        
+        AUDIO_INFO_LOG("currect device:%{public}s not exist.", audioModuleInfo.name.c_str());
+        uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
+        CreateRendererManager(audioModuleInfo, sinkSourceIndex, true);
     };
     SendRequest(request, __func__);
     return SUCCESS;
@@ -1041,6 +1079,26 @@ void HpaeManager::HandleDumpSourceInfo(std::string deviceName, std::string dumpS
         dumpStr.c_str());
     if (auto ptr = dumpCallback_.lock()) {
         ptr->OnDumpSourceInfoCb(dumpStr, SUCCESS);
+    }
+}
+
+void HpaeManager::HandleReloadDeviceResult(std::string deviceName, int32_t result)
+{
+    AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d ", deviceName.c_str(), result);
+    auto serviceCallback = serviceCallback_.lock();
+    if (serviceCallback && result == SUCCESS) {
+        if (sinkNameSinkIdMap_.find(deviceName) != sinkNameSinkIdMap_.end()) {
+            serviceCallback->OnReloadAudioPortCb(sinkNameSinkIdMap_[deviceName]);
+        } else {
+            AUDIO_ERR_LOG("device:%{public}s is not exist.", deviceName.c_str());
+            serviceCallback->OnReloadAudioPortCb(SINK_INVALID_ID);
+        }
+    } else if (serviceCallback) {
+        serviceCallback->OnReloadAudioPortCb(SINK_INVALID_ID);
+        AUDIO_INFO_LOG("deviceName:%{public}s result:%{public}d error",
+            deviceName.c_str(), result);
+    } else {
+        AUDIO_INFO_LOG("OnReloadAudioPortCb is nullptr");
     }
 }
 

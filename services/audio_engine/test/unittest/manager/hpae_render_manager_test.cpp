@@ -146,6 +146,46 @@ void TestRendererManagerCreateStream(
 }
 
 template <class RenderManagerType>
+void TestRenderManagerReload()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+
+    EXPECT_EQ(hpaeRendererManager->ReloadRenderManager(sinkInfo, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+
+    EXPECT_EQ(hpaeRendererManager->ReloadRenderManager(sinkInfo, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+template <class RenderManagerType>
 void TestIRendererManagerCreateDestoryStream()
 {
     HpaeSinkInfo sinkInfo;
@@ -298,6 +338,13 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitTest)
     TestIRendererManagerInit<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerInit<HpaeOffloadRendererManager>();
+}
+
+TEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadTest)
+{
+    TestRenderManagerReload<HpaeRendererManager>();
+    std::cout << "test offload" << std::endl;
+    TestRenderManagerReload<HpaeOffloadRendererManager>();
 }
 
 TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateDestoryStreamTest)

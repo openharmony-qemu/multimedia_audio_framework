@@ -44,7 +44,7 @@ public:
     virtual int32_t SuspendStreamManager(bool isSuspend) = 0;
     virtual void Process() = 0;
     virtual void HandleMsg() = 0;
-    virtual int32_t Init() = 0;
+    virtual int32_t Init(bool isReload = false) = 0;
     virtual int32_t DeInit(bool isMoveDefault = false) = 0;
     virtual bool IsInit() = 0;
     virtual bool IsRunning(void) = 0;
@@ -58,7 +58,7 @@ public:
     virtual int32_t SetPrivacyType(uint32_t sessionId, int32_t privacyType) = 0;
     virtual int32_t GetPrivacyType(uint32_t sessionId, int32_t &privacyType) = 0;
     virtual int32_t RegisterWriteCallback(uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback) = 0;
-    virtual int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) = 0;
+    virtual int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) = 0;
 
     virtual int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state)
     {

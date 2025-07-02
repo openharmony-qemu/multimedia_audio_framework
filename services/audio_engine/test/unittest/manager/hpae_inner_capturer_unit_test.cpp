@@ -511,6 +511,31 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, Other_001)
     EXPECT_EQ(hpaeInnerCapturerManager_->UpdateSpatializationState(playStreamInfo.sessionId, true, true), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->UpdateMaxLength(playStreamInfo.sessionId, testVariable), SUCCESS);
 }
-} // namespace HPAE
-} // namespace OHOS::AudioStandard
-} // namespace OHOS
+
+/**
+ * @tc.name  : Test ReloadRenderManager_001
+ * @tc.type  : FUNC
+ * @tc.number: ReloadRenderManager_001
+ * @tc.desc  : Test ReloadRenderManager.
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001)
+{
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeStreamInfo playStreamInfo = GetInCapPlayStreamInfo();
+    ++playStreamInfo.sessionId;
+    EXPECT_EQ(hpaeInnerCapturerManager_->CreateStream(playStreamInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    EXPECT_EQ(hpaeInnerCapturerManager_->ReloadRenderManager(sinkInfo, false), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+    EXPECT_EQ(hpaeInnerCapturerManager_->ReloadRenderManager(sinkInfo, true), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+}
+}  // namespace HPAE
+}  // namespace OHOS::AudioStandard
+}  // namespace OHOS

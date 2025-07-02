@@ -685,7 +685,10 @@ void AudioDeviceStatus::ReloadA2dpOffloadOnDeviceChanged(DeviceType deviceType, 
         AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream count: %{public}zu",
             activateDeviceIOHandle, curPaIndex, streamDescs.size());
         pipeManager->RemoveAudioPipeInfo(activateDeviceIOHandle);
-        audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
+        int32_t engineFlag = GetEngineFlag();
+        if (engineFlag != 1) {
+            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
+        }
 
         CHECK_AND_RETURN(RestoreNewA2dpPort(streamDescs, moduleInfo, currentActivePort) == SUCCESS);
         std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
@@ -1370,10 +1373,16 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     // Load bt sink module again with new configuration
     AUDIO_INFO_LOG("Reload a2dp module [%{public}s]", moduleInfo.name.c_str());
     uint32_t paIndex;
-    AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+    AudioIOHandle ioHandle;
+    int32_t engineFlag = GetEngineFlag();
+    if (engineFlag == 1) {
+        ioHandle = audioPolicyManager_.ReloadAudioPort(moduleInfo, paIndex);
+    } else {
+        ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+    }
     if (ioHandle == HDI_INVALID_ID || paIndex == OPEN_PORT_FAILURE) {
         audioPolicyManager_.SuspendAudioDevice(currentActivePort, false);
-        AUDIO_ERR_LOG("OpenAudioPort failed, ioHandle: %{public}u, paIndex: %{public}u", ioHandle, paIndex);
+        AUDIO_ERR_LOG("AudioPort failed, ioHandle: %{public}u, paIndex: %{public}u", ioHandle, paIndex);
         return ERROR;
     }
     audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
