@@ -232,8 +232,9 @@ int32_t HpaeInnerCapturerManager::ReloadRenderManager(const HpaeSinkInfo &sinkIn
 
         for (const auto &it: sinkInputNodeMap_) {
             HpaeProcessorType processorType =  it.second->GetSceneType();
+            HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             if (!SafeGetMap(rendererSceneClusterMap_, processorType)) {
-                rendererSceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
+                rendererSceneClusterMap_[processorType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
             }
             if (it.second->GetState() == HPAE_SESSION_RUNNING) {
                 ConnectRendererInputSessionInner(it.first);

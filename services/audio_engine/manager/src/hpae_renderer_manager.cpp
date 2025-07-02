@@ -120,7 +120,7 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     CreateEffectAndConnect(nodeInfo, isConnect);
 }
 
-void HpaeRendererManager::CreateEffectAndConnect(const HpaeNodeInfo &nodeInfo, bool isConnect)
+void HpaeRendererManager::CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect)
 {
     uint32_t sessionId = nodeInfo.sessionId;
     HpaeNodeInfo processNodeInfo = nodeInfo;

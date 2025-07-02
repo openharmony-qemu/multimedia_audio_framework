@@ -483,8 +483,8 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     }
-    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     pipeManager_->RemoveAudioPipeInfo(activateDeviceIOHandle);
 
     // Load a2dp sink or source module again with the configuration of active a2dp device.
@@ -515,7 +515,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
 }
 
 AudioIOHandle AudioCoreService::ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
-        uint32_t &paIndex);
+        uint32_t &paIndex)
 {
     AudioIOHandle ioHandle;
     if (engineFlag == 1) {
