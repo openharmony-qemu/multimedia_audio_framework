@@ -111,6 +111,12 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     }
 }
 
+int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return AudioCapturerSession::GetInstance().ReloadCaptureSession(sessionId, operation);
+}
+
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

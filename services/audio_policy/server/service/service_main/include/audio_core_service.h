@@ -69,6 +69,7 @@ public:
         // ICoreServiceProvider
         int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
             SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
+        int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;

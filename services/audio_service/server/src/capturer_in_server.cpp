@@ -583,6 +583,10 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
+        AUDIO_ERR_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_STARTING;
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -609,6 +613,10 @@ int32_t CapturerInServer::Pause()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -682,6 +690,9 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -718,6 +729,9 @@ int32_t CapturerInServer::Release(bool isSwitchStream)
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
+    }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 

@@ -62,6 +62,12 @@ int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOp
     return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
+int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->ReloadCaptureSession(sessionId, operation);
+}
+
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
