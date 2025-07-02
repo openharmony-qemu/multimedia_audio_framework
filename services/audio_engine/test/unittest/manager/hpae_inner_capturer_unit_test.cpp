@@ -453,6 +453,29 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001)
 }
 
 /**
+ * @tc.name  : Test GetThreadName_001
+ * @tc.type  : FUNC
+ * @tc.number: GetThreadName_001
+ * @tc.desc  : Test GetThreadName
+ */
+TEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001)
+{
+    HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
+    sinkInfo.deviceName = "InnerCap1";
+    hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    std::string threadName = hpaeInnerCapturerManager_->GetThreadName();
+    EXPECT_EQ(threadName, "InnerCap1");
+    sinkInfo.deviceName = "InnerCap";
+    hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    threadName = hpaeInnerCapturerManager_->GetThreadName();
+    EXPECT_EQ(threadName, "InnerCap");
+}
+
+/**
  * @tc.name  : Test SendRequestInner_001
  * @tc.type  : FUNC
  * @tc.number: SendRequestInner_001
