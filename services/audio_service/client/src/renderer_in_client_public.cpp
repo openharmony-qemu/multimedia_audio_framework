@@ -73,6 +73,7 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
+constexpr float EPSILON = 1e-6f;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -616,7 +617,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (abs(speed - writtenAtSpeedChange_.second.load()) > EPS) {
+    if (abs(speed - writtenAtSpeedChange_.second.load()) > EPSILON) {
         writtenAtSpeedChange_.first = totalBytesWrittenAfterFlush_.load();
         writtenAtSpeedChange_.second = speed_;
     }
@@ -1565,7 +1566,7 @@ void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodS
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
     totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
-    totalBytesWrittenAfterFlush_.add(static_cast<int64_t>(bytesWritten));
+    totalBytesWrittenAfterFlush_.fetch_add(bytesWritten);
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1774,8 +1775,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
 
     uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
     // cal latency between readIdx and framesWritten
-    uint64_t framesWrittenAfterFlush = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
-    uint64_t deepLatency = framesWrittenAfterFlush > readIdx ? framesWrittenAfterFlush - readIdx : 0;
+    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
+    uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     uint64_t lastSpeedPosition = writtenAtSpeedChange_.first.load();
     float lastSpeed = writtenAtSpeedChange_.second.load();
@@ -1784,7 +1785,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     if (readIdx < latency + lastSpeedPosition) {
         // cache before speed change
         frameLatency = lastSpeed * (latency - readIdx + lastSpeedPosition) +
-            (framesWrittenAfterFlush - lastSpeedPosition) * speed_;
+            (samplesWritten - lastSpeedPosition) * speed_;
     } else {
         frameLatency = (deepLatency + latency) * speed_;
     }
@@ -1801,8 +1802,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
         framePosition = lastFramePositionWithSpeed_[base].first;
         timestampVal = lastFramePositionWithSpeed_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: frameWrite %{public}" PRIu64 ", framesWrittenAfterFlush %{public}" PRIu64
-        ", lastSpeedPosition %{public}" PRIu64, frameWrite, framesWrittenAfterFlush, lastSpeedPosition);
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: unprocessSamples %{public}" PRIu64 ", samplesWritten %{public}" PRIu64
+        ", lastSpeedPosition %{public}" PRIu64, unprocessSamples, samplesWritten, lastSpeedPosition);
     AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", totlatency %{public}" PRIu64,
         framePosition, lastFlushReadIndex_, timestampVal, frameLatency);

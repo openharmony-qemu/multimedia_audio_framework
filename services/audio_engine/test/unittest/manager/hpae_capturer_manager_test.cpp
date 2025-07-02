@@ -452,6 +452,31 @@ TEST_F(HpaeCapturerManagerTest, Flush_001)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test Flush_002
+ */
+TEST_F(HpaeCapturerManagerTest, Flush_002)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Flush(DEFAULT_SESSION_ID), SUCCESS);
+    EXPECT_EQ(capturerManager->Deinit(DEFAULT_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Drain_001
  */
 TEST_F(HpaeCapturerManagerTest, Drain_001)
@@ -463,6 +488,31 @@ TEST_F(HpaeCapturerManagerTest, Drain_001)
     EXPECT_NE(capturerManager, nullptr);
 
     EXPECT_EQ(capturerManager->Drain(DEFAULT_SESSION_ID), ERR_INVALID_OPERATION);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test Drain_002
+ */
+TEST_F(HpaeCapturerManagerTest, Drain_002)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Drain(DEFAULT_SESSION_ID), SUCCESS);
+    EXPECT_EQ(capturerManager->Deinit(DEFAULT_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
 }
 
 /*
