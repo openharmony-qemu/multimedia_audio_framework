@@ -536,6 +536,6 @@ TEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
 }
-};
+}  // namespace HPAE
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
