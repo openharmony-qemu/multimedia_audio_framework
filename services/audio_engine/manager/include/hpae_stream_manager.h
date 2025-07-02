@@ -41,7 +41,7 @@ public:
     virtual int32_t SetMute(bool isMute) = 0;
     virtual void Process() = 0;
     virtual void HandleMsg() = 0;
-    virtual int32_t Init() = 0;
+    virtual int32_t Init(bool isReload = false) = 0;
     virtual int32_t DeInit(bool isMoveDefault = false) = 0;
     virtual bool IsInit() = 0;
     virtual bool IsRunning() = 0;

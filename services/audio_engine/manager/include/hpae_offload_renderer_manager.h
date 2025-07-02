@@ -53,7 +53,7 @@ public:
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
-    int32_t Init() override;
+    int32_t Init(bool isReload = false) override;
     int32_t DeInit(bool isMoveDefault = false) override;
     bool IsInit() override;
     bool IsRunning(void) override;
@@ -89,7 +89,7 @@ public:
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
-    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     std::string GetDeviceHDFDumpInfo() override;
 
 private:
@@ -102,7 +102,7 @@ private:
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner();
+    void InitSinkInner(bool isReload = false);
     void UpdateAppsUid();
 
     HpaeRenderSessionInfo sessionInfo_;

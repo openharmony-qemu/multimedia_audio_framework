@@ -37,6 +37,7 @@ public:
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
+    uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
     int32_t MoveSourceOutputByIndexOrName(

@@ -319,5 +319,60 @@ HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_GetAllSources_001, TestSize.L
     std::vector<SourceOutput> sourceOutputs = impl_->GetAllSourceOutputs();
     EXPECT_EQ(0, sourceOutputs.size());
 }
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_001
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_001, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+}
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_002
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSourceAudioModeInfo();
+    int32_t portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+}
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_003
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+    portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+}
+
+/**
+ * @tc.name: Pro_Audio_ReloadAudioPort_003
+ * @tc.desc: test reload audio port sink
+ * @tc.type: FUNC
+ */
+HWTEST_F(ProAudioServiceAdapterUnitTest, Pro_Audio_ReloadAudioPort_002, TestSize.Level1)
+{
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+    int32_t ret = impl_->CloseAudioPort(portId);
+    EXPECT_EQ(ERROR, ret);
+    portId = impl_->ReloadAudioPort(moduleInfo.lib, moduleInfo);
+    EXPECT_GE(0, portId);
+}
+
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -649,7 +649,7 @@ int32_t HpaeCapturerManager::InitCapturerManager()
 }
 
 
-int32_t HpaeCapturerManager::Init()
+int32_t HpaeCapturerManager::Init(bool isReload)
 {
     hpaeSignalProcessThread_ = std::make_unique<HpaeSignalProcessThread>();
     auto request = [this] {

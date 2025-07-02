@@ -65,6 +65,30 @@ uint32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, string 
     return SUCCESS;
 }
 
+int32_t ProAudioServiceAdapterImpl::ReloadAudioPort(const std::string &audioPortName,
+    const AudioModuleInfo &audioModuleInfo)
+{
+    AUDIO_PRERELEASE_LOGI("ReloadAudioPort enter.");
+    AudioXCollie audioXCollie("ProAudioServiceAdapterImpl::ReloadAudioPort", HPAE_SERVICE_IMPL_TIMEOUT,
+        [](void *) {
+            AUDIO_ERR_LOG("[xcollie] ReloadAudioPort timeout");
+        }, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
+    lock_guard<mutex> lock(lock_);
+    Trace trace("ReloadAudioPort");
+    isFinishReloadAudioPort_ = false;
+    IHpaeManager::GetHpaeManager().ReloadAudioPort(audioModuleInfo);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishReloadAudioPort_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("ReloadAudioPort timeout");
+        return ERROR;
+    }
+    AUDIO_INFO_LOG("ReloadAudioPort leave");
+    return AudioPortIndex_;
+}
+
 int32_t ProAudioServiceAdapterImpl::OpenAudioPort(string audioPortName, const AudioModuleInfo &audioModuleInfo)
 {
     AUDIO_PRERELEASE_LOGI("OpenAudioPort enter.");
@@ -403,6 +427,15 @@ int32_t ProAudioServiceAdapterImpl::GetAudioEnhanceProperty(AudioEnhanceProperty
         AUDIO_WARNING_LOG("wait for notify timeout");
     }
     return SUCCESS;
+}
+
+void ProAudioServiceAdapterImpl::OnReloadAudioPortCb(int32_t portId)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    AUDIO_INFO_LOG("OnReloadAudioPortCb portId: %{public}d", portId);
+    isFinishReloadAudioPort_= true;
+    AudioPortIndex_ = portId;
+    callbackCV_.notify_all();
 }
 
 void ProAudioServiceAdapterImpl::OnOpenAudioPortCb(int32_t portId)

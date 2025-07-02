@@ -1372,6 +1372,41 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
     }
 }
 
+AudioIOHandle AudioAdapterManager::ReloadAudioPort(const AudioModuleInfo &audioPortInfo, uint32_t &paIndex)
+{
+    std::string moduleArgs = GetModuleArgs(audioModuleInfo);
+    AUDIO_INFO_LOG("[PipeExecInfo] PA moduleArgs %{public}s", moduleArgs.c_str());
+
+    CHECK_AND_RETURN_RET_LOG(audioServiceAdapter_ != nullptr, ERR_OPERATION_FAILED, "ServiceAdapter is null");
+    AudioIOHandle ioHandle = HDI_INVALID_ID;
+    CHECK_AND_RETURN_RET_LOG(audioServerProxy_ != nullptr, ioHandle, "audioServerProxy_ null");
+    curActiveCount_++;
+
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    if (audioModuleInfo.lib == "libmodule-inner-capturer-sink.z.so") {
+        std::string idInfo = audioModuleInfo.name;
+        IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+        ioHandle = audioServerProxy_->CreateSinkPort(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, idInfo, attr);
+    } else {
+        if (audioModuleInfo.role == HDI_AUDIO_PORT_SINK_ROLE) {
+            std::string idInfo = GetHdiSinkIdInfo(audioModuleInfo);
+            IAudioSinkAttr attr = GetAudioSinkAttr(audioModuleInfo);
+            ioHandle = audioServerProxy_->CreateHdiSinkPort(audioModuleInfo.className, idInfo, attr);
+        } else if (audioModuleInfo.role == HDI_AUDIO_PORT_SOURCE_ROLE) {
+            std::string idInfo = GetHdiSourceIdInfo(audioModuleInfo);
+            IAudioSourceAttr attr = GetAudioSourceAttr(audioModuleInfo);
+            ioHandle = audioServerProxy_->CreateHdiSourcePort(audioModuleInfo.className, idInfo, attr);
+        }
+    }
+    IPCSkeleton::SetCallingIdentity(identity);
+
+    int32_t ret = audioServiceAdapter_->ReloadAudioPort(audioModuleInfo.lib, audioModuleInfo);
+    paIndex = ret < 0 ? HDI_INVALID_ID : static_cast<uint32_t>(ret);
+
+    AUDIO_INFO_LOG("[PipeExecInfo] Open %{public}u port, paIndex: %{public}u end", ioHandle, paIndex);
+    return ioHandle;
+}
+
 AudioIOHandle AudioAdapterManager::OpenAudioPort(const AudioModuleInfo &audioModuleInfo, uint32_t &paIndex)
 {
     std::string moduleArgs = GetModuleArgs(audioModuleInfo);
