@@ -213,7 +213,7 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
     const size_t requestDataLen = static_cast<size_t>(SAMPLE_RATE_48000) *
-                                  static_cast<int32_t>(STEREO) *
+                                  static_cast<size_t>(STEREO) *
                                   sizeof(float) *
                                   static_cast<size_t>(DEFAULT_FRAME_LEN_MS) /
                                   static_cast<size_t>(MS_PER_SECOND);
