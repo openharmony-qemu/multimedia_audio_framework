@@ -1138,7 +1138,7 @@ std::string AudioRenderSink::GetDPDeviceInfo(const std::string &condition)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init attr fail");
 
     ret = InitRender();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, "", "init render fail");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && audioRender_ != nullptr, "", "init render fail");
 
     struct AudioSampleAttributes attrInfo = {};
     ret = audioRender_->GetSampleAttributes(audioRender_, &attrInfo);
