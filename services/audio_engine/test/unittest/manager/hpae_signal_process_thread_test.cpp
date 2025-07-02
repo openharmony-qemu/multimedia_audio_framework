@@ -20,6 +20,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 class HpaeSignalProcessThreadTest : public testing::Test {
 public:
@@ -33,7 +35,7 @@ void HpaeSignalProcessThreadTest::SetUp()
 void HpaeSignalProcessThreadTest::TearDown()
 {}
 
-TEST_F(HpaeSignalProcessThreadTest, ActivateDeactivateThread)
+HWTEST_F(HpaeSignalProcessThreadTest, ActivateDeactivateThread, TestSize.Level0)
 {
     std::shared_ptr<HpaeRendererManager> streamManager = nullptr;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread = std::make_unique<HpaeSignalProcessThread>();

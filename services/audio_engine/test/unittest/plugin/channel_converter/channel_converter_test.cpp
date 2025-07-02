@@ -18,6 +18,9 @@
 #include "channel_converter.h"
 #include <vector>
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -33,7 +36,7 @@ void ChannelConverterTest::SetUp() {}
 
 void ChannelConverterTest::TearDown() {}
 
-TEST_F(ChannelConverterTest, ChannelConverterTestProcessTest)
+HWTEST_F(ChannelConverterTest, ChannelConverterTestProcessTest, TestSize.Level0)
 {
     // test upmix
     AudioChannelInfo inChannelInfo;

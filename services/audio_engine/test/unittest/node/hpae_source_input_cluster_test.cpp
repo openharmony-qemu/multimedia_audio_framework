@@ -23,6 +23,9 @@
 #include "hpae_source_output_node.h"
 #include "hpae_format_convert.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -42,7 +45,7 @@ void HpaeSourceInputClusterTest::SetUp()
 void HpaeSourceInputClusterTest::TearDown()
 {}
 
-TEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode)
+HWTEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
@@ -75,7 +78,7 @@ TEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode)
     EXPECT_EQ(hpaeSourceInputCluster->GetConverterNodeCount(), 1); // no delete converter now
 }
 
-TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
+HWTEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
@@ -126,7 +129,7 @@ TEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase)
     EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceDeInit(), SUCCESS);
 }
 
-TEST_F(HpaeSourceInputClusterTest, testInterfaces)
+HWTEST_F(HpaeSourceInputClusterTest, testInterfaces, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;

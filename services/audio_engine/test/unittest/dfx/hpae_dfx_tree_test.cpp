@@ -22,6 +22,8 @@
 #include <algorithm>
 #include "hpae_dfx_tree.h"
 #include <locale>
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -87,7 +89,7 @@ HpaeDfxTree HpaeDfxTreeTest::CreateSampleTree()
     return hpaeDfxTree;
 }
 
-TEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest)
+HWTEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
     HpaeNodeInfo info;
@@ -126,7 +128,7 @@ TEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest)
     }
 }
 
-TEST_F(HpaeDfxTreeTest, removeDfxTreeTest)
+HWTEST_F(HpaeDfxTreeTest, removeDfxTreeTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
     HpaeNodeInfo info;
@@ -158,7 +160,7 @@ TEST_F(HpaeDfxTreeTest, removeDfxTreeTest)
     EXPECT_EQ(result.size(), removeNodeIndex);
 }
 
-TEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest_002)
+HWTEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest_002, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
     HpaeDfxNodeInfo info;
@@ -197,7 +199,7 @@ TEST_F(HpaeDfxTreeTest, constructHpaeDfxTreeTest_002)
     }
 }
 
-TEST_F(HpaeDfxTreeTest, removeDfxTreeTest_002)
+HWTEST_F(HpaeDfxTreeTest, removeDfxTreeTest_002, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree = CreateSampleTree();
 
@@ -219,7 +221,7 @@ TEST_F(HpaeDfxTreeTest, removeDfxTreeTest_002)
     EXPECT_EQ(hpaeDfxTree.Remove(NODE_ID_999), false);
 }
 
-TEST_F(HpaeDfxTreeTest, emptyTreeOperations)
+HWTEST_F(HpaeDfxTreeTest, emptyTreeOperations, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
 
@@ -233,7 +235,7 @@ TEST_F(HpaeDfxTreeTest, emptyTreeOperations)
     EXPECT_TRUE(outStr.empty());
 }
 
-TEST_F(HpaeDfxTreeTest, invalidInsertionTest)
+HWTEST_F(HpaeDfxTreeTest, invalidInsertionTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
     HpaeDfxNodeInfo info;
@@ -246,7 +248,7 @@ TEST_F(HpaeDfxTreeTest, invalidInsertionTest)
     EXPECT_EQ(hpaeDfxTree.Insert(NODE_ID_100, info), true);
 }
 
-TEST_F(HpaeDfxTreeTest, updateNodeInfoTest)
+HWTEST_F(HpaeDfxTreeTest, updateNodeInfoTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree = CreateSampleTree();
 
@@ -282,7 +284,7 @@ TEST_F(HpaeDfxTreeTest, updateNodeInfoTest)
     hpaeDfxTree.UpdateNodeInfo(NODE_ID_999, newInfo);
 }
 
-TEST_F(HpaeDfxTreeTest, rootNodeOperations)
+HWTEST_F(HpaeDfxTreeTest, rootNodeOperations, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
     HpaeDfxNodeInfo info;
@@ -298,7 +300,7 @@ TEST_F(HpaeDfxTreeTest, rootNodeOperations)
     EXPECT_EQ(hpaeDfxTree.Remove(NODE_ID_100), false);
 }
 
-TEST_F(HpaeDfxTreeTest, treeTraversalBoundaryTest)
+HWTEST_F(HpaeDfxTreeTest, treeTraversalBoundaryTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree;
 
@@ -320,7 +322,7 @@ TEST_F(HpaeDfxTreeTest, treeTraversalBoundaryTest)
     EXPECT_EQ(result[1].size(), 1);
 }
 
-TEST_F(HpaeDfxTreeTest, findParentNodeTest)
+HWTEST_F(HpaeDfxTreeTest, findParentNodeTest, TestSize.Level0)
 {
     HpaeDfxTree hpaeDfxTree = CreateSampleTree();
     DfxTreeNode *root = hpaeDfxTree.GetRoot();

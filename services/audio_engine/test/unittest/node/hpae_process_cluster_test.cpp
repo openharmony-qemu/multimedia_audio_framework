@@ -26,6 +26,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -53,7 +55,7 @@ void HpaeProcessClusterTest::SetUp()
 void HpaeProcessClusterTest::TearDown()
 {}
 
-TEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode)
+HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
@@ -122,7 +124,7 @@ static void CreateHpaeInfo(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
     dummySinkInfo.samplingRate = SAMPLE_RATE_48000;
 }
 
-TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
+HWTEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     HpaeSinkInfo dummySinkInfo;
@@ -170,7 +172,7 @@ TEST_F(HpaeProcessClusterTest, testHpaeWriteDataProcessSessionTest)
     EXPECT_EQ(hpaeProcessCluster->GetGainNodeCount(), 0);
 }
 
-TEST_F(HpaeProcessClusterTest, testEffectNode_001)
+HWTEST_F(HpaeProcessClusterTest, testEffectNode_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODEID_NUM_FIRST;
@@ -199,7 +201,7 @@ TEST_F(HpaeProcessClusterTest, testEffectNode_001)
     EXPECT_EQ(hpaeProcessCluster->AudioRendererRelease(nodeInfo), 0);
 }
 
-TEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo)
+HWTEST_F(HpaeProcessClusterTest, testGetNodeInputFormatInfo, TestSize.Level0)
 {
     // test processCluster without effectnode and loundess algorithm handle
     HpaeNodeInfo nodeInfo;

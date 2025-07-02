@@ -23,7 +23,9 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
 using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -51,20 +53,20 @@ void HpaePcmUtilsTest::SetUp()
 void HpaePcmUtilsTest::TearDown()
 {}
 
-TEST_F(HpaePcmUtilsTest, pcmDumperValidFile)
+HWTEST_F(HpaePcmUtilsTest, pcmDumperValidFile, TestSize.Level0)
 {
     HpaePcmDumper dumper(g_rootCapturerPath);
     EXPECT_EQ(dumper.filename_, g_rootCapturerPath);
 }
 
-TEST_F(HpaePcmUtilsTest, pcmDumpeInvalidFile)
+HWTEST_F(HpaePcmUtilsTest, pcmDumpeInvalidFile, TestSize.Level0)
 {
     std::string invalidFilename = "";
     HpaePcmDumper dumper(invalidFilename);
     EXPECT_EQ(dumper.filename_, invalidFilename);
 }
 
-TEST_F(HpaePcmUtilsTest, readWrite24Bit)
+HWTEST_F(HpaePcmUtilsTest, readWrite24Bit, TestSize.Level0)
 {
     uint8_t data[NUM_THREE] = {0xAA, 0xBB, 0xCC};
     uint32_t value = Read24Bit(data);
@@ -77,7 +79,7 @@ TEST_F(HpaePcmUtilsTest, readWrite24Bit)
     EXPECT_EQ(newData[NUM_TWO], 0xDD);
 }
 
-TEST_F(HpaePcmUtilsTest, convertU8ToFloat)
+HWTEST_F(HpaePcmUtilsTest, convertU8ToFloat, TestSize.Level0)
 {
     uint8_t u8Data[] = {0x80, 0xFF, 0x00, 0xC0};
     float floatData[TEST_FRAMES];
@@ -88,7 +90,7 @@ TEST_F(HpaePcmUtilsTest, convertU8ToFloat)
     EXPECT_FLOAT_EQ(floatData[NUM_THREE], 0.5f);
 }
 
-TEST_F(HpaePcmUtilsTest, boundaryValueHandling)
+HWTEST_F(HpaePcmUtilsTest, boundaryValueHandling, TestSize.Level0)
 {
     float boundaryFloat[NUM_TWO] = {
         1.0f + FLOAT_EPS,
@@ -100,7 +102,7 @@ TEST_F(HpaePcmUtilsTest, boundaryValueHandling)
     EXPECT_EQ(s16Data[1], -32767); // -32767: INT_MIN
 }
 
-TEST_F(HpaePcmUtilsTest, convertToFloatAllFormats)
+HWTEST_F(HpaePcmUtilsTest, convertToFloatAllFormats, TestSize.Level0)
 {
     float testFloat[TEST_FRAMES] = {
         0.0f,
@@ -123,7 +125,7 @@ TEST_F(HpaePcmUtilsTest, convertToFloatAllFormats)
     ConvertToFloat(static_cast<AudioSampleFormat>(FLOAT_SAMPLE_FORMAT), TEST_FRAMES, testFloat, floatData);
 }
 
-TEST_F(HpaePcmUtilsTest, memcpyFallback)
+HWTEST_F(HpaePcmUtilsTest, memcpyFallback, TestSize.Level0)
 {
     float src[TEST_FRAMES] = {0.1f, 0.2f, 0.3f, 0.4f};
     float dest[1];
@@ -138,7 +140,7 @@ TEST_F(HpaePcmUtilsTest, memcpyFallback)
     EXPECT_FLOAT_EQ(newDest[NUM_THREE], 0.8f);
 }
 
-TEST_F(HpaePcmUtilsTest, bit24SpecialHandling)
+HWTEST_F(HpaePcmUtilsTest, bit24SpecialHandling, TestSize.Level0)
 {
     uint8_t s24Input[12] = {0}; // 12: inputsize
     float floatOutput[4]; // // 4: outputsize
@@ -151,7 +153,7 @@ TEST_F(HpaePcmUtilsTest, bit24SpecialHandling)
     EXPECT_FLOAT_EQ(floatOutput[1], -1.0f);
 }
 
-TEST_F(HpaePcmUtilsTest, convertFromFloatAllFormats)
+HWTEST_F(HpaePcmUtilsTest, convertFromFloatAllFormats, TestSize.Level0)
 {
     float testFloat[TEST_FRAMES] = {
         0.0f,

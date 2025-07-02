@@ -24,6 +24,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 namespace {
 static constexpr int32_t TEST_VALUE1 = 100;
 static constexpr int32_t TEST_VALUE2 = 200;
@@ -43,7 +45,7 @@ void HpaeMixerNodeTest::TearDown()
 
 static int32_t g_testValue = 0;
 
-TEST_F(HpaeMixerNodeTest, constructHpaeMixerNode)
+HWTEST_F(HpaeMixerNodeTest, constructHpaeMixerNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -64,7 +66,7 @@ TEST_F(HpaeMixerNodeTest, constructHpaeMixerNode)
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
 }
-static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
+static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.Level0)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
         float diff = *((float*)data + i) - g_testValue;
@@ -73,7 +75,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     return 0;
 }
 
-TEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode)
+HWTEST_F(HpaeMixerNodeTest, testHpaePlayOutConnectNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;

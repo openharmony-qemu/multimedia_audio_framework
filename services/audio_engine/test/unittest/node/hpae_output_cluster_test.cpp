@@ -21,7 +21,8 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_output_cluster.h"
-
+using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -38,7 +39,7 @@ static std::string g_deviceClass = "file_io";
 static std::string g_deviceNetId = "LocalDevice";
 
 
-static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
+static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.Level0)
 {
     float curGain = 0.0f;
     float targetGain = 1.0f;
@@ -56,7 +57,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     return 0;
 }
 
-static void InitHpaeWriteDataOutSessionTest(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
+static void InitHpaeWriteDataOutSessionTest(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo, TestSize.Level0)
 {
     nodeInfo.nodeId = NODE_ID;
     nodeInfo.frameLen = FRAME_LEN;
@@ -84,7 +85,7 @@ void HpaeOutputClusterTest::SetUp()
 void HpaeOutputClusterTest::TearDown()
 {}
 
-TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
+HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NODE_ID;
@@ -114,7 +115,7 @@ TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
     EXPECT_EQ(hpaeoutputCluster->GetConverterNodeCount(), 1);
 }
 
-TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
+HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     HpaeSinkInfo dummySinkInfo;

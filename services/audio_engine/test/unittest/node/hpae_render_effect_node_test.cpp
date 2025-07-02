@@ -30,6 +30,9 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -62,7 +65,7 @@ void HpaeRenderEffectNodeTest::SetUp()
 void HpaeRenderEffectNodeTest::TearDown()
 {}
 
-TEST_F(HpaeRenderEffectNodeTest, testCreate_001)
+HWTEST_F(HpaeRenderEffectNodeTest, testCreate_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -76,7 +79,7 @@ TEST_F(HpaeRenderEffectNodeTest, testCreate_001)
     EXPECT_NE(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testCreate_002)
+HWTEST_F(HpaeRenderEffectNodeTest, testCreate_002, TestSize.Level0)
 {
     constexpr uint32_t idOffset = 5;
     HpaeNodeInfo nodeInfo;
@@ -93,7 +96,7 @@ TEST_F(HpaeRenderEffectNodeTest, testCreate_002)
     EXPECT_EQ(hpaeRenderEffectNode->ReleaseAudioEffectChain(nodeInfo), 0);
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_001)
+HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -112,7 +115,7 @@ TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_001)
     EXPECT_NE(hpaeRenderEffectNode->SignalProcess(inputs), nullptr);
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_002)
+HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_002, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -131,7 +134,7 @@ TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_002)
     hpaeRenderEffectNode->ReconfigOutputBuffer();
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003)
+HWTEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003, TestSize.Level0)
 {
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
@@ -156,7 +159,7 @@ TEST_F(HpaeRenderEffectNodeTest, testSignalProcess_003)
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001)
+HWTEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -172,7 +175,7 @@ TEST_F(HpaeRenderEffectNodeTest, testModifyAudioEffectChainInfo_001)
     hpaeRenderEffectNode->ModifyAudioEffectChainInfo(nodeInfo, testReason);
 }
 
-TEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001)
+HWTEST_F(HpaeRenderEffectNodeTest, testUpdateAudioEffectChainInfo_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
