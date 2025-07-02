@@ -739,7 +739,7 @@ private:
     int32_t RegisterVolumeKeyMuteEvents();
     void SubscribeVolumeKeyEvents();
     bool IsContinueAddVol();
-    void TrigerMuteCheck();
+    void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
 #endif
     void AddAudioServiceOnStart();
