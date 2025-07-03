@@ -617,7 +617,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (abs(speed - writtenAtSpeedChange_.load().writtenFrames) > EPSILON) {
+    if (abs(speed - writtenAtSpeedChange_.load().speed) > EPSILON) {
         writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     }
     speed_ = speed;
