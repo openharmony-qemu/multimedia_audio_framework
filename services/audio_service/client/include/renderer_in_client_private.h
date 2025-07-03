@@ -415,10 +415,10 @@ private:
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
     struct WrittenFramesWithSpeed {
-        uint64_t writtenFrames;
-        float speed;
+        uint64_t writtenFrames = 0;
+        float speed = 1.0;
     };
-    std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_ = {0, 1.0}; // afterSpeed
+    std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
     std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
     std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
 

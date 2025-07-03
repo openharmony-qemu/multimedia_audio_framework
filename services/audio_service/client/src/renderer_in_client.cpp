@@ -660,6 +660,7 @@ void RendererInClientInner::ResetFramePosition()
     }
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});
 }
 
 bool RendererInClientInner::IsMutePlaying()
