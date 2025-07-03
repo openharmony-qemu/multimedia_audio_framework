@@ -414,7 +414,11 @@ private:
     std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
-    std::pair<std::atomic<uint64_t>, std::atomic<float>> writtenAtSpeedChange_ = {0, 1.0}; // afterSpeed
+    struct WrittenFramesWithSpeed {
+        uint64_t writtenFrames;
+        float speed;
+    };
+    std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_ = {0, 1.0}; // afterSpeed
     std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
     std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
 

@@ -617,9 +617,8 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (abs(speed - writtenAtSpeedChange_.second.load()) > EPSILON) {
-        writtenAtSpeedChange_.first = totalBytesWrittenAfterFlush_.load();
-        writtenAtSpeedChange_.second = speed_;
+    if (abs(speed - writtenAtSpeedChange_.load().writtenFrames) > EPSILON) {
+        writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     }
     speed_ = speed;
     speedEnable_ = true;
@@ -1778,8 +1777,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
-    uint64_t lastSpeedPosition = writtenAtSpeedChange_.first.load();
-    float lastSpeed = writtenAtSpeedChange_.second.load();
+    WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load()
+    uint64_t lastSpeedPosition = fsPair.writtenFrames;
+    float lastSpeed = fsPair.speed;
 
     uint64_t frameLatency = 0;
     if (readIdx < latency + lastSpeedPosition) {
