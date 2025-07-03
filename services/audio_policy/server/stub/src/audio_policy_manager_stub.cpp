@@ -237,6 +237,7 @@ const char *g_audioPolicyCodeStrs[] = {
     "NOFITY_SESSION_STATE_CHANGE",
     "NOFITY_FREEZE_STATE_CHANGE",
     "RESET_ALL_PROXY",
+    "NOTIFY_PROCESS_BACKGROUND_STATE",
     "SET_BACKGROUND_MUTE_CALLBACK",
     "IS_ACOSTIC_ECHO_CAMCELER_SUPPORTED",
     "FORCE_STOP_AUDIO_STREAM",
@@ -1358,6 +1359,14 @@ void AudioPolicyManagerStub::ResetAllProxyInternal(MessageParcel &data, MessageP
     reply.WriteInt32(result);
 }
 
+void AudioPolicyManagerStub::NotifyProcessBackgroundStateInternal(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t uid = data.ReadInt32();
+    int32_t pid = data.ReadInt32();
+    int32_t result = NotifyProcessBackgroundState(uid, pid);
+    reply.WriteInt32(result);
+}
+
 void AudioPolicyManagerStub::SetBackgroundMuteCallbackInternal(MessageParcel &data, MessageParcel &reply)
 {
     sptr<IRemoteObject> object = data.ReadRemoteObject();
@@ -1378,6 +1387,9 @@ void AudioPolicyManagerStub::OnMiddleThiRemoteRequest(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SESSION_DEFAULT_OUTPUT_DEVICE):
             SetDefaultOutputDeviceInternal(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::NOTIFY_PROCESS_BACKGROUND_STATE):
+            NotifyProcessBackgroundStateInternal(data, reply);
             break;
         default:
             AUDIO_ERR_LOG("default case, need check AudioPolicyManagerStub");

@@ -606,6 +606,8 @@ public:
 
     int32_t ResetAllProxy();
 
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
+
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
     void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);

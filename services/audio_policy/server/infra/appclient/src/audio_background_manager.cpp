@@ -81,12 +81,12 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
             // for media
             HandleSessionStateChange(uid, pid);
             // for others
-            streamCollector_.HandleStartStreamMuteState(uid, mute, true);
+            streamCollector_.HandleStartStreamMuteState(uid, pid, mute, true);
         } else {
-            streamCollector_.HandleStartStreamMuteState(uid, mute, false);
+            streamCollector_.HandleStartStreamMuteState(uid, pid, mute, false);
         }
     } else {
-        streamCollector_.HandleStartStreamMuteState(uid, false, false);
+        streamCollector_.HandleStartStreamMuteState(uid, pid, false, false);
     }
     return true;
 }
@@ -114,7 +114,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
                 "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
                 appState.hasBackTask, appState.isFreeze);
             if (!isBack) {
-                return streamCollector_.HandleForegroundUnmute(uid);
+                return streamCollector_.HandleForegroundUnmute(uid, pid);
             }
             bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
             streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);

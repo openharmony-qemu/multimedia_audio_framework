@@ -463,6 +463,8 @@ public:
 
     virtual int32_t ResetAllProxy() = 0;
 
+    virtual int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid) = 0;
+
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 
     virtual int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

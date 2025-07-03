@@ -2635,6 +2635,14 @@ int32_t AudioPolicyManager::ResetAllProxy()
     return gsp->ResetAllProxy();
 }
 
+int32_t AudioPolicyManager::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    AUDIO_INFO_LOG("In");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->NotifyProcessBackgroundState(uid, pid);
+}
+
 int32_t AudioPolicyManager::SetAudioFormatUnsupportedErrorCallback(
     const std::shared_ptr<AudioFormatUnsupportedErrorCallback> &callback)
 {

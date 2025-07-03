@@ -102,7 +102,7 @@ public:
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
             const sptr<IRemoteObject> &object, const int32_t apiVersion);
         int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-        void RegisteredTrackerClientDied(pid_t uid);
+        void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
         bool ConnectServiceAdapter();
         void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -199,7 +199,7 @@ private:
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    void RegisteredTrackerClientDied(pid_t uid);
+    void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
     bool ConnectServiceAdapter();
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

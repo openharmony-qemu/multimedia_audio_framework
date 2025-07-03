@@ -322,11 +322,11 @@ int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStream
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
-void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("[ADeviceEvent] withlock uid %{public}d", uid);
-    coreService_->RegisteredTrackerClientDied(uid);
+    coreService_->RegisteredTrackerClientDied(uid, pid);
 }
 
 bool AudioCoreService::EventEntry::ConnectServiceAdapter()

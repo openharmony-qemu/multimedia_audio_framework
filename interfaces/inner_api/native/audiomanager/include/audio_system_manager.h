@@ -1524,6 +1524,16 @@ public:
     */
     int32_t ResetAllProxy();
 
+    /**
+    * @brief Notify process background state.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**
     * @brief check capture limit

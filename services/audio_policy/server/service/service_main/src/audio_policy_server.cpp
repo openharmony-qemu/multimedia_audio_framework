@@ -2798,7 +2798,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
-    eventEntry_->RegisteredTrackerClientDied(uid);
+    eventEntry_->RegisteredTrackerClientDied(uid, pid);
 
     auto filter = [&uid](int val) {
         return uid == val;
@@ -4332,6 +4332,15 @@ int32_t AudioPolicyServer::ResetAllProxy()
     CHECK_AND_RETURN_RET_LOG(callerUid == UID_RESOURCE_SCHEDULE_SERVICE, ERROR,
         "ResetAllProxy callerUid is error: not RSS");
     return audioBackgroundManager_.ResetAllProxy();
+}
+
+int32_t AudioPolicyServer::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    AUDIO_INFO_LOG("In");
+    bool ret = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+    audioBackgroundManager_.NotifyAppStateChange(uid, pid, STATE_BACKGROUND);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetVirtualCall(const bool isVirtual)

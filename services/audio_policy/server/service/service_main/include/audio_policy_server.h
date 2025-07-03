@@ -540,6 +540,8 @@ public:
 
     int32_t ResetAllProxy() override;
 
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid) override;
+
     int32_t SetVirtualCall(const bool isVirtual) override;
 
     int32_t SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

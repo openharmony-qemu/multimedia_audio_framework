@@ -475,6 +475,8 @@ public:
 
     int32_t ResetAllProxy() override;
 
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid) override;
+
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;
 

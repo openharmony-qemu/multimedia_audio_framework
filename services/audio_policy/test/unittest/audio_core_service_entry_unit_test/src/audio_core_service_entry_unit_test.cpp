@@ -613,8 +613,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     pid_t uid = 0;
-
-    eventEntry->RegisteredTrackerClientDied(uid);
+    pid_t pid = 0;
+    eventEntry->RegisteredTrackerClientDied(uid, pid);
 }
 
 /**

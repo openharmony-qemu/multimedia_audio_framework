@@ -1981,6 +1981,12 @@ int32_t AudioSystemManager::ResetAllProxy()
     return AudioPolicyManager::GetInstance().ResetAllProxy();
 }
 
+int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().NotifyProcessBackgroundState(uid, pid);
+}
+
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,

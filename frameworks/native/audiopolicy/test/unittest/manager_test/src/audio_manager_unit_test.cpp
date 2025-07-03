@@ -2319,5 +2319,22 @@ HWTEST(AudioManagerUnitTest, ResetAllProxy_001, TestSize.Level1)
     ret = AudioSystemManager::GetInstance()->ResetAllProxy();
     EXPECT_EQ(ERROR, ret);
 }
+
+/**
+ * @tc.name   : Test NotifyProcessBackgroundState API
+ * @tc.number : NotifyProcessBackgroundState_001
+ * @tc.desc   : Test NotifyProcessBackgroundState interface.
+ */
+HWTEST(AudioManagerUnitTest, NotifyProcessBackgroundState_001, TestSize.Level1)
+{
+    int32_t uid = 1001;
+    int32_t pid = 2001;
+    int32_t ret;
+    ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = AudioSystemManager::GetInstance()->NotifyProcessBackgroundState(uid, pid);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
