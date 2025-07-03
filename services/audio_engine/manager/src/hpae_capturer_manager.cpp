@@ -357,9 +357,6 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
 {
-    if (!IsInit()) {
-        return ERR_INVALID_OPERATION;
-    }
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Flush");
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
@@ -374,9 +371,6 @@ int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
 
 int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
 {
-    if (!IsInit()) {
-        return ERR_INVALID_OPERATION;
-    }
     auto request = [this, sessionId]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeCapturerManager::Drain");
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
