@@ -18,6 +18,8 @@
 
 #include <functional>
 #include <string>
+#include "audio_info.h"
+#include "audio_errors.h"
 #include "gtest/gtest.h"
 #include "audio_renderer.h"
 #include "fast_audio_stream.h"
@@ -107,8 +109,19 @@ public:
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     bool ReleaseAudioStream(bool releaseRunner, bool destoryAtOnce) override { return true; }
+    RestoreStatus CheckRestoreStatus() override { return restoreStatus_; };
+    RestoreStatus SetRestoreStatus(RestoreStatus status) override
+    {
+        restoreStatus_ = status;
+        return restoreStatus_;
+    };
+    int32_t SetAudioStreamInfo(const AudioStreamParams info,
+        const std::shared_ptr<AudioClientTracker> &proxyObj,
+        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
+    void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
 
     State state_ = State::RUNNING;
+    RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;
 };
 
 class RendererFastStatusChangeCallbackTest : public AudioRendererFastStatusChangeCallback {
