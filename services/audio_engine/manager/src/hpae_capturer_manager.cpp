@@ -199,7 +199,7 @@ void HpaeCapturerManager::SetSessionState(uint32_t sessionId, HpaeSessionState c
 int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
 {
     if (!IsInit()) {
-        AUDIO_ERROR_LOG("HpaeCapturerManager is not init");
+        AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, streamInfo]() {
@@ -216,7 +216,7 @@ int32_t HpaeCapturerManager::CreateStream(const HpaeStreamInfo &streamInfo)
 int32_t HpaeCapturerManager::DestroyStream(uint32_t sessionId)
 {
     if (!IsInit()) {
-        AUDIO_ERROR_LOG("HpaeCapturerManager is not init");
+        AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, sessionId]() {
@@ -360,7 +360,7 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
 int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
 {
     if (!IsInit()) {
-        AUDIO_ERROR_LOG("HpaeCapturerManager is not init");
+        AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, sessionId]() {
@@ -378,7 +378,7 @@ int32_t HpaeCapturerManager::Flush(uint32_t sessionId)
 int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
 {
     if (!IsInit()) {
-        AUDIO_ERROR_LOG("HpaeCapturerManager is not init");
+        AUDIO_ERR_LOG("HpaeCapturerManager is not init");
         return ERR_INVALID_OPERATION;
     }
     auto request = [this, sessionId]() {

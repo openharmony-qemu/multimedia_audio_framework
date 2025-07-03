@@ -102,7 +102,7 @@ HWTEST_F(HpaePcmUtilsTest, boundaryValueHandling, TestSize.Level0)
 HWTEST_F(HpaePcmUtilsTest, convertToFloatAllFormats, TestSize.Level0)
 {
     float output[TEST_FRAMES] = {0};
-    const float EPS = std::numeric_limits<float>::epsilon();
+    const float eps = std::numeric_limits<float>::epsilon();
 
     // SAMPLE_U8
     uint8_t u8Data[] = {128, 255, 0, 192};
@@ -118,7 +118,7 @@ HWTEST_F(HpaePcmUtilsTest, convertToFloatAllFormats, TestSize.Level0)
     EXPECT_FLOAT_EQ(output[0], 0.0f);
     EXPECT_FLOAT_EQ(output[1], static_cast<float>(INT16_MAX) / 32768.0f);
     EXPECT_FLOAT_EQ(output[NUM_TWO], -1.0f);
-    EXPECT_NEAR(output[NUM_THREE], 12345.0f / 32768.0f, EPS);
+    EXPECT_NEAR(output[NUM_THREE], 12345.0f / 32768.0f, eps);
 
     // SAMPLE_S24LE
     uint8_t s24Data[6] = {0}; // 6: data size
@@ -134,10 +134,10 @@ HWTEST_F(HpaePcmUtilsTest, convertToFloatAllFormats, TestSize.Level0)
     EXPECT_FLOAT_EQ(output[0], 0.0f);
     EXPECT_FLOAT_EQ(output[1], static_cast<float>(INT32_MAX) / 2147483648.0f);
     EXPECT_FLOAT_EQ(output[NUM_TWO], -1.0f);
-    EXPECT_NEAR(output[NUM_THREE], 123456789.0f / 2147483648.0f, EPS);
+    EXPECT_NEAR(output[NUM_THREE], 123456789.0f / 2147483648.0f, eps);
 
     // FLOAT
-    float floatData[] = {0.0f, 0.5f, -0.5f, 1.0f - EPS};
+    float floatData[] = {0.0f, 0.5f, -0.5f, 1.0f - eps};
     ConvertToFloat(static_cast<AudioSampleFormat>(FLOAT_SAMPLE_FORMAT), TEST_FRAMES, floatData, output);
     for (size_t i = 0; i < TEST_FRAMES; ++i) {
         EXPECT_FLOAT_EQ(output[i], floatData[i]);
