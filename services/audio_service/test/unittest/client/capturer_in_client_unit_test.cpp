@@ -36,6 +36,7 @@ const int32_t VALUE_TEN = 10;
 const int32_t VALUE_FIF = 15;
 const int32_t VALUE_INVALID = -1;
 const int32_t MAX_TIMES = 21;
+const size_t SHORT_SLEEP_TIME = 200000; // us 200ms
 
 enum {
     STATE_CHANGE_EVENT = 0,
@@ -779,6 +780,7 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_001, TestSize.Level1)
     capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     AudioCaptureMode captureMode = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -801,6 +803,7 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_002, TestSize.Level1)
     capturerInClientInner_->capturerMode_ = AudioCaptureMode::CAPTURE_MODE_CALLBACK;
     captureMode = AudioCaptureMode::CAPTURE_MODE_NORMAL;
     ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
@@ -824,6 +827,7 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_003, TestSize.Level1)
 
     capturerInClientInner_->state_ = State::PREPARED;
     ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -843,6 +847,7 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_004, TestSize.Level1)
     capturerInClientInner_->streamParams_.samplingRate = SAMPLE_RATE_11025;
     capturerInClientInner_->spanSizeInFrame_ = 1;
     int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -863,6 +868,7 @@ HWTEST(CapturerInClientUnitTest, SetCaptureMode_005, TestSize.Level1)
     capturerInClientInner_->cbThreadReleased_ = true;
     capturerInClientInner_->spanSizeInFrame_ = 1;
     int32_t ret = capturerInClientInner_->SetCaptureMode(captureMode);
+    usleep(SHORT_SLEEP_TIME);
     EXPECT_EQ(ret, SUCCESS);
 }
 

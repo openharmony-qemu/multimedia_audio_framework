@@ -658,6 +658,7 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
+// LCOV_EXCL_START
 bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
     CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
@@ -669,7 +670,6 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     return false;
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {

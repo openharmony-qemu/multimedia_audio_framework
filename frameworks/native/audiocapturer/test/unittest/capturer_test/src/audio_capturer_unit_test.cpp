@@ -1036,7 +1036,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_004, TestSize.Level1)
     ret = audioCapturer->GetParams(getCapturerParams);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
-#endif
 
 /**
 * @tc.name  : Test GetParams API via legal state, CAPTURER_STOPPED: GetParams after Stop.
@@ -1094,7 +1093,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_Stability_001, TestSize.L
     audioCapturer->Release();
 }
 
-#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetParams API stability.
  * @tc.number: Audio_Capturer_GetParams_Stability_001

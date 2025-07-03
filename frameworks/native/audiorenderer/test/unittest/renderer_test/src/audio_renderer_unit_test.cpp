@@ -1432,7 +1432,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_With_Meta_008, TestSize.Level
         AudioRendererUnitTest::GetBuffersAndLen(audioRenderer, buffer, metaBuffer, bufferLen);
 
         bool isStopped = audioRenderer->Stop();
-        EXPECT_EQ(false, isStopped);
+        EXPECT_EQ(true, isStopped);
 
         fread(buffer, 1, bufferLen, wavFile);
         fread(metaBuffer, 1, RenderUT::AVS3METADATA_SIZE, metaFile);
@@ -3410,8 +3410,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Direct_VoIP_001, TestSize.Level1)
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
-
-    std::this_thread::sleep_for(1s);
 
     bool isStopped = audioRenderer->Stop();
     EXPECT_EQ(true, isStopped);

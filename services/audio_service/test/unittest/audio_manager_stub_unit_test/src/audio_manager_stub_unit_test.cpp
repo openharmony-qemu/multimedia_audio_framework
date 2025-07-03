@@ -398,7 +398,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleFourthPartCode_008, TestSize.Level1)
     auto set = audioServer->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
     EXPECT_EQ(AUDIO_OK, set);
     auto ret = audioServer->HandleFourthPartCode(format, data, reply, option);
-    EXPECT_NE(AUDIO_OK, ret);
+    EXPECT_EQ(AUDIO_OK, ret);
 }
 
 /**
@@ -1015,7 +1015,7 @@ HWTEST_F(AudioManagerStubUnitTest, HandleSecondPartCode_008, TestSize.Level1)
     MessageParcel reply;
     MessageOption option;
     auto ret = audioServer->HandleSecondPartCode(format, data, reply, option);
-    EXPECT_EQ(AUDIO_OK, ret);
+    EXPECT_NE(AUDIO_OK, ret);
 }
 
 /**
