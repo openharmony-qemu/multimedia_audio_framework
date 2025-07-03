@@ -239,6 +239,7 @@ private:
     void NotifySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
+    void NotifyProcessBackgroundStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
     void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);

@@ -930,14 +930,15 @@ int32_t AudioStreamCollector::GetCurrentCapturerChangeInfos(
     return SUCCESS;
 }
 
-void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid)
+void AudioStreamCollector::RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid)
 {
     int32_t sessionID = -1;
     auto audioRendererBegin = audioRendererChangeInfos_.begin();
     while (audioRendererBegin != audioRendererChangeInfos_.end()) {
         const auto &audioRendererChangeInfo = *audioRendererBegin;
         if (audioRendererChangeInfo == nullptr ||
-            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid)) {
+            (audioRendererChangeInfo->clientUID != uid && audioRendererChangeInfo->createrUID != uid) ||
+            audioRendererChangeInfo->clientPid != pid) {
             audioRendererBegin++;
             continue;
         }
@@ -986,13 +987,13 @@ void AudioStreamCollector::RegisteredCapturerTrackerClientDied(const int32_t uid
     }
 }
 
-void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid)
+void AudioStreamCollector::RegisteredTrackerClientDied(int32_t uid, int32_t pid)
 {
     AUDIO_INFO_LOG("TrackerClientDied:client:%{public}d Died", uid);
 
     // Send the release state event notification for all streams of died client to registered app
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    RegisteredRendererTrackerClientDied(uid);
+    RegisteredRendererTrackerClientDied(uid, pid);
     RegisteredCapturerTrackerClientDied(uid);
 }
 
@@ -1135,12 +1136,12 @@ void AudioStreamCollector::HandleKaraokeAppToBack(int32_t uid, int32_t pid)
     }
 }
 
-void AudioStreamCollector::HandleForegroundUnmute(int32_t uid)
+void AudioStreamCollector::HandleForegroundUnmute(int32_t uid, int32_t pid)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
-            AUDIO_INFO_LOG(" uid=%{public}d is foreground, Don't need mute", uid);
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid) {
+            AUDIO_INFO_LOG(" uid=%{public}d pid=%{public}d is foreground, Don't need mute", uid, pid);
             std::shared_ptr<AudioClientTracker> callback = clientTracker_[changeInfo->sessionId];
             if (callback == nullptr) {
                 AUDIO_ERR_LOG(" callback failed sId:%{public}d", changeInfo->sessionId);
@@ -1217,11 +1218,11 @@ void AudioStreamCollector::HandleBackTaskStateChange(int32_t uid, bool hasSessio
     }
 }
 
-void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, bool mute, bool skipMedia)
+void AudioStreamCollector::HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo != nullptr && changeInfo->clientUID == uid) {
+        if (changeInfo != nullptr && changeInfo->clientUID == uid && changeInfo->clientPid == pid) {
             AUDIO_INFO_LOG(" uid=%{public}d and state=%{public}d", uid, mute);
             if (skipMedia && std::count(BACKGROUND_MUTE_STREAM_USAGE.begin(), BACKGROUND_MUTE_STREAM_USAGE.end(),
                 changeInfo->rendererInfo.streamUsage) != 0) {

@@ -607,6 +607,22 @@ int32_t AudioPolicyProxy::ResetAllProxy()
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::NOTIFY_PROCESS_BACKGROUND_STATE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "NotifyProcessBackgroundState failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetVirtualCall(const bool isVirtual)
 {
     MessageParcel data;

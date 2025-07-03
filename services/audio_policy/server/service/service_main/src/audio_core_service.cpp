@@ -875,13 +875,13 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     return ret;
 }
 
-void AudioCoreService::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     UpdateDefaultOutputDeviceWhenStopping(static_cast<int32_t>(uid));
     UpdateInputDeviceWhenStopping(static_cast<int32_t>(uid));
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
-    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid));
+    streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
     std::vector<uint32_t> sessionIds = pipeManager_->GetFastStreamIdsByUid(uid);
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
