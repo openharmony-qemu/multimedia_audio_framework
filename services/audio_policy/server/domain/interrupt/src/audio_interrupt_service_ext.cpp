@@ -270,14 +270,13 @@ bool AudioInterruptService::IsCapturerFocusAvailable(const int32_t zoneId, const
 
 int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "No Permission");
-
     AUDIO_INFO_LOG("start clear audio focus, target sessionID:%{public}d", sessionID);
 
     int32_t targetZoneId = -1;
     AudioInterrupt targetInterrupt;
     const uint32_t targetSessionID = static_cast<uint32_t>(sessionID);
     bool clearFlag = false;
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
 
     {
         std::unique_lock<std::mutex> lock(mutex_);
@@ -301,6 +300,11 @@ int32_t AudioInterruptService::ClearAudioFocusBySessionID(const int32_t &session
 
     if (clearFlag) {
         (void)DeactivateAudioInterrupt(targetZoneId, targetInterrupt);
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            CHECK_AND_RETURN_RET_LOG(handler_ != nullptr, ERROR, "handler is nullptr");
+            SendInterruptEventCallback(interruptEvent, targetInterrupt.streamId, targetInterrupt);
+        }
     }
 
     return SUCCESS;

@@ -167,6 +167,7 @@ void AudioStreamMonitor::ReportStreamFreezen(int64_t intervalTime)
 
 void AudioStreamMonitor::NotifyAppStateChange(const int32_t uid, bool isBackground)
 {
+    std::lock_guard<std::mutex> lock(regStatusMutex_);
     for (auto iter = audioStreamCheckers_.begin(); iter != audioStreamCheckers_.end();) {
         if (iter->second->GetAppUid() == uid) {
             iter->second->UpdateAppState(isBackground);
