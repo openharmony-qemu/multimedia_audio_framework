@@ -481,6 +481,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
+    AUDIO_ERR_LOG("The same device set active failed, need update scostate");
     activeHfpDevice_ = device;
     return SUCCESS;
 }
