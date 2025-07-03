@@ -2082,8 +2082,11 @@ int32_t HpaeManager::SetAudioEnhanceProperty(const AudioEffectPropertyArrayV3 &p
 
 int32_t HpaeManager::GetAudioEnhanceProperty(AudioEffectPropertyArrayV3 &propertyArray, DeviceType deviceType)
 {
-    auto request = [&propertyArray, deviceType]() {
+    auto request = [this, &propertyArray, deviceType]() {
         HpaePolicyManager::GetInstance().GetAudioEnhanceProperty(propertyArray, deviceType);
+        if (auto serviceCallback = serviceCallback_.lock()) {
+            serviceCallback->OnGetAudioEnhancePropertyCbV3(SUCCESS);
+        }
     };
     SendRequest(request, __func__);
     return SUCCESS;
