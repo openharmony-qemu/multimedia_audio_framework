@@ -51,6 +51,7 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
         curSystemGain = audioVolume->GetVolume(GetSessionId(), GetStreamType(), GetDeviceClass(), &volumes);
     }
     audioVolume->SetHistoryVolume(GetSessionId(), curSystemGain);
+    audioVolume->Monitor(GetSessionId(), true);
     AUDIO_INFO_LOG("HpaeGainNode curSystemGain:%{public}f streamType :%{public}d", curSystemGain, GetStreamType());
     AUDIO_INFO_LOG(
         "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
