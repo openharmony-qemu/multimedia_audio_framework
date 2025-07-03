@@ -20,6 +20,7 @@ ohos_fuzztest("AudioPolicyClientFuzzTest") {
   fuzz_config_file = "../audiopolicyclient_fuzzer"
 
   include_dirs = [
+    "../../../services/audio_policy/client/stub/include",
     "../../../services/audio_policy/client/interface",
     "../../../services/audio_policy/server/proxy/include",
   ]
@@ -32,7 +33,10 @@ ohos_fuzztest("AudioPolicyClientFuzzTest") {
     "-fno-access-control",
   ]
 
-  sources = [ "audio_policy_client_proxy_fuzzer.cpp" ]
+  sources = [ 
+    "audio_policy_client_proxy_fuzzer.cpp",
+    "../../../services/audio_policy/client/stub/src/audio_client_tracker_callback_stub.cpp",
+  ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]

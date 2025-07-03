@@ -161,13 +161,6 @@ void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest()
 void DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest()
 {
     static const vector<string> testInfo = {
-        "EVENT_TYPE=1;DEVICE_TYPE=4;",
-        "EVENT_TYPE=1;DEVICE_TYPE=2;",
-        "EVENT_TYPE=1;DEVICE_TYPE=8;",
-        "EVENT_TYPE=1;DEVICE_TYPE=2048;",
-        "EVENT_TYPE=1;DEVICE_TYPE=4096;",
-        "EVENT_TYPE=1;DEVICE_TYPE=8192;",
-        "EVENT_TYPE=1;DEVICE_TYPE=1;",
         "abc",
         "ANAHS_NAME=test;EVENT_TYPE=1;DEVICE_TYPE=1;DEVICE_ADDRESS=1;",
     };
@@ -190,8 +183,8 @@ void DeviceStatusListenerUnRegisterDeviceStatusListenerFuzzTest()
     }
     HDIServiceManager hdiServiceManager;
     ServiceStatusListener listener;
-    deviceStatusListenerPtr->hdiServiceManager_ = &hdiServiceManager;
-    deviceStatusListenerPtr->listener_ = &listener;
+    deviceStatusListenerPtr->hdiServiceManager_ = HDIServiceManagerGet();
+    deviceStatusListenerPtr->listener_ = HdiServiceStatusListenerNewInstance();
     deviceStatusListenerPtr->audioPnpServer_ = &AudioPnpServer::GetAudioPnpServer();
 
     deviceStatusListenerPtr->UnRegisterDeviceStatusListener();

@@ -41,10 +41,31 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 21;
+const uint8_t TESTSIZE = 26;
 const uint32_t RESIZENUM = 2;
 const uint32_t IDNUM = 2;
+const uint32_t NUM_2 = 2;
 typedef void (*TestFuncs)();
+
+vector<AudioFlag> AudioFlagVec = {
+    AUDIO_FLAG_NONE,
+    AUDIO_OUTPUT_FLAG_NORMAL,
+    AUDIO_OUTPUT_FLAG_DIRECT,
+    AUDIO_OUTPUT_FLAG_HD,
+    AUDIO_OUTPUT_FLAG_MULTICHANNEL,
+    AUDIO_OUTPUT_FLAG_LOWPOWER,
+    AUDIO_OUTPUT_FLAG_FAST,
+    AUDIO_OUTPUT_FLAG_VOIP,
+    AUDIO_OUTPUT_FLAG_VOIP_FAST,
+    AUDIO_OUTPUT_FLAG_HWDECODING,
+    AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD,
+    AUDIO_INPUT_FLAG_NORMAL,
+    AUDIO_INPUT_FLAG_FAST,
+    AUDIO_INPUT_FLAG_VOIP,
+    AUDIO_INPUT_FLAG_VOIP_FAST,
+    AUDIO_INPUT_FLAG_WAKEUP,
+    AUDIO_FLAG_MAX,
+};
 
 template<class T>
 T GetData()
@@ -148,8 +169,78 @@ void GetUnusedPipeFuzzTest()
 void IsSpecialPipeFuzzTest()
 {
     auto audioPipeManager = AudioPipeManager::GetPipeManager();
-    uint32_t routeFlag = AUDIO_OUTPUT_FLAG_FAST;
+    if (AudioFlagVec.size() == 0) {
+        return;
+    }
+    uint32_t routeFlagCount = GetData<uint32_t>() % AudioFlagVec.size();
+    uint32_t routeFlag = AudioFlagVec[routeFlagCount];
     audioPipeManager->IsSpecialPipe(routeFlag);
+}
+
+void IsNormalRecordPipeFuzzTest()
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    if (AudioFlagVec.size() == 0 || audioPipeManager == nullptr) {
+        return;
+    }
+    shared_ptr<AudioPipeInfo> pipe = std::make_shared<AudioPipeInfo>();
+    pipe->adapterName_ = GetData<uint32_t>() % NUM_2 == 0 ? PRIMARY_CLASS : USB_CLASS;
+    uint32_t routeFlagCount = GetData<uint32_t>() % AudioFlagVec.size();
+    pipe->routeFlag_ == AudioFlagVec[routeFlagCount];
+    audioPipeManager->IsNormalRecordPipe(pipe);
+}
+
+void GetStreamDescByIdFuzzTest()
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    if (audioPipeManager == nullptr) {
+        return;
+    }
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> desc = std::make_shared<AudioStreamDescriptor>();
+    desc->sessionId_ = GetData<uint32_t>();
+    pipeInfo->streamDescriptors_.push_back(desc);
+    audioPipeManager->AddAudioPipeInfo(pipeInfo);
+
+    uint32_t targetSessionId = GetData<uint32_t>();
+    audioPipeManager->GetStreamDescById(targetSessionId);
+}
+
+void DumpFuzzTest()
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    if (audioPipeManager == nullptr) {
+        return;
+    }
+    std::string dumpString = "";
+    audioPipeManager->Dump(dumpString);
+}
+
+void IsModemCommunicationIdExistFuzzTest()
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    if (audioPipeManager == nullptr) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    audioPipeManager->IsModemCommunicationIdExist(sessionId);
+}
+
+void GetModemCommunicationStreamDescByIdFuzzTest()
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    if (audioPipeManager == nullptr) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioPipeManager->modemCommunicationIdMap_.clear();
+    audioPipeManager->AddModemCommunicationId(sessionId, streamDesc);
+    audioPipeManager->GetModemCommunicationStreamDescById(sessionId);
 }
 
 void GetPipeinfoByNameAndFlagFuzzTest()
@@ -382,6 +473,11 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     IsSamePipeFuzzTest,
     GetUnusedPipeFuzzTest,
     IsSpecialPipeFuzzTest,
+    IsNormalRecordPipeFuzzTest,
+    GetStreamDescByIdFuzzTest,
+    DumpFuzzTest,
+    IsModemCommunicationIdExistFuzzTest,
+    GetModemCommunicationStreamDescByIdFuzzTest,
     GetPipeinfoByNameAndFlagFuzzTest,
     GetAdapterNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,

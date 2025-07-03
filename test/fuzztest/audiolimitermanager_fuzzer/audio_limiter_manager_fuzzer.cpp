@@ -42,8 +42,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 4;
-const int32_t NUM_1 = 1;
+const uint8_t TESTSIZE = 5;
+const int32_t NUM_2 = 2;
 const int32_t TEST_MAX_REQUEST = 7680;
 
 typedef void (*TestFuncs)();
@@ -79,7 +79,7 @@ void SetLimiterConfigFuzzTest()
     AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
     int32_t sinkIndex = GetData<uint32_t>();
     limiterManager->CreateLimiter(sinkIndex);
-    int32_t audioChannel = static_cast<int32_t>(AudioChannel::CHANNEL_16) + NUM_1;
+    int32_t audioChannel = static_cast<int32_t>(AudioChannel::CHANNEL_16) + 1;
     int32_t channels = static_cast<AudioChannel>(GetData<uint8_t>() % audioChannel);
     limiterManager->SetLimiterConfig(sinkIndex, TEST_MAX_REQUEST, SAMPLE_F32LE, SAMPLE_RATE_48000, channels);
 }
@@ -95,7 +95,8 @@ void ProcessLimiterFuzzTest()
     std::vector<float> outBufferVector(frameLen, 0);
     float *inBuffer = inBufferVector.data();
     float *outBuffer = outBufferVector.data();
-    limiterManager->ProcessLimiter(sinkIndex, frameLen, inBuffer, outBuffer);
+    int32_t frameLength = GetData<uint32_t>() % NUM_2 == 0 ? frameLen : 0;
+    limiterManager->ProcessLimiter(sinkIndex, frameLength, inBuffer, outBuffer);
 }
 
 void ReleaseLimiterFuzzTest()
@@ -116,11 +117,20 @@ void GetLatencyFuzzTest()
     limiterManager->GetLatency(sinkIndex);
 }
 
+void CreateLimiterFuzzTest()
+{
+    AudioLmtManager *limiterManager = AudioLmtManager::GetInstance();
+    int32_t sinkIndex = GetData<int32_t>();
+    limiterManager->CreateLimiter(sinkIndex);
+    limiterManager->CreateLimiter(sinkIndex);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     SetLimiterConfigFuzzTest,
     ProcessLimiterFuzzTest,
     ReleaseLimiterFuzzTest,
     GetLatencyFuzzTest,
+    CreateLimiterFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
