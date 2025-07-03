@@ -2142,6 +2142,127 @@ int32_t AudioPolicyManager::UnsetAudioSessionCallback(
     return result;
 }
 
+int32_t AudioPolicyManager::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->SetAudioSessionScene(audioSessionScene);
+}
+
+int32_t AudioPolicyManager::SetAudioSessionStateChangeCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(stateChangedCallback != nullptr, ERR_INVALID_PARAM, "stateChangedCallback is nullptr");
+
+    int32_t result = SUCCESS;
+    if (!isAudioPolicyClientRegisted_) {
+        result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+
+    result = audioPolicyClientStubCB_->AddAudioSessionStateCallback(stateChangedCallback);
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to add audio session callback.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionStateCallbackSize() == 1) {
+        // Notify audio server that the client has registerd one listener.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].isEnable = true;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION_STATE, true);
+    }
+    return result;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSessionStateChangeCallback()
+{
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+
+    int32_t result = audioPolicyClientStubCB_->RemoveAudioSessionStateCallback();
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to remove all audio session state callbacks.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionStateCallbackSize() == 0) {
+        // Notify audio server that all of the client listeners have been unregisterd.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION_STATE, false);
+    }
+    return result;
+}
+
+int32_t AudioPolicyManager::UnsetAudioSessionStateChangeCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback)
+{
+    if (audioPolicyClientStubCB_ == nullptr) {
+        AUDIO_ERR_LOG("audioPolicyClientStubCB_ is null");
+        return ERROR_ILLEGAL_STATE;
+    }
+    int32_t result = audioPolicyClientStubCB_->RemoveAudioSessionStateCallback(stateChangedCallback);
+    if (result != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to remove the audio session state callback.");
+        return result;
+    }
+
+    std::lock_guard<std::mutex> lockCbMap(callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].mutex);
+    if (audioPolicyClientStubCB_->GetAudioSessionStateCallbackSize() == 0) {
+        // Notify audio server that all of the client listeners have been unregisterd.
+        callbackChangeInfos_[CALLBACK_AUDIO_SESSION_STATE].isEnable = false;
+        SetClientCallbacksEnable(CALLBACK_AUDIO_SESSION_STATE, false);
+    }
+    return result;
+}
+
+int32_t AudioPolicyManager::GetDefaultOutputDevice(DeviceType &deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->GetDefaultOutputDevice(deviceType);
+}
+
+int32_t AudioPolicyManager::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t result = RegisterPolicyCallbackClientFunc(gsp);
+        if (result != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to register policy callback clent");
+            return result;
+        }
+    }
+    return gsp->SetDefaultOutputDevice(deviceType);
+}
+
 AudioSpatializationSceneType AudioPolicyManager::GetSpatializationSceneType()
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

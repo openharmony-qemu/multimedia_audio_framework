@@ -901,6 +901,55 @@ bool AudioPolicyProxy::IsAudioSessionActivated()
     return reply.ReadBool();
 }
 
+int32_t AudioPolicyProxy::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioSessionScene));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SESSION_SCENE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed to audioSessionScene. Error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetDefaultOutputDevice(DeviceType &deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_DEFAULT_OUTPUT_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "GetDefaultOutputDevice failed, Error: %{public}d", error);
+
+    deviceType = static_cast<DeviceType>(reply.ReadInt32());
+    return SUCCESS;
+}
+
+int32_t AudioPolicyProxy::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SESSION_DEFAULT_OUTPUT_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetDefaultOutputDevice failed, Error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {

@@ -59,7 +59,8 @@ enum class AudioPolicyClientCode {
     ON_FORMAT_UNSUPPORTED_ERROR,
     ON_STREAM_VOLUME_CHANGE,
     ON_SYSTEM_VOLUME_CHANGE,
-    AUDIO_POLICY_CLIENT_CODE_MAX = ON_SYSTEM_VOLUME_CHANGE,
+    ON_AUDIO_SESSION_STATE_CHANGED,
+    AUDIO_POLICY_CLIENT_CODE_MAX = ON_AUDIO_SESSION_STATE_CHANGED,
 };
 class IAudioPolicyClient : public IRemoteBroker {
 public:
@@ -97,6 +98,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const bool &enabled) = 0;
     virtual void OnNnStateChange(const int32_t &nnState) = 0;
     virtual void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) = 0;
+    virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
     virtual void OnAudioSceneChange(const AudioScene &audioScene) = 0;
     virtual void OnFormatUnsupportedError(const AudioErrors &errorCode) = 0;
     virtual void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) = 0;

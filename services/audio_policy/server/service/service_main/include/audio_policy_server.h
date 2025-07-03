@@ -221,6 +221,12 @@ public:
 
     bool IsAudioSessionActivated() override;
 
+    int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene) override;
+
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType) override;
+
+    int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+
     int32_t SetAudioInterruptCallback(const uint32_t sessionID,
         const sptr<IRemoteObject> &object, uint32_t clientUid, const int32_t zoneId = 0) override;
 

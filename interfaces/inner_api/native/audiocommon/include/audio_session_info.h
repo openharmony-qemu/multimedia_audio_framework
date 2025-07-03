@@ -82,7 +82,7 @@ enum class AudioSessionScene {
  * Enumerates the session state change hints.
  * @since 20
  */
-enum class AudioSessionStateChangedHint {
+enum class AudioSessionStateChangeHint {
     /**
      * Invalid audio session state change hint.
      * @since 20
@@ -134,22 +134,7 @@ struct AudioSessionStateChangedEvent {
      * Audio session state changed hints.
      * @since 20
      */
-    AudioSessionStateChangedHint stateChangedHint;
-};
-
-/**
- * Enumerates the recommend action when device changed.
- * @since 20
- */
-enum class DeviceChangedRecommendedAction {
-    /**
-     * No special recommendations, the playback can continue or not.
-     */
-    NO_RECOMMENDATION = 0,
-    /**
-     * Recommend to stop the playback.
-     */
-    RECOMMEND_TO_STOP = 1,
+    AudioSessionStateChangeHint stateChangeHint;
 };
 } // namespace AudioStandard
 } // namespace OHOS

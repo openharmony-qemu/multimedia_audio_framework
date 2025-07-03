@@ -76,6 +76,9 @@ void AudioPolicyClientStub::OnFirMaxRemoteRequest(uint32_t updateCode, MessagePa
         case static_cast<uint32_t>(AudioPolicyClientCode::ON_SYSTEM_VOLUME_CHANGE):
             HandleSystemVolumeChange(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyClientCode::ON_AUDIO_SESSION_STATE_CHANGED):
+            HandleAudioSessionStateCallback(data, reply);
+            break;
         default:
             break;
     }
@@ -431,6 +434,14 @@ void AudioPolicyClientStub::HandleAudioSessionCallback(MessageParcel &data, Mess
     AudioSessionDeactiveEvent deactiveEvent;
     deactiveEvent.deactiveReason = static_cast<AudioSessionDeactiveReason>(data.ReadInt32());
     OnAudioSessionDeactive(deactiveEvent);
+}
+
+void AudioPolicyClientStub::HandleAudioSessionStateCallback(MessageParcel &data, MessageParcel &reply)
+{
+    AUDIO_INFO_LOG("HandleAudioSessionStateCallback");
+    AudioSessionStateChangedEvent stateChangedEvent;
+    stateChangedEvent.stateChangeHint = static_cast<AudioSessionStateChangeHint>(data.ReadInt32());
+    OnAudioSessionStateChanged(stateChangedEvent);
 }
 
 void AudioPolicyClientStub::HandleFormatUnsupportedError(MessageParcel &data, MessageParcel &reply)
