@@ -1178,9 +1178,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute()
             continue;
         }
 
-        // handle nearlink
-        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
-        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
 
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));
