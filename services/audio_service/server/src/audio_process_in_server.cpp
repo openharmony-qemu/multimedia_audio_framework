@@ -469,6 +469,7 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, ERROR, "processInServer_ is nullptr");
     auto config = processInServer_->GetAudioProcessConfig();
     if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
         AudioService::GetInstance()->DisableLoopback();
