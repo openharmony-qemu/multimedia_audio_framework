@@ -588,15 +588,8 @@ void OHAudioCapturer::SetStreamEventCallback(CapturerCallback capturerCallbacks,
             (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
         AUDIO_INFO_LOG("The stream event callback function with result");
-    } else if (streamEventCallbackType_ == STREAM_EVENT_CALLBACK_COMBINED &&
-        capturerCallbacks.callbacks.OH_AudioCapturer_OnStreamEvent != nullptr) {
-        std::shared_ptr<AudioCapturerDeviceChangeCallback> callback =
-            std::make_shared<OHAudioCapturerDeviceChangeCallback>(capturerCallbacks.callbacks,
-            (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetAudioCapturerDeviceChangeCallback(callback);
-        AUDIO_INFO_LOG("The stream event callback function without result");
     } else {
-        AUDIO_WARNING_LOG("The stream event callback function is not set");
+        AUDIO_WARNING_LOG("The stream event callback function only supports seperated set");
     }
 }
 
@@ -632,13 +625,8 @@ void OHAudioCapturer::SetErrorCallback(CapturerCallback capturerCallbacks, void 
         std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
             capturerCallbacks.onErrorCallback, (OH_AudioCapturer*)this, userData);
         audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
-    } else if (errorCallbackType_ == ERROR_CALLBACK_COMBINED &&
-        capturerCallbacks.callbacks.OH_AudioCapturer_OnError != nullptr) {
-        std::shared_ptr<AudioCapturerErrorCallback> errorCallback = std::make_shared<OHAudioCapturerErrorCallback>(
-            capturerCallbacks.callbacks, (OH_AudioCapturer*)this, userData);
-        audioCapturer_->SetAudioCapturerErrorCallback(errorCallback);
     } else {
-        AUDIO_WARNING_LOG("The audio capturer error callback function is not set");
+        AUDIO_WARNING_LOG("The audio capturer error callback function only supports seperated set");
     }
 }
 
