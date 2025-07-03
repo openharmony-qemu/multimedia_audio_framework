@@ -118,7 +118,7 @@ static void WaitForMsgProcessing(std::shared_ptr<HpaeInnerCapturerManager>& hpae
  * @tc.number: Construct_001
  * @tc.desc  : Test Construct when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, Construct_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Construct_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeInnerCapturerManager_, nullptr);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
@@ -141,7 +141,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, Construct_001, TestSize.Level0)
  * @tc.number: Init_001
  * @tc.desc  : Test Init.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, Init_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Init_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeInnerCapturerManager_, nullptr);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
@@ -155,7 +155,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, Init_001, TestSize.Level0)
  * @tc.number: DeInit_001
  * @tc.desc  : Test DeInit.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeInit_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeInit_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -170,7 +170,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeInit_001, TestSize.Level0)
  * @tc.number: CreateStream_001
  * @tc.desc  : Test CreateRendererStream when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -188,7 +188,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_001, TestSize.Level0)
  * @tc.number: CreateStream_002
  * @tc.desc  : Test CreateCapturerStream when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_002, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_002, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -206,7 +206,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, CreateStream_002, TestSize.Level0)
  * @tc.number: DestroyStream_001
  * @tc.desc  : Test DestroyRendererStream when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -229,7 +229,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_001, TestSize.Level0)
  * @tc.number: DestroyStream_002
  * @tc.desc  : Test DestroyCapturerStream when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -249,7 +249,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DestroyStream_002, TestSize.Level0)
  * @tc.number: StreamStartPauseFlushChange_001
  * @tc.desc  : Test StreamStartPauseFlushChange when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -298,7 +298,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, Test
  * @tc.number: StreamStartStopDrainChange_001
  * @tc.desc  : Test StreamStartStopDrainChange when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -353,7 +353,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartStopDrainChange_001, TestS
  * @tc.number: AddNodeToSink_001
  * @tc.desc  : Test AddNodeToSink when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -409,7 +409,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, AddNodeToSink_001, TestSize.Level0)
  * @tc.number: SetMute_001
  * @tc.desc  : Test SetMute when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->SetMute(true), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -433,7 +433,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SetMute_001, TestSize.Level0)
  * @tc.number: OnFadeDone_001
  * @tc.desc  : Test OnFadeDone when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -459,7 +459,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, OnFadeDone_001, TestSize.Level0)
  * @tc.number: GetThreadName_001
  * @tc.desc  : Test GetThreadName
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
     sinkInfo.deviceName = "InnerCap1";
@@ -482,7 +482,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001, TestSize.Level0)
  * @tc.number: SendRequestInner_001
  * @tc.desc  : Test SendRequestInner when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001, TestSize.Level1)
 {
     auto request = []() {
     };
@@ -500,7 +500,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, SendRequestInner_001, TestSize.Level0
  * @tc.number: Other_001
  * @tc.desc  : Test Other when config in vaild.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, Other_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, Other_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
@@ -542,7 +542,7 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, Other_001, TestSize.Level0)
  * @tc.number: ReloadRenderManager_001
  * @tc.desc  : Test ReloadRenderManager.
  */
-HWTEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001, TestSize.Level0)
+HWTEST_F(HpaeInnerCapturerManagerUnitTest, ReloadRenderManager_001, TestSize.Level1)
 {
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);

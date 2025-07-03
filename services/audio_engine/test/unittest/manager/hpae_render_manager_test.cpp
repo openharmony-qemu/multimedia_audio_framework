@@ -335,28 +335,28 @@ HWTEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest, TestSize.Lev
     TestIRendererManagerConstruct<HpaeOffloadRendererManager>();
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitTest, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitTest, TestSize.Level1)
 {
     TestIRendererManagerInit<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerInit<HpaeOffloadRendererManager>();
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadTest, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadTest, TestSize.Level1)
 {
     TestRenderManagerReload<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestRenderManagerReload<HpaeOffloadRendererManager>();
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateDestoryStreamTest, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateDestoryStreamTest, TestSize.Level1)
 {
     TestIRendererManagerCreateDestoryStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerCreateDestoryStream<HpaeOffloadRendererManager>();
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest, TestSize.Level1)
 {
     TestIRendererManagerStartPuaseStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
@@ -382,7 +382,7 @@ static void HpaeRendererManagerCreateStream(
     TestCheckSinkInputInfo(sinkInputInfo, streamInfo);
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -413,7 +413,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001, TestS
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -458,7 +458,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002, TestS
 }
 
 
-HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -533,7 +533,7 @@ static void GetBtSpeakerSinkInfo(HpaeSinkInfo &sinkInfo)
  * @tc.number: UpdateCollaborativeState_001
  * @tc.desc  : Test UpdateCollaborativeState before stream is created.
  */
-HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
@@ -584,7 +584,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level0)
  * @tc.number: UpdateCollaborativeState_002
  * @tc.desc  : Test UpdateCollaborativeState after stream is created.
  */
-HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
@@ -635,7 +635,7 @@ HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level0)
  * @tc.number: ConnectCoBufferNode_001
  * @tc.desc  : Test ConnectCoBufferNode when config in vaild.
  */
-HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -676,7 +676,7 @@ HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level0)
  * @tc.number: MoveAllStream_001
  * @tc.desc  : Test MoveAllStream when sink is initialized.
  */
-HWTEST_F(HpaeRendererManagerTest, MoveAllStream_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, MoveAllStream_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -740,7 +740,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveAllStream_002, TestSize.Level0)
  * @tc.number: MoveStreamSync_001
  * @tc.desc  : Test MoveStreamSync when sessionId doesn't exist in sinkInputNodeMap_.
  */
-HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -772,7 +772,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_001, TestSize.Level0)
  * @tc.number: MoveStreamSync_002
  * @tc.desc  : Test MoveStreamSync when sinkName is empty.
  */
-HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_002, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -804,7 +804,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_002, TestSize.Level0)
  * @tc.number: MoveStreamSync_003
  * @tc.desc  : Test MoveStreamSync when session is in HPAE_SESSION_STOPPING state.
  */
-HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_003, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_003, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -839,7 +839,7 @@ HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_003, TestSize.Level0)
  * @tc.number: MoveStreamSync_004
  * @tc.desc  : Test MoveStreamSync when session is in HPAE_SESSION_PAUSING state.
  */
-HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_004, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_004, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -908,7 +908,7 @@ HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002, TestSize.Leve
  * @tc.number: ReloadRenderManager_001
  * @tc.desc: Test basic reload functionality
  */
-HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level0)
+HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceName = "test_device";

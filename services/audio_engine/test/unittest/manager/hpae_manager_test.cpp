@@ -156,7 +156,7 @@ HWTEST_F(HpaeManagerUnitTest, constructHpaeManagerTest, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-HWTEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -180,7 +180,7 @@ HWTEST_F(HpaeManagerUnitTest, GetHpaeRenderManagerTest, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest, TestSize.Level1)
 {
     IHpaeManager::GetHpaeManager().Init();
     EXPECT_EQ(IHpaeManager::GetHpaeManager().IsInit(), true);
@@ -194,7 +194,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderManagerTest, TestSize.Level0)
     EXPECT_EQ(IHpaeManager::GetHpaeManager().IsRunning(), false);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -241,7 +241,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest, TestSize.Level0)
     EXPECT_EQ(sinkInputs.size(), 0);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -282,7 +282,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level0)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -335,7 +335,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerTest002, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -394,7 +394,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest001, TestSize.Leve
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -456,7 +456,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest002, TestSize.Leve
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -502,7 +502,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -558,7 +558,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Lev
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -718,7 +718,7 @@ HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003, TestSize.Level0)
  * @tc.number: UpdateCollaborativeState_001
  * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
  */
-HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -730,7 +730,7 @@ HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level0)
     EXPECT_EQ(ret, true);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -840,7 +840,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Leve
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -939,7 +939,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest003, TestSize.Lev
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
-HWTEST_F(HpaeManagerUnitTest, GetAllSinks003, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, GetAllSinks003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -986,7 +986,7 @@ HWTEST_F(HpaeManagerUnitTest, GetAllSinks003, TestSize.Level0)
     EXPECT_EQ(devicesInfo_.sourceInfos.size() > 0, true);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1015,7 +1015,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink001, TestSize.Level0)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1031,7 +1031,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSink002, TestSize.Level0)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1063,7 +1063,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerSetDefaultSource001, TestSize.Level0)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1119,7 +1119,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest001, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->CloseOutAudioPort("Speaker_File"), SUCCESS);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerEffectTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1218,7 +1218,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 1, true);
 }
 
-HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1250,7 +1250,7 @@ HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->IsRunning(), false);
 }
 
-HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level0)
+HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();

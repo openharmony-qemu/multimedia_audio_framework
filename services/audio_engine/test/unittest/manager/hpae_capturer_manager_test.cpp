@@ -142,7 +142,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest, TestSize.Lev
  * tc.number : HpaeCapturerManagerTest_002
  * tc.desc   : Test HpaeCapturerManagerInitTest
  */
-HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -160,7 +160,7 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest, TestSize.Level0)
  * tc.number : HpaeCapturerManagerTest_003
  * tc.desc   : Test HpaeCapturerManagerCreateDestoryStreamTest
  */
-HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -228,7 +228,7 @@ static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerMana
  * tc.number : HpaeCapturerManagerTest_004
  * tc.desc   : Test HpaeCapturerManagerStartStopTest
  */
-HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -293,7 +293,7 @@ static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &new
  * tc.number : HpaeCapturerManagerTest_005
  * tc.desc   : Test HpaeCapturerManagerReloadTest
  */
-HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     HpaeSourceInfo newSourceInfo;
@@ -455,7 +455,7 @@ HWTEST_F(HpaeCapturerManagerTest, Flush_001, TestSize.Level0)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Flush_002
  */
-HWTEST_F(HpaeCapturerManagerTest, Flush_002, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, Flush_002, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -497,7 +497,7 @@ HWTEST_F(HpaeCapturerManagerTest, Drain_001, TestSize.Level0)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Drain_002
  */
-HWTEST_F(HpaeCapturerManagerTest, Drain_002, TestSize.Level0)
+HWTEST_F(HpaeCapturerManagerTest, Drain_002, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
