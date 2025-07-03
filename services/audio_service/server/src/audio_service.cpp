@@ -140,6 +140,7 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releasingEndpointSet_.insert(endpointName);
     auto releaseMidpointThread = [this, endpointName, delayTime] () {
+        std::lock_guard<std::mutex> processListLock(processListMutex_);
         this->DelayCallReleaseEndpoint(endpointName, delayTime);
     };
     std::thread releaseEndpointThread(releaseMidpointThread);
@@ -962,9 +963,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
         return;
     }
     releasingEndpointSet_.erase(endpointName);
-    lock.unlock();
 
-    std::lock_guard<std::mutex> processListLock(processListMutex_);
     std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
