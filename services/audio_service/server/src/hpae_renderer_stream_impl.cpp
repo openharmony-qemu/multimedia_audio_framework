@@ -231,6 +231,17 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     return a2dpOffloadLatency;
 }
 
+uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
+{
+    Trace trace("PaRendererStreamImpl::GetNearlinkLatency");
+    uint32_t nearlinkLatency = 0;
+    auto &handler = PolicyHandler::GetInstance();
+    int32_t ret = handler.NearlinkGetRenderPosition(nearlinkLatency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, 0, "NearlinkGetRenderPosition failed");
+
+    return nearlinkLatency;
+}
+
 int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
@@ -256,6 +267,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
         base : Timestamp::Timestampbase::MONOTONIC;
     uint32_t sinkLatency = 0;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
+    uint32_t nearlinkLatency = GetNearlinkLatency();
     latencyUs = latency_;
     if (deviceClass_ != DEVICE_CLASS_OFFLOAD && deviceClass_ != DEVICE_CLASS_REMOTE_OFFLOAD) {
         std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
@@ -265,6 +277,7 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     }
     latencyUs += sinkLatency * AUDIO_US_PER_MS;
     latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
+    latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
     auto interval = (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US;
@@ -274,8 +287,8 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
         ", base %{public}d, timestamp %{public}" PRIu64
-        ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms",
-        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency);
+        ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
+        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)

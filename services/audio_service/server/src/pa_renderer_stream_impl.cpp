@@ -591,9 +591,9 @@ uint32_t PaRendererStreamImpl::GetNearlinkLatency()
 {
     Trace trace("PaRendererStreamImpl::GetNearlinkLatency");
     uint32_t nearlinkLatency = 0;
-    auto& handle = PolicyHandler::GetInstance();
-    int32_t ret = handle.NearlinkGetRenderPosition(nearlinkLatency);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nearlinkLatency, "NearlinkGetRenderPosition failed");
+    auto &handler = PolicyHandler::GetInstance();
+    int32_t ret = handler.NearlinkGetRenderPosition(nearlinkLatency);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, 0, "NearlinkGetRenderPosition failed");
 
     return nearlinkLatency;
 }
