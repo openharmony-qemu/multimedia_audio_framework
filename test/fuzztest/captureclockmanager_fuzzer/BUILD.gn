@@ -24,6 +24,7 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../frameworks/native/audioutils/include",
+    "../../../frameworks/native/audioclock/include",
     "../../../services/audio_service/common/include/limiter/",
   ]
   cflags = [

@@ -36,7 +36,6 @@ typedef void (*TestPtr)();
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_DEFAULT,
-    STREAM_VOICE_CALL,
     STREAM_MUSIC,
     STREAM_RING,
     STREAM_MEDIA,
@@ -60,7 +59,6 @@ const vector<AudioStreamType> g_testAudioStreamTypes = {
     STREAM_NAVIGATION,
     STREAM_INTERNAL_FORCE_STOP,
     STREAM_SOURCE_VOICE_CALL,
-    STREAM_VOICE_COMMUNICATION,
     STREAM_VOICE_RING,
     STREAM_VOICE_CALL_ASSISTANT,
     STREAM_CAMCORDER,
