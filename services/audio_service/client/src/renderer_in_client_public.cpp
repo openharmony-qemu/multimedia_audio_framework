@@ -1777,15 +1777,15 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
-    WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load()
+    WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
     uint64_t lastSpeedPosition = fsPair.writtenFrames;
     float lastSpeed = fsPair.speed;
 
     uint64_t frameLatency = 0;
     if (readIdx < latency + lastSpeedPosition) {
         // cache before speed change
-        frameLatency = lastSpeed * (latency - readIdx + lastSpeedPosition) +
-            (samplesWritten - lastSpeedPosition) * speed_;
+        frameLatency = lastSpeed * (latency - readIdx + lastSpeedPosition);
+        frameLatency += (samplesWritten > lastSpeedPosition ? (samplesWritten - lastSpeedPosition) * speed_ : 0);
     } else {
         frameLatency = (deepLatency + latency) * speed_;
     }
