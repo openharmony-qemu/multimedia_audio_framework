@@ -66,14 +66,14 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01, TestSize.Level0)
     hpaeRemoteSinkOutputNode->Connect(hpaeMixerNode);
     EXPECT_EQ(hpaeRemoteSinkOutputNode->GetRenderSinkInstance("remote", "LocalDevice"), 0);
     hpaeRemoteSinkOutputNode->DoProcess();
-    hpaeRemoteSinkOutputNode->RenderSinkDeInit();
-    hpaeRemoteSinkOutputNode->RenderSinkFlush();
-    hpaeRemoteSinkOutputNode->RenderSinkPause();
-    hpaeRemoteSinkOutputNode->RenderSinkReset();
-    hpaeRemoteSinkOutputNode->RenderSinkResume();
-    hpaeRemoteSinkOutputNode->RenderSinkStart();
-    hpaeRemoteSinkOutputNode->RenderSinkStop();
-    hpaeRemoteSinkOutputNode->GetPreOutNum();
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkDeInit(), SUCCESS);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkFlush(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkPause(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkReset(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkResume(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkStart(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkStop(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->GetPreOutNum(), 1);
     
     hpaeRemoteSinkOutputNode->DisConnect(hpaeMixerNode);
 }

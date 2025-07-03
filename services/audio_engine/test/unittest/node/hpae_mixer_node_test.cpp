@@ -66,7 +66,7 @@ HWTEST_F(HpaeMixerNodeTest, constructHpaeMixerNode, TestSize.Level0)
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
 }
-static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.Level0)
+static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     for (int32_t i = 0; i < len / SAMPLE_F32LE; i++) {
         float diff = *((float*)data + i) - g_testValue;

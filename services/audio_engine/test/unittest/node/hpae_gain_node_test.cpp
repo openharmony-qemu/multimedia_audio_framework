@@ -79,7 +79,7 @@ HWTEST_F(HpaeGainNodeTest, constructHpaeGainNode, TestSize.Level0)
     std::cout << "deviceClass: " << retNi.deviceClass << std::endl;
     std::cout << "HpaeGainNodeTest::GetNodeInfo end" << std::endl;
 }
-static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.Level0)
+static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     float curGain = 0.0f;
     float targetGain = 1.0f;

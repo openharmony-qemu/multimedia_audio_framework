@@ -53,17 +53,14 @@ void HpaePcmUtilsTest::SetUp()
 void HpaePcmUtilsTest::TearDown()
 {}
 
-HWTEST_F(HpaePcmUtilsTest, pcmDumperValidFile, TestSize.Level0)
+HWTEST_F(HpaePcmUtilsTest, pcmDumperFile, TestSize.Level0)
 {
-    HpaePcmDumper dumper(g_rootCapturerPath);
-    EXPECT_EQ(dumper.filename_, g_rootCapturerPath);
-}
+    HpaePcmDumper dumper1(g_rootCapturerPath);
+    EXPECT_EQ(dumper1.filename_, g_rootCapturerPath);
 
-HWTEST_F(HpaePcmUtilsTest, pcmDumpeInvalidFile, TestSize.Level0)
-{
     std::string invalidFilename = "";
-    HpaePcmDumper dumper(invalidFilename);
-    EXPECT_EQ(dumper.filename_, invalidFilename);
+    HpaePcmDumper dumper2(invalidFilename);
+    EXPECT_EQ(dumper2.filename_, invalidFilename);
 }
 
 HWTEST_F(HpaePcmUtilsTest, readWrite24Bit, TestSize.Level0)
@@ -104,25 +101,47 @@ HWTEST_F(HpaePcmUtilsTest, boundaryValueHandling, TestSize.Level0)
 
 HWTEST_F(HpaePcmUtilsTest, convertToFloatAllFormats, TestSize.Level0)
 {
-    float testFloat[TEST_FRAMES] = {
-        0.0f,
-        0.5f,
-        -0.5f,
-        1.0f - FLOAT_EPS
-    };
-    float output[TEST_FRAMES];
+    float output[TEST_FRAMES] = {0};
+    const float EPS = std::numeric_limits<float>::epsilon();
+
+    // SAMPLE_U8
     uint8_t u8Data[] = {128, 255, 0, 192};
     ConvertToFloat(SAMPLE_U8, TEST_FRAMES, u8Data, output);
+    EXPECT_FLOAT_EQ(output[0], 0.0f);
+    EXPECT_FLOAT_EQ(output[1], 127.0f / 128.0f);
+    EXPECT_FLOAT_EQ(output[NUM_TWO], -1.0f);
+    EXPECT_FLOAT_EQ(output[NUM_THREE], 0.5f);
+
+    // SAMPLE_S16LE
     int16_t s16Data[] = {0, INT16_MAX, INT16_MIN, 12345};
     ConvertToFloat(SAMPLE_S16LE, TEST_FRAMES, s16Data, output);
-    uint8_t s24Data[NUM_THREE * TEST_FRAMES] = {0};
-    Write24Bit(s24Data, 0x7FFFFF);
-    Write24Bit(s24Data + NUM_THREE, 0x800000);
+    EXPECT_FLOAT_EQ(output[0], 0.0f);
+    EXPECT_FLOAT_EQ(output[1], static_cast<float>(INT16_MAX) / 32768.0f);
+    EXPECT_FLOAT_EQ(output[NUM_TWO], -1.0f);
+    EXPECT_NEAR(output[NUM_THREE], 12345.0f / 32768.0f, EPS);
+
+    // SAMPLE_S24LE
+    uint8_t s24Data[6] = {0}; // 6: data size
+    Write24Bit(s24Data, 0x7FFFFF); // 8388607
+    Write24Bit(s24Data + NUM_THREE, 0x800000); // -8388608
     ConvertToFloat(SAMPLE_S24LE, NUM_TWO, s24Data, output);
+    EXPECT_FLOAT_EQ(output[0], 8388607.0f / 8388608.0f);
+    EXPECT_FLOAT_EQ(output[1], -1.0f);
+
+    // SAMPLE_S32LE
     int32_t s32Data[] = {0, INT32_MAX, INT32_MIN, 123456789};
     ConvertToFloat(SAMPLE_S32LE, TEST_FRAMES, s32Data, output);
-    float floatData[TEST_FRAMES];
-    ConvertToFloat(static_cast<AudioSampleFormat>(FLOAT_SAMPLE_FORMAT), TEST_FRAMES, testFloat, floatData);
+    EXPECT_FLOAT_EQ(output[0], 0.0f);
+    EXPECT_FLOAT_EQ(output[1], static_cast<float>(INT32_MAX) / 2147483648.0f);
+    EXPECT_FLOAT_EQ(output[NUM_TWO], -1.0f);
+    EXPECT_NEAR(output[NUM_THREE], 123456789.0f / 2147483648.0f, EPS);
+
+    // FLOAT
+    float floatData[] = {0.0f, 0.5f, -0.5f, 1.0f - EPS};
+    ConvertToFloat(static_cast<AudioSampleFormat>(FLOAT_SAMPLE_FORMAT), TEST_FRAMES, floatData, output);
+    for (size_t i = 0; i < TEST_FRAMES; ++i) {
+        EXPECT_FLOAT_EQ(output[i], floatData[i]);
+    }
 }
 
 HWTEST_F(HpaePcmUtilsTest, memcpyFallback, TestSize.Level0)

@@ -24,10 +24,13 @@
 #include "audio_errors.h"
 #include "hpae_audio_service_dump_callback_unit_test.h"
 #include "hpae_manager_unit_test.h"
-using namespace testing::ext;
+
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
+
 namespace {
 static std::string g_rootPath = "/data/";
 const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";

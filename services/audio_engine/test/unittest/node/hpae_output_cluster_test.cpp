@@ -39,7 +39,7 @@ static std::string g_deviceClass = "file_io";
 static std::string g_deviceNetId = "LocalDevice";
 
 
-static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.Level0)
+static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
 {
     float curGain = 0.0f;
     float targetGain = 1.0f;
@@ -57,7 +57,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len, TestSize.
     return 0;
 }
 
-static void InitHpaeWriteDataOutSessionTest(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo, TestSize.Level0)
+static void InitHpaeWriteDataOutSessionTest(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
 {
     nodeInfo.nodeId = NODE_ID;
     nodeInfo.frameLen = FRAME_LEN;
