@@ -712,24 +712,6 @@ HWTEST_F(HpaeManagerUnitTest, GetEffectLiveParameter003, TestSize.Level0)
     EXPECT_EQ("NoSupport", result[0].second);
 }
 
-/**
- * @tc.name  : Test UpdateCollaborativeState
- * @tc.type  : FUNC
- * @tc.number: UpdateCollaborativeState_001
- * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
- */
-HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
-{
-    EXPECT_NE(hpaeManager_, nullptr);
-    hpaeManager_->Init();
-    EXPECT_EQ(hpaeManager_->IsInit(), true);
-    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
-    EXPECT_EQ(ret, true);
-    WaitForMsgProcessing(hpaeManager_);
-    ret = hpaeManager_->UpdateCollaborativeState(false);
-    EXPECT_EQ(ret, true);
-}
-
 HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest003, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
@@ -1216,6 +1198,24 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerAddPreferSink001, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 0, true);
     hpaeManager_->AddPreferSinkForDefaultChange(true, "speaker_file");
     EXPECT_EQ(hpaeManager_->idPreferSinkNameMap_.size() == 1, true);
+}
+
+/**
+ * @tc.name  : Test UpdateCollaborativeState
+ * @tc.type  : FUNC
+ * @tc.number: UpdateCollaborativeState_001
+ * @tc.desc  : Test UpdateCollaborativeState when config in vaild.
+ */
+HWTEST_F(HpaeManagerUnitTest, UpdateCollaborativeState_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    int32_t ret = hpaeManager_->UpdateCollaborativeState(true);
+    EXPECT_EQ(ret, SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    ret = hpaeManager_->UpdateCollaborativeState(false);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest001, TestSize.Level1)

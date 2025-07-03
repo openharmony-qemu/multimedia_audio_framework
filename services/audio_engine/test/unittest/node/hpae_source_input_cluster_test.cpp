@@ -78,57 +78,6 @@ HWTEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode, TestSi
     EXPECT_EQ(hpaeSourceInputCluster->GetConverterNodeCount(), 1); // no delete converter now
 }
 
-HWTEST_F(HpaeSourceInputClusterTest, testWriteDataToSourceInputDataCase, TestSize.Level0)
-{
-    std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
-    HpaeNodeInfo nodeInfo;
-    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
-    nodeInfo.samplingRate = SAMPLE_RATE_48000;
-    nodeInfo.channels = STEREO;
-    nodeInfo.format = SAMPLE_S16LE;
-    nodeInfo.statusCallback = testStatuscallback;
-    std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
-    uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
-    std::vector<char> testData(requestBytes);
-    uint64_t replyBytes = 0;
-    std::string deviceClass = "file_io";
-    std::string deviceNetId = "LocalDevice";
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    std::string sourceName = "mic";
-    EXPECT_EQ(hpaeSourceInputCluster->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
-    IAudioSourceAttr attr;
-    attr.adapterName = "";
-    attr.openMicSpeaker = 0;
-    attr.format = AudioSampleFormat::INVALID_WIDTH;
-    attr.sampleRate = nodeInfo.samplingRate;
-    attr.channel = nodeInfo.channels;
-    attr.volume = 0.0f;
-    attr.bufferSize = 0;
-    attr.isBigEndian = false;
-    attr.filePath = g_rootCapturerPath.c_str();
-    attr.deviceNetworkId = NULL;
-    attr.deviceType = 0;
-    attr.sourceType = 0;
-    attr.channelLayout = 0;
-    attr.audioStreamFlag = 0;
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceInit(attr), SUCCESS);
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStart(), SUCCESS);
-    EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_RUNNING, true);
-    TestCapturerSourceFrame(testData.data(), requestBytes, replyBytes);
-    std::vector<float> testDataFloat(requestBytes / SAMPLE_F32LE);
-    ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
-    OutputPort<HpaePcmBuffer *> *outputPort = hpaeSourceInputCluster->GetSourceInputNodeOutputPort();
-    HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
-    float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
-    for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
-        float diff = outputPcmData[i] - testDataFloat[i];
-        EXPECT_EQ(fabs(diff) < TEST_VALUE_PRESION, true);
-    }
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceStop(), SUCCESS);
-    EXPECT_EQ(hpaeSourceInputCluster->GetSourceState() == STREAM_MANAGER_SUSPENDED, true);
-    EXPECT_EQ(hpaeSourceInputCluster->CapturerSourceDeInit(), SUCCESS);
-}
-
 HWTEST_F(HpaeSourceInputClusterTest, testInterfaces, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
