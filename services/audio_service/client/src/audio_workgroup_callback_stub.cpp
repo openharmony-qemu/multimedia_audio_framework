@@ -31,6 +31,48 @@ AudioWorkgroupCallbackStub::~AudioWorkgroupCallbackStub()
 {
     AUDIO_DEBUG_LOG("~AudioWorkgroupCallbackStub dtor");
 }
- 
+
+int AudioWorkgroupCallbackStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
+    MessageOption &option)
+{
+    CHECK_AND_RETURN_RET_LOG(data.ReadInterfaceToken() == GetDescriptor(),
+        -1, "AudioManagerStub: ReadInterfaceToken failed");
+
+    switch (code) {
+        case ON_WORKGROUP_CHANGE: {
+            AudioWorkgroupChangeInfo info = {
+                .pid = data.ReadInt32(),
+                .groupId = data.ReadInt32(),
+                .startAllowed = data.ReadBool(),
+            };
+            OnWorkgroupChange(info);
+            return AUDIO_OK;
+        }
+        default: {
+            return IRemoteStub<IAudioWorkgroupCallback>::OnRemoteRequest(code, data, reply, option);
+        }
+    }
+}
+
+void AudioWorkgroupCallbackStub::AddWorkgroupChangeCallback(
+    std::shared_ptr<AudioWorkgroupChangeCallback> cb)
+{
+    workgroupCb_ = cb;
+}
+
+void AudioWorkgroupCallbackStub::RemoveWorkgroupChangeCallback()
+{
+    workgroupCb_ = nullptr;
+}
+
+void AudioWorkgroupCallbackStub::OnWorkgroupChange(
+    const AudioWorkgroupChangeInfo &info)
+{
+    if (workgroupCb_ == nullptr) {
+        return;
+    }
+    workgroupCb_->OnWorkgroupChange(info);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

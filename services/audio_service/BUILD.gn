@@ -396,6 +396,9 @@ audio_ohos_library("audio_process_service") {
     "server/src/pro_audio_stream_manager.cpp",
     "server/src/pro_renderer_stream_impl.cpp",
     "server/src/renderer_in_server.cpp",
+    "server/src/audio_workgroup_callback_proxy.cpp",
+    "server/src/audio_workgroup.cpp",
+    "server/src/audio_resource_service.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -441,6 +444,8 @@ audio_ohos_library("audio_process_service") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
@@ -503,8 +508,6 @@ audio_ohos_library("audio_service") {
     "server/src/audio_server_effect.cpp",
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/config/audio_param_parser.cpp",
-    "server/src/audio_workgroup.cpp",
-    "server/src/audio_resource_service.cpp",
   ]
 
   configs = [ ":audio_service_config" ]
@@ -539,8 +542,6 @@ audio_ohos_library("audio_service") {
     "pulseaudio:pulseaudio",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "frame_aware_sched:rtg_interface",
-    "qos_manager:concurrent_task_client",
   ]
 
   public_external_deps = [ "libxml2:libxml2" ]

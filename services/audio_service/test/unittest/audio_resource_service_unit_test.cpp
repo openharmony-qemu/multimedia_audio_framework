@@ -111,33 +111,33 @@ HWTEST(AudioResourceServiceUnitTest, DeathRecipient_003, TestSize.Level0)
     std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
     sptr<IRemoteObject> remoteObj = nullptr;
 
-    audioResourceService.audioWorkgroupMap[1][testRtgId] = {workgroup};
+    audioResourceService.audioWorkgroupMap_[1].groups[testRtgId] = {workgroup};
     audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
-    EXPECT_EQ(audioResourceService.audioWorkgroupMap[1].size(), 0);
-    EXPECT_EQ(audioResourceService.audioWorkgroupMap[1][testRtgId], nullptr);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[1].size(), 0);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[1].groups[testRtgId], nullptr);
 }
 
 /**
  * @tc.name  : Test deathRecipient
  * @tc.type  : FUNC
  * @tc.number: DeathRecipient_004
- * @tc.desc  : Test OnWorkgroupRemoteDied when audioWorkgroupMap zero
+ * @tc.desc  : Test OnWorkgroupRemoteDied when audioWorkgroupMap_ zero
  */
 HWTEST(AudioResourceServiceUnitTest, DeathRecipient_004, TestSize.Level0)
 {
     std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
     sptr<IRemoteObject> remoteObj = nullptr;
 
-    audioResourceService.audioWorkgroupMap[1][testRtgId] = {workgroup};
+    audioResourceService.audioWorkgroupMap_[1].groups[testRtgId] = {workgroup};
     audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
-    EXPECT_EQ(audioResourceService.audioWorkgroupMap.count(1), 0);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_.count(1), 0);
 }
 
 /**
  * @tc.name  : Test deathRecipient
  * @tc.type  : FUNC
  * @tc.number: DeathRecipient_005
- * @tc.desc  : Test OnWorkgroupRemoteDied when audioWorkgroupMap empty
+ * @tc.desc  : Test OnWorkgroupRemoteDied when audioWorkgroupMap_ empty
  */
 HWTEST(AudioResourceServiceUnitTest, DeathRecipient_005, TestSize.Level0)
 {
@@ -145,14 +145,14 @@ HWTEST(AudioResourceServiceUnitTest, DeathRecipient_005, TestSize.Level0)
     sptr<IRemoteObject> remoteObj = nullptr;
 
     audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
-    EXPECT_TRUE(audioResourceService.audioWorkgroupMap.empty());
+    EXPECT_TRUE(audioResourceService.audioWorkgroupMap_.empty());
 }
 
 /**
  * @tc.name  : Test deathRecipient OnWorkgroupRemoteDied
  * @tc.type  : FUNC
  * @tc.number: DeathRecipient_006
- * @tc.desc  : Test OnWorkgroupRemoteDied find audioWorkgroupMap
+ * @tc.desc  : Test OnWorkgroupRemoteDied find audioWorkgroupMap_
  */
 HWTEST(AudioResourceServiceUnitTest, DeathRecipient_006, TestSize.Level0)
 {
