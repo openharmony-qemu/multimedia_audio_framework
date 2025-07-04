@@ -1634,16 +1634,13 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
     result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-     result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
     EXPECT_EQ(result, SUCCESS);
 }
 }
