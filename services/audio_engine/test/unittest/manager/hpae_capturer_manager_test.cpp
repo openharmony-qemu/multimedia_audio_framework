@@ -898,6 +898,29 @@ HWTEST_F(HpaeCapturerManagerTest, GetDeviceHDFDumpInfo_001, TestSize.Level0)
     TransDeviceInfoToString(sourceInfo, info);
     EXPECT_EQ(config == info, true);
 }
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test GetDeviceHDFDumpInfo_001
+ */
+HWTEST_F(HpaeCapturerManagerTest, CheckEcAndMicRefCondition_001, TestSize.Level0)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+
+    HpaeProcessorType sceneType = HPAE_SCENE_VOIP_UP;
+    HpaeNodeInfo ecNodeInfo;
+    HpaeSourceInputNodeType ecNodeType = HPAE_SOURCE_DEFAULT;
+    EXPECT_EQ(capturerManager->CheckEcCondition(sceneType, ecNodeInfo, ecNodeType), false);
+
+    HpaeNodeInfo micRefNodeInfo;
+    EXPECT_EQ(capturerManager->CheckMicRefCondition(sceneType, micRefNodeInfo), false);
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

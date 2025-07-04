@@ -222,7 +222,7 @@ bool HpaeCapturerManager::CheckEcCondition(const HpaeProcessorType &sceneType, H
 {
     CHECK_AND_RETURN_RET_LOG(sourceInfo_.ecType != HPAE_EC_TYPE_NONE, false, "source not need ec");
     CHECK_AND_RETURN_RET_LOG(CheckSceneTypeNeedEc(sceneType), false, "scene not need ec");
-    CHECK_AND_RETURN_RET_LOG(
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(ecNodeInfo, HPAE_SOURCE_BUFFER_TYPE_EC),
         false, "capture effect node has no ec config");
     ecNodeType = sourceInfo_.ecType == HPAE_EC_TYPE_SAME_ADAPTER ? mainMicType_ : HPAE_SOURCE_EC;
@@ -235,7 +235,7 @@ bool HpaeCapturerManager::CheckMicRefCondition(const HpaeProcessorType &sceneTyp
 {
     CHECK_AND_RETURN_RET_LOG(sourceInfo_.micRef == HPAE_REF_ON, false, "source not need micref");
     CHECK_AND_RETURN_RET_LOG(CheckSceneTypeNeedMicRef(sceneType), false, "scene not need micref");
-    CHECK_AND_RETURN_RET_LOG(
+    CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, sceneType) &&
         sceneClusterMap_[sceneType]->GetCapturerEffectConfig(micRefNodeInfo, HPAE_SOURCE_BUFFER_TYPE_MICREF),
         false, "capture effect node has no micref config");
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF), false, "micref node is null");
