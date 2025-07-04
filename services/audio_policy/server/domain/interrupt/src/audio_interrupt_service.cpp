@@ -1222,16 +1222,17 @@ void AudioInterruptService::ProcessExistInterrupt(std::list<std::pair<AudioInter
     }
 }
 
-void AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+bool AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
     InterruptEventInternal &interruptEvent, std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList)
 {
+    bool needRemoveCurIter = false;
     switch (interruptEvent.hintType) {
         case INTERRUPT_HINT_STOP:
             if (IsGameAvoidCallbackCase(iterActive->first)) {
                 iterActive->second = PAUSEDBYREMOTE;
                 break;
             }
-            iterActive = tmpFocusInfoList.erase(iterActive);
+            needRemoveCurIter = true;
             break;
         case INTERRUPT_HINT_PAUSE:
             if (iterActive->second == ACTIVE || iterActive->second == DUCK) {
@@ -1240,13 +1241,13 @@ void AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, A
             break;
         case INTERRUPT_HINT_RESUME:
             if (iterActive->second == PAUSEDBYREMOTE) {
-                iterActive = tmpFocusInfoList.erase(iterActive);
+                needRemoveCurIter = true;
             }
             break;
         default:
             break;
     }
-    return;
+    return needRemoveCurIter;
 }
 
 void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent)
@@ -1261,19 +1262,24 @@ void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, 
         targetZoneIt->second->zoneId = 0;
     }
     for (auto iterActive = tmpFocusInfoList.begin(); iterActive != tmpFocusInfoList.end();) {
+        bool needRemoveCurIter = false;
         for (auto streamId : streamIds) {
             if (streamId != static_cast<int32_t> (iterActive->first.streamId)) {
                 continue;
             }
             AudioInterrupt currentInterrupt = iterActive->first;
-            SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
+            needRemoveCurIter = SwitchHintType(iterActive, interruptEvent, tmpFocusInfoList);
             SendInterruptEventCallback(interruptEvent, streamId, currentInterrupt);
             if (interruptEvent.hintType == INTERRUPT_HINT_PAUSE || interruptEvent.hintType == INTERRUPT_HINT_STOP) {
                 SendFocusChangeEvent(ZONEID_DEFAULT, AudioPolicyServerHandler::ABANDON_CALLBACK_CATEGORY,
                     currentInterrupt);
             }
         }
-        ++iterActive;
+        if (needRemoveCurIter) {
+            iterActive = tmpFocusInfoList.erase(iterActive);
+        } else {
+            ++iterActive;
+        }
     }
     targetZoneIt->second->audioFocusInfoList = tmpFocusInfoList;
 }
