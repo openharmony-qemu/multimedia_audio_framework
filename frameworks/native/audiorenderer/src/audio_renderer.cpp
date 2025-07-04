@@ -2781,6 +2781,8 @@ void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
 
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
+
     if (audioHapticsSyncId > 0) {
         audioHapticsSyncId_ = audioHapticsSyncId;
         audioStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
@@ -2794,6 +2796,8 @@ void AudioRendererPrivate::ResetFirstFrameState()
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
+
+    CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, false, "audio stream is null");
 
     audioStream_->ResetFirstFrameState();
 }
