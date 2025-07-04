@@ -36,6 +36,7 @@ private:
     void SetSystemVolumeLevelWithDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void SetAppVolumeMutedInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAdjustVolumeForZoneInternal(MessageParcel &data, MessageParcel &reply);
     void SetSelfAppVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
     void GetSystemActiveVolumeTypeInternal(MessageParcel& data, MessageParcel& reply);
     void GetSystemVolumeLevelInternal(MessageParcel &data, MessageParcel &reply);
@@ -171,6 +172,9 @@ private:
     void HandleEnableAudioZoneChangeReport(MessageParcel &data, MessageParcel &reply);
     void HandleAddUidToAudioZone(MessageParcel &data, MessageParcel &reply);
     void HandleRemoveUidFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleAddStreamToAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleRemoveStreamFromAudioZone(MessageParcel &data, MessageParcel &reply);
+    void HandleSetZoneDeviceVisible(MessageParcel &data, MessageParcel &reply);
     void HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZone(MessageParcel &data, MessageParcel &reply);
     void HandleGetAudioInterruptForZoneDevice(MessageParcel &data, MessageParcel &reply);
@@ -224,6 +228,8 @@ private:
     void SetVoiceRingtoneMuteInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryClientTypeCallbackInternal(MessageParcel &data, MessageParcel &reply);
     void SetAudioClientInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioVKBInfoMgrCallbackInternal(MessageParcel &data, MessageParcel &reply);
+    void CheckVKBInfoInternal(MessageParcel &data, MessageParcel &reply);
     void SetVirtualCallInternal(MessageParcel &data, MessageParcel &reply);
     void SetDeviceConnectionStatusInternal(MessageParcel &data, MessageParcel &reply);
     void SetQueryAllowedPlaybackCallbackInternal(MessageParcel &data, MessageParcel &reply);
@@ -233,6 +239,7 @@ private:
     void NotifySessionStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void NotifyFreezeStateChangeInternal(MessageParcel &data, MessageParcel &reply);
     void ResetAllProxyInternal(MessageParcel &data, MessageParcel &reply);
+    void NotifyProcessBackgroundStateInternal(MessageParcel &data, MessageParcel &reply);
     void IsAcousticEchoCancelerSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void ForceStopAudioStreamInternal(MessageParcel &data, MessageParcel &reply);
     void IsCapturerFocusAvailableInternal(MessageParcel &data, MessageParcel &reply);
@@ -252,7 +259,11 @@ private:
     void IsCollaborativePlaybackSupportedInternal(MessageParcel &data, MessageParcel &reply);
     void SetCollaborativePlayBackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
     void IsCollaborativePlaybackEnabledForDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetAudioSessionSceneInternal(MessageParcel &data, MessageParcel &reply);
+    void GetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
+    void SetDefaultOutputDeviceInternal(MessageParcel &data, MessageParcel &reply);
 
+    void OnMiddleThiRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTweRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleEleRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);
     void OnMiddleTenRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option);

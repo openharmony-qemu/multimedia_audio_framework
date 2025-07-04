@@ -39,10 +39,12 @@ public:
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation, SessionOperationMsg opMsg) override;
+    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
         const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
     std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo) override;
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+        bool isReloadProcess) override;
     uint32_t GenerateSessionId() override;
 
 private:

@@ -80,6 +80,12 @@ uint32_t HpaeManagerImpl::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
     return manager_->OpenAudioPort(audioModuleInfo);
 }
 
+uint32_t HpaeManagerImpl::ReloadAudioPort(const AudioModuleInfo &audioModuleInfo)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, -1, "manager is nullptr");
+    return manager_->ReloadAudioPort(audioModuleInfo);
+}
+
 int32_t HpaeManagerImpl::CloseAudioPort(int32_t audioHandleIndex)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE,

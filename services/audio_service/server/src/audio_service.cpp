@@ -140,6 +140,7 @@ void AudioService::ReleaseProcess(const std::string endpointName, const int32_t 
     std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
     releasingEndpointSet_.insert(endpointName);
     auto releaseMidpointThread = [this, endpointName, delayTime] () {
+        std::lock_guard<std::mutex> processListLock(processListMutex_);
         this->DelayCallReleaseEndpoint(endpointName, delayTime);
     };
     std::thread releaseEndpointThread(releaseMidpointThread);
@@ -373,7 +374,7 @@ int32_t AudioService::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int6
     return ERR_INVALID_PARAM;
 }
 
-void AudioService::RemoveRenderer(uint32_t sessionId)
+void AudioService::RemoveRenderer(uint32_t sessionId, bool isSwitchStream)
 {
     std::unique_lock<std::mutex> lock(rendererMapMutex_);
     AUDIO_INFO_LOG("Renderer:%{public}u will be removed.", sessionId);
@@ -382,7 +383,9 @@ void AudioService::RemoveRenderer(uint32_t sessionId)
         return;
     }
     allRendererMap_.erase(sessionId);
-    RemoveIdFromMuteControlSet(sessionId);
+    if (!isSwitchStream) {
+        RemoveIdFromMuteControlSet(sessionId);
+    }
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
 }
 
@@ -393,7 +396,7 @@ void AudioService::InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerIn
     allCapturerMap_[sessionId] = capturer;
 }
 
-void AudioService::RemoveCapturer(uint32_t sessionId)
+void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
 {
     std::unique_lock<std::mutex> lock(capturerMapMutex_);
     AUDIO_INFO_LOG("Capturer: %{public}u will be removed.", sessionId);
@@ -403,7 +406,9 @@ void AudioService::RemoveCapturer(uint32_t sessionId)
     }
     allCapturerMap_.erase(sessionId);
     muteStateCallbacks_.erase(sessionId);
-    RemoveIdFromMuteControlSet(sessionId);
+    if (!isSwitchStream) {
+        RemoveIdFromMuteControlSet(sessionId);
+    }
 }
 
 void AudioService::AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer)
@@ -798,16 +803,18 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
-    CHECK_AND_RETURN_RET_LOG(*deviceInfo.audioStreamInfo_.samplingRate.rbegin() > 0, nullptr,
+
+    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
+    CHECK_AND_RETURN_RET_LOG(*audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
         "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
     CheckFastSessionMuteState(process->GetSessionId(), process);
 
-    std::shared_ptr<OHAudioBuffer> buffer = audioEndpoint->GetEndpointType()
+    std::shared_ptr<OHAudioBufferBase> buffer = audioEndpoint->GetEndpointType()
          == AudioEndpoint::TYPE_INDEPENDENT ? audioEndpoint->GetBuffer() : nullptr;
-    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, deviceInfo.audioStreamInfo_, buffer);
+    ret = process->ConfigProcessBuffer(totalSizeInframe, spanSizeInframe, audioStreamInfo, buffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "ConfigProcessBuffer failed");
 
     ret = LinkProcessToEndpoint(process, audioEndpoint);
@@ -856,7 +863,7 @@ void AudioService::ReLinkProcessToEndpoint()
 
             // get new endpoint
             const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
+            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, true);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
                 IsEndpointTypeVoip(config, deviceInfo));
             if (audioEndpoint == nullptr) {
@@ -956,9 +963,7 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
         return;
     }
     releasingEndpointSet_.erase(endpointName);
-    lock.unlock();
 
-    std::lock_guard<std::mutex> processListLock(processListMutex_);
     std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
@@ -975,12 +980,12 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t de
     return;
 }
 
-AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config)
+AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    int32_t ret =
-        CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId, deviceInfo);
+    int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
+        deviceInfo, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
             "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
@@ -989,15 +994,16 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             } else {
                 AUDIO_INFO_LOG("VoIP 48K");
-                deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             }
         } else {
             AUDIO_INFO_LOG("Fast stream");
-            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-            deviceInfo.audioStreamInfo_ = targetStreamInfo;
+            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+                CH_LAYOUT_STEREO};
+            deviceInfo.audioStreamInfo_ = { targetStreamInfo };
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1015,8 +1021,9 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO}; // note: read from xml
-    deviceInfo.audioStreamInfo_ = targetStreamInfo;
+    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+        CH_LAYOUT_STEREO}; // note: read from xml
+    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
     deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
 }

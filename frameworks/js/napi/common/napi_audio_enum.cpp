@@ -87,6 +87,8 @@ napi_ref NapiAudioEnum::reason_ = nullptr;
 napi_ref NapiAudioEnum::policyType_ = nullptr;
 napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
 napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
+napi_ref NapiAudioEnum::audioSessionScene_ = nullptr;
+napi_ref NapiAudioEnum::audioSessionStateChangeHint_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -557,6 +559,22 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioLoopbackStatusMap = {
     {"AVAILABLE_RUNNING", LOOPBACK_AVAILABLE_RUNNING},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::audioSessionSceneMap = {
+    {"AUDIO_SESSION_SCENE_MEDIA", static_cast<int32_t>(AudioSessionScene::MEDIA)},
+    {"AUDIO_SESSION_SCENE_GAME", static_cast<int32_t>(AudioSessionScene::GAME)},
+    {"AUDIO_SESSION_SCENE_VOICE_COMMUNICATION", static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintMap = {
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_RESUME", static_cast<int32_t>(AudioSessionStateChangeHint::RESUME)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_PAUSE", static_cast<int32_t>(AudioSessionStateChangeHint::PAUSE)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_STOP", static_cast<int32_t>(AudioSessionStateChangeHint::STOP)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_TIME_OUT_STOP",
+        static_cast<int32_t>(AudioSessionStateChangeHint::TIME_OUT_STOP)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_DUCK", static_cast<int32_t>(AudioSessionStateChangeHint::DUCK)},
+    {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -736,6 +754,9 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap, audioLoopbackMode_)),
         DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
             CreateEnumObject(env, audioLoopbackStatusMap, audioLoopbackStatus_)),
+        DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap, audioSessionScene_)),
+        DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
+            CreateEnumObject(env, audioSessionStateChangeHintMap, audioSessionStateChangeHint_)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1874,6 +1895,22 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
     bool result = false;
     switch (inputMode) {
         case AudioLoopbackModeNapi::LOOPBACK_MODE_HARDWARE:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
+{
+    bool result = false;
+    switch (scene) {
+        case static_cast<int32_t>(AudioSessionScene::MEDIA):
+        case static_cast<int32_t>(AudioSessionScene::GAME):
+        case static_cast<int32_t>(AudioSessionScene::VOICE_COMMUNICATION):
             result = true;
             break;
         default:

@@ -73,6 +73,15 @@ float AudioServerProxy::GetMaxAmplitudeProxy(bool flag, std::string portName, So
     return maxAmplitude;
 }
 
+int64_t AudioServerProxy::GetVolumeDataCount(std::string sinkName)
+{
+    const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
+
+    int64_t volumeDataCount = gsp->GetVolumeDataCount(sinkName);
+    return volumeDataCount;
+}
+
 void AudioServerProxy::UpdateEffectBtOffloadSupportedProxy(const bool &isSupported)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();

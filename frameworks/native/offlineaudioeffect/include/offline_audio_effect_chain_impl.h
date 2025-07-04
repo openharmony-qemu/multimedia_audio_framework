@@ -30,6 +30,8 @@ class OfflineAudioEffectChainImpl : public OfflineAudioEffectChain {
 public:
     int32_t Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) override;
 
+    int32_t SetParam(const std::vector<uint8_t> &param) override;
+
     int32_t Prepare() override;
 
     int32_t GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize) override;

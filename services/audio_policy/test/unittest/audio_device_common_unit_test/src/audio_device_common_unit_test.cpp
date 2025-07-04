@@ -601,98 +601,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_037, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_038
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_038, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_039
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_039, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_040
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_040, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_48000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_041
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_041, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_WIRED_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_8000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_042
-* @tc.desc  : Test NotifyRecreateDirectStream interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_042, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_OFFLOAD;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = SAMPLE_RATE_8000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    bool ret = audioDeviceCommon.NotifyRecreateDirectStream(rendererChangeInfo, reason);
-    EXPECT_EQ(false, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_043
 * @tc.desc  : Test MuteSinkForSwitchGeneralDevice interface.
 */
@@ -1024,7 +932,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_061, TestSize.Level1)
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "test";
     bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
         capturerChangeInfo, reason);
@@ -1044,7 +954,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_062, TestSize.Level1)
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
     capturerChangeInfo->capturerInfo.originalFlag = AUDIO_FLAG_MMAP;
     capturerChangeInfo->inputDeviceInfo.deviceType_ = DEVICE_TYPE_MIC;
-    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDeviceType(DEVICE_TYPE_MIC);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_MIC;
+    audioDeviceCommon.audioActiveDevice_.SetCurrentInputDevice(deviceDescriptor);
     capturerChangeInfo->inputDeviceInfo.networkId_ = "LocalDevice";
     bool ret = audioDeviceCommon.NotifyRecreateCapturerStream(isUpdateActiveDevice,
         capturerChangeInfo, reason);
@@ -1255,61 +1167,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_070, TestSize.Level1)
     deviceDesc.deviceRole_ = DEVICE_ROLE_NONE;
     ret = audioDeviceCommon.IsSameDevice(desc, deviceDesc);
     EXPECT_EQ(true, ret);
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_071
-* @tc.desc  : Test UpdateTracker interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_071, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
-    RendererState rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    bool ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_STOPPED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_PAUSED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    audioDeviceCommon.enableDualHalToneState_ = true;
-    rendererState = RENDERER_STOPPED;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    rendererState = RENDERER_RELEASED;
-    audioDeviceCommon.enableDualHalToneSessionId_ = 0;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = 0;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_ALARM;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, rendererState);
-    ret = audioDeviceCommon.audioOffloadStream_.GetOffloadAvailableFromXml();
-    EXPECT_EQ(false, ret);
 }
 
 /**
@@ -1779,48 +1636,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_091, TestSize.Level1)
 
     state = RENDERER_PAUSED;
     EXPECT_TRUE(audioDeviceCommon.IsRingOverPlayback(mode, state));
-}
-
-/**
-* @tc.name  : Test AudioDeviceCommon.
-* @tc.number: AudioDeviceCommon_092
-* @tc.desc  : Test UpdateTracker interface.
-*/
-HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_092, TestSize.Level1)
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-    RendererState state  = RENDERER_STOPPED;
-    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = false;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    mode = AUDIO_MODE_PLAYBACK;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_INVALID;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_VOICE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
-
-    audioDeviceCommon.isRingDualToneOnPrimarySpeaker_ = true;
-    audioDeviceCommon.UpdateTracker(mode, streamChangeInfo, state);
-    EXPECT_FALSE(audioDeviceCommon.isRingDualToneOnPrimarySpeaker_);
 }
 } // namespace AudioStandard
 } // namespace OHOS

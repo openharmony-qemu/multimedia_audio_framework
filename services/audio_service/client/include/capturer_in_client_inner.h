@@ -84,7 +84,7 @@ public:
     int32_t SetLoudnessGain(float loudnessGain) override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
-    int32_t SetMute(bool mute) override;
+    int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -128,6 +128,7 @@ public:
     bool StopAudioStream() override;
     bool FlushAudioStream() override;
     bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
+    void JoinCallbackLoop() override;
 
     // Playback related APIs
     bool DrainAudioStream(bool stopFlag = false) override;

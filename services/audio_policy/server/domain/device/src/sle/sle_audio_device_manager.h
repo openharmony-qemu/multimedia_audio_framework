@@ -34,6 +34,7 @@ struct SleVolumeConfigInfo {
 
 enum SleAudioStreamType : uint32_t {
     SLE_AUDIO_STREAM_NONE = 0x00000000,
+    SLE_AUDIO_STREAM_UNDEFINED = 0x00000001,
     SLE_AUDIO_STREAM_MUSIC = 0x00000002,
     SLE_AUDIO_STREAM_VOICE_CALL = 0x00000004,
     SLE_AUDIO_STREAM_VOICE_ASSISTANT = 0x00000008,
@@ -67,6 +68,7 @@ public:
     int32_t ConnectAllowedProfiles(const std::string &remoteAddr) const override;
     int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType) override;
     int32_t SendUserSelection(const std::string &device, uint32_t streamType) override;
+    int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override;
 
     // Parameter Conversion Interface
     int32_t SetActiveDevice(const std::string &device, StreamUsage streamUsage);

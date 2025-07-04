@@ -55,14 +55,13 @@ public:
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
-    int32_t Init() override;
+    int32_t Init(bool isReload = false) override;
     int32_t DeInit(bool isMoveDefault = false) override;
     bool IsInit() override;
     bool IsRunning(void) override;
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -89,35 +88,42 @@ public:
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     void DumpSinkInfo() override;
-    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;
 
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     int32_t ConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
     int32_t DisConnectCoBufferNode(const std::shared_ptr<HpaeCoBufferNode> &coBufferNode) override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
+
 private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t StartRenderSink();
     bool IsMchDevice();
     int32_t CreateInputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteInputSession(uint32_t sessionId);
+    int32_t DeleteInputSessionForMove(uint32_t sessionId);
     bool isSplitProcessorType(HpaeProcessorType sceneType);
     int32_t ConnectInputSession(uint32_t sessionId);
     int32_t DisConnectInputSession(uint32_t sessionId);
+    int32_t DeleteConnectInputProcessor(const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
     void SetSessionState(uint32_t sessionId, HpaeSessionState renderState);
     void AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
+    void CreateEffectAndConnect(HpaeNodeInfo &nodeInfo, bool isConnect = true);
     void MoveAllStreamToNewSink(const std::string &sinkName, const std::vector<uint32_t>& moveIds,
         MoveSessionType moveType);
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
-    void DisConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
+    void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
+    void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
     void CreateDefaultProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateOutputClusterNodeInfo(HpaeNodeInfo &nodeInfo);
-    void InitManager();
+    void InitManager(bool isReload = false);
     void MoveStreamSync(uint32_t sessionId, const std::string &sinkName);
     void UpdateAppsUid();
     int32_t HandlePriPaPower(uint32_t sessionId);

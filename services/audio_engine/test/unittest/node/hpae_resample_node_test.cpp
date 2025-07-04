@@ -29,6 +29,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 static constexpr uint32_t TEST_ID = 1243;
 static constexpr uint32_t TEST_ID2 = 1246;
@@ -47,7 +49,7 @@ void HpaeResampleNodeTest::SetUp()
 void HpaeResampleNodeTest::TearDown()
 {}
 
-TEST_F(HpaeResampleNodeTest, constructHpaeResampleNode)
+HWTEST_F(HpaeResampleNodeTest, constructHpaeResampleNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -75,7 +77,7 @@ TEST_F(HpaeResampleNodeTest, constructHpaeResampleNode)
     EXPECT_EQ(retNi.format, dstNodeInfo.format);
 }
 
-TEST_F(HpaeResampleNodeTest, testReset)
+HWTEST_F(HpaeResampleNodeTest, testReset, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -108,7 +110,7 @@ TEST_F(HpaeResampleNodeTest, testReset)
     EXPECT_EQ(hpaeResampleNode2->Reset(), false);
 }
 
-TEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess)
+HWTEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess, TestSize.Level0)
 {
     HpaeNodeInfo srcNodeInfo;
     srcNodeInfo.nodeId = TEST_ID;
@@ -126,7 +128,7 @@ TEST_F(HpaeResampleNodeTest, testHpaeReampleNodeProcess)
     std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(srcNodeInfo, dstNodeInfo);
 }
 
-TEST_F(HpaeResampleNodeTest, testSignalProcess_001)
+HWTEST_F(HpaeResampleNodeTest, testSignalProcess_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -152,7 +154,7 @@ TEST_F(HpaeResampleNodeTest, testSignalProcess_001)
     EXPECT_NE(hpaeResampleNode->SignalProcess(inputs), nullptr);
 }
 
-TEST_F(HpaeResampleNodeTest, testSignalProcess_002)
+HWTEST_F(HpaeResampleNodeTest, testSignalProcess_002, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;
@@ -180,7 +182,7 @@ TEST_F(HpaeResampleNodeTest, testSignalProcess_002)
     EXPECT_NE(hpaeResampleNode2->SignalProcess(inputs), nullptr);
 }
 
-TEST_F(HpaeResampleNodeTest, testConnectWithInfo)
+HWTEST_F(HpaeResampleNodeTest, testConnectWithInfo, TestSize.Level0)
 {
     HpaeNodeInfo srcNodeInfo;
     srcNodeInfo.nodeId = TEST_ID;

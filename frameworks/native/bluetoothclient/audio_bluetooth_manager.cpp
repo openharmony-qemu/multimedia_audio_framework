@@ -467,7 +467,7 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
     BluetoothRemoteDevice device;
     if (HfpBluetoothDeviceManager::GetConnectedHfpBluetoothDevice(macAddress, device) != SUCCESS) {
-        AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device %{public}s does not exist.",
+        AUDIO_ERR_LOG("SetActiveHfpDevice failed for the HFP device, %{public}s does not exist.",
             GetEncryptAddr(macAddress).c_str());
         return ERROR;
     }
@@ -480,9 +480,21 @@ int32_t AudioHfpManager::SetActiveHfpDevice(const std::string &macAddress)
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "DisconnectSco failed, result: %{public}d", ret);
     }
     int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
-    CHECK_AND_RETURN_RET_LOG(res == 0, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetActiveHfpDevice failed, result: %{public}d", res);
     activeHfpDevice_ = device;
     return SUCCESS;
+}
+
+int32_t AudioHfpManager::UpdateActiveHfpDevice(const BluetoothRemoteDevice &device)
+{
+    AUDIO_INFO_LOG("update active device:%{public}s, current device:%{public}s",
+        GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+        GetEncryptAddr(activeHfpDevice_.GetDeviceAddr()).c_str());
+    std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    int32_t res = BluetoothHfpInterface::GetInstance().SetActiveDevice(device);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR, "SetActiveDevice failed, result: %{public}d", res);
+    activeHfpDevice_ = device;
+    return TryUpdateScoCategoryNoLock();
 }
 
 std::string AudioHfpManager::GetActiveHfpDevice()
@@ -700,6 +712,11 @@ ScoCategory AudioHfpManager::JudgeScoCategory()
 int32_t AudioHfpManager::TryUpdateScoCategory()
 {
     std::lock_guard<std::mutex> hfpDeviceLock(g_activehfpDeviceLock);
+    return TryUpdateScoCategoryNoLock();
+}
+
+int32_t AudioHfpManager::TryUpdateScoCategoryNoLock()
+{
     BluetoothRemoteDevice defaultDevice;
     if (!activeHfpDevice_.IsValidBluetoothRemoteDevice() ||
         activeHfpDevice_.GetDeviceAddr() == defaultDevice.GetDeviceAddr()) {
@@ -764,9 +781,13 @@ void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, in
     // SCO_DISCONNECTED = 3, SCO_CONNECTING = 4, SCO_DISCONNECTING = 5, SCO_CONNECTED = 6
     HfpScoConnectState scoState = static_cast<HfpScoConnectState>(state);
     if (scoState == HfpScoConnectState::SCO_CONNECTED || scoState == HfpScoConnectState::SCO_DISCONNECTED) {
-        bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
-        BluetoothScoManager::GetInstance().UpdateScoState(scoState, device, reason);
-        HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
+        if (scoState == HfpScoConnectState::SCO_CONNECTED && reason == HFP_AG_SCO_REMOTE_USER_SET_UP) {
+            AudioHfpManager::UpdateActiveHfpDevice(device);
+        } else {
+            bool isConnected = (scoState == HfpScoConnectState::SCO_CONNECTED) ? true : false;
+            BluetoothScoManager::GetInstance().UpdateScoState(scoState, device, reason);
+            HfpBluetoothDeviceManager::OnScoStateChanged(device, isConnected, reason);
+        }
     }
 }
 

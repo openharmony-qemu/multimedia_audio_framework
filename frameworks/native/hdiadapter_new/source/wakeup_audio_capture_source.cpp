@@ -265,7 +265,7 @@ float WakeupAudioCaptureSource::GetMaxAmplitude(void)
     return audioCaptureSource_.GetMaxAmplitude();
 }
 
-int32_t WakeupAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice)
+int32_t WakeupAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
     return audioCaptureSource_.SetAudioScene(audioScene, activeDevice);
 }

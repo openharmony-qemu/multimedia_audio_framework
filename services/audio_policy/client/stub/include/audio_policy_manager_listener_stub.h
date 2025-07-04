@@ -36,14 +36,16 @@ public:
     void OnAvailableDeviceChange(const AudioDeviceUsage usage, const DeviceChangeAction &deviceChangeAction) override;
     bool OnQueryClientType(const std::string &bundleName, uint32_t uid) override;
     bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) override;
+    bool OnCheckVKBInfo(const std::string &bundleName) override;
     bool OnQueryAllowedPlayback(int32_t uid, int32_t pid) override;
     void OnBackgroundMute(const int32_t uid) override;
-    bool OnQueryBundleNameIsInList(const std::string &bundleName) override;
+    bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) override;
     // AudioManagerListenerStub
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
     void SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb);
     void SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb);
+    void SetAudioVKBInfoMgrCallback(const std::weak_ptr<AudioVKBInfoMgrCallback> &cb);
     void SetQueryAllowedPlaybackCallback(const std::weak_ptr<AudioQueryAllowedPlaybackCallback> &cb);
     void SetBackgroundMuteCallback(const std::weak_ptr<AudioBackgroundMuteCallback> &cb);
     void SetQueryBundleNameListCallback(const std::weak_ptr<AudioQueryBundleNameListCallback> &cb);
@@ -58,6 +60,7 @@ private:
     std::weak_ptr<AudioQueryAllowedPlaybackCallback> audioQueryAllowedPlaybackCallback_;
     std::weak_ptr<AudioBackgroundMuteCallback> audioBackgroundMuteCallback_;
     std::weak_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback_;
+    std::weak_ptr<AudioVKBInfoMgrCallback> audioVKBInfoMgrCallback_;
     std::weak_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback_;
 };
 } // namespace AudioStandard

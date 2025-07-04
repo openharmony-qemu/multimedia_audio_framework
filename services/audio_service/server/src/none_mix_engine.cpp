@@ -33,7 +33,6 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DELTA_TIME = 4000000; // 4ms
 constexpr int32_t PERIOD_NS = 20000000; // 20ms
-constexpr int32_t AUDIO_US_PER_MS = 1000;
 constexpr int32_t AUDIO_DEFAULT_LATENCY_US = 160000;
 constexpr int32_t AUDIO_FRAME_WORK_LATENCY_US = 40000;
 constexpr int32_t FADING_MS = 20; // 20ms
@@ -272,7 +271,7 @@ void NoneMixEngine::AdjustVoipVolume()
         float volumeEd = AudioVolume::GetInstance()->GetVolume(streamIndx, config.streamType,
             std::string(SINK_ADAPTER_NAME), &volumes);
         float volumeBg = volumes.volumeHistory;
-        if ((!firstSetVolume_ && volumeBg != volumeEd) || firstSetVolume_) {
+        if ((!firstSetVolume_ && abs(volumeBg - volumeEd) > FLOAT_EPS) || firstSetVolume_) {
             AUDIO_INFO_LOG("Adjust voip volume");
             AudioVolume::GetInstance()->SetHistoryVolume(streamIndx, volumeEd);
             AudioVolume::GetInstance()->Monitor(streamIndx, true);

@@ -278,6 +278,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_012, TestSize.Level1)
 
     auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
     EXPECT_EQ(ret, SUCCESS);
+
+    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, true);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -610,8 +613,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     pid_t uid = 0;
-
-    eventEntry->RegisteredTrackerClientDied(uid);
+    pid_t pid = 0;
+    eventEntry->RegisteredTrackerClientDied(uid, pid);
 }
 
 /**

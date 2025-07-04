@@ -479,7 +479,7 @@ void AudioServer::RegisterDataTransferStateChangeCallback()
 {
     DataTransferMonitorParam param;
     param.clientUID = CHECK_ALL_RENDER_UID;
-    param.badDataTransferTypeBitMap = 0b01; // bit0:NO_DATA_TRANS, bit1:SILENCE_DATA_TRANS
+    param.badDataTransferTypeBitMap = (1 << NO_DATA_TRANS);
     param.timeInterval = RENDER_DETECTION_CYCLE_NS;
     param.badFramesRatio = RENDER_BAD_FRAMES_RATIO;
 
@@ -512,6 +512,11 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
 {
     if (info.stateChangeType == DATA_TRANS_STOP) {
         ReportEvent(info);
+        if (((info.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
+            (info.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION)) && info.isBackground) {
+            int32_t ret = PolicyHandler::GetInstance().ClearAudioFocusBySessionID(info.sessionId);
+            CHECK_AND_RETURN_LOG(ret ==SUCCESS, "focus clear fail");
+        }
     }
 }
 
@@ -653,6 +658,7 @@ bool AudioServer::SetPcmDumpParameter(const std::vector<std::pair<std::string, s
     return AudioCacheMgr::GetInstance().SetDumpParameter(params);
 }
 
+// LCOV_EXCL_START
 bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string, std::string>> &params)
 {
     CHECK_AND_RETURN_RET_LOG(params.size() > 0, false, "params is empty!");
@@ -664,7 +670,6 @@ bool AudioServer::SetEffectLiveParameter(const std::vector<std::pair<std::string
     return false;
 }
 
-// LCOV_EXCL_START
 int32_t AudioServer::SetExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -1169,7 +1174,8 @@ int32_t AudioServer::OffloadSetVolume(float volume)
 int32_t AudioServer::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
     DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d", audioScene, activeInputDevice);
+    AUDIO_INFO_LOG("Scene: %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, activeInputDevice, scoExcludeFlag);
     std::lock_guard<std::mutex> lock(audioSceneMutex_);
 
     DeviceType activeOutputDevice = activeOutputDevices.front();
@@ -2422,6 +2428,20 @@ float AudioServer::GetMaxAmplitude(bool isOutputDevice, std::string deviceClass,
     return 0;
 }
 
+int64_t AudioServer::GetVolumeDataCount(std::string sinkName)
+{
+    // this is only called in audio_server, not need to check calling uid
+    uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
+    std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
+    int64_t volumeDataCount = 0;
+    if (sink != nullptr) {
+        volumeDataCount = sink->GetVolumeDataCount();
+    } else {
+        AUDIO_WARNING_LOG("can not find: %{public}s", sinkName.c_str());
+    }
+    return volumeDataCount;
+}
+
 void AudioServer::ResetAudioEndpoint()
 {
 #ifdef SUPPORT_LOW_LATENCY
@@ -2827,9 +2847,9 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
     primarySink->SetDeviceConnectedFlag(flag);
 }
 
-int32_t AudioServer::CreateAudioWorkgroup(int32_t pid)
+int32_t AudioServer::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject>& object)
 {
-    return audioResourceService_->CreateAudioWorkgroup(pid);
+    return audioResourceService_->CreateAudioWorkgroup(pid, object);
 }
 
 int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)

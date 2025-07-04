@@ -1495,10 +1495,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_072, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -1536,10 +1535,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_073, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
@@ -1575,10 +1573,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_074, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
@@ -1785,10 +1782,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_082, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     BufferDesc srcDesc;
@@ -1817,7 +1813,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_083, TestSize.Lev
     uint32_t totalSizeInFrame = 0;
     uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
@@ -1922,10 +1918,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_087, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -1933,10 +1928,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_087, TestSize.Lev
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
-
-    uint64_t curWritePos = 0;
-    auto ret = ptrAudioProcessInClientInner->PrepareCurrent(curWritePos);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1957,10 +1948,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_088, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -1968,10 +1958,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_088, TestSize.Lev
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
-
-    uint64_t curWritePos = 0;
-    auto ret = ptrAudioProcessInClientInner->PrepareCurrentLoop(curWritePos);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1992,10 +1978,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_089, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -2006,10 +1991,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_089, TestSize.Lev
 
     ptrAudioProcessInClientInner->spanSizeInFrame_ = 1;
     ptrAudioProcessInClientInner->clientSpanSizeInFrame_ = 0;
-
-    uint64_t curWritePos = 0;
-    auto ret = ptrAudioProcessInClientInner->PrepareCurrentLoop(curWritePos);
-    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2031,10 +2012,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_090, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -2042,11 +2022,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_090, TestSize.Lev
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
-
-    uint64_t curWritePos = 0;
-    int64_t clientWriteCost = 0;
-    auto ret = ptrAudioProcessInClientInner->FinishHandleCurrent(curWritePos, clientWriteCost);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -2068,10 +2043,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_091, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -2079,11 +2053,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_091, TestSize.Lev
     ASSERT_TRUE(ptrBufferInfo != nullptr);
 
     ptrBufferInfo->basePosInFrame.store(0);
-
-    uint64_t curWritePos = 0;
-    int64_t clientWriteCost = 0;
-    auto ret = ptrAudioProcessInClientInner->FinishHandleCurrentLoop(curWritePos, clientWriteCost);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -2105,10 +2074,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_092, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -2119,11 +2087,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_092, TestSize.Lev
 
     ptrAudioProcessInClientInner->spanSizeInFrame_ = 1;
     ptrAudioProcessInClientInner->clientSpanSizeInFrame_ = 0;
-
-    uint64_t curWritePos = 0;
-    int64_t clientWriteCost = 0;
-    auto ret = ptrAudioProcessInClientInner->FinishHandleCurrentLoop(curWritePos, clientWriteCost);
-    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -2144,13 +2107,10 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_093, TestSize.Lev
     ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
 
     uint64_t curWritePos = 0;
-    int64_t curTime = 0;
-    int64_t wakeUpTime = 0;
-    int64_t clientWriteCost = 0;
 
     ptrAudioProcessInClientInner->isCallbackLoopEnd_ = true;
     ptrAudioProcessInClientInner->startFadeout_.store(false);
-    auto ret = ptrAudioProcessInClientInner->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
+    auto ret = ptrAudioProcessInClientInner->ProcessCallbackFuc(curWritePos);
     EXPECT_EQ(ret, false);
 }
 
@@ -2173,10 +2133,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_094, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
@@ -2191,10 +2150,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_094, TestSize.Lev
     ASSERT_TRUE(ptrStreamStatus != nullptr);
 
     uint64_t curWritePos = 0;
-    int64_t curTime = 0;
-    int64_t wakeUpTime = 0;
-    int64_t clientWriteCost = 0;
-    auto ret = ptrAudioProcessInClientInner->ProcessCallbackFuc(curWritePos, curTime, wakeUpTime, clientWriteCost);
+    auto ret = ptrAudioProcessInClientInner->ProcessCallbackFuc(curWritePos);
     EXPECT_EQ(ret, true);
 }
 

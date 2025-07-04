@@ -193,7 +193,7 @@ private:
 class AudioQueryBundleNameListCallback {
 public:
     virtual ~AudioQueryBundleNameListCallback() = default;
-    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName) = 0;
+    virtual bool OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType) = 0;
 };
 
 class AudioManagerAvailableDeviceChangeCallback {
@@ -461,6 +461,8 @@ public:
      * defined in {@link audio_errors.h} otherwise.
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
+
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     /**
      * @brief Check the uid app volume is muted.
@@ -1432,6 +1434,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const std::shared_ptr<AudioQueryClientTypeCallback> &callback);
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
+    int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
     int32_t SetQueryAllowedPlaybackCallback(const std::shared_ptr<AudioQueryAllowedPlaybackCallback> &callback);
     int32_t SetBackgroundMuteCallback(const std::shared_ptr<AudioBackgroundMuteCallback> &callback);
 
@@ -1519,6 +1523,16 @@ public:
     * in {@link audio_errors.h}.
     */
     int32_t ResetAllProxy();
+
+    /**
+    * @brief Notify process background state.
+    *
+    * @param uid Specifies uid of app.
+    * @param pid Specifies pid of app.
+    * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
+    * in {@link audio_errors.h}.
+    */
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
 
 #ifdef HAS_FEATURE_INNERCAPTURER
     /**

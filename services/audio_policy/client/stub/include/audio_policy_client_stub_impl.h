@@ -122,6 +122,10 @@ public:
     int32_t RemoveAudioSessionCallback();
     int32_t RemoveAudioSessionCallback(const std::shared_ptr<AudioSessionCallback> &cb);
     size_t GetAudioSessionCallbackSize() const;
+    int32_t AddAudioSessionStateCallback(const std::shared_ptr<AudioSessionStateChangedCallback> &cb);
+    int32_t RemoveAudioSessionStateCallback();
+    int32_t RemoveAudioSessionStateCallback(const std::shared_ptr<AudioSessionStateChangedCallback> &cb);
+    size_t GetAudioSessionStateCallbackSize() const;
     int32_t AddAudioSceneChangedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     int32_t RemoveAudioSceneChangedCallback(
@@ -165,6 +169,7 @@ public:
         const bool &enabled) override;
     void OnNnStateChange(const int32_t &nnState) override;
     void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
     void OnAudioSceneChange(const AudioScene &audioScene) override;
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
     void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
@@ -196,6 +201,7 @@ private:
     std::vector<std::shared_ptr<AudioHeadTrackingEnabledChangeCallback>> headTrackingEnabledChangeCallbackList_;
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
+    std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
@@ -231,6 +237,7 @@ private:
     mutable std::mutex headTrackingEnabledChangeMutex_;
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
+    mutable std::mutex audioSessionStateMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;

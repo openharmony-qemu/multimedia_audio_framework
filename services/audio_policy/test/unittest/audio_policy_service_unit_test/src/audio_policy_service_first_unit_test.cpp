@@ -295,13 +295,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, AudioPolicyServiceTest_001, TestSize.Level1
             AUDIO_INFO_LOG("AudioPolicyServiceTest_001 isConnected:%{public}d", static_cast<uint32_t>(isConnected));
             GetServerPtr()->audioPolicyService_.audioDeviceStatus_.hasModulesLoaded = true;
             GetServerPtr()->audioPolicyService_.OnPnpDeviceStatusUpdated(audioDeviceDescriptor, isConnected);
-            GetServerPtr()->audioDeviceLock_.SetCallDeviceActive(deviceType, isConnected,
-                audioDeviceDescriptor.macAddress_);
         }
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
-            CONNECTING_NUMBER);
-        GetServerPtr()->audioPolicyService_.audioDeviceLock_.UpdateSessionConnectionState(TEST_SESSIONID,
-            (CONNECTING_NUMBER + 1));
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
         GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->GetA2dpOffloadCodecAndSendToDsp();
         GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.UpdateAudioCapturerMicrophoneDescriptor(
@@ -1724,48 +1718,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, HandleLocalDeviceDisconnected_002, TestSize
 }
 
 /**
-* @tc.name  : Test AddAudioCapturerMicrophoneDescriptor and GetAudioCapturerMicrophoneDescriptors.
-* @tc.number: AddAudioCapturerMicrophoneDescriptor_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest AddAudioCapturerMicrophoneDescriptor_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-    // clear data
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.clear();
-
-    // call when devType is DEVICE_TYPE_NONE
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_NONE);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // call when devType is DEVICE_TYPE_MIC and connectedMicrophones_ is empty
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_MIC);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // dummy data
-    sptr<MicrophoneDescriptor> microphoneDescriptor = new(std::nothrow) MicrophoneDescriptor();
-    ASSERT_NE(nullptr, microphoneDescriptor) << "microphoneDescriptor is nullptr.";
-    microphoneDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.connectedMicrophones_.push_back(
-        microphoneDescriptor);
-
-    // call when devType is DEVICE_TYPE_MIC but connectedMicrophones_ is DEVICE_TYPE_BLUETOOTH_A2DP
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_MIC);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-
-    // call when devType is DEVICE_TYPE_BLUETOOTH_A2DP and connectedMicrophones_ is also DEVICE_TYPE_BLUETOOTH_A2DP
-    GetServerPtr()->audioPolicyService_.audioMicrophoneDescriptor_.AddAudioCapturerMicrophoneDescriptor(
-        TEST_SESSIONID, DEVICE_TYPE_BLUETOOTH_A2DP);
-    GetServerPtr()->audioPolicyService_.GetAudioCapturerMicrophoneDescriptors(TEST_SESSIONID);
-}
-
-/**
 * @tc.name  : Test UpdateAudioCapturerMicrophoneDescriptor.
 * @tc.number: UpdateAudioCapturerMicrophoneDescriptor_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1882,7 +1834,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, OnCapturerSessionAdded_001, TestSize.Level1
     sessionInfo.channels = CHANNELS;
 
     GetServerPtr()->audioPolicyService_.audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_INVALID;
-    GetServerPtr()->audioPolicyService_.OnCapturerSessionAdded(TEST_SESSIONID, sessionInfo, streamInfo);
 
     // dummy data
     AudioAdapterInfo adapterInfo = {};
@@ -2667,89 +2618,6 @@ HWTEST_F(AudioPolicyServiceUnitTest, IsFastFromA2dpToA2dp_002, TestSize.Level1)
 
     bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.IsFastFromA2dpToA2dp(audioDeviceDescriptor,
         rendererChangeInfo, reason);
-    EXPECT_TRUE(ret);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_001 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-
-    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
-        reason);
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_002
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_002, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_002 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    rendererChangeInfo->outputDeviceInfo.deviceId_ = DEVICE_TYPE_USB_ARM_HEADSET;
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
-
-    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
-        reason);
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_003
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_003, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_003 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_WAKEUP;
-
-    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
-        reason);
-    EXPECT_TRUE(ret);
-}
-
-/**
-* @tc.name  : Test NotifyRecreateDirectStream.
-* @tc.number: NotifyRecreateDirectStream_004
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceUnitTest, NotifyRecreateDirectStream_004, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceUnitTest NotifyRecreateDirectStream_004 start");
-    ASSERT_NE(nullptr, GetServerPtr());
-
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererInfo.pipeType = PIPE_TYPE_UNKNOWN;
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    rendererChangeInfo->rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
-    rendererChangeInfo->rendererInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    rendererChangeInfo->rendererInfo.format = SAMPLE_S24LE;
-    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-
-    bool ret = GetServerPtr()->audioPolicyService_.audioDeviceCommon_.NotifyRecreateDirectStream(rendererChangeInfo,
-        reason);
     EXPECT_TRUE(ret);
 }
 

@@ -225,6 +225,7 @@ int32_t ProcessConfig::WriteConfigToParcel(const AudioProcessConfig &config, Mes
     parcel.WriteInt32(config.rendererInfo.effectMode);
     parcel.WriteBool(config.rendererInfo.isLoopback);
     parcel.WriteInt32(static_cast<int32_t>(config.rendererInfo.loopbackMode));
+    parcel.WriteBool(config.rendererInfo.isVirtualKeyboard);
 
     //AudioPrivacyType
     parcel.WriteInt32(config.privacyType);
@@ -289,6 +290,7 @@ int32_t ProcessConfig::ReadConfigFromParcel(AudioProcessConfig &config, MessageP
     config.rendererInfo.effectMode = parcel.ReadInt32();
     config.rendererInfo.isLoopback = parcel.ReadBool();
     config.rendererInfo.loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+    config.rendererInfo.isVirtualKeyboard = parcel.ReadBool();
 
     //AudioPrivacyType
     config.privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());

@@ -25,6 +25,8 @@ public:
     void OnOpenAudioPortCb(int32_t portId) override;
  
     void OnCloseAudioPortCb(int32_t result) override;
+
+    void OnReloadAudioPortCb(int32_t portId) override;
  
     void OnSetSinkMuteCb(int32_t result) override;
  

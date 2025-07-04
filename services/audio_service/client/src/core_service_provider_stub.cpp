@@ -88,9 +88,10 @@ int32_t CoreServiceProviderStub::HandleGetAdapterNameBySessionId(MessageParcel &
 int32_t CoreServiceProviderStub::HandleGetProcessDeviceInfoBySessionId(MessageParcel &data, MessageParcel &reply)
 {
     uint32_t sessionID = data.ReadUint32();
-    AUDIO_INFO_LOG("SessionId: %{public}u", sessionID);
+    bool isReloadProcess = data.ReadBool();
+    AUDIO_INFO_LOG("SessionId: %{public}u, is in reload: %{public}d", sessionID, isReloadProcess);
     AudioDeviceDescriptor deviceInfo;
-    int32_t ret = GetProcessDeviceInfoBySessionId(sessionID, deviceInfo);
+    int32_t ret = GetProcessDeviceInfoBySessionId(sessionID, deviceInfo, isReloadProcess);
     deviceInfo.Marshalling(reply);
     return ret;
 }
@@ -119,6 +120,12 @@ int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, S
     return coreServiceWorker_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
+int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->ReloadCaptureSession(sessionId, operation);
+}
+
 int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
     const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
 {
@@ -133,10 +140,10 @@ std::string CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessi
 }
 
 int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
 }
 
 uint32_t CoreServiceProviderWrapper::GenerateSessionId()

@@ -41,6 +41,7 @@ public:
     virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
+    virtual uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
 
     virtual int32_t SetDefaultSink(std::string name) = 0;
     virtual int32_t SetDefaultSource(std::string name) = 0;

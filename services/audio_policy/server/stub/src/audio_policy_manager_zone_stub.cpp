@@ -62,6 +62,12 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequest(
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_UID_FROM_AUDIO_ZONE):
             HandleRemoveUidFromAudioZone(data, reply);
             break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::ADD_STREAM_TO_AUDIO_ZONE):
+            HandleAddStreamToAudioZone(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::REMOVE_STREAM_FROM_AUDIO_ZONE):
+            HandleRemoveStreamFromAudioZone(data, reply);
+            break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::ENABLE_SYSTEM_VOLUME_PROXY):
             HandleEnableSystemVolumeProxy(data, reply);
             break;
@@ -89,6 +95,9 @@ void AudioPolicyManagerStub::OnAudioZoneRemoteRequestExt(
             break;
         case static_cast<uint32_t>(AudioPolicyInterfaceCode::INJECT_INTERRUPT_OF_DEVICE_TO_AUDIO_ZONE):
             HandleInjectInterruptToAudioZoneDevice(data, reply);
+            break;
+        case static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_ZONE_DEVICE_VISIBLE):
+            HandleSetZoneDeviceVisible(data, reply);
             break;
         default:
             break;
@@ -198,6 +207,30 @@ void AudioPolicyManagerStub::HandleRemoveUidFromAudioZone(MessageParcel &data, M
     CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
     int32_t uid = data.ReadInt32();
     reply.WriteInt32(RemoveUidFromAudioZone(zoneId, uid));
+}
+
+void AudioPolicyManagerStub::HandleAddStreamToAudioZone(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
+    AudioZoneStream stream;
+    stream.Unmarshalling(data);
+    reply.WriteInt32(AddStreamToAudioZone(zoneId, stream));
+}
+
+void AudioPolicyManagerStub::HandleRemoveStreamFromAudioZone(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t zoneId = data.ReadInt32();
+    CHECK_AND_RETURN_LOG(zoneId > 0, "audio zone id is invalid");
+    AudioZoneStream stream;
+    stream.Unmarshalling(data);
+    reply.WriteInt32(RemoveStreamFromAudioZone(zoneId, stream));
+}
+
+void AudioPolicyManagerStub::HandleSetZoneDeviceVisible(MessageParcel &data, MessageParcel &reply)
+{
+    bool visible = data.ReadBool();
+    SetZoneDeviceVisible(visible);
 }
 
 void AudioPolicyManagerStub::HandleEnableSystemVolumeProxy(MessageParcel &data, MessageParcel &reply)

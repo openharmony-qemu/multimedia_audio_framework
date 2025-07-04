@@ -39,6 +39,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
   include_dirs = [
     "include",
     "../audioutils/include",
+    "../audioschedule/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_service/server/include",
     "../hdiadapter/common/include",
@@ -52,6 +53,7 @@ ohos_shared_library("pulse_audio_service_adapter") {
   deps = [
     "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_service:audio_common",
+    "../audioschedule:audio_schedule",
     "../audioutils:audio_utils",
   ]
 

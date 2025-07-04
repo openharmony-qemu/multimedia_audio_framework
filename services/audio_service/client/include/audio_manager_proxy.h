@@ -75,6 +75,7 @@ public:
     int32_t ResetRouteForDisconnect(DeviceType type) override;
     uint32_t GetEffectLatency(const std::string &sessionId) override;
     float GetMaxAmplitude(bool isOutputDevice, std::string deviceClass, SourceType sourceType) override;
+    int64_t GetVolumeDataCount(std::string sinkName) override;
     void ResetAudioEndpoint() override;
     void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
     int32_t SetAsrAecMode(AsrAecMode asrAecMode) override;
@@ -152,7 +153,7 @@ public:
 private:
     static inline BrokerDelegator<AudioManagerProxy> delegator_;
 
-    int32_t CreateAudioWorkgroup(int32_t pid) override;
+    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object) override;
     int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId) override;
     int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;
     int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId) override;

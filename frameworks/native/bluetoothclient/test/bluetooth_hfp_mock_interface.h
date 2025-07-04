@@ -29,7 +29,8 @@ public:
     ~BluetoothHfpMockInterface() = default;
 
     MOCK_METHOD2(GetDeviceState, int32_t(const BluetoothRemoteDevice &, int32_t &));
-    MOCK_METHOD1(GetScoState, int32_t(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(GetScoState, AudioScoState(const BluetoothRemoteDevice &));
+    MOCK_METHOD1(GetCurrentCategory, int32_t(ScoCategory &));
     MOCK_METHOD1(ConnectSco, int32_t(uint8_t));
     MOCK_METHOD1(DisconnectSco, int32_t(uint8_t));
     MOCK_METHOD1(OpenVoiceRecognition, int32_t(const BluetoothRemoteDevice &));

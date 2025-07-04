@@ -116,15 +116,20 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
         AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
             volumeType, deviceClass.c_str());
     }
+    float sysVolume = volumes->volumeSystem;
+    if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
+        sysVolume = itSV->second.isMuted_ ? 0.0f : 1.0f;
+    }
     int32_t doNotDisturbStatusVolume = static_cast<int32_t>(GetDoNotDisturbStatusVolume(streamType, appUid, sessionId));
-    volumes->volume = volumes->volumeSystem * volumes->volumeStream * doNotDisturbStatusVolume;
+    volumes->volume = sysVolume * volumes->volumeStream * doNotDisturbStatusVolume;
     if (it != streamVolume_.end() && !IsSameVolume(it->second.monitorVolume_, volumes->volume)) {
         it->second.monitorVolume_ = volumes->volume;
         it->second.monitorVolumeLevel_ = volumeLevel;
-        AUDIO_INFO_LOG("volume, sessionId:%{public}u, volume:%{public}f, volumeType:%{public}d, devClass:%{public}s,"
-            " system volume:%{public}f, stream volume:%{public}f app volume:%{public}f,"
-            " doNotDisturbStatusVolume: %{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
-            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, doNotDisturbStatusVolume);
+        AUDIO_INFO_LOG("volume,sessionId:%{public}u,volume:%{public}f,volumeType:%{public}d,devClass:%{public}s,"
+            "volumeSystem:%{public}f,volumeStream:%{public}f,volumeApp:%{public}f,isVKB:%{public}d,isMuted:%{public}s,"
+            "doNotDisturbStatusVolume:%{public}d,", sessionId, volumes->volume, volumeType, deviceClass.c_str(),
+            volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
+            itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
     }
     return volumes->volume;
 }
@@ -213,17 +218,18 @@ void AudioVolume::SetHistoryVolume(uint32_t sessionId, float volume)
     }
 }
 
-void AudioVolume::AddStreamVolume(uint32_t sessionId, int32_t streamType, int32_t streamUsage,
-    int32_t uid, int32_t pid, bool isSystemApp, int32_t mode)
+void AudioVolume::AddStreamVolume(StreamVolumeParams &streamVolumeParams)
 {
-    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", sessionId);
+    AUDIO_INFO_LOG("stream volume, sessionId:%{public}u", streamVolumeParams.sessionId);
     std::unique_lock<std::shared_mutex> lock(volumeMutex_);
-    auto it = streamVolume_.find(sessionId);
+    auto it = streamVolume_.find(streamVolumeParams.sessionId);
     if (it == streamVolume_.end()) {
-        streamVolume_.emplace(sessionId,
-            StreamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode));
+        streamVolume_.emplace(streamVolumeParams.sessionId,
+            StreamVolume(streamVolumeParams.sessionId, streamVolumeParams.streamType, streamVolumeParams.streamUsage,
+                streamVolumeParams.uid, streamVolumeParams.pid, streamVolumeParams.isSystemApp, streamVolumeParams.mode,
+                streamVolumeParams.isVKB));
     } else {
-        AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", sessionId);
+        AUDIO_ERR_LOG("stream volume already exist, sessionId:%{public}u", streamVolumeParams.sessionId);
     }
 }
 
@@ -345,11 +351,10 @@ float AudioVolume::GetAppVolume(int32_t appUid, AudioVolumeMode mode)
 inline float AudioVolume::GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode)
 {
     float appVolume = 1.0f;
-    if (mode != AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL) {
-        auto iter = appVolume_.find(appUid);
-        if (iter != appVolume_.end()) {
-            appVolume = iter->second.totalVolume_;
-        }
+    auto iter = appVolume_.find(appUid);
+    if (iter != appVolume_.end()) {
+        appVolume = iter->second.isMuted_ ? iter->second.totalVolume_ :
+            (mode == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : iter->second.totalVolume_);
     }
     return appVolume;
 }
@@ -374,11 +379,9 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
         appUid, isMuted, appVolume_.size());
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
-        if (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL) {
-            continue;
-        }
         if (stream.GetAppUid() == appUid) {
-            stream.appVolume_ = totalAppVolume;
+            stream.appVolume_ = isMuted ? totalAppVolume :
+                (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : totalAppVolume);
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
         }
@@ -406,11 +409,9 @@ void AudioVolume::SetAppVolume(AppVolume &appVolume)
         appVolume_.size());
     for (auto &streamVolume : streamVolume_) {
         auto &stream = streamVolume.second;
-        if (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL) {
-            continue;
-        }
         if (stream.GetAppUid() == appUid) {
-            stream.appVolume_ = appVolume.totalVolume_;
+            stream.appVolume_ = appVolume.isMuted_ ? appVolume.totalVolume_ :
+                (stream.GetVolumeMode() == AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL ? 1.0 : appVolume.totalVolume_);
             stream.totalVolume_ = stream.isMuted_ ? 0.0f :
                 stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
         }

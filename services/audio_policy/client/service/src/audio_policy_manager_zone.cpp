@@ -117,6 +117,27 @@ int32_t AudioPolicyManager::RemoveUidFromAudioZone(int32_t zoneId, int32_t uid)
     return gsp->RemoveUidFromAudioZone(zoneId, uid);
 }
 
+int32_t AudioPolicyManager::AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->AddStreamToAudioZone(zoneId, stream);
+}
+
+void AudioPolicyManager::SetZoneDeviceVisible(bool visible)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_LOG(gsp != nullptr, "audio policy manager proxy is NULL.");
+    gsp->SetZoneDeviceVisible(visible);
+}
+
+int32_t AudioPolicyManager::RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->RemoveStreamFromAudioZone(zoneId, stream);
+}
+
 int32_t AudioPolicyManager::EnableSystemVolumeProxy(int32_t zoneId, bool enable)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

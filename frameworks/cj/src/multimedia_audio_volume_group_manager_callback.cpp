@@ -22,6 +22,7 @@ namespace AudioStandard {
 
 void CjAudioRingerModeCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -37,6 +38,7 @@ void CjAudioRingerModeCallback::OnRingerModeUpdated(const AudioRingerMode& ringe
 
 void CjAudioManagerMicStateChangeCallback::RegisterFunc(std::function<void(CMicStateChangeEvent)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 

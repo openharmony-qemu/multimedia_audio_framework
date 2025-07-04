@@ -20,6 +20,7 @@
 #include "audio_stream_collector.h"
 #include "audio_stream_info.h"
 #include "audio_definition_adapter_info.h"
+#include "audio_policy_utils.h"
 #include <algorithm>
 
 namespace OHOS {
@@ -34,6 +35,17 @@ static std::map<int, AudioPipeType> flagPipeTypeMap_ = {
     {AUDIO_OUTPUT_FLAG_MULTICHANNEL, PIPE_TYPE_MULTICHANNEL},
     {AUDIO_OUTPUT_FLAG_DIRECT, PIPE_TYPE_DIRECT_OUT},
 };
+
+static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
+{
+    CHECK_AND_RETURN_RET(newPipe != nullptr && oldPipe != nullptr, false);
+    CHECK_AND_RETURN_RET(newPipe->moduleInfo_.className == "remote_offload" &&
+        oldPipe->moduleInfo_.className == "remote_offload", false);
+    return (newPipe->moduleInfo_.format != oldPipe->moduleInfo_.format) ||
+        (newPipe->moduleInfo_.rate != oldPipe->moduleInfo_.rate) ||
+        (newPipe->moduleInfo_.channels != oldPipe->moduleInfo_.channels) ||
+        (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
+}
 
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
 {
@@ -234,10 +246,10 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             } else {
                 return PIPE_TYPE_DIRECT_OUT;
             }
-        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
-            return PIPE_TYPE_OFFLOAD;
         } else if (flag & AUDIO_OUTPUT_FLAG_MULTICHANNEL) {
             return PIPE_TYPE_MULTICHANNEL;
+        } else if (flag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) {
+            return PIPE_TYPE_OFFLOAD;
         } else {
             return PIPE_TYPE_NORMAL_OUT;
         }
@@ -328,6 +340,37 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     return name;
 }
 
+static void FillSpecialPipeInfo(AudioPipeInfo &info, std::shared_ptr<AdapterPipeInfo> pipeInfoPtr,
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (pipeInfoPtr->name_ == "multichannel_output") {
+        info.moduleInfo_.className = "multichannel";
+        info.moduleInfo_.fileName = "mch_dump_file";
+        info.moduleInfo_.fixedLatency = "1"; // for fix max request
+        info.moduleInfo_.bufferSize =
+            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
+        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
+    } else if (pipeInfoPtr->name_ == "offload_output") {
+        info.moduleInfo_.className = "offload";
+        info.moduleInfo_.offloadEnable = "1";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.fileName = "offload_dump_file";
+    } else if (pipeInfoPtr->name_ == "dp_multichannel_output") {
+        info.moduleInfo_.className = "dp_multichannel";
+        info.moduleInfo_.fileName = "mch_dump_file";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.bufferSize = std::to_string(streamPropInfo->bufferSize_);
+    } else if (pipeInfoPtr->name_ == "offload_distributed_output") {
+        info.moduleInfo_.className = "remote_offload";
+        info.moduleInfo_.offloadEnable = "1";
+        info.moduleInfo_.fixedLatency = "1";
+        info.moduleInfo_.fileName = "remote_offload_dump_file";
+        info.moduleInfo_.name =
+            AudioPolicyUtils::GetInstance().GetRemoteModuleName(streamDesc->newDeviceDescs_[0]->networkId_,
+            AudioPolicyUtils::GetInstance().GetDeviceRole(streamDesc->newDeviceDescs_[0]->deviceType_)) + "_offload";
+    }
+}
+
 void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo, AudioPipeInfo &info)
 {
@@ -357,19 +400,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.moduleInfo_.OpenMicSpeaker = configManager_.GetUpdateRouteSupport() ? "1" : "0";
 
     AUDIO_INFO_LOG("Pipe name: %{public}s", pipeInfoPtr->name_.c_str());
-    if (pipeInfoPtr->name_ == "multichannel_output") {
-        info.moduleInfo_.className = "multichannel";
-        info.moduleInfo_.fileName = "mch_dump_file";
-        info.moduleInfo_.fixedLatency = "1"; // for fix max request
-        info.moduleInfo_.bufferSize =
-            std::to_string(((streamPropInfo->bufferSize_ / std::stoul(info.moduleInfo_.channels)) * STEREO));
-        AUDIO_INFO_LOG("Buffer size: %{public}s", info.moduleInfo_.bufferSize.c_str());
-    } else if (pipeInfoPtr->name_ == "offload_output") {
-        info.moduleInfo_.className = "offload";
-        info.moduleInfo_.offloadEnable = "1";
-        info.moduleInfo_.fixedLatency = "1";
-        info.moduleInfo_.fileName = "offload_dump_file";
-    }
+    FillSpecialPipeInfo(info, pipeInfoPtr, streamDesc, streamPropInfo);
 
     info.moduleInfo_.deviceType = std::to_string(streamDesc->newDeviceDescs_[0]->deviceType_);
     info.moduleInfo_.networkId = streamDesc->newDeviceDescs_[0]->networkId_;
@@ -386,6 +417,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(
     std::shared_ptr<AudioPipeInfo> newPipe, std::shared_ptr<AudioPipeInfo> oldPipe)
 {
+    CHECK_AND_RETURN_RET(!IsRemoteOffloadNeedRecreate(newPipe, oldPipe), AUDIO_STREAM_ACTION_RECREATE);
     if (newPipe->adapterName_ == oldPipe->adapterName_ && newPipe->routeFlag_ == oldPipe->routeFlag_) {
         return AUDIO_STREAM_ACTION_DEFAULT;
     }

@@ -26,6 +26,7 @@
 
 namespace OHOS {
 namespace AudioStandard {
+static constexpr size_t MAX_PARAM_SIZE = 1000;
 OfflineAudioEffectChainImpl::OfflineAudioEffectChainImpl(const std::string &effectChainName)
 {
     chainName_ = effectChainName;
@@ -66,6 +67,14 @@ int32_t OfflineAudioEffectChainImpl::Configure(const AudioStreamInfo &inInfo, co
     std::lock_guard<std::mutex> lock(streamClientMutex_);
     CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
     return offlineStreamInClient_->ConfigureOfflineEffectChain(inInfo, outInfo);
+}
+
+int32_t OfflineAudioEffectChainImpl::SetParam(const std::vector<uint8_t> &param)
+{
+    CHECK_AND_RETURN_RET_LOG(param.size() <= MAX_PARAM_SIZE, ERR_INVALID_PARAM, "param size overflow");
+    std::lock_guard<std::mutex> lock(streamClientMutex_);
+    CHECK_AND_RETURN_RET_LOG(offlineStreamInClient_, ERR_ILLEGAL_STATE, "offline stream is null!");
+    return offlineStreamInClient_->SetParamOfflineEffectChain(param);
 }
 
 int32_t OfflineAudioEffectChainImpl::GetEffectBufferSize(uint32_t &inBufferSize, uint32_t &outBufferSize)

@@ -21,6 +21,7 @@ namespace OHOS {
 namespace AudioStandard {
 void CjRendererPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -34,6 +35,7 @@ void CjRendererPositionCallback::OnMarkReached(const int64_t& framePosition)
 
 void CjRendererPeriodPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -47,6 +49,7 @@ void CjRendererPeriodPositionCallback::OnPeriodReached(const int64_t& frameNumbe
 
 void CjAudioRendererOutputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -71,6 +74,7 @@ void CjAudioRendererOutputDeviceChangeCallback::OnOutputDeviceChange(
 void CjAudioRendererOutputDeviceChangeWithInfoCallback::RegisterFunc(
     std::function<void(CAudioStreamDeviceChangeInfo)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -98,6 +102,7 @@ void CjAudioRendererOutputDeviceChangeWithInfoCallback::OnOutputDeviceChange(
 void CjAudioRendererWriteCallback::RegisterFunc(
     std::function<int32_t(CArrUI8)> cjCallback, std::shared_ptr<AudioRenderer> audioRenderer)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
     audioRenderer_ = audioRenderer;
 }
@@ -138,11 +143,13 @@ void CjAudioRendererWriteCallback::OnWriteData(size_t length)
 
 void CjAudioRendererCallback::RegisterFunc(std::function<void(int32_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     stateChangeCallback_ = cjCallback;
 }
 
 void CjAudioRendererCallback::RegisterInterruptFunc(std::function<void(CInterruptEvent)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     interruptCallback_ = cjCallback;
 }
 

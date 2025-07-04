@@ -92,6 +92,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequestExt(uint32_t code, MessageParcel &da
             return HandleSetDefaultOutputDevice(data, reply);
         case ON_SET_SOURCE_DURATION:
             return HandleSetSourceDuration(data, reply);
+        case ON_RESOLVE_BUFFER_BASE:
+            return HandleResolveBufferBase(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
@@ -173,6 +175,26 @@ int32_t IpcStreamStub::HandleResolveBuffer(MessageParcel &data, MessageParcel &r
     return AUDIO_OK;
 }
 
+int32_t IpcStreamStub::HandleResolveBufferBase(MessageParcel &data, MessageParcel &reply)
+{
+    (void)data;
+    std::shared_ptr<OHAudioBufferBase> buffer;
+    uint32_t spanSizeInFrame;
+    uint64_t engineTotalSizeInFrame;
+    int32_t ret = ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame, engineTotalSizeInFrame);
+    reply.WriteInt32(ret);
+    if (ret == AUDIO_OK && buffer != nullptr) {
+        OHAudioBufferBase::WriteToParcel(buffer, reply);
+        reply.WriteUint32(spanSizeInFrame);
+        reply.WriteUint64(engineTotalSizeInFrame);
+    } else {
+        AUDIO_ERR_LOG("error: ResolvebaseBuffer failed.");
+        return AUDIO_INVALID_PARAM;
+    }
+
+    return AUDIO_OK;
+}
+
 int32_t IpcStreamStub::HandleUpdatePosition(MessageParcel &data, MessageParcel &reply)
 {
     (void)data;
@@ -212,8 +234,8 @@ int32_t IpcStreamStub::HandleStop(MessageParcel &data, MessageParcel &reply)
 }
 int32_t IpcStreamStub::HandleRelease(MessageParcel &data, MessageParcel &reply)
 {
-    (void)data;
-    reply.WriteInt32(Release());
+    bool isSwitchStream = data.ReadBool();
+    reply.WriteInt32(Release(isSwitchStream));
     return AUDIO_OK;
 }
 

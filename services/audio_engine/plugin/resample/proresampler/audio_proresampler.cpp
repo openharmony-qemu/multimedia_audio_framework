@@ -34,15 +34,6 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     : inRate_(inRate), outRate_(outRate), channels_(channels), quality_(quality),
     expectedOutFrameLen_(outRate_ * FRAME_LEN_20MS / MS_PER_SECOND)
 {
-    int32_t errRet;
-    state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
-    CHECK_AND_RETURN_LOG(state_, "Proresampler: Init failed! failed with error %{public}s.",
-        ErrCodeToString(errRet).c_str());
-    
-    SingleStagePolyphaseResamplerSkipHalfTaps(state_);
-    AUDIO_INFO_LOG("Proresampler: Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
-        "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
-    
     if (inRate_ == SAMPLE_RATE_11025) { // for 11025, process input 40ms per time and output 20ms per time
         buf11025_.reserve(expectedOutFrameLen_ * channels_ * BUFFER_EXPAND_SIZE + ADD_SIZE);
         AUDIO_INFO_LOG("Proresampler input 11025hz, output resample rate %{public}d, buf11025_ size %{public}d",
@@ -51,6 +42,14 @@ ProResampler::ProResampler(uint32_t inRate, uint32_t outRate, uint32_t channels,
     } else {
         expectedInFrameLen_ = inRate_ * FRAME_LEN_20MS / MS_PER_SECOND;
     }
+    int32_t errRet;
+    state_ = SingleStagePolyphaseResamplerInit(channels_, inRate_, outRate_, quality_, &errRet);
+    CHECK_AND_RETURN_LOG(state_, "Proresampler: Init failed! failed with error %{public}s.",
+        ErrCodeToString(errRet).c_str());
+    
+    SingleStagePolyphaseResamplerSkipHalfTaps(state_);
+    AUDIO_INFO_LOG("Proresampler: Init success inRate: %{public}d, outRate: %{public}d, channels: %{public}d, "
+        "quality: %{public}d.", inRate_, outRate_, channels_, quality_);
 }
 
 int32_t ProResampler::Process(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
@@ -170,7 +169,8 @@ int32_t ProResampler::UpdateChannels(uint32_t channels)
 
 ProResampler::ProResampler(ProResampler &&other) noexcept
     : inRate_(other.inRate_), outRate_(other.outRate_), channels_(other.channels_),
-    quality_(other.quality_), state_(other.state_)
+    quality_(other.quality_), expectedOutFrameLen_(other.expectedOutFrameLen_),
+    expectedInFrameLen_(other.expectedInFrameLen_), state_(other.state_)
 {
     other.state_ = nullptr;
 }
@@ -186,6 +186,8 @@ ProResampler &ProResampler::operator=(ProResampler &&other) noexcept
         channels_ = other.channels_;
         quality_ = other.quality_;
         state_ = other.state_;
+        expectedOutFrameLen_ = other.expectedOutFrameLen_;
+        expectedInFrameLen_ = other.expectedInFrameLen_;
         other.state_ = nullptr;
     }
     return *this;

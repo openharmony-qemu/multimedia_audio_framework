@@ -129,7 +129,6 @@ struct UserData {
 public:
     enum {
         WRITE_DATA_CALLBACK,
-
         WRITE_DATA_CALLBACK_WITH_RESULT
     } writeDataCallbackType;
 };

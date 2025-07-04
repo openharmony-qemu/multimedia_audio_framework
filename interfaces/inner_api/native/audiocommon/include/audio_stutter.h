@@ -17,6 +17,7 @@
 
 #include <parcel.h>
 #include <audio_stream_info.h>
+#include <audio_buffer_desc.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -41,6 +42,7 @@ struct AudioRendererDataTransferStateChangeInfo {
     int32_t sessionId;                              // session id
     StreamUsage streamUsage;                        // stream type
     DataTransferStateChangeType stateChangeType;
+    bool isBackground;
     int32_t badDataRatio[MAX_DATATRANS_TYPE];
 
     AudioRendererDataTransferStateChangeInfo() = default;
@@ -49,7 +51,8 @@ struct AudioRendererDataTransferStateChangeInfo {
     {
         bool ret =  parcel.WriteInt32(clientPid) && parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
-            parcel.WriteUint32(static_cast<int32_t>(stateChangeType));
+            parcel.WriteUint32(static_cast<int32_t>(stateChangeType)) &&
+            parcel.WriteBool(isBackground);
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             ret = ret && parcel.WriteInt32(badDataRatio[i]);
@@ -64,6 +67,7 @@ struct AudioRendererDataTransferStateChangeInfo {
         sessionId = parcel.ReadInt32();
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
+        isBackground = parcel.ReadBool();
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             badDataRatio[i] = parcel.ReadInt32();

@@ -329,13 +329,12 @@ void UpdateSpatialDeviceTypeFuzzTest()
     AudioEffectChainManager::GetInstance()->ResetInfo();
 }
 
-typedef void (*TestFuncs[24])();
+typedef void (*TestFuncs[22])();
 
 TestFuncs g_testFuncs = {
     InitAudioEffectChainManagerFuzzTest,
     CheckAndAddSessionIDFuzzTest,
     CheckAndRemoveSessionIDFuzzTest,
-    ReleaseAudioEffectChainDynamicFuzzTest,
     ApplyAudioEffectChainFuzzTest,
     SetOutputDeviceSinkFuzzTest,
     GetDeviceSinkNameFuzzTest,
@@ -351,7 +350,6 @@ TestFuncs g_testFuncs = {
     GetLatencyFuzzTest,
     SetSpatializationSceneTypeFuzzTest,
     UpdateSpkOffloadEnabledFuzzTest,
-    UpdateDeviceInfoFuzzTest,
     CheckAndReleaseCommonEffectChainFuzzTest,
     UpdateCurrSceneTypeFuzzTest,
     CheckSceneTypeMatchFuzzTest,

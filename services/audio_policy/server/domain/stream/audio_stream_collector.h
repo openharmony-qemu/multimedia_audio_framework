@@ -51,13 +51,15 @@ public:
     int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
-    void RegisteredTrackerClientDied(int32_t uid);
+    int32_t GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos);
+    void RegisteredTrackerClientDied(int32_t uid, int32_t pid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     void HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask);
-    void HandleForegroundUnmute(int32_t uid);
+    void HandleKaraokeAppToBack(int32_t uid, int32_t pid);
+    void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, bool mute, bool skipMedia);
+    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
@@ -134,7 +136,7 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    void RegisteredRendererTrackerClientDied(const int32_t uid);
+    void RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     void SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);

@@ -20,6 +20,7 @@
 
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,6 +37,7 @@ public:
     ~AudioSessionService() override;
 
     // Audio session manager interfaces
+    static std::shared_ptr<AudioSessionService> GetAudioSessionService(void);
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -50,6 +52,10 @@ public:
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    bool IsStreamAllowedToSetDevice(const uint32_t streamId);
+    DeviceType GetSessionDefaultOutputDevice(const int32_t callerPid);
+    bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);

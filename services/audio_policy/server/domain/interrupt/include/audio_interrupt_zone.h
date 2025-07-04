@@ -30,7 +30,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
-using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &)>;
+using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &,
+    const StreamUsage &)>;
 using AudioFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 using AudioFocusIterator = std::list<AudioFocusList::iterator>;
 

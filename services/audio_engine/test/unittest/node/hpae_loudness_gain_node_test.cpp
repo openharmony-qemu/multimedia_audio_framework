@@ -23,6 +23,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 class HpaeLoudnessGainNodeTest : public testing::Test {
 public:
@@ -43,7 +45,7 @@ constexpr uint32_t TEST_FRAMELEN = 960;
 constexpr int TIMES = 5;
 constexpr float LOUDNESS_GAIN_VALUE = 10.0f;
 
-TEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode)
+HWTEST_F(HpaeLoudnessGainNodeTest, testLoudnessGainNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = TEST_ID;

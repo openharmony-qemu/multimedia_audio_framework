@@ -73,6 +73,12 @@ public:
     virtual bool OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid) = 0;
 };
 
+class AudioVKBInfoMgrCallback {
+public:
+    virtual ~AudioVKBInfoMgrCallback() = default;
+    virtual bool OnCheckVKBInfo(const std::string &bundleName) = 0;
+};
+
 class AudioPreferredOutputDeviceChangeCallback {
 public:
     virtual ~AudioPreferredOutputDeviceChangeCallback() = default;
@@ -276,6 +282,14 @@ public:
      * @return int32_t
      */
     virtual int32_t SendUserSelection(const std::string &device, uint32_t streamType) = 0;
+
+    /**
+     * @brief Get the delay from a device.
+     * @param device Address of the peer NearLink device.
+     * @param delayValue Render delay.
+     * @return int32_t
+     */
+    virtual int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

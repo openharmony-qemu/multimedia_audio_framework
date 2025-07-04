@@ -35,7 +35,8 @@ public:
 
     int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) override;
 
-    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) override;
+    int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0,
+        int32_t uid = 0) override;
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0) override;
@@ -43,6 +44,8 @@ public:
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0) override;
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) override;
+
+    int32_t SetAdjustVolumeForZone(int32_t zoneId) override;
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) override;
 
@@ -54,7 +57,7 @@ public:
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) override;
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) override;
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0) override;
 
     int32_t SetLowPowerVolume(int32_t streamId, float volume) override;
 
@@ -151,6 +154,12 @@ public:
 
     bool IsAudioSessionActivated() override;
 
+    int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene) override;
+
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType) override;
+
+    int32_t SetDefaultOutputDevice(DeviceType deviceType) override;
+
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const SourceType sourceType, bool isRunning) override;
 
@@ -175,6 +184,10 @@ public:
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) override;
+
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid) override;
 
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) override;
 
@@ -352,7 +365,13 @@ public:
 
     int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) override;
 
+    int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) override;
+
+    int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) override;
+
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) override;
+
+    void SetZoneDeviceVisible(bool visible) override;
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) override;
 
@@ -455,6 +474,8 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) override;
 
     int32_t ResetAllProxy() override;
+
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid) override;
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo,
         const StreamUsage &streamUsage) override;

@@ -39,7 +39,6 @@ private:
         std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
         bool collaborativeEnable;
         int32_t intValue;
-        AudioSpatialDeviceState spatialDeviceState;
     };
     static bool CheckContextStatus(std::shared_ptr<AudioCollaborativeManagerAsyncContext> context);
     static bool CheckAudioCollaborativeManagerStatus(NapiAudioCollaborativeManager *napi,

@@ -55,14 +55,13 @@ public:
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
-    int32_t Init() override;
+    int32_t Init(bool isReload = false) override;
     int32_t DeInit(bool isMoveDefault = false) override;
     bool IsInit() override;
     bool IsRunning(void) override;
     bool IsMsgProcessing() override;
     bool DeactivateThread() override;
     int32_t SetClientVolume(uint32_t sessionId, float volume) override;
-    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     int32_t SetRate(uint32_t sessionId, int32_t rate) override;
     int32_t SetAudioEffectMode(uint32_t sessionId, int32_t effectMode) override;
     int32_t GetAudioEffectMode(uint32_t sessionId, int32_t &effectMode) override;
@@ -89,14 +88,17 @@ public:
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;
-    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo) override;
+    int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     std::string GetDeviceHDFDumpInfo() override;
+    int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
+    void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;
 
 private:
     void TransStreamInfoToNodeInfoInner(const HpaeStreamInfo &streamInfo, HpaeNodeInfo &nodeInfo);
     int32_t CreateRendererInputSessionInner(const HpaeStreamInfo &streamInfo);
     int32_t CreateCapturerInputSessionInner(const HpaeStreamInfo &streamInfo);
     int32_t DeleteRendererInputSessionInner(uint32_t sessionId);
+    void DeleteRendererInputNodeSession(const std::shared_ptr<HpaeSinkInputNode> &sinkInputNode);
     int32_t DeleteCapturerInputSessionInner(uint32_t sessionId);
     int32_t ConnectRendererInputSessionInner(uint32_t sessionId);
     int32_t ConnectCapturerOutputSessionInner(uint32_t sessionId);
@@ -109,11 +111,10 @@ private:
     void AddSingleNodeToSinkInner(const std::shared_ptr<HpaeSinkInputNode> &node, bool isConnect = true);
     void MoveAllStreamToNewSinkInner(const std::string &sinkName, const std::vector<uint32_t> &moveIds,
         MoveSessionType moveType);
-    void InitSinkInner();
+    void InitSinkInner(bool isReload = false);
     uint32_t sinkInputNodeCounter_ = 0;
     int32_t sceneTypeToProcessClusterCount_ = 0;
     std::atomic<bool> isInit_ = false;
-    std::atomic<bool> isMute_ = false;
     HpaeSinkInfo sinkInfo_;
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::shared_ptr<HpaeInnerCapSinkNode> hpaeInnerCapSinkNode_ = nullptr;

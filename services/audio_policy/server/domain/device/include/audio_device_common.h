@@ -63,7 +63,6 @@ public:
     void DeInit();
     void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
-    void OnAudioSceneChange(const AudioScene& audioScene);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredInputDeviceDescInner(
@@ -98,7 +97,6 @@ public:
 
     bool GetHasDpFlag();
     void SetHasDpFlag(bool flag);
-    void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -193,6 +191,7 @@ private:
         SourceType sourceType);
     int32_t SwitchActiveA2dpDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     int32_t RingToneVoiceControl(const InternalDeviceType &deviceType);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
 
     // fetchOutput
     void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
@@ -221,8 +220,6 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void SetVoiceCallMuteForSwitchDevice();
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
-    bool NotifyRecreateDirectStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
     vector<std::shared_ptr<AudioDeviceDescriptor>> GetDeviceDescriptorInner(
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsRingDualToneOnPrimarySpeaker(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,

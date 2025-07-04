@@ -386,14 +386,6 @@ void AudioDeviceMoreFuzzTest()
     GetServerPtr()->GetDirectPlaybackSupport(audioStreamInfo, streamUsage);
 }
 
-void AudioPolicySomeMoreFuzzTest()
-{
-    uint32_t sessionID = GetData<uint32_t>();
-    GetServerPtr()->OnAudioStreamRemoved(sessionID);
-    GetServerPtr()->ProcessSessionRemoved(sessionID);
-    GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
-}
-
 void AudioPolicyOtherMoreFuzzTest()
 {
     int pid = GetData<int>();
@@ -474,7 +466,6 @@ TestFuncs g_testFuncs = {
     GetAudioFocusInfoListFuzzTest,
     AudioVolumeMoreFuzzTest,
     AudioDeviceMoreFuzzTest,
-    AudioPolicySomeMoreFuzzTest,
     AudioPolicyOtherMoreFuzzTest,
     AudioVolumeKeyCallbackStubMoreFuzzTest,
     AudioPolicyManagerFuzzTest,

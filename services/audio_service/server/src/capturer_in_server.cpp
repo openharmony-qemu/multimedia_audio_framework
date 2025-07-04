@@ -240,7 +240,7 @@ BufferDesc CapturerInServer::DequeueBuffer(size_t length)
 bool CapturerInServer::IsReadDataOverFlow(size_t length, uint64_t currentWriteFrame,
     std::shared_ptr<IStreamListener> stateListener)
 {
-    if (audioServerBuffer_->GetAvailableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
+    if (audioServerBuffer_->GetWritableDataFrames() <= static_cast<int32_t>(spanSizeInFrame_)) {
         if (overFlowLogFlag_ == 0) {
             AUDIO_INFO_LOG("OverFlow!!!");
         } else if (overFlowLogFlag_ == OVERFLOW_LOG_LOOP_COUNT) {
@@ -449,8 +449,8 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
 
 int32_t CapturerInServer::UpdateReadIndex()
 {
-    AUDIO_DEBUG_LOG("audioServerBuffer_->GetAvailableDataFrames(): %{public}d, needStart: %{public}d",
-        audioServerBuffer_->GetAvailableDataFrames(), needStart);
+    AUDIO_DEBUG_LOG("audioServerBuffer_->GetWritableDataFrames(): %{public}d, needStart: %{public}d",
+        audioServerBuffer_->GetWritableDataFrames(), needStart);
     return SUCCESS;
 }
 
@@ -583,6 +583,10 @@ int32_t CapturerInServer::StartInner()
         CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_START);
     }
 
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_START) == SUCCESS) {
+        AUDIO_ERR_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_STARTING;
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
@@ -609,6 +613,10 @@ int32_t CapturerInServer::Pause()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_PAUSED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_PAUSE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
+
     status_ = I_STATUS_PAUSING;
     int ret = stream_->Pause();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Pause stream failed, reason: %{public}d", ret);
@@ -682,6 +690,9 @@ int32_t CapturerInServer::Stop()
     if (needCheckBackground_) {
         TurnOffMicIndicator(CAPTURER_STOPPED);
     }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_STOP) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
+    }
 
     int ret = stream_->Stop();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
@@ -690,11 +701,11 @@ int32_t CapturerInServer::Stop()
     return SUCCESS;
 }
 
-int32_t CapturerInServer::Release()
+int32_t CapturerInServer::Release(bool isSwitchStream)
 {
     AudioXCollie audioXCollie("CapturerInServer::Release", RELEASE_TIMEOUT_IN_SEC,
         nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG | AUDIO_XCOLLIE_FLAG_RECOVERY);
-    AudioService::GetInstance()->RemoveCapturer(streamIndex_);
+    AudioService::GetInstance()->RemoveCapturer(streamIndex_, isSwitchStream);
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ == I_STATUS_RELEASED) {
         AUDIO_INFO_LOG("Already released");
@@ -718,6 +729,9 @@ int32_t CapturerInServer::Release()
     if (status_ != I_STATUS_STOPPING &&
         status_ != I_STATUS_STOPPED) {
         HandleOperationStopped(CAPTURER_STAGE_STOP_BY_RELEASE);
+    }
+    if (CoreServiceHandler::GetInstance().ReloadCaptureSession(streamIndex_, SESSION_OPERATION_RELEASE) == SUCCESS) {
+        AUDIO_INFO_LOG("ReloadCaptureSession success!");
     }
     status_ = I_STATUS_RELEASED;
 
@@ -886,6 +900,12 @@ int32_t CapturerInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(audioServerBuffer_ != nullptr, ERR_INVALID_PARAM, "audioServerBuffer_ is nullptr");
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
+{
+    return ERR_NOT_SUPPORTED;
 }
 } // namespace AudioStandard
 } // namespace OHOS

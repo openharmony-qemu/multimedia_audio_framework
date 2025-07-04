@@ -119,7 +119,13 @@ int32_t AudioPolicyManagerListenerStub::OnMiddleFirRemoteRequest(
     switch (code) {
         case ON_QUERY_BUNDLE_NAME_LIST: {
             std::string bundleName = data.ReadString();
-            OnQueryBundleNameIsInList(bundleName);
+            std::string listType = data.ReadString();
+            OnQueryBundleNameIsInList(bundleName, listType);
+            return AUDIO_OK;
+        }
+        case ON_CHECK_VKB_INFO: {
+            std::string bundleName = data.ReadString();
+            OnCheckVKBInfo(bundleName);
             return AUDIO_OK;
         }
         default: {
@@ -162,13 +168,23 @@ bool AudioPolicyManagerListenerStub::OnQueryClientType(const std::string &bundle
     return audioQueryClientTypeCallback->OnQueryClientType(bundleName, uid);
 }
 
-bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid)
+bool AudioPolicyManagerListenerStub::OnCheckClientInfo(const std::string &bundleName,
+    int32_t &uid, int32_t pid)
 {
     std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback = audioClientInfoMgrCallback_.lock();
 
     CHECK_AND_RETURN_RET_LOG(audioClientInfoMgrCallback != nullptr, false, "audioClientInfoMgrCallback is nullptr");
 
     return audioClientInfoMgrCallback->OnCheckClientInfo(bundleName, uid, pid);
+}
+
+bool AudioPolicyManagerListenerStub::OnCheckVKBInfo(const std::string &bundleName)
+{
+    std::shared_ptr<AudioVKBInfoMgrCallback> audioVKBInfoMgrCallback = audioVKBInfoMgrCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioVKBInfoMgrCallback != nullptr, false, "audioVKBInfoMgrCallback is nullptr");
+
+    return audioVKBInfoMgrCallback->OnCheckVKBInfo(bundleName);
 }
 
 bool AudioPolicyManagerListenerStub::OnQueryAllowedPlayback(int32_t uid, int32_t pid)
@@ -192,7 +208,8 @@ void AudioPolicyManagerListenerStub::OnBackgroundMute(const int32_t uid)
     audioBackgroundMuteCallback->OnBackgroundMute(uid);
 }
 
-bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string &bundleName)
+bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string &bundleName,
+    const std::string &listType)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();
@@ -200,7 +217,7 @@ bool AudioPolicyManagerListenerStub::OnQueryBundleNameIsInList(const std::string
     CHECK_AND_RETURN_RET_LOG(audioQueryBundleNameListCallback != nullptr, false,
         "audioQueryBundleNameListCallback_ is nullptr");
 
-    return audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName);
+    return audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName, listType);
 }
 
 void AudioPolicyManagerListenerStub::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
@@ -222,6 +239,11 @@ void AudioPolicyManagerListenerStub::SetQueryClientTypeCallback(const std::weak_
 void AudioPolicyManagerListenerStub::SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb)
 {
     audioClientInfoMgrCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStub::SetAudioVKBInfoMgrCallback(const std::weak_ptr<AudioVKBInfoMgrCallback> &cb)
+{
+    audioVKBInfoMgrCallback_ = cb;
 }
 
 void AudioPolicyManagerListenerStub::SetQueryAllowedPlaybackCallback(

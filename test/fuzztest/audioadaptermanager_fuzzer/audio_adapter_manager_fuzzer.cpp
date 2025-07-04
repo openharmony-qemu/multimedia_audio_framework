@@ -474,8 +474,6 @@ void AudioVolumeManagerUpdateVolumeForLowLatencyFuzzTest(const uint8_t *rawData,
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     audioAdapterManager->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     audioAdapterManager->UpdateVolumeForLowLatency();
-    audioAdapterManager->RegisterDoNotDisturbStatus();
-    audioAdapterManager->RegisterDoNotDisturbStatusWhiteList();
 }
 
 void AudioVolumeManagerUpdateSinkArgsFuzzTest(const uint8_t *rawData, size_t size)

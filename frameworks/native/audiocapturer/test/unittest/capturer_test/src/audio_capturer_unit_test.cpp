@@ -1036,7 +1036,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_004, TestSize.Level1)
     ret = audioCapturer->GetParams(getCapturerParams);
     EXPECT_EQ(ERR_OPERATION_FAILED, ret);
 }
-#endif
 
 /**
 * @tc.name  : Test GetParams API via legal state, CAPTURER_STOPPED: GetParams after Stop.
@@ -1094,7 +1093,6 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_GetParams_Stability_001, TestSize.L
     audioCapturer->Release();
 }
 
-#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test GetParams API stability.
  * @tc.number: Audio_Capturer_GetParams_Stability_001
@@ -2156,9 +2154,47 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_IsDeviceChanged_003, TestSize.Level
 }
 
 /**
-* @tc.name : Test SwitchToTargetStream API in non-running state
+* @tc.name  : Test RestoreAudioInLoop API in non-running state
+* @tc.number: Audio_Capturer_RestoreAudioInLoop_001
+* @tc.desc  : Test stream restore when capturer is in PREPARED state
+*/
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_RestoreAudioInLoop_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    int32_t tryCounter = 1;
+    bool restoreResult = false;
+    audioCapturer->RestoreAudioInLoop(restoreResult, tryCounter);
+    EXPECT_EQ(true, restoreResult);
+
+    bool isReleased = audioCapturer->Release();
+    EXPECT_EQ(true, isReleased);
+}
+
+/**
+ * @tc.name  : Test CheckAndRestoreAudioCapturer API in non-running state
+ * @tc.number: Audio_Capturer_CheckAndRestoreAudioCapturer_001
+ * @tc.desc  : Test stream restore when Capturer has released
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_CheckAndRestoreAudioCapturer_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioCapturerPrivate> audioCapturer =
+        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioCapturer);
+
+    audioCapturer->abortRestore_ = true;
+    auto res = audioCapturer->CheckAndRestoreAudioCapturer("UT-Test");
+    EXPECT_EQ(SUCCESS, res);
+}
+
+/**
+* @tc.name  : Test SwitchToTargetStream API in non-running state
 * @tc.number: Audio_Capturer_SwitchToTargetStream_001
-* @tc.desc : Test stream switch when capturer is in PREPARED state
+* @tc.desc  : Test stream switch when capturer is in PREPARED state
 */
 HWTEST(AudioCapturerUnitTest, Audio_Capturer_SwitchToTargetStream_001, TestSize.Level1)
 {

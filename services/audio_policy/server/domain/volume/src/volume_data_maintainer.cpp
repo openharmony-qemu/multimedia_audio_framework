@@ -19,6 +19,7 @@
 #include "volume_data_maintainer.h"
 #include "system_ability_definition.h"
 #include "audio_policy_manager_factory.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -120,6 +121,8 @@ bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType s
 {
     std::string volumeKey = GetVolumeKeyForDataShare(type, streamType, networkId);
     if (!volumeKey.compare("")) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_A),
+            ERR_READ_FAILED);
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
             type, streamType);
         return false;
@@ -128,6 +131,8 @@ bool VolumeDataMaintainer::SaveVolumeInternal(DeviceType type, AudioStreamType s
     AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = audioSettingProvider.PutIntValue(volumeKey, volumeLevel, "system");
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_VOLUME_INTERNA_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("Save Volume To DataBase volumeMap failed");
         return false;
     }
@@ -149,6 +154,8 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     }
     std::string volumeKey = GetVolumeKeyForDataShare(deviceType, streamType, networkId);
     if (!volumeKey.compare("")) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_VOLUME_INTERNAL_A),
+            ERR_READ_FAILED);
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for datashare",
             deviceType, streamType);
         return false;
@@ -158,6 +165,8 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     int32_t volumeValue = 0;
     ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_VOLUME_INTERNAL_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("Get streamType %{public}d, deviceType %{public}d, Volume FromDataBase volumeMap failed.",
             streamType, deviceType);
         return false;
@@ -279,6 +288,18 @@ int32_t VolumeDataMaintainer::GetStreamVolumeInternal(AudioStreamType streamType
     return volumeLevelMap_[streamForVolumeMap];
 }
 
+void VolumeDataMaintainer::WriteVolumeDbAccessExceptionEvent(int32_t errorCase, int32_t errorMsg)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DB_ACCESS_EXCEPTION,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+    bean->Add("DB_TYPE", "volume");
+    bean->Add("ERROR_CASE", errorCase);
+    bean->Add("ERROR_MSG", errorMsg);
+    bean->Add("ERROR_DESCRIPTION", "Dateabase access failed");
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
 std::unordered_map<AudioStreamType, int32_t> VolumeDataMaintainer::GetVolumeMap()
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
@@ -286,7 +307,7 @@ std::unordered_map<AudioStreamType, int32_t> VolumeDataMaintainer::GetVolumeMap(
 }
 
 bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType,
-    bool muteStatus)
+    bool muteStatus, std::string networkId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     if (streamType == STREAM_RING && VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_RING) {
@@ -294,7 +315,7 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
         bool saveMuteResult = false;
         for (auto &device : DEVICE_TYPE_LIST) {
             // set ring stream mute status to device
-            saveMuteResult = SaveMuteStatusInternal(device, streamType, muteStatus);
+            saveMuteResult = SaveMuteStatusInternal(device, streamType, muteStatus, networkId);
             if (!saveMuteResult) {
                 AUDIO_INFO_LOG("save mute failed.");
                 break;
@@ -303,14 +324,17 @@ bool VolumeDataMaintainer::SaveMuteStatus(DeviceType deviceType, AudioStreamType
         return saveMuteResult;
     }
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return SaveMuteStatusInternal(deviceType, streamForVolumeMap, muteStatus);
+    return SaveMuteStatusInternal(deviceType, streamForVolumeMap, muteStatus, networkId);
 }
 
 bool VolumeDataMaintainer::SaveMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType,
-    bool muteStatus)
+    bool muteStatus, std::string networkId)
 {
-    std::string muteKey = GetMuteKeyForDataShare(deviceType, streamType);
+    std::string muteKey = GetMuteKeyForDataShare(deviceType, streamType, networkId);
     if (!muteKey.compare("")) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_MUTE_STATUS_INTERNAL),
+            ERR_READ_FAILED);
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for "\
             "datashare", deviceType, streamType);
         return false;
@@ -335,17 +359,22 @@ bool VolumeDataMaintainer::SetStreamMuteStatus(AudioStreamType streamType, bool 
     return true;
 }
 
-bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType)
+bool VolumeDataMaintainer::GetMuteStatus(DeviceType deviceType, AudioStreamType streamType,
+    std::string networkId)
 {
     std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
     AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
-    return GetMuteStatusInternal(deviceType, streamForVolumeMap);
+    return GetMuteStatusInternal(deviceType, streamForVolumeMap, networkId);
 }
 
-bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType)
+bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStreamType streamType,
+    std::string networkId)
 {
-    std::string muteKey = GetMuteKeyForDataShare(deviceType, streamType);
+    std::string muteKey = GetMuteKeyForDataShare(deviceType, streamType, networkId);
     if (!muteKey.compare("")) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_STATUS_INTERNAL_A),
+            ERR_READ_FAILED);
         AUDIO_ERR_LOG("[device %{public}d, streamType %{public}d] is not supported for "\
             "datashare", deviceType, streamType);
         return false;
@@ -355,6 +384,9 @@ bool VolumeDataMaintainer::GetMuteStatusInternal(DeviceType deviceType, AudioStr
     bool muteStatus = false;
     ErrCode ret = audioSettingProvider.GetBoolValue(muteKey, muteStatus, "system");
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_STATUS_INTERNAL_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("Get MuteStatus From DataBase muteStatus failed");
         return false;
     } else {
@@ -384,6 +416,8 @@ bool VolumeDataMaintainer::GetMuteAffected(int32_t &affected)
     int32_t value = 0;
     ErrCode ret = settingProvider.GetIntValue(settingKey, value, "system");
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_AFFECTED),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to get muteaffected failed Err: %{public}d", ret);
         return false;
     } else {
@@ -398,6 +432,8 @@ bool VolumeDataMaintainer::GetMuteTransferStatus(bool &status)
     const std::string settingKey = "need_mute_affected_transfer";
     ErrCode ret = settingProvider.GetBoolValue(settingKey, status);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MUTE_TRANSFER_STATUS),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to get muteaffected failed Err: %{public}d", ret);
         return false;
     }
@@ -424,6 +460,9 @@ bool VolumeDataMaintainer::SaveMuteTransferStatus(bool status)
     const std::string settingKey = "need_mute_affected_transfer";
     ErrCode ret = settingProvider.PutIntValue(settingKey, status);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_MUTE_TRANSFER_STATUS),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to SaveMuteTransferStatus: %{public}d to setting db! Err: %{public}d", status, ret);
         return false;
     }
@@ -436,6 +475,8 @@ bool VolumeDataMaintainer::SaveRingerMode(AudioRingerMode ringerMode)
     const std::string settingKey = "ringer_mode";
     ErrCode ret = settingProvider.PutIntValue(settingKey, static_cast<int32_t>(ringerMode));
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_RINGER_MODE),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to write ringer_mode: %{public}d to setting db! Err: %{public}d", ringerMode, ret);
         return false;
     }
@@ -449,6 +490,8 @@ bool VolumeDataMaintainer::GetRingerMode(AudioRingerMode &ringerMode)
     int32_t value = 0;
     ErrCode ret = settingProvider.GetIntValue(settingKey, value);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_RINGER_MODE),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to write ringer_mode: %{public}d to setting db! Err: %{public}d", ringerMode, ret);
         return false;
     } else {
@@ -476,6 +519,8 @@ bool VolumeDataMaintainer::SaveSafeStatus(DeviceType deviceType, SafeStatus safe
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_STATUS),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed, safe status:%{public}d", deviceType, safeStatus);
         return false;
     }
@@ -498,10 +543,14 @@ bool VolumeDataMaintainer::GetSafeStatus(DeviceType deviceType, SafeStatus &safe
             ret = settingProvider.GetIntValue(AUDIO_SAFE_VOLUME_STATE, value);
             break;
         default:
+            WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_STATUS_A),
+                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_STATUS_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed, safe status:%{public}d", deviceType, safeStatus);
         return false;
     }
@@ -528,10 +577,15 @@ bool VolumeDataMaintainer::SaveSafeVolumeTime(DeviceType deviceType, int64_t tim
             ret = settingProvider.PutLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
+            WriteVolumeDbAccessExceptionEvent(
+                static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_VOLUME_TIME_A),
+                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SAFE_VOLUME_TIME_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
         return false;
     }
@@ -554,10 +608,15 @@ bool VolumeDataMaintainer::GetSafeVolumeTime(DeviceType deviceType, int64_t &tim
             ret = settingProvider.GetLongValue(UNSAFE_VOLUME_MUSIC_ACTIVE_MS, time, "secure");
             break;
         default:
+            WriteVolumeDbAccessExceptionEvent(
+                static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_VOLUME_TIME_A),
+                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe mode");
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SAFE_VOLUME_TIME_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, get safe active time failed", deviceType);
         return false;
     }
@@ -580,10 +639,16 @@ bool VolumeDataMaintainer::SetRestoreVolumeLevel(DeviceType deviceType, int32_t 
             ret = settingProvider.PutIntValue(UNSAFE_VOLUME_LEVEL, volume);
             break;
         default:
+            WriteVolumeDbAccessExceptionEvent(
+                static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SET_RESTORE_VOLUME_LEVEL_A),
+                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SET_RESTORE_VOLUME_LEVEL_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
         return false;
     }
@@ -608,10 +673,16 @@ bool VolumeDataMaintainer::GetRestoreVolumeLevel(DeviceType deviceType, int32_t 
             ret = settingProvider.GetIntValue(UNSAFE_VOLUME_LEVEL, value);
             break;
         default:
+            WriteVolumeDbAccessExceptionEvent(
+                static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_RESTORE_VOLUME_LEVEL_A),
+                static_cast<int32_t>(ret));
             AUDIO_WARNING_LOG("the device type not support safe volume");
             return false;
     }
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(
+            static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_RESTORE_VOLUME_LEVEL_B),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("device:%{public}d, insert failed", deviceType);
         return false;
     }
@@ -624,6 +695,8 @@ bool VolumeDataMaintainer::SaveSystemSoundUrl(const std::string &key, const std:
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.PutStringValue(key, value);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_SYSTEM_SOUND_URL),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to system sound url: %{public}s to setting db! Err: %{public}d", value.c_str(), ret);
         return false;
     }
@@ -635,6 +708,8 @@ bool VolumeDataMaintainer::GetSystemSoundUrl(const std::string &key, std::string
     AudioSettingProvider& settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
     ErrCode ret = settingProvider.GetStringValue(key, value);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_SYSTEM_SOUND_URL),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to get systemsoundurl failed Err: %{public}d", ret);
         return false;
     }
@@ -672,6 +747,8 @@ bool VolumeDataMaintainer::SaveMicMuteState(bool isMute)
     const std::string settingKey = "micmute_state";
     ErrCode ret = settingProvider.PutBoolValue(settingKey, isMute, "secure", true, AudioSettingProvider::MAIN_USER_ID);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::SAVE_MIC_MUTE_STATE),
+            static_cast<int32_t>(ret));
         AUDIO_ERR_LOG("Failed to saveMicMuteState: %{public}d to setting db! Err: %{public}d", isMute, ret);
         return false;
     }
@@ -684,6 +761,8 @@ bool VolumeDataMaintainer::GetMicMuteState(bool &isMute)
     const std::string settingKey = "micmute_state";
     ErrCode ret = settingProvider.GetBoolValue(settingKey, isMute, "secure", AudioSettingProvider::MAIN_USER_ID);
     if (ret != SUCCESS) {
+        WriteVolumeDbAccessExceptionEvent(static_cast<int32_t>(VolumeDbAccessExceptionFuncId::GET_MIC_MUTE_STATE),
+            static_cast<int32_t>(ret));
         AUDIO_WARNING_LOG("Failed to write micmute_state: %{public}d to setting db! Err: %{public}d", isMute, ret);
         return false;
     }
@@ -758,7 +837,8 @@ std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType
     return type + deviceTypeName;
 }
 
-std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType)
+std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
+    std::string networkId)
 {
     std::string type = "";
     if (!AUDIO_STREAMTYPE_MUTE_STATUS_MAP.count(streamType)) {
@@ -778,6 +858,19 @@ std::string VolumeDataMaintainer::GetMuteKeyForDataShare(DeviceType deviceType, 
     if (VolumeUtils::IsPCVolumeEnable() && streamType == AudioStreamType::STREAM_MUSIC &&
         deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
         type = AUDIO_STREAMTYPE_VOLUME_MAP[STREAM_VOICE_CALL];
+    }
+
+    if (streamType == AudioStreamType::STREAM_VOICE_ASSISTANT &&
+        deviceType == DeviceType::DEVICE_TYPE_BLUETOOTH_SCO) {
+        deviceTypeName += "_sco";
+    }
+
+    if (networkId != "LocalDevice" && deviceType == DEVICE_TYPE_SPEAKER) {
+        deviceTypeName += "_distributed";
+    }
+
+    if (deviceType == DEVICE_TYPE_DP) {
+        deviceTypeName += "_dp";
     }
     return type + deviceTypeName;
 }

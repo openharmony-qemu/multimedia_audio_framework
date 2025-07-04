@@ -21,7 +21,8 @@
 #include "audio_errors.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_output_cluster.h"
-
+using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -84,7 +85,7 @@ void HpaeOutputClusterTest::SetUp()
 void HpaeOutputClusterTest::TearDown()
 {}
 
-TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
+HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NODE_ID;
@@ -114,7 +115,7 @@ TEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode)
     EXPECT_EQ(hpaeoutputCluster->GetConverterNodeCount(), 1);
 }
 
-TEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest)
+HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     HpaeSinkInfo dummySinkInfo;

@@ -20,6 +20,9 @@
 #include "test_case_common.h"
 #include "audio_errors.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -47,7 +50,7 @@ static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.format = SAMPLE_F32LE;
 }
 
-TEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode)
+HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
 {
     uint32_t sessionId = 10001;
     HpaeNodeInfo nodeInfo;
@@ -79,7 +82,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     return 0;
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode, TestSize.Level0)
 {
     size_t usedCount = 2;
     HpaeNodeInfo nodeInfo;
@@ -123,7 +126,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Level0)
 {
     size_t usedCount = 2;
     std::string deviceClass = "remote";
@@ -169,7 +172,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
-TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower, TestSize.Level0)
 {
     std::string deviceClass = "primary";
     std::string deviceNetId = "LocalDevice";
@@ -215,7 +218,7 @@ TEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower)
 }
 
 #ifdef ENABLE_HOOK_PCM
-TEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper)
+HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     std::string deviceClass = "remote";

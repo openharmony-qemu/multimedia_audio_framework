@@ -49,6 +49,22 @@ int32_t CoreServiceProviderProxy::UpdateSessionOperation(uint32_t sessionId, Ses
     return reply.ReadInt32();
 }
 
+int32_t CoreServiceProviderProxy::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "write descriptor failed!");
+    data.WriteUint32(sessionId);
+    data.WriteUint32(operation);
+
+    int ret = Remote()->SendRequest(ICoreServiceProviderMsg::RELOADCAPTURESESSION, data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(ret == AUDIO_OK, ERR_OPERATION_FAILED, "failed, error: %{public}d", ret);
+
+    return reply.ReadInt32();
+}
+
 int32_t CoreServiceProviderProxy::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
@@ -79,7 +95,8 @@ std::string CoreServiceProviderProxy::GetAdapterNameBySessionId(uint32_t session
     return reply.ReadString();
 }
 
-int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+    bool isReloadProcess)
 {
     MessageParcel data;
     MessageParcel reply;
@@ -87,6 +104,7 @@ int32_t CoreServiceProviderProxy::GetProcessDeviceInfoBySessionId(uint32_t sessi
 
     CHECK_AND_RETURN_RET_LOG(data.WriteInterfaceToken(GetDescriptor()), ERROR, "Write descriptor failed!");
     data.WriteUint32(sessionId);
+    data.WriteBool(isReloadProcess);
     int ret = Remote()->SendRequest(
         ICoreServiceProviderMsg::GET_PROCESS_DEVICE_INFO_BY_SESSION_ID, data, reply, option);
     CHECK_AND_RETURN_RET(ret == AUDIO_OK, ret, "set default output device failed, ipc error: %{public}d", ret);

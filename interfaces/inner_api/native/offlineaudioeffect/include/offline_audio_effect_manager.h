@@ -35,6 +35,15 @@ public:
     virtual int32_t Configure(const AudioStreamInfo &inInfo, const AudioStreamInfo &outInfo) = 0;
 
     /**
+     * @brief Set parameter for the offline audio effect chain
+     *
+     * @param param Input offline audio effect parameter
+     * @return The result of the setparam, 0 for success, other for error code
+     * @since 15
+     */
+    virtual int32_t SetParam(const std::vector<uint8_t> &param) = 0;
+
+    /**
      * @brief Prepare the offline audio effect chain
      *
      * @return The result of the preparation, 0 for success, other for error code

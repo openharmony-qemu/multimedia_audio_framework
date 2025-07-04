@@ -303,8 +303,9 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
     }
     ret = InitAudioStream(audioStreamParams);
-    // When the fast stream creation fails, a normal stream is created
-    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+    if (ret != SUCCESS) {
+        // if the normal stream creation fails, return fail, other try create normal stream
+        CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams);
     }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
@@ -1503,6 +1504,11 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
     }
     // switch new stream
     InitSwitchInfo(targetClass, switchInfo);
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
+        switchInfo.params.originalSessionId = 0;
+        switchInfo.sessionId = 0;
+    }
 
     // release old stream and restart audio stream
     switchResult = audioStream_->ReleaseAudioStream(true, true);
@@ -1532,6 +1538,10 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     int32_t initResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (initResult != SUCCESS && switchInfo.capturerInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, crate normal ipc stream");
+        if (restoreInfo.restoreReason == SERVER_DIED) {
+            switchInfo.sessionId = switchInfo.params.originalSessionId;
+            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+        }
         streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
         int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
             streamDesc, flag, switchInfo.params.originalSessionId);
@@ -1955,8 +1965,6 @@ void AudioCapturerPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     AUDIO_INFO_LOG("Restore AudioCapturer %{public}u when server died", sessionID_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
-    audioStream_->SetRestoreInfo(restoreInfo);
-    audioStream_->GetRestoreInfo(restoreInfo);
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
     AUDIO_INFO_LOG("Set restore status when server died, restore result %{public}d", restoreResult);
     return;

@@ -42,7 +42,8 @@ public:
 
     virtual int32_t SetSystemVolumeLevelLegacy(AudioVolumeType volumeType, int32_t volumeLevel) = 0;
 
-    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
+    virtual int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, int32_t volumeFlag = 0,
+        int32_t uid = 0) = 0;
 
     virtual int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
         DeviceType deviceType, int32_t volumeFlag = 0) = 0;
@@ -57,11 +58,13 @@ public:
 
     virtual int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0) = 0;
 
+    virtual int32_t SetAdjustVolumeForZone(int32_t zoneId) = 0;
+
     virtual int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0) = 0;
 
     virtual AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid) = 0;
 
-    virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid) = 0;
 
     virtual int32_t SetLowPowerVolume(int32_t streamId, float volume) = 0;
 
@@ -140,6 +143,12 @@ public:
 
     virtual bool IsAudioSessionActivated() = 0;
 
+    virtual int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene) = 0;
+
+    virtual int32_t GetDefaultOutputDevice(DeviceType &deviceType) = 0;
+
+    virtual int32_t SetDefaultOutputDevice(DeviceType deviceType) = 0;
+
     virtual int32_t SetAudioInterruptCallback(const uint32_t sessionID, const sptr<IRemoteObject> &object,
         uint32_t clientUid, const int32_t zoneID = 0 /* default value: 0 -- local device */) = 0;
 
@@ -164,6 +173,10 @@ public:
     virtual int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) = 0;
 
     virtual int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid) = 0;
 
     virtual int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object) = 0;
 
@@ -365,6 +378,12 @@ public:
 
     virtual int32_t RemoveUidFromAudioZone(int32_t zoneId, int32_t uid) = 0;
 
+    virtual int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
+    
+    virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
+
+    virtual void SetZoneDeviceVisible(bool visible) = 0;
+
     virtual int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable) = 0;
 
     virtual std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId) = 0;
@@ -443,6 +462,8 @@ public:
     virtual int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze) = 0;
 
     virtual int32_t ResetAllProxy() = 0;
+
+    virtual int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid) = 0;
 
     virtual void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType) = 0;
 

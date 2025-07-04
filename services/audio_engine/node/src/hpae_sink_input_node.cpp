@@ -25,6 +25,7 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "cinttypes"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -88,6 +89,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         .requestDataLen = interleveData_.size(),
         .deviceClass = GetDeviceClass(),
         .deviceNetId = GetDeviceNetId(),
+        .latency = streamInfo_.latency,
         .needData = !(historyBuffer_ && historyBuffer_->GetCurFrames())};
     GetCurrentPosition(streamInfo_.framePosition, streamInfo_.timestamp);
     auto writeCallback = writeCallback_.lock();
@@ -150,7 +152,7 @@ void HpaeSinkInputNode::DoProcess()
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
-        inputPcmDumper_->CheckAndReopenHandlde();
+        inputPcmDumper_->CheckAndReopenHandle();
         inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
             GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
     }
@@ -158,10 +160,15 @@ void HpaeSinkInputNode::DoProcess()
     
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
+    AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
+            static_cast<uint32_t>(appUid_));
         AUDIO_WARNING_LOG("request data is not enough sessionId:%{public}u", GetSessionId());
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
+        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
+            static_cast<uint32_t>(appUid_));
         totalFrames_ = totalFrames_ + GetFrameLen();
         framesWritten_ = totalFrames_;
         if (historyBuffer_) {
@@ -274,6 +281,17 @@ void HpaeSinkInputNode::SetOffloadEnabled(bool offloadEnable)
 bool HpaeSinkInputNode::GetOffloadEnabled()
 {
     return offloadEnable_;
+}
+
+int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
+{
+    loudnessGain_ = loudnessGain;
+    return SUCCESS;
+}
+
+float HpaeSinkInputNode::GetLoudnessGain()
+{
+    return loudnessGain_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

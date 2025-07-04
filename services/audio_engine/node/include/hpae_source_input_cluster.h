@@ -55,7 +55,6 @@ public:
     uint32_t GetConverterNodeCount();
     uint32_t GetSourceInputNodeUseCount();
     int32_t WriteCapturerData(char *data, int32_t dataSize);
-    OutputPort<HpaePcmBuffer *> *GetSourceInputNodeOutputPort();
 private:
     HpaeNodeInfo &GetNodeInfoWithInfo(HpaeSourceBufferType &type);
 

@@ -63,8 +63,11 @@ public:
 
     // interfaces for AudioSessionService
     int32_t ActivateAudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy);
+    bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
+    int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);
@@ -81,6 +84,7 @@ public:
         const int32_t zoneId, const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy = false);
     int32_t DeactivateAudioInterrupt(const int32_t zoneId, const AudioInterrupt &audioInterrupt);
     bool IsCapturerFocusAvailable(int32_t zoneId, const AudioCapturerInfo &capturerInfo);
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 
     // preempt audio focus interfaces
     int32_t ActivatePreemptMode();
@@ -177,6 +181,8 @@ private:
     bool IsAudioSourceConcurrency(const SourceType &existSourceType, const SourceType &incomingSourceType,
         const std::vector<SourceType> &existConcurrentSources,
         const std::vector<SourceType> &incomingConcurrentSources);
+    void UpdateFocusStrategy(const std::string &bundleName,
+        AudioFocusEntry &focusEntry, bool isExistMediaStream, bool isIncomingMediaStream);
     bool IsMediaStream(AudioStreamType audioStreamType);
     std::string GetRealBundleName(uint32_t uid);
     void UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt, const AudioInterrupt &incomingInterrupt,
@@ -220,6 +226,9 @@ private:
         std::shared_ptr<AudioInterruptZone> &zoneInfo,
         std::list<int32_t> &removeFocusInfoPidList);
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
+    void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
+        const std::string &bundleName, AudioFocusEntry &focusEntry);
+    bool IsMicSource(SourceType sourceType);
 
     // zone debug interfaces
     void WriteFocusMigrateEvent(const int32_t &toZoneId);
@@ -260,7 +269,7 @@ private:
     
     bool CheckAudioSessionExistence(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
 
-    void SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
+    bool SwitchHintType(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,
         InterruptEventInternal &interruptEvent, std::list<std::pair<AudioInterrupt, AudioFocuState>> &tmpFocusInfoList);
 
     bool IsHandleIter(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &iterActive,

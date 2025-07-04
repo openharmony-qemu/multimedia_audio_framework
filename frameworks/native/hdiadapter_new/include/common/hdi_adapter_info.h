@@ -30,6 +30,7 @@ enum HdiIdType : uint32_t {
     HDI_ID_TYPE_FAST,
     HDI_ID_TYPE_REMOTE,
     HDI_ID_TYPE_REMOTE_FAST,
+    HDI_ID_TYPE_REMOTE_OFFLOAD,
     HDI_ID_TYPE_FILE,
     HDI_ID_TYPE_BLUETOOTH,
     HDI_ID_TYPE_OFFLOAD,
@@ -51,6 +52,7 @@ enum HdiIdType : uint32_t {
 #define HDI_ID_INFO_MIC_REF "mic_ref"
 #define HDI_ID_INFO_MMAP "mmap"
 #define HDI_ID_INFO_ACCESSORY "accessory"
+#define HDI_ID_INFO_DP_MULITCHANNEL "dp_multichannel"
 
 // device manager
 enum HdiDeviceManagerType : uint32_t {

@@ -58,8 +58,6 @@ static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t LOGLITMITTIMES = 20;
-const uint64_t AUDIO_US_PER_MS = 1000;
-const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
@@ -691,8 +689,7 @@ float CapturerInClientInner::GetLoudnessGain()
     return 0.0;
 }
 
-
-int32_t CapturerInClientInner::SetMute(bool mute)
+int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
@@ -1244,7 +1241,6 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)isSwitchStream;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");
@@ -1255,7 +1251,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release();
+        ipcStream_->Release(isSwitchStream);
     } else {
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }
@@ -1759,6 +1755,11 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void CapturerInClientInner::JoinCallbackLoop()
+{
+    AUDIO_INFO_LOG("Not Support");
 }
 
 int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)

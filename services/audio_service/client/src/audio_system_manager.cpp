@@ -33,6 +33,7 @@
 #include "audio_manager_listener_stub.h"
 #include "audio_policy_interface.h"
 #include "audio_focus_info_change_callback_impl.h"
+#include "audio_workgroup_callback_stub.h"
 #include "audio_qosmanager.h"
 #include "rtg_interface.h"
 using namespace OHOS::RME;
@@ -50,6 +51,7 @@ mutex g_asProxyMutex;
 mutex g_audioListenerMutex;
 sptr<IStandardAudioService> g_asProxy = nullptr;
 sptr<AudioManagerListenerStub> g_audioListener = nullptr;
+class AudioWorkgroupClientCallback : public AudioWorkgroupCallbackStub {};
 
 const std::vector<AudioStreamType> workgroupValidStreamType = {
     AudioStreamType::STREAM_MUSIC,
@@ -875,6 +877,19 @@ int32_t AudioSystemManager::SetAudioClientInfoMgrCallback(const std::shared_ptr<
     return AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(callback);
 }
 
+int32_t AudioSystemManager::SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback)
+{
+    AUDIO_INFO_LOG("In");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetAudioVKBInfoMgrCallback(callback);
+}
+
+int32_t AudioSystemManager::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    AUDIO_INFO_LOG("In");
+    return AudioPolicyManager::GetInstance().CheckVKBInfo(bundleName, isValid);
+}
+
 int32_t AudioSystemManager::SetQueryBundleNameListCallback(
     const std::shared_ptr<AudioQueryBundleNameListCallback> &callback)
 {
@@ -1549,6 +1564,11 @@ int32_t AudioSystemManager::SetDeviceAbsVolumeSupported(const std::string &macAd
     return AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
 }
 
+int32_t AudioSystemManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return AudioPolicyManager::GetInstance().SetAdjustVolumeForZone(zoneId);
+}
+
 int32_t AudioSystemManager::SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume,
     const bool updateUi)
 {
@@ -1961,6 +1981,12 @@ int32_t AudioSystemManager::ResetAllProxy()
     return AudioPolicyManager::GetInstance().ResetAllProxy();
 }
 
+int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    AUDIO_INFO_LOG("RSS IN");
+    return AudioPolicyManager::GetInstance().NotifyProcessBackgroundState(uid, pid);
+}
+
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
     CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
@@ -2059,9 +2085,21 @@ int32_t AudioSystemManager::CreateAudioWorkgroup()
     AttachAudioRendererEventListener();
     AttachVolumeKeyEventListener();
 
+    sptr<AudioWorkgroupClientCallback> callback = new(std::nothrow) AudioWorkgroupClientCallback();
+    if (callback == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] callback is null");
+        return ERR_INVALID_PARAM;
+    }
+
+    sptr<IRemoteObject> object = callback->AsObject();
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("[WorkgroupInClient] callback->AsObject is null");
+        return ERR_INVALID_PARAM;
+    }
+
     const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
-    return gasp->CreateAudioWorkgroup(getpid());
+    return gasp->CreateAudioWorkgroup(getpid(), object);
 }
 
 int32_t AudioSystemManager::ReleaseAudioWorkgroup(int32_t workgroupId)

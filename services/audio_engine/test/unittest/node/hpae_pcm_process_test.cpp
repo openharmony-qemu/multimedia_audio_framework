@@ -18,6 +18,9 @@
 #include "hpae_pcm_process.h"
 #include "test_case_common.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -39,7 +42,7 @@ void HpaePcmProcessTest::TearDown()
 
 std::aligned_storage<sizeof(float), alignof(float)> aligned_memory;
 
-TEST_F(HpaePcmProcessTest, constructHpaePcmProcess)
+HWTEST_F(HpaePcmProcessTest, constructHpaePcmProcess, TestSize.Level0)
 {
     std::vector<float> testData(TEST_FREAME_LEN);
     HpaePcmProcess hpaePcmProcess(testData.data(), TEST_FREAME_LEN);
@@ -54,7 +57,7 @@ TEST_F(HpaePcmProcessTest, constructHpaePcmProcess)
     EXPECT_EQ(&testData[TEST_FREAME_LEN - 1], hpaePcmProcess.End() - 1);
 }
 
-TEST_F(HpaePcmProcessTest, assignHpaeProcessTest)
+HWTEST_F(HpaePcmProcessTest, assignHpaeProcessTest, TestSize.Level0)
 {
     std::vector<float> testData(TEST_FREAME_LEN);
     for (int i = 0; i < TEST_FREAME_LEN; i++) {
@@ -95,7 +98,7 @@ TEST_F(HpaePcmProcessTest, assignHpaeProcessTest)
     }
 }
 
-TEST_F(HpaePcmProcessTest, calHpaeProcessTest)
+HWTEST_F(HpaePcmProcessTest, calHpaeProcessTest, TestSize.Level0)
 {
     std::vector<float> testData(TEST_SUB_FREAME_LEN);
     for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
@@ -122,7 +125,7 @@ TEST_F(HpaePcmProcessTest, calHpaeProcessTest)
     }
 }
 
-TEST_F(HpaePcmProcessTest, selfAssignHpaeProcessTest)
+HWTEST_F(HpaePcmProcessTest, selfAssignHpaeProcessTest, TestSize.Level0)
 {
     std::vector<float> testData(TEST_SUB_FREAME_LEN);
     for (int i = 0; i < TEST_SUB_FREAME_LEN; i++) {
@@ -148,7 +151,7 @@ TEST_F(HpaePcmProcessTest, selfAssignHpaeProcessTest)
     EXPECT_EQ(hpaePcmProcessTest.End(), testData.data() + TEST_SUB_FREAME_LEN);
 }
 
-TEST_F(HpaePcmProcessTest, smallArrayOperations)
+HWTEST_F(HpaePcmProcessTest, smallArrayOperations, TestSize.Level0)
 {
     // Only test lengths smaller than ALIGIN_FLOAT_SIZE (0,1,2,3)
     const size_t testLengths[] = {0, 1, 2};
@@ -193,7 +196,7 @@ TEST_F(HpaePcmProcessTest, smallArrayOperations)
     }
 }
 
-TEST_F(HpaePcmProcessTest, multiplicationExactAlignment)
+HWTEST_F(HpaePcmProcessTest, multiplicationExactAlignment, TestSize.Level0)
 {
     // Test lengths that are multiples of ALIGIN_FLOAT_SIZE
     const size_t testLen = ALIGIN_FLOAT_SIZE * 4;  // 16 elements
@@ -216,7 +219,7 @@ TEST_F(HpaePcmProcessTest, multiplicationExactAlignment)
     }
 }
 
-TEST_F(HpaePcmProcessTest, zeroRemainderEdgeCases)
+HWTEST_F(HpaePcmProcessTest, zeroRemainderEdgeCases, TestSize.Level0)
 {
     // Test multiple exact alignment cases
     const size_t multipliers[] = {1, 2, 3};  // x4, x8, x12
@@ -249,7 +252,7 @@ TEST_F(HpaePcmProcessTest, zeroRemainderEdgeCases)
     }
 }
 
-TEST_F(HpaePcmProcessTest, hpaeProcessTestShortLen)
+HWTEST_F(HpaePcmProcessTest, hpaeProcessTestShortLen, TestSize.Level0)
 {
     std::vector<float> testData(TEST_LEN_LT_FOUR);
     for (int i = 0; i < TEST_LEN_LT_FOUR; i++) {

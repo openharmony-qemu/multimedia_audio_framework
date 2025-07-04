@@ -322,8 +322,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     AudioStreamType audioStreamType = IAudioStream::GetStreamType(rendererOptions.rendererInfo.contentType,
         rendererOptions.rendererInfo.streamUsage);
     if (audioStreamType == STREAM_ULTRASONIC && getuid() != UID_MSDP_SA) {
-        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
+        AudioRenderer::SendRendererCreateError(rendererOptions.rendererInfo.streamUsage, ERR_INVALID_PARAM);
         AUDIO_ERR_LOG("ULTRASONIC can only create by MSDP");
         return nullptr;
     }
@@ -336,9 +335,13 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, nullptr, "Failed to create renderer object");
 
     int32_t rendererFlags = rendererOptions.rendererInfo.rendererFlags;
+    bool isVirtualKeyboard = audioRenderer->IsVirtualKeyboard(rendererFlags);
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_NORMAL ? AUDIO_FLAG_NORMAL : rendererFlags;
+    rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
+
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, rendererFlags, appInfo.appUid);
+        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
+        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
@@ -352,6 +355,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->privacyType_ = rendererOptions.privacyType;
     audioRenderer->strategy_ = rendererOptions.strategy;
     audioRenderer->originalStrategy_ = rendererOptions.strategy;
@@ -410,7 +414,6 @@ AudioRendererPrivate::AudioRendererPrivate(AudioStreamType audioStreamType, cons
     audioInterrupt_.pid = appInfo_.appPid;
     audioInterrupt_.uid = appInfo_.appUid;
     audioInterrupt_.mode = SHARE_MODE;
-    audioInterrupt_.parallelPlayFlag = false;
 
     state_ = RENDERER_PREPARED;
 }
@@ -611,8 +614,9 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
-    // When the fast stream creation fails, a normal stream is created
-    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
+    if (ret != SUCCESS) {
+        // if the normal stream creation fails, return fail, other try create normal stream
+        CHECK_AND_RETURN_RET_LOG(streamClass != IAudioStream::PA_STREAM, ret, "Normal Stream Init Failed");
         ret = HandleCreateFastStreamError(audioStreamParams, audioStreamType);
     }
 
@@ -882,35 +886,49 @@ std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
     return audioStream_;
 }
 
-int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+void AudioRendererPrivate::SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+    RestoreStatus restoreStatus)
 {
-    std::unique_lock<std::shared_mutex> lock;
-    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-    }
-
-    if (abortRestore_) {
-        return SUCCESS;
-    }
-    // Return in advance if there's no need for restore.
-    CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
-    if (restoreStatus == NO_NEED_FOR_RESTORE) {
-        return SUCCESS;
-    }
-    if (restoreStatus == RESTORING) {
-        AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
-        return ERR_ILLEGAL_STATE;
-    }
-
     // Get restore info and target stream class for switching.
-    RestoreInfo restoreInfo;
     audioStream_->GetRestoreInfo(restoreInfo);
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
     SetClientInfo(restoreInfo.routeFlag, targetClass);
     if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
         restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
     }
+}
+
+int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    RestoreInfo restoreInfo;
+    std::shared_ptr<IAudioStream> oldStream = nullptr;
+    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+    {
+        std::unique_lock<std::shared_mutex> lock;
+        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        }
+
+        // Return in advance if there's no need for restore.
+        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
+        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
+            return SUCCESS;
+        }
+        if (restoreStatus == RESTORING) {
+            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
+            return ERR_ILLEGAL_STATE;
+        }
+
+        SetRestoreInfo(restoreInfo, targetClass, restoreStatus);
+        // Check if split stream. If true, fetch output device and return.
+        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
+        // Check if continue to switch after some concede operation.
+        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
+            true, "No need for switch");
+        oldStream = audioStream_;
+    }
+    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
+    oldStream->JoinCallbackLoop();
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -977,8 +995,9 @@ bool AudioRendererPrivate::Start(StateChangeCmdType cmdType)
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Start. id: %{public}u, streamType: %{public}d, "\
-        "volume: %{public}f, interruptMode: %{public}d", sessionID_, audioInterrupt_.audioFocusType.streamType,
-        GetVolumeInner(), audioInterrupt_.mode);
+        "volume: %{public}f, interruptMode: %{public}d, isVKB: %{public}s",
+        sessionID_, audioInterrupt_.audioFocusType.streamType,
+        GetVolumeInner(), audioInterrupt_.mode, rendererInfo_.isVirtualKeyboard ? "T" : "F");
     CHECK_AND_RETURN_RET_LOG(IsAllowedStartBackgroud(), false, "Start failed. IsAllowedStartBackgroud is false");
     RendererState state = GetStatusInner();
     CHECK_AND_RETURN_RET_LOG((state == RENDERER_PREPARED) || (state == RENDERER_STOPPED) || (state == RENDERER_PAUSED),
@@ -1133,7 +1152,7 @@ bool AudioRendererPrivate::Mute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Mute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(true);
+    (void)audioStream_->SetMute(true, cmdType);
     return true;
 }
 
@@ -1145,7 +1164,7 @@ bool AudioRendererPrivate::Unmute(StateChangeCmdType cmdType) const
         lock = std::shared_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_INFO_LOG("StreamClientState for Renderer::Unmute. id: %{public}u", sessionID_);
-    (void)audioStream_->SetMute(false);
+    (void)audioStream_->SetMute(false, cmdType);
     UpdateAudioInterruptStrategy(GetVolumeInner(), false);
     return true;
 }
@@ -1367,6 +1386,8 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    int32_t ret = currentStream->SetRenderRate(renderRate);
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     float speed = 1.0f;
     switch (renderRate) {
         case RENDER_RATE_NORMAL:
@@ -1381,11 +1402,15 @@ int32_t AudioRendererPrivate::SetRenderRate(AudioRendererRate renderRate) const
         default:
             speed = 1.0f;
     }
-    int32_t ret = currentStream->SetPitch(speed);
+    ret = currentStream->SetSpeed(speed);
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("SetSpeed Failed, error: %{public}d", ret);
+    }
+    ret = currentStream->SetPitch(speed);
     if (ret != SUCCESS) {
         AUDIO_WARNING_LOG("SetPitch Failed, error: %{public}d", ret);
     }
-    return currentStream->SetSpeed(speed);
+    return SUCCESS;
 }
 
 AudioRendererRate AudioRendererPrivate::GetRenderRate() const
@@ -1760,7 +1785,11 @@ bool AudioRendererPrivate::GetSilentModeAndMixWithOthers()
 int32_t AudioRendererPrivate::SetParallelPlayFlag(bool parallelPlayFlag)
 {
     AUDIO_PRERELEASE_LOGI("parallelPlayFlag %{public}d", parallelPlayFlag);
-    audioInterrupt_.parallelPlayFlag = parallelPlayFlag;
+    if (parallelPlayFlag) {
+        audioInterrupt_.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    } else {
+        audioInterrupt_.sessionStrategy.concurrencyMode = originalStrategy_.concurrencyMode;
+    }
     return SUCCESS;
 }
 
@@ -2091,7 +2120,7 @@ bool AudioRendererPrivate::InitTargetStream(IAudioStream::SwitchInfo &info,
 bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass, RestoreInfo restoreInfo,
     RendererState previousState, IAudioStream::SwitchInfo &switchInfo)
 {
-    audioStream_->SetMute(true); // Do not record this status in recover(InitSwitchInfo)
+    audioStream_->SetMute(true, CMD_FROM_SYSTEM); // Do not record this status in recover(InitSwitchInfo)
     bool switchResult = false;
     if (previousState == RENDERER_RUNNING) {
         switchResult = audioStream_->StopAudioStream();
@@ -2102,6 +2131,11 @@ bool AudioRendererPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         }
     }
     InitSwitchInfo(targetClass, switchInfo);
+    if (restoreInfo.restoreReason == SERVER_DIED) {
+        AUDIO_INFO_LOG("Server died, reset session id: %{public}d", switchInfo.params.originalSessionId);
+        switchInfo.params.originalSessionId = 0;
+        switchInfo.sessionId = 0;
+    }
     UpdateFramesWritten();
     switchResult = audioStream_->ReleaseAudioStream(true, true);
     if (restoreInfo.restoreReason != SERVER_DIED) {
@@ -2134,6 +2168,10 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     switchResult = SetSwitchInfo(switchInfo, newAudioStream);
     if (!switchResult && switchInfo.rendererInfo.originalFlag != AUDIO_FLAG_NORMAL) {
         AUDIO_ERR_LOG("Re-create stream failed, create normal ipc stream");
+        if (restoreInfo.restoreReason == SERVER_DIED) {
+            switchInfo.sessionId = switchInfo.params.originalSessionId;
+            streamDesc->sessionId_ = switchInfo.params.originalSessionId;
+        }
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId);
@@ -2210,11 +2248,7 @@ bool AudioRendererPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
     AUDIO_INFO_LOG("Restore AudioRenderer %{public}u, target class %{public}d, reason: %{public}d, "
         "device change reason %{public}d, target flag %{public}d", sessionID_, targetClass,
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
-    // Check if split stream. If true, fetch output device and return.
-    CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-    // Check if continue to switch after some concede operation.
-    CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-        true, "No need for switch");
+
     isSwitching_ = true;
     audioStream_->SetSwitchingStatus(true);
     AudioScopeExit scopeExit([this] () {
@@ -2505,8 +2539,6 @@ void AudioRendererPrivate::RestoreAudioInLoop(bool &restoreResult, int32_t &tryC
     AUDIO_INFO_LOG("Restore audio renderer when server died, session %{public}u", sessionID_);
     RestoreInfo restoreInfo;
     restoreInfo.restoreReason = SERVER_DIED;
-    audioStream_->SetRestoreInfo(restoreInfo);
-    audioStream_->GetRestoreInfo(restoreInfo);
     // When server died, restore client stream by SwitchToTargetStream. Target stream class is
     // the stream class of the old stream.
     restoreResult = SwitchToTargetStream(audioStream_->GetStreamClass(), restoreInfo);
@@ -2765,6 +2797,18 @@ int32_t AudioRendererPrivate::StopDataCallback()
 void AudioRendererPrivate::SetInterruptEventCallbackType(InterruptEventCallbackType callbackType)
 {
     audioInterrupt_.callbackType = callbackType;
+}
+
+bool AudioRendererPrivate::IsVirtualKeyboard(const int32_t flags)
+{
+    bool isBundleNameValid = false;
+    std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(getuid());
+    int32_t ret = AudioSystemManager::GetInstance()->CheckVKBInfo(bundleName, isBundleNameValid);
+    bool isVirtualKeyboard = (flags == AUDIO_FLAG_VKB_NORMAL || flags == AUDIO_FLAG_VKB_FAST)
+        && isBundleNameValid;
+    AUDIO_INFO_LOG("Check VKB ret:%{public}d, flags:%{public}d, isVKB:%{public}s", ret, flags,
+        isVirtualKeyboard ? "T" : "F");
+    return isVirtualKeyboard;
 }
 
 int32_t AudioRendererPrivate::CheckAudioRenderer(std::string callingFunc)

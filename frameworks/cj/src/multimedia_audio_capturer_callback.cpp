@@ -43,16 +43,19 @@ void CjAudioCapturerCallback::OnStateChange(const CapturerState state)
 
 void CjAudioCapturerCallback::RegisterInterruptFunc(std::function<void(CInterruptEvent)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     interruptEventfunc_ = cjCallback;
 }
 
 void CjAudioCapturerCallback::RegisterStateChangeFunc(std::function<void(int32_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     stateChangefunc_ = cjCallback;
 }
 
 void CjCapturerPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -66,6 +69,7 @@ void CjCapturerPositionCallback::OnMarkReached(const int64_t& framePosition)
 
 void CjCapturerPeriodPositionCallback::RegisterFunc(std::function<void(int64_t)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t& frameNumber)
@@ -79,6 +83,7 @@ void CjCapturerPeriodPositionCallback::OnPeriodReached(const int64_t& frameNumbe
 void CjAudioCapturerReadCallback::RegisterFunc(
     std::function<void(CArrUI8)> cjCallback, std::shared_ptr<AudioCapturer> audioCapturer)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
     audioCapturer_ = audioCapturer;
 }
@@ -119,6 +124,7 @@ void CjAudioCapturerReadCallback::OnReadData(size_t length)
 
 void CjAudioCapturerInfoChangeCallback::RegisterFunc(std::function<void(CAudioCapturerChangeInfo)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -141,6 +147,7 @@ void CjAudioCapturerInfoChangeCallback::OnStateChange(const AudioCapturerChangeI
 
 void CjAudioCapturerDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 

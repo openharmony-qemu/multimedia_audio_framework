@@ -20,6 +20,9 @@
 #include "audio_engine_log.h"
 #include "down_mixer.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -132,7 +135,7 @@ void DownMixerTest::TearDown() {}
  * @tc.number : SetParam
  * @tc.desc : Test SetParam interface
 */
-TEST_F(DownMixerTest, SetParamTest)
+HWTEST_F(DownMixerTest, SetParamTest, TestSize.Level0)
 {
     // invalid input Param
     DownMixer downMixer;
@@ -180,7 +183,7 @@ TEST_F(DownMixerTest, SetParamTest)
  * @tc.number : SetParam
  * @tc.desc : Test SetDefaultChannelLayout interface
 */
-TEST_F(DownMixerTest, SetDefaultChannelLayoutTest)
+HWTEST_F(DownMixerTest, SetDefaultChannelLayoutTest, TestSize.Level0)
 {
     DownMixer downMixer;
     for (auto pair : DOWNMIX_CHANNEL_COUNT_MAP) {
@@ -196,7 +199,7 @@ TEST_F(DownMixerTest, SetDefaultChannelLayoutTest)
  * @tc.number : SetParam
  * @tc.desc : Test CheckIsHOA interface
 */
-TEST_F(DownMixerTest, CheckIsHOATest)
+HWTEST_F(DownMixerTest, CheckIsHOATest, TestSize.Level0)
 {
     DownMixer downMixer;
     EXPECT_EQ(true, downMixer.CheckIsHOA(CH_LAYOUT_HOA_ORDER2_ACN_SN3D));
@@ -209,7 +212,7 @@ TEST_F(DownMixerTest, CheckIsHOATest)
  * @tc.number: Process
  * @tc.desc  : Test Process interface.
  */
-TEST_F(DownMixerTest, ProcesTest)
+HWTEST_F(DownMixerTest, ProcesTest, TestSize.Level0)
 {
     AudioChannelInfo inChannelInfo;
     AudioChannelInfo outChannelInfo;

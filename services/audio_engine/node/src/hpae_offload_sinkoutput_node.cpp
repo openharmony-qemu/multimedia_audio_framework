@@ -60,7 +60,7 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
         "HpaeOffloadSinkOutputNode_Out_bit_" + std::to_string(GetBitWidth()) + "_ch_" +
         std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
-    frameLenMs_ = nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate;
+    frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
 }
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
@@ -154,8 +154,9 @@ void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<Hpae
 int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
     const std::string &deviceNetworkId)
 {
+    std::string info = deviceNetworkId == "LocalDevice" ? HDI_ID_INFO_DEFAULT : deviceNetworkId;
     renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(
-        deviceClass, HDI_ID_INFO_DEFAULT, true);
+        deviceClass, info, true);
     audioRendererSink_ = HdiAdapterManager::GetInstance().GetRenderSink(renderId_, true);
     if (audioRendererSink_ == nullptr) {
         AUDIO_ERR_LOG("get offload sink fail, deviceClass: %{public}s, renderId_: %{public}u",
@@ -515,7 +516,7 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 {
     struct VolumeValues volumes;
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
-    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, DEVICE_CLASS_OFFLOAD, &volumes);
+    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, GetDeviceClass(), &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
     if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode::sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",

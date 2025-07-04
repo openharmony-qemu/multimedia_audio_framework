@@ -19,6 +19,9 @@
 #include "test_case_common.h"
 #include "hpae_format_convert.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -82,7 +85,7 @@ static AudioSampleFormat ConverFormat(uint32_t format)
  * tc.number : HpaeCaptureEffectNodeTest_001
  * tc.desc   : Test HpaeCaptureEffectNodeTest_001
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -134,7 +137,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001)
  * tc.number : HpaeCaptureEffectNodeTest_002
  * tc.desc   : Test HpaeCaptureEffectNodeTest_002
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -189,7 +192,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002)
  * tc.number : HpaeCaptureEffectNodeTest_003
  * tc.desc   : Test HpaeCaptureEffectNodeTest_003
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -216,7 +219,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003)
  * tc.number : HpaeCaptureEffectNodeTest_004
  * tc.desc   : Test HpaeCaptureEffectNodeTest_004
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_004)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_004, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -233,7 +236,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_004)
  * tc.number : HpaeCaptureEffectNodeTest_005
  * tc.desc   : Test HpaeCaptureEffectNodeTest_005
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_005)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_005, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -252,7 +255,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_005)
  * tc.number : HpaeCaptureEffectNodeTest_006
  * tc.desc   : Test HpaeCaptureEffectNodeTest_006
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_006)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_006, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
@@ -275,7 +278,7 @@ TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_006)
  * tc.number : HpaeCaptureEffectNodeTest_007
  * tc.desc   : Test HpaeCaptureEffectNodeTest_007
  */
-TEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_007)
+HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_007, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);

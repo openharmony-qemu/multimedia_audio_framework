@@ -85,17 +85,14 @@ void AudioPnpServerUnRegisterPnpStatusListenerFuzzTest(const uint8_t *rawData, s
 void AudioPnpServerOnPnpDeviceStatusChangedFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::string info = "test_info";
-    std::shared_ptr<TestAudioPnpDeviceChangeCallback> pnpCallback =
+    std::shared_ptr<AudioPnpDeviceChangeCallback> pnpCallback =
         std::make_shared<TestAudioPnpDeviceChangeCallback>();
-    audioPnpServer_->RegisterPnpStatusListener(pnpCallback);
+    audioPnpServer_->pnpCallback_ = pnpCallback;
     audioPnpServer_->OnPnpDeviceStatusChanged(info);
 }
 
 void AudioPnpServerOnMicrophoneBlockedFuzzTest(const uint8_t *rawData, size_t size)
 {
-    std::shared_ptr<TestAudioPnpDeviceChangeCallback> pnpCallback =
-        std::make_shared<TestAudioPnpDeviceChangeCallback>();
-    audioPnpServer_->RegisterPnpStatusListener(pnpCallback);
     MicrophoneBlocked::GetInstance().OnMicrophoneBlocked("test_info", *audioPnpServer_);
 }
 

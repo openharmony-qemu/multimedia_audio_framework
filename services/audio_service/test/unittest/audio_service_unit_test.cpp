@@ -97,13 +97,13 @@ HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
     std::unique_ptr<AudioProcessProxy> audioProcessProxy = std::make_unique<AudioProcessProxy>(object);
 
     int32_t ret = -1;
-    std::shared_ptr<OHAudioBuffer> buffer;
+    std::shared_ptr<OHAudioBufferBase> buffer;
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame - 1;
     uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    buffer = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
 
-    ret=audioProcessProxy->ResolveBuffer(buffer);
+    ret=audioProcessProxy->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame);
     EXPECT_LT(ret, TEST_RET_NUM);
 
     ret = audioProcessProxy->Start();
@@ -303,13 +303,13 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
         SAMPLE_RATE_48000,
         ENCODING_PCM,
         SAMPLE_S16LE,
-        STEREO
+        CH_LAYOUT_STEREO
     };
     int32_t channelMask = 1;
-    audioDeviceDescriptor->SetDeviceCapability(audioStreamInfo, channelMask);
+    audioDeviceDescriptor->SetDeviceCapability({ audioStreamInfo }, channelMask);
 
-    DeviceStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
-    EXPECT_EQ(streamInfo.channels, audioStreamInfo.channels);
+    DeviceStreamInfo streamInfo = audioDeviceDescriptor->GetDeviceStreamInfo();
+    EXPECT_EQ(streamInfo.channelLayout, audioStreamInfo.channelLayout);
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);
@@ -1613,8 +1613,24 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
 
     audioService->allRendererMap_.clear();
 
-    uint32_t sessionId = 0;
-    audioService->RemoveRenderer(sessionId);
+    uint32_t sessionId = 100001;
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    std::set<uint32_t>::iterator end = audioService->mutedSessions_.end();
+    std::set<uint32_t>::iterator it = end;
+    audioService->RemoveRenderer(sessionId, true);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_NE(it, end);
+    }
+
+    audioService->RemoveRenderer(sessionId, false);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_EQ(it, end);
+    }
 }
 
 /**

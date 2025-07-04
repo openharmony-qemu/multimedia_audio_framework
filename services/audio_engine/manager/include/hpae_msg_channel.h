@@ -36,6 +36,7 @@ enum HpaeMsgCode {
     MOVE_SESSION_FAILED,
     CONNECT_CO_BUFFER_NODE,
     DISCONNECT_CO_BUFFER_NODE,
+    RELOAD_AUDIO_SINK_RESULT,
 };
 
 enum NodeOperation { UNDERFLOW, FADED, DRAINED };
@@ -130,6 +131,7 @@ public:
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
     virtual void OnRewindAndFlush(uint64_t rewindTime){};
     virtual void OnNotifyQueue(){};
+    virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
     // add callback
     virtual uint32_t OnGetNodeId()
     {
@@ -161,7 +163,7 @@ struct HpaeNodeInfo : HpaeDfxNodeInfo {
 
 class INodeFormatInfoCallback {
 public:
-    virtual int32_t GetEffectNodeInputChannelInfo(uint32_t &channels, uint64_t &channelLayout) = 0;
+    virtual int32_t GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat) = 0;
 };
 
 } // namespace HPAE

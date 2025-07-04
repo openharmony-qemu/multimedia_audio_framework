@@ -121,11 +121,7 @@ public:
 
     shared_ptr<AudioDeviceDescriptor> GetActiveOutputDeviceDescriptor();
 
-    int32_t SetAudioScene(AudioScene audioScene, const int32_t uid = INVALID_UID, const int32_t pid = INVALID_PID);
-
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
-
-    int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
     void OnUpdateAnahsSupport(std::string anahsShowType);
 
@@ -165,22 +161,10 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
-    int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
-        const sptr<IRemoteObject> &object, const int32_t apiVersion);
-
-    int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-
-    int32_t GetCurrentRendererChangeInfos(vector<shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos,
-        bool hasBTPermission, bool hasSystemPermission);
-
     int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
 
-    void RegisteredTrackerClientDied(pid_t uid);
-
     int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
@@ -220,19 +204,11 @@ public:
 
     int32_t GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc);
 
-    vector<sptr<MicrophoneDescriptor>> GetAudioCapturerMicrophoneDescriptors(int32_t sessionId);
-
-    vector<sptr<MicrophoneDescriptor>> GetAvailableMicrophones();
-
-    int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
-
-    void OnCapturerSessionRemoved(uint64_t sessionID);
-
-    std::vector<shared_ptr<AudioDeviceDescriptor>> GetAvailableDevices(AudioDeviceUsage usage);
-
     int32_t OffloadStopPlaying(const std::vector<int32_t> &sessionIds);
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp);
+
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue);
 
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName);
 
@@ -246,20 +222,11 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByUsageInner(AudioDeviceUsage usage,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
-    std::shared_ptr<AudioDeviceDescriptor> GetActiveBluetoothDevice();
-
-    void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
-        const AudioStreamDeviceChangeReasonExt reason);
-
-    void FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo);
-
     void NotifyAccountsChanged(const int &id);
 
     int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
-
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     // for effect V3
     int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
@@ -275,9 +242,6 @@ public:
     bool getFastControlParam();
 
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-
-    int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
@@ -289,6 +253,7 @@ public:
     void RestoreSession(const uint32_t &sessionID, RestoreInfo restoreInfo);
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

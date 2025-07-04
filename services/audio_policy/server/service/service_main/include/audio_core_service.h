@@ -39,12 +39,20 @@
 #include "audio_pipe_info.h"
 #include "audio_service_enum.h"
 #include "audio_pipe_manager.h"
+#include "audio_session_service.h"
 #include "audio_pipe_selector.h"
 #include "audio_policy_config_manager.h"
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
+#include "audio_event_utils.h"
 namespace OHOS {
 namespace AudioStandard {
+enum OffloadType {
+    LOCAL_OFFLOAD,
+    REMOTE_OFFLOAD,
+    OFFLOAD_TYPE_NUM,
+};
+
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
@@ -62,10 +70,12 @@ public:
         // ICoreServiceProvider
         int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
             SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
+        int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
-        int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo) override;
+        int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+            bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
 
         // IDeviceStatusObserver
@@ -92,7 +102,7 @@ public:
         int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
             const sptr<IRemoteObject> &object, const int32_t apiVersion);
         int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-        void RegisteredTrackerClientDied(pid_t uid);
+        void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
         bool ConnectServiceAdapter();
         void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -146,6 +156,7 @@ private:
     std::shared_ptr<EventEntry> GetEventEntry();
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
+    void DumpSelectHistory(std::string &dumpString);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -188,7 +199,7 @@ private:
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object, const int32_t apiVersion);
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
-    void RegisteredTrackerClientDied(pid_t uid);
+    void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
     bool ConnectServiceAdapter();
     void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
@@ -242,6 +253,9 @@ private:
     void SetAudioServerProxy();
     bool GetDisableFastStreamParam();
     bool IsFastAllowed(std::string &bundleName);
+    void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
+        const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
+    void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -262,14 +276,18 @@ private:
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> desc,
         const AudioStreamDeviceChangeReasonExt reason);
     int32_t SwitchActiveA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
-    int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    int32_t ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
     int32_t LoadA2dpModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
         std::string networkId, std::string sinkName, SourceType sourceType);
     int32_t ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, DeviceType deviceType,
         const AudioStreamInfo& audioStreamInfo, std::string networkId, std::string sinkName,
         SourceType sourceType);
+    AudioIOHandle ReloadOrOpenAudioPort(int32_t engineFlag, AudioModuleInfo &moduleInfo,
+        uint32_t &paIndex);
     void GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const AudioStreamInfo& audioStreamInfo,
         SourceType sourceType);
+    void RecordSelectDevice(const std::string &history);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
@@ -296,7 +314,8 @@ private:
         std::shared_ptr<AudioPipeInfo> pipeInfo,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     int32_t MoveToRemoteOutputDevice(
-        std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
+        std::vector<SinkInput> sinkInputIds, std::shared_ptr<AudioPipeInfo> pipeInfo,
+        std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor);
     void MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void MoveToNewInputDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     int32_t MoveToLocalInputDevice(
@@ -365,8 +384,8 @@ private:
     bool NeedRehandleA2DPDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo, RendererState rendererState);
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
-    void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
-    int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex);
+    void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
+    int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
@@ -398,6 +417,9 @@ private:
         const AudioStreamDeviceChangeReasonExt reason);
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
+    void ClearRingMuteWhenCallStart(bool pre, bool after);
+    void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
+    void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -426,10 +448,15 @@ private:
     AudioAffinityManager &audioAffinityManager_;
     SleAudioDeviceManager &sleAudioDeviceManager_;
     std::shared_ptr<AudioPipeSelector> audioPipeSelector_;
+    std::shared_ptr<AudioSessionService> audioSessionService_ = nullptr;
 
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+
+    // select device history
+    std::mutex hisQueueMutex_;
+    std::deque<std::string> selectDeviceHistory_;
 
     // dual tone for same sinks
     std::vector<std::pair<AudioStreamType, StreamUsage>> streamsWhenRingDualOnPrimarySpeaker_;
@@ -454,8 +481,8 @@ private:
     std::mutex serviceFlagMutex_;
 
     // offload delay release
-    std::atomic<bool> isOffloadOpened_ = false;
-    std::condition_variable offloadCloseCondition_;
+    std::atomic<bool> isOffloadOpened_[OFFLOAD_TYPE_NUM] = {};
+    std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
 

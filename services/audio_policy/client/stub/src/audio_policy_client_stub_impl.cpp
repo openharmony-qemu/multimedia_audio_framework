@@ -515,7 +515,7 @@ void AudioPolicyClientStubImpl::OnRingerModeUpdated(const AudioRingerMode &ringe
     }
 }
 
-void AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType)
+void AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(const AudioVolumeType &volumeType)
 {
     std::lock_guard<std::mutex> lockCbMap(activeVolumeTypeChangeMutex_);
     for (auto it = activeVolumeTypeChangeCallbackList_.begin(); it != activeVolumeTypeChangeCallbackList_.end(); ++it) {
@@ -590,6 +590,57 @@ void AudioPolicyClientStubImpl::OnAudioSessionDeactive(const AudioSessionDeactiv
     std::lock_guard<std::mutex> lockCbMap(audioSessionMutex_);
     for (auto it = audioSessionCallbackList_.begin(); it != audioSessionCallbackList_.end(); ++it) {
         (*it)->OnAudioSessionDeactive(deactiveEvent);
+    }
+}
+
+int32_t AudioPolicyClientStubImpl::AddAudioSessionStateCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &cb)
+{
+    AUDIO_INFO_LOG("AddAudioSessionStateCallback in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionStateMutex_);
+    audioSessionStateCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionStateCallback()
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionStateCallback all in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionStateMutex_);
+    audioSessionStateCallbackList_.clear();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionStateCallback(
+    const std::shared_ptr<AudioSessionStateChangedCallback> &cb)
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionStateCallback one in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionStateMutex_);
+    auto it = find_if(audioSessionStateCallbackList_.begin(), audioSessionStateCallbackList_.end(),
+        [&cb](const std::weak_ptr<AudioSessionStateChangedCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != audioSessionStateCallbackList_.end()) {
+        audioSessionStateCallbackList_.erase(it);
+        AUDIO_INFO_LOG("RemoveAudioSessionStateCallback remove cb succeed");
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSessionStateCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSessionStateMutex_);
+    return audioSessionStateCallbackList_.size();
+}
+
+void AudioPolicyClientStubImpl::OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent)
+{
+    AUDIO_INFO_LOG("OnAudioSessionStateChanged in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionStateMutex_);
+    for (auto it = audioSessionStateCallbackList_.begin(); it != audioSessionStateCallbackList_.end(); ++it) {
+        std::shared_ptr<AudioSessionStateChangedCallback> audioSessionStateChangedCallback = (*it).lock();
+        if (audioSessionStateChangedCallback != nullptr) {
+            audioSessionStateChangedCallback->OnAudioSessionStateChanged(stateChangedEvent);
+        }
     }
 }
 

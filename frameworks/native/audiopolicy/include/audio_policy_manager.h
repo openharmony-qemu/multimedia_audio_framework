@@ -62,7 +62,7 @@ public:
     int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
-        int32_t volumeFlag = 0);
+        int32_t volumeFlag = 0, int32_t uid = 0);
 
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
@@ -70,13 +70,15 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+
     int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
 
     int32_t SetSelfAppVolumeLevel(int32_t volumeLevel, int32_t volumeFlag = 0);
 
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
-    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
@@ -247,25 +249,17 @@ public:
 
     int32_t SetAudioSessionScene(const AudioSessionScene audioSessionScene);
 
-    int32_t SetAudioSessionStateChangedCallback(
+    int32_t SetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
-    int32_t UnsetAudioSessionStateChangedCallback();
+    int32_t UnsetAudioSessionStateChangeCallback();
 
-    int32_t UnsetAudioSessionStateChangedCallback(
+    int32_t UnsetAudioSessionStateChangeCallback(
         const std::shared_ptr<AudioSessionStateChangedCallback> &stateChangedCallback);
 
-    int32_t GetCurrentOutputDevices(AudioDeviceDescriptor &deviceInfo) const;
+    int32_t GetDefaultOutputDevice(DeviceType &deviceType);
 
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
-
-    int32_t SetAudioSessionCurrentDeviceChangedCallback(
-        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
-
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback();
-
-    int32_t UnsetAudioSessionCurrentDeviceChangedCallback(
-        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 
     int32_t SetVolumeKeyEventCallback(const int32_t clientPid,
         const std::shared_ptr<VolumeKeyEventCallback> &callback, API_VERSION api_v = API_9);
@@ -503,6 +497,12 @@ public:
 
     int32_t EnableSystemVolumeProxy(int32_t zoneId, bool enable);
 
+    int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
+
+    int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
+
+    void SetZoneDeviceVisible(bool visible);
+
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(int32_t zoneId);
 
     std::list<std::pair<AudioInterrupt, AudioFocuState>> GetAudioInterruptForZone(
@@ -553,6 +553,9 @@ public:
 
     int32_t SetAudioClientInfoMgrCallback(const std::shared_ptr<AudioClientInfoMgrCallback> &callback);
 
+    int32_t SetAudioVKBInfoMgrCallback(const std::shared_ptr<AudioVKBInfoMgrCallback> &callback);
+    int32_t CheckVKBInfo(const std::string &bundleName, bool &isValid);
+
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
     int32_t SetPreferredDevice(const PreferredType preferredType, const std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -602,6 +605,8 @@ public:
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
     int32_t ResetAllProxy();
+
+    int32_t NotifyProcessBackgroundState(const int32_t uid, const int32_t pid);
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 

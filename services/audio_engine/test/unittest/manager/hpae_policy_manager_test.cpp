@@ -19,7 +19,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
-
+using namespace testing::ext;
+using namespace testing;
 constexpr uint32_t SESSION_ID = 12345;
 
 class HpaePolicyManagerTest : public testing::Test {
@@ -34,7 +35,7 @@ void HpaePolicyManagerTest::SetUp()
 void HpaePolicyManagerTest::TearDown()
 {}
 
-TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001)
+HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001, TestSize.Level0)
 {
     AudioSpatializationState spatializationState = {};
     int32_t ret = HpaePolicyManager::GetInstance().UpdateSpatializationState(spatializationState);
@@ -78,7 +79,7 @@ TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_001)
     EXPECT_EQ(ret, 0);
 }
 
-TEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002)
+HWTEST_F(HpaePolicyManagerTest, TestForHpaePolicyManager_002, TestSize.Level0)
 {
     AudioEffectPropertyArrayV3 propertyArray2;
     propertyArray2.property.push_back({"invalidEffect", "property1"});

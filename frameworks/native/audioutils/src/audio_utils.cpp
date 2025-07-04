@@ -16,6 +16,7 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
+#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -52,12 +53,12 @@ const int32_t YEAR_BASE = 1900;
 const size_t MOCK_INTERVAL = 2000;
 const int32_t DETECTED_ZERO_THRESHOLD = 1;
 const int32_t BLANK_THRESHOLD_MS = 100;
-const int32_t SIGNAL_THRESHOLD = 10;
+const int32_t SIGNAL_THRESHOLD = 32;
 const uint32_t MAX_VALUE_OF_SIGNED_24_BIT = 8388607;
 const int64_t PCM_MAYBE_SILENT = 1;
 const int64_t PCM_MAYBE_NOT_SILENT = 5;
 const int32_t SIGNAL_DATA_SIZE = 96;
-const int32_t DECIMAL_EXPONENT = 10;
+const size_t TIME_TEXT_LENGTH = 32;
 const size_t DATE_LENGTH = 17;
 static uint32_t g_sessionToMock = 0;
 constexpr int32_t UID_AUDIO = 1041;
@@ -162,6 +163,53 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
+}
+
+uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
+{
+    enum AudioInputType hdiAudioInputType;
+    switch (sourceType) {
+        case SOURCE_TYPE_INVALID:
+            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
+            break;
+        case SOURCE_TYPE_MIC:
+        case SOURCE_TYPE_PLAYBACK_CAPTURE:
+        case SOURCE_TYPE_ULTRASONIC:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+        case SOURCE_TYPE_WAKEUP:
+            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+        case SOURCE_TYPE_VOICE_COMMUNICATION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_RECOGNITION:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
+            break;
+        case SOURCE_TYPE_VOICE_CALL:
+            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
+            break;
+        case SOURCE_TYPE_CAMCORDER:
+            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
+            break;
+        case SOURCE_TYPE_EC:
+            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
+            break;
+        case SOURCE_TYPE_MIC_REF:
+            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
+            break;
+        case SOURCE_TYPE_UNPROCESSED:
+            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
+            break;
+        case SOURCE_TYPE_LIVE:
+            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
+            break;
+        default:
+            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
+            break;
+    }
+    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
@@ -350,10 +398,9 @@ void Trace::CountVolume(const std::string &value, uint8_t data)
 
 Trace::Trace(const std::string &value)
 {
-    value_ = value;
     isFinished_ = false;
 #ifdef FEATURE_HITRACE_METER
-    StartTrace(HITRACE_TAG_ZAUDIO, value_);
+    StartTrace(HITRACE_TAG_ZAUDIO, value);
 #endif
 }
 
@@ -369,7 +416,10 @@ void Trace::End()
 
 Trace::~Trace()
 {
-    End();
+    if (!isFinished_) {
+        FinishTrace(HITRACE_TAG_ZAUDIO);
+        isFinished_ = true;
+    }
 }
 
 AudioXCollie::AudioXCollie(const std::string &tag, uint32_t timeoutSeconds,
@@ -712,7 +762,7 @@ std::map<std::uint32_t, std::set<uint32_t>> g_tokenIdRecordMap = {};
 int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StartUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StartUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StartUsingPermission:PermissionUtil::StartUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StartUsingPermission(targetTokenId, permission);
@@ -723,7 +773,7 @@ int32_t PermissionUtil::StartUsingPermission(uint32_t targetTokenId, const char*
 int32_t PermissionUtil::StopUsingPermission(uint32_t targetTokenId, const char* permission)
 {
     Trace trace("PrivacyKit::StopUsingPermission");
-    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}d permission:%{public}s",
+    AUDIO_WARNING_LOG("PrivacyKit::StopUsingPermission tokenId:%{public}u permission:%{public}s",
         targetTokenId, permission);
     WatchTimeout guard("PrivacyKit::StopUsingPermission:PermissionUtil::StopUsingPermission");
     int32_t res = Security::AccessToken::PrivacyKit::StopUsingPermission(targetTokenId, permission);
@@ -744,7 +794,7 @@ bool PermissionUtil::NotifyPrivacyStart(uint32_t targetTokenId, uint32_t session
         }
     } else {
         AUDIO_INFO_LOG("Notify PrivacyKit to display the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StartUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0 || res == Security::AccessToken::ERR_PERMISSION_ALREADY_START_USING, false,
             "StartUsingPermission for tokenId:%{public}u, PrivacyKit error code:%{public}d", targetTokenId, res);
@@ -779,7 +829,7 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
     if (g_tokenIdRecordMap[targetTokenId].empty()) {
         g_tokenIdRecordMap.erase(targetTokenId);
         AUDIO_INFO_LOG("Notify PrivacyKit to remove the microphone privacy indicator "
-            "for tokenId: %{public}d sessionId:%{public}d", targetTokenId, sessionId);
+            "for tokenId: %{public}u sessionId:%{public}u", targetTokenId, sessionId);
         int32_t res = PermissionUtil::StopUsingPermission(targetTokenId, MICROPHONE_PERMISSION);
         CHECK_AND_RETURN_RET_LOG(res == 0, false, "StopUsingPermission for tokenId %{public}u!"
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
@@ -1283,7 +1333,6 @@ bool NearZero(int16_t number)
 
 std::string GetTime()
 {
-    std::string curTime;
     struct timeval tv;
     struct timezone tz;
     struct tm *t;
@@ -1293,20 +1342,17 @@ std::string GetTime()
         return "";
     }
 
-    curTime += std::to_string(YEAR_BASE + t->tm_year);
-    curTime += (1 + t->tm_mon < DECIMAL_EXPONENT ? "0" + std::to_string(1 + t->tm_mon) :
-        std::to_string(1 + t->tm_mon));
-    curTime += (t->tm_mday < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_mday) :
-        std::to_string(t->tm_mday));
-    curTime += (t->tm_hour < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_hour) :
-        std::to_string(t->tm_hour));
-    curTime += (t->tm_min < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_min) :
-        std::to_string(t->tm_min));
-    curTime += (t->tm_sec < DECIMAL_EXPONENT ? "0" + std::to_string(t->tm_sec) :
-        std::to_string(t->tm_sec));
     int64_t mSec = static_cast<int64_t>(tv.tv_usec / AUDIO_MS_PER_SECOND);
-    curTime += (mSec < (DECIMAL_EXPONENT * DECIMAL_EXPONENT) ? (mSec < DECIMAL_EXPONENT ? "00" : "0") +
-        std::to_string(mSec) : std::to_string(mSec));
+
+    // 2025-06-22-21:22:07:666
+    char timeBuf[TIME_TEXT_LENGTH] = {0};
+    int ret = sprintf_s(timeBuf, sizeof(timeBuf), "%04d-%02d-%02d-%02d:%02d:%02d:%03d", (YEAR_BASE + t->tm_year),
+        (1 + t->tm_mon), t->tm_mday, t->tm_hour, t->tm_min, t->tm_sec, mSec);
+    if (ret < 0) {
+        return "";
+    }
+
+    std::string curTime(timeBuf);
     return curTime;
 }
 

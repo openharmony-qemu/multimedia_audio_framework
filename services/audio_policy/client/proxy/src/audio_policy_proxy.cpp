@@ -607,6 +607,22 @@ int32_t AudioPolicyProxy::ResetAllProxy()
     return reply.ReadInt32();
 }
 
+int32_t AudioPolicyProxy::NotifyProcessBackgroundState(const int32_t uid, const int32_t pid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(uid);
+    data.WriteInt32(pid);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::NOTIFY_PROCESS_BACKGROUND_STATE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "NotifyProcessBackgroundState failed, error: %{public}d", error);
+    return reply.ReadInt32();
+}
+
 int32_t AudioPolicyProxy::SetVirtualCall(const bool isVirtual)
 {
     MessageParcel data;
@@ -901,6 +917,55 @@ bool AudioPolicyProxy::IsAudioSessionActivated()
     return reply.ReadBool();
 }
 
+int32_t AudioPolicyProxy::SetAudioSessionScene(const AudioSessionScene audioSessionScene)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(audioSessionScene));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_AUDIO_SESSION_SCENE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "Failed to audioSessionScene. Error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::GetDefaultOutputDevice(DeviceType &deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::GET_SESSION_DEFAULT_OUTPUT_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, ERROR, "GetDefaultOutputDevice failed, Error: %{public}d", error);
+
+    deviceType = static_cast<DeviceType>(reply.ReadInt32());
+    return SUCCESS;
+}
+
+int32_t AudioPolicyProxy::SetDefaultOutputDevice(DeviceType deviceType)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+    data.WriteInt32(static_cast<int32_t>(deviceType));
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::SET_SESSION_DEFAULT_OUTPUT_DEVICE), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "SetDefaultOutputDevice failed, Error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
 void AudioPolicyProxy::ReadAudioFocusInfo(MessageParcel &reply,
     std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList)
 {
@@ -1006,6 +1071,24 @@ int32_t AudioPolicyProxy::DeactivatePreemptMode()
     int error = Remote()->SendRequest(
         static_cast<uint32_t>(AudioPolicyInterfaceCode::DEACTIVATE_PREEMPT_MODE), data, reply, option);
     CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "deactivate preemptMode failed, error: %{public}d", error);
+
+    return reply.ReadInt32();
+}
+
+int32_t AudioPolicyProxy::CheckVKBInfo(const std::string &bundleName, bool &isValid)
+{
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    bool ret = data.WriteInterfaceToken(GetDescriptor());
+    CHECK_AND_RETURN_RET_LOG(ret, -1, "WriteInterfaceToken failed");
+
+    data.WriteString(bundleName);
+    int32_t error = Remote()->SendRequest(
+        static_cast<uint32_t>(AudioPolicyInterfaceCode::CHECK_VKB_INFO), data, reply, option);
+    CHECK_AND_RETURN_RET_LOG(error == ERR_NONE, error, "CheckVKBInfo failed, error: %d", error);
+    isValid = reply.ReadBool();
 
     return reply.ReadInt32();
 }
