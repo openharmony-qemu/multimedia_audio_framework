@@ -665,9 +665,9 @@ void AudioRendererImpl::RegisterRendererDeviceChangeCallback(std::shared_ptr<uin
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererDeviceChangeCallbackTaihe_ != nullptr,
             "rendererDeviceChangeCallbackTaihe_ is nullptr, No memory");
 
-        int32_t ret = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
+        int32_t retDeviceChange = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
             taiheRenderer->rendererDeviceChangeCallbackTaihe_);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        CHECK_AND_RETURN_LOG(retDeviceChange == OHOS::AudioStandard::SUCCESS,
             "Registering of Renderer Device Change Callback Failed");
     }
 
@@ -677,9 +677,9 @@ void AudioRendererImpl::RegisterRendererDeviceChangeCallback(std::shared_ptr<uin
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererPolicyServiceDiedCallbackTaihe_ != nullptr,
             "Registering of Renderer Device Change Callback Failed");
 
-        int32_t ret = taiheRenderer->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
+        int32_t retAudioPolicy = taiheRenderer->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
             taiheRenderer->rendererPolicyServiceDiedCallbackTaihe_);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        CHECK_AND_RETURN_LOG(retAudioPolicy == OHOS::AudioStandard::SUCCESS,
             "Registering of AudioPolicyService Died Change Callback Failed");
     }
 
@@ -705,9 +705,9 @@ void AudioRendererImpl::RegisterRendererOutputDeviceChangeWithInfoCallback(std::
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_ != nullptr,
             "rendererOutputDeviceChangeWithInfoCallbackTaihe_ is nullptr, No memory");
 
-        int32_t ret = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
+        int32_t retOutputDevice = taiheRenderer->audioRenderer_->RegisterOutputDeviceChangeWithInfoCallback(
             taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        CHECK_AND_RETURN_LOG(retOutputDevice == OHOS::AudioStandard::SUCCESS,
             "Registering of Renderer Device Change Callback Failed");
     }
 
@@ -717,9 +717,9 @@ void AudioRendererImpl::RegisterRendererOutputDeviceChangeWithInfoCallback(std::
         CHECK_AND_RETURN_LOG(taiheRenderer->rendererPolicyServiceDiedCallbackTaihe_ != nullptr,
             "Registering of Renderer Device Change Callback Failed");
 
-        int32_t ret = taiheRenderer->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
+        int32_t retPolicyService = taiheRenderer->audioRenderer_->RegisterAudioPolicyServerDiedCb(getpid(),
             taiheRenderer->rendererPolicyServiceDiedCallbackTaihe_);
-        CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
+        CHECK_AND_RETURN_LOG(retPolicyService == OHOS::AudioStandard::SUCCESS,
             "Registering of AudioPolicyService Died Change Callback Failed");
     }
 
@@ -750,6 +750,7 @@ void AudioRendererImpl::RegisterRendererWriteDataCallback(std::shared_ptr<uintpt
     CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "SetRendererWriteCallback failed");
     std::shared_ptr<TaiheRendererWriteDataCallback> cb =
         std::static_pointer_cast<TaiheRendererWriteDataCallback>(taiheRenderer->rendererWriteDataCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->AddCallbackReference(cbName, callback);
     AUDIO_INFO_LOG("Register Callback is successful");
 }
@@ -766,6 +767,7 @@ void AudioRendererImpl::UnregisterRendererCallback(std::shared_ptr<uintptr_t> &c
 
     std::shared_ptr<TaiheAudioRendererCallback> cb =
         std::static_pointer_cast<TaiheAudioRendererCallback>(taiheRenderer->callbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     UnregisterAudioRendererSingletonCallbackTemplate(callback, cbName, cb);
     AUDIO_DEBUG_LOG("UnregisterRendererCallback is successful");
 }
@@ -787,9 +789,8 @@ void AudioRendererImpl::UnregisterRendererDeviceChangeCallback(std::shared_ptr<u
     std::shared_ptr<TaiheAudioRendererDeviceChangeCallback> cb =
         std::static_pointer_cast<TaiheAudioRendererDeviceChangeCallback>(
             taiheRenderer->rendererDeviceChangeCallbackTaihe_);
-
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->RemoveCallbackReference(callback);
-
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {
         int32_t ret = taiheRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "unregister renderer device change callback failed");
@@ -797,7 +798,6 @@ void AudioRendererImpl::UnregisterRendererDeviceChangeCallback(std::shared_ptr<u
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "unregister AudioPolicyServerDiedCb failed");
         taiheRenderer->DestroyTaiheCallbacks();
     }
-
     AUDIO_INFO_LOG("UnregisterRendererDeviceChangeCallback success!");
 }
 
@@ -817,8 +817,8 @@ void AudioRendererImpl::UnregisterRendererOutputDeviceChangeWithInfoCallback(std
 
     std::shared_ptr<TaiheAudioRendererOutputDeviceChangeWithInfoCallback> cb =
         taiheRenderer->rendererOutputDeviceChangeWithInfoCallbackTaihe_;
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->RemoveCallbackReference(callback);
-
     if (callback == nullptr || cb->GetCallbackListSize() == 0) {
         int32_t ret = taiheRenderer->audioRenderer_->UnregisterOutputDeviceChangeWithInfoCallback(cb);
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS,
@@ -829,7 +829,6 @@ void AudioRendererImpl::UnregisterRendererOutputDeviceChangeWithInfoCallback(std
 
         taiheRenderer->DestroyTaiheCallbacks();
     }
-    
     AUDIO_INFO_LOG("UnregisterRendererOutputDeviceChangeWithInfoCallback success");
 }
 
@@ -845,6 +844,7 @@ void AudioRendererImpl::UnregisterPeriodPositionCallback(std::shared_ptr<uintptr
 
     std::shared_ptr<TaiheRendererPeriodPositionCallback> cb =
         std::static_pointer_cast<TaiheRendererPeriodPositionCallback>(taiheRenderer->periodPositionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheRendererPeriodPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheRenderer] (std::shared_ptr<TaiheRendererPeriodPositionCallback> callbackPtr,
@@ -869,6 +869,7 @@ void AudioRendererImpl::UnregisterPositionCallback(std::shared_ptr<uintptr_t> &c
 
     std::shared_ptr<TaiheRendererPositionCallback> cb =
         std::static_pointer_cast<TaiheRendererPositionCallback>(taiheRenderer->positionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheRendererPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheRenderer] (std::shared_ptr<TaiheRendererPositionCallback> callbackPtr,
@@ -891,11 +892,10 @@ void AudioRendererImpl::UnregisterRendererWriteDataCallback(std::shared_ptr<uint
         TAIHE_ERR_NO_MEMORY), "audioRenderer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheRenderer->rendererWriteDataCallbackTaihe_ != nullptr,
         "taiheRendererWriteDataCallback is nullptr, return");
-
     std::shared_ptr<TaiheRendererWriteDataCallback> cb =
         std::static_pointer_cast<TaiheRendererWriteDataCallback>(taiheRenderer->rendererWriteDataCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->RemoveCallbackReference(callback);
-
     AUDIO_INFO_LOG("Unregister Callback is successful");
 }
 

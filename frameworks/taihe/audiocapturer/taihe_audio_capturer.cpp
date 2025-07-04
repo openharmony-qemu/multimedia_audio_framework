@@ -203,6 +203,7 @@ void AudioCapturerImpl::UnregisterCapturerCallback(std::shared_ptr<uintptr_t> &c
     CHECK_AND_RETURN_LOG(taiheCapturer->callbackTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheAudioCapturerCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerCallback>(taiheCapturer->callbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb);
     AUDIO_DEBUG_LOG("UnregisterCapturerCallback is successful");
 }
@@ -281,6 +282,7 @@ void AudioCapturerImpl::UnregisterCapturerPeriodPositionCallback(std::shared_ptr
     CHECK_AND_RETURN_LOG(taiheCapturer->periodPositionCbTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheCapturerPeriodPositionCallback> cb =
         std::static_pointer_cast<TaiheCapturerPeriodPositionCallback>(taiheCapturer->periodPositionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheCapturerPeriodPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheCapturerPeriodPositionCallback> callbackPtr,
@@ -304,6 +306,7 @@ void AudioCapturerImpl::UnregisterCapturerPositionCallback(std::shared_ptr<uintp
     CHECK_AND_RETURN_LOG(taiheCapturer->positionCbTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheCapturerPositionCallback> cb =
         std::static_pointer_cast<TaiheCapturerPositionCallback>(taiheCapturer->positionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheCapturerPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheCapturerPositionCallback> callbackPtr,
@@ -540,6 +543,7 @@ void AudioCapturerImpl::RegisterCapturerCallback(std::shared_ptr<uintptr_t> &cal
 
     std::shared_ptr<TaiheAudioCapturerCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerCallback>(taiheCapturer->callbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->SaveCallbackReference(cbName, callback);
 
     if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
@@ -617,6 +621,7 @@ void AudioCapturerImpl::RegisterCapturerReadDataCallback(std::shared_ptr<uintptr
     CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "SetCapturerCallback failed");
     std::shared_ptr<TaiheCapturerReadDataCallback> cb =
         std::static_pointer_cast<TaiheCapturerReadDataCallback>(taiheCapturer->capturerReadDataCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->AddCallbackReference(cbName, callback);
 
     AUDIO_INFO_LOG("Register Callback is successful");
@@ -670,6 +675,7 @@ void AudioCapturerImpl::RegisterPositionCallback(int64_t frame, std::shared_ptr<
 
         std::shared_ptr<TaiheCapturerPositionCallback> cb =
             std::static_pointer_cast<TaiheCapturerPositionCallback>(taiheCapturer->positionCbTaihe_);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
         cb->SaveCallbackReference(cbName, callback);
     } else {
         AUDIO_ERR_LOG("AudioCapturerImpl: Mark Position value not supported!!");

@@ -55,6 +55,10 @@ void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared
 
     if (callback == nullptr) {
         for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+            if (*autoRef == nullptr) {
+                AUDIO_ERR_LOG("RemoveCallbackReference: nullptr element found in callbacks_");
+                continue;
+            }
             (*autoRef)->cb_ = nullptr;
         }
         callbacks_.clear();
@@ -63,10 +67,13 @@ void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        if (*autoRef == nullptr) {
+            AUDIO_ERR_LOG("RemoveCallbackReference: nullptr element found in callbacks_");
+            continue;
+        }
         if (TaiheParamUtils::IsSameRef(callback, ((*autoRef)->cb_))) {
             isEquals = true;
         }
-
         if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
             callbacks_.remove(*autoRef);
@@ -74,7 +81,6 @@ void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared
             return;
         }
     }
-
     AUDIO_INFO_LOG("RemoveCallbackReference success");
 }
 
@@ -163,6 +169,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        CHECK_AND_RETURN_LOG((*autoRef) != nullptr, "callback reference is null");
         CHECK_AND_RETURN_LOG(TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_), "callback already exits");
     }
     CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
@@ -187,6 +194,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferen
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        CHECK_AND_RETURN_LOG((*autoRef) != nullptr, "callback reference is null");
         if (TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_)) {
             isEquals = true;
         }

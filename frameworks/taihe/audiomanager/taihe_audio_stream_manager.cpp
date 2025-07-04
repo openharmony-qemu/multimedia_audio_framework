@@ -231,6 +231,7 @@ void AudioStreamManagerImpl::UnregisterCapturerChangeCallback(std::shared_ptr<ui
         "capturerStateCallback_ is nullptr");
     std::shared_ptr<TaiheAudioCapturerStateCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerStateCallback>(taiheStreamManager->capturerStateCallback_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     if (callback) {
         CHECK_AND_RETURN_LOG(cb->IsSameCallback(callback),
             "The callback need to be unregistered is not the same as the registered callback");
