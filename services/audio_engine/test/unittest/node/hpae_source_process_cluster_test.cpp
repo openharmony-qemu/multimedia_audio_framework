@@ -22,6 +22,8 @@
 #include "hpae_source_output_node.h"
 #include "hpae_source_input_cluster.h"
 
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,7 +44,7 @@ void HpaeSourceProcessClusterTest::SetUp()
 void HpaeSourceProcessClusterTest::TearDown()
 {}
 
-TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
+HWTEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;
@@ -90,7 +92,7 @@ TEST_F(HpaeSourceProcessClusterTest, constructHpaeSourceProcessClusterNode)
     EXPECT_EQ(hpaeSourceProcessCluster->GetPreOutNum(), 0);
 }
 
-TEST_F(HpaeSourceProcessClusterTest, testInterfaces)
+HWTEST_F(HpaeSourceProcessClusterTest, testInterfaces, TestSize.Level0)
 {
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     HpaeNodeInfo nodeInfo;

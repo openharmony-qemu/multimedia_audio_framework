@@ -1094,7 +1094,7 @@ bool RendererInClientInner::StopAudioStream()
 void RendererInClientInner::JoinCallbackLoop()
 {
     std::unique_lock<std::mutex> statusLock(loopMutex_);
-    if (renderMode_ == RENDER_MODE_CALLBACK && !cbThreadReleased_) {
+    if (renderMode_ == RENDER_MODE_CALLBACK) {
         cbThreadReleased_ = true; // stop loop
         cbThreadCv_.notify_all();
         CHECK_AND_RETURN_LOG(clientBuffer_ != nullptr, "clientBuffer_ is nullptr!");

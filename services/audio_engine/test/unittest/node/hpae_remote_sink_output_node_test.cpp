@@ -23,6 +23,9 @@
 #include "hpae_remote_sink_output_node.h"
 #include "hpae_mixer_node.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -40,7 +43,7 @@ void HpaeRemoteSinkOutputNodeTest::SetUp()
 void HpaeRemoteSinkOutputNodeTest::TearDown()
 {}
 
-TEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01)
+HWTEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id
@@ -63,14 +66,14 @@ TEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01)
     hpaeRemoteSinkOutputNode->Connect(hpaeMixerNode);
     EXPECT_EQ(hpaeRemoteSinkOutputNode->GetRenderSinkInstance("remote", "LocalDevice"), 0);
     hpaeRemoteSinkOutputNode->DoProcess();
-    hpaeRemoteSinkOutputNode->RenderSinkDeInit();
-    hpaeRemoteSinkOutputNode->RenderSinkFlush();
-    hpaeRemoteSinkOutputNode->RenderSinkPause();
-    hpaeRemoteSinkOutputNode->RenderSinkReset();
-    hpaeRemoteSinkOutputNode->RenderSinkResume();
-    hpaeRemoteSinkOutputNode->RenderSinkStart();
-    hpaeRemoteSinkOutputNode->RenderSinkStop();
-    hpaeRemoteSinkOutputNode->GetPreOutNum();
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkDeInit(), SUCCESS);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkFlush(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkPause(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkReset(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkResume(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkStart(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->RenderSinkStop(), ERROR);
+    EXPECT_EQ(hpaeRemoteSinkOutputNode->GetPreOutNum(), 1);
     
     hpaeRemoteSinkOutputNode->DisConnect(hpaeMixerNode);
 }

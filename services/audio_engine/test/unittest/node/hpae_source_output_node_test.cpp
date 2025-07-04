@@ -20,9 +20,12 @@
 #include "hpae_source_output_node.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
+
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -65,7 +68,7 @@ static int32_t TestCapturerSourceFrame(char *frame, uint64_t requestBytes, uint6
     return 0;
 }
 
-TEST_F(HpaeSourceOutputNodeTest, constructHpaeSourceOutputNode)
+HWTEST_F(HpaeSourceOutputNodeTest, constructHpaeSourceOutputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -87,7 +90,7 @@ TEST_F(HpaeSourceOutputNodeTest, constructHpaeSourceOutputNode)
     EXPECT_EQ(retNi.format, nodeInfo.format);
 }
 
-TEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode)
+HWTEST_F(HpaeSourceOutputNodeTest, connectHpaeSourceInputAndOutputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;

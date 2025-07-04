@@ -37,8 +37,10 @@ public:
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 constexpr size_t NUMBER1 = 1;
+constexpr size_t NUMBER2 = 2;
 constexpr size_t NUMBER4 = 4;
 constexpr size_t NUMBER6 = 6;
+constexpr size_t NUMBER8 = 8;
 
 static AudioProcessConfig InitProcessConfig()
 {
@@ -1351,12 +1353,10 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_066, TestSize.Lev
  */
 HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Level1)
 {
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
+    sptr<AudioProcessInServer> stream = AudioProcessInServer::Create(InitProcessConfig(), AudioService::GetInstance());
+
     AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(stream, true, info);
 
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     AudioStreamData srcData;
@@ -1377,11 +1377,8 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Lev
     srcData.streamInfo.channels = MONO;
     ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(false, ret);
-    srcData.streamInfo.channels = CHANNEL_3;
-    ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
-    EXPECT_EQ(false, ret);
+
     srcData.streamInfo.format = SAMPLE_S32LE;
-    srcData.streamInfo.channels = MONO;
     ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(false, ret);
     srcData.streamInfo.channels = CHANNEL_3;
@@ -1395,9 +1392,15 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_067, TestSize.Lev
     EXPECT_EQ(false, ret);
     srcData.streamInfo.format = SAMPLE_F32LE;
     srcData.streamInfo.channels = MONO;
+    uint8_t src1[NUMBER4] = {0};
+    srcData.bufferDesc = {src1, NUMBER4, NUMBER4};
+    uint8_t dst[NUMBER4] = {0};
+    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
     ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(true, ret);
     srcData.streamInfo.channels = STEREO;
+    uint8_t src2[NUMBER8] = {0};
+    srcData.bufferDesc = {src2, NUMBER8, NUMBER8};
     ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(true, ret);
 }
@@ -1713,7 +1716,13 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_079, TestSize.Lev
     AudioStreamData srcData;
     srcData.streamInfo.format = SAMPLE_F32LE;
     srcData.streamInfo.channels = MONO;
+    dstData.streamInfo.format = SAMPLE_S16LE;
+    dstData.streamInfo.channels = STEREO;
 
+    uint8_t src1[NUMBER4] = {0};
+    srcData.bufferDesc = {src1, NUMBER4, NUMBER4};
+    uint8_t dst[NUMBER4] = {0};
+    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
     auto ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(ret, true);
 }
@@ -1738,7 +1747,13 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_080, TestSize.Lev
     AudioStreamData srcData;
     srcData.streamInfo.format = SAMPLE_F32LE;
     srcData.streamInfo.channels = STEREO;
+    dstData.streamInfo.format = SAMPLE_S16LE;
+    dstData.streamInfo.channels = STEREO;
 
+    uint8_t src1[NUMBER8] = {0};
+    srcData.bufferDesc = {src1, NUMBER8, NUMBER8};
+    uint8_t dst[NUMBER4] = {0};
+    dstData.bufferDesc = {dst, NUMBER4, NUMBER4};
     auto ret = ptrAudioProcessInClientInner->ChannelFormatS16Convert(srcData, dstData);
     EXPECT_EQ(ret, true);
 }
@@ -1811,10 +1826,9 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_083, TestSize.Lev
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
     ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+        byteSizePerFrame);
     ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
 
     BufferDesc srcDesc;
@@ -2532,6 +2546,369 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_110, TestSize.Lev
 
     auto ret = ptrAudioProcessInClientInner->ReadFromProcessClient();
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_001
+ * @tc.desc  : Test Convert success
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_001, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+    uint8_t srcArray[NUMBER8] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_002
+ * @tc.desc  : Test sample rate or encoding different
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_002, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t srcArray[NUMBER8] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    // samplingRate diff
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_AUDIOVIVID, SAMPLE_S32LE, STEREO};
+    // encoding diff
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_003
+ * @tc.desc  : Test convert SAMPLE_S16LE STEREO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_003, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_004
+ * @tc.desc  : Test convert SAMPLE_S16LE MONO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_004, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO};
+    uint8_t srcArray[NUMBER2] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER2, NUMBER2};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_005
+ * @tc.desc  : Test convert SAMPLE_S32LE MONO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_005, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, MONO};
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_006
+ * @tc.desc  : Test convert SAMPLE_S32LE STEREO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_006, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t srcArray[NUMBER8] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_007
+ * @tc.desc  : Test convert SAMPLE_F32LE STEREO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_007, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, MONO};
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+    uint8_t dstArray[NUMBER8] = {0};
+    dstData.bufferDesc = {dstArray, NUMBER8, NUMBER8};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(true, ret) << "convert failed, check format";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_008
+ * @tc.desc  : Test convert SAMPLE_F32LE STEREO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_008, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER8;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength not equel fail";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer nullptr fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_009
+ * @tc.desc  : Test convert SAMPLE_F32LE STEREO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_009, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+
+    uint8_t srcArray[NUMBER8] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer nullptr fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_010
+ * @tc.desc  : Test convert SAMPLE_S16LE STEREO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_010, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER4;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength failed";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
+
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_011
+ * @tc.desc  : Test convert SAMPLE_S16LE MONO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_011, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, MONO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER2;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength failed";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
+
+    uint8_t srcArray[NUMBER2] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER2, NUMBER2};
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_012
+ * @tc.desc  : Test convert SAMPLE_S32LE MONO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_012, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, MONO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER4;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength failed";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
+
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_013
+ * @tc.desc  : Test convert SAMPLE_S32LE CHANNEL_3 failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_013, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, CHANNEL_3};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "CHANNEL_3 not supported";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_014
+ * @tc.desc  : Test convert SAMPLE_F32LE MONO failed
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_014, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, MONO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER4;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength failed";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
+
+    uint8_t srcArray[NUMBER4] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER4, NUMBER4};
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_ConvertS32_015
+ * @tc.desc  : Test convert SAMPLE_F32LE STEREO
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ConvertS32_015, TestSize.Level1)
+{
+    AudioStreamData srcData;
+    srcData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_F32LE, STEREO};
+
+    AudioStreamData dstData;
+    dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
+
+    srcData.bufferDesc.bufLength = NUMBER8;
+    bool ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "bufLength failed";
+
+    dstData.bufferDesc.bufLength = NUMBER8;
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "srcDesc.buffer is nullptr should fail";
+
+    uint8_t srcArray[NUMBER8] = {0};
+    srcData.bufferDesc = {srcArray, NUMBER8, NUMBER8};
+    ret = AudioProcessInClientInner::ChannelFormatS32Convert(srcData, dstData);
+    EXPECT_EQ(false, ret) << "dstDesc.buffer is nullptr should fail";
 }
 } // namespace AudioStandard
 } // namespace OHOS

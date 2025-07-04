@@ -272,6 +272,72 @@ HWTEST_F(PaRendererStreamUnitTest, PaRenderer_011, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test InitPaStream for different adapter manager type.
+ * @tc.type  : FUNC
+ * @tc.number: InitPaStream_001
+ * @tc.desc  : Test InitPaStream for DUP_PLAYBACK
+ */
+HWTEST_F(PaRendererStreamUnitTest, InitPaStream_001, TestSize.Level1)
+{
+    adapterManager = std::make_shared<PaAdapterManager>(DUP_PLAYBACK);
+    adapterManager->InitPaContext();
+    uint32_t sessionId = 123456;
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, stream);
+    std::shared_ptr<PaRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<PaRendererStreamImpl>(rendererStream);
+
+    int32_t rate = RENDER_RATE_NORMAL;
+    EXPECT_EQ(rendererStreamImpl->SetRate(rate), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test InitPaStream for different adapter manager type.
+ * @tc.type  : FUNC
+ * @tc.number: InitPaStream_002
+ * @tc.desc  : Test InitPaStream for DUAL_PLAYBACK
+ */
+HWTEST_F(PaRendererStreamUnitTest, InitPaStream_002, TestSize.Level1)
+{
+    adapterManager = std::make_shared<PaAdapterManager>(DUAL_PLAYBACK);
+    adapterManager->InitPaContext();
+    uint32_t sessionId = 123456;
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, stream);
+    std::shared_ptr<PaRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<PaRendererStreamImpl>(rendererStream);
+
+    int32_t rate = RENDER_RATE_NORMAL;
+    EXPECT_EQ(rendererStreamImpl->SetRate(rate), SUCCESS);
+}
+
+/**
+ * @tc.name  : Test InitPaStream for different adapter manager type.
+ * @tc.type  : FUNC
+ * @tc.number: InitPaStream_003
+ * @tc.desc  : Test InitPaStream for PLAYBACK
+ */
+HWTEST_F(PaRendererStreamUnitTest, InitPaStream_003, TestSize.Level1)
+{
+    adapterManager = std::make_shared<PaAdapterManager>(PLAYBACK);
+    adapterManager->InitPaContext();
+    uint32_t sessionId = 123456;
+    AudioProcessConfig processConfig = GetInnerCapConfig();
+    pa_stream *stream = adapterManager->InitPaStream(processConfig, sessionId, false);
+
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(processConfig, stream);
+    std::shared_ptr<PaRendererStreamImpl> rendererStreamImpl =
+        std::static_pointer_cast<PaRendererStreamImpl>(rendererStream);
+
+    int32_t rate = RENDER_RATE_NORMAL;
+    EXPECT_EQ(rendererStreamImpl->SetRate(rate), SUCCESS);
+}
+
+/**
  * @tc.name  : Test OffloadSetVolume.
  * @tc.type  : FUNC
  * @tc.number: PaRenderer_013

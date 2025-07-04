@@ -20,9 +20,12 @@
 #include "hpae_sink_output_node.h"
 #include "test_case_common.h"
 #include "audio_errors.h"
+
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 class HpaeSinkInputNodeTest : public testing::Test {
 public:
@@ -40,7 +43,7 @@ namespace {
 constexpr int32_t NORMAL_FRAME_LEN = 960;
 constexpr int32_t NORMAL_ID = 1243;
 constexpr float LOUDNESS_GAIN = 1.0f;
-TEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode)
+HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
@@ -62,7 +65,7 @@ TEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode)
     EXPECT_EQ(retNi.format, nodeInfo.format);
 }
 
-TEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase)
+HWTEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
@@ -97,7 +100,7 @@ TEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase)
     EXPECT_EQ(outputPort->GetInputNum(), 0);
 }
 
-TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputDataCase)
+HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputDataCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
@@ -122,7 +125,7 @@ TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputDataCase)
     }
 }
 
-TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase)
+HWTEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;
@@ -153,7 +156,7 @@ TEST_F(HpaeSinkInputNodeTest, testWriteDataToSinkInputAndSinkOutputDataCase)
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
 }
 
-TEST_F(HpaeSinkInputNodeTest, testLoudnessGain)
+HWTEST_F(HpaeSinkInputNodeTest, testLoudnessGain, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = NORMAL_ID;

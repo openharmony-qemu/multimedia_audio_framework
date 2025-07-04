@@ -31,6 +31,8 @@ constexpr uint32_t NUM_THREE = 3;
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 class HpaePcmBufferTest : public testing::Test {
 public:
@@ -69,7 +71,7 @@ void HpaePcmBufferTest::SetUp()
 void HpaePcmBufferTest::TearDown()
 {}
 
-TEST_F(HpaePcmBufferTest, constructHpaePcmBufferTest)
+HWTEST_F(HpaePcmBufferTest, constructHpaePcmBufferTest, TestSize.Level0)
 {
     PcmBufferInfo pcmBufferInfo;
     pcmBufferInfo.ch = DEFAULT_CHANNEL_COUNT;
@@ -93,7 +95,7 @@ TEST_F(HpaePcmBufferTest, constructHpaePcmBufferTest)
     EXPECT_EQ(hpaePcmBuffer.Size(), bufferSize);
 }
 
-TEST_F(HpaePcmBufferTest, assignHpaePcmBufferTest)
+HWTEST_F(HpaePcmBufferTest, assignHpaePcmBufferTest, TestSize.Level0)
 {
     PcmBufferInfo pcmBufferInfo;
     pcmBufferInfo.ch = DEFAULT_CHANNEL_COUNT;
@@ -115,7 +117,7 @@ TEST_F(HpaePcmBufferTest, assignHpaePcmBufferTest)
     }
 }
 
-TEST_F(HpaePcmBufferTest, calHpaePcmBufferTest)
+HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferTest, TestSize.Level0)
 {
     PcmBufferInfo pcmBufferInfo;
     pcmBufferInfo.ch = DEFAULT_CHANNEL_COUNT;
@@ -157,7 +159,7 @@ TEST_F(HpaePcmBufferTest, calHpaePcmBufferTest)
     }
 }
 
-TEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest)
+HWTEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest, TestSize.Level0)
 {
     PcmBufferInfo pcmBufferInfo;
     size_t inputFrames = 4; // 4: input frame numbers
@@ -205,7 +207,7 @@ TEST_F(HpaePcmBufferTest, calHpaePcmBufferMultiFrameTest)
     EXPECT_EQ(hpaePcmBuffer.GetFrameData(testVec2), false);
 }
 
-TEST_F(HpaePcmBufferTest, ConstructorInitialization)
+HWTEST_F(HpaePcmBufferTest, ConstructorInitialization, TestSize.Level0)
 {
     PcmBufferInfo info = CreateBufferInfo(NUM_TWO, true);
     HpaePcmBuffer buffer(info);
@@ -222,7 +224,7 @@ TEST_F(HpaePcmBufferTest, ConstructorInitialization)
     EXPECT_TRUE(buffer.IsMultiFrames());
 }
 
-TEST_F(HpaePcmBufferTest, arithmeticOperations)
+HWTEST_F(HpaePcmBufferTest, arithmeticOperations, TestSize.Level0)
 {
     PcmBufferInfo info = CreateBufferInfo(1);
     HpaePcmBuffer bufferA(info);
@@ -243,7 +245,7 @@ TEST_F(HpaePcmBufferTest, arithmeticOperations)
     }
 }
 
-TEST_F(HpaePcmBufferTest, bufferManagement)
+HWTEST_F(HpaePcmBufferTest, bufferManagement, TestSize.Level0)
 {
     PcmBufferInfo info = CreateBufferInfo(NUM_THREE, true);
     HpaePcmBuffer buffer(info);
@@ -269,7 +271,7 @@ TEST_F(HpaePcmBufferTest, bufferManagement)
     }
 }
 
-TEST_F(HpaePcmBufferTest, edgeCases)
+HWTEST_F(HpaePcmBufferTest, edgeCases, TestSize.Level0)
 {
     PcmBufferInfo multiInfo = CreateBufferInfo(NUM_TWO, true);
     HpaePcmBuffer multiBuffer(multiInfo);
@@ -292,7 +294,7 @@ TEST_F(HpaePcmBufferTest, edgeCases)
     EXPECT_EQ(rewound, 0);
 }
 
-TEST_F(HpaePcmBufferTest, invalidArguments)
+HWTEST_F(HpaePcmBufferTest, invalidArguments, TestSize.Level0)
 {
     PcmBufferInfo multiInfo = CreateBufferInfo(NUM_TWO, true);
     HpaePcmBuffer multiBuffer(multiInfo);
@@ -312,7 +314,7 @@ TEST_F(HpaePcmBufferTest, invalidArguments)
     EXPECT_EQ(singleBuffer.RewindBuffer(1), 0);
 }
 
-TEST_F(HpaePcmBufferTest, positionWrapping)
+HWTEST_F(HpaePcmBufferTest, positionWrapping, TestSize.Level0)
 {
     PcmBufferInfo info = CreateBufferInfo(NUM_TWO, true);
     HpaePcmBuffer buffer(info);

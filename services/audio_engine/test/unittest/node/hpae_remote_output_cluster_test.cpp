@@ -23,6 +23,9 @@
 #include "hpae_remote_output_cluster.h"
 #include "hpae_mixer_node.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -40,7 +43,7 @@ void HpaeRemoteOutputClusterTest::SetUp()
 void HpaeRemoteOutputClusterTest::TearDown()
 {}
 
-TEST_F(HpaeRemoteOutputClusterTest, constructNode_01)
+HWTEST_F(HpaeRemoteOutputClusterTest, constructNode_01, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id
@@ -76,7 +79,7 @@ TEST_F(HpaeRemoteOutputClusterTest, constructNode_01)
     hpaeRemoteOutputCluster->DisConnect(hpaeMixerNode);
 }
 
-TEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01)
+HWTEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id

@@ -151,7 +151,8 @@ void CheckModemSceneFuzzTest()
     audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
-    audioCoreService->CheckModemScene(reason);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    audioCoreService->CheckModemScene(modemDescs, reason);
 }
 
 void HandleAudioCaptureStateFuzzTest()

@@ -884,49 +884,14 @@ std::shared_ptr<IAudioStream> AudioRendererPrivate::GetInnerStream() const
     return audioStream_;
 }
 
-void AudioRendererPrivate::SetRestoreInfo(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
-    RestoreStatus restoreStatus)
+int32_t AudioRendererPrivate::StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
+    std::string callingFunc)
 {
-    // Get restore info and target stream class for switching.
-    audioStream_->GetRestoreInfo(restoreInfo);
-    SetClientInfo(restoreInfo.routeFlag, targetClass);
-    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
-        restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+    // hold rendererMutex_ to avoid render control and switch process called in concurrency
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
-}
-
-int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
-{
-    RestoreInfo restoreInfo;
-    std::shared_ptr<IAudioStream> oldStream = nullptr;
-    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
-    {
-        std::unique_lock<std::shared_mutex> lock;
-        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
-            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
-        }
-
-        // Return in advance if there's no need for restore.
-        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
-        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
-        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
-            return SUCCESS;
-        }
-        if (restoreStatus == RESTORING) {
-            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
-            return ERR_ILLEGAL_STATE;
-        }
-
-        SetRestoreInfo(restoreInfo, targetClass, restoreStatus);
-        // Check if split stream. If true, fetch output device and return.
-        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-        // Check if continue to switch after some concede operation.
-        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-            true, "No need for switch");
-        oldStream = audioStream_;
-    }
-    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
-    oldStream->JoinCallbackLoop();
 
     // Block interrupt calback, avoid pausing wrong stream.
     std::shared_ptr<AudioRendererInterruptCallbackImpl> interruptCbImpl = nullptr;
@@ -961,6 +926,47 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         interruptCbImpl->FinishSwitch();
     }
     return SUCCESS;
+}
+
+int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFunc)
+{
+    RestoreInfo restoreInfo;
+    std::shared_ptr<IAudioStream> oldStream = nullptr;
+    IAudioStream::StreamClass targetClass = IAudioStream::PA_STREAM;
+    {
+        std::unique_lock<std::shared_mutex> lock;
+        if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+            lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        }
+
+        // Return in advance if there's no need for restore.
+        CHECK_AND_RETURN_RET_LOG(audioStream_, ERR_ILLEGAL_STATE, "audioStream_ is nullptr");
+        RestoreStatus restoreStatus = audioStream_->CheckRestoreStatus();
+        if (abortRestore_ || restoreStatus == NO_NEED_FOR_RESTORE) {
+            return SUCCESS;
+        }
+        if (restoreStatus == RESTORING) {
+            AUDIO_WARNING_LOG("%{public}s when restoring, return", callingFunc.c_str());
+            return ERR_ILLEGAL_STATE;
+        }
+
+        // Get restore info and target stream class for switching.
+        audioStream_->GetRestoreInfo(restoreInfo);
+        SetClientInfo(restoreInfo.routeFlag, targetClass);
+        if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+            restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
+        }
+        // Check if split stream. If true, fetch output device and return.
+        CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
+        // Check if continue to switch after some concede operation.
+        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
+            true, "No need for switch");
+        oldStream = audioStream_;
+    }
+    // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
+    oldStream->JoinCallbackLoop();
+
+    return StartSwitchProcess(restoreInfo, targetClass, callingFunc);
 }
 
 int32_t AudioRendererPrivate::AsyncCheckAudioRenderer(std::string callingFunc)

@@ -25,7 +25,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
-
+using namespace testing::ext;
+using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -118,7 +119,7 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
  * tc.number : HpaeCapturerManagerTest_001
  * tc.desc   : Test HpaeCapturerManagerConstructTest
  */
-TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -141,7 +142,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerConstructTest)
  * tc.number : HpaeCapturerManagerTest_002
  * tc.desc   : Test HpaeCapturerManagerInitTest
  */
-TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -159,7 +160,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerInitTest)
  * tc.number : HpaeCapturerManagerTest_003
  * tc.desc   : Test HpaeCapturerManagerCreateDestoryStreamTest
  */
-TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -227,7 +228,7 @@ static void StateControlTest(std::shared_ptr<IHpaeCapturerManager> &capturerMana
  * tc.number : HpaeCapturerManagerTest_004
  * tc.desc   : Test HpaeCapturerManagerStartStopTest
  */
-TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -292,7 +293,7 @@ static void InitReloadSourceInfo(HpaeSourceInfo &sourceInfo, HpaeSourceInfo &new
  * tc.number : HpaeCapturerManagerTest_005
  * tc.desc   : Test HpaeCapturerManagerReloadTest
  */
-TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
+HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1)
 {
     HpaeSourceInfo sourceInfo;
     HpaeSourceInfo newSourceInfo;
@@ -324,7 +325,7 @@ TEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test CreateOutputSession_001
  */
-TEST_F(HpaeCapturerManagerTest, CreateOutputSession_001)
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -345,7 +346,7 @@ TEST_F(HpaeCapturerManagerTest, CreateOutputSession_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test CreateOutputSession_002
  */
-TEST_F(HpaeCapturerManagerTest, CreateOutputSession_002)
+HWTEST_F(HpaeCapturerManagerTest, CreateOutputSession_002, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -366,7 +367,7 @@ TEST_F(HpaeCapturerManagerTest, CreateOutputSession_002)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DisConnectSceneClusterFromSourceInputCluster_001
  */
-TEST_F(HpaeCapturerManagerTest, DisConnectSceneClusterFromSourceInputCluster_001)
+HWTEST_F(HpaeCapturerManagerTest, DisConnectSceneClusterFromSourceInputCluster_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -385,7 +386,7 @@ TEST_F(HpaeCapturerManagerTest, DisConnectSceneClusterFromSourceInputCluster_001
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DeleteOutputSession_001
  */
-TEST_F(HpaeCapturerManagerTest, DeleteOutputSession_001)
+HWTEST_F(HpaeCapturerManagerTest, DeleteOutputSession_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -402,7 +403,7 @@ TEST_F(HpaeCapturerManagerTest, DeleteOutputSession_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test CreateStream_001
  */
-TEST_F(HpaeCapturerManagerTest, CreateStream_001)
+HWTEST_F(HpaeCapturerManagerTest, CreateStream_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -420,7 +421,7 @@ TEST_F(HpaeCapturerManagerTest, CreateStream_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DestroyStream_001
  */
-TEST_F(HpaeCapturerManagerTest, DestroyStream_001)
+HWTEST_F(HpaeCapturerManagerTest, DestroyStream_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -437,7 +438,7 @@ TEST_F(HpaeCapturerManagerTest, DestroyStream_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Flush_001
  */
-TEST_F(HpaeCapturerManagerTest, Flush_001)
+HWTEST_F(HpaeCapturerManagerTest, Flush_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -452,9 +453,34 @@ TEST_F(HpaeCapturerManagerTest, Flush_001)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test Flush_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, Flush_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Flush(DEFAULT_SESSION_ID), SUCCESS);
+    EXPECT_EQ(capturerManager->DeInit(DEFAULT_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
+
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Drain_001
  */
-TEST_F(HpaeCapturerManagerTest, Drain_001)
+HWTEST_F(HpaeCapturerManagerTest, Drain_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -464,6 +490,31 @@ TEST_F(HpaeCapturerManagerTest, Drain_001)
 
     EXPECT_EQ(capturerManager->Drain(DEFAULT_SESSION_ID), ERR_INVALID_OPERATION);
 }
+ 
+/*
+ * tc.name   : Test HpaeCapturerManager API
+ * tc.type   : FUNC
+ * tc.number : HpaeCapturerManagerTest
+ * tc.desc   : Test Drain_002
+ */
+HWTEST_F(HpaeCapturerManagerTest, Drain_002, TestSize.Level1)
+{
+    HpaeSourceInfo sourceInfo;
+    InitSourceInfo(sourceInfo);
+
+    std::shared_ptr<IHpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
+    EXPECT_NE(capturerManager, nullptr);
+    EXPECT_EQ(capturerManager->Init(), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->IsInit(), true);
+    HpaeStreamInfo streamInfo;
+    InitReloadStreamInfo(streamInfo);
+    EXPECT_EQ(capturerManager->CreateStream(streamInfo), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+    EXPECT_EQ(capturerManager->Drain(DEFAULT_SESSION_ID), SUCCESS);
+    EXPECT_EQ(capturerManager->DeInit(DEFAULT_SESSION_ID), SUCCESS);
+    WaitForMsgProcessing(capturerManager);
+}
 
 /*
  * tc.name   : Test HpaeCapturerManager API
@@ -471,7 +522,7 @@ TEST_F(HpaeCapturerManagerTest, Drain_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test Release_001
  */
-TEST_F(HpaeCapturerManagerTest, Release_001)
+HWTEST_F(HpaeCapturerManagerTest, Release_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -488,7 +539,7 @@ TEST_F(HpaeCapturerManagerTest, Release_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test SetMute_001
  */
-TEST_F(HpaeCapturerManagerTest, SetMute_001)
+HWTEST_F(HpaeCapturerManagerTest, SetMute_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -505,7 +556,7 @@ TEST_F(HpaeCapturerManagerTest, SetMute_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test SetMute_002
  */
-TEST_F(HpaeCapturerManagerTest, SetMute_002)
+HWTEST_F(HpaeCapturerManagerTest, SetMute_002, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -522,7 +573,7 @@ TEST_F(HpaeCapturerManagerTest, SetMute_002)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test PrepareCapturerEc_001
  */
-TEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_001)
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -542,7 +593,7 @@ TEST_F(HpaeCapturerManagerTest, PrepareCapturerEc_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test PrepareCapturerMicRef_001
  */
-TEST_F(HpaeCapturerManagerTest, PrepareCapturerMicRef_001)
+HWTEST_F(HpaeCapturerManagerTest, PrepareCapturerMicRef_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -562,7 +613,7 @@ TEST_F(HpaeCapturerManagerTest, PrepareCapturerMicRef_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test ReloadCaptureManager_001
  */
-TEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_001)
+HWTEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -579,7 +630,7 @@ TEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test ReloadCaptureManager_002
  */
-TEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_002)
+HWTEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_002, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -597,7 +648,7 @@ TEST_F(HpaeCapturerManagerTest, ReloadCaptureManager_002)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DeInit_001
  */
-TEST_F(HpaeCapturerManagerTest, DeInit_001)
+HWTEST_F(HpaeCapturerManagerTest, DeInit_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -614,7 +665,7 @@ TEST_F(HpaeCapturerManagerTest, DeInit_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DeactivateThread_001
  */
-TEST_F(HpaeCapturerManagerTest, DeactivateThread_001)
+HWTEST_F(HpaeCapturerManagerTest, DeactivateThread_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -631,7 +682,7 @@ TEST_F(HpaeCapturerManagerTest, DeactivateThread_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test RegisterReadCallback_001
  */
-TEST_F(HpaeCapturerManagerTest, RegisterReadCallback_001)
+HWTEST_F(HpaeCapturerManagerTest, RegisterReadCallback_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -650,7 +701,7 @@ TEST_F(HpaeCapturerManagerTest, RegisterReadCallback_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test GetSourceOutputInfo_001
  */
-TEST_F(HpaeCapturerManagerTest, GetSourceOutputInfo_001)
+HWTEST_F(HpaeCapturerManagerTest, GetSourceOutputInfo_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -668,7 +719,7 @@ TEST_F(HpaeCapturerManagerTest, GetSourceOutputInfo_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test GetAllSourceOutputsInfo_001
  */
-TEST_F(HpaeCapturerManagerTest, GetAllSourceOutputsInfo_001)
+HWTEST_F(HpaeCapturerManagerTest, GetAllSourceOutputsInfo_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -686,7 +737,7 @@ TEST_F(HpaeCapturerManagerTest, GetAllSourceOutputsInfo_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test OnNodeStatusUpdate_001
  */
-TEST_F(HpaeCapturerManagerTest, OnNodeStatusUpdate_001)
+HWTEST_F(HpaeCapturerManagerTest, OnNodeStatusUpdate_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -704,7 +755,7 @@ TEST_F(HpaeCapturerManagerTest, OnNodeStatusUpdate_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test AddAllNodesToSource_001
  */
-TEST_F(HpaeCapturerManagerTest, AddAllNodesToSource_001)
+HWTEST_F(HpaeCapturerManagerTest, AddAllNodesToSource_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -722,7 +773,7 @@ TEST_F(HpaeCapturerManagerTest, AddAllNodesToSource_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test MoveAllStream_001
  */
-TEST_F(HpaeCapturerManagerTest, MoveAllStream_001)
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStream_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -740,7 +791,7 @@ TEST_F(HpaeCapturerManagerTest, MoveAllStream_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test MoveAllStream_002
  */
-TEST_F(HpaeCapturerManagerTest, MoveAllStream_002)
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStream_002, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -759,7 +810,7 @@ TEST_F(HpaeCapturerManagerTest, MoveAllStream_002)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test MoveAllStreamToNewSource_001
  */
-TEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_001)
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -778,7 +829,7 @@ TEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test MoveAllStreamToNewSource_002
  */
-TEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_002)
+HWTEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_002, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -797,7 +848,7 @@ TEST_F(HpaeCapturerManagerTest, MoveAllStreamToNewSource_002)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test OnRequestLatency_001
  */
-TEST_F(HpaeCapturerManagerTest, OnRequestLatency_001)
+HWTEST_F(HpaeCapturerManagerTest, OnRequestLatency_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -816,7 +867,7 @@ TEST_F(HpaeCapturerManagerTest, OnRequestLatency_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test DumpSourceInfo_001
  */
-TEST_F(HpaeCapturerManagerTest, DumpSourceInfo_001)
+HWTEST_F(HpaeCapturerManagerTest, DumpSourceInfo_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
@@ -834,7 +885,7 @@ TEST_F(HpaeCapturerManagerTest, DumpSourceInfo_001)
  * tc.number : HpaeCapturerManagerTest
  * tc.desc   : Test GetDeviceHDFDumpInfo_001
  */
-TEST_F(HpaeCapturerManagerTest, GetDeviceHDFDumpInfo_001)
+HWTEST_F(HpaeCapturerManagerTest, GetDeviceHDFDumpInfo_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
