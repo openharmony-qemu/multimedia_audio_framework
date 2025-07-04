@@ -275,8 +275,8 @@ static void MultiplyFilterSymmetricOddUpStereo(SingleStagePolyphaseResamplerStat
 static void MultiplyFilterSymmetricOddUpMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const uint32_t indCenter = state->filterLength / TWO_STEPS - 1;
-    for (int32_t ch = 0; ch < state->numChannels; ch++) {
+    const int32_t indCenter = state->filterLength / TWO_STEPS - 1;
+    for (uint32_t ch = 0; ch < state->numChannels; ch++) {
         *outputs++ = inputs[state->numChannels * indCenter + ch];
     }
 }
