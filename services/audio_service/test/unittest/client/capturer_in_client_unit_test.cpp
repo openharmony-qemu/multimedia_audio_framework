@@ -92,6 +92,100 @@ public:
     virtual void OnStateChange(const State state, const StateChangeCmdType cmdType = CMD_FROM_CLIENT) {};
 };
 
+class CapturerPositionCallbackTest : public CapturerPositionCallback {
+public:
+    void OnMarkReached(const int64_t &framePosition) override {};
+};
+
+class IpcStreamTest : public IpcStream {
+public:
+    virtual ~IpcStreamTest() = default;
+
+    virtual int32_t RegisterStreamListener(sptr<IRemoteObject> object) { return 0; }
+
+    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) { return 0; }
+
+    virtual int32_t UpdatePosition() { return 0; }
+
+    virtual int32_t GetAudioSessionID(uint32_t &sessionId) { return 0; }
+
+    virtual int32_t Start() { return 0; }
+
+    virtual int32_t Pause() { return 0; }
+
+    virtual int32_t Stop() { return 0; }
+
+    virtual int32_t Release(bool isSwitchStream = false) { return 0; }
+
+    virtual int32_t Flush() { return 0; }
+
+    virtual int32_t Drain(bool stopFlag = false) { return 0; }
+
+    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) { return 0; }
+
+    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) { return 0; }
+
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+    {
+        return 0;
+    }
+
+    virtual int32_t GetLatency(uint64_t &latency) { return 0; }
+
+    virtual int32_t SetRate(int32_t rate) { return 0; } // SetRenderRate
+
+    virtual int32_t GetRate(int32_t &rate) { return 0; } // SetRenderRate
+
+    virtual int32_t SetLowPowerVolume(float volume) { return 0; } // renderer only
+
+    virtual int32_t GetLowPowerVolume(float &volume) { return 0; } // renderer only
+
+    virtual int32_t SetAudioEffectMode(int32_t effectMode) { return 0; } // renderer only
+
+    virtual int32_t GetAudioEffectMode(int32_t &effectMode) { return 0; } // renderer only
+
+    virtual int32_t SetPrivacyType(int32_t privacyType) { return 0; } // renderer only
+
+    virtual int32_t GetPrivacyType(int32_t &privacyType) { return 0; } // renderer only
+
+    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) { return 0; } // renderer only
+
+    virtual int32_t UnsetOffloadMode() { return 0; } // renderer only
+
+    virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) { return 0; } // renderer only
+
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) { return 0; }
+
+    virtual int32_t GetStreamManagerType() { return 0; }
+
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) { return 0; }
+
+    virtual int32_t SetClientVolume() { return 0; }
+
+    virtual int32_t SetLoudnessGain(float loudnessGain) { return 0; }
+
+    virtual int32_t SetMute(bool isMute) { return (isMute ? SUCCESS : ERROR); }
+
+    virtual int32_t SetDuckFactor(float duckFactor) { return 0; }
+
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method)
+    {
+        return 0;
+    }
+
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) { return 0; }
+
+    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
+
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
+
+    virtual sptr<IRemoteObject> AsObject() { return nullptr; }
+
+    virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) { return SUCCESS; }
+};
+
 class AudioClientTrackerTest : public AudioClientTracker {
 public:
     virtual ~AudioClientTrackerTest() = default;
@@ -216,6 +310,44 @@ HWTEST(CapturerInClientUnitTest, RegisterTracker_003, TestSize.Level1)
     std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->audioStreamTracker_ = nullptr;
+    capturerInClientInner_->streamTrackerRegistered_ = false;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    capturerInClientInner_->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner_, nullptr);
+}
+
+/**
+ * @tc.name  : Test RegisterTracker API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterTracker_004
+ * @tc.desc  : Test RegisterTracker interface.
+ */
+HWTEST(CapturerInClientUnitTest, RegisterTracker_004, TestSize.Level1)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
+        clientUid);
+    capturerInClientInner_->streamTrackerRegistered_ = true;
+    std::shared_ptr<AudioClientTracker> proxyObj;
+    capturerInClientInner_->RegisterTracker(proxyObj);
+    EXPECT_NE(capturerInClientInner_, nullptr);
+}
+
+/**
+ * @tc.name  : Test RegisterTracker API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterTracker_005
+ * @tc.desc  : Test RegisterTracker interface.
+ */
+HWTEST(CapturerInClientUnitTest, RegisterTracker_005, TestSize.Level1)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
+        clientUid);
     capturerInClientInner_->streamTrackerRegistered_ = false;
     std::shared_ptr<AudioClientTracker> proxyObj;
     capturerInClientInner_->RegisterTracker(proxyObj);
@@ -515,6 +647,24 @@ HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_001, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test HandleCapturerMarkReachedEvent API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCapturerMarkReachedEvent_002
+ * @tc.desc  : Test HandleCapturerMarkReachedEvent interface.
+ */
+HWTEST(CapturerInClientUnitTest, HandleCapturerMarkReachedEvent_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner_);
+    capturerInClientInner_->capturerPositionCallback_ = std::make_shared<CapturerPositionCallbackTest>();
+    ASSERT_TRUE(capturerInClientInner_->capturerPositionCallback_ != nullptr);
+    int64_t data = 16;
+    capturerInClientInner_->HandleCapturerMarkReachedEvent(data);
+    EXPECT_NE(capturerInClientInner_, nullptr);
+}
+
+/**
  * @tc.name  : Test HandleCapturerPeriodReachedEvent API
  * @tc.type  : FUNC
  * @tc.number: HandleCapturerPeriodReachedEvent_001
@@ -564,6 +714,7 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_001, TestSize.Level1)
     State state;
     StateChangeCmdType cmdType;
     int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, NEW);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -582,6 +733,7 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_002, TestSize.Level1)
     State state;
     StateChangeCmdType cmdType;
     int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, RELEASED);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -600,18 +752,40 @@ HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_003, TestSize.Level1)
     State state;
     StateChangeCmdType cmdType;
     int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, STOPPING);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_RUNNING_FROM_SYSTEM;
     ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_PAUSED_FROM_SYSTEM;
     ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
     EXPECT_EQ(ret, SUCCESS);
 
     params = HANDLER_PARAM_INVALID;
     ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test ParamsToStateCmdType API
+ * @tc.type  : FUNC
+ * @tc.number: ParamsToStateCmdType_004
+ * @tc.desc  : Test ParamsToStateCmdType interface.
+ */
+HWTEST(CapturerInClientUnitTest, ParamsToStateCmdType_004, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    Init(capturerInClientInner_);
+    int64_t params = HANDLER_PARAM_PAUSED;
+    State state;
+    StateChangeCmdType cmdType;
+    int32_t ret = capturerInClientInner_->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, PAUSED);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -631,6 +805,7 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_001, TestSize.Level1)
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
     int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(params, HANDLER_PARAM_RUNNING_FROM_SYSTEM);
 }
 
 /**
@@ -649,6 +824,7 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_002, TestSize.Level1)
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
     int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(params, HANDLER_PARAM_PAUSED_FROM_SYSTEM);
 }
 
 /**
@@ -667,6 +843,7 @@ HWTEST(CapturerInClientUnitTest, StateCmdTypeToParams_003, TestSize.Level1)
     StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
     int32_t ret = capturerInClientInner_->StateCmdTypeToParams(params, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(params, HANDLER_PARAM_INVALID);
 }
 
 /**
@@ -717,6 +894,7 @@ HWTEST(CapturerInClientUnitTest, GetBufferSize_001, TestSize.Level1)
     capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
     size_t bufferSize = 0;
     int32_t ret = capturerInClientInner_->GetBufferSize(bufferSize);
+    EXPECT_EQ(bufferSize, capturerInClientInner_->cbBufferSize_);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -886,8 +1064,67 @@ HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_001, TestSize.Level1)
     temp.buffer = nullptr;
     capturerInClientInner_->cbBufferQueue_.Push(temp);
     capturerInClientInner_->state_ = State::RUNNING;
-    capturerInClientInner_->ReadCallbackFunc();
+    auto ret = capturerInClientInner_->ReadCallbackFunc();
     EXPECT_NE(capturerInClientInner_, nullptr);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test ReadCallbackFunc API
+ * @tc.type  : FUNC
+ * @tc.number: ReadCallbackFunc_002
+ * @tc.desc  : Test ReadCallbackFunc interface.
+ */
+HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    BufferDesc temp;
+    temp.buffer = nullptr;
+    capturerInClientInner_->cbBufferQueue_.Push(temp);
+    capturerInClientInner_->state_ = State::RUNNING;
+    capturerInClientInner_->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner_->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner_, nullptr);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test ReadCallbackFunc API
+ * @tc.type  : FUNC
+ * @tc.number: ReadCallbackFunc_003
+ * @tc.desc  : Test ReadCallbackFunc interface.
+ */
+HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner_->state_ = State::STOPPED;
+    capturerInClientInner_->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner_->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner_, nullptr);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test ReadCallbackFunc API
+ * @tc.type  : FUNC
+ * @tc.number: ReadCallbackFunc_004
+ * @tc.desc  : Test ReadCallbackFunc interface.
+ */
+HWTEST(CapturerInClientUnitTest, ReadCallbackFunc_004, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    BufferDesc temp;
+    uint8_t bufferTest = 10;
+    temp.buffer = &bufferTest;
+    capturerInClientInner_->cbBufferQueue_.Push(temp);
+    capturerInClientInner_->state_ = State::RUNNING;
+    capturerInClientInner_->cbThreadReleased_ = false;
+    auto ret = capturerInClientInner_->ReadCallbackFunc();
+    EXPECT_NE(capturerInClientInner_, nullptr);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -904,6 +1141,10 @@ HWTEST(CapturerInClientUnitTest, GetBufferDesc_001, TestSize.Level1)
     BufferDesc bufferDesc;
     int32_t ret = capturerInClientInner_->GetBufferDesc(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
+
+    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner_->GetBufferDesc(bufferDesc);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
 /**
@@ -920,6 +1161,10 @@ HWTEST(CapturerInClientUnitTest, GetBufQueueState_001, TestSize.Level1)
     BufferQueueState bufState;
     int32_t ret = capturerInClientInner_->GetBufQueueState(bufState);
     EXPECT_EQ(ret, SUCCESS);
+
+    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner_->GetBufQueueState(bufState);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
 }
 
 /**
@@ -1257,6 +1502,10 @@ HWTEST(CapturerInClientUnitTest, SetBufferSizeInMsec_001, TestSize.Level1)
     capturerInClientInner_->capturerMode_ = CAPTURE_MODE_CALLBACK;
     int32_t ret = capturerInClientInner_->SetBufferSizeInMsec(bufferSizeInMsec);
     EXPECT_EQ(ret, SUCCESS);
+
+    capturerInClientInner_->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner_->SetBufferSizeInMsec(bufferSizeInMsec);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1337,6 +1586,203 @@ HWTEST(CapturerInClientUnitTest, RestoreAudioStream_002, TestSize.Level1)
     capturerInClientInner_->state_ = State::RUNNING;
     bool ret = capturerInClientInner_->RestoreAudioStream();
     EXPECT_NE(ret, VALUE_EIGHT);
+}
+
+/**
+ * @tc.name  : Test PauseAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudioStream_001
+ * @tc.desc  : Test PauseAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, PauseAudioStream_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    capturerInClientInner->state_ = PREPARED;
+    auto ret = capturerInClientInner->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, false);
+
+    capturerInClientInner->state_ = RUNNING;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    ret = capturerInClientInner->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test PauseAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudioStream_002
+ * @tc.desc  : Test PauseAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, PauseAudioStream_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    capturerInClientInner->state_ = RUNNING;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->notifiedOperation_ = PAUSE_STREAM;
+    auto ret = capturerInClientInner->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, true);
+
+    ret = capturerInClientInner->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test PauseAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudioStream_003
+ * @tc.desc  : Test PauseAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, PauseAudioStream_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    capturerInClientInner->state_ = RUNNING;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->notifiedResult_ = 1;
+
+    auto ret = capturerInClientInner->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test FlushAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: FlushAudioStream_001
+ * @tc.desc  : Test FlushAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushAudioStream_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    size_t size = 8 * 1024;
+    capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
+
+    capturerInClientInner->state_ = PREPARED;
+    auto ret = capturerInClientInner->FlushAudioStream();
+    EXPECT_EQ(ret, false);
+
+    capturerInClientInner->state_ = RUNNING;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->notifiedOperation_ = FLUSH_STREAM;
+    capturerInClientInner->notifiedResult_ = SUCCESS;
+    ret = capturerInClientInner->FlushAudioStream();
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test FlushAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: FlushAudioStream_002
+ * @tc.desc  : Test FlushAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushAudioStream_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    size_t size = 8 * 1024;
+    capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
+
+    capturerInClientInner->state_ = PAUSED;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->notifiedOperation_ = RELEASE_STREAM;
+    capturerInClientInner->notifiedResult_ = SUCCESS;
+    auto ret = capturerInClientInner->FlushAudioStream();
+    EXPECT_EQ(ret, false);
+
+    capturerInClientInner->notifiedResult_ = 10;
+    ret = capturerInClientInner->FlushAudioStream();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test FlushAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: FlushAudioStream_003
+ * @tc.desc  : Test FlushAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushAudioStream_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    size_t size = 8 * 1024;
+    capturerInClientInner->ringCache_ = std::make_unique<AudioRingCache>(size);
+
+    capturerInClientInner->state_ = STOPPED;
+    capturerInClientInner->ipcStream_ = std::make_shared<IpcStreamTest>().get();
+    capturerInClientInner->notifiedOperation_ = RELEASE_STREAM;
+    capturerInClientInner->notifiedResult_ = 10;
+    auto ret = capturerInClientInner->FlushAudioStream();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test FlushCbBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: FlushCbBuffer_001
+ * @tc.desc  : Test FlushCbBuffer interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushCbBuffer_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    auto ret = capturerInClientInner->FlushCbBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner->FlushCbBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test FlushCbBuffer API
+ * @tc.type  : FUNC
+ * @tc.number: FlushCbBuffer_002
+ * @tc.desc  : Test FlushCbBuffer interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushCbBuffer_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+
+    capturerInClientInner->cbBuffer_.reset(new uint8_t[VALUE_TEN]);
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_CALLBACK;
+    auto ret = capturerInClientInner->FlushCbBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+
+    capturerInClientInner->capturerMode_ = CAPTURE_MODE_NORMAL;
+    ret = capturerInClientInner->FlushCbBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_001
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    ASSERT_TRUE(capturerInClientInner != nullptr);
+
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
+        clientUid);
+    capturerInClientInner->FetchDeviceForSplitStream();
 }
 } // namespace AudioStandard
 } // namespace OHOS
