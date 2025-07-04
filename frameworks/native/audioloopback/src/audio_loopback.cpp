@@ -55,7 +55,7 @@ AudioLoopbackPrivate::AudioLoopbackPrivate(AudioLoopbackMode mode, const AppInfo
     mode_ = mode;
     karaokeParams_["Karaoke_enable"] = "disable";
     karaokeParams_["Karaoke_reverb_mode"] = "theatre";
-    karaokeParams_["Karaoke_eq_mode"] = "disable";
+    karaokeParams_["Karaoke_eq_mode"] = "full";
     karaokeParams_["Karaoke_volume"] = "50";
     rendererOptions_ = GenerateRendererConfig();
     capturerOptions_ = GenerateCapturerConfig();
