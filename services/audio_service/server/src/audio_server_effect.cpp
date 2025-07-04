@@ -481,8 +481,13 @@ bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
         "IsAudioLoopbackSupported refused for %{public}d", callingUid);
 #ifdef SUPPORT_LOW_LATENCY
     if (mode == AudioLoopbackMode::LOOPBACK_HARDWARE) {
-        AUDIO_INFO_LOG("IsAudioLoopbackSupported support");
-        return true;
+        HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+        std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, false, "local device manager is nullptr");
+        std::string ret = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
+            "is_audioloop_support");
+        AUDIO_INFO_LOG("IsAudioLoopbackSupported ret: %{public}s", ret.c_str());
+        return ret == "true";
     }
 #endif
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
