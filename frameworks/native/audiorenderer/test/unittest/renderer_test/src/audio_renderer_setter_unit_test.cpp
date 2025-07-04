@@ -1844,7 +1844,7 @@ HWTEST(AudioRendererUnitTest, SetAudioHapticsSyncId_001, TestSize.Level0)
     ASSERT_TRUE(audioRendererPrivate != nullptr);
 
     std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
-    audioRenderer->audioStream_ = testAudioStreamStub;
+    audioRendererPrivate->audioStream_ = testAudioStreamStub;
 
     int32_t syncId = 100000;
     audioRendererPrivate->SetAudioHapticsSyncId(syncId);
