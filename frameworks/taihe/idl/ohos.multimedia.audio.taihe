@@ -397,7 +397,7 @@ interface AudioRoutingManager {
   @!sts_inject_into_interface("on(type: string, capturerInfo: AudioCapturerInfo, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, capturerInfo: AudioCapturerInfo, callback: object): void {
             if (type === "preferredInputDeviceChangeForCapturerInfo") {
-              this.OnPreferredInputDeviceChangeForCapturerInfo_inner(capturerInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
+              this.onPreferredInputDeviceChangeForCapturerInfo(capturerInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
             }
         }
   """)
@@ -406,7 +406,7 @@ interface AudioRoutingManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "micBlockStatusChanged") {
-              this.OnMicBlockStatusChanged_inner(callback as (data: DeviceBlockStatusInfo) => void);
+              this.onMicBlockStatusChanged(callback as (data: DeviceBlockStatusInfo) => void);
             }
         }
   """)
@@ -415,15 +415,15 @@ interface AudioRoutingManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "micBlockStatusChanged") {
-              this.OffMicBlockStatusChanged_inner(callback as ((data: DeviceBlockStatusInfo) => void) | undefined);
+              this.offMicBlockStatusChanged(callback as ((data: DeviceBlockStatusInfo) => void) | undefined);
             } else if (type === "preferredInputDeviceChangeForCapturerInfo") {
-              this.OffPreferredInputDeviceChangeForCapturerInfo_inner(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
+              this.offPreferredInputDeviceChangeForCapturerInfo(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
             } else if (type === "preferOutputDeviceChangeForRendererInfo") {
-              this.OffPreferOutputDeviceChangeForRendererInfo_inner(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
+              this.offPreferOutputDeviceChangeForRendererInfo(callback as ((data: (AudioDeviceDescriptor[])) => void) | undefined);
             } else if (type === "deviceChange") {
-              this.OffDeviceChange_inner(callback as ((data: DeviceChangeAction) => void) | undefined);
+              this.offDeviceChange(callback as ((data: DeviceChangeAction) => void) | undefined);
             } else if (type === "availableDeviceChange") {
-              this.OffAvailableDeviceChange_inner(callback as ((data: DeviceChangeAction) => void) | undefined);
+              this.offAvailableDeviceChange(callback as ((data: DeviceChangeAction) => void) | undefined);
             }
         }
   """)
@@ -437,14 +437,14 @@ interface AudioRoutingManager {
   @!sts_inject_into_interface("on(type: string, deviceUsage: DeviceUsage, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, deviceFlag: DeviceFlag, callback: object): void {
             if (type === "deviceChange") {
-              this.OnDeviceChange_inner(deviceFlag, callback as (data: DeviceChangeAction) => void);
+              this.onDeviceChange(deviceFlag, callback as (data: DeviceChangeAction) => void);
             }
         }
   """)
 
   @!sts_inject_into_class("""on(type: string, deviceUsage: DeviceUsage, callback: object): void {
             if (type === "availableDeviceChange") {
-              this.OnAvailableDeviceChange_inner(deviceUsage, callback as (data: DeviceChangeAction) => void);
+              this.onAvailableDeviceChange(deviceUsage, callback as (data: DeviceChangeAction) => void);
             }
         }
   """)
@@ -452,7 +452,7 @@ interface AudioRoutingManager {
   @!sts_inject_into_interface("on(type: string, rendererInfo: AudioRendererInfo, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, rendererInfo: AudioRendererInfo, callback: object): void {
             if (type === "preferOutputDeviceChangeForRendererInfo") {
-              this.OnPreferOutputDeviceChangeForRendererInfo_inner(rendererInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
+              this.onPreferOutputDeviceChangeForRendererInfo(rendererInfo, callback as (data: (AudioDeviceDescriptor[])) => void);
             }
         }
   """)
@@ -481,9 +481,9 @@ interface AudioStreamManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "audioRendererChange") {
-              this.OnAudioRendererChange_inner(callback as (data: (AudioRendererChangeInfo[])) => void);
+              this.onAudioRendererChange(callback as (data: (AudioRendererChangeInfo[])) => void);
             } else if (type === "audioCapturerChange") {
-              this.OnAudioCapturerChange_inner(callback as (data: (AudioCapturerChangeInfo[])) => void);
+              this.onAudioCapturerChange(callback as (data: (AudioCapturerChangeInfo[])) => void);
             }
         }
   """)
@@ -493,9 +493,9 @@ interface AudioStreamManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "audioRendererChange") {
-              this.OffAudioRendererChange_inner(callback as ((data: AudioRendererChangeInfo[]) => void) | undefined);
+              this.offAudioRendererChange(callback as ((data: AudioRendererChangeInfo[]) => void) | undefined);
             } else if (type === "audioCapturerChange") {
-              this.OffAudioCapturerChange_inner(callback as ((data: AudioCapturerChangeInfo[]) => void) | undefined);
+              this.offAudioCapturerChange(callback as ((data: AudioCapturerChangeInfo[]) => void) | undefined);
             }
         }
   """)
@@ -533,9 +533,9 @@ interface AudioVolumeManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "volumeChange") {
-              this.OnVolumeChange_inner(callback as (data: VolumeEvent) => void);
+              this.onVolumeChange(callback as (data: VolumeEvent) => void);
             } else if (type === "appVolumeChange") {
-              this.OnAppVolumeChange_inner(callback as (data: VolumeEvent) => void);
+              this.onAppVolumeChange(callback as (data: VolumeEvent) => void);
             }
         }
   """)
@@ -545,7 +545,7 @@ interface AudioVolumeManager {
   @!sts_inject_into_interface("on(type: string, uid: int, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, uid: int, callback: object): void {
             if (type === "appVolumeChangeForUid") {
-              this.OnAppVolumeChangeForUid_inner(uid, callback as (data: VolumeEvent) => void);
+              this.onAppVolumeChangeForUid(uid, callback as (data: VolumeEvent) => void);
             }
         }
   """)
@@ -554,11 +554,11 @@ interface AudioVolumeManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "volumeChange") {
-              this.OffVolumeChange_inner(callback as ((data: VolumeEvent) => void) | undefined);
+              this.offVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
             } else if (type === "appVolumeChange") {
-              this.OffAppVolumeChange_inner(callback as ((data: VolumeEvent) => void) | undefined);
+              this.offAppVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
             } else if (type === "appVolumeChangeForUid") {
-              this.OffAppVolumeChangeForUid_inner(callback as ((data: VolumeEvent) => void) | undefined);
+              this.offAppVolumeChangeForUid(callback as ((data: VolumeEvent) => void) | undefined);
             }
         }
   """)
@@ -624,9 +624,9 @@ interface AudioVolumeGroupManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "ringerModeChange") {
-              this.OnRingerModeChange_inner(callback as (data: AudioRingMode) => void);
+              this.onRingerModeChange(callback as (data: AudioRingMode) => void);
             } else if (type === "micStateChange") {
-              this.OnMicStateChange_inner(callback as (data: MicStateChangeEvent) => void);
+              this.onMicStateChange(callback as (data: MicStateChangeEvent) => void);
             }
         }
   """)
@@ -637,9 +637,9 @@ interface AudioVolumeGroupManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "ringerModeChange") {
-              this.OffRingerModeChange_inner(callback as ((data: AudioRingMode) => void) | undefined);
+              this.offRingerModeChange(callback as ((data: AudioRingMode) => void) | undefined);
             } else if (type === "micStateChange") {
-              this.OffMicStateChange_inner(callback as ((data: MicStateChangeEvent) => void) | undefined);
+              this.offMicStateChange(callback as ((data: MicStateChangeEvent) => void) | undefined);
             }
         }
   """)
@@ -830,7 +830,7 @@ interface AudioSessionManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "audioSessionDeactivated") {
-              this.OnAudioSessionDeactivated_inner(callback as (data: AudioSessionDeactivatedEvent) => void);
+              this.onAudioSessionDeactivated(callback as (data: AudioSessionDeactivatedEvent) => void);
             }
         }
   """)
@@ -839,7 +839,7 @@ interface AudioSessionManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "audioSessionDeactivated") {
-              this.OffAudioSessionDeactivated_inner(callback as ((data: AudioSessionDeactivatedEvent) => void) | undefined);
+              this.offAudioSessionDeactivated(callback as ((data: AudioSessionDeactivatedEvent) => void) | undefined);
             }
         }
   """)
@@ -936,15 +936,15 @@ interface AudioCapturer {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "stateChange") {
-              this.OnStateChange_inner(callback as (data: AudioState) => void);
+              this.onStateChange(callback as (data: AudioState) => void);
             } else if (type === "audioInterrupt") {
-              this.OnAudioInterrupt_inner(callback as (data: InterruptEvent) => void);
+              this.onAudioInterrupt(callback as (data: InterruptEvent) => void);
             } else if (type === "inputDeviceChange") {
-              this.OnInputDeviceChange_inner(callback as (data: (AudioDeviceDescriptor[])) => void);
+              this.onInputDeviceChange(callback as (data: (AudioDeviceDescriptor[])) => void);
             } else if (type === "audioCapturerChange") {
-              this.OnAudioCapturerChange_inner(callback as (data: AudioCapturerChangeInfo) => void);
+              this.onAudioCapturerChange(callback as (data: AudioCapturerChangeInfo) => void);
             } else if (type === "readData") {
-              this.OnReadData_inner(callback as (data: ArrayBuffer) => void);
+              this.onReadData(callback as (data: ArrayBuffer) => void);
             }
         }
   """)
@@ -957,9 +957,9 @@ interface AudioCapturer {
   @!sts_inject_into_interface("on(type: string, frame: long, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, frame: long, callback: object): void {
             if (type === "periodReach") {
-              this.OnPeriodReach_inner(frame, callback as (data: long) => void);
+              this.onPeriodReach(frame, callback as (data: long) => void);
             } else if (type === "markReach") {
-              this.OnMarkReach_inner(frame, callback as (data: long) => void);
+              this.onMarkReach(frame, callback as (data: long) => void);
             }
         }
   """)
@@ -969,19 +969,19 @@ interface AudioCapturer {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "stateChange") {
-              this.OffStateChange_inner(callback as (((data: AudioState) => void) | undefined));
+              this.offStateChange(callback as (((data: AudioState) => void) | undefined));
             } else if (type === "audioInterrupt") {
-              this.OffAudioInterrupt_inner(callback as (((data: InterruptEvent) => void) | undefined));
+              this.offAudioInterrupt(callback as (((data: InterruptEvent) => void) | undefined));
             } else if (type === "inputDeviceChange") {
-              this.OffInputDeviceChange_inner(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
+              this.offInputDeviceChange(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
             } else if (type === "audioCapturerChange") {
-              this.OffAudioCapturerChange_inner(callback as (((data: AudioCapturerChangeInfo) => void) | undefined));
+              this.offAudioCapturerChange(callback as (((data: AudioCapturerChangeInfo) => void) | undefined));
             } else if (type === "readData") {
-              this.OffReadData_inner(callback as (((data: ArrayBuffer) => void) | undefined));
+              this.offReadData(callback as (((data: ArrayBuffer) => void) | undefined));
             } else if (type === "periodReach") {
-              this.OffPeriodReach_inner(callback as (((data: long) => void) | undefined));
+              this.offPeriodReach(callback as (((data: long) => void) | undefined));
             } else if (type === "markReach") {
-              this.OffMarkReach_inner(callback as (((data: long) => void) | undefined));
+              this.offMarkReach(callback as (((data: long) => void) | undefined));
             }
         }
   """)
@@ -1105,15 +1105,15 @@ interface AudioRenderer {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => object): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "stateChange") {
-              this.OnStateChange_inner(callback as (data: AudioState) => void);
+              this.onStateChange(callback as (data: AudioState) => void);
             } else if (type === "audioInterrupt") {
-              this.OnAudioInterrupt_inner(callback as (data: InterruptEvent) => void);
+              this.onAudioInterrupt(callback as (data: InterruptEvent) => void);
             } else if (type === "outputDeviceChange") {
-              this.OnOutputDeviceChange_inner(callback as (data: (AudioDeviceDescriptor[])) => void);
+              this.onOutputDeviceChange(callback as (data: (AudioDeviceDescriptor[])) => void);
             } else if (type === "outputDeviceChangeWithInfo") {
-              this.OnOutputDeviceChangeWithInfo_inner(callback as (data: AudioStreamDeviceChangeInfo) => void);
+              this.onOutputDeviceChangeWithInfo(callback as (data: AudioStreamDeviceChangeInfo) => void);
             } else if (type === "writeData") {
-              this.OnWriteData_inner(callback as (data: ArrayBuffer) => AudioDataCallbackResult);
+              this.onWriteData(callback as (data: ArrayBuffer) => AudioDataCallbackResult);
             }
         }
   """)
@@ -1126,9 +1126,9 @@ interface AudioRenderer {
   @!sts_inject_into_interface("on(type: string, frame: long, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, frame: long, callback: object): void {
             if (type === "periodReach") {
-              this.OnPeriodReach_inner(frame, callback as (data: long) => void);
+              this.onPeriodReach(frame, callback as (data: long) => void);
             } else if (type === "markReach") {
-              this.OnMarkReach_inner(frame, callback as (data: long) => void);
+              this.onMarkReach(frame, callback as (data: long) => void);
             }
         }
   """)
@@ -1138,19 +1138,19 @@ interface AudioRenderer {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "stateChange") {
-              this.OffStateChange_inner(callback as (((data: AudioState) => void) | undefined));
+              this.offStateChange(callback as (((data: AudioState) => void) | undefined));
             } else if (type === "audioInterrupt") {
-              this.OffAudioInterrupt_inner(callback as (((data: InterruptEvent) => void) | undefined));
+              this.offAudioInterrupt(callback as (((data: InterruptEvent) => void) | undefined));
             } else if (type === "outputDeviceChange") {
-              this.OffOutputDeviceChange_inner(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
+              this.offOutputDeviceChange(callback as (((data: (AudioDeviceDescriptor[])) => void) | undefined));
             } else if (type === "outputDeviceChangeWithInfo") {
-              this.OffOutputDeviceChangeWithInfo_inner(callback as (((data: AudioStreamDeviceChangeInfo) => void) | undefined));
+              this.offOutputDeviceChangeWithInfo(callback as (((data: AudioStreamDeviceChangeInfo) => void) | undefined));
             } else if (type === "periodReach") {
-              this.OffPeriodReach_inner(callback as (((data: long) => void) | undefined));
+              this.offPeriodReach(callback as (((data: long) => void) | undefined));
             } else if (type === "markReach") {
-              this.OffMarkReach_inner(callback as (((data: long) => void) | undefined));
+              this.offMarkReach(callback as (((data: long) => void) | undefined));
             } else if (type === "writeData") {
-              this.OffWriteData_inner(callback as (((data: ArrayBuffer) => AudioDataCallbackResult) | undefined));
+              this.offWriteData(callback as (((data: ArrayBuffer) => AudioDataCallbackResult) | undefined));
             }
         }
   """)
@@ -1288,11 +1288,11 @@ interface AudioSpatializationManager {
   @!sts_inject_into_interface("on(type: string, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, callback: object): void {
             if (type === "spatializationEnabledChangeForCurrentDevice") {
-              this.OnSpatializationEnabledChangeForCurrentDevice_inner(callback as (data: boolean) => void);
+              this.onSpatializationEnabledChangeForCurrentDevice(callback as (data: boolean) => void);
             } else if (type === "spatializationEnabledChangeForAnyDevice") {
-              this.OnSpatializationEnabledChangeForAnyDevice_inner(callback as (data: AudioSpatialEnabledStateForDevice) => void);
+              this.onSpatializationEnabledChangeForAnyDevice(callback as (data: AudioSpatialEnabledStateForDevice) => void);
             } else if (type === "headTrackingEnabledChangeForAnyDevice") {
-              this.OnHeadTrackingEnabledChangeForAnyDevice_inner(callback as (data: AudioSpatialEnabledStateForDevice) => void);
+              this.onHeadTrackingEnabledChangeForAnyDevice(callback as (data: AudioSpatialEnabledStateForDevice) => void);
             }
         }
   """)
@@ -1303,11 +1303,11 @@ interface AudioSpatializationManager {
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "spatializationEnabledChangeForCurrentDevice") {
-              this.OffSpatializationEnabledChangeForCurrentDevice_inner(callback as ((data: boolean) => void) | undefined);
+              this.offSpatializationEnabledChangeForCurrentDevice(callback as ((data: boolean) => void) | undefined);
             } else if (type === "spatializationEnabledChangeForAnyDevice") {
-              this.OffSpatializationEnabledChangeForAnyDevice_inner(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
+              this.offSpatializationEnabledChangeForAnyDevice(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
             } else if (type === "headTrackingEnabledChangeForAnyDevice") {
-              this.OffHeadTrackingEnabledChangeForAnyDevice_inner(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
+              this.offHeadTrackingEnabledChangeForAnyDevice(callback as ((data: AudioSpatialEnabledStateForDevice) => void) | undefined);
             }
         }
   """)
