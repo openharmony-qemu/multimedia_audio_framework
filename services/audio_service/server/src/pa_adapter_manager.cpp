@@ -413,7 +413,10 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
 pa_stream *PaAdapterManager::InitPaStream(AudioProcessConfig processConfig, uint32_t sessionId, bool isRecording)
 {
     AUDIO_INFO_LOG("In, isInnerCapturer: %{public}d", processConfig.isInnerCapturer);
-    std::string adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+    std::string adapterName = "";
+    if (managerType_ != DUP_PLAYBACK && managerType_ != DUAL_PLAYBACK) {
+        adapterName = CoreServiceHandler::GetInstance().GetAdapterNameBySessionId(sessionId);
+    }
     std::lock_guard<std::mutex> lock(paElementsMutex_);
     PaLockGuard palock(mainLoop_);
     if (CheckReturnIfinvalid(mainLoop_ && context_, ERR_ILLEGAL_STATE) < 0) {
