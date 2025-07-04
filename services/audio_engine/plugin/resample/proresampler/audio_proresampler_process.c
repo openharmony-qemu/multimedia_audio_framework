@@ -429,8 +429,8 @@ static void MultiplyFilterSymmetricOddDownMultichannel(SingleStagePolyphaseResam
     uint32_t ch;
     float sum[MAX_NUM_CHANNEL];
     float h;
-    int32_t rem = indCenter % decimateFactor;
-    int32_t len = indCenter / decimateFactor;
+    uint32_t rem = indCenter % decimateFactor;
+    uint32_t len = indCenter / decimateFactor;
 
     // center index
     h = coeffs[indCenter];
