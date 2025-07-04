@@ -32,7 +32,7 @@ public:
     void RemoveCallbackReferenceInner(const std::string &callbackName, std::shared_ptr<uintptr_t> callback,
         std::function<void()> successed = nullptr);
 protected:
-    virtual std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) = 0;
+    virtual std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) = 0;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_RENDERER_CALLBACK_INNER_H

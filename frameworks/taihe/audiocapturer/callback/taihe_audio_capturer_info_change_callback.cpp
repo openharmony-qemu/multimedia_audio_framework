@@ -24,9 +24,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioCapturerInfoChangeCallback::sWorkerMutex_;
-TaiheAudioCapturerInfoChangeCallback::TaiheAudioCapturerInfoChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioCapturerInfoChangeCallback::TaiheAudioCapturerInfoChangeCallback()
 {
     AUDIO_DEBUG_LOG("Instance create");
 }
@@ -67,10 +65,7 @@ void TaiheAudioCapturerInfoChangeCallback::RemoveCallbackReference(const std::st
 
 bool TaiheAudioCapturerInfoChangeCallback::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
-    if (callback == callback_) {
-        return true;
-    }
-    return false;
+    return TaiheParamUtils::IsSameRef(callback, callback_);
 }
 
 void TaiheAudioCapturerInfoChangeCallback::OnStateChange(
@@ -97,18 +92,17 @@ void TaiheAudioCapturerInfoChangeCallback::OnJsCallbackCapturerChangeInfo(
     AudioCapturerChangeInfoJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackCapturerChangeInfoWork(this->env_, event);
+            sharePtr->SafeJsCallbackCapturerChangeInfoWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAudioCapturerChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(ani_env *env,
+void TaiheAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
     AudioCapturerChangeInfoJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<AudioCapturerChangeInfoJsCallback> safeContext(
@@ -125,7 +119,7 @@ void TaiheAudioCapturerInfoChangeCallback::SafeJsCallbackCapturerChangeInfoWork(
     } while (0);
 }
 
-std::shared_ptr<AutoRef> &TaiheAudioCapturerInfoChangeCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheAudioCapturerInfoChangeCallback::GetCallback(const std::string &callbackName)
 {
     return callbackPtr_;
 }

@@ -42,7 +42,7 @@ AudioStreamManager AudioStreamManagerImpl::CreateStreamManagerWrapper()
         audioStreamMgrImpl->cachedClientId_ = getpid();
         return make_holder<AudioStreamManagerImpl, AudioStreamManager>(audioStreamMgrImpl);
     }
-    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioStreamMgrImpl is nullptr");
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMgrImpl is nullptr");
     return make_holder<AudioStreamManagerImpl, AudioStreamManager>(nullptr);
 }
 
@@ -50,12 +50,12 @@ array<AudioRendererChangeInfo> AudioStreamManagerImpl::GetCurrentAudioRendererIn
 {
     std::vector<AudioRendererChangeInfo> emptyResult;
     if (audioStreamMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioStreamMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
         return array<AudioRendererChangeInfo>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioRendererChangeInfo>> audioRendererChangeInfos;
     if (audioStreamMngr_->GetCurrentRendererChangeInfos(audioRendererChangeInfos) != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetCurrentRendererChangeInfos failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetCurrentRendererChangeInfos failure!");
         return array<AudioRendererChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetRendererChangeInfos(audioRendererChangeInfos);
@@ -65,12 +65,12 @@ array<AudioCapturerChangeInfo> AudioStreamManagerImpl::GetCurrentAudioCapturerIn
 {
     std::vector<AudioCapturerChangeInfo> emptyResult;
     if (audioStreamMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioStreamMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     if (audioStreamMngr_->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos) != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetCurrentCapturerChangeInfos failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetCurrentCapturerChangeInfos failure!");
         return array<AudioCapturerChangeInfo>(emptyResult);
     }
     return TaiheParamUtils::SetCapturerChangeInfos(audioCapturerChangeInfos);
@@ -87,7 +87,7 @@ array<AudioEffectMode> AudioStreamManagerImpl::GetAudioEffectInfoArraySync(Strea
         return array<AudioEffectMode>(emptyResult);
     }
     if (audioStreamMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioStreamMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioStreamMngr_ is nullptr");
         return array<AudioEffectMode>(emptyResult);
     }
     OHOS::AudioStandard::AudioSceneEffectInfo audioSceneEffectInfo;
@@ -110,7 +110,7 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
         return false;
     }
     if (audioStreamMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "AudioStreamManager not initialized");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "AudioStreamManager not initialized");
         return false;
     }
     return audioStreamMngr_->IsStreamActive(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
@@ -118,16 +118,12 @@ bool AudioStreamManagerImpl::IsActiveSync(AudioVolumeType volumeType)
 
 void AudioStreamManagerImpl::OnAudioRendererChange(callback_view<void(array_view<AudioRendererChangeInfo>)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioStreamMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRendererStateChangeCallback(cacheCallback, RENDERERCHANGE_CALLBACK_NAME, this);
 }
 
 void AudioStreamManagerImpl::OnAudioCapturerChange(callback_view<void(array_view<AudioCapturerChangeInfo>)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioStreamMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerStateChangeCallback(cacheCallback, CAPTURERCHANGE_CALLBACK_NAME, this);
 }
@@ -135,13 +131,11 @@ void AudioStreamManagerImpl::OnAudioCapturerChange(callback_view<void(array_view
 void AudioStreamManagerImpl::OffAudioRendererChange(
     optional_view<callback<void(array_view<AudioRendererChangeInfo>)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioStreamMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioStreamMngr_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
-    UnregisterRendererStateChangeCallback(cacheCallback, this);
+    UnregisterRendererChangeCallback(cacheCallback, this);
 }
 
 void AudioStreamManagerImpl::OffAudioCapturerChange(optional_view<callback<void(array_view<AudioCapturerChangeInfo>)>>
@@ -153,14 +147,17 @@ void AudioStreamManagerImpl::OffAudioCapturerChange(optional_view<callback<void(
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
     }
-    UnregisterCapturerStateChangeCallback(cacheCallback, this);
+    UnregisterCapturerChangeCallback(cacheCallback, this);
 }
 
 void AudioStreamManagerImpl::RegisterRendererStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioStreamManagerImpl *taiheStreamManager)
 {
+    CHECK_AND_RETURN_LOG((taiheStreamManager != nullptr) &&
+        (taiheStreamManager->audioStreamMngr_ != nullptr), "Failed to retrieve stream mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheStreamManager->mutex_);
     if (!taiheStreamManager->rendererStateCallback_) {
-        taiheStreamManager->rendererStateCallback_ = std::make_shared<TaiheAudioRendererStateCallback>(get_env());
+        taiheStreamManager->rendererStateCallback_ = std::make_shared<TaiheAudioRendererStateCallback>();
         CHECK_AND_RETURN_RET_LOG(taiheStreamManager->rendererStateCallback_ != nullptr,
             TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY),
             "AudioStreamManagerImpl: Memory Allocation Failed !!");
@@ -181,8 +178,11 @@ void AudioStreamManagerImpl::RegisterRendererStateChangeCallback(std::shared_ptr
 void AudioStreamManagerImpl::RegisterCapturerStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioStreamManagerImpl *taiheStreamManager)
 {
+    CHECK_AND_RETURN_LOG((taiheStreamManager != nullptr) &&
+        (taiheStreamManager->audioStreamMngr_ != nullptr), "Failed to retrieve stream mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheStreamManager->mutex_);
     if (!taiheStreamManager->capturerStateCallback_) {
-        taiheStreamManager->capturerStateCallback_ = std::make_shared<TaiheAudioCapturerStateCallback>(get_env());
+        taiheStreamManager->capturerStateCallback_ = std::make_shared<TaiheAudioCapturerStateCallback>();
         CHECK_AND_RETURN_RET_LOG(taiheStreamManager->capturerStateCallback_ != nullptr,
             TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY),
             "AudioStreamManagerImpl: Memory Allocation Failed !!");
@@ -200,9 +200,12 @@ void AudioStreamManagerImpl::RegisterCapturerStateChangeCallback(std::shared_ptr
     AUDIO_INFO_LOG("RegisterRendererStateChangeCallback is successful");
 }
 
-void AudioStreamManagerImpl::UnregisterRendererStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+void AudioStreamManagerImpl::UnregisterRendererChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioStreamManagerImpl *taiheStreamManager)
 {
+    CHECK_AND_RETURN_LOG((taiheStreamManager != nullptr) &&
+        (taiheStreamManager->audioStreamMngr_ != nullptr), "Failed to retrieve stream mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheStreamManager->mutex_);
     CHECK_AND_RETURN_LOG(taiheStreamManager->rendererStateCallback_ != nullptr,
         "rendererStateCallback_ is nullptr");
     std::shared_ptr<TaiheAudioRendererStateCallback> cb =
@@ -218,11 +221,14 @@ void AudioStreamManagerImpl::UnregisterRendererStateChangeCallback(std::shared_p
     taiheStreamManager->rendererStateCallback_.reset();
 }
 
-void AudioStreamManagerImpl::UnregisterCapturerStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+void AudioStreamManagerImpl::UnregisterCapturerChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioStreamManagerImpl *taiheStreamManager)
 {
+    CHECK_AND_RETURN_LOG((taiheStreamManager != nullptr) &&
+        (taiheStreamManager->audioStreamMngr_ != nullptr), "Failed to retrieve stream mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheStreamManager->mutex_);
     CHECK_AND_RETURN_LOG(taiheStreamManager->capturerStateCallback_ != nullptr,
-        "capturerStateChangeCallbackNapi is nullptr");
+        "capturerStateCallback_ is nullptr");
     std::shared_ptr<TaiheAudioCapturerStateCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerStateCallback>(taiheStreamManager->capturerStateCallback_);
     if (callback) {
@@ -235,5 +241,4 @@ void AudioStreamManagerImpl::UnregisterCapturerStateChangeCallback(std::shared_p
     cb->RemoveCallbackReference(callback);
     taiheStreamManager->capturerStateCallback_.reset();
 }
-
 } // namespace ANI::Audio

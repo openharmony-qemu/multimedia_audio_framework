@@ -26,7 +26,7 @@ using namespace ohos::multimedia::audio;
 class TaiheRendererWriteDataCallback : public OHOS::AudioStandard::AudioRendererWriteCallback,
     public std::enable_shared_from_this<TaiheRendererWriteDataCallback> {
 public:
-    TaiheRendererWriteDataCallback(ani_env *env, AudioRendererImpl *taiheRenderer);
+    explicit TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer);
     virtual ~TaiheRendererWriteDataCallback();
     void OnWriteData(size_t length) override;
 
@@ -41,15 +41,13 @@ private:
         AudioRendererImpl *rendererTaiheObj;
     };
 
-    static void SafeJsCallbackWriteDataWork(ani_env *env, RendererWriteDataJsCallback *event);
+    static void SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback *event);
     void OnJsRendererWriteDataCallback(std::unique_ptr<RendererWriteDataJsCallback> &jsCb);
     static void CheckWriteDataCallbackResult(OHOS::AudioStandard::BufferDesc &bufDesc, AudioDataCallbackResult result);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> rendererWriteDataCallback_ = nullptr;
     AudioRendererImpl *taiheRenderer_;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)

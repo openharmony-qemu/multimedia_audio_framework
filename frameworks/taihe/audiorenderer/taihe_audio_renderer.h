@@ -101,21 +101,21 @@ private:
     static void RegisterRendererCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void RegisterRendererDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioRendererImpl *taiheRenderer);
+        AudioRendererImpl *taiheRenderer);
     static void RegisterPositionCallback(int64_t markPosition, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void RegisterPeriodPositionCallback(int64_t frame, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void RegisterRendererOutputDeviceChangeWithInfoCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioRendererImpl *taiheRenderer);
+        AudioRendererImpl *taiheRenderer);
     static void RegisterRendererWriteDataCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void UnregisterRendererCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void UnregisterRendererDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioRendererImpl *taiheRenderer);
+        AudioRendererImpl *taiheRenderer);
     static void UnregisterRendererOutputDeviceChangeWithInfoCallback(std::shared_ptr<uintptr_t> &callback,
-        const std::string &cbName, AudioRendererImpl *taiheRenderer);
+        AudioRendererImpl *taiheRenderer);
     static void UnregisterPeriodPositionCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioRendererImpl *taiheRenderer);
     static void UnregisterPositionCallback(std::shared_ptr<uintptr_t> &callback,
@@ -133,6 +133,7 @@ private:
         rendererPolicyServiceDiedCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioRendererWriteCallback> rendererWriteDataCallbackTaihe_ = nullptr;
 
+    std::mutex mutex_;
     static std::mutex createMutex_;
     static int32_t isConstructSuccess_;
     static std::unique_ptr<OHOS::AudioStandard::AudioRendererOptions> sRendererOptions_;

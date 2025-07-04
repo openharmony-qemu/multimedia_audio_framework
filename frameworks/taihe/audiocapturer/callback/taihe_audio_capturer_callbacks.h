@@ -36,7 +36,7 @@ const std::string READ_DATA_CALLBACK_NAME = "readData";
 class TaiheAudioCapturerCallback : public OHOS::AudioStandard::AudioCapturerCallback,
     public TaiheAudioCapturerCallbackInner, public std::enable_shared_from_this<TaiheAudioCapturerCallback> {
 public:
-    explicit TaiheAudioCapturerCallback(ani_env *env);
+    explicit TaiheAudioCapturerCallback();
     ~TaiheAudioCapturerCallback() override;
     void OnInterrupt(const OHOS::AudioStandard::InterruptEvent &interruptEvent) override;
     void OnStateChange(const OHOS::AudioStandard::CapturerState state) override;
@@ -44,7 +44,7 @@ public:
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct AudioCapturerJsCallback {
@@ -56,14 +56,12 @@ private:
 
     void OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioCapturerJsCallback> &jsCb);
-    static void SafeJsCallbackInterruptWork(ani_env *env, AudioCapturerJsCallback *event);
-    static void SafeJsCallbackStateChangeWork(ani_env *env, AudioCapturerJsCallback *event);
+    static void SafeJsCallbackInterruptWork(AudioCapturerJsCallback *event);
+    static void SafeJsCallbackStateChangeWork(AudioCapturerJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

@@ -41,7 +41,7 @@ AudioEffectManager AudioEffectManagerImpl::CreateEffectManagerWrapper()
 {
     auto *audioEffectMngr = OHOS::AudioStandard::AudioEffectManager::GetInstance();
     if (audioEffectMngr == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Failed to get AudioEffectManager instance");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Failed to get AudioEffectManager instance");
         return make_holder<AudioEffectManagerImpl, AudioEffectManager>(nullptr);
     }
     return make_holder<AudioEffectManagerImpl, AudioEffectManager>(audioEffectMngr);
@@ -77,7 +77,7 @@ void AudioEffectManagerImpl::SetAudioEffectProperty(array_view<AudioEffectProper
 
     OHOS::AudioStandard::AudioEffectPropertyArrayV3 innerPropertyArray = {};
     int32_t result = TaiheParamUtils::GetEffectPropertyArray(innerPropertyArray, propertyArray);
-    if (result != AUDIO_OK || innerPropertyArray.property.size() == 0) {
+    if (result != AUDIO_OK || innerPropertyArray.property.size() <= 0) {
         AUDIO_ERR_LOG("GetEffectPropertyArray failed or arguments error");
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: mandatory parameters are left unspecified");
@@ -105,7 +105,7 @@ array<AudioEffectProperty> AudioEffectManagerImpl::GetAudioEffectProperty()
     int32_t result = audioEffectMngr_->GetAudioEffectProperty(propertyArray);
     if (result != AUDIO_OK) {
         AUDIO_ERR_LOG("get audio enhance property failure! %{public}d", result);
-        TaiheAudioError::ThrowError(result, "interface operation failed");
+        TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM, "interface operation failed");
         return array<AudioEffectProperty>(emptyResult);
     }
     return TaiheParamUtils::ToTaiheEffectPropertyArray(propertyArray);

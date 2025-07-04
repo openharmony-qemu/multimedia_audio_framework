@@ -72,6 +72,7 @@ private:
     std::shared_ptr<OHOS::AudioStandard::AudioManagerAppVolumeChangeCallback>
         appVolumeChangeCallbackForUidTaihe_ = nullptr;
     std::list<std::shared_ptr<TaiheAudioVolumeKeyEvent>> volumeKeyEventCallbackTaiheList_;
+    std::mutex mutex_;
 };
 } // namespace ANI::Audio
 

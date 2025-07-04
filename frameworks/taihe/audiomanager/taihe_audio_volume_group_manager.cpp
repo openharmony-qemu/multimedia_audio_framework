@@ -70,7 +70,7 @@ void AudioVolumeGroupManagerImpl::SetVolumeSync(AudioVolumeType volumeType, int3
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->SetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType), volLevel);
@@ -89,7 +89,7 @@ void AudioVolumeGroupManagerImpl::SetVolumeWithFlagSync(AudioVolumeType volumeTy
     int32_t volLevel = volume;
     int32_t volFlag = flags;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t intValue = audioGroupMngr_->SetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType), volLevel, volFlag);
@@ -105,7 +105,7 @@ AudioVolumeType AudioVolumeGroupManagerImpl::GetActiveVolumeTypeSync(int32_t uid
     int32_t clientUid = uid;
     OHOS::AudioStandard::AudioStreamType volType = OHOS::AudioStandard::AudioStreamType::STREAM_VOICE_CALL;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return TaiheAudioEnum::GetJsAudioVolumeType(volType);
     }
     volType = audioGroupMngr_->GetActiveVolumeType(clientUid);
@@ -122,7 +122,7 @@ int32_t AudioVolumeGroupManagerImpl::GetVolumeSync(AudioVolumeType volumeType)
         return volLevel;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return volLevel;
     }
     volLevel = audioGroupMngr_->GetVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
@@ -139,7 +139,7 @@ int32_t AudioVolumeGroupManagerImpl::GetMinVolumeSync(AudioVolumeType volumeType
         return volLevel;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return volLevel;
     }
     volLevel = audioGroupMngr_->GetMinVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
@@ -156,7 +156,7 @@ int32_t AudioVolumeGroupManagerImpl::GetMaxVolumeSync(AudioVolumeType volumeType
         return volLevel;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return volLevel;
     }
     volLevel = audioGroupMngr_->GetMaxVolume(TaiheAudioEnum::GetNativeAudioVolumeType(volType));
@@ -171,7 +171,7 @@ void AudioVolumeGroupManagerImpl::MuteSync(AudioVolumeType volumeType, bool mute
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->SetMute(TaiheAudioEnum::GetNativeAudioVolumeType(volType), mute);
@@ -191,7 +191,7 @@ bool AudioVolumeGroupManagerImpl::IsMuteSync(AudioVolumeType volumeType)
         return false;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return false;
     }
     int32_t ret = audioGroupMngr_->IsStreamMute(TaiheAudioEnum::GetNativeAudioVolumeType(volType), isMute);
@@ -207,7 +207,7 @@ void AudioVolumeGroupManagerImpl::SetRingerModeSync(AudioRingMode mode)
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->SetRingerMode(TaiheAudioEnum::GetNativeAudioRingerMode(ringMode));
@@ -220,7 +220,7 @@ AudioRingMode AudioVolumeGroupManagerImpl::GetRingerModeSync()
 {
     OHOS::AudioStandard::AudioRingerMode ringerMode = OHOS::AudioStandard::AudioRingerMode::RINGER_MODE_NORMAL;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return TaiheAudioEnum::ToTaiheAudioRingMode(ringerMode);
     }
     ringerMode = audioGroupMngr_->GetRingerMode();
@@ -234,7 +234,7 @@ void AudioVolumeGroupManagerImpl::SetMicMuteSync(bool mute)
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->SetMicrophoneMute(mute);
@@ -258,7 +258,7 @@ void AudioVolumeGroupManagerImpl::SetMicMutePersistentSync(bool mute, PolicyType
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->SetMicrophoneMutePersistent(
@@ -279,7 +279,7 @@ bool AudioVolumeGroupManagerImpl::IsPersistentMicMute()
 {
     bool isPersistentMicMute = false;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return isPersistentMicMute;
     }
     isPersistentMicMute = audioGroupMngr_->GetPersistentMicMuteState();
@@ -289,7 +289,7 @@ bool AudioVolumeGroupManagerImpl::IsPersistentMicMute()
 bool AudioVolumeGroupManagerImpl::IsMicrophoneMuteSync()
 {
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return false;
     }
     return audioGroupMngr_->IsMicrophoneMute();
@@ -304,7 +304,7 @@ void AudioVolumeGroupManagerImpl::AdjustVolumeByStepSync(VolumeAdjustType adjust
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t ret = audioGroupMngr_->
@@ -314,7 +314,7 @@ void AudioVolumeGroupManagerImpl::AdjustVolumeByStepSync(VolumeAdjustType adjust
             TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
             return;
         } else {
-            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
             return;
         }
     }
@@ -323,8 +323,6 @@ void AudioVolumeGroupManagerImpl::AdjustVolumeByStepSync(VolumeAdjustType adjust
 
 void AudioVolumeGroupManagerImpl::OnRingerModeChange(callback_view<void(AudioRingMode)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioGroupMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterRingModeCallback(cacheCallback, RINGERMODE_CALLBACK_NAME, this);
 }
@@ -334,10 +332,11 @@ void AudioVolumeGroupManagerImpl::RegisterRingModeCallback(std::shared_ptr<uintp
 {
     CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
+    std::lock_guard<std::mutex> lock(audioVolumeGroupManagerImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl->audioGroupMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     if (audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ == nullptr) {
-        audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ = std::make_shared<TaiheAudioRingerModeCallback>(env);
+        audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ = std::make_shared<TaiheAudioRingerModeCallback>();
         int32_t ret = audioVolumeGroupManagerImpl->audioGroupMngr_->SetRingerModeCallback(
             audioVolumeGroupManagerImpl->cachedClientId_, audioVolumeGroupManagerImpl->ringerModecallbackTaihe_);
         CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "SetRingerModeCallback Failed");
@@ -350,8 +349,6 @@ void AudioVolumeGroupManagerImpl::RegisterRingModeCallback(std::shared_ptr<uintp
 
 void AudioVolumeGroupManagerImpl::OffRingerModeChange(optional_view<callback<void(AudioRingMode)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioGroupMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -362,6 +359,11 @@ void AudioVolumeGroupManagerImpl::OffRingerModeChange(optional_view<callback<voi
 void AudioVolumeGroupManagerImpl::UnregisterRingerModeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl)
 {
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolumeGroupManagerImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl->audioGroupMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     CHECK_AND_RETURN_LOG(audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ != nullptr,
         "ringerModecallbackTaihe is null");
     std::shared_ptr<TaiheAudioRingerModeCallback> cb = std::static_pointer_cast<TaiheAudioRingerModeCallback>(
@@ -376,12 +378,11 @@ void AudioVolumeGroupManagerImpl::UnregisterRingerModeCallback(std::shared_ptr<u
     CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnsetRingerModeCallback failed");
     cb->RemoveCallbackReference(callback);
     audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterRingerModeCallback success");
 }
 
 void AudioVolumeGroupManagerImpl::OnMicStateChange(callback_view<void(MicStateChangeEvent const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioGroupMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterMicStateChangeCallback(cacheCallback, MIC_STATE_CHANGE_CALLBACK_NAME, this);
 }
@@ -391,11 +392,12 @@ void AudioVolumeGroupManagerImpl::RegisterMicStateChangeCallback(std::shared_ptr
 {
     CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
         TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
+    std::lock_guard<std::mutex> lock(audioVolumeGroupManagerImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl->audioGroupMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     if (!audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_) {
         audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_ =
-            std::make_shared<TaiheAudioManagerMicStateChangeCallback>(env);
+            std::make_shared<TaiheAudioManagerMicStateChangeCallback>();
         if (!audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_) {
             AUDIO_ERR_LOG("Memory Allocation Failed !!");
         }
@@ -427,6 +429,11 @@ void AudioVolumeGroupManagerImpl::OffMicStateChange(optional_view<callback<void(
 void AudioVolumeGroupManagerImpl::UnregisterMicStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioVolumeGroupManagerImpl *audioVolumeGroupManagerImpl)
 {
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioVolumeGroupManagerImpl is nullptr");
+    std::lock_guard<std::mutex> lock(audioVolumeGroupManagerImpl->mutex_);
+    CHECK_AND_RETURN_RET_LOG(audioVolumeGroupManagerImpl->audioGroupMngr_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "audioGroupMngr_ is nullptr");
     CHECK_AND_RETURN_LOG(audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_ != nullptr,
         "micStateChangeCallbackTaihe is null");
     std::shared_ptr<TaiheAudioManagerMicStateChangeCallback> cb =
@@ -441,7 +448,8 @@ void AudioVolumeGroupManagerImpl::UnregisterMicStateChangeCallback(std::shared_p
         audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_);
     CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "UnregisterMicStateChangeCallback failed");
     cb->RemoveCallbackReference(callback);
-    audioVolumeGroupManagerImpl->ringerModecallbackTaihe_ = nullptr;
+    audioVolumeGroupManagerImpl->micStateChangeCallbackTaihe_ = nullptr;
+    AUDIO_INFO_LOG("UnregisterMicStateChangeCallback success");
 }
 
 bool AudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
@@ -449,7 +457,7 @@ bool AudioVolumeGroupManagerImpl::IsVolumeUnadjustable()
     AUDIO_INFO_LOG("IsVolumeUnadjustable");
     bool isVolumeUnadjustable = false;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return isVolumeUnadjustable;
     }
     isVolumeUnadjustable = audioGroupMngr_->IsVolumeUnadjustable();
@@ -472,7 +480,7 @@ void AudioVolumeGroupManagerImpl::AdjustSystemVolumeByStepSync(AudioVolumeType v
         return;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return;
     }
     int32_t volumeAdjustStatus = audioGroupMngr_->AdjustSystemVolumeByStep(TaiheAudioEnum::GetNativeAudioVolumeType(
@@ -482,7 +490,7 @@ void AudioVolumeGroupManagerImpl::AdjustSystemVolumeByStepSync(AudioVolumeType v
             TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
             return;
         } else {
-            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
             return;
         }
     }
@@ -497,7 +505,6 @@ double AudioVolumeGroupManagerImpl::GetSystemVolumeInDbSync(AudioVolumeType volu
     if (!TaiheAudioEnum::IsLegalInputArgumentVolType(volType)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: The param of volumeType must be enum AudioVolumeType");
-        AUDIO_ERR_LOG("get volType failed");
         return volumeInDb;
     }
     int32_t volLevel = volumeLevel;
@@ -505,20 +512,20 @@ double AudioVolumeGroupManagerImpl::GetSystemVolumeInDbSync(AudioVolumeType volu
     if (!TaiheAudioEnum::IsLegalInputArgumentDeviceType(deviceType)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: The param of volumeType must be enum DeviceType");
-        AUDIO_ERR_LOG("get deviceType failed");
         return volumeInDb;
     }
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return volumeInDb;
     }
     volumeInDb = audioGroupMngr_->GetSystemVolumeInDb(TaiheAudioEnum::GetNativeAudioVolumeType(volType), volLevel,
         static_cast<OHOS::AudioStandard::DeviceType>(deviceType));
     if (OHOS::AudioStandard::FLOAT_COMPARE_EQ(static_cast<float>(volumeInDb),
         static_cast<float>(OHOS::AudioStandard::ERR_INVALID_PARAM))) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of volumeType must be enum DeviceType");
-        AUDIO_ERR_LOG("getsystemvolumeindb failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "volumeInDb invalid");
+        return volumeInDb;
+    } else if (volumeInDb < 0) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
         return volumeInDb;
     }
     return volumeInDb;
@@ -533,7 +540,7 @@ double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDeviceSync(AudioDevic
     TaiheParamUtils::GetAudioDeviceDescriptor(inputDeviceDescriptor, inputBArgTransFlag, inputDevice);
     double inputMaxAmplitude = 0.0;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return inputMaxAmplitude;
     }
     inputMaxAmplitude = audioGroupMngr_->GetMaxAmplitude(inputDeviceDescriptor->deviceId_);
@@ -542,10 +549,10 @@ double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForInputDeviceSync(AudioDevic
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "maxAmplitude invalid");
         return inputMaxAmplitude;
     } else if (inputMaxAmplitude < 0) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Internal variable exception.");
         return inputMaxAmplitude;
     } else if (!inputBArgTransFlag) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
         return inputMaxAmplitude;
     }
     return inputMaxAmplitude;
@@ -560,19 +567,20 @@ double AudioVolumeGroupManagerImpl::GetMaxAmplitudeForOutputDeviceSync(AudioDevi
     TaiheParamUtils::GetAudioDeviceDescriptor(outputDeviceDescriptor, outputBArgTransFlag, inputDevice);
     double outputMaxAmplitude = 0.0;
     if (audioGroupMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioGroupMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioGroupMngr_ is nullptr");
         return outputMaxAmplitude;
     }
     outputMaxAmplitude = audioGroupMngr_->GetMaxAmplitude(outputDeviceDescriptor->deviceId_);
     if (OHOS::AudioStandard::FLOAT_COMPARE_EQ(outputMaxAmplitude,
         static_cast<float>(OHOS::AudioStandard::ERR_INVALID_PARAM))) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "Parmeter verification faild. OutputDevice not exist.");
         return outputMaxAmplitude;
     } else if (outputMaxAmplitude < 0) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Internal variable exception.");
         return outputMaxAmplitude;
     } else if (!outputBArgTransFlag) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. Set app volume fail.");
         return outputMaxAmplitude;
     }
     return outputMaxAmplitude;

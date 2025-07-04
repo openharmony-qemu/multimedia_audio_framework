@@ -37,7 +37,7 @@ TonePlayer TonePlayerImpl::CreateTonePlayerWrapper(
 {
     std::lock_guard<std::mutex> lock(TonePlayerImpl::createMutex_);
     if (rendererInfo == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Failed in CreateTonePlayerWrapper");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Failed in CreateTonePlayerWrapper");
         return make_holder<TonePlayerImpl, TonePlayer>();
     }
 
@@ -58,7 +58,7 @@ void TonePlayerImpl::LoadSync(ToneType type)
 {
     int32_t toneType = type;
     if (tonePlayer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "tonePlayer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "tonePlayer_ is nullptr");
         return;
     }
     bool isTrue = tonePlayer_->LoadTone(static_cast<OHOS::AudioStandard::ToneType>(toneType));
@@ -107,7 +107,7 @@ TonePlayer CreateTonePlayerSync(AudioRendererInfo const &options)
         std::make_unique<OHOS::AudioStandard::AudioRendererInfo>(rendererInfo);
     if (audioRendererInfo == nullptr) {
         AUDIO_ERR_LOG("audioRendererInfo create failed,no memory.");
-        TaiheAudioError::ThrowError(TAIHE_ERR_NO_MEMORY);
+        TaiheAudioError::ThrowError(TAIHE_ERR_SYSTEM);
         return make_holder<TonePlayerImpl, TonePlayer>();
     }
     return TonePlayerImpl::CreateTonePlayerWrapper(audioRendererInfo);

@@ -35,7 +35,7 @@ const std::string RINGERMODE_CALLBACK_NAME = "ringerModeChange";
 class TaiheAudioRingerModeCallback : public OHOS::AudioStandard::AudioRingerModeCallback,
 public std::enable_shared_from_this<TaiheAudioRingerModeCallback> {
 public:
-    explicit TaiheAudioRingerModeCallback(ani_env *env);
+    explicit TaiheAudioRingerModeCallback();
     virtual ~TaiheAudioRingerModeCallback();
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
     bool IsSameCallback(std::shared_ptr<uintptr_t> &callback);
@@ -50,12 +50,10 @@ private:
     };
 
     void OnJsCallbackRingerMode(std::unique_ptr<AudioRingerModeJsCallback> &jsCb);
-    static void SafeJsCallbackRingModeWork(ani_env *env, AudioRingerModeJsCallback *event);
+    static void SafeJsCallbackRingModeWork(AudioRingerModeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> ringerModeCallback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

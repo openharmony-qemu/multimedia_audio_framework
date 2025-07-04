@@ -22,9 +22,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheRendererPositionCallback::sWorkerMutex_;
-TaiheRendererPositionCallback::TaiheRendererPositionCallback(ani_env *env)
-    : env_(env)
+TaiheRendererPositionCallback::TaiheRendererPositionCallback()
 {
     AUDIO_DEBUG_LOG("instance create");
 }
@@ -48,7 +46,7 @@ void TaiheRendererPositionCallback::SaveCallbackReference(
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
-std::shared_ptr<AutoRef> &TaiheRendererPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheRendererPositionCallback::GetCallback(const std::string &callbackName)
 {
     return renderPositionCallback_;
 }
@@ -94,18 +92,16 @@ void TaiheRendererPositionCallback::OnJsRendererPositionCallback(
     RendererPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackPositionWork(this->env_, event);
+            sharePtr->SafeJsCallbackPositionWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnMarkReach", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheRendererPositionCallback::SafeJsCallbackPositionWork(ani_env *env,
-    RendererPositionJsCallback *event)
+void TaiheRendererPositionCallback::SafeJsCallbackPositionWork(RendererPositionJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<RendererPositionJsCallback> safeContext(

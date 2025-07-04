@@ -25,9 +25,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheCapturerPositionCallback::sWorkerMutex_;
-TaiheCapturerPositionCallback::TaiheCapturerPositionCallback(ani_env *env)
-    : env_(env)
+TaiheCapturerPositionCallback::TaiheCapturerPositionCallback()
 {
     AUDIO_DEBUG_LOG("TaiheCapturerPositionCallback: instance create");
 }
@@ -67,7 +65,7 @@ void TaiheCapturerPositionCallback::RemoveCallbackReference(const std::string &c
 void TaiheCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("NapiCapturerPositionCallback: mark reached");
+    AUDIO_DEBUG_LOG("TaiheCapturerPositionCallback: mark reached");
     CHECK_AND_RETURN_LOG(capturerPositionCallback_ != nullptr, "Cannot find the reference of position callback");
 
     std::unique_ptr<CapturerPositionJsCallback> cb = std::make_unique<CapturerPositionJsCallback>();
@@ -78,10 +76,8 @@ void TaiheCapturerPositionCallback::OnMarkReached(const int64_t &framePosition)
     return OnJsCapturerPositionCallback(cb);
 }
 
-void TaiheCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(ani_env *env,
-    CapturerPositionJsCallback *event)
+void TaiheCapturerPositionCallback::SafeJsCallbackCapturerPositionWork(CapturerPositionJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<CapturerPositionJsCallback> safeContext(
@@ -110,15 +106,15 @@ void TaiheCapturerPositionCallback::OnJsCapturerPositionCallback(
     CapturerPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackCapturerPositionWork(this->env_, event);
+            sharePtr->SafeJsCallbackCapturerPositionWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnMarkReach", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-std::shared_ptr<AutoRef> &TaiheCapturerPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheCapturerPositionCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == MARK_REACH_CALLBACK_NAME) {

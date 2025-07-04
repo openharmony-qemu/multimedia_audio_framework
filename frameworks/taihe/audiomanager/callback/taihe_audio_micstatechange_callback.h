@@ -35,7 +35,7 @@ const std::string MIC_STATE_CHANGE_CALLBACK_NAME = "micStateChange";
 class TaiheAudioManagerMicStateChangeCallback : public OHOS::AudioStandard::AudioManagerMicStateChangeCallback,
 public std::enable_shared_from_this<TaiheAudioManagerMicStateChangeCallback> {
 public:
-    explicit TaiheAudioManagerMicStateChangeCallback(ani_env *env);
+    explicit TaiheAudioManagerMicStateChangeCallback();
     virtual ~TaiheAudioManagerMicStateChangeCallback();
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
     bool IsSameCallback(std::shared_ptr<uintptr_t> &callback);
@@ -50,12 +50,10 @@ private:
     };
 
     void OnJsCallbackMicStateChange(std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb);
-    static void SafeJsCallbackMicStateChangeWork(ani_env *env, AudioManagerMicStateChangeJsCallback *event);
+    static void SafeJsCallbackMicStateChangeWork(AudioManagerMicStateChangeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> micStateChangeCallback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

@@ -26,20 +26,17 @@ namespace ANI::Audio {
 using namespace taihe;
 using namespace ohos::multimedia::audio;
 class TaiheAudioRendererDeviceChangeCallback : public OHOS::AudioStandard::AudioRendererOutputDeviceChangeCallback,
-    public TaiheAudioRendererCallbackInner,
     public std::enable_shared_from_this<TaiheAudioRendererDeviceChangeCallback> {
 public:
-    explicit TaiheAudioRendererDeviceChangeCallback(ani_env *env);
-    ~TaiheAudioRendererDeviceChangeCallback() override;
-    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
-    void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
+    explicit TaiheAudioRendererDeviceChangeCallback();
+    ~TaiheAudioRendererDeviceChangeCallback();
     void OnOutputDeviceChange(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo,
         const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason) override;
     void RemoveAllCallbacks();
     int32_t GetCallbackListSize() const;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    void AddCallbackReference(std::shared_ptr<uintptr_t> callback);
+    void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback = nullptr);
+
 private:
     struct AudioRendererDeviceChangeJsCallback {
         std::shared_ptr<AutoRef> callback = nullptr;
@@ -47,29 +44,24 @@ private:
         array<AudioDeviceDescriptor> deviceInfo_ = array<AudioDeviceDescriptor>(nullptr, 0);
     };
     void OnJsCallbackRendererDeviceInfo(std::unique_ptr<AudioRendererDeviceChangeJsCallback> &jsCb);
-    static void SafeJsCallbackRendererDeviceInfoWork(ani_env *env, AudioRendererDeviceChangeJsCallback *event);
+    static void SafeJsCallbackRendererDeviceInfoWork(AudioRendererDeviceChangeJsCallback *event);
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 
 class TaiheAudioRendererOutputDeviceChangeWithInfoCallback :
-    public OHOS::AudioStandard::AudioRendererOutputDeviceChangeCallback, public TaiheAudioRendererCallbackInner,
+    public OHOS::AudioStandard::AudioRendererOutputDeviceChangeCallback,
     public std::enable_shared_from_this<TaiheAudioRendererOutputDeviceChangeWithInfoCallback> {
 public:
-    explicit TaiheAudioRendererOutputDeviceChangeWithInfoCallback(ani_env *env);
-    ~TaiheAudioRendererOutputDeviceChangeWithInfoCallback() override;
+    explicit TaiheAudioRendererOutputDeviceChangeWithInfoCallback();
+    ~TaiheAudioRendererOutputDeviceChangeWithInfoCallback();
     void OnOutputDeviceChange(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo,
         const OHOS::AudioStandard::AudioStreamDeviceChangeReason reason) override;
-    void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
-    bool CheckIfTargetCallbackName(const std::string &callbackName) override;
-    void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     int32_t GetCallbackListSize() const;
-protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    void AddCallbackReference(std::shared_ptr<uintptr_t> callback);
+    void RemoveCallbackReference(std::shared_ptr<uintptr_t> callback = nullptr);
 
 private:
     struct AudioRendererOutputDeviceChangeWithInfoJsCallback {
@@ -80,13 +72,10 @@ private:
     };
 
     void OnJsCallbackOutputDeviceInfo(std::unique_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> &jsCb);
-    static void SafeJsCallbackOutputDeviceInfoWork(ani_env *env,
-        AudioRendererOutputDeviceChangeWithInfoJsCallback *event);
+    static void SafeJsCallbackOutputDeviceInfoWork(AudioRendererOutputDeviceChangeWithInfoJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> callbacks_ {};
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

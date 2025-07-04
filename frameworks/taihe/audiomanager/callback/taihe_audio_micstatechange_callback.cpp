@@ -19,9 +19,7 @@
 #include "taihe_audio_micstatechange_callback.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioManagerMicStateChangeCallback::sWorkerMutex_;
-TaiheAudioManagerMicStateChangeCallback::TaiheAudioManagerMicStateChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioManagerMicStateChangeCallback::TaiheAudioManagerMicStateChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioManagerMicStateChangeCallback: instance create");
 }
@@ -57,18 +55,17 @@ void TaiheAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange(
     AudioManagerMicStateChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackMicStateChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackMicStateChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnMicStateChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(ani_env *env,
+void TaiheAudioManagerMicStateChangeCallback::SafeJsCallbackMicStateChangeWork(
     AudioManagerMicStateChangeJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackRingerMode: no memory");
     std::shared_ptr<AudioManagerMicStateChangeJsCallback> safeContext(
@@ -93,7 +90,8 @@ void TaiheAudioManagerMicStateChangeCallback::SaveCallbackReference(
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioManagerMicStateChangeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     CHECK_AND_RETURN_LOG(callbackName == MIC_STATE_CHANGE_CALLBACK_NAME,
         "TaiheAudioManagerMicStateChangeCallback: Unknown callback type: %{public}s", callbackName.c_str());
     micStateChangeCallback_ = cb;
@@ -113,6 +111,7 @@ bool TaiheAudioManagerMicStateChangeCallback::IsSameCallback(std::shared_ptr<uin
 
 void TaiheAudioManagerMicStateChangeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
+    CHECK_AND_RETURN_LOG(micStateChangeCallback_ != nullptr, "micStateChangeCallback_ is nullptr");
     if (!IsSameCallback(callback)) {
         return;
     }

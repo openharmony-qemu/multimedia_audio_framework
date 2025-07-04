@@ -28,7 +28,7 @@ using namespace ohos::multimedia::audio;
 class TaiheCapturerPeriodPositionCallback : public OHOS::AudioStandard::CapturerPeriodPositionCallback,
     public TaiheAudioCapturerCallbackInner, public std::enable_shared_from_this<TaiheCapturerPeriodPositionCallback> {
 public:
-    explicit TaiheCapturerPeriodPositionCallback(ani_env *env);
+    explicit TaiheCapturerPeriodPositionCallback();
     ~TaiheCapturerPeriodPositionCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
@@ -36,7 +36,7 @@ public:
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct CapturerPeriodPositionJsCallback {
@@ -46,11 +46,9 @@ private:
     };
 
     void OnJsCapturerPeriodPositionCallback(std::unique_ptr<CapturerPeriodPositionJsCallback> &jsCb);
-    static void SafeJsCallbackCapturerPeriodPositionWork(ani_env *env, CapturerPeriodPositionJsCallback *event);
+    static void SafeJsCallbackCapturerPeriodPositionWork(CapturerPeriodPositionJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> capturerPeriodPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

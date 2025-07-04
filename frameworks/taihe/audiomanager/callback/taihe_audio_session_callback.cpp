@@ -22,9 +22,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioSessionCallback::sWorkerMutex_;
-TaiheAudioSessionCallback::TaiheAudioSessionCallback(ani_env *env)
-    : env_(env)
+TaiheAudioSessionCallback::TaiheAudioSessionCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioSessionCallback::Constructor");
 }
@@ -55,17 +53,15 @@ void TaiheAudioSessionCallback::SaveCallbackReference(std::shared_ptr<uintptr_t>
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioSessionCallback: creating reference for callback fail");
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     audioSessionJsCallback_ = cb;
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
-void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(ani_env *env, AudioSessionJsCallback *event)
+void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(AudioSessionJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackAudioSession: no memory");
     std::shared_ptr<AudioSessionJsCallback> safeContext(
@@ -76,9 +72,9 @@ void TaiheAudioSessionCallback::SafeJsCallbackAudioSessionWork(ani_env *env, Aud
 
     AUDIO_INFO_LOG("SafeJsCallbackAudioSessionWork: safe js callback working.");
     do {
-        std::shared_ptr<taihe::callback<void(AudioSessionDeactivatedEvent)>> cacheCallback =
-            std::reinterpret_pointer_cast<taihe::callback<void(AudioSessionDeactivatedEvent)>>(
-            event->callback->cb_);
+        std::shared_ptr<taihe::callback<void(AudioSessionDeactivatedEvent const&)>> cacheCallback =
+            std::reinterpret_pointer_cast<taihe::callback<void(AudioSessionDeactivatedEvent const&)>>(
+                event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "get reference value fail");
         AudioSessionDeactivatedEvent sessionDeactivatedEvent = TaiheParamUtils::ToTaiheSessionDeactivatedEvent(
             event->audioSessionDeactiveEvent);
@@ -95,9 +91,9 @@ void TaiheAudioSessionCallback::OnJsCallbackAudioSession(std::unique_ptr<AudioSe
     AudioSessionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackAudioSessionWork(this->env_, event);
+            sharePtr->SafeJsCallbackAudioSessionWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAudioSessionDeactivated", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});

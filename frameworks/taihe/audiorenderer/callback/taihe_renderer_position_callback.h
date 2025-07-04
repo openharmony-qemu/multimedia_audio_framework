@@ -27,14 +27,14 @@ using namespace ohos::multimedia::audio;
 class TaiheRendererPositionCallback : public OHOS::AudioStandard::RendererPositionCallback,
     public TaiheAudioRendererCallbackInner, public std::enable_shared_from_this<TaiheRendererPositionCallback> {
 public:
-    explicit TaiheRendererPositionCallback(ani_env *env);
+    explicit TaiheRendererPositionCallback();
     ~TaiheRendererPositionCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
     void OnMarkReached(const int64_t &framePosition) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct RendererPositionJsCallback {
@@ -43,10 +43,8 @@ private:
         int64_t position = 0;
     };
     void OnJsRendererPositionCallback(std::unique_ptr<RendererPositionJsCallback> &jsCb);
-    static void SafeJsCallbackPositionWork(ani_env *env, RendererPositionJsCallback *event);
+    static void SafeJsCallbackPositionWork(RendererPositionJsCallback *event);
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> renderPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

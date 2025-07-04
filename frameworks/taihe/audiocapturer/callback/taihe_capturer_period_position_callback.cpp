@@ -25,9 +25,7 @@
 #include "taihe_audio_capturer_callbacks.h"
 
 namespace ANI::Audio {
-std::mutex TaiheCapturerPeriodPositionCallback::sWorkerMutex_;
-TaiheCapturerPeriodPositionCallback::TaiheCapturerPeriodPositionCallback(ani_env *env)
-    : env_(env)
+TaiheCapturerPeriodPositionCallback::TaiheCapturerPeriodPositionCallback()
 {
     AUDIO_DEBUG_LOG("TaiheCapturerPeriodPositionCallback: instance create");
 }
@@ -67,7 +65,7 @@ void TaiheCapturerPeriodPositionCallback::RemoveCallbackReference(const std::str
 void TaiheCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNumber)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("NapiCapturerPeriodPositionCallback: period reached");
+    AUDIO_DEBUG_LOG("TaiheCapturerPeriodPositionCallback: period reached");
     CHECK_AND_RETURN_LOG(capturerPeriodPositionCallback_ != nullptr, "Cannot find the reference of position callback");
 
     std::unique_ptr<CapturerPeriodPositionJsCallback> cb = std::make_unique<CapturerPeriodPositionJsCallback>();
@@ -78,10 +76,9 @@ void TaiheCapturerPeriodPositionCallback::OnPeriodReached(const int64_t &frameNu
     return OnJsCapturerPeriodPositionCallback(cb);
 }
 
-void TaiheCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWork(ani_env *env,
+void TaiheCapturerPeriodPositionCallback::SafeJsCallbackCapturerPeriodPositionWork(
     CapturerPeriodPositionJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<CapturerPeriodPositionJsCallback> safeContext(
@@ -112,15 +109,15 @@ void TaiheCapturerPeriodPositionCallback::OnJsCapturerPeriodPositionCallback(
         "OnJsCapturerPeriodPositionCallback: event is nullptr.");
 
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackCapturerPeriodPositionWork(this->env_, event);
+            sharePtr->SafeJsCallbackCapturerPeriodPositionWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnPeriodReach", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-std::shared_ptr<AutoRef> &TaiheCapturerPeriodPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheCapturerPeriodPositionCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == PERIOD_REACH_CALLBACK_NAME) {

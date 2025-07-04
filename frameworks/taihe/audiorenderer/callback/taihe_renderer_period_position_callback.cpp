@@ -22,9 +22,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheRendererPeriodPositionCallback::sWorkerMutex_;
-TaiheRendererPeriodPositionCallback::TaiheRendererPeriodPositionCallback(ani_env *env)
-    : env_(env)
+TaiheRendererPeriodPositionCallback::TaiheRendererPeriodPositionCallback()
 {
     AUDIO_DEBUG_LOG("instance create");
 }
@@ -48,7 +46,7 @@ void TaiheRendererPeriodPositionCallback::SaveCallbackReference(
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
-std::shared_ptr<AutoRef> &TaiheRendererPeriodPositionCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheRendererPeriodPositionCallback::GetCallback(const std::string &callbackName)
 {
     return renderPeriodPositionCallback_;
 }
@@ -94,18 +92,16 @@ void TaiheRendererPeriodPositionCallback::OnJsRendererPeriodPositionCallback(
     RendererPeriodPositionJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackPeriodPositionWork(this->env_, event);
+            sharePtr->SafeJsCallbackPeriodPositionWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnPeriodReach", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheRendererPeriodPositionCallback::SafeJsCallbackPeriodPositionWork(ani_env *env,
-    RendererPeriodPositionJsCallback *event)
+void TaiheRendererPeriodPositionCallback::SafeJsCallbackPeriodPositionWork(RendererPeriodPositionJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<RendererPeriodPositionJsCallback> safeContext(

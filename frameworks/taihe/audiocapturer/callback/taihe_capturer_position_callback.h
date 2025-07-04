@@ -28,7 +28,7 @@ using namespace ohos::multimedia::audio;
 class TaiheCapturerPositionCallback : public OHOS::AudioStandard::CapturerPositionCallback,
     public TaiheAudioCapturerCallbackInner, public std::enable_shared_from_this<TaiheCapturerPositionCallback> {
 public:
-    explicit TaiheCapturerPositionCallback(ani_env *env);
+    explicit TaiheCapturerPositionCallback();
     ~TaiheCapturerPositionCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
@@ -36,7 +36,7 @@ public:
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct CapturerPositionJsCallback {
@@ -46,11 +46,9 @@ private:
     };
 
     void OnJsCapturerPositionCallback(std::unique_ptr<CapturerPositionJsCallback> &jsCb);
-    static void SafeJsCallbackCapturerPositionWork(ani_env *env, CapturerPositionJsCallback *event);
+    static void SafeJsCallbackCapturerPositionWork(CapturerPositionJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> capturerPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

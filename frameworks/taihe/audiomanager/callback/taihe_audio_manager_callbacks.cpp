@@ -19,9 +19,7 @@
 #include "taihe_audio_manager_callbacks.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioManagerCallback::sWorkerMutex_;
-TaiheAudioManagerCallback::TaiheAudioManagerCallback(ani_env *env)
-    : env_(env)
+TaiheAudioManagerCallback::TaiheAudioManagerCallback()
 {
     AUDIO_INFO_LOG("instance create");
 }
@@ -46,7 +44,8 @@ void TaiheAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(std::shar
         CHECK_AND_RETURN_LOG(!isSameCallback, "audio manager has same callback, nothing to do");
     }
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     microphoneBlockedCbList_.push_back({cb});
     AUDIO_INFO_LOG("SaveMicrophoneBlocked callback ref success, list size [%{public}zu]",
         microphoneBlockedCbList_.size());
@@ -113,17 +112,16 @@ void TaiheAudioManagerCallback::OnJsCallbackMicrophoneBlocked(std::unique_ptr<Au
     AudioManagerJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackMicrophoneBlockedWork(this->env_, event);
+            sharePtr->SafeJsCallbackMicrophoneBlockedWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnMicBlockStatusChanged", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(ani_env *env, AudioManagerJsCallback *event)
+void TaiheAudioManagerCallback::SafeJsCallbackMicrophoneBlockedWork(AudioManagerJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackMicrophoneBlocked: no memory");
     std::shared_ptr<AudioManagerJsCallback> safeContext(
@@ -151,9 +149,9 @@ void TaiheAudioManagerCallback::SaveRoutingManagerDeviceChangeCbRef(OHOS::AudioS
         bool isSameCallback = IsSameCallback(callback, (*it).first->cb_);
         CHECK_AND_RETURN_LOG(!isSameCallback, "SaveCallbackReference: has same callback, nothing to do");
     }
-
     CHECK_AND_RETURN_LOG(callback != nullptr, "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
     routingManagerDeviceChangeCbList_.push_back({cb, deviceFlag});
     AUDIO_INFO_LOG("Save routing device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
@@ -223,24 +221,23 @@ void TaiheAudioManagerCallback::OnDeviceChange(const OHOS::AudioStandard::Device
 void TaiheAudioManagerCallback::OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("NapiAudioManagerCallback: OnJsCallbackDeviceChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("TaiheAudioManagerCallback: OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
     CHECK_AND_RETURN_LOG(mainHandler_ != nullptr, "mainHandler_ is nullptr");
     AudioManagerJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackDeviceChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackDeviceChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnDeviceChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioManagerCallback::SafeJsCallbackDeviceChangeWork(ani_env *env, AudioManagerJsCallback *event)
+void TaiheAudioManagerCallback::SafeJsCallbackDeviceChangeWork(AudioManagerJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<AudioManagerJsCallback> safeContext(

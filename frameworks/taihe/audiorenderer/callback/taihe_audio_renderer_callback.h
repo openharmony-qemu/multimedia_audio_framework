@@ -37,7 +37,7 @@ const std::string WRITE_DATA_CALLBACK_NAME = "writeData";
 class TaiheAudioRendererCallback : public OHOS::AudioStandard::AudioRendererCallback,
     public TaiheAudioRendererCallbackInner, public std::enable_shared_from_this<TaiheAudioRendererCallback> {
 public:
-    explicit TaiheAudioRendererCallback(ani_env *env);
+    explicit TaiheAudioRendererCallback();
     ~TaiheAudioRendererCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
@@ -46,7 +46,7 @@ public:
         const OHOS::AudioStandard::StateChangeCmdType __attribute__((unused)) cmdType) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct AudioRendererJsCallback {
@@ -57,11 +57,9 @@ private:
     };
     void OnJsCallbackInterrupt(std::unique_ptr<AudioRendererJsCallback> &jsCb);
     void OnJsCallbackStateChange(std::unique_ptr<AudioRendererJsCallback> &jsCb);
-    static void SafeJsCallbackInterruptWork(ani_env *env, AudioRendererJsCallback *event);
-    static void SafeJsCallbackStateChangeWork(ani_env *env, AudioRendererJsCallback *event);
+    static void SafeJsCallbackInterruptWork(AudioRendererJsCallback *event);
+    static void SafeJsCallbackStateChangeWork(AudioRendererJsCallback *event);
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> interruptCallback_ = nullptr;
     std::shared_ptr<AutoRef> stateChangeCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;

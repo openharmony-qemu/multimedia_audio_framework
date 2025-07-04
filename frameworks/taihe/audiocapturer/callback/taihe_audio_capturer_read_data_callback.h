@@ -26,7 +26,7 @@ using namespace ohos::multimedia::audio;
 class TaiheCapturerReadDataCallback : public OHOS::AudioStandard::AudioCapturerReadCallback,
     public std::enable_shared_from_this<TaiheCapturerReadDataCallback> {
 public:
-    TaiheCapturerReadDataCallback(ani_env *env, AudioCapturerImpl *taiheCapturer);
+    explicit TaiheCapturerReadDataCallback(AudioCapturerImpl *taiheCapturer);
     virtual ~TaiheCapturerReadDataCallback();
     void OnReadData(size_t length) override;
     void AddCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback);
@@ -42,16 +42,14 @@ private:
         TaiheCapturerReadDataCallback *readDataCallbackPtr;
     };
 
-    static void SafeJsCallbackCapturerReadDataWork(ani_env *env, CapturerReadDataJsCallback *event);
+    static void SafeJsCallbackCapturerReadDataWork(CapturerReadDataJsCallback *event);
     static void SafeJsCallbackCapturerReadDataWorkInner(CapturerReadDataJsCallback *event);
     void OnJsCapturerReadDataCallback(std::unique_ptr<CapturerReadDataJsCallback> &jsCb);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> capturerReadDataCallback_ = nullptr;
     AudioCapturerImpl *taiheCapturer_;
     bool isCallbackInited_ = false;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio
