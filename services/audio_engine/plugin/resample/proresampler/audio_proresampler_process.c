@@ -137,7 +137,7 @@ static float Sinc(float x)
 static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
 {
     uint32_t i;
-    int32_t j;
+    uint32_t j;
     float phi0 = 0;
     float phi = 0;
     double w;
@@ -153,18 +153,15 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
     if (state->filterCoefficientsSize < requiredFilterCoefficientsSize) {
         if (state->filterCoefficients == NULL) {
             state->filterCoefficients = (float*)malloc(requiredFilterCoefficientsSize * sizeof(float));
-            if (!state->filterCoefficients) {
-                return RESAMPLER_ERR_ALLOC_FAILED;
-            }
+            CHECK_AND_RETURN_RET_LOG(state->filterCoefficients, RESAMPLER_ERR_ALLOC_FAILED,
+                "malloc state->filterCoefficients fail!");
         } else {
             float* filterCoefficients = (float*)malloc(requiredFilterCoefficientsSize * sizeof(float));
-            if (!filterCoefficients) {
-                return RESAMPLER_ERR_ALLOC_FAILED;
-            }
-            if (memcpy_s(filterCoefficients, requiredFilterCoefficientsSize * sizeof(float),
-                state->filterCoefficients, state->filterCoefficientsSize * sizeof(float)) != 0) {
-                return RESAMPLER_ERR_ALLOC_FAILED;
-            }
+            CHECK_AND_RETURN_RET_LOG(filterCoefficients, RESAMPLER_ERR_ALLOC_FAILED, "malloc filterCoefficients fail!");
+            int32_t ret = memcpy_s(filterCoefficients, requiredFilterCoefficientsSize * sizeof(float),
+                state->filterCoefficients, state->filterCoefficientsSize * sizeof(float));
+            CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, RESAMPLER_ERR_ALLOC_FAILED,
+                "memcpy_s filterCoefficients fail with error code %{public}d", ret);
             free(state->filterCoefficients);
             state->filterCoefficients = filterCoefficients;
         }
@@ -173,7 +170,7 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
 
     for (i = 0; i < state->interpolateFactor; i++) {
         for (j = 0; j < state->filterLength; j++) {
-            phi = (j - (int32_t)state->filterLength / TWO_STEPS + 1) - phi0;
+            phi = ((int32_t)j - (int32_t)state->filterLength / TWO_STEPS + 1) - phi0;
             w = CompHyperbolicCosineWindow(fabs((double)TWO_STEPS * phi / state->filterLength),
                 state->coshParameter);
             state->filterCoefficients[i * state->filterLength + j] = w * cutoff * Sinc(cutoff * phi);
@@ -189,7 +186,7 @@ static void MultiplyFilterMono(SingleStagePolyphaseResamplerState* state, const 
 {
     float sum = 0;
 
-    for (int32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
+    for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
         sum += (*coeffs++) * (*inputs++);
         sum += (*coeffs++) * (*inputs++);
         sum += (*coeffs++) * (*inputs++);
@@ -205,7 +202,7 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
     float sumR = 0;
     float h;
 
-    for (int32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
+    for (uint32_t j = 0; j < state->filterLength; j += FOUR_STEPS) {
         h = *coeffs++;
         sumL += h * (*inputs++);
         sumR += h * (*inputs++);
@@ -229,9 +226,9 @@ static void MultiplyFilterStereo(SingleStagePolyphaseResamplerState* state, cons
 static void MultiplyFilterMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t numChannels = state->numChannels;
-    int32_t ch;
-    int32_t j;
+    const uint32_t numChannels = state->numChannels;
+    uint32_t ch;
+    uint32_t j;
     float h;
     float sum[MAX_NUM_CHANNEL];
 
@@ -279,7 +276,7 @@ static void MultiplyFilterSymmetricOddUpMultichannel(SingleStagePolyphaseResampl
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
     const int32_t indCenter = state->filterLength / TWO_STEPS - 1;
-    for (int32_t ch = 0; ch < state->numChannels; ch++) {
+    for (uint32_t ch = 0; ch < state->numChannels; ch++) {
         *outputs++ = inputs[state->numChannels * indCenter + ch];
     }
 }
@@ -352,15 +349,15 @@ static void MultiplyFilterSymmetricEvenUpMultichannel(SingleStagePolyphaseResamp
 static void MultiplyFilterSymmetricOddDownMono(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
     float sum;
-    int32_t rem = indCenter % decimateFactor;
-    int32_t len = indCenter / decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
+    uint32_t rem = indCenter % decimateFactor;
+    uint32_t len = indCenter / decimateFactor;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
     // center index
     sum = coeffs[indCenter] * inputs[indCenter];
     // symmetric indices
@@ -382,17 +379,17 @@ static void MultiplyFilterSymmetricOddDownMono(SingleStagePolyphaseResamplerStat
 static void MultiplyFilterSymmetricOddDownStereo(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
     float sumL;
     float sumR;
     float h;
-    int32_t rem = indCenter % decimateFactor;
-    int32_t len = indCenter / decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
+    uint32_t rem = indCenter % decimateFactor;
+    uint32_t len = indCenter / decimateFactor;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
 
     // center
     h = coeffs[indCenter];
@@ -422,18 +419,18 @@ static void MultiplyFilterSymmetricOddDownStereo(SingleStagePolyphaseResamplerSt
 static void MultiplyFilterSymmetricOddDownMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
-    const int32_t numChannels = state->numChannels;
-    const int32_t indCenter = n / TWO_STEPS - 1;
+    const uint32_t n = state->filterLength;
+    const uint32_t numChannels = state->numChannels;
+    const uint32_t indCenter = n / TWO_STEPS - 1;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
-    int32_t ch;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
+    uint32_t ch;
     float sum[MAX_NUM_CHANNEL];
     float h;
-    int32_t rem = indCenter % decimateFactor;
-    int32_t len = indCenter / decimateFactor;
+    uint32_t rem = indCenter % decimateFactor;
+    uint32_t len = indCenter / decimateFactor;
 
     // center index
     h = coeffs[indCenter];
@@ -468,13 +465,13 @@ static void MultiplyFilterSymmetricOddDownMultichannel(SingleStagePolyphaseResam
 static void MultiplyFilterSymmetricEvenDownMono(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
-    int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t len = (n / TWO_STEPS) / decimateFactor;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
+    uint32_t rem = (n / TWO_STEPS) % decimateFactor;
+    uint32_t len = (n / TWO_STEPS) / decimateFactor;
     float h;
 
     float sum = 0;
@@ -505,13 +502,13 @@ static void MultiplyFilterSymmetricEvenDownMono(SingleStagePolyphaseResamplerSta
 static void MultiplyFilterSymmetricEvenDownStereo(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
-    int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t len = (n / TWO_STEPS) / decimateFactor;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
+    uint32_t rem = (n / TWO_STEPS) % decimateFactor;
+    uint32_t len = (n / TWO_STEPS) / decimateFactor;
     float h;
 
     float sumL = 0;
@@ -548,17 +545,17 @@ static void MultiplyFilterSymmetricEvenDownStereo(SingleStagePolyphaseResamplerS
 static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResamplerState* state, const float* coeffs,
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
-    const int32_t n = state->filterLength;
+    const uint32_t n = state->filterLength;
     const int32_t numChannels = state->numChannels;
     const uint32_t decimateFactor = state->decimateFactor;
-    int32_t i;
-    int32_t j;
-    int32_t l;
-    int32_t ch;
+    uint32_t i;
+    uint32_t j;
+    uint32_t l;
+    uint32_t ch;
     float sum[MAX_NUM_CHANNEL];
     float h;
-    int32_t rem = (n / TWO_STEPS) % decimateFactor;
-    int32_t len = (n / TWO_STEPS) / decimateFactor;
+    uint32_t rem = (n / TWO_STEPS) % decimateFactor;
+    uint32_t len = (n / TWO_STEPS) / decimateFactor;
 
     for (ch = 0; ch < numChannels; ch++) {
         sum[ch] = 0;
@@ -1191,7 +1188,7 @@ static int32_t PolyphaseResamplerZero(SingleStagePolyphaseResamplerState* state,
     return outSample;
 }
 
-static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState* state, int32_t i)
+static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState* state, uint32_t i)
 {
     int32_t channelMode = CompareMin(state->numChannels - 1, STEREO);
 
@@ -1199,7 +1196,7 @@ static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState
         if (i == 0) {
             return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_SYMMETRIC_ODD_DOWN + channelMode];
         }
-        if (TWO_STEPS * i == state->interpolateFactor) {
+        if ((uint32_t)TWO_STEPS * i == state->interpolateFactor) {
             return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_SYMMETRIC_EVEN_DOWN + channelMode];
         }
         return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_DOWN + channelMode];
@@ -1207,7 +1204,7 @@ static MultiplyFilterFun GetMultiplyFilterFun(SingleStagePolyphaseResamplerState
         if (i == 0) {
             return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_SYMMETRIC_ODD_UP + channelMode];
         }
-        if (TWO_STEPS * i == state->interpolateFactor) {
+        if ((uint32_t)TWO_STEPS * i == state->interpolateFactor) {
             return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_SYMMETRIC_EVEN_UP + channelMode];
         }
         return multiplyFilterFunTable[THREE_STEPS * MULTIPLY_FILTER_FUN_UP + channelMode];
@@ -1239,7 +1236,7 @@ static ResamplerMethod SetResamplerFunctionCoarse(SingleStagePolyphaseResamplerS
         }
     }
 
-    for (int32_t j = 0; j < state->interpolateFactor; j++) {
+    for (uint32_t j = 0; j < state->interpolateFactor; j++) {
         state->multiplyFunSeq[j] = GetMultiplyFilterFun(state, j);
     }
     return PolyphaseResamplerCoarse;
@@ -1440,7 +1437,7 @@ static inline uint32_t ComputeGcd(uint32_t a, uint32_t b)
 int32_t SingleStagePolyphaseResamplerProcess(SingleStagePolyphaseResamplerState* state, const float* in,
     uint32_t* inputLength, float* out, uint32_t* outputLength)
 {
-    int32_t j;
+    uint32_t j;
     uint32_t remainingInputLength = *inputLength;
     uint32_t remainingOutputLength = *outputLength;
     const int32_t filtOffs = state->filterLength - 1;
