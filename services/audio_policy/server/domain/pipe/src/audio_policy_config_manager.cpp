@@ -506,23 +506,34 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     CHECK_AND_RETURN_LOG(desc != nullptr, "stream desc is nullptr");
     CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "adapterPipeInfo is nullptr");
     if (desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST) {
-        info = GetStreamPropInfoFromPipe(
+        auto fastStreamPropinfo = GetStreamPropInfoFromPipe(
             adapterPipeInfo, desc->streamInfo_.format, desc->streamInfo_.samplingRate, tempChannel);
-        CHECK_AND_RETURN(info == nullptr);
+        if (fastStreamPropinfo != nullptr) {
+            AUDIO_INFO_LOG("Find fast streamPropInfo from %{public}s", adapterPipeInfo->name_.c_str());
+            // Use *ptr to get copy and avoid modify the source data from XML
+            *info = *fastStreamPropinfo;
+            return;
+        }
         AUDIO_WARNING_LOG("Find streamPropInfo %{public}s failed, choose normal route", adapterPipeInfo->name_.c_str());
         desc->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         adapterPipeInfo = GetNormalRecordAdapterInfo(desc);
         CHECK_AND_RETURN_LOG(adapterPipeInfo != nullptr, "Get adapter info for normal capture failed");
     }
 
-    info = adapterPipeInfo->streamPropInfos_.front();
+    auto streamPropInfos = adapterPipeInfo->streamPropInfos_;
+    CHECK_AND_RETURN_LOG(streamPropInfos.size() > 0, "streamPropInfos is empty");
+    auto firstStreamPropInfo = streamPropInfos.front();
+    CHECK_AND_RETURN_LOG(firstStreamPropInfo != nullptr, "Get firstStreamPropInfo for normal capture failed");
+    // Use *ptr to get copy and avoid modify the source data from XML
+    *info = *firstStreamPropInfo;
     bool useMatchingPropInfo = false;
     GetTargetSourceTypeAndMatchingFlag(desc->capturerInfo_.sourceType, useMatchingPropInfo);
     if (useMatchingPropInfo) {
         auto streamProp = GetStreamPropInfoFromPipe(adapterPipeInfo, desc->streamInfo_.format,
             desc->streamInfo_.samplingRate, tempChannel);
         if (streamProp != nullptr) {
-            info = streamProp;
+            // Use *ptr to get copy and avoid modify the source data from XML
+            *info = *streamProp;
         }
     }
 
