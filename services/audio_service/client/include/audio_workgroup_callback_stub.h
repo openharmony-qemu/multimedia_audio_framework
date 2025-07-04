@@ -17,6 +17,7 @@
 #define AUDIO_WORKGROUP_CALLBACK_STUB_H
  
 #include "i_audio_workgroup_callback.h"
+#include "audio_system_manager.h"
  
 namespace OHOS {
 namespace AudioStandard {
@@ -24,10 +25,12 @@ class AudioWorkgroupCallbackStub : public IRemoteStub<IAudioWorkgroupCallback> {
 public:
     AudioWorkgroupCallbackStub();
     virtual ~AudioWorkgroupCallbackStub();
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
-    {
-        return IRemoteStub<IAudioWorkgroupCallback>::OnRemoteRequest(code, data, reply, option);
-    }
+    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
+    void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) override;
+    void AddWorkgroupChangeCallback(std::shared_ptr<AudioWorkgroupChangeCallback> cb);
+    void RemoveWorkgroupChangeCallback();
+private:
+    std::shared_ptr<AudioWorkgroupChangeCallback> workgroupCb_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

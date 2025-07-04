@@ -67,6 +67,13 @@
     *SetLatestMuteState*;
     *ForceStopAudioStream*;
     *ClearAudioFocusBySessionID*;
+    *SetAudioServerPtr*;
+    *CreateAudioWorkgroup*;
+    *ReleaseAudioWorkgroup*;
+    *AddThreadToGroup*;
+    *RemoveThreadFromGroup*;
+    *StartGroup*;
+    *StopGroup*;
   local:
     *;
 };

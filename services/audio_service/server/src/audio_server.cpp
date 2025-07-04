@@ -59,6 +59,7 @@
 #include "audio_info.h"
 #include "i_hpae_manager.h"
 #include "audio_server_hpae_dump.h"
+#include "audio_resource_service.h"
 
 #define PA
 #ifdef PA
@@ -353,8 +354,7 @@ void *AudioServer::paDaemonThread(void *arg)
 
 AudioServer::AudioServer(int32_t systemAbilityId, bool runOnCreate)
     : SystemAbility(systemAbilityId, runOnCreate),
-    audioEffectServer_(std::make_unique<AudioEffectServer>()),
-    audioResourceService_(std::make_unique<AudioResourceService>())
+    audioEffectServer_(std::make_unique<AudioEffectServer>())
 {
     AudioStreamMonitor::GetInstance().SetAudioServerPtr(this);
 }
@@ -2849,32 +2849,32 @@ void AudioServer::SetDeviceConnectedFlag(bool flag)
 
 int32_t AudioServer::CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject>& object)
 {
-    return audioResourceService_->CreateAudioWorkgroup(pid, object);
+    return AudioResourceService::GetInstance()->CreateAudioWorkgroup(pid, object);
 }
 
 int32_t AudioServer::ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId)
 {
-    return audioResourceService_->ReleaseAudioWorkgroup(pid, workgroupId);
+    return AudioResourceService::GetInstance()->ReleaseAudioWorkgroup(pid, workgroupId);
 }
 
 int32_t AudioServer::AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
-    return audioResourceService_->AddThreadToGroup(pid, workgroupId, tokenId);
+    return AudioResourceService::GetInstance()->AddThreadToGroup(pid, workgroupId, tokenId);
 }
 
 int32_t AudioServer::RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId)
 {
-    return audioResourceService_->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+    return AudioResourceService::GetInstance()->RemoveThreadFromGroup(pid, workgroupId, tokenId);
 }
 
 int32_t AudioServer::StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime)
 {
-    return audioResourceService_->StartGroup(pid, workgroupId, startTime, deadlineTime);
+    return AudioResourceService::GetInstance()->StartGroup(pid, workgroupId, startTime, deadlineTime);
 }
 
 int32_t AudioServer::StopGroup(int32_t pid, int32_t workgroupId)
 {
-    return audioResourceService_->StopGroup(pid, workgroupId);
+    return AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
 }
 
 void AudioServer::SetBtHdiInvalidState()
