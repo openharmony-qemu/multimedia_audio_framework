@@ -906,7 +906,7 @@ HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_002, TestSize.Level1)
     fastAudioStream->spkProcClientCb_ = spkProcClientCb;
     fastAudioStream->ResetFirstFrameState();
 
-    fastAudioStream->spkProcClientCb_ = null;
+    fastAudioStream->spkProcClientCb_ = nullptr;
     fastAudioStream->ResetFirstFrameState();
     
     EXPECT_EQ(spkProcClientCb->hasFirstFrameWrited_.load(), false);
