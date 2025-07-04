@@ -132,7 +132,8 @@ void HpaeCapturerManager::DisConnectSceneClusterFromSourceInputCluster(HpaeProce
 
     HpaeNodeInfo micRefNodeInfo;
     if (CheckMicRefCondition(sceneType, micRefNodeInfo)) {
-        sceneClusterMap_[sceneType]->DisConnectWithInfo(sourceInputClusterMap_[HPAE_SOURCE_MICREF], micRefNodeInfo); // micref
+        // micref
+        sceneClusterMap_[sceneType]->DisConnectWithInfo(sourceInputClusterMap_[HPAE_SOURCE_MICREF], micRefNodeInfo);
     }
 
     HpaeNodeInfo micNodeInfo;
