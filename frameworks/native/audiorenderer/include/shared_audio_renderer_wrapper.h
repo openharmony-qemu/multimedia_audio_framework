@@ -466,6 +466,11 @@ public:
         sharedAudioRenderer_->SetAudioHapticsSyncId(audioHapticsSyncId);
     }
 
+    void ResetFirstFrameState() override
+    {
+        sharedAudioRenderer_->ResetFirstFrameState();
+    }
+
     int32_t StopDataCallback() override
     {
         return sharedAudioRenderer_->StopDataCallback();

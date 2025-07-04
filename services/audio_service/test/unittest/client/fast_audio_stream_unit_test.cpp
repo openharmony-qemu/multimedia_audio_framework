@@ -885,6 +885,34 @@ HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test ResetFirstFrameState API
+ * @tc.type  : FUNC
+ * @tc.number: ResetFirstFrameState_002
+ * @tc.desc  : Test ResetFirstFrameState interface. - do nothing when spkProcClientCb_ is null
+ */
+HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    auto spkProcClientCb = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
+    spkProcClientCb->hasFirstFrameWrited_.store(true);
+
+    fastAudioStream->spkProcClientCb_ = spkProcClientCb;
+    fastAudioStream->ResetFirstFrameState();
+
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->ResetFirstFrameState();
+    
+    EXPECT_EQ(spkProcClientCb->hasFirstFrameWrited_.load(), false);
+}
+
+/**
  * @tc.name  : Test GetRendererWriteCallback API
  * @tc.type  : FUNC
  * @tc.number: GetRendererWriteCallback_001

@@ -153,6 +153,7 @@ public:
     int32_t StartDataCallback() override;
     int32_t StopDataCallback() override;
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    void ResetFirstFrameState() override;
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 

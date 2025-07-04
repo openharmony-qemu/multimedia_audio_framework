@@ -2124,6 +2124,12 @@ int32_t RendererInServer::StopSession()
     return SUCCESS;
 }
 
+int32_t RendererInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    audioHapticsSyncId_.store(audioHapticsSyncId);
+    return SUCCESS;
+}
+
 void RendererInServer::UpdateLatestForWorkgroup(float systemVolume)
 {
     latestForWorkgroup_.status = status_;

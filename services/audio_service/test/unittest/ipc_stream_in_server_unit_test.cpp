@@ -1611,5 +1611,37 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_072, TestSize.Level1)
     auto result = ipcStreamInServerRet.SetSourceDuration(duration);
     EXPECT_EQ(result, ERR_OPERATION_FAILED);
 }
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_073
+ * @tc.desc  : Test SetAudioHapticsSyncId interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    int32_t syncId = 0;
+
+    ipcStreamInServerRet.rendererInServer_ = nullptr;
+    auto result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
+    result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, SUCCESS);
+}
 }
 }

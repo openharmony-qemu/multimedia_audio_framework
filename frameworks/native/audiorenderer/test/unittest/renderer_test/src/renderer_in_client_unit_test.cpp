@@ -120,6 +120,8 @@ public:
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) { return SUCCESS; }
+    
+    virtual int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) { return 0; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {

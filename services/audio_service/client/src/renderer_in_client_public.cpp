@@ -1904,5 +1904,12 @@ bool RendererInClientInner::GetStopFlag() const
     CHECK_AND_RETURN_RET_LOG(clientBuffer_ != nullptr, false, "Client OHAudioBuffer is nullptr");
     return clientBuffer_->GetStopFlag();
 }
+
+void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
+    int32_t ret = ipcStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
+}
 } // namespace AudioStandard
 } // namespace OHOS

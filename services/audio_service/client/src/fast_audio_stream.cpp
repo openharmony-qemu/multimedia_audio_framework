@@ -966,13 +966,21 @@ void FastAudioStream::OnFirstFrameWriting()
     firstFrameWritingCb_->OnFirstFrameWriting(latency);
 }
 
+void FastAudioStream::ResetFirstFrameState()
+{
+    if (spkProcClientCb_ != nullptr) {
+        AUDIO_DEBUG_LOG("FastAudioStream::ResetFirstFrameState: reset the first frame state");
+        spkProcClientCb_->ResetFirstFrameState();
+    }
+}
+
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(rendererWriteCallback_!= nullptr, "OnHandleData failed: rendererWriteCallback_ is null.");
-    if (!hasFirstFrameWrited_) {
+    if (!hasFirstFrameWrited_.load()) {
         AUDIO_DEBUG_LOG("OnHandleData: send the first frame writing event to audio haptic player");
         audioStreamImpl_.OnFirstFrameWriting();
-        hasFirstFrameWrited_ = true;
+        hasFirstFrameWrited_.store(true);
     }
     rendererWriteCallback_->OnWriteData(length);
 }
@@ -980,7 +988,7 @@ void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 void FastAudioStreamRenderCallback::ResetFirstFrameState()
 {
     AUDIO_DEBUG_LOG("ResetFirstFrameState: set the hasFirstFrameWrited_ to false");
-    hasFirstFrameWrited_ = false;
+    hasFirstFrameWrited_.store(false);
 }
 
 std::shared_ptr<AudioRendererWriteCallback> FastAudioStreamRenderCallback::GetRendererWriteCallback() const

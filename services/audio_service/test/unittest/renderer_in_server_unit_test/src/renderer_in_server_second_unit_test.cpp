@@ -1035,6 +1035,23 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_008, TestSize.
     EXPECT_EQ(ERR_INVALID_PARAM, ret);
     delete[] inputData;
 }
- 
+
+/**
+ * @tc.name  : Test RendererInServer API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetAudioHapticsSyncId_001
+ * @tc.desc  : Test SetAudioHapticsSyncId interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetAudioHapticsSyncId_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    processConfig.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_ULTRASONIC;
+    auto server = std::make_shared<RendererInServer>(processConfig, stateListener);
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t syncId = 100;
+    server->SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(server->audioHapticsSyncId_, syncId);
+}
 } // namespace AudioStandard
 } // namespace OHOS
