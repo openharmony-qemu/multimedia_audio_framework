@@ -41,6 +41,11 @@ static std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_sh
 static std::shared_ptr<RendererInServer> rendererInServer;
 static std::shared_ptr<OHAudioBuffer> buffer;
 static std::weak_ptr<IStreamListener> streamListener;
+static constexpr int32_t ONE_MINUTE = 60;
+const uint64_t TEST_FRAMEPOS = 123456;
+const uint64_t TEST_TIMESTAMP = 111111;
+const float IN_VOLUME_RANGE = 0.5f;
+const uint32_t TEST_STREAMINDEX = 64;
 
 static AudioProcessConfig processConfig;
 static BufferDesc bufferDesc;
@@ -738,5 +743,298 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
     ret = server->RestoreSession(restoreInfo);
     EXPECT_EQ(ret, NO_NEED_FOR_RESTORE);
 }
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_006
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 0.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_006, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_U8, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    uint8_t buffer[10] = {0};
+    size_t bufferSize = 10;
+    bufferDesc.buffer = buffer;
+    bufferDesc.bufLength = bufferSize;
+
+    bufferDesc.buffer[0] = 0;
+    rendererInServer->startMuteTime_ =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) - ONE_MINUTE - 1;
+    rendererInServer->isInSilentState_ = false;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(true, rendererInServer->isInSilentState_);
+}
+
+/**
+* @tc.name  : Test WriteMuteDataSysEvent API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerWriteMuteDataSysEvent_007
+* @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 1.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_007, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+    uint8_t buffer[10] = {0};
+    size_t bufferSize = 10;
+    bufferDesc.buffer = buffer;
+    bufferDesc.bufLength = bufferSize;
+
+    bufferDesc.buffer[0] = 1;
+    rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    rendererInServer->isInSilentState_ = true;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
+}
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerGetAudioTime_004
+ * @tc.desc  : Test GetAudioTime interface, status_ is not I_STATUS_STOPPED, resetTime_ is true.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerGetAudioTime_004, TestSize.Level1)
+{
+    processConfig.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    rendererInServer->Init();
+    rendererInServer->Start();
+    rendererInServer->resetTime_ = true;
+    uint64_t framePos = TEST_FRAMEPOS;
+    uint64_t timestamp = TEST_TIMESTAMP;
+    int32_t ret = rendererInServer->GetAudioTime(framePos, timestamp);
+    EXPECT_EQ(false, rendererInServer->resetTime_);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+
+/**
+ * @tc.name  : Test SetLowPowerVolume API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerSetLowPowerVolume_004
+ * @tc.desc  : Test SetLowPowerVolume interface, Set volume is IN_VOLUME_RANGE.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetLowPowerVolume_004, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+
+    float volume = IN_VOLUME_RANGE;
+    int32_t ret = rendererInServer->SetLowPowerVolume(volume);
+
+    rendererInServer->isDualToneEnabled_ = true;
+    rendererInServer->offloadEnable_ = true;
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: StreamCallbacksOnWriteData_002
+ * @tc.desc  : Test OnWriteData interface.
+ */
+HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.Level1)
+{
+    std::shared_ptr<StreamCallbacks> streamCallbacks;
+    streamCallbacks = std::make_shared<StreamCallbacks>(TEST_STREAMINDEX);
+    EXPECT_NE(nullptr, streamCallbacks);
+
+    auto inputData = new int8_t [10] {1, 2, 3};
+    ASSERT_NE(nullptr, inputData);
+    int32_t ret = streamCallbacks->OnWriteData(inputData, 3);
+    EXPECT_EQ(SUCCESS, ret);
+
+    streamCallbacks->dupRingBuffer_ = AudioRingCache::Create(10);
+    ret = streamCallbacks->OnWriteData(inputData, 3);
+    EXPECT_EQ(SUCCESS, ret);
+    delete[] inputData;
+}
+
+/**
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerOnWriteData_003
+ * @tc.desc  : Test OnWriteData API when requestDataLen is not 0,
+ * currentReadFrame + requestDataInFrame > currentWriteFrame, offloadEnable_ is false.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_003, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = false;
+
+    auto inputData = new int8_t[5] {1, 2, 3, 4, 5};
+    ASSERT_NE(inputData, nullptr);
+    ret = rendererInServer->OnWriteData(inputData, 5);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    delete[] inputData;
+}
+
+/**
+* @tc.name  : Test OnWriteData API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerOnWriteData_004
+* @tc.desc  : Test OnWriteData API when requestDataLen is not 0,
+* currentReadFrame + requestDataInFrame > currentWriteFrame, offloadEnable_ is true.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_004, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = true;
+
+    auto inputData = new int8_t[5] {1, 2, 3, 4, 5};
+    ASSERT_NE(inputData, nullptr);
+    ret = rendererInServer->OnWriteData(inputData, 5);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    delete[] inputData;
+}
+
+/**
+* @tc.name  : Test OnWriteData API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerOnWriteData_005
+* @tc.desc  : Test OnWriteData API when requestDataLen is 0,
+* currentReadFrame + requestDataInFrame > currentWriteFrame, offloadEnable_ is true.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_005, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = true;
+
+    auto inputData = new int8_t[5] {1, 2, 3, 4, 5};
+    ASSERT_NE(inputData, nullptr);
+    ret = rendererInServer->OnWriteData(inputData, 0);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    delete[] inputData;
+}
+
+/**
+* @tc.name  : Test OnWriteData API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerOnWriteData_006
+* @tc.desc  : Test OnWriteData API when requestDataLen is 0,
+* currentReadFrame + requestDataInFrame > currentWriteFrame, offloadEnable_ is false.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_006, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    rendererInServer->offloadEnable_ = false;
+
+    auto inputData = new int8_t[5] {1, 2, 3, 4, 5};
+    ASSERT_NE(inputData, nullptr);
+    ret = rendererInServer->OnWriteData(inputData, 0);
+    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    delete[] inputData;
+}
+
+/**
+* @tc.name  : Test OnWriteData API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerOnWriteData_007
+* @tc.desc  : Test OnWriteData API when requestDataLen is not 0,
+* currentReadFrame + requestDataInFrame <= currentWriteFrame, offloadEnable_ is false.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_007, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    const int requestDataLen = 5;
+    auto inputData = new int8_t[5] {1, 2, 3, 4, 5};
+    ASSERT_NE(inputData, nullptr);
+    rendererInServer->offloadEnable_ = false;
+    size_t requestDataInFrame = requestDataLen / rendererInServer->byteSizePerFrame_;
+    uint64_t currentReadFrame = rendererInServer->audioServerBuffer_->GetCurReadFrame();
+    rendererInServer->audioServerBuffer_->SetCurWriteFrame(currentReadFrame + requestDataInFrame + 1);
+
+    ret = rendererInServer->OnWriteData(inputData, requestDataLen);
+    EXPECT_EQ(SUCCESS, ret);
+    delete[] inputData;
+}
+
+/**
+* @tc.name  : Test OnWriteData API
+* @tc.type  : FUNC
+* @tc.number: RendererInServerOnWriteData_008
+* @tc.desc  : Test OnWriteData API when requestDataLen is not 0,
+* currentReadFrame + requestDataInFrame <= currentWriteFrame.
+*/
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerOnWriteData_008, TestSize.Level1)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo, DEVICE_TYPE_USB_HEADSET, AUDIO_FLAG_VOIP_DIRECT);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    int32_t ret = rendererInServer->Init();
+    EXPECT_EQ(SUCCESS, ret);
+    ret = rendererInServer->ConfigServerBuffer();
+    EXPECT_EQ(SUCCESS, ret);
+    const int requestDataLen = 2;
+    auto inputData = new int8_t[2] {1, 2};
+    ASSERT_NE(inputData, nullptr);
+    rendererInServer->offloadEnable_ = false;
+
+    uint64_t currentReadFrame = rendererInServer->audioServerBuffer_->GetCurReadFrame();
+    rendererInServer->audioServerBuffer_->SetCurWriteFrame(currentReadFrame);
+    RingBufferWrapper ringBufferDesc;
+    rendererInServer->audioServerBuffer_->GetAllReadableBufferFromPosFrame(currentReadFrame, ringBufferDesc);
+    ret = rendererInServer->OnWriteData(inputData, requestDataLen);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+    delete[] inputData;
+}
+ 
 } // namespace AudioStandard
 } // namespace OHOS
