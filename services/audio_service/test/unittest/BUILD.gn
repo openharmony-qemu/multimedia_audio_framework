@@ -801,6 +801,9 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/renderer_in_server.cpp",
+    "../../../../services/audio_service/server/src/audio_workgroup_callback_proxy.cpp",
+    "../../../../services/audio_service/server/src/audio_workgroup.cpp",
+    "../../../../services/audio_service/server/src/audio_resource_service.cpp",
     "./client/audio_process_in_client_unit_test.cpp",
   ]
 
@@ -847,6 +850,8 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
@@ -956,6 +961,9 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/renderer_in_server.cpp",
+    "../../../../services/audio_service/server/src/audio_workgroup_callback_proxy.cpp",
+    "../../../../services/audio_service/server/src/audio_workgroup.cpp",
+    "../../../../services/audio_service/server/src/audio_resource_service.cpp",
     "capturer_in_server_unit_test.cpp",
   ]
 
@@ -1002,6 +1010,8 @@ ohos_unittest("capturer_in_server_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []

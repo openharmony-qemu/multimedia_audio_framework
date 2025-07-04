@@ -16,13 +16,18 @@
 #ifndef AUDIO_WORKGROUP_H
 #define AUDIO_WORKGROUP_H
 
-#include "concurrent_task_client.h"
-
 #include <vector>
 #include <unordered_map>
+#include "audio_manager_base.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class AudioWorkgroupCallbackForMonitor {
+public:
+    virtual ~AudioWorkgroupCallbackForMonitor() = default;
+    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
+};
 
 class AudioWorkgroup {
 public:
@@ -35,6 +40,7 @@ public:
     int32_t RemoveThread(int32_t tid);
     int32_t Start(uint64_t startTime, uint64_t deadlineTime);
     int32_t Stop();
+    std::shared_ptr<AudioWorkgroupCallbackForMonitor> callback;
 
 private:
     int32_t workgroupId;

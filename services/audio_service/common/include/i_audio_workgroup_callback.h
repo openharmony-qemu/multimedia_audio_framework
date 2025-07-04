@@ -20,12 +20,18 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
+#include "audio_workgroup_ipc.h"
  
 namespace OHOS {
 namespace AudioStandard {
  
 class IAudioWorkgroupCallback : public IRemoteBroker {
 public:
+    virtual void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info) = 0;
+    enum AudioWorkgroupMsg {
+        ON_ERROR = 0,
+        ON_WORKGROUP_CHANGE
+    };
     DECLARE_INTERFACE_DESCRIPTOR(u"IAudioWorkgroupCallback");
 };
  

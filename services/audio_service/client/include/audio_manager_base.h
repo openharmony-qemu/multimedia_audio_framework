@@ -26,6 +26,7 @@
 #include "hdi_adapter_type.h"
 #include "hdi_adapter_info.h"
 #include "audio_stutter.h"
+#include "audio_workgroup_ipc.h"
 
 namespace OHOS {
 namespace AudioStandard {

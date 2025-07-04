@@ -369,7 +369,6 @@ private:
     std::mutex audioParameterMutex_;
     std::mutex audioSceneMutex_;
     std::unique_ptr<AudioEffectServer> audioEffectServer_;
-    std::unique_ptr<AudioResourceService> audioResourceService_;
 
     std::atomic<bool> isAudioParameterParsed_ = false;
     std::mutex audioParameterCacheMutex_;
