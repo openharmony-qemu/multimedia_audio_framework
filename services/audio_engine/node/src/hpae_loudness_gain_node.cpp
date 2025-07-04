@@ -111,9 +111,9 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
     CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();
-        int32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
+        uint32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
         float *dataBuffer = loudnessGainOutput_.GetPcmDataBuffer();
-        for (int32_t i = 0; i < bufferSize; i++) {
+        for (uint32_t i = 0; i < bufferSize; i++) {
             dataBuffer[i] = pcmDataBuffer[i] * linearGain_;
         }
     } else {
