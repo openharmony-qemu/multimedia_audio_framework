@@ -258,7 +258,7 @@ void GetPreferredInputDeviceDescInnerFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     if (DeviceTypeVec.size() == 0 || StreamUsageVec.size() == 0 || SourceTypeVec.size() == 0) {
         return;
     }
@@ -396,13 +396,13 @@ void FetchOutputEndFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = GetData<uint32_t>() % NUM_2;
     int32_t runningStreamCount = GetData<int32_t>();
-    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void FetchOutputDeviceWhenNoRunningStreamFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream();
+    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
@@ -415,7 +415,8 @@ void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
     }
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void MuteSinkForSwitchGeneralDeviceFuzzTest()
@@ -851,7 +852,7 @@ void GetSpatialDeviceTypeFuzzTest()
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     audioDeviceCommon.GetSpatialDeviceType(macAddress);
 }
 

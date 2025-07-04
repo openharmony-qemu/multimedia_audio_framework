@@ -17,6 +17,7 @@
 #define ST_AUDIO_SESSION_MANAGER_H
 
 #include "audio_system_manager.h"
+#include "audio_session_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +43,18 @@ public:
      * @since 20
      */
     virtual void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) = 0;
+};
+
+class AudioSessionCurrentDeviceChangedCallback {
+public:
+    virtual ~AudioSessionCurrentDeviceChangedCallback() = default;
+    /**
+     * @brief
+     *
+     * @param deviceChangedEvent the audio session current device changed event.
+     * @since 20
+     */
+    virtual void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) = 0;
 };
 
 class AudioSessionManager {
@@ -168,6 +181,38 @@ public:
      * @since 20
      */
     int32_t SetDefaultOutputDevice(DeviceType deviceType);
+
+    /**
+     * @brief Subscribes device changed event callback.
+     * The event is triggered when device changed.
+     *
+     * @param deviceChangedCallback The audio session device changed callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t SetAudioSessionCurrentDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+
+    /**
+     * @brief Unset all audio session device changed callbacks.
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback();
+
+    /**
+     * @brief Unset the audio session device changed callback.
+     *
+     * @param deviceChangedCallback The audio session device changed callback.
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
+        const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
 };
 } // namespace AudioStandard
 } // namespace OHOS

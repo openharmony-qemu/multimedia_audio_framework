@@ -446,6 +446,7 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
 
 bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
 {
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
     return deviceDescriptor->deviceType_ == deviceType_ &&
         deviceDescriptor->macAddress_ == macAddress_ &&
         deviceDescriptor->networkId_ == networkId_ &&

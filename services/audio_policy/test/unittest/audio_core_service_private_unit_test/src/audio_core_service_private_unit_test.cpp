@@ -1966,7 +1966,7 @@ HWTEST(AudioCoreServicePrivateTest, HandleFetchOutputWhenNoRunningStream_001, Te
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
-    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream();
+    auto ret = audioCoreService->HandleFetchOutputWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(ret, SUCCESS);
 }
 

@@ -295,7 +295,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, HandleDeviceChangeForFetchOutputDevice_0
     audioDeviceCommon.audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
     audioDeviceCommon.audioActiveDevice_.currentActiveDevice_ = AudioDeviceDescriptor(*desc);
 
-    int32_t result = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t result = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(result, ERR_NEED_NOT_SWITCH_DEVICE);
 }
 
@@ -326,7 +327,8 @@ HWTEST_F(AudioDeviceCommonUnitNextTest, HandleDeviceChangeForFetchOutputDevice_0
     preferredDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
     audioDeviceCommon.audioAffinityManager_.activeRendererDeviceMap_[rendererChangeInfo->clientUID] = preferredDesc;
 
-    int32_t result = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t result = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(result, ERR_NEED_NOT_SWITCH_DEVICE);
 }
 

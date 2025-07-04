@@ -391,7 +391,9 @@ enum class AudioStreamDeviceChangeReason {
     UNKNOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
     OLD_DEVICE_UNAVALIABLE = 2,
-    OVERRODE = 3
+    OVERRODE = 3,
+    AUDIO_SESSION_ACTIVATE = 4,
+    STREAM_PRIORITY_CHANGED = 5,
 };
 
 class AudioStreamDeviceChangeReasonExt : public Parcelable {
@@ -401,6 +403,8 @@ public:
         NEW_DEVICE_AVAILABLE = 1,
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
+        AUDIO_SESSION_ACTIVATE = 4,
+        STREAM_PRIORITY_CHANGED = 5,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,

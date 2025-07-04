@@ -259,5 +259,13 @@ void AudioPolicyClientHolder::OnAudioSessionStateChanged(const AudioSessionState
     int32_t stateChangeHint = static_cast<int32_t>(stateChangedEvent.stateChangeHint);
     audioPolicyClient_->OnAudioSessionStateChanged(stateChangeHint);
 }
+
+void AudioPolicyClientHolder::OnAudioSessionCurrentDeviceChanged(
+    const CurrentOutputDeviceChangedEvent &deviceChangedEvent)
+{
+    CHECK_AND_RETURN_LOG(audioPolicyClient_ != nullptr, "audioPolicyClient_ is nullptr.");
+    audioPolicyClient_->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

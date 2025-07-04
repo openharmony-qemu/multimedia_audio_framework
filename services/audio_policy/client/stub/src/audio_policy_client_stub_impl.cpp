@@ -689,6 +689,60 @@ int32_t AudioPolicyClientStubImpl::OnAudioSessionStateChanged(int32_t stateChang
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddAudioSessionDeviceCallback(
+    const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb)
+{
+    AUDIO_INFO_LOG("AddAudioSessionDeviceCallback in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionDeviceMutex_);
+    audioSessionDeviceCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionDeviceCallback()
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionDeviceCallback all in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionDeviceMutex_);
+    audioSessionDeviceCallbackList_.clear();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveAudioSessionDeviceCallback(
+    const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb)
+{
+    AUDIO_INFO_LOG("RemoveAudioSessionDeviceCallback one in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionDeviceMutex_);
+    auto it = find_if(audioSessionDeviceCallbackList_.begin(), audioSessionDeviceCallbackList_.end(),
+        [&cb](const std::weak_ptr<AudioSessionCurrentDeviceChangedCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != audioSessionDeviceCallbackList_.end()) {
+        audioSessionDeviceCallbackList_.erase(it);
+        AUDIO_INFO_LOG("RemoveAudioSessionDeviceCallback remove cb succeed");
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetAudioSessionDeviceCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(audioSessionDeviceMutex_);
+    return audioSessionDeviceCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnAudioSessionCurrentDeviceChanged(
+    const CurrentOutputDeviceChangedEvent &deviceChangedEvent)
+{
+    AUDIO_INFO_LOG("OnAudioSessionCurrentDeviceChanged in");
+    std::lock_guard<std::mutex> lockCbMap(audioSessionDeviceMutex_);
+    for (auto it = audioSessionDeviceCallbackList_.begin(); it != audioSessionDeviceCallbackList_.end(); ++it) {
+        std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> deviceChangedCallback = (*it).lock();
+        if (deviceChangedCallback != nullptr) {
+            deviceChangedCallback->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
+        }
+    }
+
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddMicStateChangeCallback(
     const std::shared_ptr<AudioManagerMicStateChangeCallback> &cb)
 {
