@@ -2770,7 +2770,26 @@ int32_t AudioRendererPrivate::StartDataCallback()
 void AudioRendererPrivate::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
-    audioHapticsSyncId_ = audioHapticsSyncId;
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    if (audioHapticsSyncId > 0) {
+        audioHapticsSyncId_ = audioHapticsSyncId;
+        audioStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    }
+}
+
+void AudioRendererPrivate::ResetFirstFrameState()
+{
+    AUDIO_PRERELEASE_LOGI("AudioRendererPrivate::ResetFirstFrameState");
+    std::unique_lock<std::shared_mutex> lock;
+    if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    }
+
+    audioStream_->ResetFirstFrameState();
 }
 
 int32_t AudioRendererPrivate::StopDataCallback()

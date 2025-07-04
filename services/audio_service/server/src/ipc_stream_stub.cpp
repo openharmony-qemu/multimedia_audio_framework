@@ -77,6 +77,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetOffloadDataCallbackState(data, reply);
         case ON_SET_LOUDNESSGAIN:
             return HandleSetLoudnessGain(data, reply);
+        case ON_SET_AUDIO_HAPTICS_SYNC_ID:
+            return HandleSetAudioHapticsSyncId(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);
     }
@@ -484,6 +486,13 @@ int32_t IpcStreamStub::HandleSetOffloadDataCallbackState(MessageParcel &data, Me
 {
     int32_t state = data.ReadInt32();
     reply.WriteInt32(SetOffloadDataCallbackState(state));
+    return AUDIO_OK;
+}
+
+int32_t IpcStreamStub::HandleSetAudioHapticsSyncId(MessageParcel &data, MessageParcel &reply)
+{
+    int32_t audioHapticsSyncId = data.ReadInt32();
+    reply.WriteInt32(SetAudioHapticsSyncId(audioHapticsSyncId));
     return AUDIO_OK;
 }
 } // namespace AudioStandard

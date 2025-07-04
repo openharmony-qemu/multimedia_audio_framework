@@ -535,5 +535,15 @@ int32_t IpcStreamInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr
     AUDIO_ERR_LOG("GetAudioSessionID failed, invalid mode: %{public}d", static_cast<int32_t>(mode_));
     return ERR_OPERATION_FAILED;
 }
+
+int32_t IpcStreamInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
+        AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",
+            static_cast<int32_t>(mode_), rendererInServer_ == nullptr);
+        return ERR_OPERATION_FAILED;
+    }
+    return rendererInServer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

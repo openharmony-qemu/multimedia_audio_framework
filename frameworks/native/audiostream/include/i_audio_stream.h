@@ -322,6 +322,10 @@ public:
     virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 
     virtual bool GetStopFlag() const = 0;
+
+    virtual void ResetFirstFrameState() {}
+
+    virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -125,6 +125,8 @@ public:
 
     int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
         uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override;
+    
+    int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

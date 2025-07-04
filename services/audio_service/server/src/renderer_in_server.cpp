@@ -2116,5 +2116,11 @@ int32_t RendererInServer::StopSession()
     audioServerBuffer_->SetStopFlag(true);
     return SUCCESS;
 }
+
+int32_t RendererInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    audioHapticsSyncId_.store(audioHapticsSyncId);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

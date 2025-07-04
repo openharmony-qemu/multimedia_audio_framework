@@ -44,7 +44,7 @@ public:
 private:
     std::shared_ptr<AudioRendererWriteCallback> rendererWriteCallback_ = nullptr;
     IAudioStream &audioStreamImpl_;
-    bool hasFirstFrameWrited_ = false;
+    std::atomic<bool> hasFirstFrameWrited_ = false;
 };
 
 class FastAudioStreamCaptureCallback : public AudioDataCallback {
@@ -212,6 +212,7 @@ public:
     int32_t GetCallbackLoopTid() override;
     void ResetCallbackLoopTid();
     bool GetStopFlag() const override;
+    void ResetFirstFrameState() override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

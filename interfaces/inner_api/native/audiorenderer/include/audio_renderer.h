@@ -1102,6 +1102,13 @@ public:
      */
     virtual void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) {};
 
+    /**
+     * @brief Reset first frame state
+     *
+     * @since 20
+     */
+    virtual void ResetFirstFrameState() {};
+
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,
         const int32_t &errorCode);

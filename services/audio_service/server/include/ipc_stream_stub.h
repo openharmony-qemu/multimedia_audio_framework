@@ -83,6 +83,8 @@ private:
 
     int32_t HandleSetOffloadDataCallbackState(MessageParcel &data, MessageParcel &reply);
     int32_t HandleResolveBufferBase(MessageParcel &data, MessageParcel &reply);
+
+    int32_t HandleSetAudioHapticsSyncId(const int32_t &audioHapticsSyncId);
 };
 } // namespace AudioStandard
 } // namespace OHOS
