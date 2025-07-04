@@ -265,7 +265,9 @@ private:
     int32_t ScoInputDeviceFetchedForRecongnition(
         bool handleFlag, const std::string &address, ConnectState connectState);
     void BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    void CheckModemScene(const AudioStreamDeviceChangeReasonExt reason);
+    void CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+         const AudioStreamDeviceChangeReasonExt reason);
+    int32_t UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     void HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void UpdateDefaultOutputDeviceWhenStopping(int32_t uid);
     void UpdateInputDeviceWhenStopping(int32_t uid);

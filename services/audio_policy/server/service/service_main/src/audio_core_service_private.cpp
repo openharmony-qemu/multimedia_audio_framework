@@ -124,7 +124,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
         std::make_shared<AudioDeviceDescriptor>(audioDeviceDescriptor);
     if (isUpdateActiveDevice && audioDeviceManager_.IsDeviceConnected(descPtr)) {
         AUDIO_INFO_LOG("active device updated, update volume for %{public}d", sessionId);
-        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "");
+        audioVolumeManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor, "", false);
         OnPreferredOutputDeviceUpdated(audioDeviceDescriptor);
     }
 }
@@ -228,7 +228,8 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
     }
 }
 
-void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt reason)
+void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
     if (!pipeManager_->IsModemCommunicationIdExist()) {
         return;
@@ -240,11 +241,11 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
     }
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
+    descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
     pipeManager_->UpdateModemStreamDevice(descs);
-    AUDIO_INFO_LOG("Update route %{public}d", descs.front()->deviceType_);
+    AUDIO_INFO_LOG("Update route %{public}d, reason %{public}d",
+        descs.front()->deviceType_, static_cast<int32_t>(reason));
 
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         auto modemCommunicationMap = pipeManager_->GetModemCommunicationMap();
@@ -256,8 +257,18 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
     }
 
     auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second);
-    if (isModemCallRunning) {
+    if (isModemCallRunning && IsDeviceSwitching(reason)) {
+        SetVoiceCallMuteForSwitchDevice();
+    }
+}
+
+int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+{
+    CHECK_AND_RETURN_RET_LOG(descs.size() != 0, ERROR, "Update device route for voice modem communication failed");
+    CHECK_AND_RETURN_RET_LOG(descs.front() != nullptr, ERROR, "Update modem route: desc is nullptr");
+    if (audioSceneManager_.IsInPhoneCallScene()) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioVolumeManager_.SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
     AudioDeviceDescriptor desc = AudioDeviceDescriptor(descs.front());
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> modemSessionMap =
@@ -266,6 +277,7 @@ void AudioCoreService::CheckModemScene(const AudioStreamDeviceChangeReasonExt re
         streamCollector_.UpdateRendererDeviceInfo(GetRealUid(it->second), it->first, desc);
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(it->second);
     }
+    return SUCCESS;
 }
 
 void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
