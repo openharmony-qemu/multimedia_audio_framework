@@ -30,7 +30,7 @@ const std::string VOLUME_KEY_EVENT_CALLBACK_NAME = "volumeChange";
 class TaiheAudioVolumeKeyEvent : public OHOS::AudioStandard::VolumeKeyEventCallback,
     public std::enable_shared_from_this<TaiheAudioVolumeKeyEvent> {
 public:
-    explicit TaiheAudioVolumeKeyEvent(ani_env *env);
+    explicit TaiheAudioVolumeKeyEvent();
     virtual ~TaiheAudioVolumeKeyEvent();
     void OnVolumeKeyEvent(OHOS::AudioStandard::VolumeEvent volumeEvent) override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> cacheCallback);
@@ -44,13 +44,11 @@ private:
     };
 
     void OnJsCallbackVolumeEvent(std::unique_ptr<AudioVolumeKeyEventJsCallback> &jsCb);
-    static void SafeJsCallbackVolumeEventWork(ani_env *env, AudioVolumeKeyEventJsCallback *event);
+    static void SafeJsCallbackVolumeEventWork(AudioVolumeKeyEventJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> audioVolumeKeyEventJsCallback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

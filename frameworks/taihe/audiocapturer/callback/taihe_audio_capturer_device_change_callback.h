@@ -30,7 +30,7 @@ class TaiheAudioCapturerDeviceChangeCallback : public OHOS::AudioStandard::Audio
     public TaiheAudioCapturerCallbackInner,
     public std::enable_shared_from_this<TaiheAudioCapturerDeviceChangeCallback> {
 public:
-    explicit TaiheAudioCapturerDeviceChangeCallback(ani_env *env);
+    explicit TaiheAudioCapturerDeviceChangeCallback();
     ~TaiheAudioCapturerDeviceChangeCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> &callback) override;
@@ -38,7 +38,7 @@ public:
     bool ContainSameJsCallback(std::shared_ptr<uintptr_t> callback);
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct AudioCapturerDeviceChangeJsCallback {
@@ -48,11 +48,9 @@ private:
     };
 
     void OnJsCallbackCapturerDeviceInfo(std::unique_ptr<AudioCapturerDeviceChangeJsCallback> &jsCb);
-    static void SafeJsCallbackCapturerDeviceInfoWork(ani_env *env, AudioCapturerDeviceChangeJsCallback *event);
+    static void SafeJsCallbackCapturerDeviceInfoWork(AudioCapturerDeviceChangeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> callbackPtr_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;

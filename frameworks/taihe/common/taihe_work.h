@@ -27,7 +27,7 @@ using namespace taihe;
 using namespace ohos::multimedia::audio;
 
 struct AutoRef {
-    AutoRef(ani_env *env, std::shared_ptr<uintptr_t> cb) : env_(env)
+    AutoRef(std::shared_ptr<uintptr_t> cb)
     {
         if (cb != nullptr) {
             cb_ = cb;
@@ -35,10 +35,8 @@ struct AutoRef {
     }
     ~AutoRef()
     {
-        env_ = nullptr;
         cb_ = nullptr;
     }
-    ani_env *env_;
     std::shared_ptr<uintptr_t> cb_;
 };
 } // namespace ANI::Audio

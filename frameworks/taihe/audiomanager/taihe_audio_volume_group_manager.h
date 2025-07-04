@@ -70,6 +70,7 @@ private:
 
     std::shared_ptr<OHOS::AudioStandard::AudioRingerModeCallback> ringerModecallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerMicStateChangeCallback> micStateChangeCallbackTaihe_ = nullptr;
+    std::mutex mutex_;
 };
 } // namespace ANI::Audio
 

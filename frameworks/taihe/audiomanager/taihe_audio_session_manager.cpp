@@ -40,7 +40,7 @@ AudioSessionManager AudioSessionManagerImpl::CreateSessionManagerWrapper()
 {
     auto *audioSessionMngr = OHOS::AudioStandard::AudioSessionManager::GetInstance();
     if (audioSessionMngr == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "Failed to get AudioSessionManager instance");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "Failed to get AudioSessionManager instance");
         return make_holder<AudioSessionManagerImpl, AudioSessionManager>(nullptr);
     }
     return make_holder<AudioSessionManagerImpl, AudioSessionManager>(audioSessionMngr);
@@ -60,9 +60,7 @@ void AudioSessionManagerImpl::ActivateAudioSessionSync(AudioSessionStrategy cons
     }
     result = audioSessionMngr_->ActivateAudioSession(audioSessionStrategy);
     if (result != OHOS::AudioStandard::SUCCESS) {
-        AUDIO_ERR_LOG("ActivateAudioSession failed! error code: %{public}d", result);
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
-            "ActivateAudioSession failed! error code: " + std::to_string(result));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. ActivateAudioSession fail.");
         return;
     }
 }
@@ -75,8 +73,7 @@ void AudioSessionManagerImpl::DeactivateAudioSessionSync()
     }
     int32_t result = audioSessionMngr_->DeactivateAudioSession();
     if (result != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM,
-            "DeactivateAudioSession failed! error code: " + std::to_string(result));
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error. DeactivateAudioSession fail.");
         return;
     }
 }
@@ -84,7 +81,7 @@ void AudioSessionManagerImpl::DeactivateAudioSessionSync()
 bool AudioSessionManagerImpl::IsAudioSessionActivated()
 {
     if (audioSessionMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioSessionMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSessionMngr_ is nullptr");
         return false;
     }
     return audioSessionMngr_->IsAudioSessionActivated();
@@ -93,8 +90,6 @@ bool AudioSessionManagerImpl::IsAudioSessionActivated()
 void AudioSessionManagerImpl::OnAudioSessionDeactivated(
     callback_view<void(AudioSessionDeactivatedEvent const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioSessionMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAudioSessionCallback(cacheCallback, this);
 }
@@ -102,8 +97,6 @@ void AudioSessionManagerImpl::OnAudioSessionDeactivated(
 void AudioSessionManagerImpl::OffAudioSessionDeactivated(
     optional_view<callback<void(AudioSessionDeactivatedEvent const&)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioSessionMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioSessionMngr_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -116,8 +109,11 @@ void AudioSessionManagerImpl::OffAudioSessionDeactivated(
 void AudioSessionManagerImpl::RegisterAudioSessionCallback(std::shared_ptr<uintptr_t> &callback,
     AudioSessionManagerImpl *taiheSessionManager)
 {
+    CHECK_AND_RETURN_LOG((taiheSessionManager != nullptr) &&
+        (taiheSessionManager->audioSessionMngr_ != nullptr), "Failed to retrieve session mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheSessionManager->mutex_);
     if (!taiheSessionManager->audioSessionCallbackTaihe_) {
-        taiheSessionManager->audioSessionCallbackTaihe_ = std::make_shared<TaiheAudioSessionCallback>(get_env());
+        taiheSessionManager->audioSessionCallbackTaihe_ = std::make_shared<TaiheAudioSessionCallback>();
         CHECK_AND_RETURN_LOG(taiheSessionManager->audioSessionCallbackTaihe_ != nullptr,
             "AudioSessionManagerImpl: Memory Allocation Failed !!");
 
@@ -139,9 +135,10 @@ void AudioSessionManagerImpl::UnregisterCallbackCarryParam(std::shared_ptr<uintp
 {
     AUDIO_INFO_LOG("UnregisterCallback");
     CHECK_AND_RETURN_LOG((taiheSessionManager != nullptr) &&
-        (taiheSessionManager->audioSessionCallbackTaihe_ != nullptr), "Failed to retrieve session mgr instance.");
+        (taiheSessionManager->audioSessionMngr_ != nullptr), "Failed to retrieve session mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheSessionManager->mutex_);
     if (!taiheSessionManager->audioSessionCallbackTaihe_) {
-        taiheSessionManager->audioSessionCallbackTaihe_ = std::make_shared<TaiheAudioSessionCallback>(get_env());
+        taiheSessionManager->audioSessionCallbackTaihe_ = std::make_shared<TaiheAudioSessionCallback>();
         CHECK_AND_RETURN_LOG(taiheSessionManager->audioSessionCallbackTaihe_ != nullptr,
             "Memory Allocation Failed !!");
         int32_t ret = taiheSessionManager->audioSessionMngr_->UnsetAudioSessionCallback(
@@ -157,8 +154,9 @@ void AudioSessionManagerImpl::UnregisterCallbackCarryParam(std::shared_ptr<uintp
 void AudioSessionManagerImpl::UnregisterCallback(AudioSessionManagerImpl *taiheSessionManager)
 {
     AUDIO_INFO_LOG("UnregisterCallback");
-    CHECK_AND_RETURN_LOG((taiheSessionManager->audioSessionMngr_ != nullptr),
-        "Failed to retrieve session mgr  instance.");
+    CHECK_AND_RETURN_LOG((taiheSessionManager != nullptr) &&
+        (taiheSessionManager->audioSessionMngr_ != nullptr), "Failed to retrieve session mgr taihe instance.");
+    std::lock_guard<std::mutex> lock(taiheSessionManager->mutex_);
 
     int32_t ret = taiheSessionManager->audioSessionMngr_->UnsetAudioSessionCallback();
     if (ret) {
@@ -171,5 +169,4 @@ void AudioSessionManagerImpl::UnregisterCallback(AudioSessionManagerImpl *taiheS
     }
     AUDIO_ERR_LOG("Unset AudioSessionCallback Success");
 }
-
 } // namespace ANI::Audio

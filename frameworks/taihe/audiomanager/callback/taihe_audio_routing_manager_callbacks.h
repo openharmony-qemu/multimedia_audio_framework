@@ -39,7 +39,7 @@ class TaiheAudioPreferredInputDeviceChangeCallback :
     public OHOS::AudioStandard::AudioPreferredInputDeviceChangeCallback,
     public std::enable_shared_from_this<TaiheAudioPreferredInputDeviceChangeCallback> {
 public:
-    explicit TaiheAudioPreferredInputDeviceChangeCallback(ani_env *env);
+    explicit TaiheAudioPreferredInputDeviceChangeCallback();
     virtual ~TaiheAudioPreferredInputDeviceChangeCallback();
     void SaveCallbackReference(std::shared_ptr<uintptr_t> &callback);
     void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>>
@@ -55,12 +55,10 @@ private:
     };
 
     void OnJsCallbackActiveInputDeviceChange(std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb);
-    static void SafeJsCallbackActiveInputDeviceChangeWork(ani_env *env, AudioActiveInputDeviceChangeJsCallback *event);
+    static void SafeJsCallbackActiveInputDeviceChangeWork(AudioActiveInputDeviceChangeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> callback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 
@@ -68,7 +66,7 @@ class TaiheAudioPreferredOutputDeviceChangeCallback :
     public OHOS::AudioStandard::AudioPreferredOutputDeviceChangeCallback,
     public std::enable_shared_from_this<TaiheAudioPreferredOutputDeviceChangeCallback> {
 public:
-    explicit TaiheAudioPreferredOutputDeviceChangeCallback(ani_env *env);
+    explicit TaiheAudioPreferredOutputDeviceChangeCallback();
     virtual ~TaiheAudioPreferredOutputDeviceChangeCallback();
     void SaveCallbackReference(std::shared_ptr<uintptr_t> &callback);
     void OnPreferredOutputDeviceUpdated(
@@ -82,13 +80,10 @@ private:
     };
 
     void OnJsCallbackActiveOutputDeviceChange(std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb);
-    static void SafeJsCallbackActiveOutputDeviceChangeWork(ani_env *env,
-        AudioActiveOutputDeviceChangeJsCallback *event);
+    static void SafeJsCallbackActiveOutputDeviceChangeWork(AudioActiveOutputDeviceChangeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> callback_ = nullptr;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

@@ -19,9 +19,7 @@
 #include "taihe_audio_ringermode_callback.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioRingerModeCallback::sWorkerMutex_;
-TaiheAudioRingerModeCallback::TaiheAudioRingerModeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioRingerModeCallback::TaiheAudioRingerModeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioRingerModeCallback: instance create");
 }
@@ -55,17 +53,16 @@ void TaiheAudioRingerModeCallback::OnJsCallbackRingerMode(std::unique_ptr<AudioR
     AudioRingerModeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackRingModeWork(this->env_, event);
+            sharePtr->SafeJsCallbackRingModeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnRingerModeChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioRingerModeCallback::SafeJsCallbackRingModeWork(ani_env *env, AudioRingerModeJsCallback *event)
+void TaiheAudioRingerModeCallback::SafeJsCallbackRingModeWork(AudioRingerModeJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackRingerMode: no memory");
     std::shared_ptr<AudioRingerModeJsCallback> safeContext(
@@ -89,7 +86,8 @@ void TaiheAudioRingerModeCallback::SaveCallbackReference(
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioRingerModeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     if (callbackName == RINGERMODE_CALLBACK_NAME) {
         ringerModeCallback_ = cb;
     }  else {
@@ -112,6 +110,7 @@ bool TaiheAudioRingerModeCallback::IsSameCallback(std::shared_ptr<uintptr_t> &ca
 
 void TaiheAudioRingerModeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
+    CHECK_AND_RETURN_LOG(ringerModeCallback_ != nullptr, "ringerModeCallback_ is nullptr");
     if (!IsSameCallback(callback)) {
         return;
     }

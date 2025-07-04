@@ -78,6 +78,7 @@ private:
         spatializationEnabledChangeCallback_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioHeadTrackingEnabledChangeCallback>
         headTrackingEnabledChangeCallback_ = nullptr;
+    std::mutex mutex_;
 };
 } // namespace ANI::Audio
 #endif // TAIHE_AUDIO_SPATIALIZATION_MANAGER_H

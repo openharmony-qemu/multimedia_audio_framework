@@ -116,6 +116,7 @@ private:
     std::shared_ptr<OHOS::AudioStandard::AudioCapturerReadCallback> capturerReadDataCallbackTaihe_ = nullptr;
 
     OHOS::AudioStandard::SourceType sourceType_;
+    std::mutex mutex_;
 };
 } // namespace ANI::Audio
 

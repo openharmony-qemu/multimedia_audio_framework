@@ -29,7 +29,7 @@ class TaiheAudioRountingAvailableDeviceChangeCallback :
     public OHOS::AudioStandard::AudioManagerAvailableDeviceChangeCallback,
     public std::enable_shared_from_this<TaiheAudioRountingAvailableDeviceChangeCallback> {
 public:
-    explicit TaiheAudioRountingAvailableDeviceChangeCallback(ani_env *env);
+    explicit TaiheAudioRountingAvailableDeviceChangeCallback();
     virtual ~TaiheAudioRountingAvailableDeviceChangeCallback();
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback);
     void OnAvailableDeviceChange(const OHOS::AudioStandard::AudioDeviceUsage usage,
@@ -49,11 +49,9 @@ private:
     };
 
     void OnJsCallbackAvailbleDeviceChange(std::unique_ptr<AudioRountingJsCallback> &jsCb);
-    static void SafeJsCallbackAvailbleDeviceChangeWork(ani_env *env, AudioRountingJsCallback *event);
+    static void SafeJsCallbackAvailbleDeviceChangeWork(AudioRountingJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, OHOS::AudioStandard::AudioDeviceUsage>> availableDeviceChangeCbList_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;

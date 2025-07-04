@@ -26,10 +26,7 @@
 #include "taihe_audio_manager_callbacks.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioRountingAvailableDeviceChangeCallback::sWorkerMutex_;
-
-TaiheAudioRountingAvailableDeviceChangeCallback::TaiheAudioRountingAvailableDeviceChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioRountingAvailableDeviceChangeCallback::TaiheAudioRountingAvailableDeviceChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioRountingAvailableDeviceChangeCallback: instance create");
 }
@@ -51,7 +48,8 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::SaveRoutingAvailbleDeviceC
     }
 
     CHECK_AND_RETURN_LOG(callback != nullptr, "SaveCallbackReference: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     availableDeviceChangeCbList_.push_back({cb, usage});
     AUDIO_INFO_LOG("SaveRoutingAvailbleDeviceChange callback ref success, usage [%{public}d], list size [%{public}zu]",
         usage, availableDeviceChangeCbList_.size());
@@ -117,24 +115,25 @@ void TaiheAudioRountingAvailableDeviceChangeCallback::OnJsCallbackAvailbleDevice
     AudioRountingJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackAvailbleDeviceChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackAvailbleDeviceChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAvailableDeviceChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioRountingAvailableDeviceChangeCallback::SafeJsCallbackAvailbleDeviceChangeWork(ani_env *env,
+void TaiheAudioRountingAvailableDeviceChangeCallback::SafeJsCallbackAvailbleDeviceChangeWork(
     AudioRountingJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<AudioRountingJsCallback> safeContext(
         static_cast<AudioRountingJsCallback*>(event),
         [](AudioRountingJsCallback *ptr) {
-            delete ptr;
+            if (ptr != nullptr) {
+                delete ptr;
+            }
     });
     std::string request = event->callbackName;
 

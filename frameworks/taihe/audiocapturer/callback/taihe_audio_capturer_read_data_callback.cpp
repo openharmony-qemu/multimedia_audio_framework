@@ -27,10 +27,9 @@ namespace ANI::Audio {
 static bool g_taiheAudioCapturerIsNullptr = true;
 static std::mutex g_asynccallbackMutex;
 static const int32_t READ_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
-std::mutex TaiheCapturerReadDataCallback::sWorkerMutex_;
 
-TaiheCapturerReadDataCallback::TaiheCapturerReadDataCallback(ani_env *env, AudioCapturerImpl *taiheCapturer)
-    : env_(env), taiheCapturer_(taiheCapturer)
+TaiheCapturerReadDataCallback::TaiheCapturerReadDataCallback(AudioCapturerImpl *taiheCapturer)
+    : taiheCapturer_(taiheCapturer)
 {
     AUDIO_DEBUG_LOG("instance create");
     g_taiheAudioCapturerIsNullptr = false;
@@ -38,10 +37,6 @@ TaiheCapturerReadDataCallback::TaiheCapturerReadDataCallback(ani_env *env, Audio
 
 TaiheCapturerReadDataCallback::~TaiheCapturerReadDataCallback()
 {
-    if (taiheCapturer_ != nullptr) {
-        taiheCapturer_->readCallbackCv_.notify_all();
-    }
-
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
@@ -51,7 +46,8 @@ void TaiheCapturerReadDataCallback::AddCallbackReference(const std::string &call
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback failed");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     if (callbackName == READ_DATA_CALLBACK_NAME) {
         capturerReadDataCallback_ = cb;
         isCallbackInited_ = true;
@@ -66,6 +62,7 @@ void TaiheCapturerReadDataCallback::AddCallbackReference(const std::string &call
 void TaiheCapturerReadDataCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> &callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_LOG(capturerReadDataCallback_ != nullptr, "capturerReadDataCallback_ is null");
     isCallbackInited_ = false;
 
     if (callback == nullptr) {
@@ -74,7 +71,7 @@ void TaiheCapturerReadDataCallback::RemoveCallbackReference(std::shared_ptr<uint
         return;
     }
 
-    if (callback == capturerReadDataCallback_->cb_) {
+    if (TaiheParamUtils::IsSameRef(callback, capturerReadDataCallback_->cb_)) {
         AUDIO_INFO_LOG("found JS Callback, delete it!");
         capturerReadDataCallback_->cb_ = nullptr;
     }
@@ -94,13 +91,15 @@ void TaiheCapturerReadDataCallback::OnReadData(size_t length)
     CHECK_AND_RETURN_LOG(capturerReadDataCallback_ != nullptr, "Cannot find the reference of readData callback");
 
     std::unique_ptr<CapturerReadDataJsCallback> cb = std::make_unique<CapturerReadDataJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     cb->callback = capturerReadDataCallback_;
     cb->callbackName = READ_DATA_CALLBACK_NAME;
     cb->bufDesc.buffer = nullptr;
     cb->capturerTaiheObj = taiheCapturer_;
     cb->readDataCallbackPtr = this;
 
-    CHECK_AND_RETURN_LOG(taiheCapturer_ != nullptr, "Cannot find the reference to audio capturer napi");
+    CHECK_AND_RETURN_LOG(taiheCapturer_ != nullptr, "Cannot find the reference to audio capturer taihe");
+    CHECK_AND_RETURN_LOG(taiheCapturer_->audioCapturer_ != nullptr, "audioCapturer is null");
     taiheCapturer_->audioCapturer_->GetBufferDesc(cb->bufDesc);
     if (cb->bufDesc.buffer == nullptr) {
         return;
@@ -130,9 +129,9 @@ void TaiheCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr
     taiheCapturer_->isFrameCallbackDone_.store(false);
 
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackCapturerReadDataWork(this->env_, event);
+            sharePtr->SafeJsCallbackCapturerReadDataWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnReadData", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
@@ -148,9 +147,8 @@ void TaiheCapturerReadDataCallback::OnJsCapturerReadDataCallback(std::unique_ptr
     readCallbackLock.unlock();
 }
 
-void TaiheCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(ani_env *env, CapturerReadDataJsCallback *event)
+void TaiheCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(CapturerReadDataJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackCapturerReadDataWork: no memory");
     std::shared_ptr<CapturerReadDataJsCallback> safeContext(
@@ -170,7 +168,7 @@ void TaiheCapturerReadDataCallback::SafeJsCallbackCapturerReadDataWork(ani_env *
             "audioCapturer_ is null");
         event->capturerTaiheObj->audioCapturer_->Enqueue(event->bufDesc);
     } while (0);
-    CHECK_AND_RETURN_LOG(event->capturerTaiheObj != nullptr, "NapiAudioCapturer object is nullptr");
+    CHECK_AND_RETURN_LOG(event->capturerTaiheObj != nullptr, "TaiheAudioCapturer object is nullptr");
     event->capturerTaiheObj->isFrameCallbackDone_.store(true);
     event->capturerTaiheObj->readCallbackCv_.notify_all();
 }

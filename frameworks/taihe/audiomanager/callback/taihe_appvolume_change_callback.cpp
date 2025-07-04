@@ -27,9 +27,7 @@
 #include "taihe_audio_enum.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioManagerAppVolumeChangeCallback::sWorkerMutex_;
-TaiheAudioManagerAppVolumeChangeCallback::TaiheAudioManagerAppVolumeChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioManagerAppVolumeChangeCallback::TaiheAudioManagerAppVolumeChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioManagerAppVolumeChangeCallback: instance create");
 }
@@ -51,7 +49,8 @@ void TaiheAudioManagerAppVolumeChangeCallback::SaveVolumeChangeCallbackForUidRef
     }
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioManagerAppVolumeChangeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     if (callbackName == APP_VOLUME_CHANGE_CALLBACK_NAME_FOR_UID) {
         appVolumeChangeForUidList_.push_back({cb, appUid});
     }  else {
@@ -75,7 +74,8 @@ void TaiheAudioManagerAppVolumeChangeCallback::SaveSelfVolumdChangeCallbackRefer
     }
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioManagerAppVolumeChangeCallback: creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     if (callbackName == APP_VOLUME_CHANGE_CALLBACK_NAME) {
         selfAppVolumeChangeList_.push_back(cb);
     }  else {
@@ -120,7 +120,7 @@ void TaiheAudioManagerAppVolumeChangeCallback::OnAppVolumeChangedForUid(int32_t 
 void TaiheAudioManagerAppVolumeChangeCallback::OnSelfAppVolumeChanged(const OHOS::AudioStandard::VolumeEvent &event)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("OnSelfAppVolumeChanged enter");
+    AUDIO_DEBUG_LOG("enter");
     for (auto iter : selfAppVolumeChangeList_) {
         std::unique_ptr<AudioManagerAppVolumeChangeJsCallback> cb =
             std::make_unique<AudioManagerAppVolumeChangeJsCallback>();
@@ -132,10 +132,9 @@ void TaiheAudioManagerAppVolumeChangeCallback::OnSelfAppVolumeChanged(const OHOS
     }
 }
 
-void TaiheAudioManagerAppVolumeChangeCallback::SafeJsCallbackAppVolumeChangeWork(ani_env *env,
+void TaiheAudioManagerAppVolumeChangeCallback::SafeJsCallbackAppVolumeChangeWork(
     AudioManagerAppVolumeChangeJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackVolumeEvent: no memory");
     std::shared_ptr<AudioManagerAppVolumeChangeJsCallback> safeContext(
@@ -164,9 +163,9 @@ void TaiheAudioManagerAppVolumeChangeCallback::OnJsCallbackAppVolumeChange(
     AudioManagerAppVolumeChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackAppVolumeChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackAppVolumeChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAppVolumeChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});

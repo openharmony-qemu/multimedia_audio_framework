@@ -36,7 +36,7 @@ class TaiheAudioSpatializationEnabledChangeCallback :
     public OHOS::AudioStandard::AudioSpatializationEnabledChangeCallback,
     public std::enable_shared_from_this<TaiheAudioSpatializationEnabledChangeCallback> {
 public:
-    explicit TaiheAudioSpatializationEnabledChangeCallback(ani_env *env);
+    explicit TaiheAudioSpatializationEnabledChangeCallback();
     virtual ~TaiheAudioSpatializationEnabledChangeCallback();
     void SaveSpatializationEnabledChangeCallbackReference(const std::string &callbackName,
         std::shared_ptr<uintptr_t> callback);
@@ -57,12 +57,9 @@ private:
     };
 
     void OnJsCallbackSpatializationEnabled(std::unique_ptr<AudioSpatializationEnabledJsCallback> &jsCb);
-    static void SafeJsCallbackSpatializationEnabledWork(ani_env *env,
-        AudioSpatializationEnabledJsCallback *event);
+    static void SafeJsCallbackSpatializationEnabledWork(AudioSpatializationEnabledJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForAnyDeviceList_;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
@@ -74,7 +71,7 @@ class TaiheAudioCurrentSpatializationEnabledChangeCallback : public
     OHOS::AudioStandard::AudioSpatializationEnabledChangeForCurrentDeviceCallback,
     public std::enable_shared_from_this<TaiheAudioCurrentSpatializationEnabledChangeCallback> {
 public:
-    explicit TaiheAudioCurrentSpatializationEnabledChangeCallback(ani_env *env);
+    explicit TaiheAudioCurrentSpatializationEnabledChangeCallback();
     virtual ~TaiheAudioCurrentSpatializationEnabledChangeCallback();
     void SaveCurrentSpatializationEnabledChangeCallbackReference(std::shared_ptr<uintptr_t> callback);
     void RemoveCurrentSpatializationEnabledChangeCallbackReference(std::shared_ptr<uintptr_t> callback);
@@ -91,12 +88,10 @@ private:
 
     void OnJsCallbackSpatializationEnabledForCurrentDevice(
         std::unique_ptr<AudioSpatializationEnabledForCurrentDeviceJsCallback> &jsCb);
-    static void SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(ani_env *env,
+    static void SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(
         AudioSpatializationEnabledForCurrentDeviceJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> spatializationEnabledChangeCbForCurrentDeviceList_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
@@ -104,7 +99,7 @@ private:
 class TaiheAudioHeadTrackingEnabledChangeCallback : public OHOS::AudioStandard::AudioHeadTrackingEnabledChangeCallback,
     public std::enable_shared_from_this<TaiheAudioHeadTrackingEnabledChangeCallback> {
 public:
-    explicit TaiheAudioHeadTrackingEnabledChangeCallback(ani_env *env);
+    explicit TaiheAudioHeadTrackingEnabledChangeCallback();
     virtual ~TaiheAudioHeadTrackingEnabledChangeCallback();
     void SaveHeadTrackingEnabledChangeCallbackReference(const std::string &callbackName,
         std::shared_ptr<uintptr_t> callback);
@@ -125,12 +120,9 @@ private:
     };
 
     void OnJsCallbackHeadTrackingEnabled(std::unique_ptr<AudioHeadTrackingEnabledJsCallback> &jsCb);
-    static void SafeJsCallbackHeadTrackingEnabledWork(ani_env *env,
-        AudioHeadTrackingEnabledJsCallback *event);
+    static void SafeJsCallbackHeadTrackingEnabledWork(AudioHeadTrackingEnabledJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbList_;
     std::list<std::shared_ptr<AutoRef>> headTrackingEnabledChangeCbForAnyDeviceList_;
     static bool onHeadTrackingEnabledChangeFlag_;

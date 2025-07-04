@@ -19,9 +19,7 @@
 #include "taihe_audio_routing_manager_callbacks.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioPreferredInputDeviceChangeCallback::sWorkerMutex_;
-TaiheAudioPreferredInputDeviceChangeCallback::TaiheAudioPreferredInputDeviceChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioPreferredInputDeviceChangeCallback::TaiheAudioPreferredInputDeviceChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioPreferredInputDeviceChangeCallback: instance create");
 }
@@ -33,13 +31,17 @@ TaiheAudioPreferredInputDeviceChangeCallback::~TaiheAudioPreferredInputDeviceCha
 
 bool TaiheAudioPreferredInputDeviceChangeCallback::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
+    if (callback_ == nullptr) {
+        return false;
+    }
     return TaiheParamUtils::IsSameRef(callback, callback_->cb_);
 }
 
 void TaiheAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(std::shared_ptr<uintptr_t> &callback)
 {
     CHECK_AND_RETURN_LOG(callback != nullptr, "SaveCallbackReference: creating reference for callback fail");
-    callback_ = std::make_shared<AutoRef>(env_, callback);
+    callback_ = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "Memory allocation failed!!");
 
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
@@ -71,9 +73,9 @@ void TaiheAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDevice
     AudioActiveInputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackActiveInputDeviceChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackActiveInputDeviceChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnPreferredInputDeviceChangeForCapturerInfo", 0,
@@ -81,9 +83,8 @@ void TaiheAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDevice
 }
 
 void TaiheAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDeviceChangeWork(
-    ani_env *env, AudioActiveInputDeviceChangeJsCallback *event)
+    AudioActiveInputDeviceChangeJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackActiveInputDeviceChange: no memory");
     std::shared_ptr<AudioActiveInputDeviceChangeJsCallback> safeContext(
@@ -102,9 +103,7 @@ void TaiheAudioPreferredInputDeviceChangeCallback::SafeJsCallbackActiveInputDevi
     } while (0);
 }
 
-std::mutex TaiheAudioPreferredOutputDeviceChangeCallback::sWorkerMutex_;
-TaiheAudioPreferredOutputDeviceChangeCallback::TaiheAudioPreferredOutputDeviceChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioPreferredOutputDeviceChangeCallback::TaiheAudioPreferredOutputDeviceChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioPreferredOutputDeviceChangeCallback: instance create");
 }
@@ -116,13 +115,17 @@ TaiheAudioPreferredOutputDeviceChangeCallback::~TaiheAudioPreferredOutputDeviceC
 
 bool TaiheAudioPreferredOutputDeviceChangeCallback::ContainSameJsCallback(std::shared_ptr<uintptr_t> callback)
 {
+    if (callback_ == nullptr) {
+        return false;
+    }
     return TaiheParamUtils::IsSameRef(callback, callback_->cb_);
 }
 
 void TaiheAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(std::shared_ptr<uintptr_t> &callback)
 {
     CHECK_AND_RETURN_LOG(callback != nullptr, "SaveCallbackReference: creating reference for callback fail");
-    callback_ = std::make_shared<AutoRef>(env_, callback);
+    callback_ = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(callback_ != nullptr, "Memory allocation failed!!");
 
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
@@ -154,9 +157,9 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevi
     AudioActiveOutputDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackActiveOutputDeviceChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackActiveOutputDeviceChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnPreferredInputDeviceChangeForCapturerInfo", 0,
@@ -164,7 +167,7 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevi
 }
 
 void TaiheAudioPreferredOutputDeviceChangeCallback::SafeJsCallbackActiveOutputDeviceChangeWork(
-    ani_env *env, AudioActiveOutputDeviceChangeJsCallback *event)
+    AudioActiveOutputDeviceChangeJsCallback *event)
 {
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackActiveInputDeviceChange: no memory");

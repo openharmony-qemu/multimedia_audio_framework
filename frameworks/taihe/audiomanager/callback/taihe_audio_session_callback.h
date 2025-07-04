@@ -28,7 +28,7 @@ const std::string AUDIO_SESSION_CALLBACK_NAME = "audioSessionDeactivated";
 class TaiheAudioSessionCallback : public OHOS::AudioStandard::AudioSessionCallback,
     public std::enable_shared_from_this<TaiheAudioSessionCallback> {
 public:
-    explicit TaiheAudioSessionCallback(ani_env *env);
+    explicit TaiheAudioSessionCallback();
     virtual ~TaiheAudioSessionCallback();
 
     void OnAudioSessionDeactive(const OHOS::AudioStandard::AudioSessionDeactiveEvent &deactiveEvent);
@@ -42,11 +42,9 @@ private:
     };
 
     void OnJsCallbackAudioSession(std::unique_ptr<AudioSessionJsCallback> &jsCb);
-    static void SafeJsCallbackAudioSessionWork(ani_env *env, AudioSessionJsCallback *event);
+    static void SafeJsCallbackAudioSessionWork(AudioSessionJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> audioSessionJsCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 }; // namespace ANI::Audio

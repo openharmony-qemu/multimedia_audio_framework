@@ -92,7 +92,7 @@ static void UnregisterAudioCapturerCallbackTemplate(std::shared_ptr<uintptr_t> &
     if (callback != nullptr) {
         std::shared_ptr<T> cb = nullptr;
         GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
-        CHECK_AND_RETURN_LOG(cb != nullptr, "CapturerNapiCallback is null");
+        CHECK_AND_RETURN_LOG(cb != nullptr, "GetCapturerTaiheCallback is null");
         UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb, removeFunction);
         return;
     }
@@ -163,9 +163,7 @@ std::shared_ptr<AudioCapturerImpl> AudioCapturerImpl::CreateAudioCapturerNativeO
     }
 
     if (audioCapturerImpl->audioCapturer_ != nullptr && audioCapturerImpl->callbackTaihe_ == nullptr) {
-        ani_env *env = get_env();
-        CHECK_AND_RETURN_RET_LOG(env != nullptr, nullptr, "get env fail");
-        audioCapturerImpl->callbackTaihe_ = std::make_shared<TaiheAudioCapturerCallback>(env);
+        audioCapturerImpl->callbackTaihe_ = std::make_shared<TaiheAudioCapturerCallback>();
         CHECK_AND_RETURN_RET_LOG(audioCapturerImpl->callbackTaihe_ != nullptr, audioCapturerImpl, "No memory");
         int32_t ret = audioCapturerImpl->audioCapturer_->SetCapturerCallback(audioCapturerImpl->callbackTaihe_);
         CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
@@ -182,13 +180,13 @@ AudioCapturer AudioCapturerImpl::CreateAudioCapturerWrapper(OHOS::AudioStandard:
     }
     sCapturerOptions_ = std::make_unique<OHOS::AudioStandard::AudioCapturerOptions>();
     if (sCapturerOptions_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "sCapturerOptions create failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "sCapturerOptions create failed");
         return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
     }
     *sCapturerOptions_ = capturerOptions;
     std::shared_ptr<AudioCapturerImpl> impl = AudioCapturerImpl::CreateAudioCapturerNativeObject();
     if (impl == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "failed to CreateAudioCapturerNativeObject");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "failed to CreateAudioCapturerNativeObject");
         return make_holder<AudioCapturerImpl, AudioCapturer>(nullptr);
     }
     return make_holder<AudioCapturerImpl, AudioCapturer>(impl);
@@ -197,9 +195,15 @@ AudioCapturer AudioCapturerImpl::CreateAudioCapturerWrapper(OHOS::AudioStandard:
 void AudioCapturerImpl::UnregisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheCapturer->callbackTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheAudioCapturerCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerCallback>(taiheCapturer->callbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     UnregisterAudioCapturerSingletonCallbackTemplate(callback, cbName, cb);
     AUDIO_DEBUG_LOG("UnregisterCapturerCallback is successful");
 }
@@ -207,6 +211,11 @@ void AudioCapturerImpl::UnregisterCapturerCallback(std::shared_ptr<uintptr_t> &c
 void AudioCapturerImpl::UnregisterAudioCapturerDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheAudioCapturerDeviceChangeCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheAudioCapturerDeviceChangeCallback> callbackPtr,
@@ -225,6 +234,11 @@ void AudioCapturerImpl::UnregisterAudioCapturerDeviceChangeCallback(std::shared_
 void AudioCapturerImpl::UnregisterAudioCapturerInfoChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheAudioCapturerInfoChangeCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheAudioCapturerInfoChangeCallback> callbackPtr,
@@ -243,6 +257,11 @@ void AudioCapturerImpl::UnregisterAudioCapturerInfoChangeCallback(std::shared_pt
 void AudioCapturerImpl::UnregisterCapturerReadDataCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheCapturer->capturerReadDataCallbackTaihe_ != nullptr,
         "capturerReadDataCallbackTaihe_ is nullptr");
     std::shared_ptr<TaiheCapturerReadDataCallback> cb =
@@ -255,9 +274,15 @@ void AudioCapturerImpl::UnregisterCapturerReadDataCallback(std::shared_ptr<uintp
 void AudioCapturerImpl::UnregisterCapturerPeriodPositionCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheCapturer->periodPositionCbTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheCapturerPeriodPositionCallback> cb =
         std::static_pointer_cast<TaiheCapturerPeriodPositionCallback>(taiheCapturer->periodPositionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheCapturerPeriodPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheCapturerPeriodPositionCallback> callbackPtr,
@@ -273,9 +298,15 @@ void AudioCapturerImpl::UnregisterCapturerPeriodPositionCallback(std::shared_ptr
 void AudioCapturerImpl::UnregisterCapturerPositionCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheCapturer->positionCbTaihe_ != nullptr, "taiheCaptureCallback is nullptr");
     std::shared_ptr<TaiheCapturerPositionCallback> cb =
         std::static_pointer_cast<TaiheCapturerPositionCallback>(taiheCapturer->positionCbTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     std::function<int32_t(std::shared_ptr<TaiheCapturerPositionCallback> callbackPtr,
         std::shared_ptr<uintptr_t> callbackFunction)> removeFunction =
         [&taiheCapturer] (std::shared_ptr<TaiheCapturerPositionCallback> callbackPtr,
@@ -291,7 +322,7 @@ void AudioCapturerImpl::UnregisterCapturerPositionCallback(std::shared_ptr<uintp
 AudioState AudioCapturerImpl::GetState()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return AudioState::key_t::STATE_INVALID;
     }
     OHOS::AudioStandard::CapturerState state = audioCapturer_->GetStatus();
@@ -301,7 +332,7 @@ AudioState AudioCapturerImpl::GetState()
 void AudioCapturerImpl::StartSync()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
     bool ret = audioCapturer_->Start();
@@ -311,7 +342,7 @@ void AudioCapturerImpl::StartSync()
 void AudioCapturerImpl::StopSync()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
     bool ret = audioCapturer_->Stop();
@@ -321,7 +352,7 @@ void AudioCapturerImpl::StopSync()
 void AudioCapturerImpl::ReleaseSync()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return;
     }
     bool ret = audioCapturer_->Release();
@@ -332,7 +363,7 @@ int64_t AudioCapturerImpl::GetBufferSizeSync()
 {
     size_t bufferSize = 0;
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return DEFAULT_BUFFER_SIZE;
     }
     if (audioCapturer_->GetBufferSize(bufferSize) != OHOS::AudioStandard::SUCCESS) {
@@ -349,7 +380,7 @@ AudioCapturerInfo AudioCapturerImpl::GetCapturerInfoSync()
         .capturerFlags = 0
     };
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return emptyAudioCapturerInfo;
     }
     OHOS::AudioStandard::AudioCapturerInfo capturerInfo;
@@ -371,7 +402,7 @@ AudioStreamInfo AudioCapturerImpl::GetStreamInfoSync()
         .encodingType = ohos::multimedia::audio::AudioEncodingType::key_t::ENCODING_TYPE_RAW,
     };
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return emptyStreamInfo;
     }
     OHOS::AudioStandard::AudioStreamInfo streamInfo;
@@ -390,7 +421,7 @@ int64_t AudioCapturerImpl::GetAudioStreamIdSync()
 {
     uint32_t audioStreamId = 0;
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return static_cast<int64_t>(audioStreamId);
     }
     int32_t ret = audioCapturer_->GetAudioStreamId(audioStreamId);
@@ -405,7 +436,7 @@ int64_t AudioCapturerImpl::GetAudioTimeSync()
 {
     int64_t resultTime = 0;
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return resultTime;
     }
     OHOS::AudioStandard::Timestamp timestamp;
@@ -427,7 +458,7 @@ AudioTimestampInfo AudioCapturerImpl::GetAudioTimestampInfoSync()
         .timestamp = 0
     };
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return emptyTimestampInfo;
     }
 
@@ -446,7 +477,7 @@ int64_t AudioCapturerImpl::GetOverflowCountSync()
 {
     int64_t retOverflowCount = 0;
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return retOverflowCount;
     }
     uint32_t overflowCount = audioCapturer_->GetOverflowCount();
@@ -456,7 +487,7 @@ int64_t AudioCapturerImpl::GetOverflowCountSync()
 taihe::array<AudioDeviceDescriptor> AudioCapturerImpl::GetCurrentInputDevices()
 {
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return taihe::array<AudioDeviceDescriptor>(nullptr, DEFAULT_ARRAY_SIZE);
     }
     OHOS::AudioStandard::AudioDeviceDescriptor deviceInfo(OHOS::AudioStandard::AudioDeviceDescriptor::DEVICE_INFO);
@@ -483,7 +514,7 @@ AudioCapturerChangeInfo AudioCapturerImpl::GetCurrentAudioCapturerChangeInfo()
         .deviceDescriptors = taihe::array<AudioDeviceDescriptor>(emptyDeviceDescriptor),
     };
     if (audioCapturer_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioCapturer_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioCapturer_ is nullptr");
         return emptyCapturerChangeInfo;
     }
     OHOS::AudioStandard::AudioCapturerChangeInfo capturerChangeInfo;
@@ -502,11 +533,17 @@ AudioCapturerChangeInfo AudioCapturerImpl::GetCurrentAudioCapturerChangeInfo()
 void AudioCapturerImpl::RegisterCapturerCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(taiheCapturer->callbackTaihe_ != nullptr,
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "callbackTaihe_ is nullptr");
 
     std::shared_ptr<TaiheAudioCapturerCallback> cb =
         std::static_pointer_cast<TaiheAudioCapturerCallback>(taiheCapturer->callbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->SaveCallbackReference(cbName, callback);
 
     if (!cbName.compare(STATE_CHANGE_CALLBACK_NAME)) {
@@ -520,13 +557,16 @@ void AudioCapturerImpl::RegisterCapturerCallback(std::shared_ptr<uintptr_t> &cal
 void AudioCapturerImpl::RegisterAudioCapturerDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     std::shared_ptr<TaiheAudioCapturerDeviceChangeCallback> cb = nullptr;
     GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
     CHECK_AND_RETURN_LOG(cb == nullptr, "Do not register same capturer device callback!");
 
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-    cb = std::make_shared<TaiheAudioCapturerDeviceChangeCallback>(env);
+    cb = std::make_shared<TaiheAudioCapturerDeviceChangeCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
     cb->SaveCallbackReference(cbName, callback);
@@ -542,12 +582,15 @@ void AudioCapturerImpl::RegisterAudioCapturerDeviceChangeCallback(std::shared_pt
 void AudioCapturerImpl::RegisterAudioCapturerInfoChangeCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     std::shared_ptr<TaiheAudioCapturerInfoChangeCallback> cb = nullptr;
     GetCapturerTaiheCallback(callback, cbName, taiheCapturer->audioCapturerCallbacks_, &cb);
     CHECK_AND_RETURN_LOG(cb == nullptr, "Do not register same capturer info change callback!");
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-    cb = std::make_shared<TaiheAudioCapturerInfoChangeCallback>(env);
+    cb = std::make_shared<TaiheAudioCapturerInfoChangeCallback>();
 
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
@@ -564,17 +607,21 @@ void AudioCapturerImpl::RegisterAudioCapturerInfoChangeCallback(std::shared_ptr<
 void AudioCapturerImpl::RegisterCapturerReadDataCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_LOG(taiheCapturer->capturerReadDataCallbackTaihe_ == nullptr, "readData already subscribed.");
 
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-    taiheCapturer->capturerReadDataCallbackTaihe_ = std::make_shared<TaiheCapturerReadDataCallback>(env, taiheCapturer);
+    taiheCapturer->capturerReadDataCallbackTaihe_ = std::make_shared<TaiheCapturerReadDataCallback>(taiheCapturer);
     taiheCapturer->audioCapturer_->SetCaptureMode(OHOS::AudioStandard::CAPTURE_MODE_CALLBACK);
-    CHECK_AND_RETURN_LOG(taiheCapturer->capturerReadDataCallbackTaihe_ != nullptr, "readDataNapi_ is nullptr");
+    CHECK_AND_RETURN_LOG(taiheCapturer->capturerReadDataCallbackTaihe_ != nullptr, "readDataTaihe_ is nullptr");
     int32_t ret = taiheCapturer->audioCapturer_->SetCapturerReadCallback(taiheCapturer->capturerReadDataCallbackTaihe_);
     CHECK_AND_RETURN_LOG(ret == OHOS::AudioStandard::SUCCESS, "SetCapturerCallback failed");
     std::shared_ptr<TaiheCapturerReadDataCallback> cb =
         std::static_pointer_cast<TaiheCapturerReadDataCallback>(taiheCapturer->capturerReadDataCallbackTaihe_);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
     cb->AddCallbackReference(cbName, callback);
 
     AUDIO_INFO_LOG("Register Callback is successful");
@@ -583,17 +630,20 @@ void AudioCapturerImpl::RegisterCapturerReadDataCallback(std::shared_ptr<uintptr
 void AudioCapturerImpl::RegisterPeriodPositionCallback(int64_t frame, std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     CHECK_AND_RETURN_RET_LOG(frame > 0, TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
         "parameter verification failed: The param of frame is not supported"), "frame value not supported");
 
     CHECK_AND_RETURN_RET_LOG(taiheCapturer->periodPositionCbTaihe_ == nullptr,
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE),
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM),
         "periodReach already subscribed.");
 
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     std::shared_ptr<TaiheCapturerPeriodPositionCallback> cb =
-        std::make_shared<TaiheCapturerPeriodPositionCallback>(env);
+        std::make_shared<TaiheCapturerPeriodPositionCallback>();
     CHECK_AND_RETURN_RET_LOG(cb != nullptr,
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "periodPositionCbTaihe_ id nullptr");
     taiheCapturer->periodPositionCbTaihe_ = cb;
@@ -608,13 +658,16 @@ void AudioCapturerImpl::RegisterPeriodPositionCallback(int64_t frame, std::share
 void AudioCapturerImpl::RegisterPositionCallback(int64_t frame, std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioCapturerImpl *taiheCapturer)
 {
-    AUDIO_INFO_LOG("AudioCapturerImpl:RegisterPositionCallback start! %{public}lld", frame);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "taiheCapturer is nullptr");
+    std::lock_guard<std::mutex> lock(taiheCapturer->mutex_);
+    CHECK_AND_RETURN_RET_LOG(taiheCapturer->audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
+        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
+    AUDIO_INFO_LOG("AudioCapturerImpl:RegisterPositionCallback start!");
     if (frame > 0) {
-        ani_env *env = get_env();
-        CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-        taiheCapturer->positionCbTaihe_ = std::make_shared<TaiheCapturerPositionCallback>(env);
+        taiheCapturer->positionCbTaihe_ = std::make_shared<TaiheCapturerPositionCallback>();
         CHECK_AND_RETURN_RET_LOG(taiheCapturer->positionCbTaihe_ != nullptr,
-            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "positionCbNapi_ is nullptr");
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "positionCbTaihe_ is nullptr");
         int32_t ret = taiheCapturer->audioCapturer_->SetCapturerPositionCallback(frame,
             taiheCapturer->positionCbTaihe_);
         CHECK_AND_RETURN_RET_LOG(ret == OHOS::AudioStandard::SUCCESS,
@@ -622,6 +675,7 @@ void AudioCapturerImpl::RegisterPositionCallback(int64_t frame, std::shared_ptr<
 
         std::shared_ptr<TaiheCapturerPositionCallback> cb =
             std::static_pointer_cast<TaiheCapturerPositionCallback>(taiheCapturer->positionCbTaihe_);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "cb is nullptr");
         cb->SaveCallbackReference(cbName, callback);
     } else {
         AUDIO_ERR_LOG("AudioCapturerImpl: Mark Position value not supported!!");
@@ -632,64 +686,48 @@ void AudioCapturerImpl::RegisterPositionCallback(int64_t frame, std::shared_ptr<
 
 void AudioCapturerImpl::OnAudioInterrupt(callback_view<void(InterruptEvent const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerCallback(cacheCallback, AUDIO_INTERRUPT_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnStateChange(callback_view<void(AudioState)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerCallback(cacheCallback, STATE_CHANGE_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnInputDeviceChange(callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAudioCapturerDeviceChangeCallback(cacheCallback, INPUTDEVICE_CHANGE_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnAudioCapturerChange(callback_view<void(AudioCapturerChangeInfo const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAudioCapturerInfoChangeCallback(cacheCallback, AUDIO_CAPTURER_CHANGE_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnReadData(callback_view<void(array_view<uint8_t>)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterCapturerReadDataCallback(cacheCallback, READ_DATA_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnPeriodReach(int64_t frame, callback_view<void(int64_t)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPeriodPositionCallback(frame, cacheCallback, PERIOD_REACH_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OnMarkReach(int64_t frame, callback_view<void(int64_t)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioCapturer_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPositionCallback(frame, cacheCallback, MARK_REACH_CALLBACK_NAME, this);
 }
 
 void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -699,8 +737,6 @@ void AudioCapturerImpl::OffStateChange(optional_view<callback<void(AudioState)>>
 
 void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptEvent const&)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -710,8 +746,6 @@ void AudioCapturerImpl::OffAudioInterrupt(optional_view<callback<void(InterruptE
 
 void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -721,8 +755,6 @@ void AudioCapturerImpl::OffInputDeviceChange(optional_view<callback<void(array_v
 
 void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(AudioCapturerChangeInfo const&)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -732,8 +764,6 @@ void AudioCapturerImpl::OffAudioCapturerChange(optional_view<callback<void(Audio
 
 void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8_t>)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -743,8 +773,6 @@ void AudioCapturerImpl::OffReadData(optional_view<callback<void(array_view<uint8
 
 void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -754,8 +782,6 @@ void AudioCapturerImpl::OffPeriodReach(optional_view<callback<void(int64_t)>> ca
 
 void AudioCapturerImpl::OffMarkReach(optional_view<callback<void(int64_t)>> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioCapturer_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERROR_INVALID_PARAM), "audioCapturer_ is nullptr");
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());

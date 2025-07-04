@@ -33,7 +33,7 @@ const std::string APP_VOLUME_CHANGE_CALLBACK_NAME = "appVolumeChange";
 class TaiheAudioManagerAppVolumeChangeCallback : public OHOS::AudioStandard::AudioManagerAppVolumeChangeCallback,
     public std::enable_shared_from_this<TaiheAudioManagerAppVolumeChangeCallback> {
 public:
-    explicit TaiheAudioManagerAppVolumeChangeCallback(ani_env *env);
+    explicit TaiheAudioManagerAppVolumeChangeCallback();
     virtual ~TaiheAudioManagerAppVolumeChangeCallback();
     void SaveVolumeChangeCallbackForUidReference(const std::string &callbackName,
         std::shared_ptr<uintptr_t> &callback, int32_t appUid);
@@ -57,13 +57,11 @@ private:
     };
 
     void OnJsCallbackAppVolumeChange(std::unique_ptr<AudioManagerAppVolumeChangeJsCallback> &jsCb);
-    static void SafeJsCallbackAppVolumeChangeWork(ani_env *env, AudioManagerAppVolumeChangeJsCallback *event);
+    static void SafeJsCallbackAppVolumeChangeWork(AudioManagerAppVolumeChangeJsCallback *event);
 
     std::mutex mutex_;
-    ani_env *env_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, int32_t>> appVolumeChangeForUidList_;
     std::list<std::shared_ptr<AutoRef>> selfAppVolumeChangeList_;
-    static std::mutex sWorkerMutex_;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };
 } // namespace ANI::Audio

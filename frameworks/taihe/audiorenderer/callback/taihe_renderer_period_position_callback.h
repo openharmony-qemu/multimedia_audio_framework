@@ -27,14 +27,14 @@ using namespace ohos::multimedia::audio;
 class TaiheRendererPeriodPositionCallback : public OHOS::AudioStandard::RendererPeriodPositionCallback,
     public TaiheAudioRendererCallbackInner, public std::enable_shared_from_this<TaiheRendererPeriodPositionCallback> {
 public:
-    explicit TaiheRendererPeriodPositionCallback(ani_env *env);
+    explicit TaiheRendererPeriodPositionCallback();
     ~TaiheRendererPeriodPositionCallback() override;
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     void RemoveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback) override;
     bool CheckIfTargetCallbackName(const std::string &callbackName) override;
     void OnPeriodReached(const int64_t &frameNumber) override;
 protected:
-    std::shared_ptr<AutoRef> &GetCallback(const std::string &callbackName) override;
+    std::shared_ptr<AutoRef> GetCallback(const std::string &callbackName) override;
 
 private:
     struct RendererPeriodPositionJsCallback {
@@ -43,10 +43,8 @@ private:
         int64_t position = 0;
     };
     void OnJsRendererPeriodPositionCallback(std::unique_ptr<RendererPeriodPositionJsCallback> &jsCb);
-    static void SafeJsCallbackPeriodPositionWork(ani_env *env, RendererPeriodPositionJsCallback *event);
+    static void SafeJsCallbackPeriodPositionWork(RendererPeriodPositionJsCallback *event);
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> renderPeriodPositionCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

@@ -50,6 +50,7 @@ private:
 
     OHOS::AudioStandard::AudioSessionManager *audioSessionMngr_;
     std::shared_ptr<OHOS::AudioStandard::AudioSessionCallback> audioSessionCallbackTaihe_ = nullptr;
+    std::mutex mutex_;
 };
 }  // namespace ANI::Audio
 #endif // TAIHE_AUDIO_SESSION_MANAGER_H

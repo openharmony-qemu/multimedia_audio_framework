@@ -23,10 +23,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioRendererDeviceChangeCallback::sWorkerMutex_;
-std::mutex TaiheAudioRendererOutputDeviceChangeWithInfoCallback::sWorkerMutex_;
-TaiheAudioRendererDeviceChangeCallback::TaiheAudioRendererDeviceChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioRendererDeviceChangeCallback::TaiheAudioRendererDeviceChangeCallback()
 {
     AUDIO_DEBUG_LOG("instance create");
 }
@@ -35,60 +32,56 @@ TaiheAudioRendererDeviceChangeCallback::~TaiheAudioRendererDeviceChangeCallback(
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
-void TaiheAudioRendererDeviceChangeCallback::SaveCallbackReference(
-    const std::string &callbackName, std::shared_ptr<uintptr_t> callback)
+void TaiheAudioRendererDeviceChangeCallback::AddCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-        CHECK_AND_RETURN_LOG(callback == (*autoRef)->cb_, "callback already exits");
+        CHECK_AND_RETURN_LOG(!(TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_)), "callback already exits");
     }
-    // create function that will operate while save callback reference success.
-    std::function<void(std::shared_ptr<AutoRef> generatedCallback)> successed =
-        [this](std::shared_ptr<AutoRef> generatedCallback) {
-        callbacks_.push_back(generatedCallback);
-    };
-    TaiheAudioRendererCallbackInner::SaveCallbackReferenceInner(callbackName, callback, successed);
+
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    callbacks_.push_back(cb);
+
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
     CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    AUDIO_DEBUG_LOG("AddAudioRendererDeviceChangeCallback sucessful");
 }
 
-void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(const std::string &callbackName,
-    std::shared_ptr<uintptr_t> callback)
+void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
 
     if (callback == nullptr) {
+        for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+            if (*autoRef == nullptr) {
+                AUDIO_ERR_LOG("RemoveCallbackReference: nullptr element found in callbacks_");
+                continue;
+            }
+            (*autoRef)->cb_ = nullptr;
+        }
         callbacks_.clear();
         AUDIO_INFO_LOG("Remove all JS Callback");
         return;
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
+        if (*autoRef == nullptr) {
+            AUDIO_ERR_LOG("RemoveCallbackReference: nullptr element found in callbacks_");
+            continue;
+        }
         if (TaiheParamUtils::IsSameRef(callback, ((*autoRef)->cb_))) {
             isEquals = true;
         }
-
         if (isEquals == true) {
             AUDIO_INFO_LOG("found JS Callback, delete it!");
             callbacks_.remove(*autoRef);
+            (*autoRef)->cb_ = nullptr;
             return;
         }
     }
-
     AUDIO_INFO_LOG("RemoveCallbackReference success");
-}
-
-std::shared_ptr<AutoRef> &TaiheAudioRendererDeviceChangeCallback::GetCallback(const std::string &callbackName)
-{
-    std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
-    return callbackCur;
-}
-
-bool TaiheAudioRendererDeviceChangeCallback::CheckIfTargetCallbackName(const std::string &callbackName)
-{
-    return (callbackName == DEVICECHANGE_CALLBACK_NAME);
 }
 
 void TaiheAudioRendererDeviceChangeCallback::RemoveAllCallbacks()
@@ -135,18 +128,17 @@ void TaiheAudioRendererDeviceChangeCallback::OnJsCallbackRendererDeviceInfo(
     AudioRendererDeviceChangeJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackRendererDeviceInfoWork(this->env_, event);
+            sharePtr->SafeJsCallbackRendererDeviceInfoWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnOutputDeviceChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWork(ani_env *env,
+void TaiheAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWork(
     AudioRendererDeviceChangeJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<AudioRendererDeviceChangeJsCallback> safeContext(
@@ -164,8 +156,7 @@ void TaiheAudioRendererDeviceChangeCallback::SafeJsCallbackRendererDeviceInfoWor
     } while (0);
 }
 
-TaiheAudioRendererOutputDeviceChangeWithInfoCallback::TaiheAudioRendererOutputDeviceChangeWithInfoCallback(ani_env *env)
-    : env_(env)
+TaiheAudioRendererOutputDeviceChangeWithInfoCallback::TaiheAudioRendererOutputDeviceChangeWithInfoCallback()
 {
     AUDIO_INFO_LOG("instance create");
 }
@@ -174,16 +165,16 @@ TaiheAudioRendererOutputDeviceChangeWithInfoCallback::~TaiheAudioRendererOutputD
     AUDIO_DEBUG_LOG("instance destroy");
 }
 
-void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SaveCallbackReference(
-    const std::string &callbackName, std::shared_ptr<uintptr_t> callback)
+void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-        CHECK_AND_RETURN_LOG(callback == (*autoRef)->cb_, "callback already exits");
+        CHECK_AND_RETURN_LOG((*autoRef) != nullptr, "callback reference is null");
+        CHECK_AND_RETURN_LOG(TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_), "callback already exits");
     }
-
     CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback fail");
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     callbacks_.push_back(cb);
     AUDIO_INFO_LOG("successful");
     std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
@@ -191,24 +182,7 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SaveCallbackReference
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
-std::shared_ptr<AutoRef> &TaiheAudioRendererOutputDeviceChangeWithInfoCallback::GetCallback(
-    const std::string &callbackName)
-{
-    std::shared_ptr<AutoRef> callbackCur = std::make_shared<AutoRef>(env_, nullptr);
-    return callbackCur;
-}
-
-bool TaiheAudioRendererOutputDeviceChangeWithInfoCallback::CheckIfTargetCallbackName(
-    const std::string &callbackName)
-{
-    if (callbackName == OUTPUT_DEVICECHANGE_WITH_INFO) {
-        return true;
-    }
-    return false;
-}
-
-void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(const std::string &callbackName,
-    std::shared_ptr<uintptr_t> callback)
+void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     bool isEquals = false;
@@ -220,7 +194,8 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReferen
     }
 
     for (auto autoRef = callbacks_.begin(); autoRef != callbacks_.end(); ++autoRef) {
-        if (callback == (*autoRef)->cb_) {
+        CHECK_AND_RETURN_LOG((*autoRef) != nullptr, "callback reference is null");
+        if (TaiheParamUtils::IsSameRef(callback, (*autoRef)->cb_)) {
             isEquals = true;
         }
 
@@ -272,19 +247,18 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::OnJsCallbackOutputDev
     AudioRendererOutputDeviceChangeWithInfoJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackOutputDeviceInfoWork(this->env_, event);
+            sharePtr->SafeJsCallbackOutputDeviceInfoWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnOutputDeviceChangeWithInfo", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE,
         {});
 }
 
-void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputDeviceInfoWork(ani_env *env,
+void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::SafeJsCallbackOutputDeviceInfoWork(
     AudioRendererOutputDeviceChangeWithInfoJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<AudioRendererOutputDeviceChangeWithInfoJsCallback> safeContext(

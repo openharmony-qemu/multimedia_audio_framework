@@ -50,7 +50,7 @@ void AudioManagerImpl::SetExtraParametersSync(string_view mainKey, map_view<stri
     std::vector<std::pair<std::string, std::string>> subKvpairs;
     int32_t result = TaiheParamUtils::GetExtraParametersSubKV(subKvpairs, kvpairs);
     if (result != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "get sub key and value failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INPUT_INVALID, "get sub key and value failed");
         return;
     }
     if (key.empty()) {
@@ -64,7 +64,7 @@ void AudioManagerImpl::SetExtraParametersSync(string_view mainKey, map_view<stri
         return;
     }
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return;
     }
     int32_t intValue = audioMngr_->SetExtraParameters(key, subKvpairs);
@@ -99,7 +99,7 @@ map<string, string> AudioManagerImpl::GetExtraParametersSync(string_view mainKey
         return kvpairs;
     }
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return kvpairs;
     }
     std::vector<std::pair<std::string, std::string>> subKvpairs;
@@ -118,7 +118,7 @@ void AudioManagerImpl::SetAudioSceneSync(AudioScene scene)
 {
     int32_t sceneInner = scene.get_value();
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return;
     }
     int32_t intValue = audioMngr_->SetAudioScene(static_cast<OHOS::AudioStandard::AudioScene>(sceneInner));
@@ -131,7 +131,7 @@ void AudioManagerImpl::SetAudioSceneSync(AudioScene scene)
 void AudioManagerImpl::DisableSafeMediaVolumeSync()
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return;
     }
     int32_t intValue = audioMngr_->DisableSafeMediaVolume();
@@ -191,7 +191,7 @@ AudioManager GetAudioManager()
 {
     std::shared_ptr<AudioManagerImpl> audioMngrImpl = std::make_shared<AudioManagerImpl>();
     if (audioMngrImpl == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioMngrImpl is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngrImpl is nullptr");
         return make_holder<AudioManagerImpl, AudioManager>(nullptr);
     }
     audioMngrImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();

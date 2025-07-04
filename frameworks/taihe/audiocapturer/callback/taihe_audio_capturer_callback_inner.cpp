@@ -27,12 +27,11 @@ void TaiheAudioCapturerCallbackInner::SaveCallbackReferenceInner(const std::stri
     CHECK_AND_RETURN_LOG(CheckIfTargetCallbackName(callbackName),
         "TaiheAudioCapturerCallbackInner-> SaveCallbackReferenceInner Unknown callback type: %{public}s",
         callbackName.c_str());
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     CHECK_AND_RETURN_LOG(callback != nullptr, "Creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env, callback);
     if (successed != nullptr) {
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+        CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
         successed(cb);
     }
 }
@@ -44,7 +43,7 @@ bool TaiheAudioCapturerCallbackInner::ContainSameJsCallbackInner(const std::stri
         "TaiheAudioCapturerCallbackInner->ContainSameJsCallbackInner Unknown callback type: %{public}s",
         callbackName.c_str());
 
-    std::shared_ptr<AutoRef> &callbackCur = GetCallback(callbackName);
+    std::shared_ptr<AutoRef> callbackCur = GetCallback(callbackName);
     CHECK_AND_RETURN_RET_LOG(callbackCur != nullptr, false, "callbackCur is null");
     CHECK_AND_RETURN_RET_LOG(callbackCur->cb_ != nullptr, false, "callbackCur.cb_ is null");
     return TaiheParamUtils::IsSameRef(callback, callbackCur->cb_);
@@ -56,7 +55,7 @@ void TaiheAudioCapturerCallbackInner::RemoveCallbackReferenceInner(
     CHECK_AND_RETURN_LOG(CheckIfTargetCallbackName(callbackName),
         "TaiheAudioCapturerCallbackInner->RemoveCallbackReferenceInner Unknown callback type: %{public}s",
         callbackName.c_str());
-    std::shared_ptr<AutoRef> &callbackCur = GetCallback(callbackName);
+    std::shared_ptr<AutoRef> callbackCur = GetCallback(callbackName);
     if (callback == nullptr) {
         callbackCur = nullptr;
         if (successed != nullptr) {

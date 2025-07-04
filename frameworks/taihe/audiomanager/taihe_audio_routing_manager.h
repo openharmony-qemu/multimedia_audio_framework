@@ -113,6 +113,7 @@ private:
 
     std::mutex preferredOutputDeviceMutex_;
     std::mutex preferredInputDeviceMutex_;
+    std::mutex mutex_;
 
     OHOS::AudioStandard::AudioSystemManager *audioMngr_;
     OHOS::AudioStandard::AudioRoutingManager *audioRoutingMngr_ = nullptr;

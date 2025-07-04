@@ -25,9 +25,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioCapturerCallback::sWorkerMutex_;
-TaiheAudioCapturerCallback::TaiheAudioCapturerCallback(ani_env *env)
-    : env_(env)
+TaiheAudioCapturerCallback::TaiheAudioCapturerCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioCapturerCallback: instance create");
 }
@@ -59,7 +57,7 @@ void TaiheAudioCapturerCallback::SaveCallbackReference(const std::string &callba
     mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
 }
 
-std::shared_ptr<AutoRef> &TaiheAudioCapturerCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheAudioCapturerCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
 
@@ -125,17 +123,16 @@ void TaiheAudioCapturerCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioCapt
     AudioCapturerJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackInterruptWork(this->env_, event);
+            sharePtr->SafeJsCallbackInterruptWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAudioInterrupt", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioCapturerCallback::SafeJsCallbackInterruptWork(ani_env *env, AudioCapturerJsCallback *event)
+void TaiheAudioCapturerCallback::SafeJsCallbackInterruptWork(AudioCapturerJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<AudioCapturerJsCallback> safeContext(
@@ -160,7 +157,7 @@ void TaiheAudioCapturerCallback::SafeJsCallbackInterruptWork(ani_env *env, Audio
 void TaiheAudioCapturerCallback::OnStateChange(const OHOS::AudioStandard::CapturerState state)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    AUDIO_DEBUG_LOG("NapiAudioCapturerOnStateChange is called,Callback: state: %{public}d", state);
+    AUDIO_DEBUG_LOG("TaiheAudioCapturerOnStateChange is called,Callback: state: %{public}d", state);
     CHECK_AND_RETURN_LOG(stateChangeCallback_ != nullptr, "Cannot find the reference of stateChange callback");
 
     std::unique_ptr<AudioCapturerJsCallback> cb = std::make_unique<AudioCapturerJsCallback>();
@@ -182,17 +179,16 @@ void TaiheAudioCapturerCallback::OnJsCallbackStateChange(std::unique_ptr<AudioCa
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "OnJsCallbackStateChange: event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackStateChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackStateChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnStateChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioCapturerCallback::SafeJsCallbackStateChangeWork(ani_env *env, AudioCapturerJsCallback *event)
+void TaiheAudioCapturerCallback::SafeJsCallbackStateChangeWork(AudioCapturerJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackStateChangeWork: no memory");
     std::shared_ptr<AudioCapturerJsCallback> safeContext(

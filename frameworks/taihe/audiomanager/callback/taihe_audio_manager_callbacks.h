@@ -36,7 +36,7 @@ class TaiheAudioManagerCallback : public OHOS::AudioStandard::AudioManagerDevice
 public:
     static bool IsSameCallback(std::shared_ptr<uintptr_t> &callback, std::shared_ptr<uintptr_t> &listCallback);
 
-    explicit TaiheAudioManagerCallback(ani_env *env);
+    explicit TaiheAudioManagerCallback();
     virtual ~TaiheAudioManagerCallback();
     void OnDeviceChange(const OHOS::AudioStandard::DeviceChangeAction &deviceChangeAction) override;
     void OnMicrophoneBlocked(const OHOS::AudioStandard::MicrophoneBlockedInfo &microphoneBlockedInfo) override;
@@ -60,13 +60,11 @@ private:
     };
 
     void OnJsCallbackMicrophoneBlocked(std::unique_ptr<AudioManagerJsCallback> &jsCb);
-    static void SafeJsCallbackMicrophoneBlockedWork(ani_env *env, AudioManagerJsCallback *event);
+    static void SafeJsCallbackMicrophoneBlockedWork(AudioManagerJsCallback *event);
     void OnJsCallbackDeviceChange(std::unique_ptr<AudioManagerJsCallback> &jsCb);
-    static void SafeJsCallbackDeviceChangeWork(ani_env *env, AudioManagerJsCallback *event);
+    static void SafeJsCallbackDeviceChangeWork(AudioManagerJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
     std::shared_ptr<AutoRef> deviceChangeCallback_ = nullptr;
     std::shared_ptr<AutoRef> onMicroPhoneBlockedCallback_ = nullptr;
     std::list<std::pair<std::shared_ptr<AutoRef>, OHOS::AudioStandard::DeviceFlag>> audioManagerDeviceChangeCbList_;

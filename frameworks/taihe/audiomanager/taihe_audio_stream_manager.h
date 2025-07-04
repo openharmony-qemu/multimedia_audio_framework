@@ -49,9 +49,9 @@ private:
         AudioStreamManagerImpl *taiheStreamManager);
     static void RegisterCapturerStateChangeCallback(std::shared_ptr<uintptr_t> &callback, const std::string &cbName,
         AudioStreamManagerImpl *taiheStreamManager);
-    static void UnregisterRendererStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    static void UnregisterRendererChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioStreamManagerImpl *taiheStreamManager);
-    static void UnregisterCapturerStateChangeCallback(std::shared_ptr<uintptr_t> &callback,
+    static void UnregisterCapturerChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioStreamManagerImpl *taiheStreamManager);
 
     OHOS::AudioStandard::AudioStreamManager *audioStreamMngr_;
@@ -59,6 +59,7 @@ private:
 
     std::shared_ptr<OHOS::AudioStandard::AudioRendererStateChangeCallback> rendererStateCallback_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioCapturerStateChangeCallback> capturerStateCallback_ = nullptr;
+    std::mutex mutex_;
 };
 } // namespace ANI::Audio
 

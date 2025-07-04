@@ -51,7 +51,7 @@ AudioRoutingManager AudioRoutingManagerImpl::CreateRoutingManagerWrapper()
         audioRoutingMgrImpl->audioRoutingMngr_ = OHOS::AudioStandard::AudioRoutingManager::GetInstance();
         return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(audioRoutingMgrImpl);
     }
-    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "audioRoutingMgrImpl is nullptr");
+    TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMgrImpl is nullptr");
     return make_holder<AudioRoutingManagerImpl, AudioRoutingManager>(nullptr);
 }
 
@@ -68,7 +68,7 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetAvailableDevices(Device
         static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
 
     if (audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioRoutingMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioRoutingMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> availableDescs =
@@ -80,16 +80,11 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetExcludedDevices(DeviceU
 {
     std::vector<AudioDeviceDescriptor> emptyResult;
     int32_t deviceUsage = usage.get_value();
-    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
-        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
-        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
-        return array<AudioDeviceDescriptor>(emptyResult);
-    }
     OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
         static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
 
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> excludedDevices =
@@ -100,11 +95,6 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetExcludedDevices(DeviceU
 void AudioRoutingManagerImpl::ExcludeOutputDevicesSync(DeviceUsage usage, array_view<AudioDeviceDescriptor> devices)
 {
     int32_t deviceUsage = usage.get_value();
-    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
-        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
-        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
-        return;
-    }
     OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
         static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
@@ -128,11 +118,6 @@ void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsageAndDevices(DeviceUs
     array_view<AudioDeviceDescriptor> devices)
 {
     int32_t deviceUsage = usage.get_value();
-    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
-        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
-        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
-        return;
-    }
     OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
         static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
@@ -155,11 +140,6 @@ void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsageAndDevices(DeviceUs
 void AudioRoutingManagerImpl::UnexcludeOutputDevicesWithUsage(DeviceUsage usage)
 {
     int32_t deviceUsage = usage.get_value();
-    if (!TaiheAudioEnum::IsLegalDeviceUsage(deviceUsage)) {
-        AUDIO_ERR_LOG("Invalid deviceUsage type: %{public}d", deviceUsage);
-        TaiheAudioError::ThrowError(TAIHE_ERROR_INVALID_PARAM);
-        return;
-    }
     OHOS::AudioStandard::AudioDeviceUsage audioDevUsage =
         static_cast<OHOS::AudioStandard::AudioDeviceUsage>(deviceUsage);
 
@@ -183,12 +163,12 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceFo
     OHOS::AudioStandard::AudioRendererInfo innerRendererInfo;
     if (TaiheParamUtils::GetRendererInfo(innerRendererInfo, rendererInfo) != AUDIO_OK) {
         TaiheAudioError::ThrowError(TAIHE_ERR_INPUT_INVALID,
-            "incorrect parameter types: The type of rendererInfo must be interface AudioRendererInfo");
+            "Incorrect parameter types: The type of rendererInfo must be interface AudioRendererInfo");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     if (innerRendererInfo.streamUsage == OHOS::AudioStandard::StreamUsage::STREAM_USAGE_INVALID) {
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of usage invalid");
+            "Parameter verification failed. Your usage in AudioRendererInfo is invalid.");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
 
@@ -213,7 +193,7 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceFor
     if (TaiheParamUtils::GetAudioCapturerInfo(innerCapturerInfo, capturerInfo) != AUDIO_OK ||
         innerCapturerInfo.sourceType == OHOS::AudioStandard::SourceType::SOURCE_TYPE_INVALID) {
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of capturerInfo must be interface AudioCapturerInfo");
+            "Parameter verification failed. You source in AudioCapturerInfo is invalid.");
         AUDIO_ERR_LOG("sourceType invalid");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
@@ -287,11 +267,12 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredInputDeviceByF
     OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> audioCapturerFilter;
     int32_t status = TaiheParamUtils::GetAudioCapturerFilter(audioCapturerFilter, filter);
     if (status != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "get GetAudioCapturerFilter failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "Parameter verification failed. AudioCapturerFilter abnormal.");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
@@ -307,11 +288,12 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetPreferredOutputDeviceBy
     bool bArgTransFlag = true;
     int32_t status = TaiheParamUtils::GetAudioRendererFilter(audioRendererFilter, bArgTransFlag, filter);
     if (status != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "get AudioRendererFilter failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "Parameter verification failed. Your usage in AudioRendererFilter is invalid.");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors =
@@ -325,7 +307,8 @@ void AudioRoutingManagerImpl::SelectInputDeviceByFilterSync(AudioCapturerFilter 
     OHOS::sptr<OHOS::AudioStandard::AudioCapturerFilter> audioCapturerFilter;
     int32_t status = TaiheParamUtils::GetAudioCapturerFilter(audioCapturerFilter, filter);
     if (status != AUDIO_OK) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "select input device by filter failed");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
+            "Parameter verification failed. AudioCapturerFilter abnormal.");
         return;
     }
     std::vector<std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor>> deviceDescriptors;
@@ -385,7 +368,7 @@ array<AudioDeviceDescriptor> AudioRoutingManagerImpl::GetDevicesSync(DeviceFlag 
     if (!TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(deviceFlag)) {
         AUDIO_ERR_LOG("deviceFlag invalid");
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERROR_INVALID_PARAM,
-            "parameter verification failed: The param of deviceFlag must be enum DeviceFlag");
+            "Parameter verification failed: The param of deviceFlag must be enum DeviceFlag");
         return array<AudioDeviceDescriptor>(emptyResult);
     }
 
@@ -407,7 +390,7 @@ void AudioRoutingManagerImpl::SetCommunicationDeviceSync(CommunicationDeviceType
 {
     if (!TaiheAudioEnum::IsLegalInputArgumentCommunicationDeviceType(deviceType)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
+            "Parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
         AUDIO_ERR_LOG("get deviceType failed");
         return;
     }
@@ -429,7 +412,7 @@ bool AudioRoutingManagerImpl::IsCommunicationDeviceActiveSync(CommunicationDevic
 {
     if (!TaiheAudioEnum::IsLegalInputArgumentActiveDeviceType(deviceType)) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
+            "Parameter verification failed: The param of deviceType must be enum CommunicationDeviceType");
         AUDIO_ERR_LOG("get deviceType failed");
         return false;
     }
@@ -449,12 +432,6 @@ bool AudioRoutingManagerImpl::IsCommunicationDeviceActiveSync(CommunicationDevic
 void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(AudioCapturerInfo const &capturerInfo,
     callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
-    if (audioMngr_ == nullptr || audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
-            "AudioRoutingManagerImpl::Failed to retrieve stream mgr napi instance.");
-        return;
-    }
-
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPreferredInputDeviceChangeCallback(capturerInfo, cacheCallback, PREFERRED_INPUT_DEVICE_CALLBACK_NAME, this);
 }
@@ -462,9 +439,11 @@ void AudioRoutingManagerImpl::OnPreferredInputDeviceChangeForCapturerInfo(AudioC
 void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCapturerInfo const &capturerInfo,
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
     CHECK_AND_RETURN_LOG(GetTaihePrefInputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");
 
@@ -473,10 +452,10 @@ void AudioRoutingManagerImpl::RegisterPreferredInputDeviceChangeCallback(AudioCa
 
     CHECK_AND_RETURN_RET_LOG(captureInfo.sourceType != OHOS::AudioStandard::SourceType::SOURCE_TYPE_INVALID,
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of sourceType invalid"), "invalid sourceType");
+        "Parameter verification failed. Your source in AudioCapturerInfo is invalid."), "invalid sourceType");
 
     std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb =
-        std::make_shared<TaiheAudioPreferredInputDeviceChangeCallback>(env);
+        std::make_shared<TaiheAudioPreferredInputDeviceChangeCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
     cb->SaveCallbackReference(callback);
@@ -499,8 +478,6 @@ void AudioRoutingManagerImpl::AddPreferredInputDeviceChangeCallback(AudioRouting
 void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
     optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "Failed to retrieve audio mgr napi instance.");
-
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -511,8 +488,6 @@ void AudioRoutingManagerImpl::OffPreferredInputDeviceChangeForCapturerInfo(
 void AudioRoutingManagerImpl::OffPreferOutputDeviceChangeForRendererInfo(
     optional_view<callback<void(array_view<AudioDeviceDescriptor>)>> callback)
 {
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "Failed to retrieve audio mgr napi instance.");
-
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -523,6 +498,11 @@ void AudioRoutingManagerImpl::OffPreferOutputDeviceChangeForRendererInfo(
 void AudioRoutingManagerImpl::UnregisterPreferredInputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
     if (callback != nullptr) {
         std::shared_ptr<TaiheAudioPreferredInputDeviceChangeCallback> cb =
             GetTaihePrefInputDeviceChangeCb(callback, audioRoutingManagerImpl);
@@ -539,6 +519,11 @@ void AudioRoutingManagerImpl::UnregisterPreferredInputDeviceChangeCallback(std::
 void AudioRoutingManagerImpl::UnregisterPreferredOutputDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
     if (callback != nullptr) {
         std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb =
             GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl);
@@ -604,12 +589,6 @@ void AudioRoutingManagerImpl::RemoveAllPrefOutputDeviceChangeCallback(AudioRouti
 
 void AudioRoutingManagerImpl::OnMicBlockStatusChanged(callback_view<void(DeviceBlockStatusInfo const&)> callback)
 {
-    if (audioMngr_ == nullptr || audioRoutingMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE,
-            "AudioRoutingManagerImpl::Failed to retrieve stream mgr napi instance.");
-        return;
-    }
-
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterMicrophoneBlockedCallback(cacheCallback, MICROPHONE_BLOCKED_CALLBACK_NAME, this);
 }
@@ -617,10 +596,14 @@ void AudioRoutingManagerImpl::OnMicBlockStatusChanged(callback_view<void(DeviceB
 void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->mutex_);
     if (!audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_) {
-        audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
+        audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>();
     }
 
     int32_t ret = audioRoutingManagerImpl->audioMngr_->SetMicrophoneBlockedCallback(
@@ -635,8 +618,6 @@ void AudioRoutingManagerImpl::RegisterMicrophoneBlockedCallback(std::shared_ptr<
 void AudioRoutingManagerImpl::OffMicBlockStatusChanged(
     optional_view<callback<void(DeviceBlockStatusInfo const&)>> callback)
 {
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "Failed to retrieve audio mgr napi instance.");
-
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -647,6 +628,12 @@ void AudioRoutingManagerImpl::OffMicBlockStatusChanged(
 void AudioRoutingManagerImpl::UnregisterMicrophoneBlockedCallback(std::shared_ptr<uintptr_t> &callback,
     AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->mutex_);
     if (audioRoutingManagerImpl->microphoneBlockedCallbackTaihe_ != nullptr) {
         std::shared_ptr<TaiheAudioManagerCallback> cb =
             std::static_pointer_cast<TaiheAudioManagerCallback>(
@@ -668,8 +655,6 @@ void AudioRoutingManagerImpl::UnregisterMicrophoneBlockedCallback(std::shared_pt
 
 void AudioRoutingManagerImpl::OffDeviceChange(optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "Failed to retrieve audio mgr napi instance.");
-
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -680,6 +665,12 @@ void AudioRoutingManagerImpl::OffDeviceChange(optional_view<callback<void(Device
 void AudioRoutingManagerImpl::UnregisterDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->mutex_);
     if (audioRoutingManagerImpl->deviceChangeCallbackTaihe_ != nullptr) {
         std::shared_ptr<TaiheAudioManagerCallback> cb =
             std::static_pointer_cast<TaiheAudioManagerCallback>(audioRoutingManagerImpl->deviceChangeCallbackTaihe_);
@@ -703,8 +694,6 @@ void AudioRoutingManagerImpl::UnregisterDeviceChangeCallback(std::shared_ptr<uin
 void AudioRoutingManagerImpl::OffAvailableDeviceChange(
     optional_view<callback<void(DeviceChangeAction const&)>> callback)
 {
-    CHECK_AND_RETURN_LOG(audioMngr_ != nullptr, "Failed to retrieve audio mgr napi instance.");
-
     std::shared_ptr<uintptr_t> cacheCallback;
     if (callback.has_value()) {
         cacheCallback = TaiheParamUtils::TypeCallback(callback.value());
@@ -715,6 +704,12 @@ void AudioRoutingManagerImpl::OffAvailableDeviceChange(
 void AudioRoutingManagerImpl::UnregisterAvailableDeviceChangeCallback(std::shared_ptr<uintptr_t> &callback,
     AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(audioRoutingManagerImpl->mutex_);
     if (audioRoutingManagerImpl->availableDeviceChangeCallbackTaihe_ != nullptr) {
         std::shared_ptr<TaiheAudioRountingAvailableDeviceChangeCallback> cb =
             std::static_pointer_cast<TaiheAudioRountingAvailableDeviceChangeCallback>(
@@ -738,8 +733,6 @@ void AudioRoutingManagerImpl::UnregisterAvailableDeviceChangeCallback(std::share
 void AudioRoutingManagerImpl::OnDeviceChange(DeviceFlag deviceFlag,
     callback_view<void(DeviceChangeAction const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterDeviceChangeCallback(deviceFlag, cacheCallback, DEVICE_CHANGE_CALLBACK_NAME, this);
 }
@@ -747,8 +740,6 @@ void AudioRoutingManagerImpl::OnDeviceChange(DeviceFlag deviceFlag,
 void AudioRoutingManagerImpl::OnAvailableDeviceChange(DeviceUsage deviceUsage,
     callback_view<void(DeviceChangeAction const&)> callback)
 {
-    CHECK_AND_RETURN_RET_LOG(audioMngr_ != nullptr, TaiheAudioError::ThrowErrorAndReturn(
-        TAIHE_ERR_NO_MEMORY), "audioMngr_ is nullptr");
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterAvaiableDeviceChangeCallback(deviceUsage, cacheCallback, AVAILABLE_DEVICE_CHANGE_CALLBACK_NAME, this);
 }
@@ -756,18 +747,20 @@ void AudioRoutingManagerImpl::OnAvailableDeviceChange(DeviceUsage deviceUsage,
 void AudioRoutingManagerImpl::RegisterDeviceChangeCallback(DeviceFlag deviceFlag, std::shared_ptr<uintptr_t> &callback,
     const std::string &cbName, AudioRoutingManagerImpl *taiheRoutingMgr)
 {
-    CHECK_AND_RETURN_RET_LOG(taiheRoutingMgr != nullptr,
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "taiheRoutingMgr is nullptr");
+    if ((taiheRoutingMgr == nullptr) || (taiheRoutingMgr->audioMngr_ == nullptr) ||
+        (taiheRoutingMgr->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(taiheRoutingMgr->mutex_);
     int32_t flag = deviceFlag.get_value();
     if (!TaiheAudioEnum::IsLegalInputArgumentDeviceFlag(flag)) {
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
             "parameter verification failed: The param of deviceFlag must be enum DeviceFlag");
     }
     OHOS::AudioStandard::DeviceFlag audioDeviceFlag = OHOS::AudioStandard::DeviceFlag(flag);
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (!taiheRoutingMgr->deviceChangeCallbackTaihe_) {
-        taiheRoutingMgr->deviceChangeCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>(env);
+        taiheRoutingMgr->deviceChangeCallbackTaihe_ = std::make_shared<TaiheAudioManagerCallback>();
     }
     CHECK_AND_RETURN_LOG(taiheRoutingMgr->deviceChangeCallbackTaihe_,
         "RegisterDeviceChangeCallback: Memory Allocation Failed !");
@@ -785,8 +778,12 @@ void AudioRoutingManagerImpl::RegisterDeviceChangeCallback(DeviceFlag deviceFlag
 void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage deviceUsage,
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *taiheRoutingMgr)
 {
-    CHECK_AND_RETURN_RET_LOG(taiheRoutingMgr != nullptr,
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_MEMORY), "taiheRoutingMgr is nullptr");
+    if ((taiheRoutingMgr == nullptr) || (taiheRoutingMgr->audioMngr_ == nullptr) ||
+        (taiheRoutingMgr->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
+    std::lock_guard<std::mutex> lock(taiheRoutingMgr->mutex_);
     int32_t flag = deviceUsage.get_value();
     AUDIO_INFO_LOG("RegisterDeviceChangeCallback:On deviceFlag: %{public}d", flag);
     if (!TaiheAudioEnum::IsLegalDeviceUsage(flag)) {
@@ -794,11 +791,9 @@ void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage d
             "parameter verification failed: The param of deviceUsage must be enum DeviceUsage");
     }
     OHOS::AudioStandard::AudioDeviceUsage usage = static_cast<OHOS::AudioStandard::AudioDeviceUsage>(flag);
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
     if (!taiheRoutingMgr->availableDeviceChangeCallbackTaihe_) {
         taiheRoutingMgr->availableDeviceChangeCallbackTaihe_ =
-            std::make_shared<TaiheAudioRountingAvailableDeviceChangeCallback>(env);
+            std::make_shared<TaiheAudioRountingAvailableDeviceChangeCallback>();
     }
     CHECK_AND_RETURN_LOG(taiheRoutingMgr->availableDeviceChangeCallbackTaihe_ != nullptr,
         "RegisterDeviceChangeCallback: Memory Allocation Failed !");
@@ -817,11 +812,6 @@ void AudioRoutingManagerImpl::RegisterAvaiableDeviceChangeCallback(DeviceUsage d
 void AudioRoutingManagerImpl::OnPreferOutputDeviceChangeForRendererInfo(AudioRendererInfo const &rendererInfo,
     callback_view<void(array_view<AudioDeviceDescriptor>)> callback)
 {
-    if (audioMngr_ == nullptr || audioRoutingMngr_ == nullptr) {
-        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr napi instance.");
-        return;
-    }
-
     auto cacheCallback = TaiheParamUtils::TypeCallback(callback);
     RegisterPreferredOutputDeviceChangeCallback(rendererInfo, cacheCallback, PREFERRED_OUTPUT_DEVICE_CALLBACK_NAME,
         this);
@@ -830,9 +820,11 @@ void AudioRoutingManagerImpl::OnPreferOutputDeviceChangeForRendererInfo(AudioRen
 void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(AudioRendererInfo const &rendererInfo,
     std::shared_ptr<uintptr_t> &callback, const std::string &cbName, AudioRoutingManagerImpl *audioRoutingManagerImpl)
 {
-    ani_env *env = get_env();
-    CHECK_AND_RETURN_LOG(env != nullptr, "get env fail");
-
+    if ((audioRoutingManagerImpl == nullptr) || (audioRoutingManagerImpl->audioMngr_ == nullptr) ||
+        (audioRoutingManagerImpl->audioRoutingMngr_ == nullptr)) {
+        AUDIO_ERR_LOG("AudioRoutingManagerImpl::Failed to retrieve stream mgr taihe instance.");
+        return;
+    }
     CHECK_AND_RETURN_LOG(GetTaihePrefOutputDeviceChangeCb(callback, audioRoutingManagerImpl) == nullptr,
         "Do not allow duplicate registration of the same callback");
 
@@ -841,10 +833,10 @@ void AudioRoutingManagerImpl::RegisterPreferredOutputDeviceChangeCallback(AudioR
 
     CHECK_AND_RETURN_RET_LOG(renderInfo.streamUsage != OHOS::AudioStandard::StreamUsage::STREAM_USAGE_INVALID,
         TaiheAudioError::ThrowError(TAIHE_ERR_INVALID_PARAM,
-        "parameter verification failed: The param of streamUsage invalid"), "invalid streamUsage");
+        "Parameter verification failed. Your usage in AudioRendererInfo is invalid."), "invalid streamUsage");
 
     std::shared_ptr<TaiheAudioPreferredOutputDeviceChangeCallback> cb =
-        std::make_shared<TaiheAudioPreferredOutputDeviceChangeCallback>(env);
+        std::make_shared<TaiheAudioPreferredOutputDeviceChangeCallback>();
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
 
     cb->SaveCallbackReference(callback);

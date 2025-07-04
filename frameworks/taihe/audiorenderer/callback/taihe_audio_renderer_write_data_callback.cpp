@@ -23,13 +23,11 @@
 
 namespace ANI::Audio {
 static const int32_t WRITE_CALLBACK_TIMEOUT_IN_MS = 1000; // 1s
-std::mutex TaiheRendererWriteDataCallback::sWorkerMutex_;
-
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
 vector<AudioRendererImpl*> TaiheRendererWriteDataCallback::activeRenderers_;
 #endif
-TaiheRendererWriteDataCallback::TaiheRendererWriteDataCallback(ani_env *env, AudioRendererImpl *taiheRenderer)
-    : env_(env), taiheRenderer_(taiheRenderer)
+TaiheRendererWriteDataCallback::TaiheRendererWriteDataCallback(AudioRendererImpl *taiheRenderer)
+    : taiheRenderer_(taiheRenderer)
 {
     AUDIO_DEBUG_LOG("instance create");
 #if defined(ANDROID_PLATFORM) || defined(IOS_PLATFORM)
@@ -46,11 +44,6 @@ TaiheRendererWriteDataCallback::~TaiheRendererWriteDataCallback()
         activeRenderers_.erase(iter);
     }
 #endif
-    if (taiheRenderer_ != nullptr) {
-        std::lock_guard lock(taiheRenderer_->writeCallbackMutex_);
-        taiheRenderer_->enqueued_ = true;
-        taiheRenderer_->writeCallbackCv_.notify_all();
-    }
 }
 
 void TaiheRendererWriteDataCallback::AddCallbackReference(const std::string &callbackName,
@@ -59,7 +52,8 @@ void TaiheRendererWriteDataCallback::AddCallbackReference(const std::string &cal
     std::lock_guard<std::mutex> lock(mutex_);
     CHECK_AND_RETURN_LOG(callback != nullptr, "creating reference for callback failed");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     if (callbackName == WRITE_DATA_CALLBACK_NAME) {
         rendererWriteDataCallback_ = cb;
     } else {
@@ -93,12 +87,13 @@ void TaiheRendererWriteDataCallback::OnWriteData(size_t length)
     CHECK_AND_RETURN_LOG(rendererWriteDataCallback_ != nullptr, "Cannot find the reference of writeData callback");
 
     std::unique_ptr<RendererWriteDataJsCallback> cb = std::make_unique<RendererWriteDataJsCallback>();
+    CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     cb->callback = rendererWriteDataCallback_;
     cb->callbackName = WRITE_DATA_CALLBACK_NAME;
     cb->bufDesc.buffer = nullptr;
     cb->rendererTaiheObj = taiheRenderer_;
 
-    CHECK_AND_RETURN_LOG(taiheRenderer_ != nullptr, "Cannot find the reference to audio renderer napi");
+    CHECK_AND_RETURN_LOG(taiheRenderer_ != nullptr, "Cannot find the reference to audio renderer taihe");
     if (!taiheRenderer_->audioRenderer_) {
         AUDIO_INFO_LOG("OnWriteData audioRenderer_ is null.");
         return;
@@ -128,9 +123,9 @@ void TaiheRendererWriteDataCallback::OnJsRendererWriteDataCallback(std::unique_p
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
 
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackWriteDataWork(this->env_, event);
+            sharePtr->SafeJsCallbackWriteDataWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnWriteData", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
@@ -161,9 +156,8 @@ void TaiheRendererWriteDataCallback::CheckWriteDataCallbackResult(OHOS::AudioSta
     }
 }
 
-void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(ani_env *env, RendererWriteDataJsCallback *event)
+void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(RendererWriteDataJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     std::shared_ptr<RendererWriteDataJsCallback> safeContext(
         static_cast<RendererWriteDataJsCallback*>(event),
@@ -174,7 +168,7 @@ void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(ani_env *env, R
     do {
         std::shared_ptr<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>> cacheCallback =
             std::reinterpret_pointer_cast<taihe::callback<AudioDataCallbackResult(array_view<uint8_t>)>>(
-            event->callback->cb_);
+                event->callback->cb_);
         CHECK_AND_BREAK_LOG(cacheCallback != nullptr, "%{public}s get reference value fail", request.c_str());
         (*cacheCallback)(TaiheParamUtils::ToTaiheArrayBuffer(event->bufDesc.buffer, event->bufDesc.dataLength));
         CheckWriteDataCallbackResult(event->bufDesc,
@@ -190,13 +184,13 @@ void TaiheRendererWriteDataCallback::SafeJsCallbackWriteDataWork(ani_env *env, R
                 AUDIO_INFO_LOG("WorkCallbackRendererWriteData audioRenderer_ is null");
             }
         } else {
-            AUDIO_INFO_LOG("NapiRendererWriteDataCallback is finalize.");
+            AUDIO_INFO_LOG("TaiheRendererWriteDataCallback is finalize.");
         }
 #else
         event->rendererTaiheObj->audioRenderer_->Enqueue(event->bufDesc);
 #endif
     } while (0);
-    CHECK_AND_RETURN_LOG(event->rendererTaiheObj != nullptr, "NapiAudioRenderer object is nullptr");
+    CHECK_AND_RETURN_LOG(event->rendererTaiheObj != nullptr, "TaiheAudioRenderer object is nullptr");
     std::unique_lock<std::mutex> writeCallbackLock(event->rendererTaiheObj->writeCallbackMutex_);
     event->rendererTaiheObj->enqueued_ = true;
     event->rendererTaiheObj->writeCallbackCv_.notify_all();

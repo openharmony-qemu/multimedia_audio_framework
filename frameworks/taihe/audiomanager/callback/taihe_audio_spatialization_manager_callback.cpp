@@ -27,12 +27,8 @@ using namespace std;
 
 bool TaiheAudioSpatializationEnabledChangeCallback::onSpatializationEnabledChangeFlag_;
 bool TaiheAudioHeadTrackingEnabledChangeCallback::onHeadTrackingEnabledChangeFlag_;
-std::mutex TaiheAudioSpatializationEnabledChangeCallback::sWorkerMutex_;
-std::mutex TaiheAudioCurrentSpatializationEnabledChangeCallback::sWorkerMutex_;
-std::mutex TaiheAudioHeadTrackingEnabledChangeCallback::sWorkerMutex_;
 
-TaiheAudioSpatializationEnabledChangeCallback::TaiheAudioSpatializationEnabledChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioSpatializationEnabledChangeCallback::TaiheAudioSpatializationEnabledChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioSpatializationEnabledChangeCallback: instance create");
 }
@@ -57,7 +53,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
         CHECK_AND_RETURN_LOG(callback != nullptr,
             "TaiheAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioSpatializationEnabledChangeCallback: creating callback failed");
         spatializationEnabledChangeCbList_.push_back(cb);
     } else if (!callbackName.compare(SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICES_CALLBACK_NAME)) {
@@ -70,7 +66,7 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
         CHECK_AND_RETURN_LOG(callback != nullptr,
             "TaiheAudioSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioSpatializationEnabledChangeCallback: creating callback failed");
         spatializationEnabledChangeCbForAnyDeviceList_.push_back(cb);
     }
@@ -130,7 +126,7 @@ int32_t TaiheAudioSpatializationEnabledChangeCallback::GetSpatializationEnabledC
 
 void TaiheAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChange(const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnSpatializationEnabledChange entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = spatializationEnabledChangeCbList_.begin(); it != spatializationEnabledChangeCbList_.end(); it++) {
@@ -176,9 +172,8 @@ void TaiheAudioSpatializationEnabledChangeCallback::OnSpatializationEnabledChang
 }
 
 void TaiheAudioSpatializationEnabledChangeCallback::SafeJsCallbackSpatializationEnabledWork(
-    ani_env *env, AudioSpatializationEnabledJsCallback *event)
+    AudioSpatializationEnabledJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackSpatializationEnabledWork: no memory");
     std::shared_ptr<AudioSpatializationEnabledJsCallback> safeContext(
@@ -217,17 +212,16 @@ void TaiheAudioSpatializationEnabledChangeCallback::OnJsCallbackSpatializationEn
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     event->callbackName = "AudioSpatializationEnabled";
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackSpatializationEnabledWork(this->env_, event);
+            sharePtr->SafeJsCallbackSpatializationEnabledWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnSpatializationEnabledChangeForAnyDevice", 0,
         OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-TaiheAudioCurrentSpatializationEnabledChangeCallback::TaiheAudioCurrentSpatializationEnabledChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioCurrentSpatializationEnabledChangeCallback::TaiheAudioCurrentSpatializationEnabledChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioCurrentSpatializationEnabledChangeCallback: instance create");
 }
@@ -250,7 +244,7 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializa
     CHECK_AND_RETURN_LOG(callback != nullptr,
         "TaiheAudioCurrentSpatializationEnabledChangeCallback: creating reference for callback fail");
 
-    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+    std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
     CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioCurrentSpatializationEnabledChangeCallback:create callback failed");
 
     spatializationEnabledChangeCbForCurrentDeviceList_.push_back(cb);
@@ -294,7 +288,7 @@ int32_t TaiheAudioCurrentSpatializationEnabledChangeCallback::GetCurrentSpatiali
 void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnSpatializationEnabledChangeForCurrentDevice(
     const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnSpatializationEnabledChangeForCurrentDevice entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = spatializationEnabledChangeCbForCurrentDeviceList_.begin();
@@ -311,9 +305,8 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnSpatializationEnabl
 }
 
 void TaiheAudioCurrentSpatializationEnabledChangeCallback::SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(
-    ani_env *env, AudioSpatializationEnabledForCurrentDeviceJsCallback *event)
+    AudioSpatializationEnabledForCurrentDeviceJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackSpatializationEnabledForCurrentDeviceWork: no memory");
     std::shared_ptr<AudioSpatializationEnabledForCurrentDeviceJsCallback> safeContext(
@@ -342,17 +335,16 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::OnJsCallbackSpatializ
     AudioSpatializationEnabledForCurrentDeviceJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(this->env_, event);
+            sharePtr->SafeJsCallbackSpatializationEnabledForCurrentDeviceWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnSpatializationEnabledChangeForCurrentDevice", 0,
         OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-TaiheAudioHeadTrackingEnabledChangeCallback::TaiheAudioHeadTrackingEnabledChangeCallback(ani_env *env)
-    : env_(env)
+TaiheAudioHeadTrackingEnabledChangeCallback::TaiheAudioHeadTrackingEnabledChangeCallback()
 {
     AUDIO_DEBUG_LOG("TaiheAudioHeadTrackingEnabledChangeCallback: instance create");
 }
@@ -375,7 +367,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
         CHECK_AND_RETURN_LOG(callback != nullptr,
             "TaiheAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioHeadTrackingEnabledChangeCallback: creating callback failed");
 
         headTrackingEnabledChangeCbList_.push_back(cb);
@@ -389,7 +381,7 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
         CHECK_AND_RETURN_LOG(callback != nullptr,
             "TaiheAudioHeadTrackingEnabledChangeCallback: creating reference for callback fail");
 
-        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(env_, callback);
+        std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
         CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioHeadTrackingEnabledChangeCallback: creating callback failed");
 
         headTrackingEnabledChangeCbForAnyDeviceList_.push_back(cb);
@@ -449,7 +441,7 @@ int32_t TaiheAudioHeadTrackingEnabledChangeCallback::GetHeadTrackingEnabledChang
 
 void TaiheAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChange(const bool &enabled)
 {
-    AUDIO_INFO_LOG("OnHeadTrackingEnabledChange entered");
+    AUDIO_INFO_LOG("enter");
     std::lock_guard<std::mutex> lock(mutex_);
 
     for (auto it = headTrackingEnabledChangeCbList_.begin(); it != headTrackingEnabledChangeCbList_.end(); it++) {
@@ -496,9 +488,8 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::OnHeadTrackingEnabledChangeFor
 }
 
 void TaiheAudioHeadTrackingEnabledChangeCallback::SafeJsCallbackHeadTrackingEnabledWork(
-    ani_env *env, AudioHeadTrackingEnabledJsCallback *event)
+    AudioHeadTrackingEnabledJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackHeadTrackingEnabledWork: no memory");
     std::shared_ptr<AudioHeadTrackingEnabledJsCallback> safeContext(
@@ -536,9 +527,9 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::OnJsCallbackHeadTrackingEnable
     AudioHeadTrackingEnabledJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackHeadTrackingEnabledWork(this->env_, event);
+            sharePtr->SafeJsCallbackHeadTrackingEnabledWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnHeadTrackingEnabledChangeForAnyDevice", 0,

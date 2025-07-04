@@ -22,9 +22,7 @@
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
-std::mutex TaiheAudioRendererCallback::sWorkerMutex_;
-TaiheAudioRendererCallback::TaiheAudioRendererCallback(ani_env *env)
-    : env_(env)
+TaiheAudioRendererCallback::TaiheAudioRendererCallback()
 {
     AUDIO_DEBUG_LOG("instance create");
 }
@@ -73,7 +71,7 @@ void TaiheAudioRendererCallback::RemoveCallbackReference(const std::string &call
     RemoveCallbackReferenceInner(callbackName, callback, successed);
 }
 
-std::shared_ptr<AutoRef> &TaiheAudioRendererCallback::GetCallback(const std::string &callbackName)
+std::shared_ptr<AutoRef> TaiheAudioRendererCallback::GetCallback(const std::string &callbackName)
 {
     std::shared_ptr<AutoRef> cb = nullptr;
     if (callbackName == INTERRUPT_CALLBACK_NAME || callbackName == AUDIO_INTERRUPT_CALLBACK_NAME) {
@@ -134,17 +132,16 @@ void TaiheAudioRendererCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioRend
     AudioRendererJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackInterruptWork(this->env_, event);
+            sharePtr->SafeJsCallbackInterruptWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnAudioInterrupt", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(ani_env *env, AudioRendererJsCallback *event)
+void TaiheAudioRendererCallback::SafeJsCallbackInterruptWork(AudioRendererJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackInterruptWork: no memory");
     std::shared_ptr<AudioRendererJsCallback> safeContext(
@@ -176,17 +173,16 @@ void TaiheAudioRendererCallback::OnJsCallbackStateChange(std::unique_ptr<AudioRe
     AudioRendererJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     auto sharePtr = shared_from_this();
-    auto task = [event, sharePtr, this]() {
+    auto task = [event, sharePtr]() {
         if (sharePtr != nullptr) {
-            sharePtr->SafeJsCallbackStateChangeWork(this->env_, event);
+            sharePtr->SafeJsCallbackStateChangeWork(event);
         }
     };
     mainHandler_->PostTask(task, "OnStateChange", 0, OHOS::AppExecFwk::EventQueue::Priority::IMMEDIATE, {});
 }
 
-void TaiheAudioRendererCallback::SafeJsCallbackStateChangeWork(ani_env *env, AudioRendererJsCallback *event)
+void TaiheAudioRendererCallback::SafeJsCallbackStateChangeWork(AudioRendererJsCallback *event)
 {
-    std::lock_guard<std::mutex> lock(sWorkerMutex_);
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr),
         "SafeJsCallbackStateChangeWork: no memory");
     std::shared_ptr<AudioRendererJsCallback> safeContext(

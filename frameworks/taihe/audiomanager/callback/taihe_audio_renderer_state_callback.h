@@ -27,7 +27,7 @@ using namespace ohos::multimedia::audio;
 class TaiheAudioRendererStateCallback : public OHOS::AudioStandard::AudioRendererStateChangeCallback,
     public std::enable_shared_from_this<TaiheAudioRendererStateCallback> {
 public:
-    explicit TaiheAudioRendererStateCallback(ani_env *env);
+    explicit TaiheAudioRendererStateCallback();
     virtual ~TaiheAudioRendererStateCallback();
     void SaveCallbackReference(const std::string &callbackName, std::shared_ptr<uintptr_t> callback);
     bool IsSameCallback(std::shared_ptr<uintptr_t> callback);
@@ -42,12 +42,9 @@ private:
     };
 
     void OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb);
-    static void SafeJsCallbackRendererStateWork(ani_env *env, AudioRendererStateJsCallback *event);
+    static void SafeJsCallbackRendererStateWork(AudioRendererStateJsCallback *event);
 
     std::mutex mutex_;
-    static std::mutex sWorkerMutex_;
-    ani_env *env_ = nullptr;
-    std::shared_ptr<uintptr_t> callback_ = nullptr;
     std::shared_ptr<AutoRef> rendererStateCallback_ = nullptr;
     std::shared_ptr<OHOS::AppExecFwk::EventHandler> mainHandler_ = nullptr;
 };

@@ -109,7 +109,7 @@ AsrProcessingControllerImpl::AsrProcessingControllerImpl(std::shared_ptr<AsrProc
 bool AsrProcessingControllerImpl::SetAsrAecMode(::ohos::multimedia::audio::AsrAecMode mode)
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
     int32_t asrAecMode = mode.get_value();
@@ -132,7 +132,7 @@ bool AsrProcessingControllerImpl::SetAsrAecMode(::ohos::multimedia::audio::AsrAe
 ::ohos::multimedia::audio::AsrAecMode AsrProcessingControllerImpl::GetAsrAecMode()
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return ::ohos::multimedia::audio::AsrAecMode::key_t::BYPASS;
     }
     ::AsrAecMode asrAecMode;
@@ -148,7 +148,7 @@ bool AsrProcessingControllerImpl::SetAsrAecMode(::ohos::multimedia::audio::AsrAe
 bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia::audio::AsrNoiseSuppressionMode mode)
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
 
@@ -174,7 +174,7 @@ bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia:
 ::ohos::multimedia::audio::AsrNoiseSuppressionMode AsrProcessingControllerImpl::GetAsrNoiseSuppressionMode()
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return ::ohos::multimedia::audio::AsrNoiseSuppressionMode::key_t::BYPASS;
     }
     ::AsrNoiseSuppressionMode asrNoiseSuppressionMode;
@@ -190,7 +190,7 @@ bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia:
 bool AsrProcessingControllerImpl::SetAsrWhisperDetectionMode(::ohos::multimedia::audio::AsrWhisperDetectionMode mode)
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
 
@@ -214,7 +214,7 @@ bool AsrProcessingControllerImpl::SetAsrWhisperDetectionMode(::ohos::multimedia:
 ::ohos::multimedia::audio::AsrWhisperDetectionMode AsrProcessingControllerImpl::GetAsrWhisperDetectionMode()
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return ::ohos::multimedia::audio::AsrWhisperDetectionMode::key_t::BYPASS;
     }
     ::AsrWhisperDetectionMode asrWhisperDetectionMode;
@@ -231,7 +231,7 @@ bool AsrProcessingControllerImpl::SetAsrVoiceControlMode(::ohos::multimedia::aud
     bool enable)
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
 
@@ -256,7 +256,7 @@ bool AsrProcessingControllerImpl::SetAsrVoiceControlMode(::ohos::multimedia::aud
 bool AsrProcessingControllerImpl::SetAsrVoiceMuteMode(::ohos::multimedia::audio::AsrVoiceMuteMode mode, bool enable)
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
 
@@ -281,7 +281,7 @@ bool AsrProcessingControllerImpl::SetAsrVoiceMuteMode(::ohos::multimedia::audio:
 bool AsrProcessingControllerImpl::IsWhispering()
 {
     if (audioMngr_ == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "audioMngr_ is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioMngr_ is nullptr");
         return false;
     }
     int32_t res = audioMngr_->IsWhispering();
@@ -307,7 +307,7 @@ AsrProcessingController CreateAsrProcessingController(weak::AudioCapturer audioC
     }
     shared_ptr<AsrProcessingControllerImpl> asrControllerImpl = make_shared<AsrProcessingControllerImpl>();
     if (asrControllerImpl == nullptr) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM, "asrControllerImpl is nullptr");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "asrControllerImpl is nullptr");
         return make_holder<AsrProcessingControllerImpl, AsrProcessingController>(nullptr);
     }
     asrControllerImpl->audioMngr_ = OHOS::AudioStandard::AudioSystemManager::GetInstance();
