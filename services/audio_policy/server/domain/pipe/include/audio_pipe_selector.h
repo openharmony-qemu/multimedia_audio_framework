@@ -35,6 +35,8 @@ public:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
+    void UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+        std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
     bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,

@@ -1589,5 +1589,91 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceDescriptor_001, TestSize.L
     audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
     EXPECT_NE(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
 }
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: GetStreamPropInfo_001
+* @tc.desc  : Test GetStreamPropInfo
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, GetStreamPropInfo_001, TestSize.Level1)
+{
+    uint32_t routerFlag = AUDIO_OUTPUT_FLAG_FAST;
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    AudioPolicyConfigData &configData = AudioPolicyConfigData::GetInstance();
+    configData.Reorganize();
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeInfo->streamPropInfos_ = {propInfo};
+
+    std::shared_ptr<AdapterDeviceInfo> deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->supportPipeMap_.insert({routerFlag, pipeInfo});
+    std::set<std::shared_ptr<AdapterDeviceInfo>> deviceInfoSet = {deviceInfo};
+    auto devicekey = std::make_pair<DeviceType, DeviceRole>(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE);
+    configData.deviceInfoMap.insert({devicekey, deviceInfoSet});
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
+    streamDesc->newDeviceDescs_.front()->deviceRole_ = OUTPUT_DEVICE;
+    streamDesc->newDeviceDescs_.front()->networkId_ = "LocalDevice";
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S16LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+
+    streamDesc->routeFlag_ = AUDIO_INPUT_FLAG_FAST;
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    streamDesc->routeFlag_ = routerFlag;
+    manager.GetStreamPropInfo(streamDesc, streamPropInfo);
+    EXPECT_EQ(streamPropInfo->channels_, AudioChannel::STEREO);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: UpdateBasicStreamInfo_001
+* @tc.desc  : Test UpdateBasicStreamInfo
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
+    std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
+    AudioStreamInfo streamInfo;
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    streamDesc = std::make_shared<AudioStreamDescriptor>();
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    pipeInfo = std::make_shared<AdapterPipeInfo>();
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    streamDesc->routeFlag_ = (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST);
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+    EXPECT_EQ(streamInfo.channels, STEREO);
+
+    streamDesc->routeFlag_ = (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST);
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+    EXPECT_EQ(streamInfo.channels, STEREO);
+
+    streamDesc->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    std::shared_ptr<PipeStreamPropInfo> propInfo = std::make_shared<PipeStreamPropInfo>();
+    propInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
+    propInfo->sampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
+    propInfo->channels_ = AudioChannel::STEREO;
+    pipeInfo->streamPropInfos_ = {propInfo};
+    manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
+
+    EXPECT_EQ(streamInfo.format, AudioSampleFormat::SAMPLE_S16LE);
+    EXPECT_EQ(streamInfo.channels, STEREO);
+}
 } // namespace AudioStandard
 } // namespace OHOS

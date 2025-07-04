@@ -1001,10 +1001,7 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
                 deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream");
-            AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
-                CH_LAYOUT_STEREO};
-            deviceInfo.audioStreamInfo_ = { targetStreamInfo };
+            AUDIO_INFO_LOG("Fast stream use format:%{public}s", deviceInfo.GetDeviceStreamInfo().Serialize().c_str());
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
