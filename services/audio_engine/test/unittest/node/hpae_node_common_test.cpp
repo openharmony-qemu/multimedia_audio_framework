@@ -16,6 +16,9 @@
 #include <gtest/gtest.h>
 #include "hpae_node_common.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -53,7 +56,7 @@ static HpaeNodeInfo GetTestNodeInfo()
     return nodeInfo;
 }
 
-TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_001)
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo1 = GetTestNodeInfo();
     HpaeNodeInfo nodeInfo2 = GetTestNodeInfo();
@@ -62,7 +65,7 @@ TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_001)
     EXPECT_EQ(CheckHpaeNodeInfoIsSame(nodeInfo1, nodeInfo2), false);
 }
 
-TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_002)
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_002, TestSize.Level0)
 {
     EXPECT_EQ(TransStreamTypeToSceneType(STREAM_MUSIC), HPAE_SCENE_MUSIC);
     EXPECT_EQ(TransStreamTypeToSceneType(STREAM_RECORDING), HPAE_SCENE_EFFECT_NONE);
@@ -80,13 +83,13 @@ TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_002)
     EXPECT_EQ(TransProcessorTypeToSceneType(HPAE_SCENE_RECORD), DEFAULT_SCENE_EXTRA);
 }
 
-TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_003)
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_003, TestSize.Level0)
 {
     EXPECT_EQ(CheckSceneTypeNeedEc(HPAE_SCENE_VOIP_UP), true);
     EXPECT_EQ(CheckSceneTypeNeedMicRef(HPAE_SCENE_VOIP_UP), true);
 }
 
-TEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_004)
+HWTEST_F(HpaeNodeCommonTest, TestHpaeNodeCommon_004, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     EXPECT_EQ(ConvertDatalenToUs(DEFAULT_BUFFER_SIZE, nodeInfo), DEFAULT_CONVERTER_US_TIME);

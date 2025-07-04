@@ -2234,7 +2234,7 @@ int32_t HpaeManager::UpdateCollaborativeState(bool isCollaborationEnabled)
         rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
     };
     SendRequest(request, __func__);
-    return true;
+    return SUCCESS;
 }
 
 void HpaeManager::HandleConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode> hpaeCoBufferNode)

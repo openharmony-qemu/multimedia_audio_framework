@@ -26,6 +26,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -47,7 +49,7 @@ void HpaeSourceInputNodeTest::SetUp()
 void HpaeSourceInputNodeTest::TearDown()
 {}
 
-TEST_F(HpaeSourceInputNodeTest, constructHpaeSourceInputNode)
+HWTEST_F(HpaeSourceInputNodeTest, constructHpaeSourceInputNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -69,7 +71,7 @@ TEST_F(HpaeSourceInputNodeTest, constructHpaeSourceInputNode)
     EXPECT_EQ(retNi.format, nodeInfo.format);
 }
 
-TEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase)
+HWTEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -104,7 +106,7 @@ TEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase)
     EXPECT_EQ(outputPort->GetInputNum(), 0);
 }
 
-TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
+HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -155,7 +157,7 @@ TEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase)
     EXPECT_EQ(hpaeSoruceInputNode->CapturerSourceDeInit(), SUCCESS);
 }
 
-TEST_F(HpaeSourceInputNodeTest, testInterfaces_001)
+HWTEST_F(HpaeSourceInputNodeTest, testInterfaces_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -204,7 +206,7 @@ TEST_F(HpaeSourceInputNodeTest, testInterfaces_001)
     EXPECT_EQ(hpaeSoruceInputNode->ResetAll(), true);
 }
 
-TEST_F(HpaeSourceInputNodeTest, testInterfaces_002)
+HWTEST_F(HpaeSourceInputNodeTest, testInterfaces_002, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;

@@ -20,6 +20,9 @@
 #include "audio_stream_info.h"
 #include "securec.h"
 
+using namespace testing::ext;
+using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -50,7 +53,7 @@ void AudioProResamplerTest::SetUp() {}
 
 void AudioProResamplerTest::TearDown() {}
 
-TEST_F(AudioProResamplerTest, InitTest)
+HWTEST_F(AudioProResamplerTest, InitTest, TestSize.Level0)
 {
     // test invalid input
     int32_t err = RESAMPLER_ERR_SUCCESS;
@@ -68,7 +71,7 @@ TEST_F(AudioProResamplerTest, InitTest)
     ProResampler resampler2(SAMPLE_RATE_48000, SAMPLE_RATE_44100, STEREO, QUALITY_ONE);
 }
 
-TEST_F(AudioProResamplerTest, ProcessTest)
+HWTEST_F(AudioProResamplerTest, ProcessTest, TestSize.Level0)
 {
     // test all input/output combination
     for (uint32_t channels: TEST_CHANNELS) {
@@ -103,7 +106,7 @@ TEST_F(AudioProResamplerTest, ProcessTest)
     EXPECT_EQ(ret, EOK);
 }
 
-TEST_F(AudioProResamplerTest, UpdateRatesTest)
+HWTEST_F(AudioProResamplerTest, UpdateRatesTest, TestSize.Level0)
 {
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
@@ -118,7 +121,7 @@ TEST_F(AudioProResamplerTest, UpdateRatesTest)
     EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
 }
 
-TEST_F(AudioProResamplerTest, UpdateChannel)
+HWTEST_F(AudioProResamplerTest, UpdateChannel, TestSize.Level0)
 {
     ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
     EXPECT_EQ(resampler.channels_, STEREO);
