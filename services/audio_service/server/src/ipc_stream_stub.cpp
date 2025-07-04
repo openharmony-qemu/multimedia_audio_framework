@@ -77,8 +77,6 @@ int IpcStreamStub::OnMiddleCodeRemoteRequest(uint32_t code, MessageParcel &data,
             return HandleSetOffloadDataCallbackState(data, reply);
         case ON_SET_LOUDNESSGAIN:
             return HandleSetLoudnessGain(data, reply);
-        case ON_SET_AUDIO_HAPTICS_SYNC_ID:
-            return HandleSetAudioHapticsSyncId(data, reply);
         default:
             return OnMiddleCodeRemoteRequestExt(code, data, reply, option);
     }
@@ -96,6 +94,8 @@ int IpcStreamStub::OnMiddleCodeRemoteRequestExt(uint32_t code, MessageParcel &da
             return HandleSetSourceDuration(data, reply);
         case ON_RESOLVE_BUFFER_BASE:
             return HandleResolveBufferBase(data, reply);
+        case ON_SET_AUDIO_HAPTICS_SYNC_ID:
+            return HandleSetAudioHapticsSyncId(data, reply);
         default:
             AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
             return IPCObjectStub::OnRemoteRequest(code, data, reply, option);

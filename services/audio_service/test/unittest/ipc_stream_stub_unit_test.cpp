@@ -787,5 +787,28 @@ HWTEST(IpcStreamStubUnitTest, IpcStreamStub_029, TestSize.Level1)
     auto result = ptrIpcStreamStub->HandleResolveBuffer(data, reply);
     EXPECT_EQ(result, AUDIO_OK);
 }
+
+/**
+ * @tc.name  : Test IpcStreamStub API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamStub_030
+ * @tc.desc  : Test IpcStreamStub::OnMiddleCodeRemoteRequest.
+ */
+HWTEST(IpcStreamStubUnitTest, IpcStreamStub_030, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    int32_t ret = 0;
+    sptr<IpcStreamInServer> ptrIpcStreamStub = IpcStreamInServer::Create(config, ret);
+
+    EXPECT_NE(ptrIpcStreamStub, nullptr);
+
+    MessageParcel data;
+    MessageParcel reply;
+    MessageOption option;
+
+    auto result = ptrIpcStreamStub->OnMiddleCodeRemoteRequest(IpcStream::IpcStreamMsg::ON_SET_AUDIO_HAPTICS_SYNC_ID,
+        data, reply, option);
+    EXPECT_EQ(result, AUDIO_OK);
+}
 } // namespace AudioStandard
 } // namespace OHOS
