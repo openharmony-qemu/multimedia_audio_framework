@@ -1609,7 +1609,7 @@ HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
  * @tc.number: ResetFirstFrameState_001
  * @tc.desc  : Test ResetFirstFrameState interface. - do nothing when spkProcClientCb_ is null
  */
-HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
+HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_001, TestSize.Level1)
 {
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream =
