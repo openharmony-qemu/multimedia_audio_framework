@@ -323,8 +323,6 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
     rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
-    rendererInfo_.rendererFlags = rendererFlags;
-    rendererInfo_.originalFlag = rendererFlags;
     rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
@@ -367,6 +365,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
     
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
+    endererInfo_.rendererFlags = rendererFlags;
+    rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
