@@ -649,8 +649,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_030, TestSize.Level1)
     auto interruptServiceTest = GetTnterruptServiceTest();
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = 2;
-    std::vector<AudioInterrupt> streamsInSession;
-    interruptServiceTest->OnSessionTimeout(audioInterrupt.pid, streamsInSession);
+    interruptServiceTest->OnSessionTimeout(audioInterrupt.pid);
     EXPECT_NE(interruptServiceTest, nullptr);
 }
 
@@ -1290,8 +1289,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceOnSessionTimeout_001, TestSi
     EXPECT_NE(nullptr, audioInterruptService);
 
     audioInterruptService->Init(serverTest);
-    std::vector<AudioInterrupt> streamsInSession;
-    audioInterruptService->OnSessionTimeout(PIT_TEST, streamsInSession);
+    audioInterruptService->OnSessionTimeout(PIT_TEST);
     EXPECT_NE(nullptr, audioInterruptService->handler_);
 }
 
@@ -1309,8 +1307,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceOnSessionTimeout_002, TestSi
 
     audioInterruptService->Init(serverTest);
     audioInterruptService->handler_ = nullptr;
-    std::vector<AudioInterrupt> streamsInSession;
-    audioInterruptService->OnSessionTimeout(PIT_TEST, streamsInSession);
+    audioInterruptService->OnSessionTimeout(PIT_TEST);
     EXPECT_EQ(nullptr, audioInterruptService->handler_);
 }
 
@@ -3683,7 +3680,7 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_001, TestSize.Level1)
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.pid = fakePid;
     incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.streamId = 8888;
+    incomingInterrupt.streamId = 888; // 888 is a fake stream id.
 
     std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
     ASSERT_TRUE(sessionService != nullptr);

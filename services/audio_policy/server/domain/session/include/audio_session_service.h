@@ -28,7 +28,7 @@ class SessionTimeOutCallback {
 public:
     virtual ~SessionTimeOutCallback() = default;
 
-    virtual void OnSessionTimeout(const int32_t pid, const std::vector<AudioInterrupt> &streamsInSession) = 0;
+    virtual void OnSessionTimeout(const int32_t pid) = 0;
 };
 
 class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
@@ -49,7 +49,6 @@ public:
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
-    static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
@@ -67,12 +66,11 @@ public:
     bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
     bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
     static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
-    // Dump AudioSession Info
-    void AudioSessionInfoDump(std::string &dumpString);
 
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
     std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
+    void GenerateFakeStreamId(int32_t callerPid);
 
 private:
     std::mutex sessionServiceMutex_;

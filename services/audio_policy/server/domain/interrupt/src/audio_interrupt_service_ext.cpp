@@ -198,10 +198,10 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
         std::pair<AudioFocusType, AudioFocusType> focusPair =
             std::make_pair((iterActive->first).audioFocusType, incomingInterrupt.audioFocusType);
         CHECK_AND_RETURN_RET_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(),
-                                ERR_INVALID_PARAM,
-                                "no focus cfg, active stream type = %{public}d, incoming stream type = %{public}d",
-                                static_cast<int32_t>(focusPair.first.streamType),
-                                static_cast<int32_t>(focusPair.second.streamType));
+            ERR_INVALID_PARAM,
+            "no focus cfg, active stream type = %{public}d, incoming stream type = %{public}d",
+            static_cast<int32_t>(focusPair.first.streamType),
+            static_cast<int32_t>(focusPair.second.streamType));
         AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
         UpdateAudioFocusStrategy(iterActive->first, incomingInterrupt, focusEntry);
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);

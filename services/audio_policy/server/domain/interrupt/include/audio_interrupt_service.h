@@ -60,7 +60,7 @@ public:
     void SetCallbackHandler(std::shared_ptr<AudioPolicyServerHandler> handler);
 
     // interfaces of SessionTimeOutCallback
-    void OnSessionTimeout(const int32_t pid, const std::vector<AudioInterrupt> &streamsInSession) override;
+    void OnSessionTimeout(const int32_t pid) override;
 
     // interfaces for AudioSessionService
     int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy);
@@ -250,7 +250,7 @@ private:
     bool IsIncomingStreamLowPriority(const AudioFocusEntry &focusEntry);
     bool IsActiveStreamLowPriority(const AudioFocusEntry &focusEntry);
     void UpdateHintTypeForExistingSession(const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry);
-    void HandleSessionTimeOutEvent(const int32_t pid, const std::vector<AudioInterrupt> &streamsInSession);
+    void HandleSessionTimeOutEvent(const int32_t pid);
     bool HandleLowPriorityEvent(const int32_t pid, const uint32_t streamId);
     void SendSessionTimeOutStopEvent(const int32_t zoneId, const AudioInterrupt &audioInterrupt,
         const std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList);
@@ -299,7 +299,11 @@ private:
         const int32_t zoneId, const int32_t callerPid, bool isSessionTimeout = false);
     void DispatchInterruptEventForAudioSession(
         InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt) override;
-    void DeactivateAudioSessionInFakeFocusMode(const int32_t pid);
+    void DeactivateAudioSessionInFakeFocusMode(const int32_t pid, InterruptHint hintType);
+    void SendAudioSessionInterruptEventCallback(
+        const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
+    void TryHandleStreamCallbackInSession(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
+    bool HasAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
 
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,

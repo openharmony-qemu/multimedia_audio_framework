@@ -1036,25 +1036,25 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
     AudioSessionStateChangedEvent stateChangedEvent;
     switch (hintType) {
         case INTERRUPT_HINT_RESUME:
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::RESUME;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::RESUME;
             break;
         case INTERRUPT_HINT_PAUSE:
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::PAUSE;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::PAUSE;
             break;
         case INTERRUPT_HINT_STOP:
-        // duckVolume = -1.0f, means timeout stop
-        if (eventContextObj->interruptEvent.duckVolume == -1.0f) {
-            eventContextObj->interruptEvent.duckVolume = 1.0f;
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::TIME_OUT_STOP;
-        } else {
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::STOP;
-        }
-        break;
+            // duckVolume = -1.0f, means timeout stop
+            if (eventContextObj->interruptEvent.duckVolume == -1.0f) {
+                eventContextObj->interruptEvent.duckVolume = 1.0f;
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::TIME_OUT_STOP;
+            } else {
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::STOP;
+            }
+            break;
         case INTERRUPT_HINT_DUCK:
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::DUCK;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::DUCK;
             break;
         case INTERRUPT_HINT_UNDUCK:
-            stateChangedEvent.stateChangedHint = AudioSessionStateChangedHint::UNDUCK;
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNDUCK;
             break;
         default:
             AUDIO_ERR_LOG("Unspported hintType %{public}d", static_cast<int32_t>(hintType));
@@ -1065,7 +1065,7 @@ void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExec
         clientCallbacksMap_[iterator->first].count(CALLBACK_AUDIO_SESSION_STATE) > 0 &&
         clientCallbacksMap_[iterator->first][CALLBACK_AUDIO_SESSION_STATE]) {
         // the client has registered audio session callback.
-        sptr<IAudioPolicyClient> audioSessionCb = iterator->second;
+        std::shared_ptr<AudioPolicyClientHolder> audioSessionCb = iterator->second;
         if (audioSessionCb == nullptr) {
             AUDIO_ERR_LOG("audioSessionCb is nullptr for client pid %{public}d", clientPid);
             return;

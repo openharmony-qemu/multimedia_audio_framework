@@ -1075,7 +1075,7 @@ HWTEST(AudioInterruptServiceUnitTest, AudioInterruptService_053, TestSize.Level1
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.pid = fakePid;
     incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.streamId = 8888;
+    incomingInterrupt.streamId = 888; // 888 is a fake stream id.
 
     std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
     audioInterruptService->sessionService_ = sessionService;

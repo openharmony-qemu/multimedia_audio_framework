@@ -46,6 +46,9 @@ public:
     AudioStreamType GetFakeStreamType();
     void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
     void RemoveStreamInfo(uint32_t streamId);
+    uint32_t GetFakeStreamId();
+    void SaveFakeStreamId(uint32_t fakeStreamId);
+    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     void Dump(std::string &dumpString);
     int32_t Activate();
     int32_t Deactivate();
@@ -68,14 +71,15 @@ private:
     int32_t EnableDefaultDevice();
     std::mutex sessionMutex_;
     int32_t callerPid_;
-    bool needToFetch = false;
+    bool needToFetch_ = false;
     AudioSessionStrategy strategy_;
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
-
+    AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
+    // These are streams included in audiosession focus.
+    std::vector<AudioInterrupt> bypassStreamInfoVec_;
+    uint32_t fakeStreamId_ {0};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
-    std::vector<AudioInterrupt> bypassStreamInfoVec_;
-    AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
 };
 } // namespace AudioStandard
