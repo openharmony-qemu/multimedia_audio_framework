@@ -365,8 +365,8 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
     
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    endererInfo_.rendererFlags = rendererFlags;
-    rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
+    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
