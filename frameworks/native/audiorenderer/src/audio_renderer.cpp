@@ -310,28 +310,27 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
-void AudioRenderer::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
+void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
-    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
-    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
     /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
-    audioRenderer->rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
-    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
-    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
+    rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
-    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
-    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
-    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+    rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+    rendererInfo_.rendererFlags = rendererFlags;
+    rendererInfo_.originalFlag = rendererFlags;
+    rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
 
-    audioRenderer->privacyType_ = rendererOptions.privacyType;
-    audioRenderer->strategy_ = rendererOptions.strategy;
-    audioRenderer->originalStrategy_ = rendererOptions.strategy;
-    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+    privacyType_ = rendererOptions.privacyType;
+    strategy_ = rendererOptions.strategy;
+    originalStrategy_ = rendererOptions.strategy;
 }
 
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
@@ -369,6 +368,7 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
+    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
