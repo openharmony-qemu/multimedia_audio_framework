@@ -196,7 +196,7 @@ private:
     int32_t CheckAudioRenderer(std::string callingFunc);
     int32_t CheckAndStopAudioRenderer(std::string callingFunc);
     int32_t PrepareAudioStream(AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
+        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag);
     std::shared_ptr<AudioStreamDescriptor> ConvertToStreamDescriptor(const AudioStreamParams &audioStreamParams);
     std::shared_ptr<AudioStreamDescriptor> GetStreamDescBySwitchInfo(
         const IAudioStream::SwitchInfo &switchInfo, const RestoreInfo &restoreInfo);

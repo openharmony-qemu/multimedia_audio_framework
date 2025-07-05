@@ -41,6 +41,7 @@
 #include "audio_service_enum.h"
 #include "i_hpae_manager.h"
 #include "stream_dfx_manager.h"
+#include "audio_stream_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -149,7 +150,7 @@ void RendererInServer::GetEAC3ControlParam()
 
 int32_t RendererInServer::Init()
 {
-    if (IsHighResolution()) {
+    if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
         Trace trace("current stream marked as high resolution");
         managerType_ = DIRECT_PLAYBACK;
         AUDIO_INFO_LOG("current stream marked as high resolution");
