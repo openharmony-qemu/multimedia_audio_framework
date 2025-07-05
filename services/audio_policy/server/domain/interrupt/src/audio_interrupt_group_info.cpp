@@ -42,9 +42,9 @@ bool InterruptGroupInfo::Marshalling(Parcel &parcel) const
     return true;
 }
 
-sptr<InterruptGroupInfo> InterruptGroupInfo::Unmarshalling(Parcel &in)
+InterruptGroupInfo *InterruptGroupInfo::Unmarshalling(Parcel &in)
 {
-    sptr<InterruptGroupInfo> interruptGroupInfo = new(std::nothrow) InterruptGroupInfo();
+    auto interruptGroupInfo = new(std::nothrow) InterruptGroupInfo();
     if (interruptGroupInfo == nullptr) {
         return nullptr;
     }

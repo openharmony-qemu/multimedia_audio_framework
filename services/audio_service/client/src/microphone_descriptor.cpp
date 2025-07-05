@@ -77,21 +77,21 @@ bool MicrophoneDescriptor::Marshalling(Parcel &parcel) const
     return true;
 }
 
-sptr<MicrophoneDescriptor> MicrophoneDescriptor::Unmarshalling(Parcel &in)
+MicrophoneDescriptor *MicrophoneDescriptor::Unmarshalling(Parcel &parcel)
 {
-    sptr<MicrophoneDescriptor> microphoneDescriptor = new(std::nothrow) MicrophoneDescriptor();
+    auto microphoneDescriptor = new MicrophoneDescriptor();
     CHECK_AND_RETURN_RET(microphoneDescriptor != nullptr, nullptr);
 
-    microphoneDescriptor->micId_ = in.ReadInt32();
-    microphoneDescriptor->deviceType_ = static_cast<DeviceType>(in.ReadInt32());
-    microphoneDescriptor->groupId_ = in.ReadInt32();
-    microphoneDescriptor->sensitivity_ = in.ReadInt32();
-    microphoneDescriptor->position_.x = in.ReadFloat();
-    microphoneDescriptor->position_.y = in.ReadFloat();
-    microphoneDescriptor->position_.z = in.ReadFloat();
-    microphoneDescriptor->orientation_.x = in.ReadFloat();
-    microphoneDescriptor->orientation_.y = in.ReadFloat();
-    microphoneDescriptor->orientation_.z = in.ReadFloat();
+    microphoneDescriptor->micId_ = parcel.ReadInt32();
+    microphoneDescriptor->deviceType_ = static_cast<DeviceType>(parcel.ReadInt32());
+    microphoneDescriptor->groupId_ = parcel.ReadInt32();
+    microphoneDescriptor->sensitivity_ = parcel.ReadInt32();
+    microphoneDescriptor->position_.x = parcel.ReadFloat();
+    microphoneDescriptor->position_.y = parcel.ReadFloat();
+    microphoneDescriptor->position_.z = parcel.ReadFloat();
+    microphoneDescriptor->orientation_.x = parcel.ReadFloat();
+    microphoneDescriptor->orientation_.y = parcel.ReadFloat();
+    microphoneDescriptor->orientation_.z = parcel.ReadFloat();
 
     return microphoneDescriptor;
 }

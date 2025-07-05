@@ -35,6 +35,7 @@ namespace AudioStandard {
 namespace {
     static const size_t MAX_MMAP_BUFFER_SIZE = 10 * 1024 * 1024; // 10M
     static const std::string STATUS_INFO_BUFFER = "status_info_buffer";
+    static constexpr int MINFD = 2;
 }
 class AudioSharedMemoryImpl : public AudioSharedMemory {
 public:
@@ -51,6 +52,8 @@ public:
 
     int32_t Init();
 
+    bool Marshalling(Parcel &parcel) const override;
+
 private:
     void Close();
 
@@ -58,6 +61,19 @@ private:
     int fd_;
     size_t size_;
     std::string name_;
+};
+
+class ScopedFd {
+public:
+    explicit ScopedFd(int fd) : fd_(fd) {}
+    ~ScopedFd()
+    {
+        if (fd_ > MINFD) {
+            CloseFd(fd_);
+        }
+    }
+private:
+    int fd_ = -1;
 };
 
 AudioSharedMemoryImpl::AudioSharedMemoryImpl(size_t size, const std::string &name)
@@ -108,6 +124,16 @@ int32_t AudioSharedMemoryImpl::Init()
     AUDIO_DEBUG_LOG("Init %{public}s <%{public}s> done.", (isFromRemote ? "remote" : "local"),
         name_.c_str());
     return SUCCESS;
+}
+
+bool AudioSharedMemoryImpl::Marshalling(Parcel &parcel) const
+{
+    // Parcel -> MessageParcel
+    MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
+    CHECK_AND_RETURN_RET_LOG((size_ > 0 && size_ < MAX_MMAP_BUFFER_SIZE), false, "invalid size: %{public}zu", size_);
+    return msgParcel.WriteFileDescriptor(fd_) &&
+        msgParcel.WriteUint64(static_cast<uint64_t>(size_)) &&
+        msgParcel.WriteString(name_);
 }
 
 void AudioSharedMemoryImpl::Close()
@@ -203,6 +229,40 @@ std::shared_ptr<AudioSharedMemory> AudioSharedMemory::ReadFromParcel(MessageParc
         memory = nullptr;
     }
     CloseFd(fd);
+    return memory;
+}
+
+bool AudioSharedMemory::Marshalling(Parcel &parcel) const
+{
+    return true;
+}
+
+AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
+{
+    // Parcel -> MessageParcel
+    MessageParcel &msgParcel = static_cast<MessageParcel &>(parcel);
+    int fd = msgParcel.ReadFileDescriptor();
+    int minfd = 2; // ignore stdout, stdin and stderr.
+    CHECK_AND_RETURN_RET_LOG(fd > minfd, nullptr, "CreateFromRemote failed: invalid fd: %{public}d", fd);
+    ScopedFd scopedFd(fd);
+
+    uint64_t sizeTmp = msgParcel.ReadUint64();
+    CHECK_AND_RETURN_RET_LOG((sizeTmp > 0 && sizeTmp < MAX_MMAP_BUFFER_SIZE), nullptr, "failed with invalid size");
+    size_t size = static_cast<size_t>(sizeTmp);
+
+    std::string name = msgParcel.ReadString();
+
+    auto memory = new AudioSharedMemoryImpl(fd, size, name);
+    if (memory == nullptr) {
+        AUDIO_ERR_LOG("not enough memory");
+        return nullptr;
+    }
+
+    if (memory->Init() != SUCCESS || memory->GetBase() == nullptr) {
+        AUDIO_ERR_LOG("Init failed or GetBase failed");
+        delete memory;
+        return nullptr;
+    }
     return memory;
 }
 
@@ -360,6 +420,69 @@ std::shared_ptr<OHAudioBufferBase> OHAudioBufferBase::ReadFromParcel(MessageParc
     if (buffer == nullptr) {
         AUDIO_ERR_LOG("ReadFromParcel failed.");
     } else if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
+        byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
+        AUDIO_WARNING_LOG("data in shared memory diff.");
+    } else {
+        AUDIO_DEBUG_LOG("Read some data done.");
+    }
+    CloseFd(dataFd);
+    CloseFd(infoFd);
+    AUDIO_DEBUG_LOG("ReadFromParcel done.");
+    return buffer;
+}
+
+bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
+{
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+    AudioBufferHolder bufferHolder = bufferHolder_;
+    CHECK_AND_RETURN_RET_LOG(bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ||
+        bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT,
+        false, "buffer holder error:%{public}d", bufferHolder);
+    CHECK_AND_RETURN_RET_LOG(dataMem_ != nullptr, false, "dataMem_ is nullptr.");
+    CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
+
+    return messageParcel.WriteUint32(bufferHolder) &&
+        messageParcel.WriteUint32(byteSizePerFrame_) &&
+        messageParcel.WriteUint32(totalSizeInFrame_) &&
+        messageParcel.WriteFileDescriptor(dataMem_->GetFd()) &&
+        messageParcel.WriteFileDescriptor(statusInfoMem_->GetFd());
+}
+
+OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
+{
+    AUDIO_DEBUG_LOG("ReadFromParcel start.");
+    MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
+    uint32_t holder = messageParcel.ReadUint32();
+    AudioBufferHolder bufferHolder = static_cast<AudioBufferHolder>(holder);
+    if (bufferHolder != AudioBufferHolder::AUDIO_SERVER_SHARED &&
+        bufferHolder != AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) {
+        AUDIO_ERR_LOG("ReadFromParcel buffer holder error:%{public}d", bufferHolder);
+        return nullptr;
+    }
+    bufferHolder = bufferHolder == AudioBufferHolder::AUDIO_SERVER_SHARED ?
+         AudioBufferHolder::AUDIO_CLIENT : bufferHolder;
+    uint32_t totalSizeInFrame = messageParcel.ReadUint32();
+    uint32_t byteSizePerFrame = messageParcel.ReadUint32();
+
+    int dataFd = messageParcel.ReadFileDescriptor();
+    int infoFd = messageParcel.ReadFileDescriptor();
+
+    int minfd = 2; // ignore stdout, stdin and stderr.
+    CHECK_AND_RETURN_RET_LOG(dataFd > minfd, nullptr, "invalid dataFd: %{public}d", dataFd);
+
+    if (infoFd != INVALID_FD) {
+        CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
+    }
+    auto buffer = new OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    if (buffer == nullptr || buffer->Init(dataFd, infoFd, 0) != SUCCESS || buffer->basicBufferInfo_ == nullptr) {
+        AUDIO_ERR_LOG("failed to init.");
+        if (buffer != nullptr) delete buffer;
+        CloseFd(dataFd);
+        CloseFd(infoFd);
+        return nullptr;
+    }
+
+    if (totalSizeInFrame != buffer->basicBufferInfo_->totalSizeInFrame ||
         byteSizePerFrame != buffer->basicBufferInfo_->byteSizePerFrame) {
         AUDIO_WARNING_LOG("data in shared memory diff.");
     } else {

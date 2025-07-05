@@ -41,6 +41,7 @@
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
 #include "audio_server.h"
+#include "pulseaudio_ipc_interface_code.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -237,8 +238,7 @@ void OnRemoteRequestFuzzTest()
     MessageParcel data;
     MessageParcel reply;
     MessageOption option;
-    AsrNoiseSuppressionMode asrNoiseSuppressionMode = (static_cast<AsrNoiseSuppressionMode>(0));
-    audioServer->SetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    audioServer->SetAsrNoiseSuppressionMode(0);
     audioServer->OnRemoteRequest(format, data, reply, option);
 }
 

@@ -18,7 +18,7 @@
 #include <cstdint>
 
 #include "audio_manager_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "audio_service.h"
 #include "sink/i_audio_render_sink.h"

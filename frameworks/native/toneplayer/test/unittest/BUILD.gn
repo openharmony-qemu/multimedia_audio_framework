@@ -44,4 +44,11 @@ ohos_unittest("audio_toneplayer_unit_test") {
     "../../../toneplayer:audio_toneplayer",
     "./../../../../../frameworks/native/audiorenderer:audio_renderer",
   ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+  ]
 }

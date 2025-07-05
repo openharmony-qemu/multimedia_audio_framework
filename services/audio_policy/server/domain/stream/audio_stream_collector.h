@@ -16,11 +16,12 @@
 #ifndef AUDIO_STREAM_COLLECTOR_H
 #define AUDIO_STREAM_COLLECTOR_H
 
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
 #include "audio_ability_manager.h"
+#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,7 +37,6 @@ public:
     AudioStreamCollector();
     ~AudioStreamCollector();
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);

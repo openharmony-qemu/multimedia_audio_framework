@@ -553,20 +553,20 @@ const std::vector<StreamUsage> AUDIO_SUPPORTED_STREAM_USAGES {
     STREAM_USAGE_VOICE_CALL_ASSISTANT,
 };
 
-class AudioStreamInfo {
+class AudioStreamInfo : public Parcelable {
 public:
     AudioSamplingRate samplingRate;
     AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
-    constexpr AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
+    AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
         AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN)
         : samplingRate(samplingRate_), encoding(encoding_), format(format_), channels(channels_),
         channelLayout(channelLayout_)
     {}
     AudioStreamInfo() = default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(samplingRate))
             && parcel.WriteInt32(static_cast<int32_t>(encoding))
@@ -574,13 +574,25 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(channels))
             && parcel.WriteInt64(static_cast<int64_t>(channelLayout));
     }
-    void Unmarshalling(Parcel &parcel)
+
+    void UnmarshallingSelf(Parcel &parcel)
     {
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
         encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
+    }
+
+    static AudioStreamInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioStreamInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->UnmarshallingSelf(parcel);
+        return info;
     }
 };
 

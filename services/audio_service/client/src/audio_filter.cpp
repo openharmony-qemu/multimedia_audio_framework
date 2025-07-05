@@ -35,21 +35,19 @@ bool AudioRendererFilter::Marshalling(Parcel &parcel) const
         parcel.WriteInt32(streamId);
 }
 
-sptr<AudioRendererFilter> AudioRendererFilter::Unmarshalling(Parcel &in)
+AudioRendererFilter *AudioRendererFilter::Unmarshalling(Parcel &parcel)
 {
-    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
-    if (audioRendererFilter == nullptr) {
+    auto info = new AudioRendererFilter();
+    if (info == nullptr) {
         return nullptr;
     }
-
-    audioRendererFilter->uid = in.ReadInt32();
-    audioRendererFilter->rendererInfo.contentType = static_cast<ContentType>(in.ReadInt32());
-    audioRendererFilter->rendererInfo.streamUsage = static_cast<StreamUsage>(in.ReadInt32());
-    audioRendererFilter->streamType = static_cast<AudioStreamType>(in.ReadInt32());
-    audioRendererFilter->rendererInfo.rendererFlags = in.ReadInt32();
-    audioRendererFilter->streamId = in.ReadInt32();
-
-    return audioRendererFilter;
+    info->uid = parcel.ReadInt32();
+    info->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+    info->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+    info->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+    info->rendererInfo.rendererFlags = parcel.ReadInt32();
+    info->streamId = parcel.ReadInt32();
+    return info;
 }
 
 AudioCapturerFilter::AudioCapturerFilter()
@@ -65,9 +63,9 @@ bool AudioCapturerFilter::Marshalling(Parcel &parcel) const
         parcel.WriteInt32(capturerInfo.capturerFlags);
 }
 
-sptr<AudioCapturerFilter> AudioCapturerFilter::Unmarshalling(Parcel &in)
+AudioCapturerFilter *AudioCapturerFilter::Unmarshalling(Parcel &in)
 {
-    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    auto audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
     CHECK_AND_RETURN_RET(audioCapturerFilter != nullptr, nullptr);
 
     audioCapturerFilter->uid = in.ReadInt32();

@@ -22,8 +22,8 @@
 #include "rtg_interface.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "i_audio_workgroup_callback.h"
 #include "audio_workgroup_callback_proxy.h"
+#include "audio_workgroup_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

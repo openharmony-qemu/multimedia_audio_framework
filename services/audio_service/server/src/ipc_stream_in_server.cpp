@@ -36,7 +36,7 @@ StreamListenerHolder::~StreamListenerHolder()
     AUDIO_INFO_LOG("~StreamListenerHolder()");
 }
 
-int32_t StreamListenerHolder::RegisterStreamListener(sptr<IpcStreamListener> listener)
+int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
     // should only be set once
@@ -51,7 +51,18 @@ int32_t StreamListenerHolder::OnOperationHandled(Operation operation, int64_t re
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
     CHECK_AND_RETURN_RET_LOG(streamListener_ != nullptr, ERR_OPERATION_FAILED, "stream listrener not set");
-    return streamListener_->OnOperationHandled(operation, result);
+    if (IsWakeUpLaterNeeded(operation)) {
+        return streamListener_->OnOperationHandledLazy(operation, result);
+    } else {
+        return streamListener_->OnOperationHandled(operation, result);
+    }
+}
+
+bool StreamListenerHolder::IsWakeUpLaterNeeded(Operation operation)
+{
+    return (operation == SET_OFFLOAD_ENABLE) ||
+        (operation == DATA_LINK_CONNECTING) ||
+        (operation == DATA_LINK_CONNECTED);
 }
 
 sptr<IpcStreamInServer> IpcStreamInServer::Create(const AudioProcessConfig &config, int32_t &ret)
@@ -134,10 +145,10 @@ int32_t IpcStreamInServer::ConfigCapturer()
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::RegisterStreamListener(sptr<IRemoteObject> object)
+int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& object)
 {
     CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
-    sptr<IpcStreamListener> listener = iface_cast<IpcStreamListener>(object);
+    sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
     CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed");
     streamListenerHolder_->RegisterStreamListener(listener);
 
@@ -482,24 +493,23 @@ int32_t IpcStreamInServer::SetDuckFactor(float duckFactor)
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+int32_t IpcStreamInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
     return SUCCESS;
 }
 
-int32_t IpcStreamInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t IpcStreamInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
 {
     if ((mode_ != AUDIO_MODE_PLAYBACK) || (rendererInServer_ == nullptr)) {
         AUDIO_ERR_LOG("mode is not playback or renderer is null");
         return ERR_OPERATION_FAILED;
     }
-    return rendererInServer_->SetDefaultOutputDevice(defaultOutputDevice);
+    return rendererInServer_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice));
 }
 
 int32_t IpcStreamInServer::SetSourceDuration(int64_t duration)
@@ -536,7 +546,7 @@ int32_t IpcStreamInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr
     return ERR_OPERATION_FAILED;
 }
 
-int32_t IpcStreamInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+int32_t IpcStreamInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     if (mode_ != AUDIO_MODE_PLAYBACK || rendererInServer_ == nullptr) {
         AUDIO_ERR_LOG("failed, invalid mode: %{public}d, or rendererInServer_ is null: %{public}d,",

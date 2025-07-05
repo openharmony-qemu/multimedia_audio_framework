@@ -21,7 +21,8 @@
 #include <mutex>
 #include <vector>
 
-#include "i_core_service_provider_ipc.h"
+#include "icore_service_provider_ipc.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {

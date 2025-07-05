@@ -16,30 +16,13 @@
 #ifndef AUDIO_ZONE_CLIENT_H
 #define AUDIO_ZONE_CLIENT_H
 
-#include "i_standard_audio_zone_client.h"
+#include "standard_audio_zone_client_stub.h"
 #include "audio_zone_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioZoneClientStub : public IRemoteStub<IStandardAudioZoneClient> {
-public:
-    AudioZoneClientStub();
-    ~AudioZoneClientStub();
 
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
-        MessageOption &option) override;
-
-private:
-    void HandleAudioZoneAdd(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneRemove(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneChange(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneInterrupt(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneDeviceInterrupt(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneSetSystemVolume(MessageParcel &data, MessageParcel &reply);
-    void HandleAudioZoneGetSystemVolume(MessageParcel &data, MessageParcel &reply);
-};
-
-class AudioZoneClient : public AudioZoneClientStub {
+class AudioZoneClient : public StandardAudioZoneClientStub {
 public:
     AudioZoneClient();
     ~AudioZoneClient();
@@ -73,18 +56,19 @@ private:
 
         std::string GetInterruptKeyId(int32_t zoneId, const std::string &deviceTag);
 
-        void OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override;
-        void OnAudioZoneRemove(int32_t zoneId) override;
-        void OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
-            AudioZoneChangeReason reason) override;
-        void OnInterruptEvent(int32_t zoneId, const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-            AudioZoneInterruptReason reason) override;
-        void OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
-            const std::list<std::pair<AudioInterrupt, AudioFocuState>> &interrupts,
-            AudioZoneInterruptReason reason) override;
-        int32_t SetSystemVolume(const int32_t zoneId, const AudioVolumeType volumeType,
+        int32_t OnAudioZoneAdd(const AudioZoneDescriptor &zoneDescriptor) override;
+        int32_t OnAudioZoneRemove(int32_t zoneId) override;
+        int32_t OnAudioZoneChange(int32_t zoneId, const AudioZoneDescriptor &zoneDescriptor,
+            int32_t reason) override;
+        int32_t OnInterruptEvent(int32_t zoneId,
+            const std::vector<std::map<AudioInterrupt, int32_t>> &ipcInterrupts,
+            int32_t reason) override;
+        int32_t OnInterruptEvent(int32_t zoneId, const std::string &deviceTag,
+            const std::vector<std::map<AudioInterrupt, int32_t>> &ipcInterrupts,
+            int32_t reason) override;
+        int32_t SetSystemVolume(const int32_t zoneId, const int32_t volumeType,
             const int32_t volumeLevel, const int32_t volumeFlag) override;
-        int32_t GetSystemVolume(int32_t zoneId, AudioVolumeType volumeType) override;
+        int32_t GetSystemVolume(int32_t zoneId, int32_t volumeType, float &outVolume) override;
 };
 } // namespace AudioStandard
 } // namespace OHOS

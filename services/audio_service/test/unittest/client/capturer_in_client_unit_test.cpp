@@ -21,6 +21,7 @@
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
 #include "capturer_in_client.h"
+#include "audio_service_types.h"
 #include "capturer_in_client_inner.h"
 
 using namespace testing::ext;
@@ -97,95 +98,98 @@ public:
     void OnMarkReached(const int64_t &framePosition) override {};
 };
 
-class IpcStreamTest : public IpcStream {
+class IpcStreamTest : public IIpcStream {
 public:
     virtual ~IpcStreamTest() = default;
 
-    virtual int32_t RegisterStreamListener(sptr<IRemoteObject> object) { return 0; }
+    virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) { return 0; }
+    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override { return 0; }
 
-    virtual int32_t UpdatePosition() { return 0; }
+    virtual int32_t UpdatePosition() override { return 0; }
 
-    virtual int32_t GetAudioSessionID(uint32_t &sessionId) { return 0; }
+    virtual int32_t GetAudioSessionID(uint32_t &sessionId) override { return 0; }
 
-    virtual int32_t Start() { return 0; }
+    virtual int32_t Start() override { return 0; }
 
-    virtual int32_t Pause() { return 0; }
+    virtual int32_t Pause() override { return 0; }
 
-    virtual int32_t Stop() { return 0; }
+    virtual int32_t Stop() override { return 0; }
 
-    virtual int32_t Release(bool isSwitchStream = false) { return 0; }
+    virtual int32_t Release(bool isSwitchStream) override { return 0; }
 
-    virtual int32_t Flush() { return 0; }
+    virtual int32_t Flush() override { return 0; }
 
-    virtual int32_t Drain(bool stopFlag = false) { return 0; }
+    virtual int32_t Drain(bool stopFlag) override { return 0; }
 
-    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) { return 0; }
+    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
-    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) { return 0; }
+    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
 
-    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
     {
         return 0;
     }
 
-    virtual int32_t GetLatency(uint64_t &latency) { return 0; }
+    virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
-    virtual int32_t SetRate(int32_t rate) { return 0; } // SetRenderRate
+    virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
-    virtual int32_t GetRate(int32_t &rate) { return 0; } // SetRenderRate
+    virtual int32_t GetRate(int32_t &rate) override { return 0; } // SetRenderRate
 
-    virtual int32_t SetLowPowerVolume(float volume) { return 0; } // renderer only
+    virtual int32_t SetLowPowerVolume(float volume) override { return 0; } // renderer only
 
-    virtual int32_t GetLowPowerVolume(float &volume) { return 0; } // renderer only
+    virtual int32_t GetLowPowerVolume(float &volume) override { return 0; } // renderer only
 
-    virtual int32_t SetAudioEffectMode(int32_t effectMode) { return 0; } // renderer only
+    virtual int32_t SetAudioEffectMode(int32_t effectMode) override { return 0; } // renderer only
 
-    virtual int32_t GetAudioEffectMode(int32_t &effectMode) { return 0; } // renderer only
+    virtual int32_t GetAudioEffectMode(int32_t &effectMode) override { return 0; } // renderer only
 
-    virtual int32_t SetPrivacyType(int32_t privacyType) { return 0; } // renderer only
+    virtual int32_t SetPrivacyType(int32_t privacyType) override { return 0; } // renderer only
 
-    virtual int32_t GetPrivacyType(int32_t &privacyType) { return 0; } // renderer only
+    virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
-    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) { return 0; } // renderer only
+    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
-    virtual int32_t UnsetOffloadMode() { return 0; } // renderer only
+    virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
-        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) { return 0; } // renderer only
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return 0; } // renderer only
 
-    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) { return 0; }
-
-    virtual int32_t GetStreamManagerType() { return 0; }
-
-    virtual int32_t SetSilentModeAndMixWithOthers(bool on) { return 0; }
-
-    virtual int32_t SetClientVolume() { return 0; }
-
-    virtual int32_t SetLoudnessGain(float loudnessGain) { return 0; }
-
-    virtual int32_t SetMute(bool isMute) { return (isMute ? SUCCESS : ERROR); }
-
-    virtual int32_t SetDuckFactor(float duckFactor) { return 0; }
-
-    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method)
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override
     {
         return 0;
     }
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) { return 0; }
+    virtual int32_t GetStreamManagerType() override { return 0; }
 
-    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) override { return 0; }
 
-    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
+    virtual int32_t SetClientVolume() override { return 0; }
 
-    virtual sptr<IRemoteObject> AsObject() { return nullptr; }
+    virtual int32_t SetLoudnessGain(float loudnessGain) override { return 0; }
+
+    virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
+
+    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+
+    virtual int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override
+    {
+        return 0;
+    }
+
+    virtual int32_t SetDefaultOutputDevice(int32_t defaultOuputDevice) override { return 0; }
+
+    virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
+
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
+
+    sptr<IRemoteObject> AsObject() override { return nullptr; }
 
     virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
-        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) { return SUCCESS; }
-    
-    virtual int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) { return 0; }
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
+
+    virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
 };
 
 class AudioClientTrackerTest : public AudioClientTracker {
@@ -250,20 +254,20 @@ HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Operation operation = UPDATE_STREAM;
+    Operation operation = Operation::UPDATE_STREAM;
     int64_t result = 1;
     int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = BUFFER_OVERFLOW;
+    operation = Operation::BUFFER_OVERFLOW;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = RESTORE_SESSION;
+    operation = Operation::RESTORE_SESSION;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 
-    operation = START_STREAM;
+    operation = Operation::START_STREAM;
     ret = capturerInClientInner_->OnOperationHandled(operation, result);
     EXPECT_EQ(ret, SUCCESS);
 }
@@ -1287,7 +1291,7 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_002, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->audioStreamTracker_ = nullptr;
     capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = PAUSE_STREAM;
+    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
     capturerInClientInner_->notifiedResult_ = ERR_ILLEGAL_STATE;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
@@ -1307,7 +1311,7 @@ HWTEST(CapturerInClientUnitTest, StartAudioStream_003, TestSize.Level1)
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
     capturerInClientInner_->audioStreamTracker_ = nullptr;
     capturerInClientInner_->state_ = State::PREPARED;
-    capturerInClientInner_->notifiedOperation_ = PAUSE_STREAM;
+    capturerInClientInner_->notifiedOperation_ = Operation::PAUSE_STREAM;
     capturerInClientInner_->notifiedResult_ = SUCCESS;
     StateChangeCmdType cmdType = CMD_FROM_CLIENT;
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;

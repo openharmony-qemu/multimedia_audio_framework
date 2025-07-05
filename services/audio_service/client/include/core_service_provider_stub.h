@@ -16,36 +16,24 @@
 #ifndef CORE_SERVICE_PROVIDER_STUB_H
 #define CORE_SERVICE_PROVIDER_STUB_H
 
-#include "i_core_service_provider_ipc.h"
+#include "core_service_provider_ipc_stub.h"
+#include "i_core_service_provider.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class CoreServiceProviderStub : public IRemoteStub<ICoreServiceProviderIpc> {
-public:
-    virtual ~CoreServiceProviderStub() = default;
-    int OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override;
-private:
-    static bool CheckInterfaceToken(MessageParcel &data);
-    int32_t HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetAdapterNameBySessionId(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGetProcessDeviceInfoBySessionId(MessageParcel &data, MessageParcel &reply);
-    int32_t HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply);
-};
-
-class CoreServiceProviderWrapper : public CoreServiceProviderStub {
+class CoreServiceProviderWrapper : public CoreServiceProviderIpcStub {
 public:
     ~CoreServiceProviderWrapper();
     CoreServiceProviderWrapper(ICoreServiceProvider *coreServiceWorker);
 
-    int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation, SessionOperationMsg opMsg) override;
-    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-        const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning) override;
-    std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-        bool isReloadProcess) override;
-    uint32_t GenerateSessionId() override;
+    int32_t UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg) override;
+    int32_t ReloadCaptureSession(uint32_t sessionId, uint32_t operation) override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, uint32_t sessionID, int32_t streamUsage,
+        bool isRunning) override;
+    int32_t GetAdapterNameBySessionId(uint32_t sessionId, std::string& name) override;
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor& deviceInfo,
+         bool isReloadProcess) override;
+    int32_t GenerateSessionId(uint32_t &sessionId) override;
 
 private:
     ICoreServiceProvider *coreServiceWorker_;

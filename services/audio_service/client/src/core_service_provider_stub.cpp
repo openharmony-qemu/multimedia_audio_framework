@@ -22,86 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-bool CoreServiceProviderStub::CheckInterfaceToken(MessageParcel &data)
-{
-    static auto localDescriptor = ICoreServiceProviderIpc::GetDescriptor();
-    auto remoteDescriptor = data.ReadInterfaceToken();
-    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed.");
-    return true;
-}
-
-int CoreServiceProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
-    MessageOption &option)
-{
-    bool ret = CheckInterfaceToken(data);
-    CHECK_AND_RETURN_RET(ret, AUDIO_ERR);
-    if (code >= ICoreServiceProviderMsg::CORE_SERVICE_PROVIDER_MAX_MSG) {
-        AUDIO_WARNING_LOG("Unsupported request code:%{public}d.", code);
-        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-    }
-    switch (code) {
-        case UPDATE_SESSION_OPERATION:
-            return HandleUpdateSessionOperation(data, reply);
-        case SET_DEFAULT_OUTPUT_DEVICE:
-            return HandleSetDefaultOutputDevice(data, reply);
-        case GET_ADAPTER_NAME_BY_SESSION_ID:
-            return HandleGetAdapterNameBySessionId(data, reply);
-        case GET_PROCESS_DEVICE_INFO_BY_SESSION_ID:
-            return HandleGetProcessDeviceInfoBySessionId(data, reply);
-        case GENERATE_SESSION_ID:
-            return HandleGenerateSessionId(data, reply);
-        default:
-            AUDIO_WARNING_LOG("Unsupported request code:%{public}d.", code);
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-    }
-}
-
-int32_t CoreServiceProviderStub::HandleUpdateSessionOperation(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sessionId = data.ReadUint32();
-    SessionOperation operation = static_cast<SessionOperation>(data.ReadUint32());
-    SessionOperationMsg opMsg = static_cast<SessionOperationMsg>(data.ReadUint32());
-    int32_t ret = UpdateSessionOperation(sessionId, operation, opMsg);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t CoreServiceProviderStub::HandleSetDefaultOutputDevice(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t deviceType = data.ReadInt32();
-    uint32_t sessionID = data.ReadUint32();
-    int32_t streamUsage = data.ReadInt32();
-    bool isRunning = data.ReadBool();
-    reply.WriteInt32(SetDefaultOutputDevice(static_cast<OHOS::AudioStandard::DeviceType>(deviceType),
-        sessionID, static_cast<OHOS::AudioStandard::StreamUsage>(streamUsage), isRunning));
-    return AUDIO_OK;
-}
-
-int32_t CoreServiceProviderStub::HandleGetAdapterNameBySessionId(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sessionID = data.ReadUint32();
-    AUDIO_INFO_LOG("SessionId: %{public}u", sessionID);
-    reply.WriteString(GetAdapterNameBySessionId(sessionID));
-    return AUDIO_OK;
-}
-
-int32_t CoreServiceProviderStub::HandleGetProcessDeviceInfoBySessionId(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t sessionID = data.ReadUint32();
-    bool isReloadProcess = data.ReadBool();
-    AUDIO_INFO_LOG("SessionId: %{public}u, is in reload: %{public}d", sessionID, isReloadProcess);
-    AudioDeviceDescriptor deviceInfo;
-    int32_t ret = GetProcessDeviceInfoBySessionId(sessionID, deviceInfo, isReloadProcess);
-    deviceInfo.Marshalling(reply);
-    return ret;
-}
-
-int32_t CoreServiceProviderStub::HandleGenerateSessionId(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t ret = GenerateSessionId();
-    reply.ReadUint32(ret);
-    return AUDIO_OK;
-}
 
 CoreServiceProviderWrapper::~CoreServiceProviderWrapper()
 {
@@ -113,30 +33,32 @@ CoreServiceProviderWrapper::CoreServiceProviderWrapper(ICoreServiceProvider *cor
 {
 }
 
-int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
-    SessionOperationMsg opMsg)
+int32_t CoreServiceProviderWrapper::UpdateSessionOperation(uint32_t sessionId, uint32_t operation, uint32_t opMsg)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->UpdateSessionOperation(sessionId, operation, opMsg);
+    return coreServiceWorker_->UpdateSessionOperation(sessionId, static_cast<SessionOperation>(operation),
+        static_cast<SessionOperationMsg>(opMsg));
 }
 
-int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+int32_t CoreServiceProviderWrapper::ReloadCaptureSession(uint32_t sessionId, uint32_t operation)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->ReloadCaptureSession(sessionId, operation);
+    return coreServiceWorker_->ReloadCaptureSession(sessionId, static_cast<SessionOperation>(operation));
 }
 
-int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(const DeviceType defaultOutputDevice,
-    const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning)
+int32_t CoreServiceProviderWrapper::SetDefaultOutputDevice(int32_t defaultOutputDevice,
+    uint32_t sessionID, int32_t streamUsage, bool isRunning)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
+    return coreServiceWorker_->SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice), sessionID,
+        static_cast<StreamUsage>(streamUsage), isRunning);
 }
 
-std::string CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID)
+int32_t CoreServiceProviderWrapper::GetAdapterNameBySessionId(uint32_t sessionID, std::string& name)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, "", "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetAdapterNameBySessionId(sessionID);
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    name = coreServiceWorker_->GetAdapterNameBySessionId(sessionID);
+    return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(
@@ -146,10 +68,11 @@ int32_t CoreServiceProviderWrapper::GetProcessDeviceInfoBySessionId(
     return coreServiceWorker_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
 }
 
-uint32_t CoreServiceProviderWrapper::GenerateSessionId()
+int32_t CoreServiceProviderWrapper::GenerateSessionId(uint32_t &sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, 0, "coreServiceWorker_ is null");
-    return coreServiceWorker_->GenerateSessionId();
+    sessionId = coreServiceWorker_->GenerateSessionId();
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

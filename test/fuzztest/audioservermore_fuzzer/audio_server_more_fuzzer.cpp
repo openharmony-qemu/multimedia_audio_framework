@@ -19,13 +19,14 @@
 #include <string>
 
 #include "audio_manager_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
 #include "audio_process_in_client.h"
 #include "audio_param_parser.h"
 #include "audio_process_config.h"
 #include "ipc_stream_in_server.h"
+#include "pulseaudio_ipc_interface_code.h"
 using namespace std;
 
 namespace OHOS {
@@ -354,7 +355,7 @@ void AudioCreateAudioProcessTest(const uint8_t* rawData, size_t size)
     config.streamType = AudioStreamType::STREAM_MUSIC;
     config.deviceType = DEVICE_TYPE_USB_HEADSET;
 
-    ProcessConfig::WriteConfigToParcel(config, data);
+    config.Marshalling(data);
 
     std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;

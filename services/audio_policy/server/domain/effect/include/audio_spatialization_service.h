@@ -32,6 +32,7 @@
 #include "iaudio_policy_interface.h"
 #include "iport_observer.h"
 #include "audio_policy_server_handler.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -124,7 +125,7 @@ private:
     bool headTrackingEnabledReal_ = false;
     bool isHeadTrackingDataRequested_ = false;
     bool isLoadedfromDb_ = false;
-    AudioSpatializationState spatializationStateFlag_ = {false};
+    AudioSpatializationState spatializationStateFlag_ = {};
     std::unordered_map<std::string, AudioSpatializationState> addressToSpatialEnabledMap_;
     AudioSpatializationSceneType spatializationSceneType_ = SPATIALIZATION_SCENE_TYPE_MUSIC;
     AudioSpatialDeviceType currSpatialDeviceType_{ EARPHONE_TYPE_OTHERS };

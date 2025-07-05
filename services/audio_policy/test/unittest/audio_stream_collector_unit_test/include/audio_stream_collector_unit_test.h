@@ -20,7 +20,7 @@
 #include "gmock/gmock.h"
 #include "audio_stream_collector.h"
 #include "audio_info.h"
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"

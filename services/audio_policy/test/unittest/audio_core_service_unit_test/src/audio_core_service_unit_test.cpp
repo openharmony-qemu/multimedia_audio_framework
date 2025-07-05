@@ -950,13 +950,14 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredOutputStreamType_001, TestSize.Le
     EXPECT_NE(nullptr, server);
 
     AudioRendererInfo rendererInfo;
-    int32_t ret = server->GetPreferredOutputStreamType(rendererInfo);
+    int32_t ret = 0;
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
     server->coreService_->isFastControlled_ = true;
-    ret = server->GetPreferredOutputStreamType(rendererInfo);
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
     rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    ret = server->GetPreferredOutputStreamType(rendererInfo);
+    server->GetPreferredOutputStreamType(rendererInfo, ret);
     EXPECT_EQ(ret, 0);
 }
 
@@ -971,13 +972,14 @@ HWTEST_F(AudioCoreServiceUnitTest, GetPreferredInputStreamType_001, TestSize.Lev
     EXPECT_NE(nullptr, server);
 
     AudioCapturerInfo capturerInfo;
-    int32_t ret = server->GetPreferredInputStreamType(capturerInfo);
+    int32_t ret = 0;
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
     server->coreService_->isFastControlled_ = true;
-    ret = server->GetPreferredInputStreamType(capturerInfo);
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
     capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    ret = server->GetPreferredInputStreamType(capturerInfo);
+    server->GetPreferredInputStreamType(capturerInfo, ret);
     EXPECT_EQ(ret, 0);
 }
 

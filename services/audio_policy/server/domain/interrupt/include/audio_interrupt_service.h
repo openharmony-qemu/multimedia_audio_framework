@@ -33,6 +33,7 @@
 #include "audio_zone_info.h"
 #include "audio_interrupt_zone.h"
 #include "audio_info.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {

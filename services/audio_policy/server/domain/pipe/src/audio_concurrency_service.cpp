@@ -19,7 +19,7 @@
 #include "audio_utils.h"
 #include "audio_stream_collector.h"
 #include "audio_concurrency_service.h"
-#include "audio_concurrency_state_listener_proxy.h"
+#include "audio_concurrency_state_listener_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {

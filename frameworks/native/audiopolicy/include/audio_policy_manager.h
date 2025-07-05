@@ -18,28 +18,27 @@
 
 #include <cstdint>
 #include <memory>
-#include "audio_client_tracker_callback_stub.h"
+#include "audio_client_tracker_callback_service.h"
+#include "audio_client_tracker_callback_listener.h"
 #include "audio_effect.h"
 #include "audio_concurrency_callback.h"
-#include "audio_concurrency_state_listener_stub.h"
+#include "audio_concurrency_state_listener_callback.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "iaudio_policy.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_policy_client_stub_impl.h"
 #include "audio_routing_manager.h"
-#include "audio_routing_manager_listener_stub.h"
-#include "audio_anahs_manager_listener_stub.h"
+#include "audio_routing_manager_listener.h"
+#include "audio_anahs_manager_listener.h"
 #include "audio_policy_interface.h"
 #include "audio_system_manager.h"
-#include "i_standard_client_tracker.h"
+#include "istandard_client_tracker.h"
 #include "audio_policy_log.h"
 #include "microphone_descriptor.h"
 #include "audio_spatialization_manager.h"
-#include "audio_spatialization_state_change_listener_stub.h"
-#include "i_standard_spatialization_state_change_listener.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_stream_descriptor.h"
-#include "sle_audio_operation_callback_stub.h"
+#include "sle_audio_operation_callback_stub_impl.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -686,7 +685,7 @@ private:
     static std::unordered_map<int32_t, std::weak_ptr<AudioRendererPolicyServiceDiedCallback>> rendererCBMap_;
     static std::weak_ptr<AudioCapturerPolicyServiceDiedCallback> capturerCB_;
     static std::vector<std::weak_ptr<AudioStreamPolicyServiceDiedCallback>> audioStreamCBMap_;
-    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackStub>> clientTrackerStubMap_;
+    static std::unordered_map<int32_t, sptr<AudioClientTrackerCallbackService>> clientTrackerStubMap_;
 
     bool isAudioRendererEventListenerRegistered = false;
     bool isAudioCapturerEventListenerRegistered = false;

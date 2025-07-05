@@ -22,10 +22,8 @@
 
 #include "audio_policy_log.h"
 #include "audio_system_manager.h"
-#include "audio_policy_client.h"
-#include "i_standard_concurrency_state_listener.h"
-#include "i_standard_audio_policy_manager_listener.h"
-#include "i_standard_audio_routing_manager_listener.h"
+#include "istandard_concurrency_state_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 #include "i_audio_concurrency_event_dispatcher.h"
 #include "i_audio_zone_event_dispatcher.h"
@@ -33,6 +31,9 @@
 namespace OHOS {
 namespace AudioStandard {
 
+class IStandardAudioRoutingManagerListener;
+class AudioPolicyClientHolder;
+class AudioPolicyManagerListenerCallback;
 class AudioPolicyServerHandler : public AppExecFwk::EventHandler {
     DECLARE_DELAYED_SINGLETON(AudioPolicyServerHandler)
 public:
@@ -142,12 +143,12 @@ public:
 
     void Init(std::shared_ptr<IAudioInterruptEventDispatcher> dispatcher);
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient> &cb);
+    void AddAudioPolicyClientProxyMap(int32_t clientPid, const std::shared_ptr<AudioPolicyClientHolder> &cb);
     void RemoveAudioPolicyClientProxyMap(pid_t clientPid);
     void AddExternInterruptCbsMap(int32_t clientId, const std::shared_ptr<AudioInterruptCallback> &callback);
     int32_t RemoveExternInterruptCbsMap(int32_t clientId);
     void AddAvailableDeviceChangeMap(int32_t clientId, const AudioDeviceUsage usage,
-        const sptr<IStandardAudioPolicyManagerListener> &callback);
+        const std::shared_ptr<AudioPolicyManagerListenerCallback> &callback);
     void RemoveAvailableDeviceChangeMap(const int32_t clientId, AudioDeviceUsage usage);
     void AddDistributedRoutingRoleChangeCbsMap(int32_t clientId,
         const sptr<IStandardAudioRoutingManagerListener> &callback);
@@ -258,7 +259,7 @@ private:
 
     void HandleOtherServiceEvent(const uint32_t &eventId, const AppExecFwk::InnerEvent::Pointer &event);
 
-    void HandleVolumeChangeCallback(int32_t clientId, sptr<IAudioPolicyClient> audioPolicyClient,
+    void HandleVolumeChangeCallback(int32_t clientId, std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient,
         const VolumeEvent &volumeEvent);
 
     void HandleVolumeKeyEventToRssWhenAccountsChange(std::shared_ptr<EventContextObj> &eventContextObj);
@@ -275,12 +276,12 @@ private:
     std::weak_ptr<IAudioConcurrencyEventDispatcher> concurrencyEventDispatcher_;
     std::weak_ptr<IAudioZoneEventDispatcher> audioZoneEventDispatcher_;
 
-    std::unordered_map<int32_t, sptr<IAudioPolicyClient>> audioPolicyClientProxyAPSCbsMap_;
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> audioPolicyClientProxyAPSCbsMap_;
     std::string pidsStrForPrinting_ = "[]";
 
     std::unordered_map<int32_t, std::shared_ptr<AudioInterruptCallback>> amInterruptCbsMap_;
     std::map<std::pair<int32_t, AudioDeviceUsage>,
-        sptr<IStandardAudioPolicyManagerListener>> availableDeviceChangeCbsMap_;
+        std::shared_ptr<AudioPolicyManagerListenerCallback>> availableDeviceChangeCbsMap_;
     std::unordered_map<int32_t, sptr<IStandardAudioRoutingManagerListener>> distributedRoutingRoleChangeCbsMap_;
     std::unordered_map<int32_t,  std::unordered_map<CallbackChange, bool>> clientCallbacksMap_;
     int32_t pidOfRss_ = -1;

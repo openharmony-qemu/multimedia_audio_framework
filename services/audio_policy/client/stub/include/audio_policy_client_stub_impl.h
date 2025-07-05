@@ -26,6 +26,7 @@
 #include "audio_spatialization_manager.h"
 #include "audio_combine_denoising_manager.h"
 #include "audio_policy_interface.h"
+#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -135,46 +136,45 @@ public:
     int32_t RemoveAudioFormatUnsupportedErrorCallback();
     size_t GetAudioFormatUnsupportedErrorCallbackSize() const;
 
-    void OnRecreateRendererStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnRecreateCapturerStreamEvent(const uint32_t sessionId, const int32_t streamFlag,
-        const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-    void OnAudioFocusInfoChange(const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList) override;
-    void OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
-    void OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
-    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
-    void OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
-    void OnRingerModeUpdated(const AudioRingerMode &ringerMode) override;
-    void OnActiveVolumeTypeChanged(const AudioVolumeType& volumeType) override;
-    void OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
-    void OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
-    void OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
+    int32_t OnRecreateRendererStreamEvent(uint32_t sessionId, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt &reason) override;
+    int32_t OnRecreateCapturerStreamEvent(uint32_t sessionId, int32_t streamFlag,
+        const AudioStreamDeviceChangeReasonExt &reason) override;
+    int32_t OnVolumeKeyEvent(const VolumeEvent &volumeEvent) override;
+    int32_t OnAudioFocusInfoChange(const std::vector<std::map<AudioInterrupt, int32_t>> &focusInfoList) override;
+    int32_t OnAudioFocusRequested(const AudioInterrupt &requestFocus) override;
+    int32_t OnAudioFocusAbandoned(const AudioInterrupt &abandonFocus) override;
+    int32_t OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override;
+    int32_t OnMicrophoneBlocked(const MicrophoneBlockedInfo &microphoneBlockedInfo) override;
+    int32_t OnRingerModeUpdated(int32_t ringerMode) override;
+    int32_t OnActiveVolumeTypeChanged(int32_t volumeType) override;
+    int32_t OnAppVolumeChanged(int32_t appUid, const VolumeEvent& volumeEvent) override;
+    int32_t OnMicStateUpdated(const MicStateChangeEvent &micStateChangeEvent) override;
+    int32_t OnPreferredOutputDeviceUpdated(const AudioRendererInfo &rendererInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
-    void OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
+    int32_t OnPreferredInputDeviceUpdated(const AudioCapturerInfo &capturerInfo,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) override;
-    void OnRendererStateChange(
-        std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
-    void OnCapturerStateChange(
-        std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
-    void OnRendererDeviceChange(const uint32_t sessionId,
-        const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt reason) override;
-    void OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
-    void OnSpatializationEnabledChange(const bool &enabled) override;
-    void OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) override;
-    void OnSpatializationEnabledChangeForCurrentDevice(const bool &enabled) override;
-    void OnHeadTrackingEnabledChange(const bool &enabled) override;
-    void OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const bool &enabled) override;
-    void OnNnStateChange(const int32_t &nnState) override;
-    void OnAudioSessionDeactive(const AudioSessionDeactiveEvent &deactiveEvent) override;
-    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
-    void OnAudioSceneChange(const AudioScene &audioScene) override;
-    void OnFormatUnsupportedError(const AudioErrors &errorCode) override;
-    void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override;
-    void OnSystemVolumeChange(VolumeEvent volumeEvent) override;
-
+    int32_t OnRendererStateChange(
+        const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos) override;
+    int32_t OnCapturerStateChange(
+        const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos) override;
+    int32_t OnRendererDeviceChange(uint32_t sessionId,
+        const AudioDeviceDescriptor &deviceInfo, const AudioStreamDeviceChangeReasonExt &reason) override;
+    int32_t OnHeadTrackingDeviceChange(const std::unordered_map<std::string, bool> &changeInfo) override;
+    int32_t OnSpatializationEnabledChange(bool enabled) override;
+    int32_t OnSpatializationEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        bool enabled) override;
+    int32_t OnSpatializationEnabledChangeForCurrentDevice(bool enabled) override;
+    int32_t OnHeadTrackingEnabledChange(bool enabled) override;
+    int32_t OnHeadTrackingEnabledChangeForAnyDevice(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
+        bool enabled) override;
+    int32_t OnNnStateChange(int32_t nnState) override;
+    int32_t OnAudioSessionDeactive(int32_t deactiveEvent) override;
+    int32_t OnAudioSceneChange(int32_t audioScene) override;
+    int32_t OnAudioSessionStateChanged(int32_t stateChangeHint) override;
+    int32_t OnFormatUnsupportedError(int32_t errorCode) override;
+    int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
+    int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
 private:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> DeviceFilterByFlag(DeviceFlag flag,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& desc);

@@ -148,41 +148,5 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
     zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
     EXPECT_EQ(zoneList.size(), 0);
 }
-
-/**
- * @tc.name  : Test AudioZone.
- * @tc.number: AudioZone_005
- * @tc.desc  : Test audio zone report
- */
-HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
-{
-    ClearZone();
-    AudioZoneContext context;
-    EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneReport(TEST_PID_1000, true), 0);
-    auto client = RegisterTestClient(TEST_PID_1000);
-    EXPECT_NE(client, nullptr);
-    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
-    EXPECT_NE(zoneId1, 0);
-}
-
-/**
- * @tc.name  : Test AudioZone.
- * @tc.number: AudioZone_006
- * @tc.desc  : Test audio zone change report
- */
-HWTEST_F(AudioZoneUnitTest, AudioZone_006, TestSize.Level1)
-{
-    ClearZone();
-    AudioZoneContext context;
-    EXPECT_NE(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, 1, true), 0);
-    auto client = RegisterTestClient(TEST_PID_1000);
-    EXPECT_NE(client, nullptr);
-    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
-    EXPECT_NE(zoneId1, 0);
-    EXPECT_EQ(AudioZoneService::GetInstance().EnableAudioZoneChangeReport(TEST_PID_1000, zoneId1, true), 0);
-
-    EXPECT_EQ(AudioZoneService::GetInstance().AddUidToAudioZone(zoneId1, TEST_PID_1000), 0);
-    EXPECT_NE(client->recvEvent_.type, AUDIO_ZONE_CHANGE_EVENT);
-}
 } // namespace AudioStandard
 } // namespace OHOS

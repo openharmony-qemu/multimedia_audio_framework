@@ -74,6 +74,7 @@
     *RemoveThreadFromGroup*;
     *StartGroup*;
     *StopGroup*;
+    *AudioWorkgroupCallback*;
   local:
     *;
 };

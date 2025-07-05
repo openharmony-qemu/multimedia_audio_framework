@@ -54,6 +54,7 @@
 #include "volume_tools.h"
 
 #include "media_monitor_manager.h"
+#include "istandard_audio_service.h"
 
 using namespace OHOS::HiviewDFX;
 using namespace OHOS::AppExecFwk;
@@ -176,7 +177,9 @@ void RendererInClientInner::InitDirectPipeType()
 int32_t RendererInClientInner::DeinitIpcStream()
 {
     Trace trace("RendererInClientInner::DeinitIpcStream");
-    ipcStream_->Release();
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr && ringCache_ != nullptr, ERROR,
+        "ipcStream_ or ringCache_ is nullptr");
+    ipcStream_->Release(false);
     ringCache_->ResetBuffer();
     return SUCCESS;
 }
@@ -252,14 +255,16 @@ int32_t RendererInClientInner::InitIpcStream()
     sptr<IStandardAudioService> gasp = RendererInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    AudioPlaybackCaptureConfig playbackConfig = {};
+    gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        gasp->CreateAudioProcess(config, errorCode, playbackConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan next: old listener_ is destoried here, will server receive dieth notify?

@@ -37,10 +37,10 @@ void AudioPolicyManagerStubUnitTest::SetUp(void) {}
 void AudioPolicyManagerStubUnitTest::TearDown(void) {}
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_001
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTenRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleTenRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_001, TestSize.Level1)
 {
@@ -59,10 +59,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_002
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTenRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleTenRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_002, TestSize.Level1)
 {
@@ -81,10 +81,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_002, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_003
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTenRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleTenRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_003, TestSize.Level1)
 {
@@ -103,10 +103,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_003, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_004
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_004, TestSize.Level1)
 {
@@ -125,10 +125,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_004, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_005
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_005, TestSize.Level1)
 {
@@ -147,10 +147,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_005, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_006
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_006, TestSize.Level1)
 {
@@ -169,10 +169,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_006, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_007
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_007, TestSize.Level1)
 {
@@ -191,10 +191,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_007, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_008
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_008, TestSize.Level1)
 {
@@ -213,10 +213,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_008, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_009
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_009, TestSize.Level1)
 {
@@ -235,10 +235,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_009, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_010
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_010, TestSize.Level1)
 {
@@ -257,10 +257,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_010, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_011
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_011, TestSize.Level1)
 {
@@ -279,10 +279,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_011, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_012
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_012, TestSize.Level1)
 {
@@ -301,10 +301,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_012, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_013
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_013, TestSize.Level1)
 {
@@ -323,10 +323,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_013, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_014
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_014, TestSize.Level1)
 {
@@ -345,10 +345,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_014, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_015
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_015, TestSize.Level1)
 {
@@ -367,10 +367,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_015, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_016
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_016, TestSize.Level1)
 {
@@ -389,10 +389,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_016, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_017
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_017, TestSize.Level1)
 {
@@ -411,10 +411,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_017, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_018
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleNinRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleNinRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_018, TestSize.Level1)
 {
@@ -433,10 +433,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_018, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_019
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_019, TestSize.Level1)
 {
@@ -455,10 +455,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_019, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_020
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_020, TestSize.Level1)
 {
@@ -477,10 +477,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_020, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_021
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_021, TestSize.Level1)
 {
@@ -499,10 +499,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_021, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_022
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_022, TestSize.Level1)
 {
@@ -521,10 +521,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_022, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_023
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_023, TestSize.Level1)
 {
@@ -543,10 +543,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_023, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_024
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_024, TestSize.Level1)
 {
@@ -565,10 +565,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_024, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_025
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleEigRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleEigRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_025, TestSize.Level1)
 {
@@ -587,10 +587,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_025, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_026
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_026, TestSize.Level1)
 {
@@ -609,10 +609,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_026, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_027
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_027, TestSize.Level1)
 {
@@ -631,10 +631,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_027, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_028
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_028, TestSize.Level1)
 {
@@ -653,10 +653,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_028, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_029
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_029, TestSize.Level1)
 {
@@ -675,10 +675,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_029, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_030
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_030, TestSize.Level1)
 {
@@ -697,10 +697,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_030, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_031
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_031, TestSize.Level1)
 {
@@ -719,10 +719,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_031, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_032
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_032, TestSize.Level1)
 {
@@ -741,10 +741,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_032, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_033
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSevRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSevRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_033, TestSize.Level1)
 {
@@ -763,10 +763,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_033, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_034
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_034, TestSize.Level1)
 {
@@ -785,10 +785,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_034, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_035
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_035, TestSize.Level1)
 {
@@ -807,10 +807,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_035, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_036
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_036, TestSize.Level1)
 {
@@ -829,10 +829,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_036, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_037
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_037, TestSize.Level1)
 {
@@ -851,10 +851,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_037, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_038
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_038, TestSize.Level1)
 {
@@ -873,10 +873,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_038, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_039
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_039, TestSize.Level1)
 {
@@ -895,10 +895,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_039, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_040
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSixRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSixRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_040, TestSize.Level1)
 {
@@ -917,10 +917,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_040, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_041
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFifRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFifRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_041, TestSize.Level1)
 {
@@ -939,10 +939,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_041, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_042
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFifRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFifRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_042, TestSize.Level1)
 {
@@ -961,10 +961,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_042, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_043
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFifRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFifRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_043, TestSize.Level1)
 {
@@ -983,10 +983,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_043, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_044
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFifRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFifRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_044, TestSize.Level1)
 {
@@ -1005,10 +1005,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_044, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_045
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFouRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFouRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_045, TestSize.Level1)
 {
@@ -1027,10 +1027,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_045, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_046
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleTirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_046, TestSize.Level1)
 {
@@ -1049,10 +1049,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_046, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_048
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleTirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleTirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_048, TestSize.Level1)
 {
@@ -1071,10 +1071,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_048, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_049
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSecRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSecRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_049, TestSize.Level1)
 {
@@ -1093,10 +1093,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_049, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_050
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSecRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSecRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_050, TestSize.Level1)
 {
@@ -1115,10 +1115,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_050, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_051
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleSecRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleSecRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_051, TestSize.Level1)
 {
@@ -1137,10 +1137,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_051, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_052
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_052, TestSize.Level1)
 {
@@ -1159,10 +1159,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_052, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_053
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_053, TestSize.Level1)
 {
@@ -1181,10 +1181,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_053, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_054
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_054, TestSize.Level1)
 {
@@ -1203,10 +1203,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_054, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_055
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_055, TestSize.Level1)
 {
@@ -1225,10 +1225,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_055, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_058
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddleFirRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddleFirRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_058, TestSize.Level1)
 {
@@ -1247,10 +1247,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_058, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_059
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddlesRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddlesRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_059, TestSize.Level1)
 {
@@ -1269,10 +1269,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_059, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_060
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddlesRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddlesRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_060, TestSize.Level1)
 {
@@ -1291,10 +1291,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_060, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_061
- * @tc.desc  : Test AudioPolicyManagerStub::OnMiddlesRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMiddlesRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_061, TestSize.Level1)
 {
@@ -1313,10 +1313,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_061, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_062
- * @tc.desc  : Test AudioPolicyManagerStub::OnMidRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMidRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_062, TestSize.Level1)
 {
@@ -1335,10 +1335,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_062, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_063
- * @tc.desc  : Test AudioPolicyManagerStub::OnMidRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMidRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_063, TestSize.Level1)
 {
@@ -1357,10 +1357,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_063, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_064
- * @tc.desc  : Test AudioPolicyManagerStub::OnMidRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMidRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_064, TestSize.Level1)
 {
@@ -1379,10 +1379,10 @@ HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_064, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test AudioPolicyManagerStub API
+ * @tc.name  : Test AudioPolicyStub API
  * @tc.type  : FUNC
  * @tc.number: AudioPolicyManagerStub_065
- * @tc.desc  : Test AudioPolicyManagerStub::OnMidRemoteRequest
+ * @tc.desc  : Test AudioPolicyStub::OnMidRemoteRequest
  */
 HWTEST(AudioPolicyManagerStubUnitTest, AudioPolicyManagerStub_065, TestSize.Level1)
 {

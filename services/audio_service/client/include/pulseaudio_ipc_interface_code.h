@@ -19,6 +19,7 @@
 /* SAID: 3001 */
 namespace OHOS {
 namespace AudioStandard {
+    // WARNING: below functions correspond with IStandardAudioService.idl
     enum class AudioServerInterfaceCode {
         GET_AUDIO_PARAMETER,
         SET_AUDIO_PARAMETER,

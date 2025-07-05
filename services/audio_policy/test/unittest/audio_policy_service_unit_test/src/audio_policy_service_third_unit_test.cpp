@@ -40,6 +40,7 @@ public:
     size_t GetSize() override { return 0; };
     int GetFd() override { return 0; };
     std::string GetName() override { return "abc"; };
+    bool Marshalling(Parcel &parcel) const override { return true; };
 };
 
 static AudioPolicyServer* GetServerPtr()

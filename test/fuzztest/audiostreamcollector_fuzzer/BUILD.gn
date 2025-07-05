@@ -21,6 +21,7 @@ ohos_fuzztest("AudioStreamCollectorFuzzTest") {
 
   include_dirs = [
     "../../../services/audio_policy/server/domain/stream",
+    "../../../interfaces/inner_api/native/audiocommon/include/",
   ]
 
   cflags = [
@@ -37,6 +38,7 @@ ohos_fuzztest("AudioStreamCollectorFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
   ]

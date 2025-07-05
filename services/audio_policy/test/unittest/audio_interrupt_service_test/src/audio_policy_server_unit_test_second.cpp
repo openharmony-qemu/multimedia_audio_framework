@@ -26,6 +26,34 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_169
+ * @tc.desc  : Test DeactivatePreemptMode.
+ */
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_169, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    int32_t result = audioPolicyServer->DeactivatePreemptMode();
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyServer.
+* @tc.number: AudioPolicyServer_170
+* @tc.desc  : Test SubscribeBackgroundTask.
+*/
+HWTEST(AudioPolicyUnitTest, AudioPolicyServer_170, TestSize.Level1)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);;
+
+    audioPolicyServer->SubscribeBackgroundTask();
+}
 
 /**
 * @tc.name  : Test AudioPolicyServer.
@@ -276,7 +304,8 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_212, TestSize.Level1)
     EXPECT_NE(audioPolicyServer->eventEntry_, nullptr);
 
     AudioCapturerInfo captureInfo;
-    auto ret = audioPolicyServer->GetPreferredInputDeviceDescriptors(captureInfo);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> ret;
+    audioPolicyServer->GetPreferredInputDeviceDescriptors(captureInfo, ret);
     EXPECT_NE(ret.size(), 0);
 }
 

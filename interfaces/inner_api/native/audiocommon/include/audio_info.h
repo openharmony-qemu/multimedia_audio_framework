@@ -92,7 +92,7 @@ const char* REMOTE_CAST_INNER_CAPTURER_SINK_NAME = "RemoteCastInnerCapturer";
 const char* DUP_STREAM = "DupStream";
 }
 
-#ifdef FEATURE_DTMF_TONE
+//#ifdef FEATURE_DTMF_TONE  cant contain this macro due to idl dependency
 // Maximun number of sine waves in a tone segment
 constexpr uint32_t TONEINFO_MAX_WAVES = 3;
 //Maximun number of SupportedTones
@@ -100,12 +100,15 @@ constexpr uint32_t MAX_SUPPORTED_TONEINFO_SIZE = 65535;
 // Maximun number of segments in a tone descriptor
 constexpr uint32_t TONEINFO_MAX_SEGMENTS = 12;
 constexpr uint32_t TONEINFO_INF = 0xFFFFFFFF;
+
 class ToneSegment : public Parcelable {
 public:
     uint32_t duration;
     uint16_t waveFreq[TONEINFO_MAX_WAVES+1];
     uint16_t loopCnt;
     uint16_t loopIndx;
+
+    ToneSegment() = default;
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(duration);
@@ -116,7 +119,8 @@ public:
         }
         return true;
     }
-    void Unmarshalling(Parcel &parcel)
+
+    void UnmarshallingSelf(Parcel &parcel)
     {
         duration = parcel.ReadUint32();
         loopCnt = parcel.ReadUint16();
@@ -124,6 +128,17 @@ public:
         for (uint32_t i = 0; i < TONEINFO_MAX_WAVES + 1; i++) {
             waveFreq[i] = parcel.ReadUint16();
         }
+    }
+
+    static ToneSegment *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new ToneSegment();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->UnmarshallingSelf(parcel);
+        return info;
     }
 };
 
@@ -133,6 +148,7 @@ public:
     uint32_t segmentCnt;
     uint32_t repeatCnt;
     uint32_t repeatSegment;
+    ToneInfo() = default;
     bool Marshalling(Parcel &parcel) const override
     {
         parcel.WriteUint32(segmentCnt);
@@ -146,20 +162,26 @@ public:
         }
         return true;
     }
-    void Unmarshalling(Parcel &parcel)
+    static ToneInfo *Unmarshalling(Parcel &parcel)
     {
-        segmentCnt = parcel.ReadUint32();
-        repeatCnt = parcel.ReadUint32();
-        repeatSegment = parcel.ReadUint32();
-        if (!(segmentCnt >= 0 && segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
-            return;
+        auto info = new ToneInfo();
+        if (info == nullptr) {
+            return nullptr;
         }
-        for (uint32_t i = 0; i < segmentCnt; i++) {
-            segments[i].Unmarshalling(parcel);
+        info->segmentCnt = parcel.ReadUint32();
+        info->repeatCnt = parcel.ReadUint32();
+        info->repeatSegment = parcel.ReadUint32();
+        if (!(info->segmentCnt >= 0 && info->segmentCnt <= TONEINFO_MAX_SEGMENTS + 1)) {
+            delete info;
+            return nullptr;
         }
+        for (uint32_t i = 0; i < info->segmentCnt; i++) {
+            info->segments[i].UnmarshallingSelf(parcel);
+        }
+        return info;
     }
 };
-#endif
+//#endif
 
 enum VolumeAdjustType {
     /**
@@ -379,7 +401,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
     "check CALLBACK_ENUMS");
 
-struct VolumeEvent {
+struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
     bool updateUi;
@@ -392,7 +414,7 @@ struct VolumeEvent {
         volume(volLevel), updateUi(isUiUpdated) {}
     VolumeEvent() = default;
 
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
@@ -402,7 +424,7 @@ struct VolumeEvent {
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(notifyRssWhenAccountsChange);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
@@ -412,16 +434,26 @@ struct VolumeEvent {
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
         notifyRssWhenAccountsChange = parcel.ReadBool();
     }
+
+    static VolumeEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new VolumeEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->UnmarshallingSelf(parcel);
+        return event;
+    }
 };
 
-struct StreamVolumeEvent {
+struct StreamVolumeEvent : public Parcelable {
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
     int32_t volume = -1;
     bool updateUi = false;
     int32_t volumeGroupId = -1;
     std::string networkId = "";
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
             && parcel.WriteInt32(volume)
@@ -430,7 +462,7 @@ struct StreamVolumeEvent {
             && parcel.WriteString(networkId)
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode));
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
@@ -438,6 +470,17 @@ struct StreamVolumeEvent {
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
         volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+    }
+
+    static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new StreamVolumeEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+
+        event->UnmarshallingSelf(parcel);
+        return event;
     }
 };
 
@@ -511,7 +554,7 @@ enum AudioLoopbackState {
     LOOPBACK_STATE_DESTROYED,
 };
 
-struct AudioRendererInfo {
+struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
@@ -537,7 +580,15 @@ struct AudioRendererInfo {
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool isVirtualKeyboard = false;
 
-    bool Marshalling(Parcel &parcel) const
+    AudioRendererInfo() {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn), rendererFlags(rendererFlagsIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn,
+        int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn),
+        rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
@@ -560,7 +611,7 @@ struct AudioRendererInfo {
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
             && parcel.WriteBool(isVirtualKeyboard);
     }
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
@@ -583,9 +634,19 @@ struct AudioRendererInfo {
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
     }
+
+    static AudioRendererInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioRendererInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->UnmarshallingSelf(parcel);
+        return info;
+    }
 };
 
-class AudioCapturerInfo {
+class AudioCapturerInfo : public Parcelable {
 public:
     SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t capturerFlags = 0;
@@ -607,7 +668,7 @@ public:
     }
     AudioCapturerInfo() = default;
     ~AudioCapturerInfo()= default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(sourceType)) &&
             parcel.WriteInt32(capturerFlags) &&
@@ -621,7 +682,8 @@ public:
             parcel.WriteBool(isLoopback) &&
             parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
-    void Unmarshalling(Parcel &parcel)
+
+    void UnmarshallingSelf(Parcel &parcel)
     {
         sourceType = static_cast<SourceType>(parcel.ReadInt32());
         capturerFlags = parcel.ReadInt32();
@@ -634,6 +696,16 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+    }
+
+    static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
+    {
+        auto audioCapturerInfo = new AudioCapturerInfo();
+        if (audioCapturerInfo == nullptr) {
+            return nullptr;
+        }
+        audioCapturerInfo->UnmarshallingSelf(parcel);
+        return audioCapturerInfo;
     }
 };
 
@@ -649,8 +721,23 @@ struct AudioRendererOptions {
     AudioSessionStrategy strategy = { AudioConcurrencyMode::INVALID };
 };
 
-struct MicStateChangeEvent {
+struct MicStateChangeEvent : public Parcelable {
     bool mute;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(mute);
+    }
+
+    static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new MicStateChangeEvent();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->mute = parcel.ReadBool();
+        return event;
+    }
 };
 
 enum AudioScene : int32_t {
@@ -764,6 +851,24 @@ struct CaptureFilterOptions {
     std::vector<int32_t> pids;
     FilterMode pidFilterMode {FilterMode::INCLUDE};
 
+    CaptureFilterOptions() = default;
+    CaptureFilterOptions(const std::vector<StreamUsage> &usage, FilterMode uFilterMode,
+        const std::vector<int32_t> &pid, FilterMode pFilterMode)
+    {
+        this->usages = usage;
+        this->usageFilterMode = uFilterMode;
+        this->pids = pid;
+        this->pidFilterMode = pFilterMode;
+    }
+
+    CaptureFilterOptions(const CaptureFilterOptions &filter)
+    {
+        usages = filter.usages;
+        usageFilterMode = filter.usageFilterMode;
+        pids = filter.pids;
+        pidFilterMode = filter.pidFilterMode;
+    }
+
     bool operator ==(CaptureFilterOptions& filter)
     {
         std::sort(filter.usages.begin(), filter.usages.end());
@@ -775,13 +880,117 @@ struct CaptureFilterOptions {
     }
 };
 
-struct AudioPlaybackCaptureConfig {
+inline constexpr uint32_t MAX_VALID_USAGE_SIZE = 30; // 128 for pids
+inline constexpr uint32_t MAX_VALID_PIDS_SIZE = 128; // 128 for pids
+
+struct AudioPlaybackCaptureConfig : public Parcelable {
     CaptureFilterOptions filterOptions;
     bool silentCapture {false}; // To be deprecated since 12
+
+    AudioPlaybackCaptureConfig() = default;
+    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool slient)
+        : filterOptions(filter), silentCapture(slient)
+    {
+    }
+
+    AudioPlaybackCaptureConfig(const AudioPlaybackCaptureConfig &capturerConfig)
+        : filterOptions(capturerConfig.filterOptions), silentCapture(capturerConfig.silentCapture)
+    {
+    }
 
     bool operator ==(AudioPlaybackCaptureConfig& filter)
     {
         return (filter.filterOptions == filterOptions && filter.silentCapture == silentCapture);
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        // filterOptions.usages
+        size_t usageSize = filterOptions.usages.size();
+        if (usageSize >= MAX_VALID_USAGE_SIZE) return false;
+        parcel.WriteUint32(usageSize);
+        for (size_t i = 0; i < usageSize; i++) {
+            parcel.WriteInt32(static_cast<int32_t>(filterOptions.usages[i]));
+        }
+
+        // filterOptions.usageFilterMode
+        parcel.WriteUint32(filterOptions.usageFilterMode);
+
+        // filterOptions.pids
+        size_t pidSize = filterOptions.pids.size();
+        if (pidSize >= MAX_VALID_PIDS_SIZE) return false;
+        parcel.WriteUint32(pidSize);
+        for (size_t i = 0; i < pidSize; i++) {
+            parcel.WriteUint32(filterOptions.pids[i]);
+        }
+
+        // filterOptions.pidFilterMode
+        parcel.WriteUint32(filterOptions.pidFilterMode);
+
+        // silentCapture
+        parcel.WriteBool(silentCapture);
+        return true;
+    }
+
+    static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new AudioPlaybackCaptureConfig();
+        if (config == nullptr) return nullptr;
+        // filterOptions.usages
+        uint32_t usageSize = parcel.ReadUint32();
+        if (usageSize > MAX_VALID_USAGE_SIZE) {
+            delete config;
+            return nullptr;
+        }
+        std::vector<StreamUsage> usages = {};
+        for (uint32_t i = 0; i < usageSize; i++) {
+            int32_t tmpUsage = parcel.ReadInt32();
+            if (std::find(AUDIO_SUPPORTED_STREAM_USAGES.begin(), AUDIO_SUPPORTED_STREAM_USAGES.end(), tmpUsage) ==
+                AUDIO_SUPPORTED_STREAM_USAGES.end()) {
+                delete config;
+                return nullptr;
+            }
+            usages.push_back(static_cast<StreamUsage>(tmpUsage));
+        }
+        config->filterOptions.usages = usages;
+
+        // filterOptions.usageFilterMode
+        uint32_t tempMode = parcel.ReadUint32();
+        if (tempMode >= FilterMode::MAX_FILTER_MODE) {
+            delete config;
+            return nullptr;
+        }
+        config->filterOptions.usageFilterMode = static_cast<FilterMode>(tempMode);
+
+        // filterOptions.pids
+        uint32_t pidSize = parcel.ReadUint32();
+        if (pidSize > MAX_VALID_PIDS_SIZE) {
+            delete config;
+            return nullptr;
+        }
+        std::vector<int32_t> pids = {};
+        for (uint32_t i = 0; i < pidSize; i++) {
+            int32_t tmpPid = parcel.ReadInt32();
+            if (tmpPid <= 0) {
+                delete config;
+                return nullptr;
+            }
+            pids.push_back(tmpPid);
+        }
+        config->filterOptions.pids = pids;
+
+        // filterOptions.pidFilterMode
+        tempMode = parcel.ReadUint32();
+        if (tempMode >= FilterMode::MAX_FILTER_MODE) {
+            delete config;
+            return nullptr;
+        }
+        config->filterOptions.pidFilterMode = static_cast<FilterMode>(tempMode);
+
+        // silentCapture
+        config->silentCapture = parcel.ReadBool();
+
+        return config;
     }
 };
 
@@ -820,7 +1029,7 @@ struct SinkInfo {
     std::string adapterName;
 };
 
-struct SinkInput {
+struct SinkInput : public Parcelable {
     int32_t streamId;
     AudioStreamType streamType;
 
@@ -832,7 +1041,7 @@ struct SinkInput {
     std::string sinkName; // sink name
     int32_t statusMark; // mark the router status
     uint64_t startTime; // when this router is created
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(streamId) &&
                parcel.WriteInt32(static_cast<int32_t>(streamType)) &&
@@ -840,13 +1049,20 @@ struct SinkInput {
                parcel.WriteInt32(pid) &&
                parcel.WriteUint32(paStreamId);
     }
-    void Unmarshalling(Parcel &parcel)
+
+    static SinkInput *Unmarshalling(Parcel &parcel)
     {
-        streamId = parcel.ReadInt32();
-        streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
-        uid = parcel.ReadInt32();
-        pid = parcel.ReadInt32();
-        paStreamId = parcel.ReadUint32();
+        auto sinkInput = new SinkInput();
+        if (sinkInput == nullptr) {
+            return nullptr;
+        }
+
+        sinkInput->streamId = parcel.ReadInt32();
+        sinkInput->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+        sinkInput->uid = parcel.ReadInt32();
+        sinkInput->pid = parcel.ReadInt32();
+        sinkInput->paStreamId = parcel.ReadUint32();
+        return sinkInput;
     }
 };
 
@@ -992,7 +1208,7 @@ enum InnerCapMode : uint32_t {
     INVALID_CAP_MODE
 };
 
-struct AudioProcessConfig {
+struct AudioProcessConfig : public Parcelable {
     int32_t callerUid = INVALID_UID;
 
     AppInfo appInfo;
@@ -1020,6 +1236,131 @@ struct AudioProcessConfig {
     InnerCapMode innerCapMode {InnerCapMode::INVALID_CAP_MODE};
 
     int32_t innerCapId = 0;
+
+    AudioProcessConfig() {}
+    bool Marshalling(Parcel &parcel) const override
+    {
+        // AppInfo
+        parcel.WriteInt32(appInfo.appUid);
+        parcel.WriteUint32(appInfo.appTokenId);
+        parcel.WriteInt32(appInfo.appPid);
+        parcel.WriteUint64(appInfo.appFullTokenId);
+
+        // AudioStreamInfo
+        parcel.WriteInt32(streamInfo.samplingRate);
+        parcel.WriteInt32(streamInfo.encoding);
+        parcel.WriteInt32(streamInfo.format);
+        parcel.WriteInt32(streamInfo.channels);
+        parcel.WriteUint64(streamInfo.channelLayout);
+
+        // AudioMode
+        parcel.WriteInt32(audioMode);
+
+        // AudioRendererInfo
+        parcel.WriteInt32(rendererInfo.contentType);
+        parcel.WriteInt32(rendererInfo.streamUsage);
+        parcel.WriteInt32(rendererInfo.rendererFlags);
+        parcel.WriteInt32(rendererInfo.volumeMode);
+        parcel.WriteInt32(rendererInfo.originalFlag);
+        parcel.WriteString(rendererInfo.sceneType);
+        parcel.WriteBool(rendererInfo.spatializationEnabled);
+        parcel.WriteBool(rendererInfo.headTrackingEnabled);
+        parcel.WriteBool(rendererInfo.isSatellite);
+        parcel.WriteInt32(rendererInfo.pipeType);
+        parcel.WriteInt32(rendererInfo.playerType);
+        parcel.WriteUint64(rendererInfo.expectedPlaybackDurationBytes);
+        parcel.WriteInt32(rendererInfo.effectMode);
+
+        //AudioPrivacyType
+        parcel.WriteInt32(privacyType);
+
+        // AudioCapturerInfo
+        parcel.WriteInt32(capturerInfo.sourceType);
+        parcel.WriteInt32(capturerInfo.capturerFlags);
+        parcel.WriteInt32(capturerInfo.originalFlag);
+        parcel.WriteInt32(capturerInfo.pipeType);
+        parcel.WriteInt32(capturerInfo.recorderType);
+
+        // streamType
+        parcel.WriteInt32(streamType);
+
+        // deviceType
+        parcel.WriteInt32(deviceType);
+
+        // Recorder only
+        parcel.WriteBool(isInnerCapturer);
+        parcel.WriteBool(isWakeupCapturer);
+
+        // Original session id for re-create stream
+        parcel.WriteUint32(originalSessionId);
+        parcel.WriteInt32(innerCapId);
+
+        return true;
+    }
+
+    static AudioProcessConfig *Unmarshalling(Parcel &parcel)
+    {
+        auto config = new AudioProcessConfig();
+        if (config == nullptr) {
+            return nullptr;
+        }
+        // AppInfo
+        config->appInfo.appUid = parcel.ReadInt32();
+        config->appInfo.appTokenId = parcel.ReadUint32();
+        config->appInfo.appPid = parcel.ReadInt32();
+        config->appInfo.appFullTokenId = parcel.ReadUint64();
+
+        // AudioStreamInfo
+        config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+        config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
+        config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
+        config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());
+        config->streamInfo.channelLayout = static_cast<AudioChannelLayout>(parcel.ReadUint64());
+
+        // AudioMode
+        config->audioMode = static_cast<AudioMode>(parcel.ReadInt32());
+
+        // AudioRendererInfo
+        config->rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+        config->rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        config->rendererInfo.rendererFlags = parcel.ReadInt32();
+        config->rendererInfo.volumeMode = static_cast<AudioVolumeMode>(parcel.ReadInt32());
+        config->rendererInfo.originalFlag = parcel.ReadInt32();
+        config->rendererInfo.sceneType = parcel.ReadString();
+        config->rendererInfo.spatializationEnabled = parcel.ReadBool();
+        config->rendererInfo.headTrackingEnabled = parcel.ReadBool();
+        config->rendererInfo.isSatellite = parcel.ReadBool();
+        config->rendererInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->rendererInfo.playerType = static_cast<PlayerType>(parcel.ReadInt32());
+        config->rendererInfo.expectedPlaybackDurationBytes = parcel.ReadUint64();
+        config->rendererInfo.effectMode = parcel.ReadInt32();
+
+        //AudioPrivacyType
+        config->privacyType = static_cast<AudioPrivacyType>(parcel.ReadInt32());
+
+        // AudioCapturerInfo
+        config->capturerInfo.sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        config->capturerInfo.capturerFlags = parcel.ReadInt32();
+        config->capturerInfo.originalFlag = parcel.ReadInt32();
+        config->capturerInfo.pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
+        config->capturerInfo.recorderType = static_cast<RecorderType>(parcel.ReadInt32());
+
+        // streamType
+        config->streamType = static_cast<AudioStreamType>(parcel.ReadInt32());
+
+        // deviceType
+        config->deviceType = static_cast<DeviceType>(parcel.ReadInt32());
+
+        // Recorder only
+        config->isInnerCapturer = parcel.ReadBool();
+        config->isWakeupCapturer = parcel.ReadBool();
+
+        // Original session id for re-create stream
+        config->originalSessionId = parcel.ReadUint32();
+        config->innerCapId = parcel.ReadInt32();
+
+        return config;
+    }
 };
 
 struct Volume {
@@ -1098,9 +1439,25 @@ struct SwitchStreamInfo {
     }
 };
 
-struct StreamSetStateEventInternal {
+struct StreamSetStateEventInternal : public Parcelable {
     StreamSetState streamSetState;
     StreamUsage streamUsage;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamSetState)) &&
+            parcel.WriteInt32(static_cast<int32_t>(streamUsage));
+    }
+    static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
+    {
+        auto event = new StreamSetStateEventInternal();
+        if (event == nullptr) {
+            return nullptr;
+        }
+        event->streamSetState = static_cast<StreamSetState>(parcel.ReadInt32());
+        event->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        return event;
+    }
 };
 
 enum AudioPin {
@@ -1491,6 +1848,32 @@ struct RestoreInfo {
     int32_t deviceChangeReason = 0;
     int32_t targetStreamFlag = AUDIO_FLAG_NORMAL;
     uint32_t routeFlag = 0;
+};
+
+struct RestoreInfoIpc : public Parcelable {
+    RestoreInfo restoreInfo;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(restoreInfo.restoreReason) &&
+            parcel.WriteInt32(restoreInfo.deviceChangeReason) &&
+            parcel.WriteInt32(restoreInfo.targetStreamFlag) &&
+            parcel.WriteUint32(restoreInfo.routeFlag);
+    }
+
+    static RestoreInfoIpc *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new RestoreInfoIpc();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->restoreInfo.restoreReason = static_cast<RestoreReason>(parcel.ReadInt32());
+        info->restoreInfo.deviceChangeReason = parcel.ReadInt32();
+        info->restoreInfo.targetStreamFlag = parcel.ReadInt32();
+        info->restoreInfo.routeFlag = parcel.ReadUint32();
+        return info;
+    }
 };
 
 /**

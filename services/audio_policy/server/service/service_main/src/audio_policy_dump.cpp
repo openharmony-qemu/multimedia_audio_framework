@@ -25,7 +25,6 @@
 #include "audio_policy_log.h"
 
 #include "iservice_registry.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_converter_parser.h"

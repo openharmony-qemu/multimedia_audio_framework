@@ -19,7 +19,7 @@
 #include <unordered_set>
 #include <shared_mutex>
 #include "audio_system_manager.h"
-#include "i_standard_audio_policy_manager_listener.h"
+#include "istandard_audio_policy_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {

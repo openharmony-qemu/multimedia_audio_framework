@@ -85,10 +85,11 @@ int32_t OfflineStreamInServer::ProcessOfflineEffectChain(uint32_t inSize, uint32
     return effectChain_->Process(inSize, outSize);
 }
 
-void OfflineStreamInServer::ReleaseOfflineEffectChain()
+int32_t OfflineStreamInServer::ReleaseOfflineEffectChain()
 {
-    CHECK_AND_RETURN_LOG(effectChain_, "effectChain not init");
+    CHECK_AND_RETURN_RET_LOG(effectChain_, ERR_ILLEGAL_STATE, "effectChain not init");
     effectChain_->Release();
+    return SUCCESS;
 }
 #endif
 

@@ -50,13 +50,12 @@ void AudioServer::RecognizeAudioEffectType(const std::string &mainkey, const std
 }
 
 // LCOV_EXCL_START
-bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChains,
+int32_t AudioServer::CreateEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectParam, const EffectChainManagerParam &enhanceParam)
 {
-    if (!PermissionUtil::VerifyIsAudio()) {
-        AUDIO_ERR_LOG("not audio calling!");
-        return false;
-    }
+    CHECK_AND_RETURN_RET_LOG(effectChains.size() >= 0 && effectChains.size() <= AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT,
+        AUDIO_ERR, "Create audio effect chains failed, invalid countChains");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "not audio calling!");
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().InitAudioEffectChainManager(effectChains, effectParam,
@@ -72,15 +71,17 @@ bool AudioServer::CreateEffectChainManager(std::vector<EffectChain> &effectChain
         audioEnhanceChainManager->InitAudioEnhanceChainManager(effectChains, enhanceParam,
             audioEffectServer_->GetEffectEntries());
     }
-    return true;
+    return SUCCESS;
 }
 
-void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
+int32_t AudioServer::SetOutputDeviceSink(int32_t deviceType, const std::string &sinkName)
 {
+    CHECK_AND_RETURN_RET_LOG(deviceType >= DEVICE_TYPE_NONE && deviceType <= DEVICE_TYPE_MAX, AUDIO_ERR,
+        "Set output device sink failed, please check log");
     Trace trace("AudioServer::SetOutputDeviceSink:" + std::to_string(deviceType) + " sink:" + sinkName);
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("not audio calling!");
-        return;
+        return SUCCESS;
     }
 
     int32_t engineFlag = GetEngineFlag();
@@ -90,10 +91,10 @@ void AudioServer::SetOutputDeviceSink(int32_t deviceType, std::string &sinkName)
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         audioEffectChainManager->SetOutputDeviceSink(deviceType, sinkName);
     }
-    return;
+    return SUCCESS;
 }
 
-int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatializationState)
+int32_t AudioServer::UpdateSpatializationState(const AudioSpatializationState& spatializationState)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
@@ -111,19 +112,21 @@ int32_t AudioServer::UpdateSpatializationState(AudioSpatializationState spatiali
     }
 }
 
-int32_t AudioServer::UpdateSpatialDeviceType(AudioSpatialDeviceType spatialDeviceType)
+int32_t AudioServer::UpdateSpatialDeviceType(int32_t spatialDeviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().UpdateSpatialDeviceType(spatialDeviceType);
+        return HPAE::IHpaeManager::GetHpaeManager().UpdateSpatialDeviceType(
+            static_cast<AudioSpatialDeviceType>(spatialDeviceType));
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
 
-        return audioEffectChainManager->UpdateSpatialDeviceType(spatialDeviceType);
+        return audioEffectChainManager->UpdateSpatialDeviceType(
+            static_cast<AudioSpatialDeviceType>(spatialDeviceType));
     }
 }
 // LCOV_EXCL_STOP
@@ -147,58 +150,67 @@ int32_t AudioServer::SetSystemVolumeToEffect(const AudioStreamType streamType, f
 }
 
 // LCOV_EXCL_START
-int32_t AudioServer::SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType)
+int32_t AudioServer::SetSpatializationSceneType(int32_t spatializationSceneType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().SetSpatializationSceneType(spatializationSceneType);
+        return HPAE::IHpaeManager::GetHpaeManager().SetSpatializationSceneType(
+            static_cast<AudioSpatializationSceneType>(spatializationSceneType));
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-        return audioEffectChainManager->SetSpatializationSceneType(spatializationSceneType);
+        return audioEffectChainManager->SetSpatializationSceneType(
+            static_cast<AudioSpatializationSceneType>(spatializationSceneType));
     }
 }
 // LCOV_EXCL_STOP
 
-uint32_t AudioServer::GetEffectLatency(const std::string &sessionId)
+int32_t AudioServer::GetEffectLatency(const std::string &sessionId, uint32_t& latency)
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->GetLatency(sessionId);
+    latency = audioEffectChainManager->GetLatency(sessionId);
+    return SUCCESS;
 }
 
 // LCOV_EXCL_START
-bool AudioServer::GetEffectOffloadEnabled()
+int32_t AudioServer::GetEffectOffloadEnabled(bool& isEffectOffloadEnabled)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d", callingUid);
 
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->GetOffloadEnabled();
+    isEffectOffloadEnabled = audioEffectChainManager->GetOffloadEnabled();
+    return SUCCESS;
 }
 
-void AudioServer::LoadHdiEffectModel()
+int32_t AudioServer::LoadHdiEffectModel()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "load hdi effect model refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "load hdi effect model refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().InitHdiState();
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
         audioEffectChainManager->InitHdiState();
     }
+    return SUCCESS;
 }
 
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
-    const DeviceType &deviceType)
+    int32_t deviceType)
 {
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
                              "SetA udio Effect Property refused for %{public}d", callingUid);
@@ -212,7 +224,8 @@ int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &pr
         }
     }
     if (enhancePropertyArray.property.size() > 0) {
-        CHECK_AND_RETURN_RET_LOG(SetAudioEnhanceChainProperty(enhancePropertyArray, deviceType) == AUDIO_OK,
+        CHECK_AND_RETURN_RET_LOG(SetAudioEnhanceChainProperty(
+            enhancePropertyArray, static_cast<DeviceType>(deviceType)) == AUDIO_OK,
             ERR_OPERATION_FAILED, "set audio enhancce property failed");
     }
     if (effectPropertyArray.property.size() > 0) {
@@ -222,7 +235,7 @@ int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &pr
     return AUDIO_OK;
 }
 
-int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray, const DeviceType& deviceType)
+int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
@@ -233,14 +246,21 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &property
         effectPropertyArray.property.begin(), effectPropertyArray.property.end());
 
     AudioEffectPropertyArrayV3 enhancePropertyArray = {};
-    (void)GetAudioEnhancePropertyArray(enhancePropertyArray, deviceType);
+    (void)GetAudioEnhancePropertyArray(enhancePropertyArray, static_cast<DeviceType>(deviceType));
     propertyArray.property.insert(propertyArray.property.end(),
         enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
+
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     return AUDIO_OK;
 }
 
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetA udio Effect Property refused for %{public}d", callingUid);
@@ -262,34 +282,46 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
         "Get Audio Effect Property refused for %{public}d", callingUid);
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-    return audioEffectChainManager->GetAudioEffectProperty(propertyArray);
+    int32_t ret = audioEffectChainManager->GetAudioEffectProperty(propertyArray);
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "audio enhance property array size invalid");
+    return ret;
 }
 
 int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
+    int32_t deviceType)
 {
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Set Audio Enhance Property refused for %{public}d", callingUid);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEnhanceProperty(propertyArray, deviceType);
+        return HPAE::IHpaeManager::GetHpaeManager().SetAudioEnhanceProperty(
+            propertyArray, static_cast<DeviceType>(deviceType));
     } else {
         AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
         CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-        return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, deviceType);
+        return audioEnhanceChainManager->SetAudioEnhanceProperty(propertyArray, static_cast<DeviceType>(deviceType));
     }
 }
 
 int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
-    DeviceType deviceType)
+    int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "Get Audio Enhance Property refused for %{public}d", callingUid);
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
-    return audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, deviceType);
+    int32_t ret = audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, static_cast<DeviceType>(deviceType));
+    int32_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+        ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
+    return ret;
 }
 // LCOV_EXCL_STOP
 
@@ -335,40 +367,44 @@ int32_t AudioServer::GetAudioEnhancePropertyArray(AudioEffectPropertyArrayV3 &pr
 }
 
 // LCOV_EXCL_START
-void AudioServer::UpdateEffectBtOffloadSupported(const bool &isSupported)
+int32_t AudioServer::UpdateEffectBtOffloadSupported(bool isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().UpdateEffectBtOffloadSupported(isSupported);
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
         audioEffectChainManager->UpdateEffectBtOffloadSupported(isSupported);
     }
+    return SUCCESS;
 }
 
-void AudioServer::SetRotationToEffect(const uint32_t rotate)
+int32_t AudioServer::SetRotationToEffect(const uint32_t rotate)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "set rotation to effect refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "set rotation to effect refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         HPAE::IHpaeManager::GetHpaeManager().EffectRotationUpdate(rotate);
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
         audioEffectChainManager->EffectRotationUpdate(rotate);
     }
 
     std::string value = "rotation=" + std::to_string(rotate);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", value);
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 
@@ -407,91 +443,107 @@ int32_t AudioServer::SetMicrophoneMuteForEnhanceChain(const bool &isMute)
 }
 
 // LCOV_EXCL_START
-bool AudioServer::LoadAudioEffectLibraries(const std::vector<Library> libraries, const std::vector<Effect> effects,
-    std::vector<Effect>& successEffectList)
+int32_t AudioServer::LoadAudioEffectLibraries(const std::vector<Library> &libraries,
+    const std::vector<Effect> &effects, std::vector<Effect> &successEffectList, bool &hasEffectsLoaded)
 {
+    CHECK_AND_RETURN_RET_LOG((libraries.size() >= 0) && (libraries.size() <= AUDIO_EFFECT_COUNT_UPPER_LIMIT) &&
+        (effects.size() >= 0) && (effects.size() <= AUDIO_EFFECT_COUNT_UPPER_LIMIT), AUDIO_ERR,
+        "LOAD_AUDIO_EFFECT_LIBRARIES read data failed");
+    CHECK_AND_RETURN_RET(libraries.size() > 0, SUCCESS);
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false, "LoadAudioEffectLibraries refused for %{public}d",
-        callingUid);
-    bool loadSuccess = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
-    if (!loadSuccess) {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "LoadAudioEffectLibraries refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(audioEffectServer_ != nullptr, ERROR, "audioEffectServer_ is nullptr");
+    hasEffectsLoaded = audioEffectServer_->LoadAudioEffects(libraries, effects, successEffectList);
+    if (!hasEffectsLoaded) {
         AUDIO_WARNING_LOG("Load audio effect failed, please check log");
+        successEffectList.clear();
+        return ERR_INVALID_OPERATION;
     }
-    return loadSuccess;
+    return SUCCESS;
 }
 
-void AudioServer::NotifyAccountsChanged()
+int32_t AudioServer::NotifyAccountsChanged()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
 
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().NotifyAccountsChanged();
+        HPAE::IHpaeManager::GetHpaeManager().NotifyAccountsChanged();
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
         audioEffectChainManager->LoadEffectProperties();
     }
+    return SUCCESS;
 }
 
-void AudioServer::NotifySettingsDataReady()
+int32_t AudioServer::NotifySettingsDataReady()
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_LOG(PermissionUtil::VerifyIsAudio(), "refused for %{public}d", callingUid);
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "refused for %{public}d", callingUid);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().NotifySettingsDataReady();
+        HPAE::IHpaeManager::GetHpaeManager().NotifySettingsDataReady();
     } else {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "audioEffectChainManager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
         audioEffectChainManager->LoadEffectProperties();
     }
+    return SUCCESS;
 }
 
-bool AudioServer::IsAcousticEchoCancelerSupported(SourceType sourceType)
+int32_t AudioServer::IsAcousticEchoCancelerSupported(int32_t sourceType,  bool& isSupported)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "IsAcousticEchoCancelerSupported refused for %{public}d", callingUid);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        return HPAE::IHpaeManager::GetHpaeManager().IsAcousticEchoCancelerSupported(sourceType);
+        isSupported = HPAE::IHpaeManager::GetHpaeManager().IsAcousticEchoCancelerSupported(
+            static_cast<SourceType>(sourceType));
+        return SUCCESS;
     }
     AUDIO_INFO_LOG("IsAcousticEchoCancelerSupported not support");
-    return false;
+    return SUCCESS;
 }
 
-bool AudioServer::SetKaraokeParameters(const std::string &parameters)
+int32_t AudioServer::SetKaraokeParameters(const std::string &parameters, bool &ret)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "SetKaraokeParameters refused for %{public}d", callingUid);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, false, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", parameters);
-    return true;
+    ret = true;
+    return SUCCESS;
 }
 
-bool AudioServer::IsAudioLoopbackSupported(AudioLoopbackMode mode)
+int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, bool &isSupported)
 {
+    isSupported = false;
     int32_t callingUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), false,
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "IsAudioLoopbackSupported refused for %{public}d", callingUid);
 #ifdef SUPPORT_LOW_LATENCY
     if (mode == AudioLoopbackMode::LOOPBACK_HARDWARE) {
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
         std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, false, "local device manager is nullptr");
+        CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
         std::string ret = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
             "is_audioloop_support");
         AUDIO_INFO_LOG("IsAudioLoopbackSupported ret: %{public}s", ret.c_str());
-        return ret == "true";
+        isSupported = ret == "true";
+        return SUCCESS;
     }
 #endif
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
-    return false;
+    return SUCCESS;
 }
 // LCOV_EXCL_STOP
 } // namespace AudioStandard

@@ -31,7 +31,7 @@ enum AudioStreamAction : uint32_t {
     AUDIO_STREAM_ACTION_RECREATE,
 };
 
-class AudioStreamDescriptor {
+class AudioStreamDescriptor : public Parcelable {
 public:
     AudioStreamInfo streamInfo_;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
@@ -53,8 +53,8 @@ public:
     AudioStreamDescriptor();
     virtual ~AudioStreamDescriptor();
 
-    bool Marshalling(Parcel &parcel) const;
-    void Unmarshalling(Parcel &parcel);
+    bool Marshalling(Parcel &parcel) const override;
+    static AudioStreamDescriptor *Unmarshalling(Parcel &parcel);
     bool WriteDeviceDescVectorToParcel(
         Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs) const;
     void UnmarshallingDeviceDescVector(Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);

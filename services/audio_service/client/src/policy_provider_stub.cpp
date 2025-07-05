@@ -22,203 +22,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-bool PolicyProviderStub::CheckInterfaceToken(MessageParcel &data)
-{
-    static auto localDescriptor = IPolicyProviderIpc::GetDescriptor();
-    auto remoteDescriptor = data.ReadInterfaceToken();
-    CHECK_AND_RETURN_RET_LOG(remoteDescriptor == localDescriptor, false, "CheckInterFfaceToken failed.");
-    return true;
-}
-
-int PolicyProviderStub::OnRemoteRequest(uint32_t code, MessageParcel &data, MessageParcel &reply,
-    MessageOption &option)
-{
-    bool ret = CheckInterfaceToken(data);
-    CHECK_AND_RETURN_RET(ret, AUDIO_ERR);
-    if (code >= IPolicyProviderMsg::POLICY_PROVIDER_MAX_MSG) {
-        AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
-        return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-    }
-    switch (code) {
-        case GET_DEVICE_INFO:
-            return HandleGetProcessDeviceInfo(data, reply);
-        case INIT_VOLUME_MAP:
-            return HandleInitSharedVolume(data, reply);
-        case SET_WAKEUP_ADUIO_CAPTURER:
-            return HandleSetWakeupCapturer(data, reply);
-        case SET_AUDIO_CAPTURER:
-            return HandleSetCapturer(data, reply);
-        case REMOVE_WAKEUP_CAPUTER:
-            return HandleWakeupCapturerRemoved(data, reply);
-        case IS_ABS_VOLUME_SUPPORTED:
-            return HandleIsAbsVolumeSupported(data, reply);
-        case OFFLOAD_GET_RENDER_POSITION:
-            return HandleOffloadGetRenderPosition(data, reply);
-        case NEARLINK_GET_RENDER_POSITION:
-            return HandleNearlinkGetRenderPosition(data, reply);
-        case GET_AND_SAVE_CLIENT_TYPE:
-            return HandleGetAndSaveClientType(data, reply);
-        case GET_MAX_RENDERER_INSTANCES:
-            return HandleGetMaxRendererInstances(data, reply);
-        case ACTIVATE_CONCURRENCY_FROM_SERVER:
-            return HandleConcurrencyFromServer(data, reply);
-        case REMOVE_AUDIO_CAPTURER:
-            return HandleNotifyCapturerRemoved(data, reply);
-#ifdef HAS_FEATURE_INNERCAPTURER
-        case LOAD_MODERN_INNER_CAPTURE_SINK:
-            return HandleLoadModernInnerCapSink(data, reply);
-        case UNLOAD_MODERN_INNER_CAPTURE_SINK:
-            return HandleUnloadModernInnerCapSink(data, reply);
-#endif
-        case CLEAR_AUDIO_FOCUS_BY_SESSIONID:
-            return HandleClearAudioFocusBySessionID(data, reply);
-        default:
-            AUDIO_WARNING_LOG("OnRemoteRequest unsupported request code:%{public}d.", code);
-            return IPCObjectStub::OnRemoteRequest(code, data, reply, option);
-    }
-}
-
-int32_t PolicyProviderStub::HandleGetProcessDeviceInfo(MessageParcel &data, MessageParcel &reply)
-{
-    AudioProcessConfig config;
-    int32_t ret = ProcessConfig::ReadConfigFromParcel(config, data);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ReadConfigFromParcel failed %{public}d", ret);
-    bool flag = data.ReadBool();
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    ret = GetProcessDeviceInfo(config, flag, deviceInfo);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetProcessDeviceInfo failed %{public}d", ret);
-    deviceInfo.Marshalling(reply);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleInitSharedVolume(MessageParcel &data, MessageParcel &reply)
-{
-    (void)data;
-    std::shared_ptr<AudioSharedMemory> buffer = nullptr;
-    int32_t ret = InitSharedVolume(buffer);
-    if (ret == SUCCESS && buffer != nullptr) {
-        ret = AudioSharedMemory::WriteToParcel(buffer, reply);
-    } else {
-        AUDIO_ERR_LOG("error: ResolveBuffer failed.");
-        return AUDIO_INVALID_PARAM;
-    }
-    return ret;
-}
-
-int32_t PolicyProviderStub::HandleSetWakeupCapturer(MessageParcel &data, MessageParcel &reply)
-{
-    AudioProcessConfig config;
-    int32_t ret = ProcessConfig::ReadConfigFromParcel(config, data);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ReadConfigFromParcel failed %{public}d", ret);
-    ret = SetWakeUpAudioCapturerFromAudioServer(config);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleSetCapturer(MessageParcel &data, MessageParcel &reply)
-{
-    AudioCapturerInfo capturerInfo;
-    AudioStreamInfo streamInfo;
-    uint32_t sessionId;
-    capturerInfo.Unmarshalling(data);
-    streamInfo.Unmarshalling(data);
-    data.ReadUint32(sessionId);
-    int32_t ret = NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleWakeupCapturerRemoved(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t ret = NotifyWakeUpCapturerRemoved();
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleIsAbsVolumeSupported(MessageParcel &data, MessageParcel &reply)
-{
-    bool ret = IsAbsVolumeSupported();
-    reply.WriteBool(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleOffloadGetRenderPosition(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t delayValue = 0;
-    uint64_t sendDataSize = 0;
-    uint32_t timeStamp = 0;
-    int32_t ret = OffloadGetRenderPosition(delayValue, sendDataSize, timeStamp);
-    reply.WriteInt32(ret);
-    reply.WriteUint32(delayValue);
-    reply.WriteUint64(sendDataSize);
-    reply.WriteUint32(timeStamp);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleNearlinkGetRenderPosition(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t delayValue = 0;
-    int32_t ret = NearlinkGetRenderPosition(delayValue);
-    reply.WriteInt32(ret);
-    reply.WriteUint32(delayValue);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleGetAndSaveClientType(MessageParcel &data, MessageParcel &reply)
-{
-    uint32_t uid = data.ReadUint32();
-    std::string bundleName = data.ReadString();
-    int32_t ret = GetAndSaveClientType(uid, bundleName);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleGetMaxRendererInstances(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t ret = GetMaxRendererInstances();
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleConcurrencyFromServer(MessageParcel &data, MessageParcel &reply)
-{
-    AudioPipeType incomingPipe = static_cast<AudioPipeType>(data.ReadInt32());
-    int32_t ret = ActivateConcurrencyFromServer(incomingPipe);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleNotifyCapturerRemoved(MessageParcel &data, MessageParcel &reply)
-{
-    uint64_t sessionId = data.ReadUint64();
-    int32_t ret = NotifyCapturerRemoved(sessionId);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
-
-#ifdef HAS_FEATURE_INNERCAPTURER
-int32_t PolicyProviderStub::HandleLoadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t innerCapId = data.ReadInt32();
-    reply.WriteInt32(LoadModernInnerCapSink(innerCapId));
-    return AUDIO_OK;
-}
-
-int32_t PolicyProviderStub::HandleUnloadModernInnerCapSink(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t innerCapId = data.ReadInt32();
-    reply.WriteInt32(UnloadModernInnerCapSink(innerCapId));
-    return AUDIO_OK;
-}
-#endif
-
-int32_t PolicyProviderStub::HandleClearAudioFocusBySessionID(MessageParcel &data, MessageParcel &reply)
-{
-    int32_t sessionID = data.ReadInt32();
-    int32_t ret = ClearAudioFocusBySessionID(sessionID);
-    reply.WriteInt32(ret);
-    return AUDIO_OK;
-}
 
 PolicyProviderWrapper::~PolicyProviderWrapper()
 {
@@ -248,8 +51,8 @@ int32_t PolicyProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(const Audio
     return policyWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
-int32_t PolicyProviderWrapper::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
-    uint32_t sessionId)
+int32_t PolicyProviderWrapper::NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo,
+    const AudioStreamInfo &streamInfo, uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->NotifyCapturerAdded(capturerInfo, streamInfo, sessionId);
@@ -261,10 +64,11 @@ int32_t PolicyProviderWrapper::NotifyWakeUpCapturerRemoved()
     return policyWorker_->NotifyWakeUpCapturerRemoved();
 }
 
-bool PolicyProviderWrapper::IsAbsVolumeSupported()
+int32_t PolicyProviderWrapper::IsAbsVolumeSupported(bool &isSupported)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->IsAbsVolumeSupported();
+    isSupported = policyWorker_->IsAbsVolumeSupported();
+    return SUCCESS;
 }
 
 int32_t PolicyProviderWrapper::OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize,
@@ -286,16 +90,17 @@ int32_t PolicyProviderWrapper::GetAndSaveClientType(uint32_t uid, const std::str
     return policyWorker_->GetAndSaveClientType(uid, bundleName);
 }
 
-int32_t PolicyProviderWrapper::GetMaxRendererInstances()
+int32_t PolicyProviderWrapper::GetMaxRendererInstances(int32_t &maxInstances)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->GetMaxRendererInstances();
+    maxInstances = policyWorker_->GetMaxRendererInstances();
+    return SUCCESS;
 }
 
-int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
+int32_t PolicyProviderWrapper::ActivateConcurrencyFromServer(int32_t incomingPipe)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
-    return policyWorker_->ActivateConcurrencyFromServer(incomingPipe);
+    return policyWorker_->ActivateConcurrencyFromServer(static_cast<AudioPipeType>(incomingPipe));
 }
 
 int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
@@ -304,21 +109,29 @@ int32_t PolicyProviderWrapper::NotifyCapturerRemoved(uint64_t sessionId)
     return policyWorker_->NotifyCapturerRemoved(sessionId);
 }
 
-#ifdef HAS_FEATURE_INNERCAPTURER
 int32_t PolicyProviderWrapper::LoadModernInnerCapSink(int32_t innerCapId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->LoadModernInnerCapSink(innerCapId);
+#else
+    (void)innerCapId;
+    return AUDIO_ERR;
+#endif
 }
 
 int32_t PolicyProviderWrapper::UnloadModernInnerCapSink(int32_t innerCapId)
 {
+#ifdef HAS_FEATURE_INNERCAPTURER
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->UnloadModernInnerCapSink(innerCapId);
-}
+#else
+    (void)innerCapId;
+    return AUDIO_ERR;
 #endif
+}
 
-int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(const int32_t &sessionID)
+int32_t PolicyProviderWrapper::ClearAudioFocusBySessionID(int32_t sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(policyWorker_ != nullptr, AUDIO_INIT_FAIL, "policyWorker_ is null");
     return policyWorker_->ClearAudioFocusBySessionID(sessionID);

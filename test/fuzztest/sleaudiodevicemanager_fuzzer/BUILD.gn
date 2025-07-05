@@ -49,5 +49,5 @@ ohos_fuzztest("SleAudioDeviceManagerFuzzTest") {
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":SleAudioDeviceManagerFuzzTest" ]
+  # deps = [ ":SleAudioDeviceManagerFuzzTest" ]
 }

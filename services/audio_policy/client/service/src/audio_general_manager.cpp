@@ -28,6 +28,7 @@
 #include "audio_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -184,7 +185,11 @@ int32_t AudioGeneralManager::SetExtraParameters(const std::string &key,
 {
     const sptr<IStandardAudioService> gasp = GetAudioGeneralManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->SetExtraParameters(key, kvpairs);
+    std::vector<StringPair> pairs;
+    for (auto &pair : kvpairs) {
+        pairs.push_back({pair.first, pair.second});
+    }
+    return gasp->SetExtraParameters(key, pairs);
 }
 
 int32_t AudioGeneralManager::GetVolume(AudioVolumeType volumeType) const

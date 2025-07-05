@@ -25,6 +25,7 @@
 #include "audio_utils.h"
 #include "iservice_registry.h"
 #include "system_ability_definition.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -68,7 +69,9 @@ uint64_t AudioAbilityManager::GetTransactionId(DeviceType deviceType, DeviceRole
 {
     const sptr<IStandardAudioService> gasp = GetAudioAbilityManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
-    return gasp->GetTransactionId(deviceType, deviceRole);
+    uint64_t transactionId = 0;
+    gasp->GetTransactionId(deviceType, deviceRole, transactionId);
+    return transactionId;
 }
 } // namespace AudioStandard
 } // namespace OHOS
