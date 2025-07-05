@@ -649,7 +649,7 @@ static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userda
         rChunk = enhanceChunk;
         pa_memblock_ref(rChunk.memblock);
     }
-    EnhanceProcessDefault(u->captureId, &enhanceChunk);
+    EnhanceProcessDefault(u->captureId, &rChunk);
 
     while ((sourceOutput = pa_hashmap_iterate(source->thread_info.outputs, &state, NULL))) {
         pa_source_output_assert_ref(sourceOutput);
@@ -658,7 +658,7 @@ static void PostDataDefault(pa_source *source, pa_memchunk *chunk, struct Userda
         if (!pa_safe_streq(defaultFlag, "1")) {
             continue;
         }
-        PostSourceData(source, sourceOutput, &enhanceChunk);
+        PostSourceData(source, sourceOutput, &rChunk);
     }
 
     pa_memblock_unref(enhanceChunk.memblock);

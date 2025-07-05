@@ -179,8 +179,6 @@ int32_t AudioCaptureSource::Start(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_.store(true);
 
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(true);
     }
@@ -201,8 +199,6 @@ int32_t AudioCaptureSource::Stop(void)
     futurePromiseEnsureLock.get();
     stopThread.detach();
 
-    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
-    CHECK_AND_RETURN_RET(audioEnhanceChainManager != nullptr, ERR_INVALID_HANDLE);
     if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(false);
     }
