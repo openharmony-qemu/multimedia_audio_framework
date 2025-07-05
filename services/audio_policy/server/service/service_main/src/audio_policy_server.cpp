@@ -228,7 +228,6 @@ void AudioPolicyServer::OnStart()
     coreService_->Init();
     eventEntry_ = coreService_->GetEventEntry();
 
-    AddSystemAbilityListeners();
     bool res = Publish(this);
     if (!res) {
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -239,6 +238,7 @@ void AudioPolicyServer::OnStart()
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
         AUDIO_INFO_LOG("publish sa err");
     }
+    AddSystemAbilityListeners();
 
     Security::AccessToken::PermStateChangeScope scopeInfo;
     scopeInfo.permList = {"ohos.permission.MICROPHONE"};
@@ -771,6 +771,10 @@ void AudioPolicyServer::SubscribeBackgroundTask()
 
 void AudioPolicyServer::SubscribeCommonEventExecute()
 {
+    if (isAlreadyRegisterCommonEventListener_) {
+        AUDIO_INFO_LOG("already registed common event listener, return");
+        return;
+    }
     SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
@@ -782,6 +786,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     usbManager_.SubscribeEvent();
 #endif
     SubscribeSafeVolumeEvent();
+    isAlreadyRegisterCommonEventListener_ = true;
 }
 
 void AudioPolicyServer::SubscribeCommonEvent(const std::string event)
