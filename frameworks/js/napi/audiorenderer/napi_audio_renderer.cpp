@@ -217,8 +217,9 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
-    /* setOffloadAllowed will be removed. Need to set isOffloadAllowed before creating the renderer. */
+    /* Set isOffloadAllowed before renderer creation when setOffloadAllowed is disabled.*/
     if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
+        AUDIO_WARNING_LOG("stream usage is unknown, do not allow to use offload output");
         rendererOptions.rendererInfo.isOffloadAllowed = false;
     }
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;

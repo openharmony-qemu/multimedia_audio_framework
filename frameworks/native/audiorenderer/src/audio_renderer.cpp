@@ -1805,6 +1805,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return currentStream->GetLowPowerVolume();
 }
 
+// in plan: need remove
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
     AUDIO_PRERELEASE_LOGI("offload allowed: %{public}d", isAllowed);
