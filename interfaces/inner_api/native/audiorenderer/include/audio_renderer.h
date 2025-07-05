@@ -859,6 +859,7 @@ public:
      * @return Returns {@link SUCCESS} if setting is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
+     * @deprecated since 15
      */
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) const = 0;
 

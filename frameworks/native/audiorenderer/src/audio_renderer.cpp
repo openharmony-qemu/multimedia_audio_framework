@@ -338,12 +338,16 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
+        "isOffloadAllowed: %{public}s, isVKB: %{public}s, flags: %{public}d, uid: %{public}d",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F",
+        isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
 
     audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
     audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
+    audioRenderer->rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
     audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
     audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
