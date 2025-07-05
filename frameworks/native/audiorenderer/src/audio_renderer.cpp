@@ -608,7 +608,8 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     rendererInfo_.rendererFlags = AUDIO_FLAG_NORMAL;
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
 #endif
-    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass);
+    rendererInfo_.audioFlag = AUDIO_OUTPUT_FLAG_NORMAL;
+    int32_t ret = PrepareAudioStream(audioStreamParams, audioStreamType, streamClass, rendererInfo_.audioFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "PrepareAudioStream failed");
 
     ret = InitAudioStream(audioStreamParams);
@@ -637,15 +638,15 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
 }
 
 int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamParams,
-    const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass)
+    const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag)
 {
     AUDIO_INFO_LOG("Create stream with flag: %{public}d, original flag: %{public}d, streamClass: %{public}d",
         rendererInfo_.rendererFlags, rendererInfo_.originalFlag, streamClass);
 
     // Create Client
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
-    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    
+    flag = AUDIO_OUTPUT_FLAG_NORMAL;
+
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");

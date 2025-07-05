@@ -579,6 +579,8 @@ struct AudioRendererInfo : public Parcelable {
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
     bool isVirtualKeyboard = false;
+    // store the finally select routeflag after concurrency
+    uint32_t audioFlag = 0x0;
 
     AudioRendererInfo() {}
     AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn, int32_t rendererFlagsIn)
@@ -609,7 +611,8 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteInt32(static_cast<int32_t>(volumeMode))
             && parcel.WriteBool(isLoopback)
             && parcel.WriteInt32(static_cast<int32_t>(loopbackMode))
-            && parcel.WriteBool(isVirtualKeyboard);
+            && parcel.WriteBool(isVirtualKeyboard)
+            && parcel.WriteUint32(audioFlag);
     }
     void UnmarshallingSelf(Parcel &parcel)
     {
@@ -633,6 +636,7 @@ struct AudioRendererInfo : public Parcelable {
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
         isVirtualKeyboard = parcel.ReadBool();
+        audioFlag = parcel.ReadUint32();
     }
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
