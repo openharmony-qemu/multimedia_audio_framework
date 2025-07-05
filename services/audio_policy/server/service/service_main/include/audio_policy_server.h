@@ -865,6 +865,7 @@ private:
 
     int32_t sessionIdByRemote_ = -1;
     sptr<IStandardAudioPolicyManagerListener> queryBundleNameListCallback_ = nullptr;
+    bool isAlreadyRegisterCommonEventListener_ = false;
 };
 
 class AudioOsAccountInfo : public AccountSA::OsAccountSubscriber {
