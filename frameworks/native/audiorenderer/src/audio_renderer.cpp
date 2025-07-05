@@ -310,6 +310,30 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+void AudioRenderer::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
+    audioRenderer->rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
+    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
+    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
+    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+
+    audioRenderer->privacyType_ = rendererOptions.privacyType;
+    audioRenderer->strategy_ = rendererOptions.strategy;
+    audioRenderer->originalStrategy_ = rendererOptions.strategy;
+    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
@@ -342,26 +366,9 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
         rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
         rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F",
         isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
-
-    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
-    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
-    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
-    audioRenderer->rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
-    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
-    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
-        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
-    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
-    audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
-    audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
-    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+    
     audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->privacyType_ = rendererOptions.privacyType;
-    audioRenderer->strategy_ = rendererOptions.strategy;
-    audioRenderer->originalStrategy_ = rendererOptions.strategy;
-    AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
         audioRenderer = nullptr;
