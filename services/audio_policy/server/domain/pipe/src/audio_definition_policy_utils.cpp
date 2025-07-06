@@ -59,6 +59,7 @@ std::unordered_map<std::string, DeviceType> AudioDefinitionPolicyUtils::deviceTy
     {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
     {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
     {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
+    {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
 };
 
 std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEnum = {
@@ -76,6 +77,7 @@ std::unordered_map<std::string, AudioPin> AudioDefinitionPolicyUtils::pinStrToEn
     {"PIN_OUT_BLUETOOTH_A2DP", AUDIO_PIN_OUT_BLUETOOTH_A2DP},
     {"PIN_OUT_DP", AUDIO_PIN_OUT_DP},
     {"PIN_OUT_NEARLINK", AUDIO_PIN_OUT_NEARLINK},
+    {"PIN_OUT_HEARING_AID", AUDIO_PIN_OUT_HEARING_AID},
     {"PIN_IN_MIC", AUDIO_PIN_IN_MIC},
     {"PIN_IN_HS_MIC", AUDIO_PIN_IN_HS_MIC},
     {"PIN_IN_LINEIN", AUDIO_PIN_IN_LINEIN},

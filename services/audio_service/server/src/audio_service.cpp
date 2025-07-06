@@ -546,7 +546,8 @@ bool AudioService::ShouldBeDualTone(const AudioProcessConfig &config)
     if (deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADSET || deviceInfo.deviceType_ == DEVICE_TYPE_WIRED_HEADPHONES ||
         deviceInfo.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP || deviceInfo.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         deviceInfo.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET || deviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST ||
-        (deviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER && deviceInfo.networkId_ != std::string(LOCAL_NETWORK_ID))) {
+        (deviceInfo.deviceType_ == DEVICE_TYPE_SPEAKER && deviceInfo.networkId_ != std::string(LOCAL_NETWORK_ID)) ||
+        deviceInfo.deviceType_ == DEVICE_TYPE_HEARING_AID) {
         switch (config.rendererInfo.streamUsage) {
             case STREAM_USAGE_ALARM:
             case STREAM_USAGE_VOICE_RINGTONE:

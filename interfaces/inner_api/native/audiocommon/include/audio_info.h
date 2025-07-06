@@ -1480,6 +1480,7 @@ enum AudioPin {
     AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_OUT_NEARLINK = 1 << 12, // Nearlink output pin
+    AUDIO_PIN_OUT_HEARING_AID = 1 << 13, // HearingAid output pin
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
     AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin

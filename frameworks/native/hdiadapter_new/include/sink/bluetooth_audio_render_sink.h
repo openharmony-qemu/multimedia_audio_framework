@@ -22,6 +22,7 @@
 #include "audio_proxy_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +33,7 @@ typedef struct OHOS::HDI::Audio_Bluetooth::AudioRender BtAudioRender;
 
 class BluetoothAudioRenderSink : public IAudioRenderSink {
 public:
-    explicit BluetoothAudioRenderSink(bool isBluetoothLowLatency = false);
+    BluetoothAudioRenderSink(bool isBluetoothLowLatency = false, const std::string &halName = "");
     ~BluetoothAudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -131,6 +132,8 @@ private:
 #endif
 
     bool isBluetoothLowLatency_ = false;
+    const std::string halName_ = "";
+    AdapterType sinkType_ = ADAPTER_TYPE_BLUETOOTH;
     IAudioSinkAttr attr_ = {};
     SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;

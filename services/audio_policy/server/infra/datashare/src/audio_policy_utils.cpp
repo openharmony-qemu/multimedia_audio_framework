@@ -234,6 +234,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
             break;
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
+            portName = HEARING_AID_SPEAKER;
+            break;
         default:
             portName = PORT_NONE;
             break;

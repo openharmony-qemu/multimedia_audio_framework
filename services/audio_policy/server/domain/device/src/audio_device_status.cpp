@@ -432,6 +432,9 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().AddNearlinkDevice(updatedDesc);
         audioVolumeManager_.SetNearlinkDeviceVolume(updatedDesc.macAddress_, STREAM_MUSIC, updatedDesc.mediaVolume_);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
+        audioA2dpDevice_.AddHearingAidDevice(updatedDesc.macAddress_, configInfo);
     }
     return SUCCESS;
 }
@@ -470,6 +473,10 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
         audioEcManager_.CloseUsbArmDevice(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(ACCESSORY_SOURCE);
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        if (audioA2dpDevice_.DelA2dpInDevice(updatedDesc.macAddress_) == 0) {
+            audioIOHandleMap_.ClosePortAndEraseIOHandle(HEARING_AID_SPEAKER);
+        }
     }
     SleAudioDeviceManager::GetInstance().RemoveNearlinkDevice(updatedDesc);
 

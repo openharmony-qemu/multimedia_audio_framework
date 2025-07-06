@@ -167,6 +167,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_DAUDIO = 29,
     /**
+     * Indicates a Bluetooth HearingAid device.
+     */
+    DEVICE_TYPE_HEARING_AID = 30,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 27,
@@ -253,6 +257,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_LINE_DIGITAL,
     DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
     DeviceType::DEVICE_TYPE_NEARLINK,
+    DeviceType::DEVICE_TYPE_HEARING_AID,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
