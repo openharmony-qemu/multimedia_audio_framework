@@ -213,6 +213,7 @@ public:
     void ResetCallbackLoopTid();
     bool GetStopFlag() const override;
     void ResetFirstFrameState() override;
+    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 private:
     void UpdateRegisterTrackerInfo(AudioRegisterTrackerInfo &registerTrackerInfo);
     int32_t InitializeAudioProcessConfig(AudioProcessConfig &config, const AudioStreamParams &info);

@@ -139,6 +139,8 @@ public:
     virtual bool GetStopFlag() const = 0;
 
     virtual void JoinCallbackLoop() = 0;
+
+    virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
