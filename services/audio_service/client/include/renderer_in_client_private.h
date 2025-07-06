@@ -212,6 +212,7 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
@@ -413,10 +414,14 @@ private:
     int64_t offloadStartHandleTime_ = 0;
 
     // for getAudioTimeStampInfo
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePositionWithSpeed_ = {
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
+    std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
+
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
         float speed = 1.0;

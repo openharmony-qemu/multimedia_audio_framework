@@ -1996,6 +1996,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
     return true;
 }
 

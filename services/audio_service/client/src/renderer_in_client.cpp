@@ -661,7 +661,8 @@ void RendererInClientInner::ResetFramePosition()
     }
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        lastFramePosition_[base].first = 0;
+        lastFramePosAndTimePair_[base].first = 0;
+        lastSwitchPosition_[base] = 0;
     }
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;

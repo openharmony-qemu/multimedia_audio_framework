@@ -206,6 +206,7 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
