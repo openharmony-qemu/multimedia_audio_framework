@@ -217,6 +217,11 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
+    /* Set isOffloadAllowed before renderer creation when setOffloadAllowed is disabled.*/
+    if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
+        AUDIO_WARNING_LOG("stream usage is unknown, do not allow to use offload output");
+        rendererOptions.rendererInfo.isOffloadAllowed = false;
+    }
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
@@ -228,10 +233,6 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
         CreateRendererFailed();
         rendererNapi.release();
         return nullptr;
-    }
-
-    if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
-        rendererNapi->audioRenderer_->SetOffloadAllowed(false);
     }
 
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {

@@ -310,6 +310,27 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
+    rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
+    rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+    rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+
+    privacyType_ = rendererOptions.privacyType;
+    strategy_ = rendererOptions.strategy;
+    originalStrategy_ = rendererOptions.strategy;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
@@ -338,25 +359,15 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
-
-    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
-    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
-    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
-    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
-        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
-    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+        "isOffloadAllowed: %{public}s, isVKB: %{public}s, flags: %{public}d, uid: %{public}d",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F",
+        isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
+    
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
-    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->privacyType_ = rendererOptions.privacyType;
-    audioRenderer->strategy_ = rendererOptions.strategy;
-    audioRenderer->originalStrategy_ = rendererOptions.strategy;
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -1802,6 +1813,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return currentStream->GetLowPowerVolume();
 }
 
+// in plan: need remove
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
     AUDIO_PRERELEASE_LOGI("offload allowed: %{public}d", isAllowed);
