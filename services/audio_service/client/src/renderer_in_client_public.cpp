@@ -1806,7 +1806,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
 
     // reset the timestamp
-    if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition || lastFramePosAndTimePairWithSpeed_[base].second == 0) {
+    if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||
+        lastFramePosAndTimePairWithSpeed_[base].second == 0) {
         lastFramePosAndTimePairWithSpeed_[base] = {framePosition, timestampVal};
     } else {
         AUDIO_DEBUG_LOG("The frame position should be continuously increasing");
