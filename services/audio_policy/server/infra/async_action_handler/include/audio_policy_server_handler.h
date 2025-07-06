@@ -83,6 +83,7 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_CURRENT_DEVICE,
         AUDIO_ZONE_EVENT,
         FORMAT_UNSUPPORTED_ERROR,
+        INTERRUPT_EVENT_FOR_AUDIO_SESSION,
     };
     /* event data */
     class EventContextObj {
@@ -170,6 +171,8 @@ public:
     bool SendInterruptEventInternalCallback(const InterruptEventInternal &interruptEvent);
     bool SendInterruptEventWithStreamIdCallback(const InterruptEventInternal &interruptEvent,
         const uint32_t &streamId);
+    bool SendInterruptEventCallbackForAudioSession(const InterruptEventInternal &interruptEvent,
+        const AudioInterrupt &audioInterrupt);
     bool SendInterruptEventWithClientIdCallback(const InterruptEventInternal &interruptEvent,
         const int32_t &clientId);
     bool SendPreferredOutputDeviceUpdated();
@@ -226,6 +229,7 @@ private:
     void HandleMicStateUpdatedEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleMicStateUpdatedEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEvent(const AppExecFwk::InnerEvent::Pointer &event);
+    void HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithStreamId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event);
     void HandlePreferredOutputDeviceUpdated();

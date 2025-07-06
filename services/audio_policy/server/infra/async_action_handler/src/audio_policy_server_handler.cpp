@@ -225,6 +225,7 @@ bool AudioPolicyServerHandler::SendAudioSessionDeactiveCallback(
     CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
     eventContextObj->sessionDeactivePair = sessionDeactivePair;
     lock_guard<mutex> runnerlock(runnerMutex_);
+    AUDIO_INFO_LOG("Send AudioSessionDeactiveCallback pid %{public}d", sessionDeactivePair.first);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::AUDIO_SESSION_DEACTIVE_EVENT,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudioSessionDeactiveCallback event failed");
@@ -334,10 +335,25 @@ bool AudioPolicyServerHandler::SendInterruptEventWithStreamIdCallback(const Inte
     eventContextObj->interruptEvent = interruptEvent;
     eventContextObj->sessionId = streamId;
     lock_guard<mutex> runnerlock(runnerMutex_);
-    AUDIO_INFO_LOG("Send interrupt event with streamId callback");
+    AUDIO_INFO_LOG("Send interrupt event with streamId callback, streamId = %{public}u", streamId);
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_WITH_STREAMID event failed");
+    return ret;
+}
+
+bool AudioPolicyServerHandler::SendInterruptEventCallbackForAudioSession(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->interruptEvent = interruptEvent;
+    eventContextObj->audioInterrupt = audioInterrupt;
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    AUDIO_INFO_LOG("Send InterruptEventCallbackForAudioSession pid %{public}d", audioInterrupt.pid);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::INTERRUPT_EVENT_FOR_AUDIO_SESSION,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send INTERRUPT_EVENT_FOR_AUDIO_SESSION event failed");
     return ret;
 }
 
@@ -1004,6 +1020,63 @@ void AudioPolicyServerHandler::HandleInterruptEventWithStreamId(const AppExecFwk
     }
 }
 
+void AudioPolicyServerHandler::HandleInterruptEventForAudioSession(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::lock_guard<std::mutex> lock(handleMapMutex_);
+    int32_t clientPid = eventContextObj->audioInterrupt.pid;
+    auto iterator = audioPolicyClientProxyAPSCbsMap_.find(clientPid);
+    if (iterator == audioPolicyClientProxyAPSCbsMap_.end()) {
+        AUDIO_ERR_LOG("No client callback for client pid %{public}d", clientPid);
+        return;
+    }
+
+    InterruptHint hintType = eventContextObj->interruptEvent.hintType;
+    AudioSessionStateChangedEvent stateChangedEvent;
+    switch (hintType) {
+        case INTERRUPT_HINT_RESUME:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::RESUME;
+            break;
+        case INTERRUPT_HINT_PAUSE:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::PAUSE;
+            break;
+        case INTERRUPT_HINT_STOP:
+            // duckVolume = -1.0f, means timeout stop
+            if (eventContextObj->interruptEvent.duckVolume == -1.0f) {
+                eventContextObj->interruptEvent.duckVolume = 1.0f;
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::TIME_OUT_STOP;
+            } else {
+                stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::STOP;
+            }
+            break;
+        case INTERRUPT_HINT_DUCK:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::DUCK;
+            break;
+        case INTERRUPT_HINT_UNDUCK:
+            stateChangedEvent.stateChangeHint = AudioSessionStateChangeHint::UNDUCK;
+            break;
+        default:
+            AUDIO_ERR_LOG("Unspported hintType %{public}d", static_cast<int32_t>(hintType));
+            return;
+    }
+
+    if (clientCallbacksMap_.count(iterator->first) > 0 &&
+        clientCallbacksMap_[iterator->first].count(CALLBACK_AUDIO_SESSION_STATE) > 0 &&
+        clientCallbacksMap_[iterator->first][CALLBACK_AUDIO_SESSION_STATE]) {
+        // the client has registered audio session callback.
+        std::shared_ptr<AudioPolicyClientHolder> audioSessionCb = iterator->second;
+        if (audioSessionCb == nullptr) {
+            AUDIO_ERR_LOG("audioSessionCb is nullptr for client pid %{public}d", clientPid);
+            return;
+        }
+        AUDIO_INFO_LOG("Trigger for client pid : %{public}d", clientPid);
+        audioSessionCb->OnAudioSessionStateChanged(stateChangedEvent);
+    } else {
+        AUDIO_ERR_LOG("No registered callback for pid %{public}d", clientPid);
+    }
+}
+
 void AudioPolicyServerHandler::HandleInterruptEventWithClientId(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1511,6 +1584,9 @@ void AudioPolicyServerHandler::ProcessEvent(const AppExecFwk::InnerEvent::Pointe
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT_WITH_STREAMID:
             HandleInterruptEventWithStreamId(event);
+            break;
+        case EventAudioServerCmd::INTERRUPT_EVENT_FOR_AUDIO_SESSION:
+            HandleInterruptEventForAudioSession(event);
             break;
         case EventAudioServerCmd::INTERRUPT_EVENT_WITH_CLIENTID:
             HandleInterruptEventWithClientId(event);
