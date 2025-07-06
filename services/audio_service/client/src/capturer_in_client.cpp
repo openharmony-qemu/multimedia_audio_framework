@@ -630,6 +630,13 @@ bool CapturerInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     return GetAudioTime(timestamp, base);
 }
 
+void CapturerInClientInner::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    (void)lastFramePosAndTimePair;
+    AUDIO_INFO_LOG("capturer stream not support timestamp re-set when stream switching");
+}
+
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
