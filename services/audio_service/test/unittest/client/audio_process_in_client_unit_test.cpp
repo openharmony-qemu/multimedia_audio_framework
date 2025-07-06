@@ -1860,9 +1860,17 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_084, TestSize.Lev
 
     bool isFlush = true;
     auto ret = ptrAudioProcessInClientInner->Pause(isFlush);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ptrAudioProcessInClientInner->streamStatus_ = new std::atomic<StreamStatus>(StreamStatus::STREAM_STAND_BY);
+    ret = ptrAudioProcessInClientInner->Pause(isFlush);
+    EXPECT_NE(ret, SUCCESS);
+
+    ptrAudioProcessInClientInner->streamStatus_ = new std::atomic<StreamStatus>(StreamStatus::STREAM_RUNNING);
+    ret = ptrAudioProcessInClientInner->Pause(isFlush);
     ptrAudioProcessInClientInner->isInited_ = false;
     delete ptrStreamStatus;
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**
