@@ -1181,6 +1181,10 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     }
     startFadeout_.store(true);
     StreamStatus targetStatus = StreamStatus::STREAM_RUNNING;
+
+    if (streamStatus_->load() == StreamStatus::STREAM_STAND_BY) {
+        targetStatus = StreamStatus::STREAM_STAND_BY;
+    }
     bool ret = streamStatus_->compare_exchange_strong(targetStatus, StreamStatus::STREAM_PAUSING);
     if (!ret) {
         startFadeout_.store(false);
