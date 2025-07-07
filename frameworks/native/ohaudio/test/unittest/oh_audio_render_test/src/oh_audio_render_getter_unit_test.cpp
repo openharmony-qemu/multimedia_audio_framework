@@ -981,19 +981,6 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetVolume_004, TestSize.Level0)
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
-// /**
-//  * @tc.name  : Test OH_AudioRenderer_GetLoudnessGain API via illegal state.
-//  * @tc.number: OH_Audio_Render_GetLoudnessGain_001
-//  * @tc.desc  : Test OH_AudioRenderer_GetLoudnessGain interface with nullptr audioRenderer.
-//  */
-// HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_001, TestSize.Level0)
-// {
-//     OH_AudioRenderer* audioRenderer = nullptr;
-//     float loudnessGain;
-//     OH_AudioStream_Result result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGain);
-//     EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
-// }
-
 /**
  * @tc.name  : Test OH_AudioRenderer_GetLoudnessGain API via illegal stream usage.
  * @tc.number: OH_Audio_Render_GetLoudnessGain_001
