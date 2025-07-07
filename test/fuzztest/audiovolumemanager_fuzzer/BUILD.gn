@@ -47,6 +47,7 @@ ohos_fuzztest("AudioVolumeManagerFuzzTest") {
     "hilog:libhilog",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
+    "eventhandler:libeventhandler",
   ]
 
   defines = []

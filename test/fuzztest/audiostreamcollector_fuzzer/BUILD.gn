@@ -45,6 +45,8 @@ ohos_fuzztest("AudioStreamCollectorFuzzTest") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ipc:ipc_single",
+    "eventhandler:libeventhandler",
   ]
 
   defines = []
