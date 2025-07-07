@@ -147,6 +147,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     ConvertToFloat(nodeInfo.format, nodeInfo.channels * nodeInfo.frameLen, testData.data(), testDataFloat.data());
     OutputPort<HpaePcmBuffer *> *outputPort = hpaeSoruceInputNode->GetOutputPort();
     HpaePcmBuffer* outPcmBuffer = outputPort->PullOutputData();
+    ASSERT_NE(outPcmBuffer, nullptr);
     float* outputPcmData = outPcmBuffer->GetPcmDataBuffer();
     for (int32_t i = 0; i < requestBytes / SAMPLE_F32LE; i++) {
         float diff = outputPcmData[i] - testDataFloat[i];
