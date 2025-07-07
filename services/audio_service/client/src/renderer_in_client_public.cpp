@@ -73,7 +73,6 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
-constexpr float EPSILON = 1e-6f;
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -627,7 +626,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    if (abs(speed - writtenAtSpeedChange_.load().speed) > EPSILON) {
+    if (std::abs(speed - writtenAtSpeedChange_.load().speed) > std::numeric_limits<float>::epsilon()) {
         writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     }
     speed_ = speed;
@@ -1015,6 +1014,7 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
@@ -1073,6 +1073,7 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
+    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);

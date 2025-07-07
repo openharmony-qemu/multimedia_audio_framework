@@ -650,15 +650,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 void RendererInClientInner::ResetFramePosition()
 {
     Trace trace("RendererInClientInner::ResetFramePosition");
-    uint64_t timestampVal = 0;
-    uint64_t latency = 0;
-    CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
-    int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampVal, latency,
-        Timestamp::Timestampbase::MONOTONIC);
-    if (ret != SUCCESS) {
-        AUDIO_PRERELEASE_LOGE("Get position failed: %{public}u", ret);
-        return;
-    }
+    lastFlushReadIndex_ = stopReadIndex_;
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosAndTimePair_[base].first = 0;
@@ -894,6 +886,14 @@ void RendererInClientInner::ResetCallbackLoopTid()
 {
     AUDIO_INFO_LOG("Reset callback loop tid to -1");
     callbackLoopTid_ = -1;
+}
+
+void RendererInClientInner::UpdatePauseReadIndex()
+{
+    uint64_t timestampVal = 0;
+    uint64_t latency = 0;
+    ipcStream_->GetAudioPosition(stopReadIndex_, timestampVal, latency,
+        Timestamp::Timestampbase::MONOTONIC);
 }
 
 SpatializationStateChangeCallbackImpl::SpatializationStateChangeCallbackImpl()
