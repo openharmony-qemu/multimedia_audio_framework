@@ -74,10 +74,9 @@ private:
     bool isOpenPaPower_ = true;
     bool isDisplayPaPowerState_ = false;
     bool isSyncIdSet_ = false;
-    bool isProcessed_ = false;
     int32_t syncId_ = -1;
     uint32_t latency_ = 0;
-    HighResolutionTimer runningTimer_; // Record the time of sink running
+    uint64_t renderFrameTimes_ = 0;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
