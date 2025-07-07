@@ -1025,7 +1025,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_002, TestSize.Leve
 /**
  * @tc.name  : Test OH_AudioRenderer_GetLoudnessGain API via legal and illegal loudnessGain.
  * @tc.number: OH_Audio_Render_GetLoudnessGain_003
- * @tc.desc  : Test OH_AudioRenderer_GetLoudnessGain interface after set volume fails.
+ * @tc.desc  : Test OH_AudioRenderer_GetLoudnessGain interface after set loudnessGain fails.
  */
 HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_003, TestSize.Level0)
 {
