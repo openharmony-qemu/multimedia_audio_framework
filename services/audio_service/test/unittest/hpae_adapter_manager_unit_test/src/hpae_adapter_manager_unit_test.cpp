@@ -806,7 +806,7 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_034, TestSize.Level1)
 * @tc.number : HpaeAdapterManager_035
 * @tc.desc   : Test StartRenderWithSyncId interface.
 */
-HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_008, TestSize.Level1)
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_035, TestSize.Level1)
 {
     HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
     ASSERT_TRUE(adapterManager != nullptr);
