@@ -77,9 +77,8 @@ static std::shared_ptr<AudioEndpointInner> CreateInputEndpointInner(AudioEndpoin
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpoint =
         std::make_shared<AudioEndpointInner>(type, AUDIO_ENDPOINT_ID, config);
@@ -94,9 +93,8 @@ static std::shared_ptr<AudioEndpointInner> CreateOutputEndpointInner(AudioEndpoi
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(type, AUDIO_ENDPOINT_ID, config, deviceInfo);
@@ -147,9 +145,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_001, TestSize.Level1
 {
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -167,22 +164,24 @@ HWTEST_F(AudioEndpointUnitTest, CreateEndpoint_002, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
-    audioStreamInfo.format = AudioSampleFormat::SAMPLE_U8;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_U8, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     audioStreamInfo.format = AudioSampleFormat::INVALID_WIDTH;
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 
     audioStreamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     audioEndpointInner = CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
 }
@@ -198,9 +197,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -218,9 +216,8 @@ HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_003, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
@@ -248,9 +245,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -273,9 +269,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -316,9 +311,8 @@ HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeCheckEvent_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -364,9 +358,8 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -416,9 +409,8 @@ HWTEST_F(AudioEndpointUnitTest, KeepWorkloopRunning_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -463,9 +455,8 @@ HWTEST_F(AudioEndpointUnitTest, CheckUpdateState_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -505,9 +496,8 @@ HWTEST_F(AudioEndpointUnitTest, CheckProcessToDupStream_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo streamInfo = deviceInfo.GetDeviceStreamInfo();
-    streamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo streamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { streamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -534,9 +524,8 @@ HWTEST_F(AudioEndpointUnitTest, GetFastSink_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
@@ -587,9 +576,8 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointMix_001, TestSize.Level1)
     AudioProcessConfig config = {};
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     result = audioEndpointInner->Config(deviceInfo);
     EXPECT_FALSE(result);

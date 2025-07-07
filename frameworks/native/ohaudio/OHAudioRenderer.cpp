@@ -302,16 +302,15 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::AudioRendererInfo rendererInfo;
     audioRenderer->GetRendererInfo(rendererInfo);
     OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
-    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
     CHECK_AND_RETURN_RET_LOG((usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
         usage == AUDIOSTREAM_USAGE_AUDIOBOOK), AUDIOSTREAM_ERROR_INVALID_PARAM, "audio stream type not supported");
-    CHECK_AND_RETURN_RET_LOG(latencyMode == AUDIOSTREAM_LATENCY_MODE_NORMAL, AUDIOSTREAM_ERROR_INVALID_PARAM,
-        "not supported.");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain set invalid");
     int32_t err = audioRenderer->SetLoudnessGain(loudnessGain);
     CHECK_AND_RETURN_RET_LOG(err != OHOS::AudioStandard::ERR_PRO_STREAM_NOT_SUPPORTED, AUDIOSTREAM_ERROR_INVALID_PARAM,
         "pro stream not supported.");
+    CHECK_AND_RETURN_RET_LOG(err != OHOS::AudioStandard::ERROR_UNSUPPORTED, AUDIOSTREAM_ERROR_INVALID_PARAM,
+        "not supported.");
     return ConvertError(err);
 }
 
@@ -456,19 +455,14 @@ OHAudioRenderer::~OHAudioRenderer()
 
 bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
 {
-    bool offloadAllowed = true;
-
-    // unknown stream use music policy as default
+    // unknown stream use music policy as default and do not allow to use offload output
     if (rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_UNKNOWN) {
+        AUDIO_WARNING_LOG("stream usage is unknown, use music policy as default "
+            "and do not allow to use offload output");
         rendererOptions.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-        offloadAllowed = false;
+        rendererOptions.rendererInfo.isOffloadAllowed = false;
     }
     audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
-
-    // if caller do not set usage, do not allow to use offload output
-    if (audioRenderer_ != nullptr) {
-        audioRenderer_->SetOffloadAllowed(offloadAllowed);
-    }
 
     return audioRenderer_ != nullptr;
 }

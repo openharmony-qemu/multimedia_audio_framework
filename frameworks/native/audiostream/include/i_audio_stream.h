@@ -104,6 +104,9 @@ public:
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
 
         std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
     };
 
     virtual ~IAudioStream() = default;
@@ -310,6 +313,8 @@ public:
     virtual RestoreStatus CheckRestoreStatus() = 0;
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
+
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
 

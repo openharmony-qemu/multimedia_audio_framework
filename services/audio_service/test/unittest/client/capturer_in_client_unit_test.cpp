@@ -38,6 +38,8 @@ const int32_t VALUE_FIF = 15;
 const int32_t VALUE_INVALID = -1;
 const int32_t MAX_TIMES = 21;
 const size_t SHORT_SLEEP_TIME = 200000; // us 200ms
+const uint64_t TEST_POSITION = 20000;
+const uint64_t TEST_TIMESTAMP_NS = 20000;
 
 enum {
     STATE_CHANGE_EVENT = 0,
@@ -1789,6 +1791,29 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
     capturerInClientInner->audioStreamTracker_ = std::make_unique<AudioStreamTracker>(AudioMode::AUDIO_MODE_PLAYBACK,
         clientUid);
     capturerInClientInner->FetchDeviceForSplitStream();
+}
+
+/**
+ * @tc.name  : Test CapturerInClient  API
+ * @tc.type  : FUNC
+ * @tc.number: SetSwitchInfoTimestamp_001
+ * @tc.desc  : Test CapturerInClient SetSwitchInfoTimestamp function
+ */
+HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
+{
+    // prepare object
+    std::shared_ptr<CapturerInClientInner> testCapturerInClientObj =
+        std::make_shared<CapturerInClientInner>(STREAM_DEFAULT, getpid());
+    ASSERT_TRUE(testCapturerInClientObj != nullptr);
+ 
+    // start test
+    std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
+    };
+    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    Timestamp testTimestamp;
+    testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
+    EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
 }
 } // namespace AudioStandard
 } // namespace OHOS

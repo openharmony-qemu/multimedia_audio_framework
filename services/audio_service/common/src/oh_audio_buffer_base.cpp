@@ -442,8 +442,8 @@ bool OHAudioBufferBase::Marshalling(Parcel &parcel) const
     CHECK_AND_RETURN_RET_LOG(statusInfoMem_ != nullptr, false, "statusInfoMem_ is nullptr.");
 
     return messageParcel.WriteUint32(bufferHolder) &&
-        messageParcel.WriteUint32(byteSizePerFrame_) &&
         messageParcel.WriteUint32(totalSizeInFrame_) &&
+        messageParcel.WriteUint32(byteSizePerFrame_) &&
         messageParcel.WriteFileDescriptor(dataMem_->GetFd()) &&
         messageParcel.WriteFileDescriptor(statusInfoMem_->GetFd());
 }

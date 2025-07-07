@@ -113,7 +113,7 @@ HWTEST(AudioResourceServiceUnitTest, DeathRecipient_003, TestSize.Level0)
 
     audioResourceService.audioWorkgroupMap_[1].groups[testRtgId] = {workgroup};
     audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
-    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[1].size(), 0);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[1].groups.size(), 0);
     EXPECT_EQ(audioResourceService.audioWorkgroupMap_[1].groups[testRtgId], nullptr);
 }
 

@@ -158,7 +158,7 @@ public:
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     bool IsVirtualKeyboard(const int32_t flags);
-
+    void HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions, const AppInfo &appInfo);
     static inline AudioStreamParams ConvertToAudioStreamParams(const AudioRendererParams params)
     {
         AudioStreamParams audioStreamParams;

@@ -26,6 +26,10 @@ using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const uint64_t TEST_POSITION = 20000;
+const uint64_t TEST_TIMESTAMP_NS = 20000;
+
 class RendererInClientUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -1562,6 +1566,29 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1
 
     auto ret = ptrRendererInClientInner->GetFastStatus();
     EXPECT_EQ(ret, FASTSTATUS_NORMAL);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_045
+ * @tc.desc  : Test RendererInClientInner SetSwitchInfoTimestamp function
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
+{
+    // prepare object
+    auto testRendererInClientObj =
+        std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(testRendererInClientObj != nullptr);
+ 
+    // start test
+    std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
+    };
+    testRendererInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    EXPECT_EQ(testRendererInClientObj->lastFramePosAndTimePair_, testLastFramePosAndTimePair);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
 }
 } // namespace AudioStandard
 } // namespace OHOS

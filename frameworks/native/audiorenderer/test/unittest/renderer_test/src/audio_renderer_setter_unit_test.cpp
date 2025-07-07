@@ -1347,11 +1347,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetOffloadAllowed_001, TestSize.Lev
 
     AudioRendererOptions rendererOptions;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    rendererOptions.rendererInfo.isOffloadAllowed = false;
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
-
-    ret = audioRenderer->SetOffloadAllowed(false);
-    EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);

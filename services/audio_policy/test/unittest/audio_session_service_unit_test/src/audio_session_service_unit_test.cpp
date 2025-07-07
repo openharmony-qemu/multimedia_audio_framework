@@ -182,5 +182,26 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_009, TestSize.
     audioSessionService->sessionMap_[callerPid] = nullptr;
     audioSessionService->AudioSessionInfoDump(dumpString);
 }
+
+/**
+* @tc.name  : Test SetAudioSessionScene
+* @tc.number: SetAudioSessionSceneTest
+* @tc.desc  : Test SetAudioSessionScene
+*/
+HWTEST(AudioSessionServiceUnitTest, SetAudioSessionSceneTest, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = sessionService->ActivateAudioSession(fakePid, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_TRUE(sessionService->IsAudioSessionActivated(fakePid));
+    EXPECT_TRUE(sessionService->IsAudioSessionFocusMode(fakePid));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

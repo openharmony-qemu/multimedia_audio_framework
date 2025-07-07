@@ -359,6 +359,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_008, TestSize.L
     adapterInfo->adapterName = "abc";
     adapterDeviceInfo->adapterInfo_ = adapterInfo;
     auto adapterDeviceInfo2 = std::make_shared<AdapterDeviceInfo>();
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo2 = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo2->adapterName = "";
+    adapterDeviceInfo2->adapterInfo_ = adapterInfo2;
     std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet;
 
     adapterDeviceInfoSet.insert(adapterDeviceInfo);

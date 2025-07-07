@@ -283,6 +283,7 @@ public:
         return sharedAudioRenderer_->GetLowPowerVolume();
     }
 
+    // in plan:need remove
     int32_t SetOffloadAllowed(bool isAllowed) override
     {
         return sharedAudioRenderer_->SetOffloadAllowed(isAllowed);

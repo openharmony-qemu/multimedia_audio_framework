@@ -56,6 +56,8 @@ static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
+static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -310,6 +312,27 @@ std::unique_ptr<AudioRenderer> AudioRenderer::Create(const std::string cachePath
     return std::make_unique<SharedAudioRendererWrapper>(sharedRenderer);
 }
 
+void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOptions &rendererOptions,
+    const AppInfo &appInfo)
+{
+    rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
+    rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
+    rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
+    /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
+    rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
+    rendererInfo_.expectedPlaybackDurationBytes
+        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
+    rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
+    rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+    rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
+    rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
+
+    privacyType_ = rendererOptions.privacyType;
+    strategy_ = rendererOptions.strategy;
+    originalStrategy_ = rendererOptions.strategy;
+}
+
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
     const AppInfo &appInfo)
 {
@@ -338,25 +361,15 @@ std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRenderer
     rendererFlags = rendererFlags == AUDIO_FLAG_VKB_FAST ? AUDIO_FLAG_MMAP : rendererFlags;
 
     AUDIO_INFO_LOG("StreamClientState for Renderer::Create. content: %{public}d, usage: %{public}d, "\
-        "isVKB: %{public}s, flags: %{public}d, uid: %{public}d", rendererOptions.rendererInfo.contentType,
-        rendererOptions.rendererInfo.streamUsage, isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
-
-    audioRenderer->rendererInfo_.contentType = rendererOptions.rendererInfo.contentType;
-    audioRenderer->rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
-    audioRenderer->rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
-    audioRenderer->rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
-    audioRenderer->rendererInfo_.expectedPlaybackDurationBytes
-        = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
-    audioRenderer->rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    audioRenderer->rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
+        "isOffloadAllowed: %{public}s, isVKB: %{public}s, flags: %{public}d, uid: %{public}d",
+        rendererOptions.rendererInfo.contentType, rendererOptions.rendererInfo.streamUsage,
+        rendererOptions.rendererInfo.isOffloadAllowed ? "T" : "F",
+        isVirtualKeyboard ? "T" : "F", rendererFlags, appInfo.appUid);
+    
+    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
     audioRenderer->rendererInfo_.rendererFlags = rendererFlags;
     audioRenderer->rendererInfo_.originalFlag = rendererFlags;
-    audioRenderer->rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
-    audioRenderer->rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;
-    audioRenderer->rendererInfo_.isVirtualKeyboard = isVirtualKeyboard;
-    audioRenderer->privacyType_ = rendererOptions.privacyType;
-    audioRenderer->strategy_ = rendererOptions.strategy;
-    audioRenderer->originalStrategy_ = rendererOptions.strategy;
+    audioRenderer->HandleSetRendererInfoByOptions(rendererOptions, appInfo);
     AudioRendererParams params = SetStreamInfoToParams(rendererOptions.streamInfo);
     if (audioRenderer->SetParams(params) != SUCCESS) {
         AUDIO_ERR_LOG("SetParams failed in renderer");
@@ -1367,6 +1380,16 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.streamUsage == STREAM_USAGE_MUSIC ||
+        rendererInfo_.streamUsage == STREAM_USAGE_MOVIE ||
+        rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK, ERROR_UNSUPPORTED, "audio stream type not supported");
+    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
+        ERROR_INVALID_PARAM, "loudnessGain set invalid");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
 
@@ -1802,6 +1825,7 @@ float AudioRendererPrivate::GetLowPowerVolume() const
     return currentStream->GetLowPowerVolume();
 }
 
+// in plan: need remove
 int32_t AudioRendererPrivate::SetOffloadAllowed(bool isAllowed)
 {
     AUDIO_PRERELEASE_LOGI("offload allowed: %{public}d", isAllowed);
@@ -1996,6 +2020,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
     return true;
 }
 

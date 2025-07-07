@@ -17,7 +17,7 @@
 #define ST_AUDIO_SESSION_SERVICE_H
 
 #include <mutex>
-
+#include <vector>
 #include "audio_session.h"
 #include "audio_session_state_monitor.h"
 #include "audio_device_info.h"
@@ -28,7 +28,7 @@ class SessionTimeOutCallback {
 public:
     virtual ~SessionTimeOutCallback() = default;
 
-    virtual void OnSessionTimeout(const int32_t pid) = 0; // 超时释放
+    virtual void OnSessionTimeout(const int32_t pid) = 0;
 };
 
 class AudioSessionService : public AudioSessionStateMonitor, public std::enable_shared_from_this<AudioSessionService> {
@@ -49,7 +49,6 @@ public:
     int32_t SetSessionTimeOutCallback(const std::shared_ptr<SessionTimeOutCallback> &timeOutCallback);
     std::shared_ptr<AudioSession> GetAudioSessionByPid(const int32_t callerPid);
 
-    static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
     // Dump AudioSession Info
     void AudioSessionInfoDump(std::string &dumpString);
     int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
@@ -57,9 +56,21 @@ public:
     DeviceType GetSessionDefaultOutputDevice(const int32_t callerPid);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
 
+    int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    bool IsAudioSessionFocusMode(int32_t callerPid);
+    bool ShouldBypassFocusForStream(const AudioInterrupt &audioInterrupt);
+    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
+    std::vector<AudioInterrupt> GetStreams(int32_t callerPid);
+    AudioInterrupt GenerateFakeAudioInterrupt(int32_t callerPid);
+    void RemoveStreamInfo(const AudioInterrupt &audioInterrupt);
+    bool ShouldAudioSessionProcessHintType(InterruptHint hintType);
+    bool ShouldAudioStreamProcessHintType(InterruptHint hintType);
+    static bool IsSameTypeForAudioSession(const AudioStreamType incomingType, const AudioStreamType existedType);
+
 private:
     int32_t DeactivateAudioSessionInternal(const int32_t callerPid, bool isSessionTimeout = false);
     std::shared_ptr<AudioSessionStateMonitor> GetSelfSharedPtr() override;
+    void GenerateFakeStreamId(int32_t callerPid);
 
 private:
     std::mutex sessionServiceMutex_;
