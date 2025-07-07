@@ -1371,7 +1371,7 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
-        ERROR_STREAM_LIMIT, "low latency mode not supported");    
+        ERROR_UNSUPPORTED, "low latency mode not supported");    
     return currentStream->SetLoudnessGain(loudnessGain);
 }
 
