@@ -24,6 +24,7 @@ ohos_fuzztest("AudioEffectChainFuzzTest") {
 
   include_dirs = [
     "../../../frameworks/native/audioeffect/include",
+    "../../../frameworks/native/audioeffect/src",
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
   ]
