@@ -58,10 +58,12 @@ RemoteAudioRenderSink::~RemoteAudioRenderSink()
 
 int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     AUDIO_INFO_LOG("in");
     attr_ = attr;
     std::vector<AudioCategory> splitStreamVector;
     InitSplitStream(attr_.aux.c_str(), splitStreamVector);
+    std::unique_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
     for (auto &splitStream : splitStreamVector) {
         audioRenderWrapperMap_[splitStream] = {};
     }
@@ -71,6 +73,7 @@ int32_t RemoteAudioRenderSink::Init(const IAudioSinkAttr &attr)
 
 void RemoteAudioRenderSink::DeInit(void)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("RemoteAudioRenderSink::DeInit");
     AUDIO_INFO_LOG("in");
 
@@ -84,6 +87,7 @@ void RemoteAudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_REMOTE);
     CHECK_AND_RETURN(deviceManager != nullptr);
+    std::unique_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         deviceManager->DestroyRender(deviceNetworkId_, it.second.hdiRenderId_);
         deviceManager->UnRegistRenderSinkCallback(deviceNetworkId_, it.second.hdiRenderId_);
@@ -116,14 +120,17 @@ int32_t RemoteAudioRenderSink::Start(void)
     AUDIO_INFO_LOG("in");
     std::lock_guard<std::mutex> lock(createRenderMutex_);
 
+    std::shared_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         it.second.dumpFileName_ = std::string(DUMP_REMOTE_RENDER_SINK_FILENAME) + "_" + std::to_string(it.first) +
-            '_' + GetTime() + "_" +
-            std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
+            '_' + GetTime() + "_" + std::to_string(attr_.sampleRate) + "_" + std::to_string(attr_.channel) + "_" +
             std::to_string(attr_.format) + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, it.second.dumpFileName_ + std::to_string(it.first) +
             ".pcm", &(it.second.dumpFile_));
     }
+    wrapperLock.unlock();
+
+    CHECK_AND_RETURN_RET_LOG(sinkInited_.load(), ERR_ILLEGAL_STATE, "not inited");
 
     if (isThreadRunning_.load()) {
         AUDIO_INFO_LOG("SubThread is already running");
@@ -137,6 +144,7 @@ int32_t RemoteAudioRenderSink::Start(void)
     startThread_ = std::make_shared<std::thread>([this]() {
         AUDIO_INFO_LOG("SubThread Start");
         if (!renderInited_.load()) {
+            std::unique_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
             for (auto &it : audioRenderWrapperMap_) {
                 int32_t ret = CreateRender(it.first);
                 CHECK_AND_RETURN_LOG(ret == SUCCESS, "create render fail");
@@ -150,12 +158,12 @@ int32_t RemoteAudioRenderSink::Start(void)
             return;
         }
     
+        std::shared_lock<std::shared_mutex> wrapperLock(renderWrapperMutex_);
         for (auto &it : audioRenderWrapperMap_) {
             CHECK_AND_RETURN_LOG(it.second.audioRender_ != nullptr,
                 "render is nullptr, type: %{public}d", it.first);
             int32_t ret = it.second.audioRender_->Start();
-            CHECK_AND_RETURN_LOG(ret == SUCCESS, "start fail, type: %{public}d, ret: %{public}d",
-                it.first, ret);
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "start fail, type: %{public}d, ret: %{public}d", it.first, ret);
         }
         started_.store(true);
         isThreadRunning_.store(false);
@@ -178,6 +186,7 @@ int32_t RemoteAudioRenderSink::Stop(void)
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", it.first);
@@ -201,6 +210,7 @@ int32_t RemoteAudioRenderSink::Resume(void)
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", it.first);
@@ -223,6 +233,7 @@ int32_t RemoteAudioRenderSink::Pause(void)
         return SUCCESS;
     }
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", it.first);
@@ -240,6 +251,7 @@ int32_t RemoteAudioRenderSink::Flush(void)
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", it.first);
@@ -256,6 +268,7 @@ int32_t RemoteAudioRenderSink::Reset(void)
     AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(started_.load(), ERR_ILLEGAL_STATE, "not start, invalid state");
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (auto &it : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(it.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", it.first);
@@ -312,6 +325,7 @@ int32_t RemoteAudioRenderSink::SetVolume(float left, float right)
         volume = (leftVolume_ + rightVolume_) / HALF_FACTOR;
     }
 
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (const auto &wrapper : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(wrapper.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", wrapper.first);
@@ -332,6 +346,7 @@ int32_t RemoteAudioRenderSink::GetLatency(uint32_t &latency)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     uint32_t hdiLatency = 0;
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (const auto &wrapper : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(wrapper.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", wrapper.first);
@@ -391,6 +406,7 @@ int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<
         .desc.pins = AudioPortPin::PIN_OUT_SPEAKER,
     };
     AUDIO_DEBUG_LOG("start");
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     for (const auto &wrapper : audioRenderWrapperMap_) {
         CHECK_AND_RETURN_RET_LOG(wrapper.second.audioRender_ != nullptr, ERR_INVALID_HANDLE,
             "render is nullptr, type: %{public}d", wrapper.first);
@@ -605,6 +621,7 @@ int32_t RemoteAudioRenderSink::CreateRender(AudioCategory type)
 
 int32_t RemoteAudioRenderSink::DoSetOutputRoute(void)
 {
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     if (audioRenderWrapperMap_.find(AUDIO_IN_MEDIA) == audioRenderWrapperMap_.end()) {
         AUDIO_WARNING_LOG("render not include AUDIO_IN_MEDIA");
         return ERR_INVALID_HANDLE;
@@ -640,6 +657,7 @@ int32_t RemoteAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     AUDIO_DEBUG_LOG("type: %{public}d", type);
     int64_t stamp = ClockTime::GetCurNano();
+    std::shared_lock<std::shared_mutex> lock(renderWrapperMutex_);
     sptr<IAudioRender> audioRender = audioRenderWrapperMap_[type].audioRender_;
     CHECK_AND_RETURN_RET_LOG(audioRender != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     if (!started_.load()) {
