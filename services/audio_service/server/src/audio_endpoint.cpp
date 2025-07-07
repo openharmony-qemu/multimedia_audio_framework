@@ -1058,6 +1058,13 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
+    Trace trace("AudioEndpointInner::");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
+    AudioVolume::GetInstance()->AddStreamVolume(processStream->GetAudioSessionId(),
+        processStream->GetAudioProcessConfig().streamType, processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
+        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode);
+
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
         std::unique_lock<std::mutex> lock(loopThreadLock_);
