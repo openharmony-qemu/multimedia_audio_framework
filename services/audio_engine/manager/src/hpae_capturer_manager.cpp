@@ -622,6 +622,7 @@ int32_t HpaeCapturerManager::ReloadCaptureManager(const HpaeSourceInfo &sourceIn
             AddSingleNodeToSource(moveInfo, true);
         }
         TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
+        TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
     };
     SendRequest(request, true);
     hpaeSignalProcessThread_->ActivateThread(shared_from_this());
@@ -678,6 +679,7 @@ int32_t HpaeCapturerManager::Init(bool isReload)
         int32_t ret = InitCapturerManager();
         TriggerCallback(INIT_DEVICE_RESULT, sourceInfo_.deviceName, ret);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Init HpaeCapturerManager failed");
+        TriggerCallback(INIT_SOURCE_RESULT, sourceInfo_.sourceType);
         AUDIO_INFO_LOG("Init HpaeCapturerManager success");
         CheckIfAnyStreamRunning();
         HpaePolicyManager::GetInstance().SetInputDevice(captureId_,

@@ -1567,23 +1567,6 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
     } else {
         config.isWakeupCapturer = false;
     }
-    if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_LIVE) {
-        int32_t engineFlag = GetEngineFlag();
-        if (engineFlag == 1) {
-            HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-            std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-            CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-            std::string res = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
-                "source_type_live_aec_supported");
-            if (res != "true") {
-                AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
-                config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-            }
-        } else {
-            AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
-            config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-        }
-    }
 }
 
 AudioProcessConfig AudioServer::ResetProcessConfig(const AudioProcessConfig &config)
