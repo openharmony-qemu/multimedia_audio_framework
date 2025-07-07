@@ -328,40 +328,6 @@ static void TestIRendererManagerSetLoudnessGain()
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-HWTEST_F(HpaeRendererManagerTest, StartWithSyncId_001, TestSize.Level0)
-{
-    HpaeSinkInfo sinkInfo;
-    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
-    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
-    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
-    sinkInfo.frameLen = FRAME_LENGTH_960;
-    sinkInfo.samplingRate = SAMPLE_RATE_48000;
-    sinkInfo.format = SAMPLE_F32LE;
-    sinkInfo.channels = STEREO;
-    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
-    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
-
-    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
-    WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
-    // test SetLoundessGain when session is created but not connected
-    HpaeStreamInfo streamInfo;
-    streamInfo.channels = STEREO;
-    streamInfo.samplingRate = SAMPLE_RATE_48000;
-    streamInfo.format = SAMPLE_F32LE;
-    streamInfo.frameLen = FRAME_LENGTH_960;
-    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
-    streamInfo.streamType = STREAM_MUSIC;
-    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
-    int32_t syncId = 123;
-    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeRendererManager);
-    
-    EXPECT_EQ(hpaeRendererManager->StartWithSyncId(streamInfo.sessionId, syncId) == SUCCESS, true);
-    WaitForMsgProcessing(hpaeRendererManager);
-}
-
 HWTEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest, TestSize.Level0)
 {
     TestIRendererManagerConstruct<HpaeRendererManager>();
@@ -983,5 +949,45 @@ HWTEST_F(HpaeRendererManagerTest, CreateRendererManager_001, TestSize.Level0)
     sinkInfo.deviceClass = "test";
     hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     EXPECT_NE(hpaeRendererManager, nullptr);
+}
+
+/**
+ * @tc.name: StartWithSyncId
+ * @tc.type: FUNC
+ * @tc.number: StartWithSyncId_001
+ * @tc.desc: Test StartWithSyncId
+ */
+HWTEST_F(HpaeRendererManagerTest, StartWithSyncId_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    // test SetLoundessGain when session is created but not connected
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    int32_t syncId = 123;
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->StartWithSyncId(streamInfo.sessionId, syncId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 }  // namespace

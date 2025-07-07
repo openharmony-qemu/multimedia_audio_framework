@@ -69,6 +69,13 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
     }
+    if (!isProcessed_) {
+        runningTimer_.Start();
+        isProcessed_ = true;
+    }
+    runningTimer_.Stop();
+    uint64_t syncTime = runningTimer_.Elapsed();
+    HandleHapticParam(syncTime);
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
@@ -87,9 +94,6 @@ void HpaeSinkOutputNode::DoProcess()
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
 #endif
-    runningTimer_.Stop();
-    uint64_t syncTime = runningTimer_.Elapsed();
-    HandleHapticParam(syncTime);
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
@@ -253,7 +257,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
-    runningTimer_.Start();
+    isProcessed_ = false;
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
