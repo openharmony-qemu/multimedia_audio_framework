@@ -33,6 +33,7 @@ public:
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
+    int32_t StartWithSyncId(const int32_t &syncId) override;
     int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain(bool stopFlag = false) override;

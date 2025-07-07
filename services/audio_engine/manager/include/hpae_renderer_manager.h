@@ -43,6 +43,7 @@ public:
     int32_t DestroyStream(uint32_t sessionId) override;
 
     int32_t Start(uint32_t sessionId) override;
+    int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(uint32_t sessionId) override;
     int32_t Flush(uint32_t sessionId) override;
     int32_t Drain(uint32_t sessionId) override;
@@ -133,6 +134,7 @@ private:
     void ReConnectNodeForCollaboration(uint32_t sessionID);
     void EnableCollaboration();
     void DisableCollaboration();
+    int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

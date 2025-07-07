@@ -87,6 +87,9 @@ void HpaeSinkOutputNode::DoProcess()
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
 #endif
+    runningTimer_.Stop();
+    uint64_t syncTime = runningTimer_.Elapsed();
+    HandleHapticParam(syncTime);
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
@@ -250,7 +253,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
-
+    runningTimer_.Start();
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -379,6 +382,25 @@ uint32_t HpaeSinkOutputNode::GetLatency()
     }
     audioRendererSink_->GetLatency(latency_);
     return latency_;
+}
+
+int32_t HpaeSinkOutputNode::RenderSinkSetSyncId(int32_t syncId)
+{
+    isSyncIdSet_ = true;
+    syncId_ = syncId;
+    return SUCCESS;
+}
+
+void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
+{
+    if (isSyncIdSet_) {
+        isSyncIdSet_ = false;
+        AudioParamKey key = NONE;
+        std::string condition = "haptic";
+        std::string param = "haptic_sessionid=" + std::to_string(syncId_) +
+            ";haptic_offset=" + std::to_string(syncTime);
+        audioRendererSink_->SetAudioParameter(key, condition, param); // to do: judge nullptr
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

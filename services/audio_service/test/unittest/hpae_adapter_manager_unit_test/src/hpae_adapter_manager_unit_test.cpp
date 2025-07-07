@@ -800,5 +800,45 @@ HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_034, TestSize.Level1)
     int result = adapterManager->CreateRender(config, rendererStream);
     EXPECT_NE(sessionId, result);
 }
+
+/**
+* @tc.name   : Test StartRenderWithSyncId API
+* @tc.number : HpaeAdapterManager_035
+* @tc.desc   : Test StartRenderWithSyncId interface.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_008, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    uint32_t streamIndex = 0;
+    int32_t syncId = -1;
+    int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
+    EXPECT_NE(ERROR, result);
+}
+
+/**
+* @tc.name   : Test StartRenderWithSyncId API
+* @tc.number : HpaeAdapterManager_036
+* @tc.desc   : Test StartRenderWithSyncId interface.
+*/
+HWTEST(HpaeAdapterManagerUnitTest, HpaeAdapterManager_009, TestSize.Level1)
+{
+    HpaeAdapterManager *adapterManager = new HpaeAdapterManager(DUP_PLAYBACK);
+    ASSERT_TRUE(adapterManager != nullptr);
+
+    AudioProcessConfig config = GetInnerCapConfig();
+    std::string deviceName = "Speaker";
+    std::shared_ptr<IRendererStream> rendererStream = adapterManager->CreateRendererStream(config, deviceName);
+    ASSERT_TRUE(rendererStream != nullptr);
+
+    int32_t rendererStreamMap = MAP_NUM;
+    adapterManager->rendererStreamMap_.emplace(rendererStreamMap, rendererStream);
+
+    uint32_t streamIndex = STREAMINDEX_ONE;
+    int32_t syncId = 123;
+    int result = adapterManager->StartRenderWithSyncId(streamIndex, syncId);
+    EXPECT_NE(ERROR, result);
+}
 } // namespace AudioStandard
 } // namespace OHOS
