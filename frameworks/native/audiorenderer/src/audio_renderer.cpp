@@ -1362,16 +1362,16 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
-    CHECK_AND_RETURN_RET_LOG(rendererInfo.streamUsage == AUDIOSTREAM_USAGE_MUSIC ||
-        rendererInfo.streamUsage == AUDIOSTREAM_USAGE_MOVIE ||
-        rendererInfo.streamUsage == AUDIOSTREAM_USAGE_AUDIOBOOK, ERROR_UNSUPPORTED, "audio stream type not supported");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.streamUsage == STREAM_USAGE_MUSIC ||
+        rendererInfo_.streamUsage == STREAM_USAGE_MOVIE ||
+        rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK, ERROR_UNSUPPORTED, "audio stream type not supported");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
         ERROR_INVALID_PARAM, "loudnessGain set invalid");
     CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
         rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
-        ERROR_UNSUPPORTED, "low latency mode not supported");    
+        ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
 
