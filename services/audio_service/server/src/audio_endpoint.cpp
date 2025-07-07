@@ -2378,6 +2378,7 @@ void AudioEndpointInner::CheckAudioHapticsSync(uint64_t curWritePos)
                 ";haptic_offset=" + std::to_string(offset);
             sink->SetAudioParameter(AudioParamKey::NONE, condition, value);
         }
+        audioHapticsSyncId_ = 0;
     }
 }
 } // namespace AudioStandard
