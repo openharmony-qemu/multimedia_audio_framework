@@ -610,6 +610,31 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
+bool RendererInClientInner::IsRemoteOffload()
+{
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
+    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(rendererChangeInfos);
+    std::string networkId = LOCAL_NETWORK_ID;
+    bool isOffload = false;
+    for (auto changeInfo : rendererChangeInfos) {
+        CHECK_AND_CONTINUE(changeInfo && changeInfo->sessionId == sessionId_);
+        networkId = changeInfo->outputDeviceInfo.networkId_;
+        isOffload = changeInfo->rendererInfo.pipeType == PIPE_TYPE_OFFLOAD;
+        break;
+    }
+    return isOffload && networkId != LOCAL_NETWORK_ID;
+}
+
+bool RendererInClientInner::DoRemoteOffloadSetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET(IsRemoteOffload(), false);
+    AUDIO_INFO_LOG("set speed for remote offload, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
+    ipcStream_->SetSpeed(speed);
+    speed_ = speed;
+    return true;
+}
+
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
@@ -618,6 +643,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speed_ = speed;
         return SUCCESS;
     }
+    CHECK_AND_RETURN_RET(!DoRemoteOffloadSetSpeed(speed), SUCCESS);
 
     if (audioSpeed_ == nullptr) {
         audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,

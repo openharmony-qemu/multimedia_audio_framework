@@ -61,7 +61,7 @@ public:
     void SetAudioParameterProxy(const std::string &key, const std::string &value);
     void ResetAudioEndpointProxy();
     bool NotifyStreamVolumeChangedProxy(AudioStreamType streamType, float volume);
-    void OffloadSetVolumeProxy(float volume);
+    void OffloadSetVolumeProxy(float volume, const std::string &deviceClass, const std::string &networkId);
     void SetVoiceVolumeProxy(float volume);
     void UnsetOffloadModeProxy(uint32_t sessionId);
     void SetOffloadModeProxy(uint32_t sessionId, int32_t state, bool isAppBack);

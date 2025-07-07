@@ -2106,5 +2106,33 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_122, TestSize.Level1
     audioCoreService->ReConfigOffloadStatus(0, pipeInfo, sinkName);
     EXPECT_EQ(audioCoreService->audioOffloadStream_.offloadSessionID_.has_value(), true);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_123
+ * @tc.desc  : Test AudioCoreService::RemoveUnusedPipe
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipe1, nullptr);
+    pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER | AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
+    pipe1->streamDescriptors_.clear();
+    pipe1->moduleInfo_.className = "offload";
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipe1);
+
+    std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
+    ASSERT_NE(pipe2, nullptr);
+    pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER | AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD;
+    pipe2->streamDescriptors_.clear();
+    pipe2->moduleInfo_.className = "remote_offload";
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipe2);
+
+    audioCoreService->RemoveUnusedPipe();
+    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
+}
 } // namespace AudioStandard
 } // namespace OHOS

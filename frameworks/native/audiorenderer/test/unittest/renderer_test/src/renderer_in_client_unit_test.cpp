@@ -122,6 +122,8 @@ public:
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 
+    virtual int32_t SetSpeed(float speed) override { return 0; }
+
     virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
 
     virtual sptr<IRemoteObject> AsObject() override { return nullptr; }

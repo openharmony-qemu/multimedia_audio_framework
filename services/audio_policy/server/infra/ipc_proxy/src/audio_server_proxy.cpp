@@ -228,12 +228,12 @@ bool AudioServerProxy::NotifyStreamVolumeChangedProxy(AudioStreamType streamType
     return true;
 }
 
-void AudioServerProxy::OffloadSetVolumeProxy(float volume)
+void AudioServerProxy::OffloadSetVolumeProxy(float volume, const std::string &deviceClass, const std::string &networkId)
 {
     const sptr <IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->OffloadSetVolume(volume);
+    gsp->OffloadSetVolume(volume, deviceClass, networkId);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

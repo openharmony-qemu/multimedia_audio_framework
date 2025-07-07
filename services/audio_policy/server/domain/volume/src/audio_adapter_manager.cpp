@@ -694,6 +694,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
     if (currentActiveDevice_.IsDistributedSpeaker()) {
         SystemVolume systemVolume(volumeType, REMOTE_CLASS, volumeDb, volumeLevel, isMuted);
         audioVolume->SetSystemVolume(systemVolume);
+        SetOffloadVolume(volumeType, volumeDb, REMOTE_CLASS);
         return;
     }
     if (GetActiveDevice() == DEVICE_TYPE_NEARLINK) {
@@ -715,7 +716,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
             audioVolume->SetSystemVolume(systemVolume);
         } else if (deviceClass == OFFLOAD_CLASS && volumeType == STREAM_MUSIC) {
             audioVolume->SetSystemVolume(systemVolume);
-            SetOffloadVolume(volumeType, volumeDb);
+            SetOffloadVolume(volumeType, volumeDb, OFFLOAD_CLASS);
         }
     }
 }
@@ -748,7 +749,7 @@ void AudioAdapterManager::SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> 
     }
 }
 
-void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb)
+void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass)
 {
     float volume = volumeDb; // maybe only system volume
     if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
@@ -762,8 +763,9 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
         struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, OFFLOAD_CLASS, &volumes);
-        audioServerProxy_->OffloadSetVolume(volume);
+        volume = AudioVolume::GetInstance()->GetVolume(offloadSessionID_.value(), streamType, deviceClass, &volumes);
+        std::string routeDeviceClass = deviceClass == REMOTE_CLASS ? "remote_offload" : "offload";
+        audioServerProxy_->OffloadSetVolume(volume, routeDeviceClass, currentActiveDevice_.networkId_);
     }
     IPCSkeleton::SetCallingIdentity(identity);
 }

@@ -791,8 +791,13 @@ void AudioCoreService::RemoveUnusedPipe()
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         if (pipeInfo->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) {
             OffloadType type = pipeInfo->moduleInfo_.className == "remote_offload" ? REMOTE_OFFLOAD : LOCAL_OFFLOAD;
-            DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
-            continue;
+            if (type == REMOTE_OFFLOAD) {
+                CHECK_AND_CONTINUE(isOffloadOpened_[type].load());
+                isOffloadOpened_[type].store(false);
+            } else {
+                DelayReleaseOffloadPipe(pipeInfo->id_, pipeInfo->paIndex_, type);
+                continue;
+            }
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
@@ -2102,9 +2107,7 @@ void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInf
     std::string adapterName = GetAdapterNameBySessionId(streamChangeInfo.audioRendererChangeInfo.sessionId);
     AUDIO_INFO_LOG("session: %{public}u, adapter name: %{public}s",
         streamChangeInfo.audioRendererChangeInfo.sessionId, adapterName.c_str());
-    if (adapterName != OFFLOAD_PRIMARY_SPEAKER) {
-        return;
-    }
+    CHECK_AND_RETURN(adapterName == OFFLOAD_PRIMARY_SPEAKER || adapterName.find("_out_offload") != std::string::npos);
 
     if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
         streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||

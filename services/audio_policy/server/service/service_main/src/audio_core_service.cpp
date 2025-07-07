@@ -1260,5 +1260,10 @@ void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const
 {
     policyConfigMananger_.ClearStreamPropInfo(adapterName, pipeName);
 }
+
+uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
+{
+    return policyConfigMananger_.GetStreamPropInfoSize(adapterName, pipeName);
+}
 } // namespace AudioStandard
 } // namespace OHOS
