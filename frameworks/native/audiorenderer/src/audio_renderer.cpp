@@ -56,6 +56,8 @@ static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 60;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
+static constexpr float MIN_LOUDNESS_GAIN = -90.0;
+static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -1378,6 +1380,16 @@ int32_t AudioRendererPrivate::SetLoudnessGain(float loudnessGain) const
 {
     std::shared_ptr<IAudioStream> currentStream = GetInnerStream();
     CHECK_AND_RETURN_RET_LOG(currentStream != nullptr, ERROR_ILLEGAL_STATE, "audioStream_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.streamUsage == STREAM_USAGE_MUSIC ||
+        rendererInfo_.streamUsage == STREAM_USAGE_MOVIE ||
+        rendererInfo_.streamUsage == STREAM_USAGE_AUDIOBOOK, ERROR_UNSUPPORTED, "audio stream type not supported");
+    CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
+        ERROR_INVALID_PARAM, "loudnessGain set invalid");
+    CHECK_AND_RETURN_RET_LOG(rendererInfo_.rendererFlags != AUDIO_FLAG_MMAP &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_FAST &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_DIRECT &&
+        rendererInfo_.rendererFlags != AUDIO_FLAG_VOIP_DIRECT,
+        ERROR_UNSUPPORTED, "low latency mode not supported");
     return currentStream->SetLoudnessGain(loudnessGain);
 }
 
