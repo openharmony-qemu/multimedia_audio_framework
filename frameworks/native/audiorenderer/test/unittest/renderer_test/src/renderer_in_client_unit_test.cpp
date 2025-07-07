@@ -1621,7 +1621,13 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
-        EXPECT_EQ(timestamp.framePosition, 150); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 500 - 50 = 150
+        EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
+    }
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 4000 bytes = 1000 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 650); // latency = 350, frameposition = 1000-350 = 650
     }
     ptrRendererInClientInner->ResetFramePosition();
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
