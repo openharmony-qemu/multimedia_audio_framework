@@ -1590,5 +1590,45 @@ HWTEST(RendererInClientInnerUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level
     EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
     EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
 }
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_001
+ * @tc.desc  : Test RendererInClientInner GetAudioTimestampInfo.
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+
+    Timestamp timestamp;
+    ptrRendererInClientInner->state_ = State::RUNNING;
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 2000 bytes = 500 samples
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200); // 200 bytes = 50 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 450); // latency = 50, frameposition = 500 - 50 = 450
+    }
+    ptrRendererInClientInner->SetSpeed(2.0); // lastspeed = 1.0, speed = 2.0, lastFrameWritten = 50
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(800); // 800 bytes = 200 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 150); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 500 - 50 = 150
+    }
+    ptrRendererInClientInner->ResetFramePosition();
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 0); // after flush
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
