@@ -278,6 +278,8 @@ private:
     void ResetCallbackLoopTid();
 
     void WaitForBufferNeedWrite();
+
+    void UpdatePauseReadIndex();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -441,6 +443,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
+    uint64_t stopReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {
