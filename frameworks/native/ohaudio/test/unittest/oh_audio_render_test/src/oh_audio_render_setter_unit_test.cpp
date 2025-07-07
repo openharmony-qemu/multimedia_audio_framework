@@ -122,6 +122,28 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetVolumeWithRamp_002, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test OH_AudioRenderer_SetLoudnessGain API via illegal state.
+ * @tc.number: OH_Audio_Render_SetLoudnessGain_001
+ * @tc.desc  : Test OH_AudioRenderer_SetLoudnessGain interface with nullptr audioRenderer.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    float loudnessGain = VALID_LOUDNESS_GAIN;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGain);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_GAME;
+    result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGain);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
  * @tc.name  : Test OH_AudioRenderer_SetMarkPosition API via illegal state.
  * @tc.number: OH_Audio_Render_SetMarkPosition_001
  * @tc.desc  : Test OH_AudioRenderer_SetMarkPosition interface with nullptr audioRenderer.
