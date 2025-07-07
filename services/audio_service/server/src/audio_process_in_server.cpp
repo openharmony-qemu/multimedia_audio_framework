@@ -814,6 +814,11 @@ StreamStatus AudioProcessInServer::GetStreamStatus()
     return streamStatus_->load();
 }
 
+int32_t AudioProcessInServer::GetAudioHapticsSyncId()
+{
+    return audioHapticsSyncId_.load();
+}
+
 int64_t AudioProcessInServer::GetLastAudioDuration()
 {
     auto ret = lastStopTime_ - lastStartTime_;

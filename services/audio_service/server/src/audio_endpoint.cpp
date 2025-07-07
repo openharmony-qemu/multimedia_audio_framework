@@ -1330,6 +1330,7 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     std::function<void()> &moveClientsIndex)
 {
     isExistLoopback_ = false;
+    audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
         CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
@@ -1339,6 +1340,11 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
+        }
+        // If there is a sync ID in the process and it is the current first frame.
+        // then the sync ID needs to be recorded.
+        if (processList_[i]->GetAudioHapticsSyncId() > 0 && curRead == 0) {
+            audioHapticsSyncId_ = processList_[i]->GetAudioHapticsSyncId();
         }
         std::function<void()> moveClientIndexFunc;
         GetAllReadyProcessDataSub(i, audioDataList, curRead, moveClientIndexFunc);
@@ -1501,6 +1507,7 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
 
     std::vector<AudioStreamData> audioDataList;
     GetAllReadyProcessData(audioDataList, moveClientIndex);
+    CheckAudioHapticsSync(curWritePos);
 
     AudioStreamData dstStreamData;
     dstStreamData.streamInfo = dstStreamInfo_;
@@ -2358,6 +2365,20 @@ int32_t AudioEndpointInner::WriteDupBufferInner(const BufferDesc &bufferDesc, in
         DumpFileUtil::WriteDumpFile(dumpDupIn_, static_cast<void *>(bufferDesc.buffer), writeSize);
     }
     return SUCCESS;
+}
+
+void AudioEndpointInner::CheckAudioHapticsSync(uint64_t curWritePos)
+{
+    if (audioHapticsSyncId_ > 0) {
+        std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(fastRenderId_);
+        if (sink != nullptr) {
+            uint64_t offset = dstSpanSizeInframe_ * curWritePos;
+            std::string condition = "AudioHapticsSync";
+            std::string value = "haptic_sessionid=" + std::to_string(audioHapticsSyncId_) +
+                ";haptic_offset=" + std::to_string(offset);
+            sink->SetAudioParameter(AudioParamKey::NONE, condition, value);
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

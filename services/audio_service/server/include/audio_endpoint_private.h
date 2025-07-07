@@ -232,6 +232,7 @@ private:
         std::function<void()>& moveClientIndex);
     void AddProcessStreamToList(IAudioProcessStream *processStream,
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
+    void CheckAudioHapticsSync(uint64_t curWritePos);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
@@ -355,6 +356,7 @@ private:
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
     bool coreBinded_ = false;
     bool isExistLoopback_ = false;
+    int32_t audioHapticsSyncId_ = false;
 };
 } // namespace AudioStandard
 } // namespace OHOS

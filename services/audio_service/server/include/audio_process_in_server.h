@@ -143,6 +143,7 @@ public:
 
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;
+    int32_t GetAudioHapticsSyncId() override;
 public:
     const AudioProcessConfig processConfig_;
 
