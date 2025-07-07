@@ -1223,6 +1223,7 @@ ohos_unittest("audio_resource_service_unit_test") {
   sources = [
     "../../server/src/audio_resource_service.cpp",
     "../../server/src/audio_workgroup.cpp",
+    "../../server/src/audio_workgroup_callback_proxy.cpp",
     "audio_resource_service_unit_test.cpp",
   ]
 
@@ -1230,7 +1231,10 @@ ohos_unittest("audio_resource_service_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  deps = [ "../../../../frameworks/native/audioutils:audio_utils" ]
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_client",
+    ]
   external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",

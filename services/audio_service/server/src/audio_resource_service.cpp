@@ -350,10 +350,12 @@ void AudioResourceService::DumpAudioWorkgroupMap()
     for (const auto& [key, process] : audioWorkgroupMap_) {
         const auto& groups = process.groups;
         for (const auto& [groupKey, audioWorkgroup] : groups) {
-            AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d, group:%{public}d, "
-                "permission:%{public}d, hasSystemPermission:%{public}d, callback:%{public}s",
-                key, groupKey, process.permission, process.hasSystemPermission,
-                ((audioWorkgroup->callback != nullptr) ? "registered" : "no register"));
+            if (audioWorkgroup != nullptr) {
+                AUDIO_INFO_LOG("[WorkgroupInServer] pid:%{public}d, group:%{public}d, "
+                    "permission:%{public}d, hasSystemPermission:%{public}d, callback:%{public}s",
+                    key, groupKey, process.permission, process.hasSystemPermission,
+                    ((audioWorkgroup->callback != nullptr) ? "registered" : "no register"));
+            }
         }
     }
 }
