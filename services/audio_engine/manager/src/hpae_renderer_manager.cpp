@@ -1297,7 +1297,7 @@ void HpaeRendererManager::DisableCollaboration()
     hpaeCoBufferNode_.reset();
 }
 
-int32_t HandleSyncId(uint32_t sessionId, int32_t syncId)
+int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
         return ERR_INVALID_OPERATION;
