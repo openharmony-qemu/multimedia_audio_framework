@@ -186,7 +186,7 @@ private:
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
-    std::vector<std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback>> activeVolumeTypeChangeCallbackList_;
+    std::vector<std::weak_ptr<AudioManagerActiveVolumeTypeChangeCallback>> activeVolumeTypeChangeCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<
         AudioManagerAppVolumeChangeCallback>>> appVolumeChangeForUidCallback_;
     std::map<int32_t, int32_t> appVolumeChangeForUidCallbackNum;
