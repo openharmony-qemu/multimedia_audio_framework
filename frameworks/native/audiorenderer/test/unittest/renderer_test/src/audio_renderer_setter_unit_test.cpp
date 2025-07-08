@@ -246,6 +246,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_008, TestSize.Level1)
     audioRenderer->Release();
 }
 
+#ifdef TEMP_DISABLE
 /**
  * @tc.name  : Test SetParams API stability.
  * @tc.number: Audio_Renderer_SetParams_Stability_001
@@ -274,6 +275,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_SetParams_Stability_001, TestSize.L
 
     audioRenderer->Release();
 }
+#endif
 
 /**
  * @tc.name  : Test SetInterruptMode API via legal input

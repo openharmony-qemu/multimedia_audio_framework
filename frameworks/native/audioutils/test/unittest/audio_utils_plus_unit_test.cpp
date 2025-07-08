@@ -236,7 +236,11 @@ HWTEST(AudioUtilsPlusUnitTest, AudioUtilsPlusUnitTest_013, TestSize.Level1)
 {
     int32_t format = SAMPLE_S32LE;
     auto result = GetFormatByteSize(format);
+    EXPECT_EQ(result, 4);
 
+    result = 0;
+    format = SAMPLE_F32LE;
+    result = GetFormatByteSize(format);
     EXPECT_EQ(result, 4);
 }
 
