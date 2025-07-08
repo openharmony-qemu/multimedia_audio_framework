@@ -29,7 +29,6 @@ ohos_unittest("audio_renderer_unit_test") {
     "../../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../../interfaces/inner_api/native/audiocapturer/include",
     "../../../../../../services/audio_policy/client/include",
-    "../../../../../../../../media_foundation/services/media_monitor/client/include",
     "../../../../../audio_utils/include",
   ]
   cflags = [
@@ -60,6 +59,7 @@ ohos_unittest("audio_renderer_unit_test") {
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
+    "eventhandler:libeventhandler",
   ]
 
   resource_config_file =
@@ -98,6 +98,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
     "googletest:gtest",
     "hilog:libhilog",
     "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
   ]
 
   defines = []

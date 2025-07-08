@@ -40,6 +40,7 @@ ohos_unittest("audio_capturer_unit_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
   ]
 
   sources = [

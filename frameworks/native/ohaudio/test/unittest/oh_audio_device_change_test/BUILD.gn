@@ -59,5 +59,8 @@ ohos_unittest("audio_oh_device_change_unit_test") {
 
   deps = [ "../../../../ohaudio:ohaudio" ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
 }

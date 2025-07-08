@@ -686,6 +686,7 @@ ohos_executable("audio_process_client_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "init:libbegetutil",
+    "eventhandler:libeventhandler",
   ]
 
   part_name = "audio_framework"

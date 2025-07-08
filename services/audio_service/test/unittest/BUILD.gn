@@ -378,6 +378,7 @@ ohos_unittest("audio_service_unit_test") {
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "eventhandler:libeventhandler",
   ]
 
   defines = []
@@ -535,6 +536,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
     "googletest:gmock",
     "hilog:libhilog",
     "pulseaudio:pulse",
+    "ipc:ipc_single",
   ]
 }
 
@@ -769,7 +771,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../frameworks/native/audiostream/include",
     "../../../../frameworks/native/hdiadapter_new/include",
     "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../../../window/window_manager/previewer/mock",
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../frameworks/native/audiopolicy/include",
     "../../../../frameworks/native/audioinnercall/include",
@@ -847,6 +848,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
+    "googletest:gmock",
   ]
 
   defines = []
@@ -1018,6 +1020,7 @@ ohos_unittest("audio_dump_pcm_unit_test") {
     "c_utils:utils",
     "googletest:gmock",
     "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
   ]
 }
 

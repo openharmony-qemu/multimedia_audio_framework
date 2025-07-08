@@ -106,6 +106,7 @@ ohos_unittest("audioclock_unit_test") {
     "drivers_interface_audio:libaudio_proxy_5.0",
     "googletest:gmock",
     "googletest:gtest",
+    "ipc:ipc_single",
   ]
 
   part_name = "audio_framework"
