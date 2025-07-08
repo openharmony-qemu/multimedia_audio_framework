@@ -131,6 +131,7 @@ ohos_unittest("audio_balance_unit_test") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "eventhandler:libeventhandler",
   ]
 
   defines = []
@@ -841,6 +842,7 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",

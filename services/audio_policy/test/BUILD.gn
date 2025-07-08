@@ -5221,6 +5221,8 @@ ohos_unittest("client_type_manager_unit_test") {
   external_deps = [
     "eventhandler:libeventhandler",
     "c_utils:utils",
+    "ipc:ipc_core",
+    "hilog:libhilog",
   ]
 
   cflags += [ "--coverage" ]
