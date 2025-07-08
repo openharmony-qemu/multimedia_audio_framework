@@ -1111,11 +1111,13 @@ void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStr
 {
     Trace trace("AudioEndpointInner::AddEndpointStreamVolume");
     bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(processStream->GetAudioSessionId(),
+    StreamVolumeParams streamVolumeParams = { processStream->GetAudioSessionId(),
         processStream->GetAudioProcessConfig().streamType,
         processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
         processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
-        processStream->GetAudioProcessConfig().rendererInfo.volumeMode);
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode, 
+        processStream->GetAudioProcessConfig().rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
 }
 
