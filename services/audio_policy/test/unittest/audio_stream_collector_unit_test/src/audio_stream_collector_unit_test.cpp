@@ -1320,6 +1320,29 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_045, TestSize.Level1
 }
 
 /**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_046
+* @tc.desc  : Test RegisteredTrackerClientDied.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_046, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 3001;
+    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->clientPid = 3002;
+    rendererChangeInfo->sessionId = 2001;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    EXPECT_NO_THROW(
+        collector.RegisteredTrackerClientDied(uid, pid);
+    );
+}
+
+/**
 * @tc.name  : IsMediaPlaying_Test01
 * @tc.number: AudioStreamCollectorUnitTest_IsMediaPlaying_Test01
 * @tc.desc  : Test IsMediaPlaying function when there is at least one media renderer running.
@@ -1934,6 +1957,9 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_002, TestSize.
     audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, false, false);
     EXPECT_FALSE(changeInfo->backMute);
     changeInfo->createrUID = 1013;
+    audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
+    EXPECT_FALSE(changeInfo->backMute);
+    changeInfo->clientPid = 2002;
     audioStreamCollector_.HandleStartStreamMuteState(clientUid, clientPid, true, false);
     EXPECT_FALSE(changeInfo->backMute);
 }
