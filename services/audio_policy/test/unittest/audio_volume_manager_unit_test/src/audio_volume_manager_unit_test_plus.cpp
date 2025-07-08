@@ -125,10 +125,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_104, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test AudioVolumeManager.
-* @tc.number: AudioVolumeManager_105
-* @tc.desc  : Test AudioVolumeManager.
-*/
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: AudioVolumeManager_105
+ * @tc.desc  : Test AudioVolumeManager.
+ */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_105, TestSize.Level1)
 {
     auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
@@ -139,7 +139,10 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_105, TestSize.Level1)
     audioVolumeManager->audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
     EXPECT_NE(VolumeUtils::GetVolumeTypeFromStreamType(streamType), STREAM_MUSIC);
 
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
     audioVolumeManager->CheckToCloseNotification(streamType, volumeLevel);
+    AudioVolumeType audioVolumeType = VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage);
+    EXPECT_EQ(audioVolumeType, STREAM_MUSIC);
 }
 
 /**
@@ -345,6 +348,22 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_116, TestSize.Level1)
 
     auto ret = audioVolumeManager->SetA2dpDeviceVolume(macAddress, volumeLevel, internalCall);
     EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioVolumeManager.
+ * @tc.number: AudioVolumeManager_117
+ * @tc.desc  : Test AudioVolumeManager.
+ */
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_117, TestSize.Level1)
+{
+    VolumeUtils::SetPCVolumeEnable(true);
+    std::set<StreamUsage> streamUsages = VolumeUtils::GetStreamUsageSetForVolumeType(STREAM_MUSIC);
+    EXPECT_FALSE(streamUsages.empty());
+
+    VolumeUtils::SetPCVolumeEnable(false);
+    streamUsages = VolumeUtils::GetStreamUsageSetForVolumeType(STREAM_MUSIC);
+    EXPECT_FALSE(streamUsages.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS
