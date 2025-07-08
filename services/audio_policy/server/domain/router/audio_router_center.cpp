@@ -170,9 +170,12 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevicesInner(
-    StreamUsage streamUsage, int32_t clientUID, RouterType &routerType,
-    const RouterType &bypassType, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
+    FetchDeviceInfo info, RouterType &routerType, const RouterType &bypassType,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
+    StreamUsage streamUsage = info.streamUsage;
+    int32_t clientUID = info.clientUID;
+    std::string caller = info.caller;
     StreamUsage callStreamUsage = streamUsage;
     if (renderConfigMap_[streamUsage] == MEDIA_RENDER_ROUTERS ||
         renderConfigMap_[streamUsage] == TONE_RENDER_ROUTERS) {
@@ -209,14 +212,15 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         int32_t audioId_ = descs[0]->deviceId_;
         DeviceType type = descs[0]->deviceType_;
         descs[0]->routerType_ = routerType;
-        AUDIO_PRERELEASE_LOGI("usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
-            "id:[%{public}d], router:%{public}d ", streamUsage, clientUID, descs.size(), type, audioId_, routerType);
+        AUDIO_PRERELEASE_LOGI("[%{public}s] usage:%{public}d uid:%{public}d size:[%{public}zu], 1st type:[%{public}d], "
+            "id:[%{public}d], router:%{public}d ", caller.c_str(), streamUsage,
+            clientUID, descs.size(), type, audioId_, routerType);
     }
     return descs;
 }
 
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutputDevices(StreamUsage streamUsage,
-    int32_t clientUID, const RouterType &bypassType)
+    int32_t clientUID, std::string caller, const RouterType &bypassType)
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
@@ -234,7 +238,12 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
         descs.push_back(AudioDeviceManager::GetAudioDeviceManager().GetRenderDefaultDevice());
         return descs;
     }
-    return FetchOutputDevicesInner(streamUsage, clientUID, routerType, bypassType, descs);
+    FetchDeviceInfo info = {
+        .streamUsage = streamUsage,
+        .clientUID = clientUID,
+        .caller = caller,
+    };
+    return FetchOutputDevicesInner(info, routerType, bypassType, descs);
 }
 
 int32_t AudioRouterCenter::NotifyDistributedOutputChange(bool isRemote)

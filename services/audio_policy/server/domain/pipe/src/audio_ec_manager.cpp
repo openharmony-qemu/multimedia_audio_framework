@@ -280,7 +280,7 @@ void AudioEcManager::UpdateStreamEcInfo(AudioModuleInfo &moduleInfo, SourceType 
     }
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "UpdateStreamEcInfo");
     std::shared_ptr<AudioDeviceDescriptor> inputDesc =
         audioRouterCenter_.FetchInputDevice(SOURCE_TYPE_VOICE_COMMUNICATION, -1);
 

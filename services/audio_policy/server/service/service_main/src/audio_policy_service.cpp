@@ -1199,7 +1199,7 @@ int32_t  AudioPolicyService::LoadSplitModule(const std::string &splitArgs, const
     audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
     AudioPipeManager::GetPipeManager()->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
     AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("LoadSplitModule");
     AUDIO_INFO_LOG("fetch device after split stream and open port.");
     return openRet;
 }
