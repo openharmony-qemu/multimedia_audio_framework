@@ -83,6 +83,10 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
             AUDIO_DEBUG_LOG("CopyMicRefToEnhanceBuffer size:%{public}u", micrefBufferLength_);
         }
     }
+
+    outPcmBuffer_->SetBufferValid(processLength != 0);
+    CHECK_AND_RETURN_RET(processLength != 0, outPcmBuffer_);
+
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_, "effect apply failed, ret:%{public}d", ret);
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),

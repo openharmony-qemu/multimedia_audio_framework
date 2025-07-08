@@ -70,7 +70,7 @@ public:
         const std::string &condition);
     void SetAudioParameter(const std::string &adapterName, const AudioParamKey key,
         const std::string &condition, const std::string &value);
-
+    void SendInitCommandToAlgo();
 private:
     HpaePolicyManager();
 };

@@ -411,6 +411,7 @@ int32_t HpaeCapturerManager::CapturerSourceStop()
     if (sourceInfo_.micRef == HPAE_REF_ON && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_MICREF)) {
         sourceInputClusterMap_[HPAE_SOURCE_MICREF]->CapturerSourceStop();
     }
+    HpaePolicyManager::GetInstance().SendInitCommandToAlgo();
     return SUCCESS;
 }
 
@@ -824,6 +825,8 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     uint32_t sessionId = moveInfo.sessionId;
     AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].",
         sessionId, sourceInfo_.sourceName.c_str());
+    HpaeNodeInfo &nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
