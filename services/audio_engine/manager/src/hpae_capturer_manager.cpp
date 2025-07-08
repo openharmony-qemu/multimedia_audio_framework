@@ -825,15 +825,16 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
     uint32_t sessionId = moveInfo.sessionId;
     AUDIO_INFO_LOG("[FinishMove] session :%{public}u to source:[%{public}s].",
         sessionId, sourceInfo_.sourceName.c_str());
-    HpaeNodeInfo &nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
+    CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
+    HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
     nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
+    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
     AudioEnhanceScene enhanceScene = TransProcessType2EnhanceScene(sceneType);
     if (sceneType != HPAE_SCENE_EFFECT_NONE) {
         // todo: algorithm instance count control
-        HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
         if (!SafeGetMap(sceneClusterMap_, sceneType)) {
             sceneClusterMap_[sceneType] = std::make_shared<HpaeSourceProcessCluster>(nodeInfo);
         }
