@@ -70,6 +70,10 @@ describe("AudioStreamManagerJsTest", function () {
     return new Promise((resolve) => setTimeout(resolve, time));
   }
 
+  function filterAudioRendererInfos(audioStreamId, audioRendererInfos) {
+    return audioRendererInfos.filter(info => info.streamId === audioStreamId);
+  }
+
   /*
    * @tc.name:getCurrentAudioRendererInfoArray001
    * @tc.desc:Get getCurrentAudioRendererInfoArray
@@ -168,6 +172,7 @@ describe("AudioStreamManagerJsTest", function () {
         done();
         return;
       }
+      audioRendererInfos = filterAudioRendererInfos(audioRenderer.getAudioStreamIdSync(), audioRendererInfos);
       console.info("AudioRendererChangeInfoArray++++:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
@@ -193,6 +198,7 @@ describe("AudioStreamManagerJsTest", function () {
       audioStreamManager = audio.getAudioManager().getStreamManager();
       await audioRenderer.start();
       let audioRendererInfos = await audioStreamManager.getCurrentAudioRendererInfoArray();
+      audioRendererInfos = filterAudioRendererInfos(audioRenderer.getAudioStreamIdSync(), audioRendererInfos);
       console.info("getCurrentAudioRendererInfoArray004:"+JSON.stringify(audioRendererInfos));
       expect(audioRendererInfos.length).assertLarger(0);
       expect(2).assertEqual(audioRendererInfos[0].rendererState);
@@ -240,6 +246,8 @@ describe("AudioStreamManagerJsTest", function () {
         done();
         return;
       }
+      let streamId = audioRenderer.getAudioStreamIdSync();
+      AudioRendererInfoArray = filterAudioRendererInfos(streamId, AudioRendererInfoArray);
       console.info("getCurrentAudioRendererInfoArray005:"+JSON.stringify(AudioRendererInfoArray));
       expect(AudioRendererInfoArray.length).assertLarger(0);
       expect(3).assertEqual(AudioRendererInfoArray[0].rendererState);
@@ -256,6 +264,7 @@ describe("AudioStreamManagerJsTest", function () {
           done();
           return;
         }
+        AudioRendererInfos = filterAudioRendererInfos(streamId, AudioRendererInfos);
         expect(AudioRendererInfos.length).assertEqual(0);
       })
       done();
@@ -277,6 +286,8 @@ describe("AudioStreamManagerJsTest", function () {
       await audioRenderer.start();
       await audioRenderer.stop();
       let audioRendererInfos = await audioStreamManager.getCurrentAudioRendererInfoArray();
+      let streamId = audioRenderer.getAudioStreamIdSync();
+      audioRendererInfos = filterAudioRendererInfos(streamId, audioRendererInfos);
       expect(audioRendererInfos.length).assertLarger(0);
       expect(3).assertEqual(audioRendererInfos[0].rendererState);
       expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
@@ -284,6 +295,7 @@ describe("AudioStreamManagerJsTest", function () {
 
       await audioRenderer.release();
       audioRendererInfos = await audioStreamManager.getCurrentAudioRendererInfoArray();
+      audioRendererInfos = filterAudioRendererInfos(streamId, audioRendererInfos);
       expect(audioRendererInfos.length).assertEqual(0);
       done();
     } catch(e) {
@@ -457,12 +469,15 @@ describe("AudioStreamManagerJsTest", function () {
       await audioRenderer.start();
       await audioRenderer.stop();
       let audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
+      let streamId = audioRenderer.getAudioStreamIdSync();
+      audioRendererInfos = filterAudioRendererInfos(streamId, audioRendererInfos);
       expect(audioRendererInfos.length).assertLarger(0);
       expect(audioRendererInfos[0].deviceDescriptors[0].displayName!==""
         && audioRendererInfos[0].deviceDescriptors[0].displayName!==undefined).assertTrue();
 
       await audioRenderer.release();
       audioRendererInfos = audioStreamManager.getCurrentAudioRendererInfoArraySync();
+      audioRendererInfos = filterAudioRendererInfos(streamId, audioRendererInfos);
       expect(audioRendererInfos.length).assertEqual(0);
       done();
     } catch(e) {
