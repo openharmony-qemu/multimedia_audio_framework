@@ -93,6 +93,7 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   ]
 
   external_deps = [
+    "ipc:ipc_core",
     "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
