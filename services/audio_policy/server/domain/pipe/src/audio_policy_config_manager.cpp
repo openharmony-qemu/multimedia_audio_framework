@@ -40,6 +40,13 @@ const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 const uint32_t FRAMES_PER_SEC = 50;
 
+// next: configed in xml
+const std::set<AudioSampleFormat> FAST_OUTPUT_SUPPORTED_FORMATS = {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
+};
+
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
@@ -638,6 +645,10 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
         streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 
+    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
+        streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
+
     if (pipeInfo->streamPropInfos_.empty()) {
         AUDIO_WARNING_LOG("streamPropInfos_ is empty!");
         return;
@@ -649,8 +660,10 @@ void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStream
             AUDIO_WARNING_LOG("propInfo is null!");
             return;
         }
-        streamInfo.format = propInfo->format_; // for s32 or s16
-        streamInfo.channels = propInfo->channels_;
+        if (FAST_OUTPUT_SUPPORTED_FORMATS.count(streamInfo.format)) {
+            streamInfo.format = propInfo->format_; // for s32 or s16
+        }
+        streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
     }
 }
 
