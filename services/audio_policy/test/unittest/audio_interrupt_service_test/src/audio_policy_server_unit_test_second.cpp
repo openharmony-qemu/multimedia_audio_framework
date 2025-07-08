@@ -379,5 +379,126 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_216, TestSize.Level1)
     auto ret = audioPolicyServer->DeactivatePreemptMode();
     EXPECT_EQ(ret, ERROR);
 }
+
+/**
+* @tc.name  : IsContinueAddVolTest_001
+* @tc.number: IsContinueAddVolTest_001
+* @tc.desc  : test false case with call once
+*/
+HWTEST(AudioPolicyUnitTest, IsContinueAddVolTest_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volUpHistory_ = {};
+    bool result = ptrAudioPolicyServer->IsContinueAddVol();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : IsContinueAddVolTest_002
+* @tc.number: IsContinueAddVolTest_002
+* @tc.desc  : test false case with call twice
+*/
+HWTEST(AudioPolicyUnitTest, IsContinueAddVolTest_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volUpHistory_ = {};
+    ptrAudioPolicyServer->IsContinueAddVol(); // first
+    bool result = ptrAudioPolicyServer->IsContinueAddVol(); //second
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : IsContinueAddVolTest_003
+* @tc.number: IsContinueAddVolTest_003
+* @tc.desc  : test true case
+*/
+HWTEST(AudioPolicyUnitTest, IsContinueAddVolTest_003, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volUpHistory_ = {};
+    ptrAudioPolicyServer->IsContinueAddVol(); // first
+    ptrAudioPolicyServer->IsContinueAddVol(); // second
+    bool result = ptrAudioPolicyServer->IsContinueAddVol(); //third
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : IsContinueAddVolTest_004
+* @tc.number: IsContinueAddVolTest_004
+* @tc.desc  : test true case
+*/
+HWTEST(AudioPolicyUnitTest, IsContinueAddVolTest_004, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->volUpHistory_ = {};
+    ptrAudioPolicyServer->IsContinueAddVol(); // first
+    ptrAudioPolicyServer->IsContinueAddVol(); // second
+    uint32_t sleepTime = 1;
+    sleep(sleepTime); // sleep for false
+    bool result = ptrAudioPolicyServer->IsContinueAddVol(); //third
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test TriggerMuteCheck.
+* @tc.number: TriggerMuteCheck_001
+* @tc.desc  : Test AudioPolicyServer::TriggerMuteCheck
+*/
+HWTEST(AudioPolicyUnitTest, TriggerMuteCheck_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->TriggerMuteCheck();
+}
+
+/**
+* @tc.name  : Test TriggerMuteCheck.
+* @tc.number: TriggerMuteCheck_002
+* @tc.desc  : Test AudioPolicyServer::TriggerMuteCheck
+*/
+HWTEST(AudioPolicyUnitTest, TriggerMuteCheck_002, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    std::shared_ptr<AudioRendererChangeInfo> info = std::shared_ptr<AudioRendererChangeInfo>();
+    info->rendererState = RENDERER_RUNNING;
+    AudioStreamCollector::GetAudioStreamCollector().audioRendererChangeInfos_.push_back(info);
+    ptrAudioPolicyServer->TriggerMuteCheck();
+    info = std::shared_ptr<AudioRendererChangeInfo>();
+    info->rendererState = RENDERER_RUNNING;
+    info->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    ptrAudioPolicyServer->TriggerMuteCheck();
+}
+
+/**
+* @tc.name  : Test ProcessVolumeKeyEvents.
+* @tc.number: ProcessVolumeKeyEvents_001
+* @tc.desc  : Test AudioPolicyServer::ProcessVolumeKeyEvents
+*/
+HWTEST(AudioPolicyUnitTest, ProcessVolumeKeyEvents_001, TestSize.Level1)
+{
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    int32_t keyType = OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP;
+    auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
+    EXPECT_NE(ptrAudioPolicyServer, nullptr);
+    ptrAudioPolicyServer->ProcessVolumeKeyEvents(keyType);
+}
 } // AudioStandard
 } // OHOS
