@@ -1130,7 +1130,7 @@ void HpaeManager::HandleInitDeviceResult(std::string deviceName, int32_t result)
 void HpaeManager::HandleInitSourceResult(SourceType sourceType)
 {
     if (sourceType == SOURCE_TYPE_LIVE && (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-        const std::string combinedParam = "live_effect=" + effectLiveState_;
+        const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
         HpaePolicyManager::GetInstance().SetAudioParameter("primary",
             AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
     }
@@ -1305,7 +1305,7 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
         } else if (operation == OPERATION_STARTED) {
             if (capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType == SOURCE_TYPE_LIVE &&
                 (effectLiveState_ == "NROFF" || effectLiveState_ == "NRON")) {
-                const std::string combinedParam = "live_effect=" + effectLiveState_;
+                const std::string combinedParam = "live_effect_enable=" + effectLiveState_;
                 HpaePolicyManager::GetInstance().SetAudioParameter("primary",
                     AudioParamKey::PARAM_KEY_STATE, "", combinedParam);
             }
