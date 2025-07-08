@@ -50,10 +50,9 @@ public:
     void SaveFakeStreamId(uint32_t fakeStreamId);
     bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
     void Dump(std::string &dumpString);
-    int32_t Activate();
+    int32_t Activate(const AudioSessionStrategy strategy);
     int32_t Deactivate();
     AudioSessionState GetSessionState();
-    void SetSessionStrategy(const AudioSessionStrategy strategy);
     AudioSessionStrategy GetSessionStrategy();
     int32_t AddAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);
     int32_t RemoveAudioInterrpt(const std::pair<AudioInterrupt, AudioFocuState> interruptPair);

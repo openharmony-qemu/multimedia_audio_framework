@@ -1803,7 +1803,6 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
         return ERR_UNKNOWN;
     }
 
-    bool isFirstTimeActiveAudioSession = true;
     auto itZone = zonesMap_.find(zoneId);
     CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
@@ -1812,23 +1811,41 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
         return pair.first.pid == callerPid && pair.first.isAudioSessionInterrupt;
     };
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = sessionService_->GenerateFakeAudioInterrupt(callerPid);
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isAudioSessionFocusPresent);
+    // It is possible that the reactivation of the audio session was caused by changing the AudioSessionScene.
+    bool isFirstTimeActiveAudioSession = true;
     if (iter != audioFocusInfoList.end()) {
+        audioFocusInfoList.erase(iter);
         isFirstTimeActiveAudioSession = false;
-        audioInterrupt = iter->first;
-    } else {
-        audioInterrupt = sessionService_->GenerateFakeAudioInterrupt(callerPid);
     }
+
+    itZone->second->audioFocusInfoList = audioFocusInfoList;
 
     bool tempUpdateScene = false;
     int32_t ret = ActivateAudioInterruptCoreProcedure(zoneId, audioInterrupt, false, tempUpdateScene);
     if (tempUpdateScene) {
         updateScene = true;
     }
-    if (ret != SUCCESS || !isFirstTimeActiveAudioSession) {
+    if (ret == SUCCESS) {
+        ResumeAudioFocusList(zoneId, false);
+    } else {
         return ret;
     }
+
+    if (isFirstTimeActiveAudioSession) {
+        return HandleExistStreamsForSession(zoneId, callerPid, updateScene);
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioInterruptService::HandleExistStreamsForSession(
+    const int32_t zoneId, const int32_t callerPid, bool &updateScene)
+{
+    auto itZone = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr), ERROR, "can not find zone");
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList = itZone->second->audioFocusInfoList;
 
     /* The focus of a single stream should be managed by audio session focus.
     1. This mainly handles streams that already exist before audio session activation.
@@ -1840,6 +1857,7 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
             !sessionService_->ShouldExcludeStreamType(pair.first);
     };
 
+    bool tempUpdateScene = false;
     for (const auto &it : audioFocusInfoList) {
         if (isStreamFocusPresent(it)) {
             updateScene = true;
