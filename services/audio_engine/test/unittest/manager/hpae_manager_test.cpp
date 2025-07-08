@@ -502,6 +502,57 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), ERROR);
 }
 
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest003, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "Nosupport";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest004, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "NRON";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest005, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    sleep(1);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
+
+    AudioModuleInfo audioModuleInfo = GetSourceAudioModeInfo();
+    audioModuleInfo.sourceType = "17";
+    hpaeManager_->effectLiveState_ = "NROFF";
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
 HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerMoveTest001, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);

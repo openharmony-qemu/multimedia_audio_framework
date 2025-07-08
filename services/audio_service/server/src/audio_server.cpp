@@ -80,7 +80,7 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
-const std::string EFFECT_LIVE_KEY = "live_effect";
+const std::string EFFECT_LIVE_KEY = "hpae_effect";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
@@ -1566,23 +1566,6 @@ void AudioServer::ResetRecordConfig(AudioProcessConfig &config)
         config.isWakeupCapturer = true;
     } else {
         config.isWakeupCapturer = false;
-    }
-    if (config.capturerInfo.sourceType == SourceType::SOURCE_TYPE_LIVE) {
-        int32_t engineFlag = GetEngineFlag();
-        if (engineFlag == 1) {
-            HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-            std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-            CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
-            std::string res = deviceManager->GetAudioParameter("primary", AudioParamKey::PARAM_KEY_STATE,
-                "source_type_live_aec_supported");
-            if (res != "true") {
-                AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
-                config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-            }
-        } else {
-            AUDIO_ERR_LOG("SOURCE_TYPE_LIVE not supported");
-            config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-        }
     }
 }
 
