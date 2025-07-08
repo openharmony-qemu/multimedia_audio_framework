@@ -2164,7 +2164,7 @@ void HpaeManager::LoadEffectLive()
         AUDIO_ERR_LOG("OS account not ready");
     } else {
         std::string configValue;
-        ret = settingProvider.GetStringValue("live_effect", configValue, "system");
+        ret = settingProvider.GetStringValue("live_effect_enable", configValue, "system");
         if (ret == SUCCESS && !configValue.empty()) {
             effectLiveState_ = configValue;
             return;
@@ -2179,7 +2179,7 @@ void HpaeManager::LoadEffectLive()
     }
     AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
     if (settingProvider.CheckOsAccountReady()) {
-        settingProvider.PutStringValue("live_effect", effectLiveState_, "system");
+        settingProvider.PutStringValue("live_effect_enable", effectLiveState_, "system");
     }
 }
 
@@ -2187,7 +2187,7 @@ bool HpaeManager::SetEffectLiveParameter(const std::vector<std::pair<std::string
 {
     CHECK_AND_RETURN_RET_LOG(!params.empty(), false, "params is empty");
     const auto &[paramKey, paramValue] = params[0];
-    if (paramKey != "live_effect" || (paramValue != "NRON" && paramValue != "NROFF")) {
+    if (paramKey != "live_effect_enable" || (paramValue != "NRON" && paramValue != "NROFF")) {
         AUDIO_ERR_LOG("Parameter Error");
         return false;
     }

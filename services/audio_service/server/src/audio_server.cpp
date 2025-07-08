@@ -80,7 +80,7 @@ const std::string CHECK_FAST_BLOCK_PREFIX = "Is_Fast_Blocked_For_AppName#";
 constexpr const char *TEL_SATELLITE_SUPPORT = "const.telephony.satellite.supported";
 const std::string SATEMODEM_PARAMETER = "usedmodem=satemodem";
 const std::string PCM_DUMP_KEY = "PCM_DUMP";
-const std::string EFFECT_LIVE_KEY = "live_effect";
+const std::string EFFECT_LIVE_KEY = "hpae_effect";
 constexpr int32_t UID_FOUNDATION_SA = 5523;
 const unsigned int TIME_OUT_SECONDS = 10;
 const char* DUMP_AUDIO_PERMISSION = "ohos.permission.DUMP_AUDIO";
