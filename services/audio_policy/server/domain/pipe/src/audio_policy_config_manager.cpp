@@ -40,6 +40,13 @@ const uint32_t HEADPHONE_CHANNEL_NUM = 2;
 
 const uint32_t FRAMES_PER_SEC = 50;
 
+// next: configed in xml
+const std::set<AudioSampleFormat> FAST_OUTPUT_SUPPORTED_FORMATS = {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
+};
+
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
@@ -587,19 +594,15 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
     CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
 
-    AudioChannel tempChannel = desc->streamInfo_.channels;
-    if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
-        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
-        tempChannel = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
-    }
+    AudioStreamInfo temp = desc->streamInfo_;
+    UpdateBasicStreamInfo(desc, pipeIt->second, temp);
 
     if (desc->audioMode_ == AUDIO_MODE_RECORD) {
-        GetStreamPropInfoForRecord(desc, pipeIt->second, info, tempChannel);
+        GetStreamPropInfoForRecord(desc, pipeIt->second, info, temp.channels);
         return;
     }
 
-    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, desc->streamInfo_.format,
-        desc->streamInfo_.samplingRate, tempChannel);
+    auto streamProp = GetStreamPropInfoFromPipe(pipeIt->second, temp.format, temp.samplingRate, temp.channels);
     if (streamProp != nullptr) {
         info = streamProp;
         return;
@@ -627,6 +630,41 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
         !pipeIt->second->streamPropInfos_.empty()) {
         info = pipeIt->second->streamPropInfos_.front();
     } // if not match, choose first?
+}
+
+void AudioPolicyConfigManager::UpdateBasicStreamInfo(std::shared_ptr<AudioStreamDescriptor> desc,
+    std::shared_ptr<AdapterPipeInfo> pipeInfo, AudioStreamInfo &streamInfo)
+{
+    if (desc == nullptr || pipeInfo == nullptr) {
+        AUDIO_WARNING_LOG("null desc or pipeInfo!");
+        return;
+    }
+
+    if ((desc->routeFlag_ == (AUDIO_INPUT_FLAG_VOIP | AUDIO_INPUT_FLAG_FAST)) ||
+        (desc->routeFlag_ == (AUDIO_OUTPUT_FLAG_VOIP | AUDIO_OUTPUT_FLAG_FAST))) {
+        streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
+
+    if (desc->routeFlag_ == AUDIO_INPUT_FLAG_FAST) {
+        streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
+
+    if (pipeInfo->streamPropInfos_.empty()) {
+        AUDIO_WARNING_LOG("streamPropInfos_ is empty!");
+        return;
+    }
+
+    if (desc->routeFlag_ == AUDIO_OUTPUT_FLAG_FAST) {
+        std::shared_ptr<PipeStreamPropInfo> propInfo = pipeInfo->streamPropInfos_.front();
+        if (propInfo == nullptr) {
+            AUDIO_WARNING_LOG("propInfo is null!");
+            return;
+        }
+        if (FAST_OUTPUT_SUPPORTED_FORMATS.count(streamInfo.format)) {
+            streamInfo.format = propInfo->format_; // for s32 or s16
+        }
+        streamInfo.channels = desc->streamInfo_.channels == MONO ? STEREO : desc->streamInfo_.channels;
+    }
 }
 
 std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPropInfoFromPipe(

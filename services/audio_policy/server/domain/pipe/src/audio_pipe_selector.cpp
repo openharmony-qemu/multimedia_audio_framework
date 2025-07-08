@@ -79,6 +79,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
@@ -111,6 +112,24 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
     return selectedPipeInfoList;
+}
+
+void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
+{
+    if (streamDesc->newDeviceDescs_.empty() || streamPropInfo == nullptr || streamDesc->newDeviceDescs_.front() ==
+        nullptr) {
+        AUDIO_WARNING_LOG("new device desc is empty!");
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> temp = streamDesc->newDeviceDescs_.front();
+    DeviceStreamInfo streamInfo;
+    streamInfo.format = streamPropInfo->format_;
+    streamInfo.samplingRate = {static_cast<AudioSamplingRate>(streamPropInfo->sampleRate_)};
+    streamInfo.SetChannels({streamPropInfo->channels_});
+    temp->audioStreamInfo_ = {streamInfo};
+    std::string info = streamInfo.Serialize();
+    AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExecute(
