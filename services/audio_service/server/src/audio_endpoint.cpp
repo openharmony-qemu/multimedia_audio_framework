@@ -1115,7 +1115,7 @@ void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStr
         processStream->GetAudioProcessConfig().streamType,
         processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
         processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
-        processStream->GetAudioProcessConfig().rendererInfo.volumeMode, 
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode,
         processStream->GetAudioProcessConfig().rendererInfo.isVirtualKeyboard };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
