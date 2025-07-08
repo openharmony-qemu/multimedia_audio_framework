@@ -54,6 +54,7 @@ namespace {
     static constexpr int32_t SLEEP_TIME_IN_DEFAULT = 400; // 400ms
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
+    static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
     static const int32_t ONE_MINUTE = 60;
     const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
