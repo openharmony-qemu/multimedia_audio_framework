@@ -903,12 +903,14 @@ HWTEST_F(HpaeCapturerManagerTest, GetDeviceHDFDumpInfo_001, TestSize.Level0)
  * tc.name   : Test HpaeCapturerManager API
  * tc.type   : FUNC
  * tc.number : HpaeCapturerManagerTest
- * tc.desc   : Test GetDeviceHDFDumpInfo_001
+ * tc.desc   : Test CheckEcAndMicRefCondition_001
  */
 HWTEST_F(HpaeCapturerManagerTest, CheckEcAndMicRefCondition_001, TestSize.Level0)
 {
     HpaeSourceInfo sourceInfo;
     InitSourceInfo(sourceInfo);
+    sourceInfo.ecType = HPAE_EC_TYPE_SAME_ADAPTER;
+    sourceInfo.micRef = HPAE_REF_ON;
 
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_NE(capturerManager, nullptr);
