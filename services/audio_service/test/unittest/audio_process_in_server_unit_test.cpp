@@ -972,5 +972,41 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_036, TestSize.Level1)
     ret = audioProcessInServer->GetLastAudioDuration();
     EXPECT_EQ(ret, 90);
 }
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_037
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    int32_t syncId = 100;
+    auto ret = audioProcessInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(audioProcessInServerRet.audioHapticsSyncId_, syncId);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInServer API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInServer_038
+ * @tc.desc  : Test AudioProcessInServer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    int32_t syncId = 100;
+    audioProcessInServerRet.audioHapticsSyncId_.store(syncId);
+    auto ret = audioProcessInServerRet.GetAudioHapticsSyncId();
+    EXPECT_EQ(ret, syncId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

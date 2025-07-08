@@ -775,5 +775,32 @@ HWTEST_F(AudioEndpointUnitTest, GetEndpointName_001, TestSize.Level1)
     res = audioEndpointInner->GetLinkedProcessCount();
     EXPECT_EQ(0, res);
 }
+
+/*
+ * @tc.name  : Test CheckAudioHapticsSync API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAudioHapticsSync_001
+ * @tc.desc  : Test CheckAudioHapticsSync interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+
+    int32_t inValidSyncId = -1;
+    audioEndpointInner->audioHapticsSyncId_ = inValidSyncId;
+    audioEndpointInner->CheckAudioHapticsSync();
+    EXPECT_EQ(audioEndpointInner->audioHapticsSyncId_, inValidSyncId);
+
+    int32_t validSyncId = 1;
+    int32_t zeroSyncId = 0;
+    audioEndpointInner->audioHapticsSyncId_ = validSyncId;
+    audioEndpointInner->CheckAudioHapticsSync();
+    EXPECT_EQ(audioEndpointInner->audioHapticsSyncId_, zeroSyncId);
+
+    audioEndpointInner->audioHapticsSyncId_ = validSyncId;
+    audioEndpointInner->fastRenderId_ = HDI_INVALID_ID;
+    audioEndpointInner->CheckAudioHapticsSync();
+    EXPECT_EQ(audioEndpointInner->audioHapticsSyncId_, zeroSyncId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -149,6 +149,8 @@ public:
 
     void JoinCallbackLoop() override;
 
+    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+
     static const sptr<IStandardAudioService> GetAudioServerProxy();
     static void AudioServerDied(pid_t pid, pid_t uid);
 
@@ -1866,6 +1868,12 @@ bool AudioProcessInClientInner::GetStopFlag() const
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, RESTORE_ERROR, "Client OHAudioBuffer is nullptr");
     return audioBuffer_->GetStopFlag();
+}
+
+void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
+    processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

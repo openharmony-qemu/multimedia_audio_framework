@@ -981,6 +981,12 @@ void FastAudioStream::ResetFirstFrameState()
     }
 }
 
+void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "Start failed, process is null.");
+    processClient_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
+
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(rendererWriteCallback_!= nullptr, "OnHandleData failed: rendererWriteCallback_ is null.");

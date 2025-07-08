@@ -698,6 +698,13 @@ int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::str
     return SUCCESS;
 }
 
+int32_t AudioProcessInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
+{
+    AUDIO_INFO_LOG("AudioProcessInServer::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
+    audioHapticsSyncId_.store(audioHapticsSyncId);
+    return SUCCESS;
+}
+
 void AudioProcessInServer::WriterRenderStreamStandbySysEvent(uint32_t sessionId, int32_t standby)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -805,6 +812,11 @@ void AudioProcessInServer::AddNormalFrameSize()
 StreamStatus AudioProcessInServer::GetStreamStatus()
 {
     return streamStatus_->load();
+}
+
+int32_t AudioProcessInServer::GetAudioHapticsSyncId()
+{
+    return audioHapticsSyncId_.load();
 }
 
 int64_t AudioProcessInServer::GetLastAudioDuration()

@@ -90,6 +90,9 @@ public:
 
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
         uint32_t method) override;
+    
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    int32_t GetAudioHapticsSyncId() override;
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -198,6 +201,8 @@ private:
     std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
     std::mutex scheduleGuardsMutex_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
+    
+    std::atomic<int32_t> audioHapticsSyncId_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
