@@ -1102,7 +1102,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RecordSelectDevice_003, TestSize.Level1)
         std::string history = "device" + std::to_string(i);
         audioCoreService->RecordSelectDevice(history);
     }
-    ASSERT_EQ(audioCoreService->selectDeviceHistory_.front(), "device" + std::to_string(limit + 2));
+    ASSERT_EQ(audioCoreService->selectDeviceHistory_.back(), "device" + std::to_string(limit + 1));
 }
 
 /**
