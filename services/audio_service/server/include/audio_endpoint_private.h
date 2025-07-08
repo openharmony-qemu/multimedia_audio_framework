@@ -77,6 +77,7 @@ public:
      *   case5: endpointStatus_ = RUNNING; RUNNING-->RUNNING
     */
     int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
+    void AddEndpointStreamVolume(IAudioProcessStream *processStream);
     void LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase>& processBuffer);
 

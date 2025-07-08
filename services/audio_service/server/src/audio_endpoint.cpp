@@ -1058,12 +1058,7 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
-    Trace trace("AudioEndpointInner::");
-    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
-    AudioVolume::GetInstance()->AddStreamVolume(processStream->GetAudioSessionId(),
-        processStream->GetAudioProcessConfig().streamType, processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
-        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
-        processStream->GetAudioProcessConfig().rendererInfo.volumeMode);
+    AddEndpointStreamVolume(processStream);
 
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
@@ -1110,6 +1105,18 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
 
     AUDIO_INFO_LOG("LinkProcessStream success with status:%{public}s", GetStatusStr(endpointStatus_).c_str());
     return SUCCESS;
+}
+
+void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStream)
+{
+    Trace trace("AudioEndpointInner::AddEndpointStreamVolume");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
+    AudioVolume::GetInstance()->AddStreamVolume(processStream->GetAudioSessionId(),
+        processStream->GetAudioProcessConfig().streamType,
+        processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
+        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode);
+    AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
 }
 
 void AudioEndpointInner::LinkProcessStreamExt(IAudioProcessStream *processStream,
