@@ -16,15 +16,19 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("StreamFilterRouterFuzzTest") {
+ohos_fuzztest("FutexToolFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../streamfilterrouter_fuzzer"
+  fuzz_config_file = "../futextool_fuzzer"
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../frameworks/native/audioutils/include",
     "../../../services/audio_service/common/include/limiter/",
+    "../../../services/audio_engine/manager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../services/audio_service/server/include",
+    "../../../services/audio_policy/client/include",
   ]
   cflags = [
     "-g",
@@ -33,15 +37,22 @@ ohos_fuzztest("StreamFilterRouterFuzzTest") {
     "-fno-omit-frame-pointer",
     "-fno-access-control",
   ]
-  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+  configs = [
+    "../../../services/audio_policy:audio_policy_public_config",
+    "../../../services/audio_service:audio_service_config"
+  ]
 
-  sources = [ "stream_filter_router_fuzzer.cpp" ]
+  sources = [ "futex_tool_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
+    "../../../frameworks/native/audioclock:audio_clock",
+    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_static",
   ]
 
   external_deps = [
@@ -79,8 +90,16 @@ ohos_fuzztest("StreamFilterRouterFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "bluetooth:btframework"
-    
+    "bluetooth:btframework",
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
@@ -104,9 +123,7 @@ ohos_fuzztest("StreamFilterRouterFuzzTest") {
   }
 }
 
-
-
 group("fuzztest") {
   testonly = true
-  deps = [ ":StreamFilterRouterFuzzTest" ]
+  deps = [ ":FutexToolFuzzTest" ]
 }

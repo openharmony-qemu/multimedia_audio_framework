@@ -24,6 +24,7 @@
 #include "audio_effect_chain_adapter.h"
 #include "audio_enhance_chain_adapter.h"
 #include "audio_enhance_chain_manager.h"
+#include "audio_enhance_chain_manager_impl.h"
 #include "audio_errors.h"
 #include "audio_head_tracker.h"
 
@@ -947,7 +948,123 @@ void AudioEffectChainCreateAudioEffectChainDynamicInnerFuzzTest()
     audioEffectChainManager->CreateAudioEffectChainDynamicInner(sceneType);
 }
 
-typedef void (*TestFuncs[42])();
+void AudioEnhanceChainSetRelateWithDevicePropForEnhanceFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    std::string sceneAndMode = "SCENE_VOIP_UP_&_ENHANCE_DEFAULT";
+    EnhanceChainConfigInfo enhanceChainConfigInfo;
+    enhanceChainConfigInfo.chainName = "ENHANCE_DEFAULT";
+    enhanceChainConfigInfo.chainLabel = "SCENE_VOIP_UP";
+    audioEnhanceChainManagerImpl.chainConfigInfoMap_.insert({sceneAndMode, enhanceChainConfigInfo});
+    audioEnhanceChainManagerImpl.SetRelateWithDevicePropForEnhance();
+}
+
+void AudioEnhanceChainUpdateEnhancePropertyMapFromDbFuzzTest()
+{
+    if (g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    audioEnhanceChainManagerImpl.enhancePropertyMap_.insert({"SCENE_VOIP_UP_&_DEVICE_TYPE_MIC", "ENHANCE_DEFAULT"});
+    audioEnhanceChainManagerImpl.UpdateEnhancePropertyMapFromDb(deviceType);
+}
+
+void AudioEnhanceChainGetThreadHandlerBySceneFuzzTest()
+{
+    static const vector<AudioEnhanceScene> testAudioEnhanceScenes = {
+        SCENE_VOIP_UP,
+        SCENE_RECORD,
+        SCENE_PRE_ENHANCE,
+        SCENE_ASR,
+        SCENE_VOICE_MESSAGE,
+        SCENE_NONE,
+    };
+    if (testAudioEnhanceScenes.size() == 0) {
+        return;
+    }
+    uint32_t sceneIndex = GetData<uint32_t>() % testAudioEnhanceScenes.size();
+    AudioEnhanceScene scene = testAudioEnhanceScenes[GetData<uint32_t>() % testAudioEnhanceScenes.size()];
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    std::shared_ptr<ThreadHandler> threadHandler = ThreadHandler::NewInstance("testThreadHandler");
+    std::pair<std::shared_ptr<ThreadHandler>, uint32_t> threadHandlerPair =
+        std::make_pair(threadHandler, GetData<uint32_t>());
+    audioEnhanceChainManagerImpl.threadHandlerMap_.insert({sceneIndex, threadHandlerPair});
+    audioEnhanceChainManagerImpl.threadHandlerMap_.insert({sceneIndex, threadHandlerPair});
+    audioEnhanceChainManagerImpl.GetThreadHandlerByScene(scene);
+}
+
+void AudioEnhanceChainCreateAudioEnhanceChainDynamicFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    AudioEnhanceDeviceAttr deviceAttr;
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    audioEnhanceChainManagerImpl.CreateAudioEnhanceChainDynamic(sceneKeyCode, deviceAttr);
+}
+
+void AudioEnhanceChainGetEnhanceNamesBySceneCodeFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    bool defaultFlag = GetData<bool>();
+    audioEnhanceChainManagerImpl.GetEnhanceNamesBySceneCode(sceneKeyCode, defaultFlag);
+}
+
+void AudioEnhanceChainCreateEnhanceChainInnerFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    AudioEnhanceDeviceAttr deviceAttr;
+    deviceAttr.ecChannels = GetData<uint32_t>();
+    deviceAttr.micRate = GetData<uint64_t>();
+    deviceAttr.needEc = GetData<bool>();
+    deviceAttr.needMicRef = GetData<bool>();
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    audioEnhanceChainManagerImpl.CreateEnhanceChainInner(sceneKeyCode, deviceAttr);
+}
+
+void AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    std::string scene = "scene";
+    AudioEnhanceParamAdapter algoParam;
+    AudioEnhanceDeviceAttr deviceAttr;
+    uint64_t chainId = GetData<uint64_t>();
+    std::shared_ptr<AudioEnhanceChain> audioEnhanceChain =
+        std::make_shared<AudioEnhanceChain>(chainId, scene, ScenePriority::PRIOR_SCENE, algoParam, deviceAttr);
+    if (audioEnhanceChain == nullptr) {
+        return;
+    }
+    std::vector<std::string> enhanceNames;
+    enhanceNames.push_back("enhance1");
+    enhanceNames.push_back("enhance2");
+    audioEnhanceChainManagerImpl.AddAudioEnhanceChainHandles(audioEnhanceChain, enhanceNames);
+}
+
+void AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    AudioEffectPropertyV3 property;
+    audioEnhanceChainManagerImpl.SetAudioEnhancePropertyToChains(property);
+}
+
+void AudioEnhanceChainApplyEnhanceChainByIdFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    uint64_t sceneKeyCode = GetData<uint64_t>();
+    EnhanceTransBuffer transBuf;
+    audioEnhanceChainManagerImpl.ApplyEnhanceChainById(sceneKeyCode, transBuf);
+}
+
+void AudioEnhanceChainUpdateExtraSceneTypeFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    std::string mainkey = "audio_effect";
+    std::string subkey = "update_audio_effect_type";
+    std::string extraSceneType = "SCENE_VOIP_UP";
+    audioEnhanceChainManagerImpl.UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+}
+
+typedef void (*TestFuncs[52])();
 
 TestFuncs g_testFuncs = {
     EffectChainManagerInitCbFuzzTest,
@@ -992,6 +1109,16 @@ TestFuncs g_testFuncs = {
     AudioEffectChainCheckAndReleaseCommonEffectChainFuzzTest,
     AudioEffectChainNotifyAndCreateAudioEffectChainFuzzTest,
     AudioEffectChainCreateAudioEffectChainDynamicInnerFuzzTest,
+    AudioEnhanceChainSetRelateWithDevicePropForEnhanceFuzzTest,
+    AudioEnhanceChainUpdateEnhancePropertyMapFromDbFuzzTest,
+    AudioEnhanceChainGetThreadHandlerBySceneFuzzTest,
+    AudioEnhanceChainCreateAudioEnhanceChainDynamicFuzzTest,
+    AudioEnhanceChainGetEnhanceNamesBySceneCodeFuzzTest,
+    AudioEnhanceChainCreateEnhanceChainInnerFuzzTest,
+    AudioEnhanceChainAddAudioEnhanceChainHandlesFuzzTest,
+    AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest,
+    AudioEnhanceChainApplyEnhanceChainByIdFuzzTest,
+    AudioEnhanceChainUpdateExtraSceneTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

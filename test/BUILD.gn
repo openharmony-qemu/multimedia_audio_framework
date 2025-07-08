@@ -191,6 +191,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiodevicecommon_fuzzer:fuzztest",
     "fuzztest/audiodevicelock_fuzzer:fuzztest",
     "fuzztest/audiodevicestatus_fuzzer:fuzztest",
+    "fuzztest/audiodumppcm_fuzzer:fuzztest",
     "fuzztest/audioecmanager_fuzzer:fuzztest",
     "fuzztest/audioeffect_fuzzer:fuzztest",
     "fuzztest/audioeffectchain_fuzzer:fuzztest",
@@ -242,9 +243,12 @@ group("audio_fuzz_test") {
     "fuzztest/audiostreamcollector_fuzzer:fuzztest",
     "fuzztest/audioutils_fuzzer:fuzztest",
     "fuzztest/audiovolumemanager_fuzzer:fuzztest",
+    "fuzztest/audiozone_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
+    "fuzztest/formatconverter_fuzzer:fuzztest",
+    "fuzztest/futextool_fuzzer:fuzztest",
     "fuzztest/hpaemanager_fuzzer:fuzztest",
     "fuzztest/hpaenolockqueue_fuzzer:fuzztest",
     "fuzztest/hpaepolicymanager_fuzzer:fuzztest",
@@ -252,7 +256,6 @@ group("audio_fuzz_test") {
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",
     "fuzztest/sleaudiodevicemanager_fuzzer:fuzztest",
-    "fuzztest/streamfilterrouter_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
   ]
 }

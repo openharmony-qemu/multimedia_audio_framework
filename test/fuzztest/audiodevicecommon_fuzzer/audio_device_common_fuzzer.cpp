@@ -51,6 +51,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const uint8_t TESTSIZE = 56;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -953,7 +954,39 @@ void SwitchActiveA2dpDeviceFuzzTest()
     audioDeviceCommon.SwitchActiveA2dpDevice(desc);
 }
 
-TestFuncs g_testFuncs[] = {
+void RingToneVoiceControlFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.RingToneVoiceControl(deviceType);
+}
+
+void SetFirstScreenOnFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.SetFirstScreenOn();
+}
+
+void SetVirtualCallFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    pid_t uid = GetData<pid_t>();
+    bool isVirtual = GetData<uint32_t>() % NUM_2;
+    audioDeviceCommon.SetVirtualCall(uid, isVirtual);
+}
+
+void SetHeadsetUnpluggedToSpkOrEpFlagFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType oldDeviceType = DeviceTypeVec[deviceTypeCount];
+    deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    InternalDeviceType newDeviceType = DeviceTypeVec[deviceTypeCount];
+    audioDeviceCommon.SetHeadsetUnpluggedToSpkOrEpFlag(oldDeviceType, newDeviceType);
+}
+
+TestFuncs g_testFuncs[TESTSIZE] = {
     FilterSourceOutputsFuzzTest,
     IsRingerOrAlarmerDualDevicesRangeFuzzTest,
     IsRingOverPlaybackFuzzTest,
@@ -1006,6 +1039,10 @@ TestFuncs g_testFuncs[] = {
     LoadA2dpModuleFuzzTest,
     ReloadA2dpAudioPortFuzzTest,
     SwitchActiveA2dpDeviceFuzzTest,
+    RingToneVoiceControlFuzzTest,
+    SetFirstScreenOnFuzzTest,
+    SetVirtualCallFuzzTest,
+    SetHeadsetUnpluggedToSpkOrEpFlagFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
