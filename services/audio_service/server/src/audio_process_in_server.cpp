@@ -698,7 +698,7 @@ int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::str
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+int32_t AudioProcessInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
 {
     AUDIO_INFO_LOG("AudioProcessInServer::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
     audioHapticsSyncId_.store(audioHapticsSyncId);

@@ -91,7 +91,8 @@ public:
     int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
         uint32_t method) override;
     
-    int32_t SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    int32_t GetAudioHapticsSyncId() override;
 
     // override for IAudioProcessStream, used in endpoint
     std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
@@ -143,7 +144,6 @@ public:
 
     uint32_t GetSpanSizeInFrame() override;
     uint32_t GetByteSizePerFrame() override;
-    int32_t GetAudioHapticsSyncId() override;
 public:
     const AudioProcessConfig processConfig_;
 

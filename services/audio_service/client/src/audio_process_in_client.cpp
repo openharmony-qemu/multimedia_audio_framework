@@ -1870,7 +1870,7 @@ bool AudioProcessInClientInner::GetStopFlag() const
     return audioBuffer_->GetStopFlag();
 }
 
-bool AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+void AudioProcessInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
 {
     CHECK_AND_RETURN_LOG(processProxy_ != nullptr, "SetAudioHapticsSyncId processProxy_ is nullptr");
     processProxy_->SetAudioHapticsSyncId(audioHapticsSyncId);
