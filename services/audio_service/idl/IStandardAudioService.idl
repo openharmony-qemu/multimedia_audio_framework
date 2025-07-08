@@ -1,0 +1,144 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+import AudioServiceTypes;
+sequenceable OHOS.IRemoteObject;
+sequenceable audio_info..OHOS.AudioStandard.AudioPlaybackCaptureConfig;
+sequenceable audio_info..OHOS.AudioStandard.AudioProcessConfig;
+sequenceable audio_info..OHOS.AudioStandard.RestoreInfoIpc;
+sequenceable audio_info..OHOS.AudioStandard.SinkInput;
+sequenceable audio_effect..OHOS.AudioStandard.Library;
+sequenceable audio_effect..OHOS.AudioStandard.Effect;
+sequenceable audio_effect..OHOS.AudioStandard.EffectChain;
+sequenceable audio_effect..OHOS.AudioStandard.EffectChainManagerParam;
+sequenceable audio_effect..OHOS.AudioStandard.AudioSpatializationState;
+sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArrayV3;
+sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArray;
+sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
+sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSinkAttr;
+sequenceable hdi_adapter_type..OHOS.AudioStandard.IAudioSourceAttr;
+sequenceable audio_stutter..OHOS.AudioStandard.DataTransferMonitorParam;
+
+interface IStandardAudioService {
+    [ipccode 0] void GetAudioParameter([in] String key, [out] String value);
+    void SetAudioParameter([in] String key, [in] String value);
+    void GetExtraParameters([in] String mainKey, [in] List<String> subKyes, [out] List<StringPair> parameters);
+    void SetExtraParameters([in] String key, [in] List<StringPair> kvpairs);
+    void SetMicrophoneMute([in] boolean isMute);
+    void SetAudioScene([in] int audioScene, [in] List<int> activeOutputDevices, [in] int activeInputDevice, [in] int a2dpOffloadFlag, [in] boolean scoExcludeFlag);
+    void UpdateActiveDeviceRoute([in] int type, [in] int flag, [in] int a2dpOffloadFlag);
+    void UpdateActiveDevicesRoute([in] List<IntPair> activeDevices, [in] int a2dpOffloadFlag, [in] String deviceName);
+    void UpdateDualToneState([in] boolean enable, [in] int sessionId);
+    void GetTransactionId([in] int deviceType, [in] int deviceRole, [out] unsigned long transactionId);
+    void SetParameterCallback([in] IRemoteObject object);
+    void GetAudioParameter([in] String networkId, [in] int key, [in] String condition, [out] String value);
+    void SetAudioParameter([in] String networkId, [in] int key, [in] String condition, [in] String value);
+    void NotifyDeviceInfo([in] String networkId, [in] boolean connected);
+    void CheckRemoteDeviceState([in] String networkId, [in] int deviceRole, [in] boolean isStartDevice);
+    void SetVoiceVolume([in] float volume);
+    void SetAudioMonoState([in] boolean audioMono);
+    void SetAudioBalanceValue([in] float audioBalance);
+    void CreateAudioProcess([in] AudioProcessConfig config, [out] int errorCode, [in] AudioPlaybackCaptureConfig filterConfig, [out] IRemoteObject client);
+    void LoadAudioEffectLibraries([in] List<Library> libraries, [in] List<Effect> effects, [out] List<Effect> successEffects, [out] boolean hasEffectsLoaded);
+    void CreateEffectChainManager([in] List<EffectChain> effectChains, [in] EffectChainManagerParam effectParam, [in] EffectChainManagerParam enhanceParam);
+    void SetOutputDeviceSink([in] int device, [in] String sinkName);
+    void SetActiveOutputDevice([in] int deviceType);
+    void CreatePlaybackCapturerManager([out] boolean isSuccess);
+    [oneway] void RegiestPolicyProvider([in] IRemoteObject object);
+    [oneway] void RegistCoreServiceProvider([in] IRemoteObject object);
+    void SetWakeupSourceCallback([in] IRemoteObject object);
+    void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
+    void UpdateSpatialDeviceType([in] int spatialDeviceType);
+    void OffloadSetVolume([in] float volume);
+    void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
+    void SetSpatializationSceneType([in] int spatializationSceneType);
+    void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);
+    void ResetAudioEndpoint();
+    void ResetRouteForDisconnect([in] int type);
+    void GetEffectLatency([in] String sessionId, [out] unsigned int latency);
+    void UpdateLatencyTimestamp([in] String timestamp, [in] boolean isRenderer);
+    void SetAsrAecMode([in] int asrAecMode); // AsrAecMode asrAecMode
+    void GetAsrAecMode([out] int asrAecMode); // AsrAecMode asrAecMode
+    void SetAsrNoiseSuppressionMode([in] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
+    void SetOffloadMode([in] unsigned int sessionId, [in] int state, [in] boolean isAppBack);
+    void UnsetOffloadMode([in] unsigned int sessionId);
+    void CheckHibernateState([in] boolean onHibernate);
+    void GetAsrNoiseSuppressionMode([out] int asrNoiseSuppressionMode); // AsrNoiseSuppressionMode asrNoiseSuppressionMode
+    void SetAsrWhisperDetectionMode([in] int asrWhisperDetectionMode); // AsrWhisperDetectionMode asrWhisperDetectionMode
+    void GetAsrWhisperDetectionMode([out] int asrWhisperDetectionMode);
+    void SetAsrVoiceControlMode([in] int asrVoiceControlMode, [in] boolean on);
+    void SetAsrVoiceMuteMode([in] int asrVoiceMuteMode, [in] boolean on); // AsrVoiceMuteMode asrVoiceMuteMode
+    void IsWhispering([out] int whisperRes);
+    void GetEffectOffloadEnabled([out] boolean isEffectOffloadEnabled);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
+    void SetAudioEffectProperty([in] AudioEffectPropertyArrayV3 propertyArray, [in] int deviceType);
+    void GetAudioEnhanceProperty([out] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
+    void GetAudioEffectProperty([out] AudioEffectPropertyArray propertyArray);
+    void SetAudioEnhanceProperty([in] AudioEnhancePropertyArray propertyArray, [in] int deviceType);
+    void SetAudioEffectProperty([in] AudioEffectPropertyArray propertyArray);
+    void SuspendRenderSink([in] String sinkName);
+    void RestoreRenderSink([in] String sinkName);
+    void LoadHdiEffectModel();
+    void UpdateEffectBtOffloadSupported([in] boolean isSupported);
+    void SetSinkMuteForSwitchDevice([in] String devceClass, [in] int durationUs, [in] boolean mute);
+    void SetRotationToEffect([in] unsigned int rotate);
+    void UpdateSessionConnectionState([in] int sessionID, [in] int state);
+    void SetNonInterruptMute([in] unsigned int sessionId, [in] boolean muteFlag);
+    void RestoreSession([in] unsigned int sessionID, [in] RestoreInfoIpc restoreInfoIpc);
+    void CreateIpcOfflineStream([out] int errorCode, [out] IRemoteObject client);
+    void GetOfflineAudioEffectChains([out] List<String> effectChains);
+    void GetStandbyStatus([in] unsigned int sessionId, [out] boolean isStandby, [out] long enterStandbyTime);
+    void GenerateSessionId([out] unsigned int sessionId);
+    void GetAllSinkInputs([out] List<SinkInput> sinkInputs);
+    void SetDefaultAdapterEnable([in] boolean isEnable);
+    void NotifyAccountsChanged();
+    void NotifyAudioPolicyReady();
+    void SetInnerCapLimit([in] unsigned int innerCapLimit);void LoadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName);
+    void UnloadHdiAdapter([in] unsigned int devMgrType, [in] String adapterName, [in] boolean force);
+    void CheckCaptureLimit([in] AudioPlaybackCaptureConfig config, [out] int innerCapId);
+    void ReleaseCaptureLimit([in] int innerCapId);
+    void CreateHdiSinkPort([in] String deviceClass, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
+    void CreateSinkPort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSinkAttr attr, [out] unsigned int renderId);
+    void CreateHdiSourcePort([in] String deviceClass, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
+    void CreateSourcePort([in] unsigned int idBase, [in] unsigned int idType, [in] String idInfo, [in] IAudioSourceAttr attr, [out] unsigned int captureId);
+    void DestroyHdiPort([in] unsigned int id);
+    void SetDeviceConnectedFlag([in] boolean flag);
+    void SetDmDeviceType([in] unsigned short dmDeviceType);
+    void RegisterDataTransferMonitorParam([in] int callbackId, [in] DataTransferMonitorParam param);
+    void UnregisterDataTransferMonitorParam([in] int callbackId);
+    void RegisterDataTransferCallback([in] IRemoteObject object);
+    void NotifySettingsDataReady();
+    void IsAcousticEchoCancelerSupported([in] int sourceType, [out] boolean isSupported);
+    void SetSessionMuteState([in] unsigned int sessionId, [in] boolean insert, [in] boolean muteFlag);
+    void SetLatestMuteState([in] unsigned int sessionId, [in] boolean muteFlag);
+    void ForceStopAudioStream([in] int audioType);
+    void CreateAudioWorkgroup([in] int pid, [in] IRemoteObject object, [out] int workgroupId);
+    void ReleaseAudioWorkgroup([in] int pid, [in] int workgroupId);
+    void AddThreadToGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
+    void RemoveThreadFromGroup([in] int pid, [in] int workgroupId, [in] int tokenId);
+    void StartGroup([in] int pid, [in] int workgroupId, [in] unsigned long startTime, [in] unsigned long deadlineTime);
+    void StopGroup([in] int pid, [in] int workgroupId);
+    void SetBtHdiInvalidState();
+    void SetKaraokeParameters([in] String parameters, [out] boolean ret);
+    void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
+    // WARNING: above functions correspond with AudioServerInterfaceCode
+
+
+    // unsupported for ipc client calling
+    [ipccode 1000] void SetForegroundList([in] List<String> list);
+    void GetVolumeDataCount([in] String sinkName, [out] long ret);
+}

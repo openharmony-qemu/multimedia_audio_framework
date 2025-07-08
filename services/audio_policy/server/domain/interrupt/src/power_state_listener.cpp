@@ -110,8 +110,10 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
 
     int32_t result = -1;
+    const int32_t zoneID = 0;
+    const bool isUpdatedAudioStrategy = false;
     if (applyFocus == true && isAudioFocusApplied_ == false) {
-        result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt);
+        result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = true;
             audioPolicyServer_->CheckConnectedDevice();
@@ -119,7 +121,7 @@ void PowerStateListener::ControlAudioFocus(bool applyFocus)
             AUDIO_WARNING_LOG("Activate audio interrupt failed, err = %{public}d", result);
         }
     } else if (applyFocus == false && isAudioFocusApplied_ == true) {
-        result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt);
+        result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt, zoneID);
         if (result == SUCCESS) {
             isAudioFocusApplied_ = false;
             thread switchThread(&AudioPolicyServer::SetDeviceConnectedFlagFalseAfterDuration, audioPolicyServer_);
@@ -199,14 +201,16 @@ void SyncHibernateListener::ControlAudioFocus(bool isHibernate)
     PowerListerMethods::InitAudioInterruptInfo(audioInterrupt);
  
     int32_t result = -1;
+    const int32_t zoneID = 0;
+    const bool isUpdatedAudioStrategy = false;
     if (isHibernate) {
-        result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt);
+        result = audioPolicyServer_->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
         if (result != SUCCESS) {
             AUDIO_WARNING_LOG("Sync hibernate activate audio interrupt failed, err = %{public}d", result);
         }
         audioPolicyServer_->CheckConnectedDevice();
     } else {
-        result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt);
+        result = audioPolicyServer_->DeactivateAudioInterrupt(audioInterrupt, zoneID);
         if (result != SUCCESS) {
             AUDIO_WARNING_LOG("Sync hibernate deactivate audio interrupt failed, err = %{public}d", result);
         }

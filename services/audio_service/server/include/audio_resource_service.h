@@ -16,31 +16,79 @@
 #ifndef AUDIO_RESOURCE_SERVICE_H
 #define AUDIO_RESOURCE_SERVICE_H
 
-#include "audio_workgroup.h"
-
 #include <cstdint>
 #include <unordered_map>
 #include <memory>
+#include <cstdio>
+#include <thread>
+ 
+#include "audio_workgroup.h"
+#include "audio_common_log.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
+struct AudioWorkgroupPerProcess {
+    std::unordered_map<int32_t, std::shared_ptr<AudioWorkgroup>> groups;
+    bool permission;
+    bool hasSystemPermission;
+
+    AudioWorkgroupPerProcess()
+    {
+        groups.clear();
+        permission = false;
+        hasSystemPermission = false;
+    }
+    ~AudioWorkgroupPerProcess() {
+    }
+};
+
 class AudioResourceService {
 public:
+    static AudioResourceService *GetInstance();
     explicit AudioResourceService();
     ~AudioResourceService();
 
-    int32_t CreateAudioWorkgroup(int32_t pid);
+    int32_t CreateAudioWorkgroup(int32_t pid, const sptr<IRemoteObject> &object);
     int32_t ReleaseAudioWorkgroup(int32_t pid, int32_t workgroupId);
     int32_t AddThreadToGroup(int32_t pid, int32_t workgroupId, int32_t tokenId);
     int32_t RemoveThreadFromGroup(int32_t pid, int32_t workgroupId, int32_t tokenId);
     int32_t StartGroup(int32_t pid, int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
     int32_t StopGroup(int32_t pid, int32_t workgroupId);
-    AudioWorkgroup *GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId);
-    int32_t CreateAudioWorkgroupCheck(int32_t pid);
+    void OnWorkgroupRemoteDied(const std::shared_ptr<AudioWorkgroup> &workgroup,
+                                const sptr<IRemoteObject> &remoteObj);
+    void ReleaseWorkgroupDeathRecipient(const std::shared_ptr<AudioWorkgroup> &workgroup,
+                                                         const sptr<IRemoteObject> &remoteObj);
+    void WorkgroupRendererMonitor(int32_t pid, const bool isAllowed);
+    bool IsProcessInWorkgroup(int32_t pid);
+    bool IsProcessHasSystemPermission(int32_t pid);
+    void RegisterAudioWorkgroupDeathRecipient(pid_t pid);
+    std::vector<int32_t> GetProcessesOfAudioWorkgroup();
+    // Inner class for death handler
+    class AudioWorkgroupDeathRecipient : public IRemoteObject::DeathRecipient {
+    public:
+        explicit AudioWorkgroupDeathRecipient();
+        virtual ~AudioWorkgroupDeathRecipient() = default;
+        DISALLOW_COPY_AND_MOVE(AudioWorkgroupDeathRecipient);
+        void OnRemoteDied(const wptr<IRemoteObject> &remote);
+ 
+        using NotifyCbFunc = std::function<void()>;
+        void SetNotifyCb(NotifyCbFunc func);
+    private:
+        NotifyCbFunc diedCb_ = nullptr;
+    };
 private:
-    std::unordered_map<int32_t, std::unordered_map<int32_t, std::shared_ptr<AudioWorkgroup>>> audioWorkgroupMap;
+    int32_t AudioWorkgroupCheck(int32_t pid);
+    AudioWorkgroup *GetAudioWorkgroupPtr(int32_t pid, int32_t workgroupId);
+    int32_t RegisterAudioWorkgroupMonitor(int32_t pid, int32_t groupId, const sptr<IRemoteObject> &object);
+    int32_t GetThreadsNumPerProcess(int32_t pid);
+    void DumpAudioWorkgroupMap();
+
     std::mutex workgroupLock_;
+    std::unordered_map<int32_t, struct AudioWorkgroupPerProcess> audioWorkgroupMap_;
+    std::unordered_map<std::shared_ptr<AudioWorkgroup>,
+        std::pair<sptr<IRemoteObject>, sptr<AudioWorkgroupDeathRecipient>>> deathRecipientMap_;
 };
 
 } // namespace AudioStandard

@@ -29,6 +29,7 @@
 #include "audio_background_manager.h"
 #include "iservice_registry.h"
 #include "audio_bundle_manager.h"
+#include "audio_stream_monitor.h"
 
 
 namespace OHOS {
@@ -60,6 +61,8 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
             appData.appName.c_str(), appData.uid, appProcessData.pid, appProcessData.appState);
         HandleAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
         HandleBackgroundAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
+        AudioStreamMonitor::GetInstance().NotifyAppStateChange(appData.uid,
+            (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
     }
 }
 

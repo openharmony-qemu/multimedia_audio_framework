@@ -20,7 +20,6 @@
 #include "audio_policy_log.h"
 #include "audio_log.h"
 #include "audio_policy_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "i_policy_provider.h"
 
@@ -81,12 +80,12 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
             // for media
             HandleSessionStateChange(uid, pid);
             // for others
-            streamCollector_.HandleStartStreamMuteState(uid, mute, true);
+            streamCollector_.HandleStartStreamMuteState(uid, pid, mute, true);
         } else {
-            streamCollector_.HandleStartStreamMuteState(uid, mute, false);
+            streamCollector_.HandleStartStreamMuteState(uid, pid, mute, false);
         }
     } else {
-        streamCollector_.HandleStartStreamMuteState(uid, false, false);
+        streamCollector_.HandleStartStreamMuteState(uid, pid, false, false);
     }
     return true;
 }
@@ -114,10 +113,11 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
                 "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
                 appState.hasBackTask, appState.isFreeze);
             if (!isBack) {
-                return streamCollector_.HandleForegroundUnmute(uid);
+                return streamCollector_.HandleForegroundUnmute(uid, pid);
             }
             bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
             streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
+            streamCollector_.HandleKaraokeAppToBack(uid, pid);
         }
         if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
             lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
@@ -219,7 +219,9 @@ void AudioBackgroundManager::HandleFreezeStateChange(const int32_t pid, bool isF
 {
     AppState& appState = appStatesMap_[pid];
     if (isFreeze) {
-        streamCollector_.HandleFreezeStateChange(pid, true, appState.hasSession);
+        if (!appState.hasBackTask) {
+            streamCollector_.HandleFreezeStateChange(pid, true, appState.hasSession);
+        }
     } else {
         if (appState.hasBackTask) {
             streamCollector_.HandleFreezeStateChange(pid, false, appState.hasSession);

@@ -32,7 +32,7 @@ ohos_fuzztest("VolumeDataMaintainerFuzzTest") {
     "-fno-access-control",
   ]
 
-  sources = [ "volume_data_maintainer_fuzz.cpp" ]
+  sources = [ "volume_data_maintainer_fuzzer.cpp" ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]

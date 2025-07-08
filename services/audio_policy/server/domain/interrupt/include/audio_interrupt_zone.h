@@ -24,13 +24,14 @@
 #include "audio_interrupt_info.h"
 #include "audio_zone_info.h"
 #include "audio_interrupt_callback.h"
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 #include "i_audio_interrupt_event_dispatcher.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &)>;
+using GetZoneIdFunc = std::function<int32_t(int32_t uid, const std::string &, const std::string &,
+    const StreamUsage &)>;
 using AudioFocusList = std::list<std::pair<AudioInterrupt, AudioFocuState>>;
 using AudioFocusIterator = std::list<AudioFocusList::iterator>;
 

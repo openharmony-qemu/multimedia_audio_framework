@@ -34,7 +34,6 @@ const float GAIN_ATTACK = 0.1f;
 const float GAIN_RELEASE = 0.6f;
 const int32_t AUDIO_FORMAT_PCM_FLOAT = 4;
 const int32_t PROC_COUNT = 4;  // process 4 times
-const int32_t AUDIO_MS_PER_S = 1000;
 const int32_t AUDIO_LMT_ALGO_CHANNEL = 2;    // 2 channel for stereo
 
 AudioLimiter::AudioLimiter(int32_t sinkIndex)
@@ -83,7 +82,7 @@ int32_t AudioLimiter::SetConfig(int32_t maxRequest, int32_t biteSize, int32_t sa
     AUDIO_INFO_LOG("maxRequest = %{public}d, biteSize = %{public}d, sampleRate = %{public}d, channels = %{public}d,"
         "algoFrameLen_ = %{public}d, latency_ = %{public}d",
         maxRequest, biteSize, sampleRate, channels, algoFrameLen_, latency_);
-    bufHis_ = new (std::nothrow) float[algoFrameLen_]();
+    bufHis_ = new (std::nothrow) float[algoFrameLen_ + 1]();
     CHECK_AND_RETURN_RET_LOG(bufHis_ != nullptr, ERROR, "allocate limit algorithm buffer failed");
     sampleRate_ = static_cast<uint32_t>(sampleRate);
     channels_ = static_cast<uint32_t>(channels);

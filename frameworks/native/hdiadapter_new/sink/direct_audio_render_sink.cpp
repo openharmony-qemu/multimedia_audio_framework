@@ -183,6 +183,7 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
             AudioStreamInfo streamInfo(static_cast<AudioSamplingRate>(attr_.sampleRate),
                 AudioEncodingType::ENCODING_EAC3, static_cast<AudioSampleFormat>(attr_.format),
                 static_cast<AudioChannel>(attr_.channel));
+            // EAC3 format is not supported to count volume
             if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
                 DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(&data), writeLen);
                 AudioCacheMgr::GetInstance().CacheData(dumpFileName_, static_cast<void *>(&data), writeLen);
@@ -191,6 +192,12 @@ int32_t DirectAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &w
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
     }
     return SUCCESS;
+}
+
+int64_t DirectAudioRenderSink::GetVolumeDataCount()
+{
+    AUDIO_WARNING_LOG("not supported");
+    return 0;
 }
 
 int32_t DirectAudioRenderSink::SuspendRenderSink(void)

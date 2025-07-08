@@ -55,7 +55,8 @@ public:
 
     void SetOffloadEnabled(bool offloadEnable);
     bool GetOffloadEnabled();
-
+    int32_t SetLoudnessGain(float loudnessGain);
+    float GetLoudnessGain();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -76,6 +77,7 @@ private:
     bool pullDataFlag_ = false; // pull data each 40ms for 11025hz input
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
+    float loudnessGain_ = 0.0f;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
 #endif

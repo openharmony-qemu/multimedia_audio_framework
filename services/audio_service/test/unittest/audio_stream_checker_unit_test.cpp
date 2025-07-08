@@ -667,5 +667,622 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_004, TestSize.Level1)
     checker->CalculateFrameAfterStandby(checkerPara, abnormalFrameNum);
     EXPECT_EQ(abnormalFrameNum, 0);
 }
+
+/**
+ * @tc.name  : Test UpdateAppState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAppState_001
+ */
+HWTEST(AudioStreamCheckerTest, UpdateAppState_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->UpdateAppState(true);
+    EXPECT_EQ(checker->isBackground_, true);
+}
+
+/**
+ * @tc.name  : Test UpdateAppState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAppState_002
+ */
+HWTEST(AudioStreamCheckerTest, UpdateAppState_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->UpdateAppState(false);
+    EXPECT_EQ(checker->isBackground_, false);
+}
+
+/**
+ * @tc.name  : Test InitChecker API
+ * @tc.type  : FUNC
+ * @tc.number: InitCheckerTest_002
+ */
+HWTEST(AudioStreamCheckerTest, InitCheckerTest_002, TestSize.Level1)
+{
+    DataTransferMonitorParam para;
+    int32_t pid = 100000;
+    int32_t callbackId = 100000;
+    CheckerParam checkerParamTest;
+
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checkerParamTest.pid = pid;
+    checkerParamTest.callbackId = callbackId;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+
+    checker->InitChecker(para, pid, callbackId);
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test InitChecker API
+ * @tc.type  : FUNC
+ * @tc.number: InitCheckerTest_003
+ */
+HWTEST(AudioStreamCheckerTest, InitCheckerTest_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    DataTransferMonitorParam para;
+    int32_t pid = 100000;
+    int32_t callbackId = 100000;
+    CheckerParam checkerParamTest;
+
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = callbackId;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(false);
+
+    checker->InitChecker(para, pid, callbackId);
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+}
+
+/**
+ * @tc.name  : Test InitChecker API
+ * @tc.type  : FUNC
+ * @tc.number: InitCheckerTest_004
+ */
+HWTEST(AudioStreamCheckerTest, InitCheckerTest_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    DataTransferMonitorParam para;
+    int32_t pid = 100000;
+    int32_t callbackId = 100000;
+    CheckerParam checkerParamTest;
+    
+    checkerParamTest.pid = pid;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(true);
+
+    checker->InitChecker(para, pid, callbackId);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+}
+
+/**
+ * @tc.name  : Test InitChecker API
+ * @tc.type  : FUNC
+ * @tc.number: InitCheckerTest_005
+ */
+HWTEST(AudioStreamCheckerTest, InitCheckerTest_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    DataTransferMonitorParam para;
+    int32_t pid = 100000;
+    int32_t callbackId = 100000;
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(true);
+
+    checker->InitChecker(para, pid, callbackId);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+}
+
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerParaTest_002
+ */
+HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    DataTransferMonitorParam para;
+
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(false);
+
+    checker->InitChecker(para, 100000, 100000);
+    checker->DeleteCheckerPara(100000, 100000);
+
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
+}
+
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerParaTest_003
+ */
+HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    DataTransferMonitorParam para;
+
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(false);
+
+    checker->InitChecker(para, 100000, 100000);
+    checker->DeleteCheckerPara(100000, 0);
+
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
+}
+
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerParaTest_004
+ */
+HWTEST(AudioStreamCheckerTest, DeleteCheckerParaTest_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    DataTransferMonitorParam para;
+
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->isNeedCreateThread_.store(false);
+
+    checker->InitChecker(para, 100000, 100000);
+    checker->DeleteCheckerPara(0, 100000);
+
+    int32_t size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), false);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_005
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    int64_t abnormalFrameNum = 0;
+
+    para.standbyStartTime = 1;
+    para.standbyStopTime = 20000001;
+    para.isMonitorNoDataFrame = true;
+    checker->streamConfig_.rendererInfo.rendererFlags = 0;
+    checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
+    EXPECT_EQ(abnormalFrameNum, 1);
+}
+
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_006
+ */
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_006, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    int64_t abnormalFrameNum = 0;
+
+    para.standbyStartTime = 0;
+    para.standbyStopTime = 20000000;
+    para.lastUpdateTime = 0;
+    para.isMonitorNoDataFrame = true;
+    checker->streamConfig_.rendererInfo.rendererFlags = 0;
+    checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
+    EXPECT_EQ(abnormalFrameNum, 1);
+}
+
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_002
+ */
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 200000);
+    checker->InitChecker(para, 100001, 200001);
+
+    checker->OnRemoteAppDied(100000);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_003
+ */
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 200000);
+    checker->InitChecker(para, 100001, 200001);
+    checker->InitChecker(para, 100002, 200002);
+
+    checker->OnRemoteAppDied(100000);
+    checker->OnRemoteAppDied(100001);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_004
+ */
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 200000);
+    checker->InitChecker(para, 100001, 200001);
+
+    checker->OnRemoteAppDied(100003);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 2);
+}
+
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_005
+ */
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->OnRemoteAppDied(100000);
+
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
+    EXPECT_EQ(checker->isKeepCheck_.load(), false);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrame API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrame_004
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->monitorSwitch_ = false;
+
+    checker->MonitorCheckFrame();
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrameAction API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameAction_007
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_007, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.lastStatus = AUDIO_STREAM_PAUSE;
+    checkerPara.sumFrameCount = 100;
+    int64_t abnormalFrameNum = 40;
+    float badFrameRatio = 0.5f;
+
+    checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
+    int size = checker->checkParaVector_.size();
+    EXPECT_GT(size, 0);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrameAction API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameAction_008
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_008, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.lastStatus = DATA_TRANS_STOP;
+    checkerPara.sumFrameCount = 100;
+    int64_t abnormalFrameNum = 40;
+    float badFrameRatio = 0.5f;
+
+    checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
+    int size = checker->checkParaVector_.size();
+    EXPECT_GT(size, 0);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrameSub API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameSub_004
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.lastStatus = DATA_TRANS_STOP;
+    checkerPara.sumFrameCount = 100;
+    checkerPara.hasInitCheck = false;
+
+    checker->MonitorCheckFrameSub(checkerPara);
+    int size = checker->checkParaVector_.size();
+    EXPECT_GT(size, 0);
+}
+
+/**
+ * @tc.name  : Test MonitorCheckFrameSub API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameSub_005
+ */
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    CheckerParam checkerPara;
+    checkerPara.lastStatus = DATA_TRANS_STOP;
+    checkerPara.sumFrameCount = 100;
+    checkerPara.hasInitCheck = true;
+    checkerPara.isMonitorMuteFrame = true;
+
+    checker->MonitorCheckFrameSub(checkerPara);
+    int size = checker->checkParaVector_.size();
+    EXPECT_GT(size, 0);
+}
+
+/**
+ * @tc.name  : Test MonitorOnAllCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_004
+ */
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    DataTransferMonitorParam para;
+    para.badDataTransferTypeBitMap = 3;
+    para.timeInterval = 2000000000;
+    para.badFramesRatio = 50;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->InitChecker(para, 100000, 100000);
+    checker->monitorSwitch_ = false;
+    DataTransferStateChangeType type = AUDIO_STREAM_START;
+
+    checker->MonitorOnAllCallback(type, true);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test MonitorOnAllCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_005
+ */
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.callbackId = 0;
+    checkerParamTest.isMonitorNoDataFrame = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+
+    checker->monitorSwitch_ = true;
+    DataTransferStateChangeType type = DATA_TRANS_RESUME;
+
+    checker->MonitorOnAllCallback(type, true);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+}
+
+/**
+ * @tc.name  : Test RecordStandbyTime API
+ * @tc.type  : FUNC
+ * @tc.number: RecordStandbyTime_003
+ */
+HWTEST(AudioStreamCheckerTest, RecordStandbyTime_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.standbyStartTime = 0;
+    checkerParamTest.isMonitorNoDataFrame = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+
+    checker->RecordStandbyTime(false);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+    EXPECT_TRUE(checker->checkParaVector_[0].standbyStopTime > 0);
+    EXPECT_EQ(checker->checkParaVector_[0].isInStandby, false);
+}
+
+/**
+ * @tc.name  : Test MonitorOnCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MMonitorOnCallback_004
+ */
+HWTEST(AudioStreamCheckerTest, MonitorOnCallback_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.lastUpdateTime = 0;
+    checkerParamTest.hasInitCheck = true;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+
+    DataTransferStateChangeType type = AUDIO_STREAM_START;
+    checker->monitorSwitch_ = false;
+
+    checker->MonitorOnCallback(type, true, checkerParamTest);
+    int size = checker->checkParaVector_.size();
+    EXPECT_EQ(size, 1);
+    EXPECT_TRUE(checkerParamTest.lastUpdateTime > 0);
+}
+
+/**
+ * @tc.name  : Test MonitorOnCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MMonitorOnCallback_005
+ */
+HWTEST(AudioStreamCheckerTest, MonitorOnCallback_005, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.sumFrameCount = 1;
+    checkerParamTest.lastUpdateTime = 0;
+    checkerParamTest.hasInitCheck = true;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+
+    DataTransferStateChangeType type = AUDIO_STREAM_START;
+    checker->monitorSwitch_ = true;
+
+    checker->MonitorOnCallback(type, true, checkerParamTest);
+    EXPECT_EQ(checkerParamTest.lastStatus, AUDIO_STREAM_START);
+    EXPECT_TRUE(checkerParamTest.lastUpdateTime > 0);
+}
+
+/**
+ * @tc.name  : Test IsMonitorMuteFrame API
+ * @tc.type  : FUNC
+ * @tc.number: IsMonitorMuteFrame_001
+ */
+HWTEST(AudioStreamCheckerTest, IsMonitorMuteFrame_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.hasInitCheck = false;
+
+    bool ret = checker->IsMonitorMuteFrame(checkerParamTest);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test IsMonitorNoDataFrame API
+ * @tc.type  : FUNC
+ * @tc.number: IsMonitorNoDataFrame_001
+ */
+HWTEST(AudioStreamCheckerTest, IsMonitorNoDataFrame_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam checkerParamTest;
+    checkerParamTest.hasInitCheck = false;
+
+    bool ret = checker->IsMonitorNoDataFrame(checkerParamTest);
+    EXPECT_EQ(ret, false);
+}
 }
 }

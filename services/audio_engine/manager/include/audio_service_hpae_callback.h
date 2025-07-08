@@ -23,6 +23,8 @@ public:
     virtual void OnOpenAudioPortCb(int32_t portId) = 0;
 
     virtual void OnCloseAudioPortCb(int32_t result) = 0;
+    
+    virtual void OnReloadAudioPortCb(int32_t portId) = 0;
 
     virtual void OnSetSinkMuteCb(int32_t result) = 0;
 

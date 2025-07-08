@@ -51,7 +51,8 @@ FastAudioStream::~FastAudioStream()
 
 void FastAudioStream::SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId)
 {
-    AUDIO_INFO_LOG("Set client PID: %{public}d, UID: %{public}d", clientPid, clientUid);
+    AUDIO_INFO_LOG("Set fast stream client PID:%{public}d UID:%{public}d appTokenId:%{public}u "
+        "fullTokenId:%{public}" PRIu64, clientPid, clientUid, appTokenId, fullTokenId);
     clientPid_ = clientPid;
     clientUid_ = clientUid;
     appTokenId_ = appTokenId;
@@ -85,6 +86,8 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
 {
     config.appInfo.appPid = clientPid_;
     config.appInfo.appUid = clientUid_;
+    config.appInfo.appTokenId = appTokenId_;
+    config.appInfo.appFullTokenId = fullTokenId_;
     config.audioMode = eMode_;
     config.streamInfo.channels = static_cast<AudioChannel>(info.channels);
     config.streamInfo.encoding = static_cast<AudioEncodingType>(info.encoding);
@@ -98,6 +101,7 @@ int32_t FastAudioStream::InitializeAudioProcessConfig(AudioProcessConfig &config
         config.rendererInfo.streamUsage = rendererInfo_.streamUsage;
         config.rendererInfo.rendererFlags = STREAM_FLAG_FAST;
         config.rendererInfo.volumeMode = rendererInfo_.volumeMode;
+        config.rendererInfo.isVirtualKeyboard = rendererInfo_.isVirtualKeyboard;
         config.rendererInfo.originalFlag = rendererInfo_.originalFlag;
         config.rendererInfo.playerType = rendererInfo_.playerType;
         config.rendererInfo.expectedPlaybackDurationBytes = rendererInfo_.expectedPlaybackDurationBytes;
@@ -283,6 +287,13 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
     return true;
 }
 
+void FastAudioStream::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    (void)lastFramePosAndTimePair;
+    AUDIO_INFO_LOG("fast stream not support timestamp re-set when stream switching");
+}
+
 bool FastAudioStream::GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
     return GetAudioTime(timestamp, base);
@@ -346,8 +357,9 @@ float FastAudioStream::GetLoudnessGain()
     return 0.0;
 }
 
-int32_t FastAudioStream::SetMute(bool mute)
+int32_t FastAudioStream::SetMute(bool mute, StateChangeCmdType cmdType)
 {
+    muteCmd_ = cmdType;
     CHECK_AND_RETURN_RET_LOG(processClient_ != nullptr, ERR_OPERATION_FAILED, "SetMute failed: null process");
     int32_t ret = processClient_->SetMute(mute);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetMute error.");
@@ -961,13 +973,27 @@ void FastAudioStream::OnFirstFrameWriting()
     firstFrameWritingCb_->OnFirstFrameWriting(latency);
 }
 
+void FastAudioStream::ResetFirstFrameState()
+{
+    if (spkProcClientCb_ != nullptr) {
+        AUDIO_DEBUG_LOG("FastAudioStream::ResetFirstFrameState: reset the first frame state");
+        spkProcClientCb_->ResetFirstFrameState();
+    }
+}
+
+void FastAudioStream::SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId)
+{
+    CHECK_AND_RETURN_LOG(processClient_ != nullptr, "Start failed, process is null.");
+    processClient_->SetAudioHapticsSyncId(audioHapticsSyncId);
+}
+
 void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 {
     CHECK_AND_RETURN_LOG(rendererWriteCallback_!= nullptr, "OnHandleData failed: rendererWriteCallback_ is null.");
-    if (!hasFirstFrameWrited_) {
+    if (!hasFirstFrameWrited_.load()) {
         AUDIO_DEBUG_LOG("OnHandleData: send the first frame writing event to audio haptic player");
         audioStreamImpl_.OnFirstFrameWriting();
-        hasFirstFrameWrited_ = true;
+        hasFirstFrameWrited_.store(true);
     }
     rendererWriteCallback_->OnWriteData(length);
 }
@@ -975,7 +1001,7 @@ void FastAudioStreamRenderCallback::OnHandleData(size_t length)
 void FastAudioStreamRenderCallback::ResetFirstFrameState()
 {
     AUDIO_DEBUG_LOG("ResetFirstFrameState: set the hasFirstFrameWrited_ to false");
-    hasFirstFrameWrited_ = false;
+    hasFirstFrameWrited_.store(false);
 }
 
 std::shared_ptr<AudioRendererWriteCallback> FastAudioStreamRenderCallback::GetRendererWriteCallback() const
@@ -1061,6 +1087,15 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void FastAudioStream::JoinCallbackLoop()
+{
+    if (processClient_ != nullptr) {
+        processClient_->JoinCallbackLoop();
+    } else {
+        AUDIO_WARNING_LOG("processClient_ is nullptr!");
+    }
 }
 
 bool FastAudioStream::GetOffloadEnable()

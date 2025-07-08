@@ -75,8 +75,8 @@ public:
 
     virtual EndpointType GetEndpointType() = 0;
     virtual int32_t SetVolume(AudioStreamType streamType, float volume) = 0;
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) = 0;
-    virtual std::shared_ptr<OHAudioBuffer> GetBuffer() = 0;
+
+    virtual std::shared_ptr<OHAudioBufferBase> GetBuffer() = 0;
 
     virtual EndpointStatus GetStatus() = 0;
 
@@ -142,9 +142,7 @@ public:
 
     int32_t SetVolume(AudioStreamType streamType, float volume) override;
 
-    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
-
-    std::shared_ptr<OHAudioBuffer> GetBuffer() override;
+    std::shared_ptr<OHAudioBufferBase> GetBuffer() override;
 
     EndpointStatus GetStatus() override;
 
@@ -173,15 +171,10 @@ private:
     void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
 
     bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
-    int32_t GetProcLastWriteDoneInfo(const std::shared_ptr<OHAudioBuffer> processBuffer, uint64_t curWriteFrame,
-        uint64_t &proHandleFrame, int64_t &proHandleTime);
 
     bool IsAnyProcessRunning();
 
     std::string GetStatusStr(EndpointStatus status);
-
-    int32_t WriteToSpecialProcBuf(const std::shared_ptr<OHAudioBuffer> &procBuf, const BufferDesc &readBuf);
-    void WriteToProcessBuffers(const BufferDesc &readBuf);
 
     void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
 
@@ -195,7 +188,7 @@ private:
     AudioStreamType streamType_ = STREAM_DEFAULT;
     std::mutex listLock_;
     std::vector<IAudioProcessStream *> processList_;
-    std::vector<std::shared_ptr<OHAudioBuffer>> processBufferList_;
+    std::vector<std::shared_ptr<OHAudioBufferBase>> processBufferList_;
 
     std::atomic<bool> isInited_ = false;
     uint32_t fastRenderId_ = HDI_INVALID_ID;
@@ -206,7 +199,7 @@ private:
     uint32_t dstSpanSizeInframe_ = 0;
     uint32_t dstByteSizePerFrame_ = 0;
     uint32_t syncInfoSize_ = 0;
-    std::shared_ptr<OHAudioBuffer> dstAudioBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> dstAudioBuffer_ = nullptr;
     std::atomic<EndpointStatus> endpointStatus_ = INVALID;
 
     std::mutex loopThreadLock_;

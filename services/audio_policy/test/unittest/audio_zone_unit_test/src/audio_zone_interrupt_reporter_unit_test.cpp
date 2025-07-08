@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../include/audio_zone_interrupt_reporter_unit_test.h"
+#include "audio_zone_interrupt_reporter_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 

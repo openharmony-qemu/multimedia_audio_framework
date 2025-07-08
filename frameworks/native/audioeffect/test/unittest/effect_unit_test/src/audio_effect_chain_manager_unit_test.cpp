@@ -945,7 +945,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_003, TestSize.
 */
 HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationState_004, TestSize.Level1)
 {
-    AudioSpatializationState spatializationState = {false, true};
+    AudioSpatializationState spatializationState(false, true);
 
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
@@ -2042,10 +2042,7 @@ HWTEST(AudioEffectChainManagerUnitTest, UpdateSpatializationEnabled_001, TestSiz
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     int32_t result = AudioEffectChainManager::GetInstance()->InitAudioEffectChainDynamic(sceneType);
     EXPECT_EQ(SUCCESS, result);
-    AudioSpatializationState audioSpatializationState = {
-        .spatializationEnabled = true,
-        .headTrackingEnabled = false,
-    };
+    AudioSpatializationState audioSpatializationState(true, false);
     AudioEffectChainManager::GetInstance()->UpdateSpatializationEnabled(audioSpatializationState);
     audioSpatializationState.spatializationEnabled = false;
     AudioEffectChainManager::GetInstance()->UpdateSpatializationEnabled(audioSpatializationState);

@@ -56,7 +56,8 @@ public:
     virtual ~AudioProcessInServer();
 
     // override for AudioProcess
-    int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame) override;
 
     int32_t GetSessionId(uint32_t &sessionId) override;
 
@@ -66,16 +67,35 @@ public:
 
     int32_t Resume() override;
 
-    int32_t Stop(AudioProcessStage stage = AUDIO_PROC_STAGE_STOP) override;
+    int32_t Stop(int32_t stage) override;
 
-    int32_t RequestHandleInfo(bool isAsync) override;
+    int32_t RequestHandleInfo() override;
 
-    int32_t Release(bool isSwitchStream = false) override;
+    int32_t RequestHandleInfoAsync() override;
 
-    int32_t RegisterProcessCb(sptr<IRemoteObject> object) override;
+    int32_t Release(bool isSwitchStream) override;
+
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
+
+    int32_t SetSilentModeAndMixWithOthers(bool on) override;
+
+    int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
+
+    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, const std::string& adjustTime,
+        uint32_t code) override;
+
+    int32_t RegisterProcessCb(const sptr<IRemoteObject>& object) override;
+
+    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName,
+        uint32_t method) override;
+    
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
+    int32_t GetAudioHapticsSyncId() override;
 
     // override for IAudioProcessStream, used in endpoint
-    std::shared_ptr<OHAudioBuffer> GetStreamBuffer() override;
+    std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() override;
     AudioStreamInfo GetStreamInfo() override;
     uint32_t GetAudioSessionId() override;
     AudioStreamType GetAudioStreamType() override;
@@ -86,7 +106,7 @@ public:
     void Dump(std::string &dumpString);
 
     int32_t ConfigProcessBuffer(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
-        DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &endpoint = nullptr);
+        DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &endpoint = nullptr);
 
     int32_t AddProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
     int32_t RemoveProcessStatusListener(std::shared_ptr<IProcessStatusListener> listener);
@@ -104,23 +124,13 @@ public:
     AppInfo GetAppInfo() override final;
     BufferDesc &GetConvertedBuffer() override;
 
-    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-        BoostTriggerMethod method) override;
-
     void WriteDumpFile(void *buffer, size_t bufferSize) override final;
-
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
-
-    int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
     std::time_t GetStartMuteTime() override;
     void SetStartMuteTime(std::time_t time) override;
  
     bool GetSilentState() override;
     void SetSilentState(bool state) override;
-    int32_t SetSourceDuration(int64_t duration) override;
-
-    int32_t SetUnderrunCount(uint32_t underrunCnt) override;
     void AddMuteWriteFrameCnt(int64_t muteFrameCnt) override;
     void AddMuteFrameSize(int64_t muteFrameCnt) override;
     void AddNormalFrameSize() override;
@@ -131,8 +141,9 @@ public:
     
     bool TurnOnMicIndicator(CapturerState capturerState);
     bool TurnOffMicIndicator(CapturerState capturerState);
-    int32_t SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
-        uint32_t code) override;
+
+    uint32_t GetSpanSizeInFrame() override;
+    uint32_t GetByteSizePerFrame() override;
 public:
     const AudioProcessConfig processConfig_;
 
@@ -168,7 +179,7 @@ private:
     uint32_t spanSizeInframe_ = 0;
     uint32_t byteSizePerFrame_ = 0;
     bool isBufferConfiged_ = false;
-    std::shared_ptr<OHAudioBuffer> processBuffer_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> processBuffer_ = nullptr;
     std::mutex listenerListLock_;
     std::vector<std::shared_ptr<IProcessStatusListener>> listenerList_;
     BufferDesc convertedBuffer_ = {};
@@ -190,6 +201,8 @@ private:
     std::array<std::shared_ptr<SharedAudioScheduleGuard>, METHOD_MAX> scheduleGuards_ = {};
     std::mutex scheduleGuardsMutex_;
     std::shared_ptr<AudioStreamChecker> audioStreamChecker_ = nullptr;
+    
+    std::atomic<int32_t> audioHapticsSyncId_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

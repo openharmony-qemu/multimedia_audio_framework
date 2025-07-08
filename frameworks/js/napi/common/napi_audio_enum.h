@@ -156,6 +156,7 @@ public:
     static AudioScene GetJsAudioScene(AudioScene audioScene);
     static bool IsLegalCapturerState(int32_t state);
     static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
+    static bool IsLegalInputArgumentSessionScene(int32_t scene);
 
 private:
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
@@ -242,6 +243,8 @@ private:
     static napi_ref reason_;
     static napi_ref audioLoopbackMode_;
     static napi_ref audioLoopbackStatus_;
+    static napi_ref audioSessionScene_;
+    static napi_ref audioSessionStateChangeHint_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -293,6 +296,8 @@ private:
     static const std::map<std::string, int32_t> reasonMap;
     static const std::map<std::string, int32_t> audioLoopbackModeMap;
     static const std::map<std::string, int32_t> audioLoopbackStatusMap;
+    static const std::map<std::string, int32_t> audioSessionSceneMap;
+    static const std::map<std::string, int32_t> audioSessionStateChangeHintMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

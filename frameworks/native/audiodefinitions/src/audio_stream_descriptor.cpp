@@ -70,25 +70,32 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         WriteDeviceDescVectorToParcel(parcel, newDeviceDescs_);
 }
 
-void AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
+AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
 {
-    streamInfo_.Unmarshalling(parcel);
-    audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
-    audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
-    routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
-    startTimeStamp_ = parcel.ReadInt64();
-    rendererInfo_.Unmarshalling(parcel);
-    capturerInfo_.Unmarshalling(parcel);
-    appInfo_.appUid = parcel.ReadInt32();
-    appInfo_.appTokenId = parcel.ReadUint32();
-    appInfo_.appPid = parcel.ReadInt32();
-    appInfo_.appFullTokenId = parcel.ReadUint64();
-    sessionId_ = parcel.ReadUint32();
-    callerUid_ = parcel.ReadInt32();
-    callerPid_ = parcel.ReadInt32();
-    streamAction_ = static_cast<AudioStreamAction>(parcel.ReadUint32());
-    UnmarshallingDeviceDescVector(parcel, oldDeviceDescs_);
-    UnmarshallingDeviceDescVector(parcel, newDeviceDescs_);
+    auto info = new AudioStreamDescriptor();
+    if (info == nullptr) {
+        return nullptr;
+    }
+
+    info->streamInfo_.UnmarshallingSelf(parcel);
+    info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
+    info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
+    info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+    info->startTimeStamp_ = parcel.ReadInt64();
+    info->rendererInfo_.UnmarshallingSelf(parcel);
+    info->capturerInfo_.UnmarshallingSelf(parcel);
+    info->appInfo_.appUid = parcel.ReadInt32();
+    info->appInfo_.appTokenId = parcel.ReadUint32();
+    info->appInfo_.appPid = parcel.ReadInt32();
+    info->appInfo_.appFullTokenId = parcel.ReadUint64();
+    info->sessionId_ = parcel.ReadUint32();
+    info->callerUid_ = parcel.ReadInt32();
+    info->callerPid_ = parcel.ReadInt32();
+    info->streamAction_ = static_cast<AudioStreamAction>(parcel.ReadUint32());
+    info->UnmarshallingDeviceDescVector(parcel, info->oldDeviceDescs_);
+    info->UnmarshallingDeviceDescVector(parcel, info->newDeviceDescs_);
+
+    return info;
 }
 
 bool AudioStreamDescriptor::WriteDeviceDescVectorToParcel(
@@ -118,7 +125,7 @@ void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
         return;
     }
     for (int32_t i = 0; i < size; i++) {
-        descs.push_back(AudioDeviceDescriptor::UnmarshallingPtr(parcel));
+        descs.push_back(std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
     }
 }
 

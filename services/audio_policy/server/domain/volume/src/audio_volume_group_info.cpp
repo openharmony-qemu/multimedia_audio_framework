@@ -41,7 +41,7 @@ bool VolumeGroupInfo::Marshalling(Parcel &parcel) const
     return true;
 }
 
-sptr<VolumeGroupInfo> VolumeGroupInfo::Unmarshalling(Parcel &in)
+VolumeGroupInfo *VolumeGroupInfo::Unmarshalling(Parcel &in)
 {
     sptr<VolumeGroupInfo> volumeGroupInfo = new(std::nothrow) VolumeGroupInfo();
     if (volumeGroupInfo == nullptr) {

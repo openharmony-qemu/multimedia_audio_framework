@@ -25,8 +25,8 @@
 #include "iremote_broker.h"
 #include "iremote_proxy.h"
 #include "iremote_stub.h"
-#include "i_standard_audio_routing_manager_listener.h"
-#include "i_standard_audio_anahs_manager_listener.h"
+#include "istandard_audio_routing_manager_listener.h"
+#include "istandard_audio_anahs_manager_listener.h"
 
 namespace OHOS {
 namespace AudioStandard {

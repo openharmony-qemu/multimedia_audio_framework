@@ -68,6 +68,7 @@ ohos_shared_library("audio_capturer") {
   }
 
   deps = [
+    "${audio_framework_root}/services/audio_service:audio_common",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_service:audio_client",
     "../audiodefinitions:audio_definitions",

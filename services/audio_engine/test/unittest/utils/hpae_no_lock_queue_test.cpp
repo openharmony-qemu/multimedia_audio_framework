@@ -18,7 +18,9 @@
 #include <atomic>
 #include <thread>
 
+using namespace testing::ext;
 using namespace testing;
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -45,7 +47,7 @@ auto CreateCountingRequest(std::atomic<int>* count)
     return [count]() { (*count)++; };
 }
 
-TEST_F(HpaeNoLockQueueTest, queueConstructorInitialization)
+HWTEST_F(HpaeNoLockQueueTest, queueConstructorInitialization, TestSize.Level0)
 {
     HpaeNoLockQueue queue(TEST_QUEUE_SIZE);
     EXPECT_TRUE(queue.IsFinishProcess());
@@ -53,7 +55,7 @@ TEST_F(HpaeNoLockQueueTest, queueConstructorInitialization)
     EXPECT_FALSE(empty_queue.IsFinishProcess());
 }
 
-TEST_F(HpaeNoLockQueueTest, pushRequestNormalOperation)
+HWTEST_F(HpaeNoLockQueueTest, pushRequestNormalOperation, TestSize.Level0)
 {
     std::atomic<int> gCount = 0;
     auto countingRequest = [&gCount]() { gCount++; };
@@ -65,7 +67,7 @@ TEST_F(HpaeNoLockQueueTest, pushRequestNormalOperation)
     EXPECT_EQ(gCount, TEST_QUEUE_SIZE);
 }
 
-TEST_F(HpaeNoLockQueueTest, pushRequestCapacityLimit)
+HWTEST_F(HpaeNoLockQueueTest, pushRequestCapacityLimit, TestSize.Level0)
 {
     std::atomic<int> gCount = 0;
     auto countingRequest = [&gCount]() { gCount++; };
@@ -78,7 +80,7 @@ TEST_F(HpaeNoLockQueueTest, pushRequestCapacityLimit)
     EXPECT_EQ(gCount, TEST_QUEUE_SIZE_THREE);
 }
 
-TEST_F(HpaeNoLockQueueTest, queueResetFunction)
+HWTEST_F(HpaeNoLockQueueTest, queueResetFunction, TestSize.Level0)
 {
     std::atomic<int> gCount = 0;
     auto countingRequest = [&gCount]() { gCount++; };
@@ -93,7 +95,7 @@ TEST_F(HpaeNoLockQueueTest, queueResetFunction)
     EXPECT_TRUE(queue.IsFinishProcess());
 }
 
-TEST_F(HpaeNoLockQueueTest, requestExecutionOrder)
+HWTEST_F(HpaeNoLockQueueTest, requestExecutionOrder, TestSize.Level0)
 {
     std::vector<int> execution_order;
     
@@ -108,7 +110,7 @@ TEST_F(HpaeNoLockQueueTest, requestExecutionOrder)
     EXPECT_EQ(execution_order[NUM_TWO], NUM_THREE);
 }
 
-TEST_F(HpaeNoLockQueueTest, isFinishProcessStatus)
+HWTEST_F(HpaeNoLockQueueTest, isFinishProcessStatus, TestSize.Level0)
 {
     HpaeNoLockQueue queue(NUM_TWO);
     EXPECT_TRUE(queue.IsFinishProcess());
@@ -121,7 +123,7 @@ TEST_F(HpaeNoLockQueueTest, isFinishProcessStatus)
     EXPECT_TRUE(queue.IsFinishProcess());
 }
 
-TEST_F(HpaeNoLockQueueTest, queueExhaustionBehavior)
+HWTEST_F(HpaeNoLockQueueTest, queueExhaustionBehavior, TestSize.Level0)
 {
     std::atomic<int> gCount = 0;
     auto countingRequest = [&gCount]() { gCount++; };
@@ -139,7 +141,7 @@ TEST_F(HpaeNoLockQueueTest, queueExhaustionBehavior)
     EXPECT_EQ(gCount, 4); // 4: expected res
 }
 
-TEST_F(HpaeNoLockQueueTest, multiThreadedConcurrency)
+HWTEST_F(HpaeNoLockQueueTest, multiThreadedConcurrency, TestSize.Level0)
 {
     constexpr int threadCount = 4;
     constexpr int requestPerThread = 100;
@@ -166,7 +168,7 @@ TEST_F(HpaeNoLockQueueTest, multiThreadedConcurrency)
     EXPECT_TRUE(queue.IsFinishProcess());
 }
 
-TEST_F(HpaeNoLockQueueTest, maximumRequestCountHandling)
+HWTEST_F(HpaeNoLockQueueTest, maximumRequestCountHandling, TestSize.Level0)
 {
     constexpr size_t largeSize = 10000;
     HpaeNoLockQueue large_queue(largeSize);
@@ -181,7 +183,7 @@ TEST_F(HpaeNoLockQueueTest, maximumRequestCountHandling)
     EXPECT_EQ(static_cast<size_t>(gCount), largeSize);
 }
 
-TEST_F(HpaeNoLockQueueTest, mixedOperations)
+HWTEST_F(HpaeNoLockQueueTest, mixedOperations, TestSize.Level0)
 {
     std::atomic<int> gCount = 0;
     auto countingRequest = [&gCount]() { gCount++; };

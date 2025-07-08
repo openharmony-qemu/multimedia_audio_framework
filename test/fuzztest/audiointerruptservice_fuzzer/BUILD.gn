@@ -14,6 +14,7 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
+import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("AudioInterruptServiceFuzzTest") {
@@ -22,13 +23,11 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
 
   include_dirs = [
     "../../../services/audio_policy/server/include",
-    "../../../../../communication/bluetooth/interfaces/inner_api/include",
     "../../../interfaces/inner_api/native/audiomanager/include",
     "../../../frameworks/native/commcon/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_policy/server/domain/interrupt/include",
     "../../../utils/system/safwk/native/include",
-    "../../../../communication/bluetooth/interfaces/inner_api/include",
   ]
 
   cflags = [
@@ -42,7 +41,10 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
 
   sources = [ "audio_interrupt_service_fuzzer.cpp" ]
 
-  deps = [ "../../../services/audio_policy:audio_policy_service_static" ]
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_policy:audio_policy_service_static",
+  ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
@@ -83,6 +85,9 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
   }
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
+  if (bluetooth_part_enable == true) {
+    external_deps += [ "bluetooth:btframework" ]
   }
 }
 

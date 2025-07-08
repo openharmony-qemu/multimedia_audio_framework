@@ -25,6 +25,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 class HpaeGainNodeTest : public testing::Test {
 public:
@@ -46,7 +48,7 @@ constexpr uint32_t DEFAULT_NODE_ID = 1234;
 constexpr uint32_t DEFAULT_FRAME_LEN = 960;
 constexpr uint32_t DEFAULT_NUM_TWO = 2;
 
-TEST_F(HpaeGainNodeTest, constructHpaeGainNode)
+HWTEST_F(HpaeGainNodeTest, constructHpaeGainNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;
@@ -95,7 +97,7 @@ static int32_t TestRendererRenderFrame(const char *data, uint64_t len)
     return 0;
 }
 
-TEST_F(HpaeGainNodeTest, testHpaeGainTestNode)
+HWTEST_F(HpaeGainNodeTest, testHpaeGainTestNode, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
     nodeInfo.nodeId = DEFAULT_NODE_ID;

@@ -34,6 +34,7 @@ public:
     bool Connect() override;
     uint32_t OpenAudioPort(std::string audioPortName, std::string moduleArgs) override;
     int32_t OpenAudioPort(std::string audioPortName,  const AudioModuleInfo& audioModuleInfo) override;
+    int32_t ReloadAudioPort(const std::string &audioPortName, const AudioModuleInfo& audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     int32_t SetDefaultSink(std::string name) override;
     int32_t SetDefaultSource(std::string name) override;
@@ -59,6 +60,7 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
+    virtual void OnReloadAudioPortCb(int32_t portId) override;
     virtual void OnCloseAudioPortCb(int32_t result) override;
     virtual void OnSetSinkMuteCb(int32_t result) override;
     virtual void OnSetSourceOutputMuteCb(int32_t result) override;
@@ -85,6 +87,7 @@ private:
     bool isFinishOpenAudioPort_ = false;
     int32_t AudioPortIndex_ = 0;
     bool isFinishCloseAudioPort_ = false;
+    bool isFinishReloadAudioPort_ = false;
 
     bool isFinishGetAllSinkInputs_ = false;
     std::vector<SinkInput> sinkInputs_;

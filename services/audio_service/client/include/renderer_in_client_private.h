@@ -29,6 +29,7 @@
 #include "audio_utils.h"
 #include "ipc_stream_listener_impl.h"
 #include "ipc_stream_listener_stub.h"
+#include "iipc_stream.h"
 #include "volume_ramp.h"
 #include "volume_tools.h"
 #include "callback_handler.h"
@@ -37,6 +38,7 @@
 #include "audio_policy_manager.h"
 #include "audio_spatialization_manager.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,7 +82,7 @@ public:
     float GetLoudnessGain() override;
     int32_t SetDuckVolume(float volume) override;
     float GetDuckVolume() override;
-    int32_t SetMute(bool mute) override;
+    int32_t SetMute(bool mute, StateChangeCmdType cmdType) override;
     bool GetMute() override;
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
@@ -197,6 +199,7 @@ public:
     bool GetSilentModeAndMixWithOthers() override;
 
     bool RestoreAudioStream(bool needStoreState = true) override;
+    void JoinCallbackLoop() override;
 
     int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
     FastStatus GetFastStatus() override;
@@ -209,12 +212,14 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
     bool GetStopFlag() const override;
+    void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
 private:
     void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
@@ -229,14 +234,8 @@ private:
     const AudioProcessConfig ConstructConfig();
 
     int32_t InitSharedBuffer();
-    int32_t InitCacheBuffer(size_t targetSize);
 
-    int32_t FlushRingCache();
-    int32_t DrainRingCache();
-
-    int32_t DrainIncompleteFrame(OptResult result, bool stopFlag,
-        size_t targetSize, BufferDesc *desc, bool &dropIncompleteFrame);
-    int32_t WriteCacheData(bool isDrain = false, bool stopFlag = false);
+    int32_t WriteCacheData(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void InitCallbackBuffer(uint64_t bufferDurationInUs);
     bool WriteCallbackFunc();
@@ -246,6 +245,9 @@ private:
     int32_t WriteInner(uint8_t *buffer, size_t bufferSize);
     int32_t WriteInner(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize);
     void WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize);
+    bool IsMutePlaying();
+    void MonitorMutePlay(bool isPlayEnd);
+    void ReportWriteMuteEvent(int64_t mutePlayDuration);
     bool IsInvalidBuffer(uint8_t *buffer, size_t bufferSize);
     void DfxWriteInterval();
     void HandleStatusChangeOperation(Operation operation);
@@ -256,8 +258,6 @@ private:
     int32_t UnregisterSpatializationStateEventListener(uint32_t sessionID);
 
     void FirstFrameProcess();
-
-    int32_t WriteRingCache(uint8_t *buffer, size_t bufferSize, bool speedCached, size_t oriBufferSize);
 
     void ResetFramePosition();
 
@@ -276,6 +276,10 @@ private:
     void RegisterThreadPriorityOnStart(StateChangeCmdType cmdType);
 
     void ResetCallbackLoopTid();
+
+    void WaitForBufferNeedWrite();
+
+    void UpdatePauseReadIndex();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -309,6 +313,7 @@ private:
 
     size_t cacheSizeInByte_ = 0;
     uint32_t spanSizeInFrame_ = 0;
+    uint64_t engineTotalSizeInFrame_ = 0;
     size_t clientSpanSizeInByte_ = 0;
     size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
 
@@ -325,6 +330,7 @@ private:
     // callback mode releated
     AudioRenderMode renderMode_ = RENDER_MODE_NORMAL;
     std::thread callbackLoop_; // thread for callback to client and write.
+    std::mutex loopMutex_;
     int32_t callbackLoopTid_ = -1;
     std::mutex callbackLoopTidMutex_;
     std::condition_variable callbackLoopTidCv_;
@@ -353,6 +359,7 @@ private:
     float lowPowerVolume_ = 1.0;
     float duckVolume_ = 1.0;
     float muteVolume_ = 1.0;
+    std::atomic<StateChangeCmdType> muteCmd_ = CMD_FROM_CLIENT;
     float clientVolume_ = 1.0;
     bool silentModeAndMixWithOthers_ = false;
 
@@ -364,8 +371,8 @@ private:
     // ipc stream related
     AudioProcessConfig clientConfig_;
     sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
+    sptr<IIpcStream> ipcStream_ = nullptr;
+    std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
     std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
@@ -401,11 +408,29 @@ private:
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
 
+    std::atomic<int64_t> mutePlayStartTime_ = 0; // realtime
+    std::atomic<bool> mutePlaying_ = false;
+
     bool offloadEnable_ = false;
     uint64_t offloadStartReadPos_ = 0;
     int64_t offloadStartHandleTime_ = 0;
 
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosition_ = {Timestamp::Timestampbase::BASESIZE, {0, 0}};
+    // for getAudioTimeStampInfo
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed_ = {
+        Timestamp::Timestampbase::BASESIZE, {0, 0}
+    };
+    std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
+
+    struct WrittenFramesWithSpeed {
+        uint64_t writtenFrames = 0;
+        float speed = 1.0;
+    };
+    std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
+    std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
+    std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
@@ -418,12 +443,8 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
+    uint64_t stopReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
-
-    uint64_t lastLatency_ = 0;
-    uint64_t lastLatencyPosition_ = 0;
-    uint64_t lastReadIdx_ = 0;
-    float lastSpeed_ = 1.0;
 
     enum {
         STATE_CHANGE_EVENT = 0,

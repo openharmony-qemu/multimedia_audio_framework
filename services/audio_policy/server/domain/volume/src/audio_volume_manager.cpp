@@ -22,7 +22,6 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "i_policy_provider.h"
@@ -190,8 +189,11 @@ int32_t AudioVolumeManager::GetAppVolumeLevel(int32_t appUid, int32_t &volumeLev
     return audioPolicyManager_.GetAppVolumeLevel(appUid, volumeLevel);
 }
 
-int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType)
+int32_t AudioVolumeManager::GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId)
 {
+    if (zoneId > 0) {
+        return audioPolicyManager_.GetZoneVolumeLevel(zoneId, streamType);
+    }
     if (streamType == STREAM_RING && !IsRingerModeMute()) {
         AUDIO_PRERELEASE_LOGW("return 0 when dual tone ring");
         return DUAL_TONE_RING_VOLUME;
@@ -226,14 +228,14 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
 }
 
 void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
-    const std::string &newSinkName)
+    const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
     // Load volume from KvStore and set volume for each stream type
     audioPolicyManager_.SetVolumeForSwitchDevice(deviceDescriptor);
 
     // The volume of voice_call needs to be adjusted separately
-    if (audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
+    if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
 }
@@ -330,6 +332,16 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
+int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
+{
+    return audioPolicyManager_.GetVolumeAdjustZoneId();
+}
+
+int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
+{
+    return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
+}
+
 int32_t AudioVolumeManager::HandleA2dpAbsVolume(AudioStreamType streamType, int32_t volumeLevel,
     DeviceType curOutputDeviceType)
 {
@@ -385,8 +397,13 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
     return result;
 }
 
-int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel)
+int32_t AudioVolumeManager::SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel,
+    int32_t zoneId)
 {
+    if (zoneId > 0) {
+        return audioPolicyManager_.SetZoneVolumeLevel(zoneId,
+            VolumeUtils::GetVolumeTypeFromStreamType(streamType), volumeLevel);
+    }
     int32_t result = ERROR;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     curOutputDeviceType_ = curOutputDeviceType;
@@ -1014,8 +1031,11 @@ int32_t AudioVolumeManager::SetDeviceAbsVolumeSupported(const std::string &macAd
 }
 
 int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute, const StreamUsage &streamUsage,
-    const DeviceType &deviceType)
+    const DeviceType &deviceType, int32_t zoneId)
 {
+    if (zoneId > 0) {
+        return audioPolicyManager_.SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
+    }
     int32_t result = SUCCESS;
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (deviceType != DEVICE_TYPE_NONE) {
@@ -1042,7 +1062,8 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
 #endif
         }
     }
-    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType);
+    result = audioPolicyManager_.SetStreamMute(streamType, mute, streamUsage, curOutputDeviceType,
+        audioActiveDevice_.GetCurrentOutputDevice().networkId_);
 
     Volume vol = {false, 1.0f, 0};
     vol.isMute = mute;
@@ -1054,8 +1075,11 @@ int32_t AudioVolumeManager::SetStreamMute(AudioStreamType streamType, bool mute,
     return result;
 }
 
-bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType) const
+bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneId) const
 {
+    if (zoneId > 0) {
+        return audioPolicyManager_.GetZoneMute(zoneId, streamType);
+    }
     DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
     if (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC &&
         curOutputDeviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {

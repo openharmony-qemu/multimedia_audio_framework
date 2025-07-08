@@ -28,6 +28,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -75,7 +77,7 @@ void HpaeCoBufferNodeUnitTest::TearDown(void)
  * @tc.number: Construct_001
  * @tc.desc  : Test Construct when config in vaild.
  */
-TEST_F(HpaeCoBufferNodeUnitTest, Construct_001)
+HWTEST_F(HpaeCoBufferNodeUnitTest, Construct_001, TestSize.Level0)
 {
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();
     EXPECT_NE(coBufferNode, nullptr);
@@ -91,7 +93,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Construct_001)
  * @tc.number: Connect_001
  * @tc.desc  : Test Connect when config in vaild.
  */
-TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
+HWTEST_F(HpaeCoBufferNodeUnitTest, Connect_001, TestSize.Level0)
 {
     HpaeNodeInfo sinkInputNodeInfo = GetTestNodeInfo();
     std::shared_ptr<HpaeSinkInputNode> sinkInputNode = std::make_shared<HpaeSinkInputNode>(sinkInputNodeInfo);
@@ -115,7 +117,7 @@ TEST_F(HpaeCoBufferNodeUnitTest, Connect_001)
  * @tc.number: Process_001
  * @tc.desc  : Test Process when config in vaild.
  */
-TEST_F(HpaeCoBufferNodeUnitTest, Process_001)
+HWTEST_F(HpaeCoBufferNodeUnitTest, Process_001, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo = GetTestNodeInfo();
     std::shared_ptr<HpaeCoBufferNode> coBufferNode = std::make_shared<HpaeCoBufferNode>();

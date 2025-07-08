@@ -17,6 +17,7 @@
 
 #include <parcel.h>
 #include <audio_stream_info.h>
+#include <audio_buffer_desc.h>
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,21 +36,23 @@ enum BadDataTransferType {
     MAX_DATATRANS_TYPE
 };
 
-struct AudioRendererDataTransferStateChangeInfo {
+struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     int32_t clientPid;                              // client pid
     int32_t clientUID;                              // client uid
     int32_t sessionId;                              // session id
     StreamUsage streamUsage;                        // stream type
     DataTransferStateChangeType stateChangeType;
+    bool isBackground;
     int32_t badDataRatio[MAX_DATATRANS_TYPE];
 
     AudioRendererDataTransferStateChangeInfo() = default;
     ~AudioRendererDataTransferStateChangeInfo() = default;
-    bool Marshalling(Parcel &parcel) const
+    bool Marshalling(Parcel &parcel) const override
     {
         bool ret =  parcel.WriteInt32(clientPid) && parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(sessionId) && parcel.WriteInt32(static_cast<int32_t>(streamUsage)) &&
-            parcel.WriteUint32(static_cast<int32_t>(stateChangeType));
+            parcel.WriteUint32(static_cast<int32_t>(stateChangeType)) &&
+            parcel.WriteBool(isBackground);
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
             ret = ret && parcel.WriteInt32(badDataRatio[i]);
@@ -57,21 +60,28 @@ struct AudioRendererDataTransferStateChangeInfo {
         
         return ret;
     }
-    void Unmarshalling(Parcel &parcel)
+    static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        clientPid = parcel.ReadInt32();
-        clientUID = parcel.ReadInt32();
-        sessionId = parcel.ReadInt32();
-        streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
-        stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
+        auto info = new AudioRendererDataTransferStateChangeInfo();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->clientPid = parcel.ReadInt32();
+        info->clientUID = parcel.ReadInt32();
+        info->sessionId = parcel.ReadInt32();
+        info->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        info->stateChangeType = static_cast<DataTransferStateChangeType>(parcel.ReadInt32());
+        info->isBackground = parcel.ReadBool();
 
         for (uint32_t i = 0; i < MAX_DATATRANS_TYPE; i++) {
-            badDataRatio[i] = parcel.ReadInt32();
+            info->badDataRatio[i] = parcel.ReadInt32();
         }
+        return info;
     }
 };
 
-struct DataTransferMonitorParam {
+struct DataTransferMonitorParam : public Parcelable {
     int32_t clientUID;
     int32_t badDataTransferTypeBitMap;
     int64_t timeInterval;
@@ -84,19 +94,26 @@ struct DataTransferMonitorParam {
         return clientUID == param.clientUID && badDataTransferTypeBitMap == param.badDataTransferTypeBitMap &&
         timeInterval == param.timeInterval && badFramesRatio == param.badFramesRatio;
     }
-    bool Marshalling(Parcel &parcel) const
+
+    bool Marshalling(Parcel &parcel) const override
     {
-        return parcel.WriteInt32(clientUID)
-            && parcel.WriteInt32(badDataTransferTypeBitMap)
-            && parcel.WriteInt32(timeInterval)
-            && parcel.WriteInt32(badFramesRatio);
+        return parcel.WriteInt32(clientUID) &&
+            parcel.WriteInt32(badDataTransferTypeBitMap) &&
+            parcel.WriteInt32(timeInterval) &&
+            parcel.WriteInt32(badFramesRatio);
     }
-    void Unmarshalling(Parcel &parcel)
+
+    static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
     {
-        clientUID = parcel.ReadInt32();
-        badDataTransferTypeBitMap = parcel.ReadInt32();
-        timeInterval = parcel.ReadInt32();
-        badFramesRatio = parcel.ReadInt32();
+        auto param = new DataTransferMonitorParam();
+        if (param == nullptr) {
+            return nullptr;
+        }
+        param->clientUID = parcel.ReadInt32();
+        param->badDataTransferTypeBitMap = parcel.ReadInt32();
+        param->timeInterval = parcel.ReadInt32();
+        param->badFramesRatio = parcel.ReadInt32();
+        return param;
     }
 };
 } // namespace AudioStandard

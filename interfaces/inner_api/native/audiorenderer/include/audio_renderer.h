@@ -859,6 +859,7 @@ public:
      * @return Returns {@link SUCCESS} if setting is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 10
+     * @deprecated since 15
      */
     virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) const = 0;
 
@@ -1101,6 +1102,13 @@ public:
      * @since 20
      */
     virtual void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) {};
+
+    /**
+     * @brief Reset first frame state
+     *
+     * @since 20
+     */
+    virtual void ResetFirstFrameState() {};
 
 private:
     static void SendRendererCreateError(const StreamUsage &sreamUsage,

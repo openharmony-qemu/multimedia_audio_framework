@@ -83,25 +83,24 @@ int32_t SourceAdapterInit(struct SourceAdapter *adapter, const struct SourceAdap
         return SUCCESS;
     }
 
-    IAudioSourceAttr sourceAttr = {
-        .adapterName = attr->adapterName,
-        .openMicSpeaker = attr->openMicSpeaker,
-        .format = static_cast<AudioSampleFormat>(attr->format),
-        .sampleRate = attr->sampleRate,
-        .channel = attr->channel,
-        .volume = attr->volume,
-        .bufferSize = attr->bufferSize,
-        .isBigEndian = attr->isBigEndian,
-        .filePath = attr->filePath,
-        .deviceNetworkId = attr->deviceNetworkId,
-        .deviceType = attr->deviceType,
-        .sourceType = attr->sourceType,
-        .channelLayout = attr->channelLayout,
-        .hasEcConfig = attr->hasEcConfig,
-        .formatEc = static_cast<AudioSampleFormat>(attr->formatEc),
-        .sampleRateEc = attr->sampleRateEc,
-        .channelEc = attr->channelEc,
-    };
+    IAudioSourceAttr sourceAttr = {};
+    sourceAttr.adapterName = attr->adapterName;
+    sourceAttr.openMicSpeaker = attr->openMicSpeaker;
+    sourceAttr.format = static_cast<AudioSampleFormat>(attr->format);
+    sourceAttr.sampleRate = attr->sampleRate;
+    sourceAttr.channel = attr->channel;
+    sourceAttr.volume = attr->volume;
+    sourceAttr.bufferSize = attr->bufferSize;
+    sourceAttr.isBigEndian = attr->isBigEndian;
+    sourceAttr.filePath = attr->filePath;
+    sourceAttr.deviceNetworkId = attr->deviceNetworkId;
+    sourceAttr.deviceType = attr->deviceType;
+    sourceAttr.sourceType = attr->sourceType;
+    sourceAttr.channelLayout = attr->channelLayout;
+    sourceAttr.hasEcConfig = attr->hasEcConfig;
+    sourceAttr.formatEc = static_cast<AudioSampleFormat>(attr->formatEc);
+    sourceAttr.sampleRateEc = attr->sampleRateEc;
+    sourceAttr.channelEc = attr->channelEc;
 
     return source->Init(sourceAttr);
 }

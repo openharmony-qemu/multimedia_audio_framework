@@ -47,6 +47,7 @@ int64_t FfiMMACreateAudioCapturer(CAudioCapturerOptions options, int32_t* errorC
     }
     auto ret = capturer->CreateAudioCapturer(options);
     if (ret != SUCCESS_CODE) {
+        FFIData::Release(capturer->GetID());
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("CreateAudioCapturer error");
         return CJ_ERR_INVALID_RETURN_VALUE;
@@ -255,7 +256,7 @@ int64_t FfiMMAAudioManagerGetStreamManager(int64_t id, int32_t* errorCode)
         *errorCode = CJ_ERR_SYSTEM;
         return CJ_ERR_INVALID_RETURN_VALUE;
     }
-    return mgr->GetStreamManger(errorCode);
+    return mgr->GetStreamManager(errorCode);
 }
 
 int64_t FfiMMAAudioManagerGetSessionManager(int64_t id, int32_t* errorCode)
@@ -806,6 +807,7 @@ int64_t FfiMMACreateAudioRenderer(CAudioRendererOptions options, int32_t* errorC
     }
     auto ret = renderer->CreateAudioRenderer(options);
     if (ret != SUCCESS_CODE) {
+        FFIData::Release(renderer->GetID());
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("CreateAudioRenderer error");
         return CJ_ERR_INVALID_RETURN_VALUE;

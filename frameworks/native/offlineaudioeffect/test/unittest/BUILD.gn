@@ -52,6 +52,7 @@ if (!audio_framework_feature_offline_effect) {
       "googletest:gtest",
       "hilog:libhilog",
       "hitrace:hitrace_meter",
+      "ipc:ipc_single",
     ]
 
     part_name = "audio_framework"

@@ -22,6 +22,7 @@ namespace AudioStandard {
 void CjAudioManagerAvailableDeviceChangeCallback::RegisterFunc(
     const uint32_t usage, std::function<void(CDeviceChangeAction)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     callbackList_.push_back({ usage, cjCallback });
 }
 
@@ -56,6 +57,7 @@ void CjAudioManagerAvailableDeviceChangeCallback::OnAvailableDeviceChange(
 
 void CjAudioPreferredInputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -79,6 +81,7 @@ void CjAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
 
 void CjAudioPreferredOutputDeviceChangeCallback::RegisterFunc(std::function<void(CArrDeviceDescriptor)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 
@@ -99,6 +102,7 @@ void CjAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(
 
 void CjAudioManagerDeviceChangeCallback::RegisterFunc(std::function<void(CDeviceChangeAction)> cjCallback)
 {
+    std::lock_guard<std::mutex> lock(cbMutex_);
     func_ = cjCallback;
 }
 

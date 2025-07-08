@@ -18,12 +18,13 @@
 
 #include <memory>
 
-#include "ipc_stream_stub.h"
+#include "iipc_stream_listener.h"
 #include "audio_process_config.h"
 #include "renderer_in_server.h"
 #include "capturer_in_server.h"
 #include "ipc_skeleton.h"
 #include "audio_schedule_guard.h"
+#include "ipc_stream_stub.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,13 +33,14 @@ class StreamListenerHolder : public IStreamListener {
 public:
     StreamListenerHolder();
     ~StreamListenerHolder();
-    int32_t RegisterStreamListener(sptr<IpcStreamListener> listener);
+    int32_t RegisterStreamListener(sptr<IIpcStreamListener> listener);
 
     // override IStreamListener
     int32_t OnOperationHandled(Operation operation, int64_t result) override;
 private:
+    bool IsWakeUpLaterNeeded(Operation operation);
     std::mutex listenerMutex_;
-    sptr<IpcStreamListener> streamListener_ = nullptr;
+    sptr<IIpcStreamListener> streamListener_ = nullptr;
 };
 
 class IpcStreamInServer : public IpcStreamStub {
@@ -50,7 +52,7 @@ public:
 
     int32_t Config();
 
-    int32_t RegisterStreamListener(sptr<IRemoteObject> object) override;
+    int32_t RegisterStreamListener(const sptr<IRemoteObject>& object) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override;
 
@@ -64,11 +66,11 @@ public:
 
     int32_t Stop() override;
 
-    int32_t Release() override;
+    int32_t Release(bool isSwitchStream) override;
 
     int32_t Flush() override;
 
-    int32_t Drain(bool stopFlag = false) override;
+    int32_t Drain(bool stopFlag) override;
 
     int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
 
@@ -115,13 +117,18 @@ public:
 
     int32_t SetDuckFactor(float duckFactor) override;
 
-    int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method) override;
+    int32_t RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
+
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override;
+    
+    int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override;
 
     // for inner-capturer
     std::shared_ptr<RendererInServer> GetRenderer();

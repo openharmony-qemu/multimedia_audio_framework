@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+
+interface IStandardSleAudioOperationCallback {
+    [ipccode 1] void GetSleAudioDeviceList([out] List<AudioDeviceDescriptor> devices);
+    void GetSleVirtualAudioDeviceList([out] List<AudioDeviceDescriptor> devices);
+    void IsInBandRingOpen([in] String device, [out] boolean ret);
+    void GetSupportStreamType([in] String device, [out] unsigned int retType);
+    void SetActiveSinkDevice([in] String device, [in] unsigned int streamType, [out] int ret);
+    void StartPlaying([in] String device, [in] unsigned int streamType, [out] int ret);
+    void StopPlaying([in] String device, [in] unsigned int streamType, [out] int ret);
+    void ConnectAllowedProfiles([in] String remoteAddr, [out] int ret);
+    void SetDeviceAbsVolume([in] String remoteAddr, [in] unsigned int volume, [in] unsigned int streamType, [out] int ret);
+    void SendUserSelection([in] String device, [in] unsigned int streamType, [out] int ret);
+    void GetRenderPosition([in] String device, [out] unsigned int delayValue);
+}

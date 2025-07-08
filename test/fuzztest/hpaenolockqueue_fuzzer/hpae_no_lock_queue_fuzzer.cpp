@@ -48,7 +48,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 7;
+const uint8_t TESTSIZE = 6;
 const size_t TESTQUEUESIZE = 5;
 static constexpr size_t TESTQUEUESIZETHREE = 3;
 static int32_t NUM_2 = 2;
@@ -136,14 +136,6 @@ void PushRequestNodeFuzzTest()
     queue_->PushRequestNode(nullptr, index);
 }
 
-void ProcessRequestsFuzzTest()
-{
-    std::unique_ptr<HPAE::HpaeNoLockQueue> queue_ = std::make_unique<HPAE::HpaeNoLockQueue>(GetData<size_t>());
-    bool isProcess = GetData<uint8_t>() % NUM_2;
-    uint64_t requestHeadIndex = GetData<uint64_t>();
-    queue_->ProcessRequests(requestHeadIndex, isProcess);
-}
-
 TestFuncs g_testFuncs[TESTSIZE] = {
     RequestNodeFuzzTest,
     HpaeNoLockQueueFuzzTest,
@@ -151,7 +143,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     ResetFuzzTest,
     GetRequsetFlagFuzzTest,
     PushRequestNodeFuzzTest,
-    ProcessRequestsFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

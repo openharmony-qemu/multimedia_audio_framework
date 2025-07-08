@@ -20,6 +20,7 @@
 #endif
 
 #include "capturer_in_client.h"
+#include "capturer_in_client_inner.h"
 
 #include <atomic>
 #include <cinttypes>
@@ -33,7 +34,7 @@
 #include "system_ability_definition.h"
 #include "securec.h"
 
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "audio_capturer_log.h"
 #include "audio_errors.h"
 #include "volume_tools.h"
@@ -49,6 +50,7 @@
 #include "ipc_stream_listener_stub.h"
 #include "callback_handler.h"
 #include "audio_safe_block_queue.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -57,8 +59,6 @@ static const size_t MAX_CLIENT_READ_SIZE = 20 * 1024 * 1024; // 20M
 static const int32_t CREATE_TIMEOUT_IN_SECOND = 9; // 9S
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000; // 1000ms
 static const int32_t LOGLITMITTIMES = 20;
-const uint64_t AUDIO_US_PER_MS = 1000;
-const uint64_t AUDIO_US_PER_S = 1000000;
 const uint64_t DEFAULT_BUF_DURATION_IN_USEC = 20000; // 20ms
 const uint64_t MAX_BUF_DURATION_IN_USEC = 2000000; // 2S
 const int64_t INVALID_FRAME_SIZE = -1;
@@ -68,322 +68,6 @@ constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 const float ERROR_VOLUME = -0.1f;
 }
-
-class CapturerInClientInner : public CapturerInClient, public IStreamListener, public IHandler,
-    public std::enable_shared_from_this<CapturerInClientInner> {
-public:
-    CapturerInClientInner(AudioStreamType eStreamType, int32_t appUid);
-    ~CapturerInClientInner();
-
-    // IStreamListener
-    int32_t OnOperationHandled(Operation operation, int64_t result) override;
-
-    void SetClientID(int32_t clientPid, int32_t clientUid, uint32_t appTokenId, uint64_t fullTokenId) override;
-
-    int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override;
-    void SetRendererInfo(const AudioRendererInfo &rendererInfo) override;
-    void GetRendererInfo(AudioRendererInfo &rendererInfo) override;
-    void SetCapturerInfo(const AudioCapturerInfo &capturerInfo) override;
-    int32_t GetAudioStreamInfo(AudioStreamParams &info) override;
-    int32_t SetAudioStreamInfo(const AudioStreamParams info,
-        const std::shared_ptr<AudioClientTracker> &proxyObj,
-        const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override;
-    State GetState() override;
-    int32_t GetAudioSessionID(uint32_t &sessionID) override;
-    void GetAudioPipeType(AudioPipeType &pipeType) override;
-    bool GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    bool GetTimeStampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    bool GetAudioPosition(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    int32_t GetBufferSize(size_t &bufferSize) override;
-    int32_t GetFrameCount(uint32_t &frameCount) override;
-    int32_t GetLatency(uint64_t &latency) override;
-    int32_t SetAudioStreamType(AudioStreamType audioStreamType) override;
-    float GetVolume() override;
-    float GetLoudnessGain() override;
-    int32_t SetVolume(float volume) override;
-    int32_t SetLoudnessGain(float loudnessGain) override;
-    int32_t SetDuckVolume(float volume) override;
-    float GetDuckVolume() override;
-    int32_t SetMute(bool mute) override;
-    bool GetMute() override;
-    int32_t SetRenderRate(AudioRendererRate renderRate) override;
-    AudioRendererRate GetRenderRate() override;
-    int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
-    int32_t SetSpeed(float speed) override;
-    int32_t SetPitch(float pitch) override;
-    float GetSpeed() override;
-
-    // callback mode api
-    AudioRenderMode GetRenderMode() override;
-    int32_t SetRenderMode(AudioRenderMode renderMode) override;
-    int32_t SetRendererWriteCallback(const std::shared_ptr<AudioRendererWriteCallback> &callback) override;
-    int32_t SetCaptureMode(AudioCaptureMode captureMode) override;
-    void InitCallbackLoop();
-    AudioCaptureMode GetCaptureMode() override;
-    int32_t SetCapturerReadCallback(const std::shared_ptr<AudioCapturerReadCallback> &callback) override;
-    int32_t GetBufferDesc(BufferDesc &bufDesc) override;
-    int32_t Clear() override;
-    int32_t GetBufQueueState(BufferQueueState &bufState) override;
-    int32_t Enqueue(const BufferDesc &bufDesc) override;
-
-    int32_t SetLowPowerVolume(float volume) override;
-    float GetLowPowerVolume() override;
-    int32_t UnsetOffloadMode() override;
-    int32_t SetOffloadMode(int32_t state, bool isAppBack) override;
-    float GetSingleStreamVolume() override;
-    AudioEffectMode GetAudioEffectMode() override;
-    int32_t SetAudioEffectMode(AudioEffectMode effectMode) override;
-    int64_t GetFramesRead() override;
-    int64_t GetFramesWritten() override;
-
-    void SetInnerCapturerState(bool isInnerCapturer) override;
-    void SetWakeupCapturerState(bool isWakeupCapturer) override;
-    void SetPrivacyType(AudioPrivacyType privacyType) override;
-    void SetCapturerSource(int capturerSource) override;
-
-    // Common APIs
-    bool StartAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT,
-        AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN) override;
-    bool PauseAudioStream(StateChangeCmdType cmdType = CMD_FROM_CLIENT) override;
-    bool StopAudioStream() override;
-    bool FlushAudioStream() override;
-    bool ReleaseAudioStream(bool releaseRunner = true, bool isSwitchStream = false) override;
-
-    // Playback related APIs
-    bool DrainAudioStream(bool stopFlag = false) override;
-    int32_t Write(uint8_t *buffer, size_t bufferSize) override;
-    int32_t Write(uint8_t *pcmBuffer, size_t pcmBufferSize, uint8_t *metaBuffer, size_t metaBufferSize) override;
-    void SetPreferredFrameSize(int32_t frameSize) override;
-    void UpdateLatencyTimestamp(std::string &timestamp, bool isRenderer) override;
-    int32_t SetRendererFirstFrameWritingCallback(
-        const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
-    void OnFirstFrameWriting() override;
-
-    // Recording related APIs
-    int32_t Read(uint8_t &buffer, size_t userSize, bool isBlockingRead) override;
-
-    // Position and period callbacks
-    void SetCapturerPositionCallback(int64_t markPosition,
-        const std::shared_ptr<CapturerPositionCallback> &callback) override;
-    void UnsetCapturerPositionCallback() override;
-    void SetCapturerPeriodPositionCallback(int64_t periodPosition,
-        const std::shared_ptr<CapturerPeriodPositionCallback> &callback) override;
-    void UnsetCapturerPeriodPositionCallback() override;
-    void SetRendererPositionCallback(int64_t markPosition,
-        const std::shared_ptr<RendererPositionCallback> &callback) override;
-    void UnsetRendererPositionCallback() override;
-    void SetRendererPeriodPositionCallback(int64_t periodPosition,
-        const std::shared_ptr<RendererPeriodPositionCallback> &callback) override;
-    void UnsetRendererPeriodPositionCallback() override;
-
-    uint32_t GetUnderflowCount() override;
-    uint32_t GetOverflowCount() override;
-    void SetUnderflowCount(uint32_t underflowCount) override;
-    void SetOverflowCount(uint32_t overflowCount) override;
-
-    uint32_t GetRendererSamplingRate() override;
-    int32_t SetRendererSamplingRate(uint32_t sampleRate) override;
-    int32_t SetBufferSizeInMsec(int32_t bufferSizeInMsec) override;
-    int32_t SetChannelBlendMode(ChannelBlendMode blendMode) override;
-    int32_t SetVolumeWithRamp(float volume, int32_t duration) override;
-
-    void SetStreamTrackerState(bool trackerRegisteredState) override;
-    void GetSwitchInfo(IAudioStream::SwitchInfo& info) override;
-
-    IAudioStream::StreamClass GetStreamClass() override;
-
-    void SetSilentModeAndMixWithOthers(bool on) override;
-
-    bool GetSilentModeAndMixWithOthers() override;
-
-    static void AudioServerDied(pid_t pid, pid_t uid);
-
-    void OnHandle(uint32_t code, int64_t data) override;
-    void InitCallbackHandler();
-    void SafeSendCallbackEvent(uint32_t eventCode, int64_t data);
-
-    void SendCapturerMarkReachedEvent(int64_t capturerMarkPosition);
-    void SendCapturerPeriodReachedEvent(int64_t capturerPeriodSize);
-
-    void HandleCapturerPositionChanges(size_t bytesRead);
-    void HandleStateChangeEvent(int64_t data);
-    void HandleCapturerMarkReachedEvent(int64_t capturerMarkPosition);
-    void HandleCapturerPeriodReachedEvent(int64_t capturerPeriodNumber);
-
-    static const sptr<IStandardAudioService> GetAudioServerProxy();
-
-    bool RestoreAudioStream(bool needStoreState = true) override;
-
-    bool GetOffloadEnable() override;
-    bool GetSpatializationEnabled() override;
-    bool GetHighResolutionEnabled() override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
-    DeviceType GetDefaultOutputDevice() override;
-    FastStatus GetFastStatus() override;
-    int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;
-    void SetSwitchingStatus(bool isSwitching) override;
-    void GetRestoreInfo(RestoreInfo &restoreInfo) override;
-    void SetRestoreInfo(RestoreInfo &restoreInfo) override;
-    RestoreStatus CheckRestoreStatus() override;
-    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
-    void FetchDeviceForSplitStream() override;
-
-    void SetCallStartByUserTid(pid_t tid) override;
-    void SetCallbackLoopTid(int32_t tid) override;
-    int32_t GetCallbackLoopTid() override;
-    bool GetStopFlag() const override;
-private:
-    void RegisterTracker(const std::shared_ptr<AudioClientTracker> &proxyObj);
-    void UpdateTracker(const std::string &updateCase);
-
-    int32_t DeinitIpcStream();
-
-    int32_t InitIpcStream(const AudioPlaybackCaptureConfig &filterConfig);
-
-    const AudioProcessConfig ConstructConfig();
-
-    int32_t InitCacheBuffer(size_t targetSize);
-    int32_t InitSharedBuffer();
-    int32_t FlushRingCache();
-    int32_t FlushCbBuffer();
-
-    void GetStreamSwitchInfo(IAudioStream::SwitchInfo& info);
-
-    int32_t StateCmdTypeToParams(int64_t &params, State state, StateChangeCmdType cmdType);
-    int32_t ParamsToStateCmdType(int64_t params, State &state, StateChangeCmdType &cmdType);
-
-    void InitCallbackBuffer(uint64_t bufferDurationInUs);
-    bool ReadCallbackFunc();
-    // for callback mode. Check status if not running, wait for start or release.
-    bool WaitForRunning();
-
-    int32_t HandleCapturerRead(size_t &readSize, size_t &userSize, uint8_t &buffer, bool isBlockingRead);
-    int32_t RegisterCapturerInClientPolicyServerDiedCb();
-    int32_t UnregisterCapturerInClientPolicyServerDiedCb();
-    void ResetCallbackLoopTid();
-    bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
-private:
-    AudioStreamType eStreamType_;
-    int32_t appUid_;
-    uint32_t sessionId_ = 0;
-    int32_t clientUid_ = -1;
-    int32_t clientPid_ = -1;
-    uint32_t appTokenId_ = 0;
-    uint64_t fullTokenId_ = 0;
-
-    std::atomic<uint32_t> readLogTimes_ = 0;
-
-    std::unique_ptr<AudioStreamTracker> audioStreamTracker_ = nullptr;
-    bool streamTrackerRegistered_ = false;
-
-    AudioRendererInfo rendererInfo_ = {}; // not in use
-    AudioCapturerInfo capturerInfo_ = {};
-
-    int32_t bufferSizeInMsec_ = 20; // 20ms
-
-    // callback mode
-    AudioCaptureMode capturerMode_ = CAPTURE_MODE_NORMAL;
-    std::thread callbackLoop_; // thread for callback to client and write.
-    int32_t callbackLoopTid_ = -1;
-    std::mutex callbackLoopTidMutex_;
-    std::condition_variable callbackLoopTidCv_;
-    std::atomic<bool> cbThreadReleased_ = true;
-    std::mutex readCbMutex_; // lock for change or use callback
-    std::condition_variable cbThreadCv_;
-    std::shared_ptr<AudioCapturerReadCallback> readCb_ = nullptr;
-    std::mutex cbBufferMutex_;
-    std::unique_ptr<uint8_t[]> cbBuffer_ {nullptr};
-    size_t cbBufferSize_ = 0;
-    AudioSafeBlockQueue<BufferDesc> cbBufferQueue_; // only one cbBuffer_
-
-    AudioPlaybackCaptureConfig filterConfig_ = {{{}, FilterMode::INCLUDE, {}, FilterMode::INCLUDE}, false};
-    bool isInnerCapturer_ = false;
-    bool isWakeupCapturer_ = false;
-
-    bool needSetThreadPriority_ = true;
-
-    AudioStreamParams streamParams_; // in plan: replace it with AudioCapturerParams
-
-    // callbacks
-    std::mutex streamCbMutex_;
-    std::weak_ptr<AudioStreamCallback> streamCallback_;
-
-    size_t cacheSizeInByte_ = 0;
-    uint32_t spanSizeInFrame_ = 0;
-    size_t clientSpanSizeInByte_ = 0;
-    size_t sizePerFrameInByte_ = 4; // 16bit 2ch as default
-
-    // using this lock when change status_
-    std::mutex statusMutex_;
-    std::atomic<State> state_ = INVALID;
-    // for status operation wait and notify
-    std::mutex callServerMutex_;
-    std::condition_variable callServerCV_;
-
-    Operation notifiedOperation_ = MAX_OPERATION_CODE;
-    int64_t notifiedResult_ = 0;
-
-    // read data
-    std::mutex readDataMutex_;
-    std::condition_variable readDataCV_;
-
-    uint32_t overflowCount_ = 0;
-    // ipc stream related
-    AudioProcessConfig clientConfig_;
-    sptr<IpcStreamListenerImpl> listener_ = nullptr;
-    sptr<IpcStream> ipcStream_ = nullptr;
-    std::shared_ptr<OHAudioBuffer> clientBuffer_ = nullptr;
-
-    // buffer handle
-    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
-    std::mutex readMutex_; // used for prevent multi thread call read
-
-    // Mark reach and period reach callback
-    uint64_t totalBytesRead_ = 0;
-    std::mutex markReachMutex_;
-    bool capturerMarkReached_ = false;
-    int64_t capturerMarkPosition_ = 0;
-    std::shared_ptr<CapturerPositionCallback> capturerPositionCallback_ = nullptr;
-
-    std::mutex periodReachMutex_;
-    int64_t capturerPeriodSize_ = 0;
-    int64_t capturerPeriodRead_ = 0;
-    std::shared_ptr<CapturerPeriodPositionCallback> capturerPeriodPositionCallback_ = nullptr;
-
-    mutable int64_t volumeDataCount_ = 0;
-    std::string logUtilsTag_ = "";
-
-    // Event handler
-    bool runnerReleased_ = false;
-    std::mutex runnerMutex_;
-    std::shared_ptr<CallbackHandler> callbackHandler_ = nullptr;
-
-    std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
-
-    bool paramsIsSet_ = false;
-    int32_t innerCapId_ = 0;
-
-    enum {
-        STATE_CHANGE_EVENT = 0,
-        RENDERER_MARK_REACHED_EVENT,
-        RENDERER_PERIOD_REACHED_EVENT,
-        CAPTURER_PERIOD_REACHED_EVENT,
-        CAPTURER_MARK_REACHED_EVENT,
-    };
-
-    enum : int64_t {
-        HANDLER_PARAM_INVALID = -1,
-        HANDLER_PARAM_NEW = 0,
-        HANDLER_PARAM_PREPARED,
-        HANDLER_PARAM_RUNNING,
-        HANDLER_PARAM_STOPPED,
-        HANDLER_PARAM_RELEASED,
-        HANDLER_PARAM_PAUSED,
-        HANDLER_PARAM_STOPPING,
-        HANDLER_PARAM_RUNNING_FROM_SYSTEM,
-        HANDLER_PARAM_PAUSED_FROM_SYSTEM,
-    };
-};
 
 std::shared_ptr<CapturerInClient> CapturerInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -735,7 +419,7 @@ void CapturerInClientInner::InitCallbackHandler()
 int32_t CapturerInClientInner::DeinitIpcStream()
 {
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, SUCCESS, "IpcStream is already nullptr");
-    ipcStream_->Release();
+    ipcStream_->Release(false);
     // in plan:
     ipcStream_ = nullptr;
     ringCache_->ResetBuffer();
@@ -829,15 +513,17 @@ int32_t CapturerInClientInner::InitIpcStream(const AudioPlaybackCaptureConfig &f
     sptr<IStandardAudioService> gasp = CapturerInClientInner::GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_OPERATION_FAILED, "Create failed, can not get service.");
     int32_t errorCode = 0;
-    sptr<IRemoteObject> ipcProxy = gasp->CreateAudioProcess(config, errorCode, filterConfig);
+    sptr<IRemoteObject> ipcProxy = nullptr;
+    gasp->CreateAudioProcess(config, errorCode, filterConfig, ipcProxy);
     for (int32_t retrycount = 0; (errorCode == ERR_RETRY_IN_CLIENT) && (retrycount < MAX_RETRY_COUNT); retrycount++) {
         AUDIO_WARNING_LOG("retry in client");
         std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_WAIT_TIME_MS));
-        ipcProxy = gasp->CreateAudioProcess(config, errorCode);
+        AudioPlaybackCaptureConfig defalutConfig = {};
+        gasp->CreateAudioProcess(config, errorCode, defalutConfig, ipcProxy);
     }
     CHECK_AND_RETURN_RET_LOG(errorCode == SUCCESS, errorCode, "failed with create audio stream fail.");
     CHECK_AND_RETURN_RET_LOG(ipcProxy != nullptr, ERR_OPERATION_FAILED, "failed with null ipcProxy.");
-    ipcStream_ = iface_cast<IpcStream>(ipcProxy);
+    ipcStream_ = iface_cast<IIpcStream>(ipcProxy);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "failed when iface_cast.");
 
     // in plan: old listener_ is destoried here, will server receive dieth notify?
@@ -944,6 +630,13 @@ bool CapturerInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     return GetAudioTime(timestamp, base);
 }
 
+void CapturerInClientInner::SetSwitchInfoTimestamp(
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+{
+    (void)lastFramePosAndTimePair;
+    AUDIO_INFO_LOG("capturer stream not support timestamp re-set when stream switching");
+}
+
 int32_t CapturerInClientInner::GetBufferSize(size_t &bufferSize)
 {
     CHECK_AND_RETURN_RET_LOG(state_ != RELEASED, ERR_ILLEGAL_STATE, "Capturer stream is released");
@@ -1006,8 +699,7 @@ float CapturerInClientInner::GetLoudnessGain()
     return 0.0;
 }
 
-
-int32_t CapturerInClientInner::SetMute(bool mute)
+int32_t CapturerInClientInner::SetMute(bool mute, StateChangeCmdType cmdType)
 {
     AUDIO_WARNING_LOG("only for renderer");
     return ERROR;
@@ -1559,7 +1251,6 @@ bool CapturerInClientInner::StopAudioStream()
 
 bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitchStream)
 {
-    (void)isSwitchStream;
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
         AUDIO_WARNING_LOG("Already release, do nothing");
@@ -1570,7 +1261,7 @@ bool CapturerInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
 
     Trace trace("CapturerInClientInner::ReleaseAudioStream " + std::to_string(sessionId_));
     if (ipcStream_ != nullptr) {
-        ipcStream_->Release();
+        ipcStream_->Release(isSwitchStream);
     } else {
         AUDIO_WARNING_LOG("Release while ipcStream is null");
     }
@@ -2074,6 +1765,11 @@ error:
     AUDIO_ERR_LOG("RestoreAudioStream failed");
     state_ = oldState;
     return false;
+}
+
+void CapturerInClientInner::JoinCallbackLoop()
+{
+    AUDIO_INFO_LOG("Not Support");
 }
 
 int32_t CapturerInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)

@@ -20,6 +20,9 @@
 #include "audio_workgroup.h"
 #include "audio_common_log.h"
 #include "rtg_interface.h"
+#include "audio_utils.h"
+#include "concurrent_task_client.h"
+
 using namespace OHOS::RME;
 
 namespace OHOS {

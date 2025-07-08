@@ -1577,8 +1577,11 @@ napi_value NapiAudioManager::GetCollaborativeManager(napi_env env, napi_callback
         AUDIO_ERR_LOG("Invalid arguments!");
         return nullptr;
     }
-
+#ifndef CROSS_PLATFORM
     return NapiAudioCollaborativeManager::CreateCollaborativeManagerWrapper(env);
+#else
+    return nullptr;
+#endif
 }
 
 }  // namespace AudioStandard

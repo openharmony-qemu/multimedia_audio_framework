@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <string>
+#include <list>
 #include <map>
 #include <unordered_map>
 #include <mutex>
@@ -55,6 +56,9 @@ const uint32_t AUDIO_ID = 1041;
 // Ringer or alarmer dual tone
 const size_t AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT = 2;
 
+constexpr int32_t AUDIO_EXTRA_PARAMETERS_COUNT_UPPER_LIMIT = 40;
+constexpr int32_t AUDIO_EFFECT_CHAIN_COUNT_UPPER_LIMIT = 32;
+
 /* Define AudioXcollie timeout flag, consistent with xcollie_define.h in hiviewdfx  */
 static constexpr unsigned int AUDIO_XCOLLIE_FLAG_DEFAULT = (~0); // do all callback function
 static constexpr unsigned int AUDIO_XCOLLIE_FLAG_NOOP = (0); // do nothing but the caller defined function
@@ -72,6 +76,8 @@ public:
     static bool IsRingerAudioScene(const AudioScene &audioScene);
 
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
+
+    static uint32_t ConvertToHDIAudioInputType(const SourceType sourceType);
 };
 
 class Trace {
@@ -83,7 +89,6 @@ public:
     void End();
     ~Trace();
 private:
-    std::string value_;
     bool isFinished_;
 };
 
@@ -563,6 +568,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_USB = 11,
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
     HDI_RENDER_OFFSET_EAC3 = 13,
+    HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
@@ -570,6 +576,12 @@ uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
 void CloseFd(int fd);
 
 int32_t CheckSupportedParams(const AudioStreamInfo &info);
+
+std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
+    const std::list<std::pair<AudioInterrupt, AudioFocuState>> &from);
+
+std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
+    const std::vector<std::map<AudioInterrupt, int32_t>> &from);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

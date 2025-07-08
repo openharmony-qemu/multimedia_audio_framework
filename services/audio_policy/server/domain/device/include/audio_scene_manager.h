@@ -52,6 +52,7 @@ public:
     bool CheckVoiceCallActive(int32_t sessionId) const;
 
     bool IsVoiceCallRelatedScene();
+    bool IsInPhoneCallScene();
 private:
     AudioSceneManager() : audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

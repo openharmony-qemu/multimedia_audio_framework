@@ -278,12 +278,6 @@ int32_t HpaeSourceInputCluster::WriteCapturerData(char *data, int32_t dataSize)
     return sourceInputNode_->WriteCapturerData(data, dataSize);
 }
 
-OutputPort<HpaePcmBuffer *> *HpaeSourceInputCluster::GetSourceInputNodeOutputPort()
-{
-    CHECK_AND_RETURN_RET_LOG(sourceInputNode_, nullptr, "sourceInputNode_ is nullptr");
-    return sourceInputNode_->GetOutputPort();
-}
-
 uint32_t HpaeSourceInputCluster::GetCaptureId()
 {
     return sourceInputNode_->GetCaptureId();

@@ -25,10 +25,11 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 const std::map<uint32_t, std::set<StreamUsage>> STREAM_USAGE_TO_SLE_STREAM_TYPE = {
-    {SLE_AUDIO_STREAM_NONE, {}},
-    {SLE_AUDIO_STREAM_MUSIC, {STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_ALARM,
-        STREAM_USAGE_AUDIOBOOK, STREAM_USAGE_ULTRASONIC, STREAM_USAGE_VOICE_MESSAGE,
-        STREAM_USAGE_ACCESSIBILITY, STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_DTMF}},
+    {SLE_AUDIO_STREAM_NONE, {STREAM_USAGE_UNKNOWN}},
+    {SLE_AUDIO_STREAM_UNDEFINED, {STREAM_USAGE_ULTRASONIC, STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_DTMF,
+        STREAM_USAGE_ALARM, STREAM_USAGE_NOTIFICATION, STREAM_USAGE_SYSTEM,
+        STREAM_USAGE_ACCESSIBILITY, STREAM_USAGE_VOICE_MESSAGE}},
+    {SLE_AUDIO_STREAM_MUSIC, {STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK}},
     {SLE_AUDIO_STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
     {SLE_AUDIO_STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
     {SLE_AUDIO_STREAM_RING, {STREAM_USAGE_NOTIFICATION_RINGTONE, STREAM_USAGE_RINGTONE, STREAM_USAGE_RANGING,
@@ -36,7 +37,7 @@ const std::map<uint32_t, std::set<StreamUsage>> STREAM_USAGE_TO_SLE_STREAM_TYPE 
     {SLE_AUDIO_STREAM_VOIP, {STREAM_USAGE_VOICE_COMMUNICATION, STREAM_USAGE_VIDEO_COMMUNICATION,
         STREAM_USAGE_VOICE_CALL_ASSISTANT}},
     {SLE_AUDIO_STREAM_GAME, {STREAM_USAGE_GAME}},
-    {SLE_AUDIO_STREAM_ALERT, {STREAM_USAGE_NOTIFICATION, STREAM_USAGE_SYSTEM}},
+    {SLE_AUDIO_STREAM_ALERT, {}},
     {SLE_AUDIO_STREAM_VIDEO, {STREAM_USAGE_MOVIE}},
     {SLE_AUDIO_STREAM_GUID, {STREAM_USAGE_NAVIGATION}}
 };
@@ -45,8 +46,9 @@ const std::map<uint32_t, std::set<SourceType>> SOURCE_TYPE_TO_SLE_STREAM_TYPE = 
     {SLE_AUDIO_STREAM_NONE, {}},
     {SLE_AUDIO_STREAM_VOICE_CALL, {SOURCE_TYPE_VIRTUAL_CAPTURE, SOURCE_TYPE_VOICE_CALL}},
     {SLE_AUDIO_STREAM_VOIP, {SOURCE_TYPE_VOICE_COMMUNICATION}},
-    {SLE_AUDIO_STREAM_RECORD, {SOURCE_TYPE_MIC, SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_ULTRASONIC,
-        SOURCE_TYPE_VOICE_MESSAGE, SOURCE_TYPE_VOICE_TRANSCRIPTION, SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_UNPROCESSED}}
+    {SLE_AUDIO_STREAM_VOICE_ASSISTANT, {SOURCE_TYPE_VOICE_RECOGNITION, SOURCE_TYPE_VOICE_TRANSCRIPTION}},
+    {SLE_AUDIO_STREAM_RECORD, {SOURCE_TYPE_MIC, SOURCE_TYPE_ULTRASONIC, SOURCE_TYPE_VOICE_MESSAGE,
+        SOURCE_TYPE_CAMCORDER, SOURCE_TYPE_UNPROCESSED, SOURCE_TYPE_LIVE}}
 };
 } // namespace
 int32_t SleAudioDeviceManager::SetSleAudioOperationCallback(const sptr<IStandardSleAudioOperationCallback> &callback)
@@ -71,19 +73,25 @@ void SleAudioDeviceManager::GetSleVirtualAudioDeviceList(std::vector<AudioDevice
 bool SleAudioDeviceManager::IsInBandRingOpen(const std::string &device) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, false, "callback is nullptr");
-    return callback_->IsInBandRingOpen(device);
+    bool ret = false;
+    callback_->IsInBandRingOpen(device, ret);
+    return ret;
 }
 
 uint32_t SleAudioDeviceManager::GetSupportStreamType(const std::string &device) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    return callback_->GetSupportStreamType(device);
+    uint32_t retType = static_cast<uint32_t>(ERROR);
+    callback_->GetSupportStreamType(device, retType);
+    return retType;
 }
 
 int32_t SleAudioDeviceManager::SetActiveSinkDevice(const std::string &device, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    return callback_->SetActiveSinkDevice(device, streamType);
+    int32_t ret = ERROR;
+    callback_->SetActiveSinkDevice(device, streamType, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType)
@@ -92,37 +100,53 @@ int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t 
 
     AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
+    int32_t ret = ERROR;
     if (!startedSleStreamType_[device][streamType].empty()) {
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
-    return callback_->StartPlaying(device, streamType);
+    callback_->StartPlaying(device, streamType, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
+    int32_t ret = ERROR;
     AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
-    return callback_->StopPlaying(device, streamType);
+    callback_->StopPlaying(device, streamType, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::ConnectAllowedProfiles(const std::string &remoteAddr) const
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    return callback_->ConnectAllowedProfiles(remoteAddr);
+    int32_t ret = ERROR;
+    callback_->ConnectAllowedProfiles(remoteAddr, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    return callback_->SetDeviceAbsVolume(remoteAddr, volume, streamType);
+    int32_t ret = ERROR;
+    callback_->SetDeviceAbsVolume(remoteAddr, volume, streamType, ret);
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::SendUserSelection(const std::string &device, uint32_t streamType)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-    return callback_->SendUserSelection(device, streamType);
+    int32_t ret = ERROR;
+    callback_->SendUserSelection(device, streamType, ret);
+    return ret;
+}
+
+int32_t SleAudioDeviceManager::GetRenderPosition(const std::string &device, uint32_t &delayValue)
+{
+    CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return callback_->GetRenderPosition(device, delayValue);
 }
 
 uint32_t SleAudioDeviceManager::GetSleStreamTypeByStreamUsage(StreamUsage streamUsage) const

@@ -20,11 +20,16 @@
 #include "renderer_in_client_private.h"
 #include "i_stream_listener.h"
 
+
 using namespace testing::ext;
 using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
+
+const uint64_t TEST_POSITION = 20000;
+const uint64_t TEST_TIMESTAMP_NS = 20000;
+
 class RendererInClientUnitTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -33,90 +38,98 @@ public:
     void TearDown();
 };
 
-class IpcStreamTest : public IpcStream {
+class IpcStreamTest : public IIpcStream {
 public:
     virtual ~IpcStreamTest() = default;
 
-    virtual int32_t RegisterStreamListener(sptr<IRemoteObject> object) { return 0; }
+    virtual int32_t RegisterStreamListener(const sptr<IRemoteObject> &object) override { return 0; }
 
-    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) { return 0; }
+    virtual int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer) override { return 0; }
 
-    virtual int32_t UpdatePosition() { return 0; }
+    virtual int32_t UpdatePosition() override { return 0; }
 
-    virtual int32_t GetAudioSessionID(uint32_t &sessionId) { return 0; }
+    virtual int32_t GetAudioSessionID(uint32_t &sessionId) override { return 0; }
 
-    virtual int32_t Start() { return 0; }
+    virtual int32_t Start() override { return 0; }
 
-    virtual int32_t Pause() { return 0; }
+    virtual int32_t Pause() override { return 0; }
 
-    virtual int32_t Stop() { return 0; }
+    virtual int32_t Stop() override { return 0; }
 
-    virtual int32_t Release() { return 0; }
+    virtual int32_t Release(bool isSwitchStream) override { return 0; }
 
-    virtual int32_t Flush() { return 0; }
+    virtual int32_t Flush() override { return 0; }
 
-    virtual int32_t Drain(bool stopFlag = false) { return 0; }
+    virtual int32_t Drain(bool stopFlag) override { return 0; }
 
-    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) { return 0; }
+    virtual int32_t UpdatePlaybackCaptureConfig(const AudioPlaybackCaptureConfig &config) override { return 0; }
 
-    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) { return 0; }
+    virtual int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override { return 0; }
 
-    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+    virtual int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
     {
         return 0;
     }
 
-    virtual int32_t GetLatency(uint64_t &latency) { return 0; }
+    virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
-    virtual int32_t SetRate(int32_t rate) { return 0; } // SetRenderRate
+    virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
 
-    virtual int32_t GetRate(int32_t &rate) { return 0; } // SetRenderRate
+    virtual int32_t GetRate(int32_t &rate) override { return 0; } // SetRenderRate
 
-    virtual int32_t SetLowPowerVolume(float volume) { return 0; } // renderer only
+    virtual int32_t SetLowPowerVolume(float volume) override { return 0; } // renderer only
 
-    virtual int32_t GetLowPowerVolume(float &volume) { return 0; } // renderer only
+    virtual int32_t GetLowPowerVolume(float &volume) override { return 0; } // renderer only
 
-    virtual int32_t SetAudioEffectMode(int32_t effectMode) { return 0; } // renderer only
+    virtual int32_t SetAudioEffectMode(int32_t effectMode) override { return 0; } // renderer only
 
-    virtual int32_t GetAudioEffectMode(int32_t &effectMode) { return 0; } // renderer only
+    virtual int32_t GetAudioEffectMode(int32_t &effectMode) override { return 0; } // renderer only
 
-    virtual int32_t SetPrivacyType(int32_t privacyType) { return 0; } // renderer only
+    virtual int32_t SetPrivacyType(int32_t privacyType) override { return 0; } // renderer only
 
-    virtual int32_t GetPrivacyType(int32_t &privacyType) { return 0; } // renderer only
+    virtual int32_t GetPrivacyType(int32_t &privacyType) override { return 0; } // renderer only
 
-    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) { return 0; } // renderer only
+    virtual int32_t SetOffloadMode(int32_t state, bool isAppBack) override { return 0; } // renderer only
 
-    virtual int32_t UnsetOffloadMode() { return 0; } // renderer only
+    virtual int32_t UnsetOffloadMode() override { return 0; } // renderer only
 
     virtual int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
-        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) { return 0; } // renderer only
+        uint64_t &cacheTimeDsp, uint64_t &cacheTimePa) override { return 0; } // renderer only
 
-    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) { return 0; }
-
-    virtual int32_t GetStreamManagerType() { return 0; }
-
-    virtual int32_t SetSilentModeAndMixWithOthers(bool on) { return 0; }
-
-    virtual int32_t SetClientVolume() { return 0; }
-
-    virtual int32_t SetLoudnessGain(float loudnessGain) { return 0; }
-
-    virtual int32_t SetMute(bool isMute) { return (isMute ? SUCCESS : ERROR); }
-
-    virtual int32_t SetDuckFactor(float duckFactor) { return 0; }
-
-    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, BoostTriggerMethod method)
+    virtual int32_t UpdateSpatializationState(bool spatializationEnabled, bool headTrackingEnabled) override
     {
         return 0;
     }
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOuputDevice) { return 0; }
+    virtual int32_t GetStreamManagerType() override { return 0; }
 
-    virtual int32_t SetSourceDuration(int64_t duration) { return 0; }
+    virtual int32_t SetSilentModeAndMixWithOthers(bool on) override { return 0; }
 
-    virtual int32_t SetOffloadDataCallbackState(int32_t state) { return 0; }
+    virtual int32_t SetClientVolume() override { return 0; }
 
-    virtual sptr<IRemoteObject> AsObject() { return nullptr; }
+    virtual int32_t SetLoudnessGain(float loudnessGain) override { return 0; }
+
+    virtual int32_t SetMute(bool isMute) override { return (isMute ? SUCCESS : ERROR); }
+
+    virtual int32_t SetDuckFactor(float duckFactor) override { return 0; }
+
+    virtual int32_t RegisterThreadPriority(pid_t tid, const std::string &bundleName, uint32_t method) override
+    {
+        return 0;
+    }
+
+    virtual int32_t SetDefaultOutputDevice(const int32_t defaultOuputDevice) override { return 0; }
+
+    virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
+
+    virtual int32_t SetOffloadDataCallbackState(int32_t state) override { return 0; }
+
+    virtual sptr<IRemoteObject> AsObject() override { return nullptr; }
+
+    virtual int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame) override { return SUCCESS; }
+
+    virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override { return 0; }
 };
 
 class AudioCapturerReadCallbackTest : public AudioCapturerReadCallback {
@@ -372,19 +385,18 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_007, TestSize.Level1
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
 
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
 
     bool mute = true;
-    auto ret = ptrRendererInClientInner->SetMute(mute);
+    auto ret = ptrRendererInClientInner->SetMute(mute, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(ret, SUCCESS);
 
     mute = false;
-    ret = ptrRendererInClientInner->SetMute(mute);
+    ret = ptrRendererInClientInner->SetMute(mute, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(ret, ERROR);
 }
 
@@ -1174,10 +1186,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_045, TestSize.Level1
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
 
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(1000000);
@@ -1213,10 +1224,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_046, TestSize.Level1
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
 
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(0);
@@ -1252,10 +1262,9 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_047, TestSize.Level1
 
     AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
     uint32_t totalSizeInFrame = 0;
-    uint32_t spanSizeInFrame = 0;
     uint32_t byteSizePerFrame = 0;
-    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBuffer>(bufferHolder, totalSizeInFrame,
-        spanSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
 
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_ = std::make_shared<BasicBufferInfo>().get();
     ptrRendererInClientInner->clientBuffer_->basicBufferInfo_->handlePos.store(0);
@@ -1557,6 +1566,75 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1
 
     auto ret = ptrRendererInClientInner->GetFastStatus();
     EXPECT_EQ(ret, FASTSTATUS_NORMAL);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_045
+ * @tc.desc  : Test RendererInClientInner SetSwitchInfoTimestamp function
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
+{
+    // prepare object
+    auto testRendererInClientObj =
+        std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
+    ASSERT_TRUE(testRendererInClientObj != nullptr);
+ 
+    // start test
+    std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
+    };
+    testRendererInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    EXPECT_EQ(testRendererInClientObj->lastFramePosAndTimePair_, testLastFramePosAndTimePair);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
+    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTimestampInfo_001
+ * @tc.desc  : Test RendererInClientInner GetAudioTimestampInfo.
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+
+    Timestamp timestamp;
+    ptrRendererInClientInner->state_ = State::RUNNING;
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 2000 bytes = 500 samples
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200); // 200 bytes = 50 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 450); // latency = 50, frameposition = 500 - 50 = 450
+    }
+    ptrRendererInClientInner->SetSpeed(2.0); // lastspeed = 1.0, speed = 2.0, lastFrameWritten = 50
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(800); // 800 bytes = 200 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
+    }
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 4000 bytes = 1000 samples
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 650); // latency = 350, frameposition = 1000-350 = 650
+    }
+    ptrRendererInClientInner->ResetFramePosition();
+    for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
+        ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
+            static_cast<Timestamp::Timestampbase>(i));
+        EXPECT_EQ(timestamp.framePosition, 0); // after flush
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

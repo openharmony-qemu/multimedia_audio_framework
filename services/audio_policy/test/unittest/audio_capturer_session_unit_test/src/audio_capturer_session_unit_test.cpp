@@ -520,5 +520,71 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_025, TestSize.Level1)
     audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
     EXPECT_EQ(audioCapturerSession->audioEcManager_.GetOpenedNormalSourceSessionId(), testSessionId);
 }
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_026
+ * @tc.desc  : Test ReloadSourceForDeviceChange() for valid source and device
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_026, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    uint32_t sessionId = 0;
+    SessionOperation operation = SESSION_OPERATION_START;
+    audioCapturerSession->ReloadCaptureSession(sessionId, operation);
+    EXPECT_NE(audioCapturerSession->ReloadCaptureSession(sessionId, operation), ERROR);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_027
+ * @tc.desc  : Test ReloadSourceForDeviceChange() for inputDeviceForReload default
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_027, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioDeviceDescriptor inputDevice;
+    inputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    AudioDeviceDescriptor outputDevice;
+    std::string caller = "testCase";
+
+    const uint64_t testSessionId = 99;
+    audioCapturerSession->audioEcManager_.isEcFeatureEnable_ = true;
+    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
+    audioCapturerSession->audioEcManager_.sessionIdUsedToOpenSource_ = testSessionId;
+    audioCapturerSession->inputDeviceForReload_.deviceType_ = DEVICE_TYPE_DEFAULT;
+
+    audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
+    EXPECT_EQ(audioCapturerSession->inputDeviceForReload_.deviceType_, DEVICE_TYPE_MIC);
+}
+
+/**
+ * @tc.name  : Test AudioCapturerSession.
+ * @tc.number: AudioCapturerSession_028
+ * @tc.desc  : Test ReloadSourceForDeviceChange() for inputDeviceForReload_ valid
+ */
+HWTEST(AudioCapturerSessionTest, AudioCapturerSession_028, TestSize.Level1)
+{
+    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
+    EXPECT_NE(audioCapturerSession, nullptr);
+
+    AudioDeviceDescriptor inputDevice;
+    inputDevice.deviceType_ = DEVICE_TYPE_MIC;
+    AudioDeviceDescriptor outputDevice;
+    std::string caller = "testCase";
+
+    const uint64_t testSessionId = 99;
+    audioCapturerSession->audioEcManager_.isEcFeatureEnable_ = true;
+    audioCapturerSession->audioEcManager_.normalSourceOpened_ = SOURCE_TYPE_MIC;
+    audioCapturerSession->audioEcManager_.sessionIdUsedToOpenSource_ = testSessionId;
+    audioCapturerSession->inputDeviceForReload_.deviceType_ = DEVICE_TYPE_MIC;
+
+    audioCapturerSession->ReloadSourceForDeviceChange(inputDevice, outputDevice, caller);
+    EXPECT_EQ(audioCapturerSession->inputDeviceForReload_.deviceType_, DEVICE_TYPE_MIC);
+}
 } // namespace AudioStandard
 } // namespace OHOS

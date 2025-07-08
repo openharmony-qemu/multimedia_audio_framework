@@ -42,6 +42,19 @@ public:
         DEVICE_INFO,
     };
 
+    class ClientInfo {
+    public:
+        bool hasBTPermission_ = false;
+        bool hasSystemPermission_ = false;
+        int32_t apiVersion_ = 0;
+
+        ClientInfo() = default;
+        ClientInfo(int32_t apiVersion)
+            : apiVersion_(apiVersion) {}
+        ClientInfo(bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion)
+            : hasBTPermission_(hasBTPermission), hasSystemPermission_(hasSystemPermission), apiVersion_(apiVersion) {}
+    };
+
     AudioDeviceDescriptor(int32_t descriptorType = AUDIO_DEVICE_DESCRIPTOR);
 
     AudioDeviceDescriptor(DeviceType type, DeviceRole role);
@@ -65,28 +78,13 @@ public:
 
     bool Marshalling(Parcel &parcel) const override;
 
-    bool Marshalling(Parcel &parcel, int32_t apiVersion) const;
+    void UnmarshallingSelf(Parcel &parcel);
 
-    bool MarshallingToDeviceDescriptor(Parcel &parcel, int32_t apiVersion) const;
-
-    bool MarshallingToDeviceInfo(Parcel &parcel) const;
-
-    bool Marshalling(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission, int32_t apiVersion) const;
-
-    bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
-        int32_t apiVersion) const;
-
-    void Unmarshalling(Parcel &parcel);
-
-    static std::shared_ptr<AudioDeviceDescriptor> UnmarshallingPtr(Parcel &parcel);
-
-    void UnmarshallingToDeviceDescriptor(Parcel &parcel);
-
-    void UnmarshallingToDeviceInfo(Parcel &parcel);
+    static AudioDeviceDescriptor *Unmarshalling(Parcel &parcel);
 
     void SetDeviceInfo(std::string deviceName, std::string macAddress);
 
-    void SetDeviceCapability(const DeviceStreamInfo &audioStreamInfo, int32_t channelMask,
+    void SetDeviceCapability(const std::list<DeviceStreamInfo> &audioStreamInfo, int32_t channelMask,
         int32_t channelIndexMasks = 0);
 
     bool IsSameDeviceDesc(const AudioDeviceDescriptor &deviceDescriptor) const;
@@ -100,6 +98,8 @@ public:
     bool IsDistributedSpeaker() const;
 
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
+
+    DeviceStreamInfo GetDeviceStreamInfo(void) const;
 
     void Dump(std::string &dumpString);
 
@@ -132,6 +132,16 @@ public:
         }
     };
 
+    void SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const;
+private:
+    static void FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
+        DeviceType &deviceType, int32_t &deviceId, std::list<DeviceStreamInfo> &streamInfo);
+
+    bool MarshallingInner(Parcel &parcel) const;
+
+    bool MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPermission, bool hasSystemPermission,
+        int32_t apiVersion) const;
+public:
     DeviceType deviceType_ = DEVICE_TYPE_NONE;
     DeviceRole deviceRole_ = DEVICE_ROLE_NONE;
     int32_t deviceId_ = 0;
@@ -144,7 +154,7 @@ public:
     std::string networkId_;
     uint16_t dmDeviceType_{0};
     std::string displayName_;
-    DeviceStreamInfo audioStreamInfo_ = {};
+    std::list<DeviceStreamInfo> audioStreamInfo_;
     DeviceCategory deviceCategory_ = CATEGORY_DEFAULT;
     ConnectState connectState_ = CONNECTED;
     // AudioDeviceDescriptor
@@ -163,6 +173,8 @@ public:
     bool spatializationSupported_ = false;
     bool hasPair_{false};
     RouterType routerType_ = ROUTER_TYPE_NONE;
+    bool isVrSupported_ = true;
+    mutable std::shared_ptr<ClientInfo> clientInfo_ = nullptr;
 
 private:
     bool IsOutput()

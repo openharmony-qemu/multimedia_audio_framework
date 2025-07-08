@@ -291,7 +291,7 @@ HWTEST(FastSystemStreamUnitTest, SetMute_001, TestSize.Level1)
     int32_t appUid = static_cast<int32_t>(getuid());
     std::shared_ptr<FastAudioStream> fastAudioStream;
     fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
-    int32_t res = fastAudioStream->SetMute(false);
+    int32_t res = fastAudioStream->SetMute(false, StateChangeCmdType::CMD_FROM_CLIENT);
     EXPECT_EQ(res, ERR_OPERATION_FAILED);
 }
 
@@ -591,6 +591,29 @@ HWTEST(FastSystemStreamUnitTest, InitializeAudioProcessConfig_001, TestSize.Leve
 }
 
 /**
+ * @tc.name  : Test InitializeAudioProcessConfig API
+ * @tc.type  : FUNC
+ * @tc.number: InitializeAudioProcessConfig_002
+ * @tc.desc  : Test InitializeAudioProcessConfig interface.
+ */
+HWTEST(FastSystemStreamUnitTest, InitializeAudioProcessConfig_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream;
+    fastAudioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    AudioRendererInfo rendererInfo;
+    rendererInfo.isVirtualKeyboard = true;
+    fastAudioStream->SetRendererInfo(rendererInfo);
+
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest InitializeAudioProcessConfig_002 start");
+    AudioProcessConfig config;
+    AudioStreamParams info;
+    auto result = fastAudioStream->InitializeAudioProcessConfig(config, info);
+    EXPECT_TRUE(config.rendererInfo.isVirtualKeyboard);
+    EXPECT_NE(result, ERR_INVALID_OPERATION);
+}
+
+/**
  * @tc.name  : Test GetState API
  * @tc.type  : FUNC
  * @tc.number: GetState_001
@@ -859,6 +882,34 @@ HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_001, TestSize.Level1)
 
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest ResetFirstFrameState_001 start");
     fastAudioStreamRenderCallback->ResetFirstFrameState();
+}
+
+/**
+ * @tc.name  : Test ResetFirstFrameState API
+ * @tc.type  : FUNC
+ * @tc.number: ResetFirstFrameState_002
+ * @tc.desc  : Test ResetFirstFrameState interface. - do nothing when spkProcClientCb_ is null
+ */
+HWTEST(FastSystemStreamUnitTest, ResetFirstFrameState_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    std::shared_ptr<AudioRendererWriteCallback> spkCallback = std::make_shared<AudioRendererWriteCallbackTest>();
+    AudioStreamParams tempParams = {};
+    auto audioStream = IAudioStream::GetRecordStream(IAudioStream::PA_STREAM, tempParams, STREAM_MUSIC, getpid());
+    auto spkProcClientCb = std::make_shared<FastAudioStreamRenderCallback>(spkCallback, *audioStream);
+    spkProcClientCb->hasFirstFrameWrited_.store(true);
+
+    fastAudioStream->spkProcClientCb_ = spkProcClientCb;
+    fastAudioStream->ResetFirstFrameState();
+
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->ResetFirstFrameState();
+    
+    EXPECT_EQ(spkProcClientCb->hasFirstFrameWrited_.load(), false);
 }
 
 /**

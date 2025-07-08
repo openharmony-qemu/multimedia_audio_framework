@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../config.gni")
 
-module_output_path = "multimedia_audio_framework/audio_engine"
+module_output_path = "audio_framework/audio_framework_engine"
 
 config("audio_engine_private_config") {
   visibility = [ ":*" ]
@@ -41,17 +41,15 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
     "-Werror",
     "-fno-access-control",
   ]
-  sources = [
-    "src/pro_audio_service_adapter_unit_test.cpp",
-  ]
+  sources = [ "src/pro_audio_service_adapter_unit_test.cpp" ]
 
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
     "../../:pulse_audio_service_adapter",
+    "../../../../../services/audio_engine:audio_engine_manager",
     "../../../audioutils:audio_utils",
     "../../../hdiadapter_new:hdiadapter_new",
-    "../../../../../services/audio_engine:audio_engine_manager",
   ]
 
   external_deps = [
@@ -70,6 +68,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
   include_dirs = [
     "../../include",
     "../../../../../interfaces/inner_api/native/audiocommon/include/",
+    "../../../../../frameworks/native/audioschedule/include",
     "../../../../../frameworks/native/audioutils/include",
     "../../../../../services/audio_service/server/include",
     "../../../../../services/audio_policy/common/include",
@@ -104,6 +103,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
 
   deps = [
     "../../:pulse_audio_service_adapter",
+    "../../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../services/audio_engine:audio_engine_manager",
     "../../../../../services/audio_service:audio_common",

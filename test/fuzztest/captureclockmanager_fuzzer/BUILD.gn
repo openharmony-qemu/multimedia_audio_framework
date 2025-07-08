@@ -24,6 +24,7 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../frameworks/native/audioutils/include",
+    "../../../frameworks/native/audioclock/include",
     "../../../services/audio_service/common/include/limiter/",
   ]
   cflags = [
@@ -38,11 +39,12 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
   sources = [ "capture_clock_manager_fuzzer.cpp" ]
 
   deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../frameworks/native/audioclock:audio_clock",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
-    "../../../frameworks/native/audioclock:audio_clock",
   ]
 
   external_deps = [
@@ -55,6 +57,7 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
     "background_task_mgr:bgtaskmgr_innerkits",
+    "bluetooth:btframework",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -80,8 +83,6 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "bluetooth:btframework"
-    
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
@@ -104,8 +105,6 @@ ohos_fuzztest("CaptureClockManagerFuzzTest") {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
   }
 }
-
-
 
 group("fuzztest") {
   testonly = true

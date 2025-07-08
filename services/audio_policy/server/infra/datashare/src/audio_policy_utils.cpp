@@ -23,7 +23,6 @@
 #include "parameters.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_policy_manager_factory.h"
@@ -88,6 +87,23 @@ void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
         Media::MediaMonitor::EventType::FAULT_EVENT);
     bean->Add("SERVICE_ID", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVICE_ID));
     bean->Add("ERROR_CODE", static_cast<int32_t>(Media::MediaMonitor::AUDIO_POLICY_SERVER));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void AudioPolicyUtils::WriteDeviceChangeExceptionEvent(const AudioStreamDeviceChangeReason reason,
+    DeviceType deviceType, DeviceRole deviceRole, int32_t errorMsg, const std::string &errorDesc)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::ModuleId::AUDIO, Media::MediaMonitor::EventId::DEVICE_CHANGE_EXCEPTION,
+        Media::MediaMonitor::EventType::FAULT_EVENT);
+
+    std::string fullErrorDesc = "DeviceRole:" + std::to_string(static_cast<uint32_t>(deviceRole)) +
+        ", errorDesc:" + errorDesc;
+    bean->Add("CHANGE", static_cast<int32_t>(reason));
+    bean->Add("DEVICE_TYPE", static_cast<int32_t>(deviceType));
+    bean->Add("ERROR_CASE", 0);
+    bean->Add("ERROR_MSG", errorMsg);
+    bean->Add("ERROR_DESCRIPTION", fullErrorDesc);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 

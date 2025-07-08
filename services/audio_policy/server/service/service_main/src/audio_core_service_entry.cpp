@@ -111,14 +111,25 @@ int32_t AudioCoreService::EventEntry::UpdateSessionOperation(uint32_t sessionId,
     }
 }
 
+int32_t AudioCoreService::EventEntry::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return AudioCapturerSession::GetInstance().ReloadCaptureSession(sessionId, operation);
+}
+
 std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t sessionId)
 {
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
 int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo, bool isReloadProcess)
 {
+    if (isReloadProcess) {
+        // Get process from reload does not require lock
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
 }
@@ -311,11 +322,11 @@ int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStream
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
-void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid)
+void AudioCoreService::EventEntry::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("[ADeviceEvent] withlock uid %{public}d", uid);
-    coreService_->RegisteredTrackerClientDied(uid);
+    coreService_->RegisteredTrackerClientDied(uid, pid);
 }
 
 bool AudioCoreService::EventEntry::ConnectServiceAdapter()

@@ -23,7 +23,6 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 
@@ -36,6 +35,7 @@
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
 #include "sle_audio_device_manager.h"
+#include "audio_pipe_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -52,7 +52,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpDeviceInfo(activeBTDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     } else if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
@@ -60,7 +60,7 @@ bool AudioActiveDevice::GetActiveA2dpDeviceStreamInfo(DeviceType deviceType, Aud
         if (audioA2dpDevice_.GetA2dpInDeviceInfo(activeBTInDevice_, info)) {
             streamInfo.samplingRate = *info.streamInfo.samplingRate.rbegin();
             streamInfo.format = info.streamInfo.format;
-            streamInfo.channels = *info.streamInfo.channels.rbegin();
+            streamInfo.channels = *info.streamInfo.GetChannels().rbegin();
             return true;
         }
     }
@@ -103,6 +103,7 @@ bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
+    AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveInputDevice_ = AudioDeviceDescriptor(desc);
 }
 
@@ -119,12 +120,6 @@ DeviceType AudioActiveDevice::GetCurrentInputDeviceType()
     return currentActiveInputDevice_.deviceType_;
 }
 
-void AudioActiveDevice::SetCurrentInputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curInputDevice_);
-    currentActiveInputDevice_.deviceType_ = deviceType;
-}
-
 std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);
@@ -134,13 +129,8 @@ std::string AudioActiveDevice::GetCurrentInputDeviceMacAddr()
 void AudioActiveDevice::SetCurrentOutputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curOutputDevice_);
+    AUDIO_INFO_LOG("Set as type: %{public}d id: %{public}d", desc.deviceType_, desc.deviceId_);
     currentActiveDevice_ = AudioDeviceDescriptor(desc);
-}
-
-void AudioActiveDevice::SetCurrentOutputDeviceType(DeviceType deviceType)
-{
-    std::lock_guard<std::mutex> lock(curOutputDevice_);
-    currentActiveDevice_.deviceType_ = deviceType;
 }
 
 const AudioDeviceDescriptor AudioActiveDevice::GetCurrentOutputDevice()
@@ -332,35 +322,6 @@ bool AudioActiveDevice::IsDeviceActive(DeviceType deviceType)
     return GetCurrentOutputDeviceType() == deviceType;
 }
 
-void AudioActiveDevice::UpdateInputDeviceInfo(DeviceType deviceType)
-{
-    DeviceType curType = GetCurrentInputDeviceType();
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-        case DEVICE_TYPE_SPEAKER:
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            curType = DEVICE_TYPE_MIC;
-            break;
-        case DEVICE_TYPE_FILE_SINK:
-            curType = DEVICE_TYPE_FILE_SOURCE;
-            break;
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            curType = DEVICE_TYPE_USB_HEADSET;
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-        case DEVICE_TYPE_USB_HEADSET:
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            curType = deviceType;
-            break;
-        default:
-            break;
-    }
-
-    SetCurrentInputDeviceType(curType);
-
-    AUDIO_INFO_LOG("Input device updated to %{public}d", curType);
-}
-
 int32_t AudioActiveDevice::SetDeviceActive(DeviceType deviceType, bool active, const int32_t uid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
@@ -461,5 +422,44 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the route for %{public}s", deviceTypesInfo.c_str());
 }
 
+bool AudioActiveDevice::IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs)
+{
+    for (auto &it : descs) {
+        CHECK_AND_RETURN_RET(!it->IsSameDeviceDesc(desc), true);
+    }
+    return false;
+}
+
+void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
+{
+    AUDIO_INFO_LOG("update for %{public}s", source.c_str());
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
+        AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
+    activeOutputDevices_.clear();
+    for (auto &desc :descs) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        AUDIO_INFO_LOG("session: %{public}d, uid %{public}d, usage:%{public}d devices:%{public}s",
+            desc->sessionId_, desc->callerUid_, desc->rendererInfo_.streamUsage,
+            desc->GetNewDevicesTypeString().c_str());
+        AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
+        streamTypeDeviceMap_[streamType] = desc->newDeviceDescs_.back();
+        streamUsageDeviceMap_[desc->rendererInfo_.streamUsage] = desc->newDeviceDescs_.front();
+        for (const auto &device : desc->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(!IsDeviceInVector(device, activeOutputDevices_));
+            activeOutputDevices_.push_back(device);
+        }
+    }
+
+    for (auto &pair : streamTypeDeviceMap_) {
+        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
+        streamTypeDeviceMap_[pair.first] = nullptr;
+    }
+
+    for (auto &pair : streamUsageDeviceMap_) {
+        CHECK_AND_CONTINUE(!IsDeviceInVector(pair.second, activeOutputDevices_));
+        streamUsageDeviceMap_[pair.first] = nullptr;
+    }
+}
 }
 }

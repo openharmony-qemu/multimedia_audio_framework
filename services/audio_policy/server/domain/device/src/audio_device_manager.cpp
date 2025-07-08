@@ -396,10 +396,11 @@ void AudioDeviceManager::AddCaptureDevices(const shared_ptr<AudioDeviceDescripto
         capturePrivacyDevices_);
     FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PUBLIC, INPUT_DEVICE, ALL_USAGE, "capture public device",
         capturePublicDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION, "capture recognition privacy device",
-        reconCapturePrivacyDevices_);
-    FillArrayWhenDeviceAttrMatch(devDesc, TYPE_NEGATIVE, INPUT_DEVICE, MEDIA, "capture media negative device",
-        reconCapturePrivacyDevices_);
+    if (devDesc->isVrSupported_ == true) {
+        AUDIO_INFO_LOG("Device supports recognition in");
+        FillArrayWhenDeviceAttrMatch(devDesc, TYPE_PRIVACY, INPUT_DEVICE, RECOGNITION,
+            "capture recognition privacy device", reconCapturePrivacyDevices_);
+    }
 }
 
 void AudioDeviceManager::HandleScoWithDefaultCategory(const shared_ptr<AudioDeviceDescriptor> &devDesc)

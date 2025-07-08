@@ -27,7 +27,7 @@ public:
     /**
      * Get buffer of client for AudioEndpoint.
     */
-    virtual std::shared_ptr<OHAudioBuffer> GetStreamBuffer() = 0;
+    virtual std::shared_ptr<OHAudioBufferBase> GetStreamBuffer() = 0;
 
     virtual AudioStreamInfo GetStreamInfo() = 0;
 
@@ -49,9 +49,13 @@ public:
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
+
+    virtual uint32_t GetSpanSizeInFrame() = 0;
+
+    virtual uint32_t GetByteSizePerFrame() = 0;
 
     virtual void EnableStandby();
 
@@ -67,6 +71,8 @@ public:
     virtual void AddNormalFrameSize() {}
     virtual void AddNoDataFrameSize() {}
     virtual StreamStatus GetStreamStatus() {return STREAM_IDEL;}
+    virtual int32_t SetAudioHapticsSyncId(int32_t audioHapticsSyncId) = 0;
+    virtual int32_t GetAudioHapticsSyncId() = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

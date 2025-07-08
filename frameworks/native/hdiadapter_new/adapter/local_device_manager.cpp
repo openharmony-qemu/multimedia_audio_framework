@@ -18,6 +18,7 @@
 #endif
 
 #include "adapter/local_device_manager.h"
+#include "manager/hdi_monitor.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -157,7 +158,7 @@ int32_t LocalDeviceManager::SetVoiceVolume(const std::string &adapterName, float
 }
 
 int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId, AudioScene scene)
+    int32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty() && devices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
         ERR_INVALID_PARAM, "invalid audio devices");
@@ -174,7 +175,7 @@ int32_t LocalDeviceManager::SetOutputRoute(const std::string &adapterName, const
     AudioRouteNode sinks[devices.size()];
     for (size_t i = 0; i < devices.size(); ++i) {
         sinks[i] = {};
-        int32_t ret = SetOutputPortPin(devices[i], sinks[i], scene);
+        int32_t ret = SetOutputPortPin(devices[i], sinks[i]);
         CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
         AUDIO_INFO_LOG("output[%{public}zu], device: %{public}d, pin: 0x%{public}X", i, devices[i],
             sinks[i].ext.device.type);
@@ -277,6 +278,8 @@ void *LocalDeviceManager::CreateRender(const std::string &adapterName, void *par
         &hdiRenderId);
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create render fail, id:" + std::to_string(hdiRenderId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -319,6 +322,8 @@ void *LocalDeviceManager::CreateCapture(const std::string &adapterName, void *pa
         &hdiCaptureId);
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create capture fail, id:" + std::to_string(hdiCaptureId)));
         UnloadAdapter(adapterName);
         return nullptr;
     }
@@ -366,6 +371,10 @@ void LocalDeviceManager::InitAudioManager(void)
     CHECK_AND_RETURN_LOG(audioManager_ == nullptr, "audio manager already inited");
     AUDIO_INFO_LOG("init audio manager");
     audioManager_ = IAudioManagerGet(false);
+    if (audioManager_ == nullptr) {
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, 0,
+            "get hdi manager fail");
+    }
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "get audio manager fail");
 
     CHECK_AND_RETURN_LOG(hdfRemoteService_ == nullptr, "hdf remote service already inited");
@@ -432,7 +441,7 @@ uint32_t LocalDeviceManager::GetPortId(const std::string &adapterName, enum Audi
     return portId;
 }
 
-int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink, AudioScene scene)
+int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
     int32_t ret = SUCCESS;
 
@@ -470,7 +479,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
              sink.ext.device.desc = (char *)"pin_out_hdmi";
              break;
         case DEVICE_TYPE_NEARLINK:
-            HandleNearlinkScene(sink, scene);
+            HandleNearlinkScene(outputDevice, sink);
             break;
         case DEVICE_TYPE_NONE:
             sink.ext.device.type = PIN_NONE;
@@ -484,14 +493,19 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
     return ret;
 }
 
-int32_t LocalDeviceManager::HandleNearlinkScene(AudioRouteNode &sink, AudioScene scene)
+int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node)
 {
-    if (scene != AUDIO_SCENE_DEFAULT) {
-        sink.ext.device.type = PIN_OUT_NEARLINK_SCO;
-        sink.ext.device.desc = (char *)"pin_out_nearlink_sco";
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
+        node.ext.device.type = PIN_OUT_NEARLINK_SCO;
+        node.ext.device.desc = (char *)"pin_out_nearlink_sco";
+        return SUCCESS;
+    }
+    if (deviceType == DEVICE_TYPE_NEARLINK) {
+        node.ext.device.type = PIN_OUT_NEARLINK;
+        node.ext.device.desc = (char *)"pin_out_nearlink";
     } else {
-        sink.ext.device.type = PIN_OUT_NEARLINK;
-        sink.ext.device.desc = (char *)"pin_out_nearlink";
+        node.ext.device.type = PIN_IN_NEARLINK;
+        node.ext.device.desc = (char *)"pin_in_nearlink";
     }
     return SUCCESS;
 }
@@ -533,8 +547,7 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             }
             break;
         case DEVICE_TYPE_NEARLINK_IN:
-            source.ext.device.type = PIN_IN_NEARLINK;
-            source.ext.device.desc = (char *)"pin_in_nearlink";
+            HandleNearlinkScene(inputDevice, source);
             break;
         default:
             ret = ERR_NOT_SUPPORTED;
@@ -557,6 +570,11 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
 void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
 {
     dmDeviceType_ = dmDeviceType;
+}
+
+void LocalDeviceManager::SetAudioScene(const AudioScene scene)
+{
+    currentAudioScene_.store(scene);
 }
 
 } // namespace AudioStandard

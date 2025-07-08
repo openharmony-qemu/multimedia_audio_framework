@@ -166,6 +166,10 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
         }
 #endif
     }
+
+    if (GetPreOutNum() == 0) {
+        mixerNode_->InitAudioLimiter();
+    }
     connectedProcessCluster_.erase(sceneType);
 }
 

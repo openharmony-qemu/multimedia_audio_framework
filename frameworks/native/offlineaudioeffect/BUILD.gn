@@ -61,6 +61,7 @@ if (!audio_framework_feature_offline_effect) {
     ]
 
     public_configs = [ ":offline_audio_effect_config" ]
+    configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
 
     version_script = "../../../audio_framework.versionscript"
     innerapi_tags = [ "platformsdk" ]

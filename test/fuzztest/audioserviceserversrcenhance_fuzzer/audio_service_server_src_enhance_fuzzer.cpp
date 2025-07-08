@@ -20,7 +20,6 @@
 #include "ipc_stream_stub.h"
 #include "ipc_stream_in_server.h"
 #include "none_mix_engine.h"
-#include "ipc_stream.h"
 #include "securec.h"
 #include "audio_errors.h"
 #include "audio_service_log.h"
@@ -185,93 +184,12 @@ void AudioNoneMixEngineMoreFuzzTest()
     noneMixEngine->GetDirectVoipSampleRate(samplingRate);
 }
 
-void AudioIpcStreamStubFuzzTest()
-{
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(IpcStream::GetDescriptor());
-    data.WriteBuffer(RAW_DATA, g_dataSize);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::vector<IpcStream::IpcStreamMsg> ipcStreamType = {
-        IpcStream::ON_REGISTER_STREAM_LISTENER,
-        IpcStream::ON_RESOLVE_BUFFER,
-        IpcStream::ON_UPDATE_POSITION,
-        IpcStream::ON_GET_AUDIO_SESSIONID,
-        IpcStream::ON_START,
-        IpcStream::ON_PAUSE,
-        IpcStream::ON_STOP,
-        IpcStream::ON_RELEASE,
-        IpcStream::ON_FLUSH,
-        IpcStream::ON_DRAIN,
-        IpcStream::ON_UPDATA_PLAYBACK_CAPTURER_CONFIG,
-        IpcStream::OH_GET_AUDIO_TIME,
-        IpcStream::OH_GET_AUDIO_POSITION,
-        IpcStream::ON_GET_LATENCY,
-        IpcStream::ON_SET_RATE,
-        IpcStream::ON_GET_RATE,
-    };
-    uint32_t sourceTypeInt = GetData<uint32_t>();
-    sourceTypeInt = sourceTypeInt % ipcStreamType.size();
-    IpcStream::IpcStreamMsg StreamType = ipcStreamType[sourceTypeInt];
-    ipcStream->OnRemoteRequest(StreamType, data, reply, option);
-}
-
-void AudioIpcStreamStubOnMiddleCodeFuzzTest()
-{
-    AudioProcessConfig config = InitProcessConfig();
-    int32_t ret = 0;
-    sptr<IpcStreamInServer> ipcStream = IpcStreamInServer::Create(config, ret);
-    if (ipcStream == nullptr) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(RAW_DATA, g_dataSize);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::vector<IpcStream::IpcStreamMsg> ipcStreamType = {
-        IpcStream::ON_SET_LOWPOWER_VOLUME,
-        IpcStream::ON_GET_LOWPOWER_VOLUME,
-        IpcStream::ON_SET_EFFECT_MODE,
-        IpcStream::ON_GET_EFFECT_MODE,
-        IpcStream::ON_SET_PRIVACY_TYPE,
-        IpcStream::ON_GET_PRIVACY_TYPE,
-        IpcStream::ON_SET_OFFLOAD_MODE,
-        IpcStream::ON_UNSET_OFFLOAD_MODE,
-        IpcStream::ON_GET_OFFLOAD_APPROXIMATELY_CACHE_TIME,
-        IpcStream::ON_UPDATE_SPATIALIZATION_STATE,
-        IpcStream::ON_GET_STREAM_MANAGER_TYPE,
-        IpcStream::ON_SET_SILENT_MODE_AND_MIX_WITH_OTHERS,
-        IpcStream::ON_SET_CLIENT_VOLUME,
-        IpcStream::ON_SET_MUTE,
-        IpcStream::ON_REGISTER_THREAD_PRIORITY,
-    };
-    uint32_t sourceTypeInt = GetData<uint32_t>();
-    sourceTypeInt = sourceTypeInt % ipcStreamType.size();
-    IpcStream::IpcStreamMsg StreamType = ipcStreamType[sourceTypeInt];
-    ipcStream->OnMiddleCodeRemoteRequest(StreamType, data, reply, option);
-}
-
 typedef void (*TestFuncs[5])();
 
 TestFuncs g_testFuncs = {
     AudioServiceMoreFuzzTest,
     AudioCapturerInServerMoreFuzzTest,
     AudioNoneMixEngineMoreFuzzTest,
-    AudioIpcStreamStubFuzzTest,
-    AudioIpcStreamStubOnMiddleCodeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

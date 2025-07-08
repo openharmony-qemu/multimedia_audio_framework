@@ -19,7 +19,9 @@
 #include "audio_info.h"
 #include "audio_policy_server.h"
 #include "audio_policy_service.h"
+#ifdef BLUETOOTH_PART_ENABLE
 #include "audio_bluetooth_manager.h"
+#endif
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
 #include "sink/i_audio_render_sink.h"

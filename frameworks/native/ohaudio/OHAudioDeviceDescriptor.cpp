@@ -201,7 +201,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceSampleRates(uint32_t **s
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
+    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->GetDeviceStreamInfo();
 
     uint32_t samplingRateSize = (uint32_t)audioStreamInfo.samplingRate.size();
     if (samplingRateSize == 0) {
@@ -223,15 +223,16 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceChannelCounts(uint32_t *
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
-    uint32_t channelsSize = (uint32_t)audioStreamInfo.channels.size();
+    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->GetDeviceStreamInfo();
+    std::set<AudioChannel> channelSet = audioStreamInfo.GetChannels();
+    uint32_t channelsSize = (uint32_t)channelSet.size();
     if (channelsSize == 0) {
         return AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM;
     }
     if (audioChannel_ == nullptr) {
         audioChannel_ = new uint32_t[channelsSize];
         int index = 0;
-        for (const auto channels : audioStreamInfo.channels) {
+        for (const auto channels : channelSet) {
             audioChannel_[index++] = static_cast<uint32_t>(channels);
         }
     }
@@ -254,7 +255,7 @@ OH_AudioCommon_Result OHAudioDeviceDescriptor::GetDeviceEncodingTypes(OH_AudioSt
 {
     CHECK_AND_RETURN_RET_LOG(audioDeviceDescriptor_ != nullptr, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM,
         "audioDeviceDescriptor_ is nullptr");
-    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->audioStreamInfo_;
+    DeviceStreamInfo audioStreamInfo = audioDeviceDescriptor_->GetDeviceStreamInfo();
     if (encodingType_ == nullptr) {
         encodingType_ = new OH_AudioStream_EncodingType[1];
         encodingType_[0] = (OH_AudioStream_EncodingType)audioStreamInfo.encoding;

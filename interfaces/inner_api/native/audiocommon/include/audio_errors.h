@@ -174,6 +174,9 @@ const int32_t ERR_AUDIO_STREAM_REGISTER_EXCEED_MAX = BASE_AUDIO_ERR_OFFSET - 37;
 /** stream register repeat */
 const int32_t ERR_AUDIO_STREAM_REGISTER_REPEAT = BASE_AUDIO_ERR_OFFSET - 38;
 
+/** pro streams do not support for setting loudness*/
+const int32_t ERR_PRO_STREAM_NOT_SUPPORTED = BASE_AUDIO_ERR_OFFSET - 39;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

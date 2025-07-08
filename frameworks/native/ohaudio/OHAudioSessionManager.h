@@ -46,6 +46,30 @@ private:
     OH_AudioSession_DeactivatedCallback callback_;
 };
 
+class OHAudioSessionStateCallback : public AudioSessionStateChangedCallback {
+public:
+    explicit OHAudioSessionStateCallback(OH_AudioSession_StateChangedCallback callback)
+        : callback_(callback)
+    {
+    }
+
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override;
+
+    OH_AudioSession_StateChangedCallback GetCallback()
+    {
+        return callback_;
+    }
+
+    ~OHAudioSessionStateCallback()
+    {
+        AUDIO_INFO_LOG("~OHAudioSessionStateCallback called.");
+        callback_ = nullptr;
+    }
+
+private:
+    OH_AudioSession_StateChangedCallback callback_;
+};
+
 class OHAudioSessionManager {
 public:
     ~OHAudioSessionManager();
@@ -68,12 +92,22 @@ public:
 
     OH_AudioCommon_Result UnsetAudioSessionCallback(OH_AudioSession_DeactivatedCallback callback);
 
+    OH_AudioCommon_Result SetAudioSessionScene(AudioSessionScene sene);
+    OH_AudioCommon_Result SetAudioSessionStateChangeCallback(OH_AudioSession_StateChangedCallback callback);
+    OH_AudioCommon_Result UnsetAudioSessionStateChangeCallback(OH_AudioSession_StateChangedCallback callback);
+    OH_AudioCommon_Result SetDefaultOutputDevice(DeviceType deviceType);
+    OH_AudioCommon_Result GetDefaultOutputDevice(DeviceType &deviceType);
+
 private:
     OHAudioSessionManager();
     
     static OHAudioSessionManager *ohAudioSessionManager_;
 
     AudioSessionManager *audioSessionManager_ = AudioSessionManager::GetInstance();
+
+    std::map<OH_AudioSession_StateChangedCallback,
+        std::shared_ptr<OHAudioSessionStateCallback>> sessionStateCallbacks_;
+    std::mutex sessionStateCbMutex_;
 };
 
 OHAudioSessionManager* OHAudioSessionManager::ohAudioSessionManager_ = nullptr;

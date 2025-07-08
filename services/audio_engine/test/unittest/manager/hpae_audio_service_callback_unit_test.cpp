@@ -27,6 +27,11 @@ void HpaeAudioServiceCallbackUnitTest::OnCloseAudioPortCb(int32_t result)
 {
     closeAudioPortResult_ = result;
 }
+
+void HpaeAudioServiceCallbackUnitTest::OnReloadAudioPortCb(int32_t portId)
+{
+    portId_ = portId;
+}
  
 void HpaeAudioServiceCallbackUnitTest::OnSetSinkMuteCb(int32_t result)
 {

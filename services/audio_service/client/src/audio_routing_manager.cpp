@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_errors.h"
-#include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_common_log.h"
 #include "iservice_registry.h"

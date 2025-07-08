@@ -52,6 +52,7 @@ ohos_shared_library("hdiadapter_new") {
     "adapter/local_device_manager.cpp",
     "manager/hdi_adapter_factory.cpp",
     "manager/hdi_adapter_manager.cpp",
+    "manager/hdi_monitor.cpp",
     "sink/audio_render_sink.cpp",
     "sink/bluetooth_audio_render_sink.cpp",
     "sink/direct_audio_render_sink.cpp",
@@ -105,6 +106,7 @@ ohos_shared_library("hdiadapter_new") {
       "adapter/remote_device_manager.cpp",
       "sink/remote_audio_render_sink.cpp",
       "sink/remote_fast_audio_render_sink.cpp",
+      "sink/remote_offload_audio_render_sink.cpp",
       "source/remote_audio_capture_source.cpp",
       "source/remote_fast_audio_capture_source.cpp",
     ]
@@ -124,6 +126,36 @@ ohos_shared_library("hdiadapter_new") {
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libhdiadapter_new.versionscript"
+}
+
+ohos_executable("hdi_monitor_test") {
+  install_enable = false
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+    boundary_sanitize = true
+  }
+
+  include_dirs = [
+    "include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../frameworks/native/hdiadapter_new/include/sink",
+  ]
+
+  sources = [ "test/unittest/hdi_monitor_test.cpp" ]
+
+  deps = [ ":hdiadapter_new" ]
+  part_name = "audio_framework"
+  subsystem_name = "multimedia"
 }
 
 ohos_unittest("hdiadapter_unit_test") {
@@ -154,6 +186,7 @@ ohos_unittest("hdiadapter_unit_test") {
     "test/unittest/sink/offload_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/remote_audio_render_sink_unit_test.cpp",
     "test/unittest/sink/remote_fast_audio_render_sink_unit_test.cpp",
+    "test/unittest/sink/remote_offload_audio_render_sink_unit_test.cpp",
     "test/unittest/source/audio_capture_source_unit_test.cpp",
     "test/unittest/source/bluetooth_audio_capture_source_unit_test.cpp",
     "test/unittest/source/fast_audio_capture_source_unit_test.cpp",

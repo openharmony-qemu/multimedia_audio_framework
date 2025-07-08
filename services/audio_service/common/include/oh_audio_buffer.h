@@ -18,15 +18,23 @@
 
 #include <atomic>
 #include <string>
+#include <type_traits>
+#include <optional>
 
 #include "message_parcel.h"
 
 #include "audio_info.h"
+#include "ring_buffer_wrapper.h"
 #include "audio_shared_memory.h"
+#include "futex_tool.h"
 
 namespace OHOS {
 namespace AudioStandard {
 const size_t BASIC_SYNC_INFO_SIZE = 8; // sizeof(uint32_t) * 2
+static constexpr int INVALID_BUFFER_FD = -1;
+static constexpr int INVALID_FD = -1;
+using OnIndexChange = std::function<bool(void)>;
+
 // client or server.
 enum AudioBufferHolder : uint32_t {
     // normal stream, Client buffer created when readFromParcel
@@ -63,7 +71,6 @@ enum StreamStatus : uint32_t {
  */
 struct BasicBufferInfo {
     uint32_t totalSizeInFrame;
-    uint32_t spanSizeInFrame;
     uint32_t byteSizePerFrame;
 
     std::atomic<uint32_t> futexObj;
@@ -91,6 +98,8 @@ struct BasicBufferInfo {
 
     RestoreInfo restoreInfo;
 };
+static_assert(std::is_standard_layout<BasicBufferInfo>::value == true, "is not standard layout!");
+static_assert(std::is_trivially_copyable<BasicBufferInfo>::value == true, "is not trivially copyable!");
 
 enum SpanStatus : uint32_t {
     SPAN_IDEL = 0,
@@ -118,9 +127,154 @@ struct SpanInfo {
     int32_t volumeEnd;
 };
 
-class OHAudioBuffer {
+class OHAudioBufferBase : public Parcelable {
 public:
-    static const int INVALID_BUFFER_FD = -1;
+    friend class OHAudioBuffer;
+
+    struct InitializationInfo {
+        AudioBufferHolder bufferHolder;
+        uint32_t totalSizeInFrame;
+        uint32_t byteSizePerFrame;
+        int dataFd;
+        int infoFd;
+    };
+
+    OHAudioBufferBase(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t byteSizePerFrame);
+
+    // create OHAudioBufferBase locally or remotely
+    static std::shared_ptr<OHAudioBufferBase> CreateFromLocal(uint32_t totalSizeInFrame,
+        uint32_t byteSizePerFrame);
+    static std::shared_ptr<OHAudioBufferBase> CreateFromRemote(uint32_t totalSizeInFrame,
+        uint32_t byteSizePerFrame, AudioBufferHolder holder, int dataFd, int infoFd = INVALID_BUFFER_FD);
+
+    // for ipc.
+    static int32_t WriteToParcel(const std::shared_ptr<OHAudioBufferBase> &buffer, MessageParcel &parcel);
+    static std::shared_ptr<OHAudioBufferBase> ReadFromParcel(MessageParcel &parcel);
+
+    // idl
+    bool Marshalling(Parcel &parcel) const override;
+    static OHAudioBufferBase *Unmarshalling(Parcel &parcel);
+
+    uint32_t GetSessionId();
+    int32_t SetSessionId(uint32_t sessionId);
+
+    AudioBufferHolder GetBufferHolder();
+
+    int32_t GetSizeParameter(uint32_t &totalSizeInFrame, uint32_t &byteSizePerFrame);
+    uint32_t GetTotalSizeInFrame();
+
+    std::atomic<StreamStatus> *GetStreamStatus();
+
+    uint32_t GetUnderrunCount();
+
+    bool SetUnderrunCount(uint32_t count);
+
+    bool GetHandleInfo(uint64_t &frames, int64_t &nanoTime);
+
+    void SetHandleInfo(uint64_t frames, int64_t nanoTime);
+
+    float GetStreamVolume();
+    bool SetStreamVolume(float streamVolume);
+
+    float GetDuckFactor();
+    bool SetDuckFactor(float duckFactor);
+
+    float GetMuteFactor();
+    bool SetMuteFactor(float muteFactor);
+
+    // hdi use one span as one frame
+    uint32_t GetSyncWriteFrame();
+    bool SetSyncWriteFrame(uint32_t writeFrame);
+    uint32_t GetSyncReadFrame();
+    bool SetSyncReadFrame(uint32_t readFrame);
+
+    int32_t GetWritableDataFrames();
+    int32_t GetReadableDataFrames();
+
+    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
+
+    uint64_t GetCurWriteFrame();
+    uint64_t GetCurReadFrame();
+    uint64_t GetBasePosInFrame();
+
+    int32_t SetCurWriteFrame(uint64_t writeFrame);
+    int32_t SetCurReadFrame(uint64_t readFrame);
+
+    int32_t GetBufferByOffset(size_t offset, size_t dataLength, RingBufferWrapper &buffer);
+    int32_t TryGetContinuousBufferByOffset(size_t offset, size_t dataLength, BufferDesc &bufferDesc);
+
+    int32_t GetBufferByFrame(uint64_t beginPosInFrame, uint64_t sizeInFrame, RingBufferWrapper &buffer);
+
+    int32_t GetOffsetByFrame(uint64_t posInFrame, size_t &offset);
+    int32_t GetOffsetByFrameForWrite(uint64_t writePosInFrame, size_t &offset);
+    int32_t GetOffsetByFrameForRead(uint64_t readPosInFrame, size_t &offset);
+
+    int32_t GetAllWritableBufferFromPosFrame(uint64_t writePosInFrame, RingBufferWrapper &buffer);
+    int32_t GetAllReadableBufferFromPosFrame(uint64_t readPosInFrame, RingBufferWrapper &buffer);
+
+    int32_t GetAllWritableBuffer(RingBufferWrapper &buffer);
+    int32_t GetAllReadableBuffer(RingBufferWrapper &buffer);
+
+    int64_t GetLastWrittenTime();
+    void SetLastWrittenTime(int64_t time);
+
+    std::atomic<uint32_t> *GetFutex();
+    uint8_t *GetDataBase();
+    size_t GetDataSize();
+    RestoreStatus CheckRestoreStatus();
+    RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus);
+    void GetRestoreInfo(RestoreInfo &restoreInfo);
+    void SetRestoreInfo(RestoreInfo restoreInfo);
+
+    void GetTimeStampInfo(uint64_t &position, uint64_t &timeStamp);
+    void SetTimeStampInfo(uint64_t position, uint64_t timeStamp);
+
+    void SetStopFlag(bool isNeedStop);
+    bool GetStopFlag() const;
+
+    FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+private:
+    int32_t SizeCheck();
+
+    int32_t Init(int dataFd, int infoFd, size_t statusInfoExtSize);
+
+    void* GetStatusInfoExtPtr();
+
+    InitializationInfo GetInitializationInfo();
+
+    void InitBasicBufferInfo();
+
+    void WakeFutexIfNeed();
+
+    uint32_t sessionId_ = 0;
+
+    AudioBufferHolder bufferHolder_;
+
+    uint32_t totalSizeInFrame_;
+    uint32_t byteSizePerFrame_;
+
+    // available only in single process
+    int64_t lastWrittenTime_ = 0;
+
+    // calculated in advance
+    size_t totalSizeInByte_ = 0;
+
+    // for render or capturer
+    AudioMode audioMode_;
+
+     // for StatusInfo buffer
+    mutable std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
+    BasicBufferInfo *basicBufferInfo_ = nullptr;
+
+    // for audio data buffer
+    mutable std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
+    uint8_t *dataBase_ = nullptr;
+    volatile uint32_t *syncReadFrame_ = nullptr;
+    volatile uint32_t *syncWriteFrame_ = nullptr;
+};
+
+class OHAudioBuffer : public Parcelable {
+public:
     OHAudioBuffer(AudioBufferHolder bufferHolder, uint32_t totalSizeInFrame, uint32_t spanSizeInFrame,
         uint32_t byteSizePerFrame);
     ~OHAudioBuffer();
@@ -134,6 +288,10 @@ public:
     // for ipc.
     static int32_t WriteToParcel(const std::shared_ptr<OHAudioBuffer> &buffer, MessageParcel &parcel);
     static std::shared_ptr<OHAudioBuffer> ReadFromParcel(MessageParcel &parcel);
+
+    // idl
+    bool Marshalling(Parcel &parcel) const override;
+    static OHAudioBuffer *Unmarshalling(Parcel &parcel);
 
     AudioBufferHolder GetBufferHolder();
 
@@ -158,7 +316,7 @@ public:
     float GetMuteFactor();
     bool SetMuteFactor(float muteFactor);
 
-    int32_t GetAvailableDataFrames();
+    int32_t GetWritableDataFrames();
 
     int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
 
@@ -174,8 +332,6 @@ public:
     int32_t GetWriteBuffer(uint64_t writePosInFrame, BufferDesc &bufferDesc);
 
     int32_t GetReadbuffer(uint64_t readPosInFrame, BufferDesc &bufferDesc);
-
-    int32_t GetBufferByFrame(uint64_t posInFrame, BufferDesc &bufferDesc);
 
     SpanInfo *GetSpanInfo(uint64_t posInFrame);
     SpanInfo *GetSpanInfoByIndex(uint32_t spanIndex);
@@ -205,38 +361,31 @@ public:
     void SetStopFlag(bool isNeedStop);
     bool GetStopFlag() const;
 
+    FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
 private:
     int32_t Init(int dataFd, int infoFd);
     int32_t SizeCheck();
-    void InitBasicBufferInfo();
 
-    uint32_t sessionId_ = 0;
-    AudioBufferHolder bufferHolder_;
-    uint32_t totalSizeInFrame_;
-    uint32_t spanSizeInFrame_;
-    uint32_t byteSizePerFrame_;
+    bool CheckWriteOrReadFrame(uint64_t writeOrReadFrame);
 
-    // available only in single process
-    int64_t lastWrittenTime_ = 0;
+    mutable OHAudioBufferBase ohAudioBufferBase_;
 
-    // calculated in advance
-    size_t totalSizeInByte_ = 0;
-    size_t spanSizeInByte_ = 0;
-    uint32_t spanConut_ = 0;
+    struct SpanBasicInfo {
+        SpanBasicInfo(uint32_t spanSizeInFrame, uint32_t totalSizeInFrame,
+            uint32_t byteSizePerFrame) : spanSizeInFrame_(spanSizeInFrame),
+            spanSizeInByte_(spanSizeInFrame * byteSizePerFrame),
+            spanConut_(spanSizeInFrame == 0 ? 0 : totalSizeInFrame / spanSizeInFrame)
+        {}
 
-    // for render or capturer
-    AudioMode audioMode_;
+        int32_t SizeCheck(uint32_t totalSizeInFrame) const;
+        uint32_t spanSizeInFrame_;
+        size_t spanSizeInByte_;
+        uint32_t spanConut_;
+    };
+    SpanBasicInfo spanBasicInfo_;
 
-    // for StatusInfo buffer
-    std::shared_ptr<AudioSharedMemory> statusInfoMem_ = nullptr;
-    BasicBufferInfo *basicBufferInfo_ = nullptr;
     SpanInfo *spanInfoList_ = nullptr;
-
-    // for audio data buffer
-    std::shared_ptr<AudioSharedMemory> dataMem_ = nullptr;
-    uint8_t *dataBase_ = nullptr;
-    volatile uint32_t *syncReadFrame_ = nullptr;
-    volatile uint32_t *syncWriteFrame_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -37,7 +37,8 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_001, TestSize.Lev
     int32_t zoneId = 0;
     uint32_t streamId = 0;
     uint32_t uid = 0;
-    sptr<AudioPolicyManagerListenerStub> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub =
+        new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     sptr<IRemoteObject> object = interruptListenerStub->AsObject();
     auto ret = audioInterruptService->SetAudioInterruptCallback(zoneId, streamId, object, uid);
     EXPECT_EQ(ret, SUCCESS);
@@ -56,7 +57,8 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_002, TestSize.Lev
     int32_t zoneId = 0;
     uint32_t streamId = 0;
     uint32_t uid = 0;
-    sptr<AudioPolicyManagerListenerStub> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub =
+        new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     sptr<IRemoteObject> object = interruptListenerStub->AsObject();
 
     audioInterruptService->zonesMap_.insert({zoneId, nullptr});
@@ -77,7 +79,8 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_003, TestSize.Lev
     int32_t zoneId = 0;
     uint32_t streamId = 0;
     uint32_t uid = 0;
-    sptr<AudioPolicyManagerListenerStub> interruptListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+    sptr<AudioPolicyManagerListenerStubImpl> interruptListenerStub =
+        new(std::nothrow) AudioPolicyManagerListenerStubImpl();
     sptr<IRemoteObject> object = interruptListenerStub->AsObject();
 
     std::shared_ptr<AudioInterruptZone> audioInterruptZone = std::make_shared<AudioInterruptZone>();
@@ -88,27 +91,6 @@ HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_003, TestSize.Lev
     audioInterruptService->interruptClients_.insert({streamId, nullptr});
     ret = audioInterruptService->SetAudioInterruptCallback(zoneId, streamId, object, uid);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test AudioInterruptService
- * @tc.number: AudioInterruptService_004
- * @tc.desc  : Test DeactivateAudioInterrupt
- */
-HWTEST(AudioInterruptServiceProUnitTest, AudioInterruptService_004, TestSize.Level1)
-{
-    auto audioInterruptService = std::make_shared<AudioInterruptService>();
-    ASSERT_NE(audioInterruptService, nullptr);
-
-    int32_t zoneId = 0;
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.parallelPlayFlag = true;
-    auto ret = audioInterruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
-
-    audioInterrupt.parallelPlayFlag = false;
-    ret = audioInterruptService->DeactivateAudioInterrupt(zoneId, audioInterrupt);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

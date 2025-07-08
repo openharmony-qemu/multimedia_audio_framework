@@ -18,6 +18,7 @@
 #endif
 
 #include "adapter/remote_device_manager.h"
+#include "manager/hdi_monitor.h"
 #include "audio_hdi_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
@@ -170,7 +171,7 @@ int32_t RemoteDeviceManager::SetVoiceVolume(const std::string &adapterName, floa
 }
 
 int32_t RemoteDeviceManager::SetOutputRoute(const std::string &adapterName, const std::vector<DeviceType> &devices,
-    int32_t streamId, AudioScene scene)
+    int32_t streamId)
 {
     CHECK_AND_RETURN_RET_LOG(!devices.empty(), ERR_INVALID_PARAM, "invalid audio devices");
     DeviceType device = devices[0];
@@ -321,6 +322,8 @@ void *RemoteDeviceManager::CreateRender(const std::string &adapterName, void *pa
     if (ret != SUCCESS || render == nullptr) {
         AUDIO_ERR_LOG("create render fail");
         wrapper->isValid_ = false;
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create render fail, id:" + std::to_string(hdiRenderId)));
         return nullptr;
     }
     IAudioRender *rawRender = render.GetRefPtr();
@@ -371,6 +374,8 @@ void *RemoteDeviceManager::CreateCapture(const std::string &adapterName, void *p
     if (ret != SUCCESS || capture == nullptr) {
         AUDIO_ERR_LOG("create capture fail");
         wrapper->isValid_ = false;
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " create capture fail, id:" + std::to_string(hdiCaptureId)));
         return nullptr;
     }
     IAudioCapture *rawCapture = capture.GetRefPtr();
@@ -420,6 +425,10 @@ void RemoteDeviceManager::InitAudioManager(void)
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     AUDIO_INFO_LOG("init audio manager");
     audioManager_ = IAudioManager::Get("daudio_primary_service", false);
+    if (audioManager_ == nullptr) {
+        HdiMonitor::ReportHdiException(HdiType::REMOTE, ErrorCase::CALL_HDI_FAILED, 0,
+            "get hdi manager fail");
+    }
     CHECK_AND_RETURN_LOG(audioManager_ != nullptr, "get audio manager fail");
 
     AUDIO_INFO_LOG("init audio manager succ");
@@ -609,5 +618,9 @@ void RemoteDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
     AUDIO_INFO_LOG("not support");
 }
 
+void RemoteDeviceManager::SetAudioScene(const AudioScene scene)
+{
+    AUDIO_INFO_LOG("not support");
+}
 } // namespace AudioStandard
 } // namespace OHOS

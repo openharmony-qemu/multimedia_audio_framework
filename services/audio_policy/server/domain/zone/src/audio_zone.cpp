@@ -15,6 +15,7 @@
 #undef LOG_TAG
 #define LOG_TAG "AudioZone"
 
+#include "audio_info.h"
 #include "audio_zone.h"
 #include "audio_log.h"
 #include "audio_errors.h"
@@ -52,6 +53,15 @@ AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag, co
 {
 }
 
+AudioZoneBindKey::AudioZoneBindKey(int32_t uid, const std::string &deviceTag, const std::string &streamTag,
+    const StreamUsage &usage)
+    : uid_(uid),
+      deviceTag_(deviceTag),
+      streamTag_(streamTag),
+      usage_(usage)
+{
+}
+
 AudioZoneBindKey::AudioZoneBindKey(const AudioZoneBindKey &other)
 {
     Assign(other);
@@ -78,7 +88,8 @@ bool AudioZoneBindKey::operator==(const AudioZoneBindKey &other) const
 {
     return this->uid_ == other.uid_ &&
         this->deviceTag_ == other.deviceTag_ &&
-        this->streamTag_ == other.streamTag_;
+        this->streamTag_ == other.streamTag_ &&
+        this->usage_ == other.usage_;
 }
 
 bool AudioZoneBindKey::operator!=(const AudioZoneBindKey &other) const
@@ -91,6 +102,7 @@ void AudioZoneBindKey::Assign(const AudioZoneBindKey &other)
     this->uid_ = other.uid_;
     this->deviceTag_ = other.deviceTag_;
     this->streamTag_ = other.streamTag_;
+    this->usage_ = other.usage_;
 }
 
 void AudioZoneBindKey::Swap(AudioZoneBindKey &&other)
@@ -98,6 +110,7 @@ void AudioZoneBindKey::Swap(AudioZoneBindKey &&other)
     this->uid_ = other.uid_;
     this->deviceTag_ = other.deviceTag_;
     this->streamTag_ = std::move(other.streamTag_);
+    this->usage_ = other.usage_;
 }
 
 int32_t AudioZoneBindKey::GetUid() const
@@ -113,6 +126,8 @@ const std::string AudioZoneBindKey::GetString() const
     str += deviceTag_;
     str += ",streamTag=";
     str += streamTag_;
+    str += ",usage_=";
+    str += std::to_string(usage_);
     return str;
 }
 
@@ -135,10 +150,10 @@ bool AudioZoneBindKey::IsContain(const AudioZoneBindKey &other) const
 }
 
 const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid, const std::string &deviceTag,
-    const std::string &streamTag)
+    const std::string &streamTag, const StreamUsage &usage)
 {
     std::vector<AudioZoneBindKey> keys;
-    keys.push_back(AudioZoneBindKey(uid, deviceTag, streamTag));
+    keys.push_back(AudioZoneBindKey(uid, deviceTag, streamTag, StreamUsage::STREAM_USAGE_INVALID));
     auto pushBack = [&keys](const AudioZoneBindKey &temp) {
         for (auto &key : keys) {
             CHECK_AND_RETURN(key != temp);
@@ -148,6 +163,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     pushBack(AudioZoneBindKey(uid, "", streamTag));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));
+    pushBack(AudioZoneBindKey(INVALID_ZONEID, "", "", usage));
     return keys;
 }
 
@@ -156,7 +172,8 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(const Audio
     int32_t uid = key.uid_;
     std::string deviceTag = key.deviceTag_;
     std::string streamTag = key.streamTag_;
-    return GetSupportKeys(uid, deviceTag, streamTag);
+    StreamUsage usage = key.usage_;
+    return GetSupportKeys(uid, deviceTag, streamTag, usage);
 }
 
 AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
@@ -170,6 +187,12 @@ AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
 int32_t AudioZone::GetId()
 {
     return zoneId_;
+}
+
+bool AudioZone::IsVolumeProxyEnable()
+{
+    std::lock_guard<std::mutex> lock(zoneMutex_);
+    return isVolumeProxyEnabled_;
 }
 
 const std::shared_ptr<AudioZoneDescriptor> AudioZone::GetDescriptor()

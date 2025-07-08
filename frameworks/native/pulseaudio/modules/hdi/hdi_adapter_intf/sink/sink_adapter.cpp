@@ -84,18 +84,17 @@ int32_t SinkAdapterInit(struct SinkAdapter *adapter, const struct SinkAdapterAtt
         return SUCCESS;
     }
 
-    IAudioSinkAttr sinkAttr = {
-        .adapterName = attr->adapterName,
-        .openMicSpeaker = attr->openMicSpeaker,
-        .format = static_cast<AudioSampleFormat>(attr->format),
-        .sampleRate = attr->sampleRate,
-        .channel = attr->channel,
-        .volume = attr->volume,
-        .deviceNetworkId = attr->deviceNetworkId,
-        .deviceType = attr->deviceType,
-        .channelLayout = attr->channelLayout,
-        .aux = attr->aux,
-    };
+    IAudioSinkAttr sinkAttr = {};
+    sinkAttr.adapterName = attr->adapterName;
+    sinkAttr.openMicSpeaker = attr->openMicSpeaker;
+    sinkAttr.format = static_cast<AudioSampleFormat>(attr->format);
+    sinkAttr.sampleRate = attr->sampleRate;
+    sinkAttr.channel = attr->channel;
+    sinkAttr.volume = attr->volume;
+    sinkAttr.deviceNetworkId = attr->deviceNetworkId;
+    sinkAttr.deviceType = attr->deviceType;
+    sinkAttr.channelLayout = attr->channelLayout;
+    sinkAttr.aux = attr->aux;
 
     return sink->Init(sinkAttr);
 }

@@ -22,26 +22,22 @@
 #include "audio_errors.h"
 #include "audio_system_manager.h"
 
-#include "audio_manager_proxy.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_process_proxy.h"
 #include "audio_process_in_client.h"
 #include "fast_audio_stream.h"
 #include "audio_endpoint_private.h"
+#include "pro_renderer_stream_impl.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-std::unique_ptr<AudioManagerProxy> audioManagerProxy;
 std::shared_ptr<AudioProcessInClient> processClient_;
 std::shared_ptr<FastAudioStream> fastAudioStream_;
-const int32_t TEST_RET_NUM = 0;
 const int32_t RENDERER_FLAGS = 0;
 #ifdef HAS_FEATURE_INNERCAPTURER
 const int32_t MEDIA_SERVICE_UID = 1013;
 #endif
-constexpr int32_t ERROR_62980101 = -62980101;
 
 static const uint32_t NORMAL_ENDPOINT_RELEASE_DELAY_TIME_MS = 3000; // 3s
 static const uint32_t A2DP_ENDPOINT_RELEASE_DELAY_TIME = 3000; // 3s
@@ -81,167 +77,6 @@ void AudioServiceUnitTest::TearDown(void)
 {
     // input testcase teardown step，teardown invoked after each testcases
 }
-
-/**
- * @tc.name  : Test AudioProcessProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioProcessProxy_001
- * @tc.desc  : Test AudioProcessProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioProcessProxy_001, TestSize.Level1)
-{
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    EXPECT_NE(nullptr, object);
-    std::unique_ptr<AudioProcessProxy> audioProcessProxy = std::make_unique<AudioProcessProxy>(object);
-
-    int32_t ret = -1;
-    std::shared_ptr<OHAudioBuffer> buffer;
-    uint32_t spanSizeInFrame = 1000;
-    uint32_t totalSizeInFrame = spanSizeInFrame - 1;
-    uint32_t byteSizePerFrame = 1000;
-    buffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-
-    ret=audioProcessProxy->ResolveBuffer(buffer);
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Start();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    bool isFlush = true;
-    ret = audioProcessProxy->Pause(isFlush);
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Resume();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->Stop();
-    EXPECT_LT(ret, TEST_RET_NUM);
-
-    ret = audioProcessProxy->RequestHandleInfo();
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioProcessProxy->Release();
-    EXPECT_LT(ret, TEST_RET_NUM);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_001
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_001, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    EXPECT_NE(nullptr, samgr);
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID);
-    EXPECT_NE(nullptr, object);
-
-    audioManagerProxy = std::make_unique<AudioManagerProxy>(object);
-
-    bool isMute = true;
-    ret = audioManagerProxy->SetMicrophoneMute(isMute);
-    if (ret == ERR_PERMISSION_DENIED) {
-        return ;
-    }
-    EXPECT_EQ(ret, SUCCESS);
-
-    ret = audioManagerProxy->RegiestPolicyProvider(object);
-    EXPECT_EQ(SUCCESS, ret);
-
-    EXPECT_TRUE(ret == ERROR_62980101 || ret == SUCCESS);
-
-    bool result = audioManagerProxy->CreatePlaybackCapturerManager();
-    EXPECT_EQ(result, true);
-
-    int32_t deviceType = 1;
-    std::string sinkName = "test";
-    audioManagerProxy->SetOutputDeviceSink(deviceType, sinkName);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_002
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_002, TestSize.Level1)
-{
-    int32_t ret = -1;
-
-    float volume = 0.1;
-    ret = audioManagerProxy->SetVoiceVolume(volume);
-
-    const std::string networkId = "LocalDevice";
-    const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
-    int32_t groupId = 0;
-    std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
-        + std::to_string(volumeType) + ";";
-    std::string value = std::to_string(volume);
-    audioManagerProxy->SetAudioParameter(networkId, key, condition, value);
-    const std::string retStr = audioManagerProxy->GetAudioParameter(networkId, key, condition);
-    EXPECT_NE(retStr, value);
-
-    bool connected = true;
-    audioManagerProxy->NotifyDeviceInfo(networkId, connected);
-    ret = audioManagerProxy->CheckRemoteDeviceState(networkId, DeviceRole::OUTPUT_DEVICE, true);
-    EXPECT_LT(ret, TEST_RET_NUM);
-}
-
-/**
- * @tc.name  : Test AudioManagerProxy API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerProxy_004
- * @tc.desc  : Test AudioManagerProxy interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerProxy_004, TestSize.Level1)
-{
-    std::vector<Library> libraries;
-    Library library = {};
-    library.name = "testname";
-    library.path ="test.so";
-    libraries.push_back(library);
-
-    std::vector<Effect> effects;
-    Effect effect = {};
-    effect.name = "test";
-    effect.libraryName = "test";
-    effects.push_back(effect);
-
-    std::vector<Effect> successEffects;
-    bool ret = audioManagerProxy->LoadAudioEffectLibraries(libraries, effects, successEffects);
-    EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test AudioManagerListenerStub API
- * @tc.type  : FUNC
- * @tc.number: AudioManagerListenerStub_001
- * @tc.desc  : Test AudioManagerListenerStub interface.
- */
-HWTEST(AudioServiceUnitTest, AudioManagerListenerStub_001, TestSize.Level1)
-{
-    std::unique_ptr<AudioManagerListenerStub> audioManagerListenerStub = std::make_unique<AudioManagerListenerStub>();
-
-    const std::weak_ptr<AudioParameterCallback> callback = std::make_shared<AudioParameterCallbackTest>();
-    audioManagerListenerStub->SetParameterCallback(callback);
-    float volume = 0.1;
-    const std::string networkId = "LocalDevice";
-    const AudioParamKey key = AudioParamKey::VOLUME;
-    AudioVolumeType volumeType =AudioVolumeType::STREAM_MEDIA;
-    int32_t groupId = 0;
-    std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId) + ";AUDIO_VOLUME_TYPE="
-        + std::to_string(volumeType) + ";";
-    std::string value = std::to_string(volume);
-    audioManagerListenerStub->OnAudioParameterChange(networkId, key, condition, value);
-    EXPECT_NE(value, "");
-}
-
 
 /**
  * @tc.name  : Test AudioProcessInClientInner API
@@ -303,13 +138,13 @@ HWTEST(AudioServiceUnitTest, AudioDeviceDescriptor_001, TestSize.Level1)
         SAMPLE_RATE_48000,
         ENCODING_PCM,
         SAMPLE_S16LE,
-        STEREO
+        CH_LAYOUT_STEREO
     };
     int32_t channelMask = 1;
-    audioDeviceDescriptor->SetDeviceCapability(audioStreamInfo, channelMask);
+    audioDeviceDescriptor->SetDeviceCapability({ audioStreamInfo }, channelMask);
 
-    DeviceStreamInfo streamInfo = audioDeviceDescriptor->audioStreamInfo_;
-    EXPECT_EQ(streamInfo.channels, audioStreamInfo.channels);
+    DeviceStreamInfo streamInfo = audioDeviceDescriptor->GetDeviceStreamInfo();
+    EXPECT_EQ(streamInfo.channelLayout, audioStreamInfo.channelLayout);
     EXPECT_EQ(streamInfo.encoding, audioStreamInfo.encoding);
     EXPECT_EQ(streamInfo.format, audioStreamInfo.format);
     EXPECT_EQ(streamInfo.samplingRate, audioStreamInfo.samplingRate);
@@ -1613,8 +1448,24 @@ HWTEST(AudioServiceUnitTest, RemoveRenderer_001, TestSize.Level1)
 
     audioService->allRendererMap_.clear();
 
-    uint32_t sessionId = 0;
-    audioService->RemoveRenderer(sessionId);
+    uint32_t sessionId = 100001;
+    audioService->UpdateMuteControlSet(sessionId, true);
+
+    std::set<uint32_t>::iterator end = audioService->mutedSessions_.end();
+    std::set<uint32_t>::iterator it = end;
+    audioService->RemoveRenderer(sessionId, true);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_NE(it, end);
+    }
+
+    audioService->RemoveRenderer(sessionId, false);
+    {
+        std::lock_guard<std::mutex> lock(audioService->mutedSessionsMutex_);
+        it = audioService->mutedSessions_.find(sessionId);
+        EXPECT_EQ(it, end);
+    }
 }
 
 /**
@@ -1938,5 +1789,488 @@ HWTEST(AudioServiceUnitTest, AudioServiceLoopbackStreamCnt_001, TestSize.Level1)
     EXPECT_EQ(rendererCnt, 0);
     EXPECT_EQ(capturerCnt, 0);
 }
+
+/**
+ * @tc.name  : Test SaveForegroundList API
+ * @tc.type  : FUNC
+ * @tc.number: SaveForegroundList_001,
+ * @tc.desc  : Test SaveForegroundList interface.
+ */
+HWTEST(AudioServiceUnitTest, SaveForegroundList_001, TestSize.Level1)
+{
+    std::vector<std::string> list;
+    list.resize(11);
+    EXPECT_EQ(list.size(), 11);
+    AudioService::GetInstance()->SaveForegroundList(list);
+    EXPECT_EQ(AudioService::GetInstance()->foregroundSet_.size(), 0);
+    EXPECT_EQ(AudioService::GetInstance()->foregroundUidSet_.size(), 0);
+
+    list.resize(5);
+    EXPECT_EQ(list.size(), 5);
+    AudioService::GetInstance()->SaveForegroundList(list);
+}
+
+/**
+ * @tc.name  : Test MatchForegroundList API
+ * @tc.type  : FUNC
+ * @tc.number: MatchForegroundList_001,
+ * @tc.desc  : Test MatchForegroundList interface.
+ */
+HWTEST(AudioServiceUnitTest, MatchForegroundList_001, TestSize.Level1)
+{
+    uint32_t uid = 0;
+    std::string bundleName = "test";
+    AudioService::GetInstance()->foregroundSet_.clear();
+    bool ret = AudioService::GetInstance()->MatchForegroundList(bundleName, uid);
+    EXPECT_FALSE(ret);
+
+    AudioService::GetInstance()->foregroundSet_.insert(bundleName);
+    ret = AudioService::GetInstance()->MatchForegroundList(bundleName, uid);
+    EXPECT_TRUE(ret);
+
+    uid = 10;
+    AudioService::GetInstance()->foregroundUidSet_.clear();
+    ret = AudioService::GetInstance()->MatchForegroundList(bundleName, uid);
+    EXPECT_TRUE(AudioService::GetInstance()->foregroundUidSet_.find(uid) !=
+        AudioService::GetInstance()->foregroundUidSet_.end());
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test InForegroundList API
+ * @tc.type  : FUNC
+ * @tc.number: InForegroundList_001,
+ * @tc.desc  : Test InForegroundList interface.
+ */
+HWTEST(AudioServiceUnitTest, InForegroundList_001, TestSize.Level1)
+{
+    uint32_t uid = 5;
+    AudioService::GetInstance()->foregroundUidSet_.clear();
+    bool ret = AudioService::GetInstance()->InForegroundList(uid);
+    EXPECT_FALSE(ret);
+
+    AudioService::GetInstance()->foregroundUidSet_.insert(uid);
+    ret = AudioService::GetInstance()->InForegroundList(uid);
+    EXPECT_TRUE(ret);
+}
+
+#ifdef SUPPORT_LOW_LATENCY
+/**
+ * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBeforeRecordEndpointCreate_001,
+ * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_001, TestSize.Level1)
+{
+    bool isRecord = false;
+    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+
+    isRecord = true;
+    std::string endpointName = "test";
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
+        123, clientConfig);
+    EXPECT_NE(endpoint, nullptr);
+    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_RECORD;
+    AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
+    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+}
+
+/**
+ * @tc.name  : Test CheckBeforeRecordEndpointCreate API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBeforeRecordEndpointCreate_002,
+ * @tc.desc  : Test CheckBeforeRecordEndpointCreate interface.
+ */
+HWTEST(AudioServiceUnitTest, CheckBeforeRecordEndpointCreate_002, TestSize.Level1)
+{
+    bool isRecord = true;
+    std::string endpointName = "test";
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
+        123, clientConfig);
+    EXPECT_NE(endpoint, nullptr);
+    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
+    AudioService::GetInstance()->CheckBeforeRecordEndpointCreate(isRecord);
+}
+
+/**
+ * @tc.name  : Test NotifyStreamVolumeChanged API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamVolumeChanged_001
+ * @tc.desc  : Test NotifyStreamVolumeChanged interface.
+ */
+HWTEST(AudioServiceUnitTest, NotifyStreamVolumeChanged_001, TestSize.Level1)
+{
+    float volume = 1.0f;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    std::string endpointName = "test";
+    AudioService::GetInstance()->endpointList_.clear();
+    AudioService::GetInstance()->endpointList_[endpointName] = nullptr;
+    auto ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test NotifyStreamVolumeChanged API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyStreamVolumeChanged_002
+ * @tc.desc  : Test NotifyStreamVolumeChanged interface.
+ */
+HWTEST(AudioServiceUnitTest, NotifyStreamVolumeChanged_002, TestSize.Level1)
+{
+    float volume = 1.0f;
+    AudioStreamType streamType = STREAM_MUSIC;
+
+    std::string endpointName = "test";
+    AudioService::GetInstance()->endpointList_.clear();
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
+        123, clientConfig);
+    EXPECT_NE(endpoint, nullptr);
+    AudioService::GetInstance()->endpointList_[endpointName] = endpoint;
+    auto ret = AudioService::GetInstance()->NotifyStreamVolumeChanged(streamType, volume);
+    EXPECT_EQ(ret, SUCCESS);
+}
+#endif
+
+/**
+ * @tc.name  : Test GetRendererBySessionID API
+ * @tc.type  : FUNC
+ * @tc.number: GetRendererBySessionId_001
+ * @tc.desc  : Test GetRendererBySessionID interface.
+ */
+HWTEST(AudioServiceUnitTest, GetRendererBySessionId_001, TestSize.Level1)
+{
+    uint32_t sessionID = 10;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    auto ret = AudioService::GetInstance()->GetRendererBySessionID(sessionID);
+    EXPECT_EQ(ret, nullptr);
+
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(rendererInServer, nullptr);
+    std::weak_ptr<RendererInServer> server = rendererInServer;
+
+    AudioService::GetInstance()->allRendererMap_[sessionID] = server;
+    ret = AudioService::GetInstance()->GetRendererBySessionID(sessionID);
+    EXPECT_NE(ret, nullptr);
+}
+
+#ifdef SUPPORT_LOW_LATENCY
+/**
+ * @tc.name  : Test SetNonInterruptMuteForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: SetNonInterruptMuteForProcess_001
+ * @tc.desc  : Test SetNonInterruptMuteForProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, SetNonInterruptMuteForProcess_001, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    bool muteFlag = true;
+
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    audioprocess->sessionId_ = 10;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = nullptr;
+    AudioService::GetInstance()->linkedPairedList_.clear();
+    AudioService::GetInstance()->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
+    AudioService::GetInstance()->SetNonInterruptMuteForProcess(sessionId, muteFlag);
+    EXPECT_EQ(AudioService::GetInstance()->linkedPairedList_.begin()->first->GetSessionId(), sessionId);
+
+    sessionId = 0;
+    AudioService::GetInstance()->SetNonInterruptMuteForProcess(sessionId, muteFlag);
+}
+
+/**
+ * @tc.name  : Test SetNonInterruptMuteForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: SetNonInterruptMuteForProcess_002
+ * @tc.desc  : Test SetNonInterruptMuteForProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, SetNonInterruptMuteForProcess_002, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    bool muteFlag = true;
+
+    sptr<AudioProcessInServer> audioprocess = nullptr;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = nullptr;
+    AudioService::GetInstance()->linkedPairedList_.clear();
+    AudioService::GetInstance()->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
+    AudioService::GetInstance()->SetNonInterruptMuteForProcess(sessionId, muteFlag);
+    EXPECT_EQ(AudioService::GetInstance()->linkedPairedList_.begin()->first, nullptr);
+}
+#endif
+
+/**
+ * @tc.name  : Test SetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_002
+ * @tc.desc  : Test SetOffloadMode interface.
+ */
+HWTEST(AudioServiceUnitTest, SetOffloadMode_002, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t state = 1;
+    bool isAppBack = true;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    std::weak_ptr<RendererInServer> server;
+    AudioService::GetInstance()->allRendererMap_[sessionId] = server;
+    int32_t ret = AudioService::GetInstance()->SetOffloadMode(sessionId, state, isAppBack);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test SetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadMode_003
+ * @tc.desc  : Test SetOffloadMode interface.
+ */
+HWTEST(AudioServiceUnitTest, SetOffloadMode_003, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t state = 1;
+    bool isAppBack = true;
+    AudioService::GetInstance()->allRendererMap_.clear();
+
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> server =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(server, nullptr);
+
+    bool isDirect = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    AudioService::GetInstance()->allRendererMap_[sessionId] = server;
+    int32_t ret = AudioService::GetInstance()->SetOffloadMode(sessionId, state, isAppBack);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test UnsetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: UnsetOffloadMode_002
+ * @tc.desc  : Test UnsetOffloadMode interface.
+ */
+HWTEST(AudioServiceUnitTest, UnsetOffloadMode_002, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    int ret = AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+    EXPECT_EQ(ret, ERR_INVALID_INDEX);
+
+    std::weak_ptr<RendererInServer> server;
+    AudioService::GetInstance()->allRendererMap_[sessionId] = server;
+    ret = AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test UnsetOffloadMode API
+ * @tc.type  : FUNC
+ * @tc.number: UnsetOffloadMode_003
+ * @tc.desc  : Test UnsetOffloadMode interface.
+ */
+HWTEST(AudioServiceUnitTest, UnsetOffloadMode_003, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    EXPECT_NE(streamListenerHolder, nullptr);
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> server =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(server, nullptr);
+
+    bool isDirect = true;
+    server->stream_ = std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
+    AudioService::GetInstance()->allRendererMap_[sessionId] = server;
+    auto ret = AudioService::GetInstance()->UnsetOffloadMode(sessionId);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test UpdateAudioSinkState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateAudioSinkState_003
+ * @tc.desc  : Test UpdateAudioSinkState interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateAudioSinkState_003, TestSize.Level1)
+{
+    uint32_t sinkId = 10;
+    bool started = false;
+
+    AudioService::GetInstance()->allRunningSinks_.clear();
+    AudioService::GetInstance()->allRunningSinks_.insert(sinkId);
+    AudioService::GetInstance()->UpdateAudioSinkState(sinkId, started);
+    EXPECT_TRUE(AudioService::GetInstance()->allRunningSinks_.empty());
+
+    uint32_t num = 5;
+    AudioService::GetInstance()->allRunningSinks_.insert(num);
+    AudioService::GetInstance()->allRunningSinks_.insert(sinkId);
+    AudioService::GetInstance()->UpdateAudioSinkState(sinkId, started);
+    EXPECT_FALSE(AudioService::GetInstance()->allRunningSinks_.empty());
+}
+
+/**
+ * @tc.name  : Test UpdateSourceType API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSourceType_001
+ * @tc.desc  : Test UPdateSourceType interface.
+ */
+HWTEST(AudioServiceUnitTest, UpdateSourceType_001, TestSize.Level1)
+{
+    SourceType sourceType = SOURCE_TYPE_WAKEUP;
+    auto ret = AudioService::GetInstance()->UpdateSourceType(sourceType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    sourceType = SOURCE_TYPE_MIC;
+    ret = AudioService::GetInstance()->UpdateSourceType(sourceType);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test RestoreSession API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreSession_001
+ * @tc.desc  : Test RestoreSession interface.
+ */
+HWTEST(AudioServiceUnitTest, RestoreSession_001, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    RestoreInfo restoreInfo;
+    std::weak_ptr<RendererInServer> rendererInServer;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    AudioService::GetInstance()->allRendererMap_[sessionId] = rendererInServer;
+    auto ret = AudioService::GetInstance()->RestoreSession(sessionId, restoreInfo);
+    EXPECT_EQ(ret, RESTORE_ERROR);
+
+    std::weak_ptr<CapturerInServer> capturerInServer;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    AudioService::GetInstance()->allCapturerMap_.clear();
+    AudioService::GetInstance()->allCapturerMap_[sessionId] = capturerInServer;
+    ret = AudioService::GetInstance()->RestoreSession(sessionId, restoreInfo);
+    EXPECT_EQ(ret, RESTORE_ERROR);
+}
+
+/**
+ * @tc.name  : Test RestoreSession API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreSession_002
+ * @tc.desc  : Test RestoreSession interface.
+ */
+HWTEST(AudioServiceUnitTest, RestoreSession_002, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    RestoreInfo restoreInfo;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    AudioService::GetInstance()->allCapturerMap_.clear();
+
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    audioprocess->sessionId_ = 1;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = nullptr;
+    AudioService::GetInstance()->linkedPairedList_.clear();
+    AudioService::GetInstance()->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
+
+    auto ret = AudioService::GetInstance()->RestoreSession(sessionId, restoreInfo);
+    EXPECT_EQ(ret, RESTORE_ERROR);
+}
+
+/*
+ * @tc.name  : Test RegisterMuteStateChangeCallback API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterMuteStateChangeCallback_001
+ * @tc.desc  : Test RegisterMuteStateChangeCallback whether callback can invoke.
+ */
+HWTEST(AudioServiceUnitTest, RegisterMuteStateChangeCallback_001, TestSize.Level1)
+{
+    uint32_t sessionId = 10;
+    bool muteFlag = false;
+    MuteStateChangeCallbck muteStateChangeCallback = [&muteFlag](bool flag) { muteFlag = flag; };
+    AudioService::GetInstance()->muteStateMap_.clear();
+    AudioService::GetInstance()->muteStateCallbacks_.clear();
+    AudioService::GetInstance()->muteStateCallbacks_[sessionId] = muteStateChangeCallback;
+    AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId, muteStateChangeCallback);
+
+    AudioService::GetInstance()->muteStateMap_[sessionId] = true;
+    AudioService::GetInstance()->RegisterMuteStateChangeCallback(sessionId, muteStateChangeCallback);
+    EXPECT_EQ(muteFlag, true);
+}
+
+/*
+ * @tc.name  : Test ForceStopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: ForceStopAudioStream_001
+ * @tc.desc  : Test ForceStopAudioStream interface.
+ */
+HWTEST(AudioServiceUnitTest, ForceStopAudioStream_001, TestSize.Level1)
+{
+    StopAudioType stopAudioType = STOP_ALL;
+    AudioService::GetInstance()->allRendererMap_.clear();
+    AudioService::GetInstance()->allCapturerMap_.clear();
+    AudioService::GetInstance()->linkedPairedList_.clear();
+    auto ret = AudioService::GetInstance()->ForceStopAudioStream(stopAudioType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    stopAudioType = STOP_RENDER;
+    ret = AudioService::GetInstance()->ForceStopAudioStream(stopAudioType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    stopAudioType = STOP_RECORD;
+    ret = AudioService::GetInstance()->ForceStopAudioStream(stopAudioType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+#ifdef SUPPORT_LOW_LATENCY
+/*
+ * @tc.name  : Test ForceStopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: ForceStopAudioStream_002
+ * @tc.desc  : Test ForceStopAudioStream interface.
+ */
+HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
+{
+    AudioProcessConfig config = {};
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    EXPECT_NE(audioprocess, nullptr);
+    audioprocess->sessionId_ = 1;
+
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
+        123, config);
+    EXPECT_NE(endpoint, nullptr);
+    endpoint->clientConfig_.audioMode = AudioMode::AUDIO_MODE_PLAYBACK;
+    AudioService::GetInstance()->linkedPairedList_.push_back(std::make_pair(audioprocess, endpoint));
+
+    StopAudioType stopAudioType = STOP_ALL;
+    auto ret = AudioService::GetInstance()->ForceStopAudioStream(stopAudioType);
+    EXPECT_EQ(ret, SUCCESS);
+
+    stopAudioType = STOP_RECORD;
+    ret = AudioService::GetInstance()->ForceStopAudioStream(stopAudioType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+#endif
 } // namespace AudioStandard
 } // namespace OHOS

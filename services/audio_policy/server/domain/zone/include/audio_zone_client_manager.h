@@ -16,7 +16,7 @@
 #ifndef ST_AUDIO_ZONE_CLIENT_MANAGER_H
 #define ST_AUDIO_ZONE_CLIENT_MANAGER_H
 
-#include "i_standard_audio_zone_client.h"
+#include "istandard_audio_zone_client.h"
 #include "i_audio_zone_event_dispatcher.h"
 #include "audio_policy_server_handler.h"
 

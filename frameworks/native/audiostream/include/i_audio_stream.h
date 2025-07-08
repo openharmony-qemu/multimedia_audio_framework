@@ -104,6 +104,9 @@ public:
         DeviceType defaultOutputDevice = DEVICE_TYPE_NONE;
 
         std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
     };
 
     virtual ~IAudioStream() = default;
@@ -150,7 +153,7 @@ public:
     virtual float GetLoudnessGain() = 0;
     virtual int32_t SetDuckVolume(float volume) = 0;
     virtual float GetDuckVolume() = 0;
-    virtual int32_t SetMute(bool mute) = 0;
+    virtual int32_t SetMute(bool mute, StateChangeCmdType cmdType) = 0;
     virtual bool GetMute() = 0;
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
@@ -261,6 +264,8 @@ public:
         return 0;
     }
 
+    virtual void JoinCallbackLoop() = 0;
+
     virtual void SetState() {}
 
     bool IsFormatValid(uint8_t format);
@@ -309,6 +314,8 @@ public:
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
+
     virtual void FetchDeviceForSplitStream() = 0;
 
     virtual void SetCallStartByUserTid(pid_t tid) = 0;
@@ -320,6 +327,10 @@ public:
     virtual int32_t SetOffloadDataCallbackState(int32_t cbState) { return 0; };
 
     virtual bool GetStopFlag() const = 0;
+
+    virtual void ResetFirstFrameState() {}
+
+    virtual void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

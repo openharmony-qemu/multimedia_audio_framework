@@ -21,7 +21,8 @@
 #include <mutex>
 #include <vector>
 
-#include "i_core_service_provider_ipc.h"
+#include "icore_service_provider_ipc.h"
+#include "audio_service_enum.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -34,12 +35,14 @@ public:
     // would be called only once
     int32_t ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> policyProvider);
 
+    int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
         SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(
         const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+        bool isReloadProcess);
     uint32_t GenerateSessionId();
 private:
     CoreServiceHandler();

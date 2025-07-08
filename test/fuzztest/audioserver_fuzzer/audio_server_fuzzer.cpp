@@ -18,9 +18,11 @@
 #include <cstdint>
 
 #include "audio_manager_base.h"
-#include "audio_policy_manager_listener_stub.h"
+#include "audio_policy_manager_listener_stub_impl.h"
 #include "audio_server.h"
 #include "message_parcel.h"
+#include "pulseaudio_ipc_interface_code.h"
+#include "audio_service_types.h"
 using namespace std;
 
 namespace OHOS {
@@ -44,6 +46,57 @@ const vector<std::string> g_testKeys = {
     "PCM_DUMP",
     "live_effect",
     "test",
+};
+
+const vector<DeviceType> g_testDeviceTypes = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_ACCESSORY,
+    DEVICE_TYPE_REMOTE_DAUDIO,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_MAX
+};
+
+const vector<HdiIdType> g_testHdiIdTypes = {
+    HDI_ID_TYPE_PRIMARY,
+    HDI_ID_TYPE_FAST,
+    HDI_ID_TYPE_REMOTE,
+    HDI_ID_TYPE_REMOTE_FAST,
+    HDI_ID_TYPE_FILE,
+    HDI_ID_TYPE_BLUETOOTH,
+    HDI_ID_TYPE_OFFLOAD,
+    HDI_ID_TYPE_EAC3,
+    HDI_ID_TYPE_MULTICHANNEL,
+    HDI_ID_TYPE_WAKEUP,
+    HDI_ID_TYPE_ACCESSORY,
+    HDI_ID_TYPE_NUM,
+};
+
+class DataTransferStateChangeCallbackInnerFuzzTest : public DataTransferStateChangeCallbackInner {
+public:
+    void OnDataTransferStateChange(const int32_t &callbackId,
+            const AudioRendererDataTransferStateChangeInfo &info) override {}
 };
 
 template<class T>
@@ -86,13 +139,14 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 
     if (code == static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK)) {
-        sptr<AudioPolicyManagerListenerStub> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStub();
+        sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub =
+            new(std::nothrow) AudioPolicyManagerListenerStubImpl();
         sptr<IRemoteObject> object = focusListenerStub->AsObject();
         AudioServerPtr->SetParameterCallback(object);
         return;
     }
     if (code == static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE)) {
-        AsrAecMode asrAecMode = (static_cast<AsrAecMode>(0));
+        int32_t asrAecMode = 0;
         AudioServerPtr->SetAsrAecMode(asrAecMode);
         AudioServerPtr->OnRemoteRequest(code, data, reply, option);
         return;
@@ -738,7 +792,7 @@ void AudioServerSetExtraParametersTest(const uint8_t *rawData, size_t size)
     audioServerPtr->ParseAudioParameter();
 }
 
-void AudioServerSetA2dpAudioParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerSetAudioParameterByKeyTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -769,12 +823,12 @@ void AudioServerGetExtraParametersTest(const uint8_t *rawData, size_t size)
     uint32_t id = static_cast<uint32_t>(size) % g_testKeys.size();
     bool isAudioParameterParsed = static_cast<uint32_t>(size) % NUM_2;
     audioServerPtr->isAudioParameterParsed_.store(isAudioParameterParsed);
-    std::vector<std::pair<std::string, std::string>> result;
+    std::vector<StringPair> result;
     std::vector<std::string> subKeys;
     audioServerPtr->GetExtraParameters(g_testKeys[id], subKeys, result);
 }
 
-void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
+void AudioServerGetAudioParameterByIdTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
@@ -802,10 +856,12 @@ void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
         MMI,
         PARAM_KEY_LOWPOWER,
     };
+    string str = "test";
     uint32_t id = static_cast<uint32_t>(size) % audioParamKey.size();
     AudioParamKey key = static_cast<AudioParamKey>(audioParamKey[id]);
     id = static_cast<uint32_t>(size) % tetsNetworkId.size();
-    audioServerPtr->GetAudioParameter(tetsNetworkId[id], key, "");
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    audioServerPtr->GetAudioParameter(tetsNetworkId[id], key, "", str);
 }
 
 void AudioServerIsFastBlockedTest(const uint8_t *rawData, size_t size)
@@ -920,11 +976,13 @@ void AudioServerCreateHdiSinkPortTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
+    uint32_t renderId = 0;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     IAudioSinkAttr attr;
     std::string deviceClass = "audio_test_class";
     std::string idInfo = "audio_indo";
-    audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    audioServerPtr->CreateHdiSinkPort(deviceClass, idInfo, attr, renderId);
 }
 
 void AudioServerCreateHdiSourcePortTest(const uint8_t *rawData, size_t size)
@@ -933,15 +991,135 @@ void AudioServerCreateHdiSourcePortTest(const uint8_t *rawData, size_t size)
         return;
     }
 
+    uint32_t captureId = 0;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     IAudioSourceAttr attr;
     std::string deviceClass = "audio_test_class";
     std::string idInfo = "audio_indo";
-
-    audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    audioServerPtr->CreateHdiSourcePort(deviceClass, idInfo, attr, captureId);
 }
 
-// NotifyProcessStatus
+void AudioServerRegisterDataTransferCallbackTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
+    sptr<IRemoteObject> object = focusListenerStub->AsObject();
+
+    audioServerPtr->RegisterDataTransferCallback(object);
+}
+
+void AudioServerWriteServiceStartupErrorTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->WriteServiceStartupError();
+}
+
+void AudioServerProcessKeyValuePairsTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    static const vector<string> testPairs = {
+        "unprocess_audio_effect",
+        "test",
+    };
+    string key = "test_key";
+    string value{};
+    string pairTest = testPairs[static_cast<uint32_t>(size) % testPairs.size()];
+    std::vector<std::pair<std::string, std::string>> kvpairs;
+    kvpairs.push_back(make_pair(pairTest, "test_value"));
+    set<std::string> subKeys = {"effect"};
+    unordered_map<std::string, std::set<std::string>> subKeyMap;
+    subKeyMap.insert(make_pair(pairTest, subKeys));
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->ProcessKeyValuePairs(key, kvpairs, subKeyMap, value);
+}
+
+void AudioServerSetA2dpAudioParameterTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    string renderValue;
+
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->SetA2dpAudioParameter(renderValue);
+}
+
+void AudioServerGetAudioParameterByKeyTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    static const vector<string> testKeys = {
+        "AUDIO_EXT_PARAM_KEY_LOWPOWER",
+        "need_change_usb_device#C",
+        "getSmartPAPOWER",
+        "show_RealTime_ChipModel",
+        "perf_info",
+    };
+
+    string value = "test";
+    string key = testKeys[static_cast<uint32_t>(size) % testKeys.size()];
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    audioServerPtr->GetAudioParameter(key, value);
+}
+
+void AudioServerGetDPParameterTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::string condition;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->GetDPParameter(condition);
+}
+
+void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    static uint32_t step = 0;
+    uint32_t index = static_cast<uint32_t>(size);
+    step += index;
+    static const vector<AudioScene> testAudioScenes = {
+        AUDIO_SCENE_INVALID,
+        AUDIO_SCENE_DEFAULT,
+        AUDIO_SCENE_RINGING,
+        AUDIO_SCENE_PHONE_CALL,
+        AUDIO_SCENE_PHONE_CHAT,
+        AUDIO_SCENE_CALL_START,
+        AUDIO_SCENE_CALL_END,
+        AUDIO_SCENE_VOICE_RINGING,
+        AUDIO_SCENE_MAX,
+    };
+    static const vector<BluetoothOffloadState> testBluetoothOffloadStates = {
+        NO_A2DP_DEVICE,
+        A2DP_NOT_OFFLOAD,
+        A2DP_OFFLOAD,
+    };
+    bool scoExcludeFlag = static_cast<bool>(index % NUM_2);
+    BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
+    std::vector<int32_t> activeOutputDevices;
+    activeOutputDevices.push_back(g_testDeviceTypes[step % g_testDeviceTypes.size()]);
+    int32_t activeInputDevice = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    AudioScene audioScene = testAudioScenes[static_cast<uint32_t>(size) % testAudioScenes.size()];
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
+}
 
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -951,9 +1129,9 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerGetUsbParameterTest,
     OHOS::AudioStandard::AudioServerOnAddSystemAbilityTest,
     OHOS::AudioStandard::AudioServerSetExtraParametersTest,
-    OHOS::AudioStandard::AudioServerSetA2dpAudioParameterTest,
+    OHOS::AudioStandard::AudioServerSetAudioParameterByKeyTest,
     OHOS::AudioStandard::AudioServerGetExtraParametersTest,
-    OHOS::AudioStandard::AudioServerGetDPParameterTest,
+    OHOS::AudioStandard::AudioServerGetAudioParameterByIdTest,
     OHOS::AudioStandard::AudioServerIsFastBlockedTest,
     OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateTestTwo,
     OHOS::AudioStandard::AudioServerCreateAudioStreamTest,
@@ -991,6 +1169,13 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerAudioWorkgroupRemoveThreadTest,
     OHOS::AudioStandard::AudioServerAudioWorkgroupStartGroupTest,
     OHOS::AudioStandard::AudioServerAudioWorkgroupStopGroupTest,
+    OHOS::AudioStandard::AudioServerRegisterDataTransferCallbackTest,
+    OHOS::AudioStandard::AudioServerWriteServiceStartupErrorTest,
+    OHOS::AudioStandard::AudioServerProcessKeyValuePairsTest,
+    OHOS::AudioStandard::AudioServerSetA2dpAudioParameterTest,
+    OHOS::AudioStandard::AudioServerGetAudioParameterByKeyTest,
+    OHOS::AudioStandard::AudioServerGetDPParameterTest,
+    OHOS::AudioStandard::AudioServerSetAudioSceneByDeviceTypeTest,
 };
 
 /* Fuzzer entry point */

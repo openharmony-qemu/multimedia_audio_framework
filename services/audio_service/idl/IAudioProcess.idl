@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable OHOS.IRemoteObject;
+sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
+
+interface IAudioProcess {
+    [ipccode 0] void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer, [out] unsigned int spanSizeInFrame);
+    void GetSessionId([out] unsigned int sessionId);
+    void Start();
+    void Pause([in] boolean isFlush);
+    void Resume();
+    void Stop([in] int stage); // AudioProcessStage stage = AUDIO_PROC_STAGE_STOP
+    void RequestHandleInfo();
+    [oneway] void RequestHandleInfoAsync(); // default
+    void Release([in] boolean isSwitchStream); // isSwitchStream = false
+    void RegisterProcessCb([in] IRemoteObject object);
+    void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
+    void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
+    void SetSilentModeAndMixWithOthers([in] boolean on);
+    void SetSourceDuration([in] long duration);
+    void SetUnderrunCount([in] unsigned int underrunCnt);
+    void SaveAdjustStreamVolumeInfo([in] float volume, [in] unsigned int sessionId, [in] String adjustTime,
+        [in] unsigned int code);
+    void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
+}

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <cstdint>
 #include <thread>
 #include <gtest/gtest.h>
 #include "gmock/gmock.h"
@@ -1038,6 +1039,34 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_012, TestSize.Le
 }
 
 /**
+ * @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_013
+ * @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return NEARLINK
+ *             when deviceType is DEVICE_TYPE_NEARLINK
+ */
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_013, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_NEARLINK;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "NEARLINK");
+}
+
+/**
+ * @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_014
+ * @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return REMOTE_CAST
+ *             when deviceType is DEVICE_TYPE_REMOTE_CAST
+ */
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_014, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_REMOTE_CAST;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "REMOTE_CAST");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -1175,6 +1204,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_007, TestSize.Level0
     SourceType sourceType = SOURCE_TYPE_MAX;
     const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
     EXPECT_EQ(sourceName, "SOURCE_TYPE_LIVE");
+}
+
+/**
+ * @tc.name  : Test AudioInfoDumpUtils::GetSourceName  API
+ * @tc.type  : FUNC
+ * @tc.number: AudioInfoDumpUtils_GetSourceName_008
+ * @tc.desc  : Test AudioInfoDumpUtils GetSourceName API,Return SOURCE_TYPE_UNPROCESSED
+ *             when sourceType is SOURCE_TYPE_UNPROCESSED
+ */
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetSourceName_008, TestSize.Level0)
+{
+    SourceType sourceType = SOURCE_TYPE_UNPROCESSED;
+    const std::string sourceName = AudioInfoDumpUtils::GetSourceName(sourceType);
+    EXPECT_EQ(sourceName, "SOURCE_TYPE_UNPROCESSED");
 }
 
 /**
@@ -2662,6 +2705,35 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test MockPcmData  API
+* @tc.type  : FUNC
+* @tc.number: MockPcmData_002
+* @tc.desc  : Test MockPcmData API
+*/
+HWTEST(AudioUtilsUnitTest, MockPcmData_002, TestSize.Level1)
+{
+    uint8_t buffer[0] = {};
+    size_t bufferLen = 0;
+    int32_t sampleRate = 44100;
+    int32_t channelCount = 2;
+    int32_t sampleFormat = 16;
+    std::string appName = "com.example.test";
+    uint32_t sessionId = 0;
+
+    std::shared_ptr<AudioLatencyMeasurement> audioLatencyMeasurement =
+        std::make_shared<AudioLatencyMeasurement>(sampleRate, channelCount, sampleFormat, appName, sessionId);
+
+    audioLatencyMeasurement->mockedTime_ = 2000;
+    bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+
+    audioLatencyMeasurement->mockedTime_ = 2000;
+    audioLatencyMeasurement->format_ = SAMPLE_S32LE;
+    ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
+    EXPECT_EQ(ret, true);
+}
+
+/**
 * @tc.name  : Test UpdateClientTime  API
 * @tc.type  : FUNC
 * @tc.number: UpdateClientTime_001
@@ -3075,6 +3147,18 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_003, TestSize.Level1)
     struct SignalDetectAgent signalDetectAgent;
     bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
+
+    signalDetectAgent.sampleFormat_ = SAMPLE_S32LE;
+    ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+
+    signalDetectAgent.sampleFormat_ = SAMPLE_F32LE;
+    ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
+
+    signalDetectAgent.sampleFormat_ = SAMPLE_S24LE;
+    ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -3241,6 +3325,59 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_006, TestSize.Level1)
     uint64_t fullTokenId = 1;
     ret = PermissionUtil::VerifyBackgroundCapture(tokenId, fullTokenId);
     EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test AudioUtils API
+ * @tc.type  : FUNC
+ * @tc.number: AudioUtilsUnitTest_007
+ * @tc.desc  : Test AudioUtils API
+ */
+HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_007, TestSize.Level1)
+{
+    std::string str1 = "-0";
+    uint64_t result64 = 1;
+    EXPECT_TRUE(StringConverter(str1, result64));
+    EXPECT_EQ(result64, 0);
+
+    uint32_t result32 = 1;
+    EXPECT_TRUE(StringConverter(str1, result32));
+    EXPECT_EQ(result32, 0);
+
+    uint16_t result16 = 1;
+    EXPECT_TRUE(StringConverter(str1, result16));
+    EXPECT_EQ(result16, 0);
+
+    uint8_t result8 = 1;
+    EXPECT_TRUE(StringConverter(str1, result8));
+    EXPECT_EQ(result8, 0);
+
+    int32_t result32Signed = 1;
+    EXPECT_TRUE(StringConverter(str1, result32Signed));
+    EXPECT_EQ(result32Signed, 0);
+
+    int8_t result8Signed = 1;
+    EXPECT_TRUE(StringConverter(str1, result8Signed));
+    EXPECT_EQ(result8Signed, 0);
+
+    std::string str2 = "10";
+    EXPECT_TRUE(StringConverter(str2, result64));
+    EXPECT_EQ(result64, 10);
+
+    EXPECT_TRUE(StringConverter(str2, result32));
+    EXPECT_EQ(result32, 10);
+
+    EXPECT_TRUE(StringConverter(str2, result16));
+    EXPECT_EQ(result16, 10);
+
+    EXPECT_TRUE(StringConverter(str2, result8));
+    EXPECT_EQ(result8, 10);
+
+    EXPECT_TRUE(StringConverter(str2, result32Signed));
+    EXPECT_EQ(result32Signed, 10);
+
+    EXPECT_TRUE(StringConverter(str2, result8Signed));
+    EXPECT_EQ(result8Signed, 10);
 }
 } // namespace AudioStandard
 } // namespace OHOS

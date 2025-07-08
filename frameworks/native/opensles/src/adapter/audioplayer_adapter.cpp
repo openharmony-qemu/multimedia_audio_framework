@@ -66,6 +66,8 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
     rendererOptions.rendererInfo.rendererFlags = RENDERER_NEW;
+    /*Set isOffloadAllowed before renderer creation when setOffloadAllowed is disabled. */
+    rendererOptions.rendererInfo.isOffloadAllowed = false;
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_OPENSL_ES;
     shared_ptr<AudioRenderer> rendererHolder = AudioRenderer::CreateRenderer(rendererOptions);
     if (!rendererHolder) {
@@ -74,7 +76,6 @@ SLresult AudioPlayerAdapter::CreateAudioPlayerAdapter
     }
     AUDIO_INFO_LOG("AudioPlayerAdapter::CreateAudioPlayer ID: %{public}lu", id);
     rendererHolder->SetRenderMode(RENDER_MODE_CALLBACK);
-    rendererHolder->SetOffloadAllowed(false);
     renderMap_.insert(make_pair(id, rendererHolder));
     return SL_RESULT_SUCCESS;
 }

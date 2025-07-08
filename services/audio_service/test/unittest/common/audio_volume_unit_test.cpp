@@ -52,7 +52,9 @@ void AudioVolumeUnitTest::SetUp(void)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode);
+    bool isVKB = false;
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 }
 
 void AudioVolumeUnitTest::TearDown(void)
@@ -89,6 +91,64 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_002, TestSize.Level1)
     int32_t volumeType = STREAM_VOICE_TEST;
     std::string deviceClass = "speaker";
     AudioVolume::GetInstance()->SetVgsVolumeSupported(true);
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volume, 1.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_003
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_003, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t volumeType = STREAM_MUSIC;
+    std::string deviceClass = "speaker";
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    bool isVKB = true;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+
+    struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+    float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
+    EXPECT_EQ(volume, 0.0f);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetVolume_004
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, GetVolume_004, TestSize.Level1)
+{
+    uint32_t sessionId = 2;
+    int32_t volumeType = STREAM_MUSIC;
+    std::string deviceClass = "speaker";
+    int32_t streamType = STREAM_MUSIC;
+    int32_t streamUsage = STREAM_USAGE_MUSIC;
+    int32_t uid = 1000;
+    int32_t pid = 1000;
+    int32_t mode = 1;
+    bool isVKB = true;
+    ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
+    AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
+
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
     EXPECT_EQ(volume, 1.0f);
@@ -339,8 +399,10 @@ HWTEST_F(AudioVolumeUnitTest, AddStreamVolume_001, TestSize.Level1)
     int32_t uid = 1000;
     int32_t pid = 1000;
     int32_t mode = 1;
+    bool isVKB = true;
     ASSERT_TRUE(AudioVolume::GetInstance() != nullptr);
-    AudioVolume::GetInstance()->AddStreamVolume(sessionId, streamType, streamUsage, uid, pid, false, mode);
+    StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 }
 
 /**
@@ -520,7 +582,8 @@ HWTEST_F(AudioVolumeUnitTest, Monitor_001, TestSize.Level1)
     int32_t pid = 0;
     bool isSystemApp = false;
     int32_t mode = 0;
-    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode);
+    bool isVKB = true;
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, uid, pid, isSystemApp, mode, isVKB);
     audioVolume->streamVolume_.insert({sessionId, streamVolume});
     audioVolume->Monitor(sessionId, true);
 }

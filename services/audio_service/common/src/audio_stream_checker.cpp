@@ -297,6 +297,10 @@ void AudioStreamChecker::InitCallbackInfo(DataTransferStateChangeType type,
     callbackInfo.clientUID = streamConfig_.appInfo.appUid;
     callbackInfo.streamUsage = streamConfig_.rendererInfo.streamUsage;
     callbackInfo.sessionId = streamConfig_.originalSessionId;
+    {
+        std::lock_guard<std::recursive_mutex> lock(backgroundStateLock_);
+        callbackInfo.isBackground = isBackground_;
+    }
 }
 
 void AudioStreamChecker::MonitorOnCallback(DataTransferStateChangeType type, bool isNeedCallback, CheckerParam &para)
@@ -377,5 +381,12 @@ void AudioStreamChecker::RecordNormalFrame()
     }
 }
 
+void AudioStreamChecker::UpdateAppState(bool isBackground)
+{
+    {
+        std::lock_guard<std::recursive_mutex> lock(backgroundStateLock_);
+        isBackground_ = isBackground;
+    }
+}
 }
 }

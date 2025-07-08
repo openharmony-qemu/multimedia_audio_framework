@@ -22,7 +22,6 @@
 #include "parameter.h"
 #include "parameters.h"
 #include "audio_policy_log.h"
-#include "audio_manager_listener_stub.h"
 #include "audio_inner_call.h"
 #include "media_monitor_manager.h"
 #include "audio_spatialization_service.h"
@@ -308,7 +307,7 @@ void AudioConnectedDevice::UpdateConnectDevice(DeviceType deviceType, const std:
     auto it = std::find_if(connectedDevices_.begin(), connectedDevices_.end(), isPresent);
     if (it != connectedDevices_.end()) {
         (*it)->deviceName_ = deviceName;
-        (*it)->audioStreamInfo_ = streamInfo;
+        (*it)->audioStreamInfo_ = { streamInfo };
     }
 }
 

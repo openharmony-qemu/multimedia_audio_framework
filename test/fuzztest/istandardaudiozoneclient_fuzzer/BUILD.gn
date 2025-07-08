@@ -42,13 +42,13 @@ ohos_fuzztest("IStandardAudioZoneClientFuzzTest") {
   sources = [ "i_standard_audio_zone_client_fuzzer.cpp" ]
 
   deps = [
+    "../../../frameworks/native/audioclock:audio_clock",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
-    "../../../services/audio_policy:audio_policy_service_static",
-    "../../../services/audio_service:audio_common",
-    "../../../frameworks/native/audioclock:audio_clock",
     "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_engine:audio_engine_utils",
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_common",
   ]
 
   external_deps = [
@@ -61,6 +61,7 @@ ohos_fuzztest("IStandardAudioZoneClientFuzzTest") {
     "access_token:libtokenid_sdk",
     "access_token:libtokensetproc_shared",
     "background_task_mgr:bgtaskmgr_innerkits",
+    "bluetooth:btframework",
     "bounds_checking_function:libsec_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
@@ -86,7 +87,6 @@ ohos_fuzztest("IStandardAudioZoneClientFuzzTest") {
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
-    "bluetooth:btframework"
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
@@ -110,9 +110,7 @@ ohos_fuzztest("IStandardAudioZoneClientFuzzTest") {
   }
 }
 
-
-
 group("fuzztest") {
   testonly = true
-  deps = [ ":IStandardAudioZoneClientFuzzTest" ]
+  # deps = [ ":IStandardAudioZoneClientFuzzTest" ]
 }

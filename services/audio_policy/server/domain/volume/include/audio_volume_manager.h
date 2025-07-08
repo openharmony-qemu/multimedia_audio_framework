@@ -81,19 +81,22 @@ public:
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
-    int32_t GetSystemVolumeLevel(AudioStreamType streamType);
+    int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
+    int32_t SetAdjustVolumeForZone(int32_t zoneId);
+    int32_t GetVolumeAdjustZoneId();
     int32_t DisableSafeMediaVolume();
     int32_t SetDeviceAbsVolumeSupported(const std::string &macAddress, const bool support);
     int32_t SetStreamMute(AudioStreamType streamType, bool mute,
         const StreamUsage &streamUsage = STREAM_USAGE_UNKNOWN,
-        const DeviceType &deviceType = DEVICE_TYPE_NONE);
-    bool GetStreamMute(AudioStreamType streamType) const;
+        const DeviceType &deviceType = DEVICE_TYPE_NONE,
+        int32_t zoneId = 0);
+    bool GetStreamMute(AudioStreamType streamType, int32_t zoneId = 0) const;
 
     int32_t SetA2dpDeviceVolume(const std::string &macAddress, const int32_t volume, bool internalCall = false);
 
@@ -103,7 +106,8 @@ public:
     void UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId, std::string networkId,
         bool connected, int32_t mappingId);
     void GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos);
-    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor, const std::string &newSinkName = PORT_NONE);
+    void SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+        const std::string &newSinkName = PORT_NONE, bool enableSetVoiceCallVolume = true);
 
     bool IsRingerModeMute();
     void SetRingerModeMute(bool flag);

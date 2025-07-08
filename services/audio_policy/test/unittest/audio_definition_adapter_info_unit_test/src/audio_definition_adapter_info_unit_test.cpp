@@ -336,5 +336,64 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_007, TestSize.L
     auto ret = audioPolicyConfigData->GetAdapterDeviceInfo(type_, role_, networkId_, flags);
     EXPECT_EQ(ret, nullptr);
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_008
+* @tc.desc  : Test GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_008, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+
+    DeviceType type_ = DEVICE_TYPE_REMOTE_CAST;
+    DeviceRole role_ = INPUT_DEVICE;
+    std::string networkId_ = LOCAL_NETWORK_ID;
+    uint32_t flags = 0;
+
+    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(DEVICE_TYPE_SPEAKER, role_);
+
+    auto adapterDeviceInfo = std::make_shared<AdapterDeviceInfo>();
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo->adapterName = "abc";
+    adapterDeviceInfo->adapterInfo_ = adapterInfo;
+    auto adapterDeviceInfo2 = std::make_shared<AdapterDeviceInfo>();
+    std::shared_ptr<PolicyAdapterInfo> adapterInfo2 = std::make_shared<PolicyAdapterInfo>();
+    adapterInfo2->adapterName = "";
+    adapterDeviceInfo2->adapterInfo_ = adapterInfo2;
+    std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet;
+
+    adapterDeviceInfoSet.insert(adapterDeviceInfo);
+    adapterDeviceInfoSet.insert(adapterDeviceInfo2);
+
+    audioPolicyConfigData->deviceInfoMap.insert({deviceMapKey, adapterDeviceInfoSet});
+    auto ret = audioPolicyConfigData->GetAdapterDeviceInfo(type_, role_, networkId_, flags);
+    EXPECT_EQ(ret, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_009
+* @tc.desc  : Test SetSupportDeviceAndPipeMap
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_009, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    auto pipeInfo = std::make_shared<AdapterPipeInfo>();
+    EXPECT_NE(pipeInfo, nullptr);
+    pipeInfo->streamPropInfos_ = {};
+    pipeInfo->supportDevices_.push_back("test");
+    pipeInfo->supportDevices_.push_back("test1");
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    deviceInfoMap["test"] = std::make_shared<AdapterDeviceInfo>();
+    audioPolicyConfigData->SetSupportDeviceAndPipeMap(pipeInfo, deviceInfoMap);
+
+    auto pipeStreamPtr = std::make_shared<PipeStreamPropInfo>();
+    pipeInfo->streamPropInfos_.push_back(pipeStreamPtr);
+    audioPolicyConfigData->SetSupportDeviceAndPipeMap(pipeInfo, deviceInfoMap);
+    EXPECT_NE(deviceInfoMap["test"]->supportPipeMap_.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

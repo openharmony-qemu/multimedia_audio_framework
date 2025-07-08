@@ -142,6 +142,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_) {
+        inputPcmDumper_->CheckAndReopenHandle();
         inputPcmDumper_->Dump((int8_t *)inputs[0]->GetPcmDataBuffer(),
             inputs[0]->GetFrameLen() * sizeof(float) * inputs[0]->GetChannelCount());
     }
@@ -163,6 +164,7 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_) {
+        outputPcmDumper_->CheckAndReopenHandle();
         outputPcmDumper_->Dump((int8_t *)effectOutput_.GetPcmDataBuffer(),
             effectOutput_.GetFrameLen() * sizeof(float) * effectOutput_.GetChannelCount());
     }
@@ -379,9 +381,14 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
     }
 }
 
-int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(uint32_t &channels, uint64_t &channelLayout)
+int32_t HpaeRenderEffectNode::GetExpectedInputChannelInfo(AudioBasicFormat &basicFormat)
 {
-    return AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_, channels, channelLayout);
+    basicFormat.rate = static_cast<AudioSamplingRate>(DEFUALT_EFFECT_RATE);
+    uint64_t channelLayout = 0;
+    int32_t ret = AudioEffectChainManager::GetInstance()->QueryEffectChannelInfo(sceneType_,
+        basicFormat.audioChannelInfo.numChannels, channelLayout);
+    basicFormat.audioChannelInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
+    return ret;
 }
 
 bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)

@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable OHOS.IRemoteObject;
+sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBuffer;
+sequenceable oh_audio_buffer..OHOS.AudioStandard.OHAudioBufferBase;
+sequenceable audio_info..OHOS.AudioStandard.AudioPlaybackCaptureConfig;
+
+interface IIpcStream {
+    [ipccode 0] void RegisterStreamListener([in] IRemoteObject object);
+    void ResolveBuffer([out] sharedptr<OHAudioBuffer> buffer);
+    void UpdatePosition();
+    void GetAudioSessionID([out] unsigned int sessionId);
+    void Start();
+    void Pause();
+    void Stop();
+    void Release([in] boolean isSwitchStream); // isSwitchStream = false
+    void Flush();
+    void Drain([in] boolean stopFlag); // stopFlag = false
+    void UpdatePlaybackCaptureConfig([in] AudioPlaybackCaptureConfig config);
+    void GetAudioTime([out] unsigned long framePos, [out] unsigned long timestamp);
+    void GetAudioPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
+        [in] int base);
+    void GetLatency([out] unsigned long latency);
+    void SetRate([in] int rate); // SetRenderRate
+    void GetRate([out] int rate); // SetRenderRate
+    void SetLowPowerVolume([in] float volume); // renderer only
+    void GetLowPowerVolume([out] float volume); // renderer only
+    void SetAudioEffectMode([in] int effectMode); // renderer only
+    void GetAudioEffectMode([out] int effectMode); // renderer only
+    void SetPrivacyType([in] int privacyType); // renderer only
+    void GetPrivacyType([out] int privacyType); // renderer only
+    void SetOffloadMode([in] int state, [in] boolean isAppBack); // renderer only
+    void UnsetOffloadMode(); // renderer only
+    void GetOffloadApproximatelyCacheTime([out] unsigned long timestamp, [out] unsigned long paWriteIndex,
+        [out] unsigned long cacheTimeDsp, [out] unsigned long cacheTimePa); // renderer only
+    void UpdateSpatializationState([in] boolean spatializationEnabled, [in] boolean headTrackingEnabled); // rendererOnly
+    void GetStreamManagerType();
+    void SetSilentModeAndMixWithOthers([in] boolean on);
+    void SetClientVolume();
+    void SetMute([in] boolean isMute);
+    void SetDuckFactor([in] float duckFactor);
+    void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
+    void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
+    void SetSourceDuration([in] long duration);
+    void SetOffloadDataCallbackState([in] int state);
+    void SetLoudnessGain([in] float loudnessGain);
+    void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer,
+        [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);
+    void SetAudioHapticsSyncId([in] int audioHapticsSyncId);
+}

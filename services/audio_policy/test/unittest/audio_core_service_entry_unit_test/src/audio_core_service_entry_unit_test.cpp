@@ -33,7 +33,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_001, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     uint32_t sessionId = 0;
-    SessionOperation operation = SESSION_OPERATION_START;
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_START;
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation);
     EXPECT_NE(ret, SUCCESS);
@@ -52,7 +52,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_002, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -62,8 +62,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_002, TestSize.Level1)
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     EXPECT_NE(eventEntry, nullptr);
 
-    uint32_t sessionId = SESSION_OPERATION_PAUSE;
-    SessionOperation operation = SESSION_OPERATION_PAUSE;
+    uint32_t sessionId = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_PAUSE;
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation);
     EXPECT_EQ(ret, SUCCESS);
@@ -82,7 +82,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_003, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_STOP;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_STOP);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -92,8 +92,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_003, TestSize.Level1)
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     EXPECT_NE(eventEntry, nullptr);
 
-    uint32_t sessionId = SESSION_OPERATION_STOP;
-    SessionOperation operation = SESSION_OPERATION_STOP;
+    uint32_t sessionId = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_STOP);
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_STOP;
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation);
     EXPECT_EQ(ret, SUCCESS);
@@ -112,7 +112,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_004, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_RELEASE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_RELEASE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -122,8 +122,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_004, TestSize.Level1)
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     EXPECT_NE(eventEntry, nullptr);
 
-    uint32_t sessionId = SESSION_OPERATION_RELEASE;
-    SessionOperation operation = SESSION_OPERATION_RELEASE;
+    uint32_t sessionId = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_RELEASE);
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_RELEASE;
 
     auto ret = eventEntry->UpdateSessionOperation(sessionId, operation);
     EXPECT_EQ(ret, SUCCESS);
@@ -277,6 +277,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_012, TestSize.Level1)
     AudioDeviceDescriptor deviceInfo;
 
     auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, true);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -454,7 +457,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_022, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -465,7 +468,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_022, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    uint32_t sessionID = SESSION_OPERATION_PAUSE;
+    uint32_t sessionID = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     bool isRunning = true;
 
@@ -486,7 +489,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_023, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -517,7 +520,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_024, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -548,7 +551,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_025, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -580,7 +583,7 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_026, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_, nullptr);
     std::shared_ptr<AudioPipeInfo> audioPipeInfo = std::make_shared<AudioPipeInfo>();
     std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
-    audioStreamDescriptor->sessionId_ = SESSION_OPERATION_PAUSE;
+    audioStreamDescriptor->sessionId_ = static_cast<uint32_t>(SessionOperation::SESSION_OPERATION_PAUSE);
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     audioPipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
@@ -610,8 +613,8 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
     EXPECT_NE(eventEntry, nullptr);
 
     pid_t uid = 0;
-
-    eventEntry->RegisteredTrackerClientDied(uid);
+    pid_t pid = 0;
+    eventEntry->RegisteredTrackerClientDied(uid, pid);
 }
 
 /**

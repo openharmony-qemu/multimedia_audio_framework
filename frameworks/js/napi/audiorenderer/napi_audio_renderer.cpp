@@ -41,7 +41,7 @@ static __thread napi_ref g_rendererConstructor = nullptr;
 mutex NapiAudioRenderer::createMutex_;
 int32_t NapiAudioRenderer::isConstructSuccess_ = SUCCESS;
 std::unique_ptr<AudioRendererOptions> NapiAudioRenderer::sRendererOptions_ = nullptr;
-static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -96.0;
+static constexpr double MIN_LOUDNESS_GAIN_IN_DOUBLE = -90.0;
 static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 
 NapiAudioRenderer::NapiAudioRenderer()
@@ -217,6 +217,11 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
     if (rendererOptions.rendererInfo.rendererFlags != 0) {
         rendererOptions.rendererInfo.rendererFlags = 0;
     }
+    /* Set isOffloadAllowed before renderer creation when setOffloadAllowed is disabled.*/
+    if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
+        AUDIO_WARNING_LOG("stream usage is unknown, do not allow to use offload output");
+        rendererOptions.rendererInfo.isOffloadAllowed = false;
+    }
     rendererOptions.rendererInfo.playerType = PLAYER_TYPE_ARKTS_AUDIO_RENDERER;
 #if !defined(ANDROID_PLATFORM) && !defined(IOS_PLATFORM)
     rendererNapi->audioRenderer_ = AudioRenderer::CreateRenderer(rendererOptions);
@@ -228,10 +233,6 @@ unique_ptr<NapiAudioRenderer> NapiAudioRenderer::CreateAudioRendererNativeObject
         CreateRendererFailed();
         rendererNapi.release();
         return nullptr;
-    }
-
-    if (rendererNapi->streamUsage_ == STREAM_USAGE_UNKNOWN) {
-        rendererNapi->audioRenderer_->SetOffloadAllowed(false);
     }
 
     if (rendererNapi->audioRenderer_ != nullptr && rendererNapi->callbackNapi_ == nullptr) {
@@ -1059,11 +1060,11 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
     }
 
     auto inputParser = [env, context](size_t argc, napi_value *argv) {
-        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_ONE, "invalid arguments",
-            NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc == ARGS_ONE, "set loudnessGain failed, invalid arguments",
+            NAPI_ERR_INPUT_INVALID);
         context->status = NapiParamUtils::GetValueDouble(env, context->loudnessGain, argv[PARAM0]);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get RendererSamplingRate failed",
-            NAPI_ERR_INVALID_PARAM);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "set loudnessGain failed, invalid param type",
+            NAPI_ERR_INPUT_INVALID);
     };
 
     context->GetCbInfo(env, info, inputParser);
@@ -1075,13 +1076,25 @@ napi_value NapiAudioRenderer::SetLoudnessGain(napi_env env, napi_callback_info i
         auto *napiAudioRenderer = objectGuard.GetPtr();
         CHECK_AND_RETURN_LOG(CheckAudioRendererStatus(napiAudioRenderer, context),
             "context object state is error.");
+        AudioRendererInfo rendererInfo = {};
+        napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+        StreamUsage streamUsage = rendererInfo.streamUsage;
+        if (streamUsage != STREAM_USAGE_MUSIC && streamUsage != STREAM_USAGE_MOVIE &&
+            streamUsage != STREAM_USAGE_AUDIOBOOK) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+            return;
+        }
         if (context->loudnessGain < MIN_LOUDNESS_GAIN_IN_DOUBLE ||
             context->loudnessGain > MAX_LOUDNESS_GAIN_IN_DOUBLE) {
-            context->SignError(NAPI_ERR_UNSUPPORTED);
+            context->SignError(NAPI_ERROR_INVALID_PARAM);
             return;
         }
         context->intValue = napiAudioRenderer->audioRenderer_->
             SetLoudnessGain(static_cast<float>(context->loudnessGain));
+        if (context->intValue == ERR_PRO_STREAM_NOT_SUPPORTED) {
+            context->SignError(NAPI_ERR_UNSUPPORTED);
+            return;
+        }
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);
         }
@@ -1100,7 +1113,14 @@ napi_value NapiAudioRenderer::GetLoudnessGain(napi_env env, napi_callback_info i
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
-    
+    AudioRendererInfo rendererInfo = {};
+    napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
+    StreamUsage streamUsage = rendererInfo.streamUsage;
+    if (!(streamUsage == STREAM_USAGE_MUSIC || streamUsage == STREAM_USAGE_MOVIE ||
+        streamUsage == STREAM_USAGE_AUDIOBOOK)) {
+        NapiParamUtils::SetValueDouble(env, 0.0f, result);
+        return result;
+    }
     double loudnessGain = napiAudioRenderer->audioRenderer_->GetLoudnessGain();
     NapiParamUtils::SetValueDouble(env, loudnessGain, result);
     return result;

@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <v1_0/iaudio_manager.h>
 #include <thread>
+#include <shared_mutex>
 #include "adapter/i_device_manager.h"
 #include "util/callback_wrapper.h"
 
@@ -57,6 +58,7 @@ public:
     int32_t Flush(void) override;
     int32_t Reset(void) override;
     int32_t RenderFrame(char &data, uint64_t len, uint64_t &writeLen) override;
+    int64_t GetVolumeDataCount() override;
 
     int32_t SuspendRenderSink(void) override;
     int32_t RestoreRenderSink(void) override;
@@ -134,6 +136,8 @@ private:
 
     float leftVolume_ = DEFAULT_VOLUME_LEVEL;
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
+    std::mutex sinkMutex_;
+    std::shared_mutex renderWrapperMutex_;
     std::mutex createRenderMutex_;
     std::mutex threadMutex_;
     std::unordered_map<RemoteAudioCategory, struct RenderWrapper> audioRenderWrapperMap_;

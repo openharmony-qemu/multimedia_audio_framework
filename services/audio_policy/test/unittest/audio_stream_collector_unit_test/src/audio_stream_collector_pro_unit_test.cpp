@@ -15,7 +15,7 @@
 
 #include "audio_stream_collector_unit_test.h"
 #include "audio_system_manager.h"
-#include "audio_client_tracker_callback_proxy.h"
+#include "standard_client_tracker_proxy.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_log.h"
 #include "audio_errors.h"

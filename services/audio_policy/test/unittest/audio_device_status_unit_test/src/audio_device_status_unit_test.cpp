@@ -82,7 +82,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_002, TestSize.Level1)
     int32_t ret = 0;
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
-    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
     ret = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
     EXPECT_EQ(ret, 0);
 }
@@ -825,7 +827,9 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_038, TestSize.Level1)
     std::string address = "00:11:22:33:44:55";
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
-    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDeviceType(DEVICE_TYPE_USB_HEADSET);
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    audioDeviceStatus.audioActiveDevice_.SetCurrentOutputDevice(deviceDescriptor);
 
     result = audioDeviceStatus.HandleArmUsbDevice(deviceType, deviceRole, address);
     EXPECT_EQ(result, SUCCESS);
@@ -1315,6 +1319,29 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_062, TestSize.Level1)
 
     audioDeviceStatus.OnForcedDeviceSelected(devType, macAddress);
     EXPECT_NE(audioDeviceStatus.audioPolicyServerHandler_, nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_063
+* @tc.desc  : Test AddAudioDevice.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_063, TestSize.Level1)
+{
+    AudioModuleInfo info;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
+    info = {};
+    info.supportedRate_.insert(CH_LAYOUT_STEREO);
+    audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
+    info = {};
+    info.supportedChannelLayout_.insert(SAMPLE_RATE_48000);
+    audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
+    info = {};
+    info.supportedRate_.insert(CH_LAYOUT_STEREO);
+    info.supportedChannelLayout_.insert(SAMPLE_RATE_48000);
+    audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(audioDeviceStatus.audioConnectedDevice_.connectedDevices_.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

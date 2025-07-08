@@ -51,7 +51,7 @@ public:
     int32_t SetMute(bool isMute) override;
     void Process() override;
     void HandleMsg() override;
-    int32_t Init() override;
+    int32_t Init(bool isReload = false) override;
     int32_t DeInit(bool isMoveDefault = false) override;
     bool IsInit() override;
     bool IsRunning(void) override;
@@ -78,8 +78,8 @@ private:
     void SendRequest(Request &&request, bool isInit = false);
     int32_t CreateOutputSession(const HpaeStreamInfo &streamInfo);
     int32_t DeleteOutputSession(uint32_t sessionId);
-    int32_t ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
-    int32_t ConnectProcessClusterWithMicRef(HpaeProcessorType &sceneType);
+    void ConnectProcessClusterWithEc(HpaeProcessorType &sceneType);
+    void ConnectProcessClusterWithMicRef(HpaeProcessorType &sceneType);
     int32_t ConnectOutputSession(uint32_t sessionId);
     int32_t DisConnectOutputSession(uint32_t sessionId);
     void DisConnectSceneClusterFromSourceInputCluster(HpaeProcessorType &sceneType);
@@ -98,7 +98,9 @@ private:
     int32_t CapturerSourceStop();
     void CheckIfAnyStreamRunning();
     void UpdateAppsUidAndSessionId();
-
+    bool CheckEcCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &ecNodeInfo,
+        HpaeSourceInputNodeType &ecNodeType);
+    bool CheckMicRefCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &micRefNodeInfo);
 private:
     HpaeNoLockQueue hpaeNoLockQueue_;
     std::unique_ptr<HpaeSignalProcessThread> hpaeSignalProcessThread_ = nullptr;

@@ -70,11 +70,15 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
 #ifdef FEATURE_DISTRIBUTE_AUDIO
     } else if (deviceClass == "remote") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE, info);
+    } else if (deviceClass == "remote_offload") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_REMOTE_OFFLOAD, info);
 #endif
     } else if (deviceClass == "offload") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_OFFLOAD, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "multichannel") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_MULTICHANNEL, HDI_ID_INFO_DEFAULT);
+    } else if (deviceClass == "dp_multichannel") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_MULTICHANNEL, HDI_ID_INFO_DP);
     } else if (deviceClass == "primary_direct_voip") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_VOIP);
     } else if (deviceClass == "primary_mmap_voip") {

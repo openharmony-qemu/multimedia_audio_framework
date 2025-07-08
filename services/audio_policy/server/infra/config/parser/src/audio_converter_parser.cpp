@@ -118,7 +118,8 @@ static void LoadConfigLibrary(ConverterConfig &result, std::shared_ptr<AudioXmlN
     std::string libPath;
     curNode->GetProp("name", libName);
     curNode->GetProp("path", libPath);
-    result.library = {libName, libPath};
+    result.library.name = libName;
+    result.library.path = libPath;
 }
 
 static void LoadConfigChannelLayout(ConverterConfig &result, std::shared_ptr<AudioXmlNode> curNode)

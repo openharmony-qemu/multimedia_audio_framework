@@ -216,15 +216,6 @@ void GetStreamTypePriorityFuzzTest()
     interruptService->GetStreamTypePriority(streamType);
 }
 
-void GetStreamPriorityMapFuzzTest()
-{
-    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
-    if (interruptService == nullptr) {
-        return;
-    }
-    interruptService->GetStreamPriorityMap();
-}
-
 void SendInterruptEventFuzzTest()
 {
     AudioFocuState oldState = GetData<AudioFocuState>();
@@ -386,14 +377,6 @@ void AudioDeviceMoreFuzzTest()
     GetServerPtr()->GetDirectPlaybackSupport(audioStreamInfo, streamUsage);
 }
 
-void AudioPolicySomeMoreFuzzTest()
-{
-    uint32_t sessionID = GetData<uint32_t>();
-    GetServerPtr()->OnAudioStreamRemoved(sessionID);
-    GetServerPtr()->ProcessSessionRemoved(sessionID);
-    GetServerPtr()->ProcessorCloseWakeupSource(sessionID);
-}
-
 void AudioPolicyOtherMoreFuzzTest()
 {
     int pid = GetData<int>();
@@ -468,13 +451,11 @@ TestFuncs g_testFuncs = {
     AudioInterruptZoneDumpFuzzTest,
     ClearAudioFocusInfoListOnAccountsChangedFuzzTest,
     GetStreamTypePriorityFuzzTest,
-    GetStreamPriorityMapFuzzTest,
     SendInterruptEventFuzzTest,
     IsSameAppInShareModeFuzzTest,
     GetAudioFocusInfoListFuzzTest,
     AudioVolumeMoreFuzzTest,
     AudioDeviceMoreFuzzTest,
-    AudioPolicySomeMoreFuzzTest,
     AudioPolicyOtherMoreFuzzTest,
     AudioVolumeKeyCallbackStubMoreFuzzTest,
     AudioPolicyManagerFuzzTest,

@@ -106,7 +106,7 @@ struct AudioModuleInfo {
     std::string rate;
 
     std::set<uint32_t> supportedRate_;
-    std::set<uint32_t> supportedChannels_;
+    std::set<uint64_t> supportedChannelLayout_;
 
     std::string format;
     std::string channels;

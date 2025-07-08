@@ -18,6 +18,7 @@
 #include "audio_errors.h"
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
+#include "hpae_inner_capturer_manager.h"
 #include "hpae_co_buffer_node.h"
 #include <thread>
 #include <chrono>
@@ -29,6 +30,8 @@
 using namespace OHOS;
 using namespace AudioStandard;
 using namespace HPAE;
+using namespace testing::ext;
+using namespace testing;
 namespace {
 static std::string g_rootPath = "/data/";
 constexpr int32_t FRAME_LENGTH_882 = 882;
@@ -37,6 +40,7 @@ constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr uint32_t INVALID_ID = 99999;
+constexpr uint32_t LOUDNESS_GAIN = 1.0f;
 class HpaeRendererManagerTest : public testing::Test {
 public:
     void SetUp();
@@ -144,6 +148,46 @@ void TestRendererManagerCreateStream(
 }
 
 template <class RenderManagerType>
+void TestRenderManagerReload()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+
+    EXPECT_EQ(hpaeRendererManager->ReloadRenderManager(sinkInfo, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+
+    EXPECT_EQ(hpaeRendererManager->ReloadRenderManager(sinkInfo, true) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
+
+template <class RenderManagerType>
 void TestIRendererManagerCreateDestoryStream()
 {
     HpaeSinkInfo sinkInfo;
@@ -242,28 +286,77 @@ static void TestIRendererManagerStartPuaseStream()
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-TEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest)
+template <class RenderManagerType>
+static void TestIRendererManagerSetLoudnessGain()
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = std::make_shared<RenderManagerType>(sinkInfo);
+
+    EXPECT_EQ(hpaeRendererManager->Init() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+    // test SetLoundessGain when session is created but not connected
+    HpaeStreamInfo streamInfo;
+    streamInfo.channels = STEREO;
+    streamInfo.samplingRate = SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_F32LE;
+    streamInfo.frameLen = FRAME_LENGTH_960;
+    streamInfo.sessionId = TEST_STREAM_SESSION_ID;
+    streamInfo.streamType = STREAM_MUSIC;
+    streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+
+    EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    // test set loundess gain before start
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    
+    EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+
+    // test set loudness gain after start
+    EXPECT_EQ(hpaeRendererManager->SetLoudnessGain(streamInfo.sessionId, LOUDNESS_GAIN) == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+}
+
+HWTEST_F(HpaeRendererManagerTest, constructHpaeRendererManagerTest, TestSize.Level0)
 {
     TestIRendererManagerConstruct<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerConstruct<HpaeOffloadRendererManager>();
 }
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitTest)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerInitTest, TestSize.Level1)
 {
     TestIRendererManagerInit<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerInit<HpaeOffloadRendererManager>();
 }
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateDestoryStreamTest)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerReloadTest, TestSize.Level1)
+{
+    TestRenderManagerReload<HpaeRendererManager>();
+    std::cout << "test offload" << std::endl;
+    TestRenderManagerReload<HpaeOffloadRendererManager>();
+}
+
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateDestoryStreamTest, TestSize.Level1)
 {
     TestIRendererManagerCreateDestoryStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
     TestIRendererManagerCreateDestoryStream<HpaeOffloadRendererManager>();
 }
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerStartPuaseStreamTest, TestSize.Level1)
 {
     TestIRendererManagerStartPuaseStream<HpaeRendererManager>();
     std::cout << "test offload" << std::endl;
@@ -289,7 +382,7 @@ static void HpaeRendererManagerCreateStream(
     TestCheckSinkInputInfo(sinkInputInfo, streamInfo);
 }
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -320,7 +413,7 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_001)
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -365,7 +458,7 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerCreateStreamTest_002)
 }
 
 
-TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -401,7 +494,7 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
     EXPECT_EQ(hpaeRendererManager->Pause(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSING);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PAUSED);
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     // offload need enable after start
     hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
@@ -412,7 +505,7 @@ TEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage)
     EXPECT_EQ(hpaeRendererManager->Stop(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
-    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPING);
+    EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(
@@ -440,7 +533,7 @@ static void GetBtSpeakerSinkInfo(HpaeSinkInfo &sinkInfo)
  * @tc.number: UpdateCollaborativeState_001
  * @tc.desc  : Test UpdateCollaborativeState before stream is created.
  */
-TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
@@ -491,7 +584,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_001)
  * @tc.number: UpdateCollaborativeState_002
  * @tc.desc  : Test UpdateCollaborativeState after stream is created.
  */
-TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
+HWTEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     GetBtSpeakerSinkInfo(sinkInfo);
@@ -542,7 +635,7 @@ TEST_F(HpaeRendererManagerTest, UpdateCollaborativeState_002)
  * @tc.number: ConnectCoBufferNode_001
  * @tc.desc  : Test ConnectCoBufferNode when config in vaild.
  */
-TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
+HWTEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -583,7 +676,7 @@ TEST_F(HpaeRendererManagerTest, ConnectCoBufferNode_001)
  * @tc.number: MoveAllStream_001
  * @tc.desc  : Test MoveAllStream when sink is initialized.
  */
-TEST_F(HpaeRendererManagerTest, MoveAllStream_001)
+HWTEST_F(HpaeRendererManagerTest, MoveAllStream_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -616,7 +709,7 @@ TEST_F(HpaeRendererManagerTest, MoveAllStream_001)
  * @tc.number: MoveAllStream_002
  * @tc.desc  : Test MoveAllStream when sink is not initialized.
  */
-TEST_F(HpaeRendererManagerTest, MoveAllStream_002)
+HWTEST_F(HpaeRendererManagerTest, MoveAllStream_002, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -647,7 +740,7 @@ TEST_F(HpaeRendererManagerTest, MoveAllStream_002)
  * @tc.number: MoveStreamSync_001
  * @tc.desc  : Test MoveStreamSync when sessionId doesn't exist in sinkInputNodeMap_.
  */
-TEST_F(HpaeRendererManagerTest, MoveStreamSync_001)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -679,7 +772,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_001)
  * @tc.number: MoveStreamSync_002
  * @tc.desc  : Test MoveStreamSync when sinkName is empty.
  */
-TEST_F(HpaeRendererManagerTest, MoveStreamSync_002)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_002, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -711,7 +804,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_002)
  * @tc.number: MoveStreamSync_003
  * @tc.desc  : Test MoveStreamSync when session is in HPAE_SESSION_STOPPING state.
  */
-TEST_F(HpaeRendererManagerTest, MoveStreamSync_003)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_003, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -746,7 +839,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_003)
  * @tc.number: MoveStreamSync_004
  * @tc.desc  : Test MoveStreamSync when session is in HPAE_SESSION_PAUSING state.
  */
-TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
+HWTEST_F(HpaeRendererManagerTest, MoveStreamSync_004, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
@@ -780,7 +873,7 @@ TEST_F(HpaeRendererManagerTest, MoveStreamSync_004)
  * @tc.number: CreateDefaultProcessCluster_001
  * @tc.desc  : Verify function creates new default cluster when none exists.
  */
-TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_001)
+HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_001, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
@@ -796,7 +889,7 @@ TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_001)
  * @tc.number: CreateDefaultProcessCluster_002
  * @tc.desc  : Verify function reuses existing default cluster.
  */
-TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002)
+HWTEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002, TestSize.Level0)
 {
     HpaeSinkInfo sinkInfo;
     std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
@@ -815,7 +908,7 @@ TEST_F(HpaeRendererManagerTest, CreateDefaultProcessCluster_002)
  * @tc.number: ReloadRenderManager_001
  * @tc.desc: Test basic reload functionality
  */
-TEST_F(HpaeRendererManagerTest, ReloadRenderManager_001)
+HWTEST_F(HpaeRendererManagerTest, ReloadRenderManager_001, TestSize.Level1)
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.deviceName = "test_device";
@@ -826,5 +919,35 @@ TEST_F(HpaeRendererManagerTest, ReloadRenderManager_001)
     int32_t ret = hpaeRendererManager->ReloadRenderManager(sinkInfo);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+HWTEST_F(HpaeRendererManagerTest, HpaeRendererSetLoudnessGain_001, TestSize.Level0)
+{
+    std::cout << "test renderer manager" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeRendererManager>();
+    std::cout << "test offload" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeOffloadRendererManager>();
+    std::cout << "test innercapture manager" << std::endl;
+    TestIRendererManagerSetLoudnessGain<HpaeInnerCapturerManager>();
+}
+
+/**
+ * @tc.name: CreateRendererManager
+ * @tc.type: FUNC
+ * @tc.number: CreateRendererManager_001
+ * @tc.desc: Test CreateRendererManager
+ */
+HWTEST_F(HpaeRendererManagerTest, CreateRendererManager_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceClass = "remote_offload";
+    std::shared_ptr<IHpaeRendererManager> hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
+    sinkInfo.deviceClass = "offload";
+    hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
+    sinkInfo.deviceClass = "test";
+    hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    EXPECT_NE(hpaeRendererManager, nullptr);
 }
 }  // namespace

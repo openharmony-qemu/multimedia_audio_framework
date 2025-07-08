@@ -25,7 +25,6 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_manager_base.h"
-#include "audio_manager_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_policy_manager.h"
 

@@ -20,10 +20,10 @@
 #include <set>
 #include <limits>
 #include <unordered_set>
+#include "audio_device_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr size_t AUDIO_DEVICE_INFO_SIZE_LIMIT = 30;
 constexpr int32_t INVALID_GROUP_ID = -1;
 namespace {
 const char* LOCAL_NETWORK_ID = "LocalDevice";
@@ -363,6 +363,12 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
+struct VolumeBehavior {
+    bool isReady = false;
+    bool isVolumeControlDisabled = false;
+    std::string databaseVolumeName = "";
+};
+
 struct DevicePrivacyInfo {
     std::string deviceName;
     DeviceType deviceType;
@@ -381,85 +387,6 @@ struct AffinityDeviceInfo {
     bool SupportedConcurrency;
 };
 
-template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &parcel)
-{
-    size_t size = value.size();
-    if (!parcel.WriteUint64(size)) {
-        return false;
-    }
-    for (const auto &i : value) {
-        if (!parcel.WriteInt32(i)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-template<typename T> std::set<T> UnmarshallingSetInt32(Parcel &parcel,
-    const size_t maxSize = std::numeric_limits<size_t>::max())
-{
-    size_t size = parcel.ReadUint64();
-    // due to security concerns, sizelimit has been imposed
-    if (size > maxSize) {
-        size = maxSize;
-    }
-
-    std::set<T> res;
-    for (size_t i = 0; i < size; i++) {
-        res.insert(static_cast<T>(parcel.ReadInt32()));
-    }
-    return res;
-}
-
-struct DeviceStreamInfo {
-    AudioEncodingType encoding = AudioEncodingType::ENCODING_PCM;
-    AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
-    AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
-    std::set<AudioSamplingRate> samplingRate;
-    std::set<AudioChannel> channels;
-
-    DeviceStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
-        AudioChannel channels_) : encoding(encoding_), format(format_),
-        samplingRate({samplingRate_}), channels({channels_})
-    {}
-    DeviceStreamInfo(AudioStreamInfo audioStreamInfo) : DeviceStreamInfo(audioStreamInfo.samplingRate,
-        audioStreamInfo.encoding, audioStreamInfo.format, audioStreamInfo.channels)
-    {}
-    DeviceStreamInfo() = default;
-
-    bool Marshalling(Parcel &parcel) const
-    {
-        return parcel.WriteInt32(static_cast<int32_t>(encoding))
-            && parcel.WriteInt32(static_cast<int32_t>(format))
-            && MarshallingSetInt32(samplingRate, parcel)
-            && MarshallingSetInt32(channels, parcel);
-    }
-    void Unmarshalling(Parcel &parcel)
-    {
-        encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
-        format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
-        samplingRate = UnmarshallingSetInt32<AudioSamplingRate>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
-        channels = UnmarshallingSetInt32<AudioChannel>(parcel, AUDIO_DEVICE_INFO_SIZE_LIMIT);
-    }
-
-    bool operator==(const DeviceStreamInfo& info) const
-    {
-        return encoding == info.encoding && format == info.format && channels == info.channels &&
-            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
-    }
-
-    bool CheckParams()
-    {
-        if (samplingRate.size() == 0) {
-            return false;
-        }
-        if (channels.size() == 0) {
-            return false;
-        }
-        return true;
-    }
-};
-
 enum class AudioStreamDeviceChangeReason {
     UNKNOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
@@ -467,7 +394,7 @@ enum class AudioStreamDeviceChangeReason {
     OVERRODE = 3
 };
 
-class AudioStreamDeviceChangeReasonExt {
+class AudioStreamDeviceChangeReasonExt : public Parcelable {
 public:
     enum class ExtEnum {
         UNKNOWN = 0,
@@ -496,6 +423,8 @@ public:
         return static_cast<int>(reason_);
     }
 
+    AudioStreamDeviceChangeReasonExt()
+        : reason_(ExtEnum::UNKNOWN) {}
     AudioStreamDeviceChangeReasonExt(const AudioStreamDeviceChangeReason &reason)
         : reason_(static_cast<ExtEnum>(reason)) {}
 
@@ -529,6 +458,21 @@ public:
     bool IsSetDefaultOutputDevice() const
     {
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(reason_));
+    }
+
+    static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new AudioStreamDeviceChangeReasonExt();
+        if (info == nullptr) {
+            return nullptr;
+        }
+        info->reason_ = static_cast<ExtEnum>(parcel.ReadInt32());
+        return info;
     }
 
 private:

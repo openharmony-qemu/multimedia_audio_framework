@@ -40,7 +40,7 @@ public:
     virtual ~MicrophoneDescriptor();
 
     bool Marshalling(Parcel &parcel) const override;
-    static sptr<MicrophoneDescriptor> Unmarshalling(Parcel &in);
+    static MicrophoneDescriptor *Unmarshalling(Parcel &parcel);
 
     void SetMicPositionInfo(const Vector3D &pos);
     void SetMicOrientationInfo(const Vector3D &orientation);

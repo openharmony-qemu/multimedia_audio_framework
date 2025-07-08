@@ -29,6 +29,7 @@
 #include "audio_inner_call.h"
 #include "audio_server.h"
 #include "audio_service.h"
+#include "audio_service_types.h"
 #include "audio_param_parser.h"
 #include "audio_process_config.h"
 #include "audio_utils.h"
@@ -89,6 +90,8 @@ public:
 
     int32_t OffloadGetRenderPosition(uint32_t &delayValue, uint64_t &sendDataSize, uint32_t &timeStamp) override;
 
+    int32_t NearlinkGetRenderPosition(uint32_t &delayValue) override;
+
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
 
     int32_t GetMaxRendererInstances() override;
@@ -97,8 +100,13 @@ public:
 
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-        const StreamUsage streamUsage, bool isRunning) override;
+    int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+    int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
+
+    int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
+#endif
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
@@ -117,7 +125,7 @@ int32_t MockPolicyProvider::GetProcessDeviceInfo(const AudioProcessConfig &confi
     deviceInfo.networkId_ = "LocalDevice";
     deviceInfo.deviceName_ = "testname";
 
-    deviceInfo.audioStreamInfo_ = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
     return SUCCESS;
 }
 
@@ -155,6 +163,11 @@ int32_t MockPolicyProvider::OffloadGetRenderPosition(uint32_t &delayValue, uint6
     return SUCCESS;
 }
 
+int32_t MockPolicyProvider::NearlinkGetRenderPosition(uint32_t &delayValue)
+{
+    return SUCCESS;
+}
+
 int32_t MockPolicyProvider::GetAndSaveClientType(uint32_t uid, const std::string &bundleName)
 {
     return SUCCESS;
@@ -175,11 +188,23 @@ int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
     return SUCCESS;
 }
 
-int32_t MockPolicyProvider::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return SUCCESS;
 }
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+int32_t MockPolicyProvider::LoadModernInnerCapSink(int32_t innerCapId)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
+{
+    return SUCCESS;
+}
+#endif
+
 void AudioFuzzTestGetPermission()
 {
     uint64_t tokenId;
@@ -224,7 +249,7 @@ AudioServer *GetServerPtr()
             AUDIO_INFO_LOG("Audio extra parameters load configuration successfully.");
         }
 
-        std::vector<std::pair<std::string, std::string>> kvpairs = {
+        std::vector<StringPair> kvpairs = {
             {"key1", "value1"},
             {"key2", "value2"},
             {"key3", "value3"}
@@ -249,13 +274,14 @@ void InitAudioServer()
 
     std::shared_ptr<AudioSharedMemory> buffer;
     wrapper->InitSharedVolume(buffer);
+    bool ret = false;
     AudioProcessConfig config;
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     wrapper->GetProcessDeviceInfo(config, true, deviceInfo);
     wrapper->SetWakeUpAudioCapturerFromAudioServer(config);
     wrapper->NotifyCapturerAdded(config.capturerInfo, config.streamInfo, 0);
     wrapper->NotifyWakeUpCapturerRemoved();
-    wrapper->IsAbsVolumeSupported();
+    wrapper->IsAbsVolumeSupported(ret);
 }
 
 void ModifyStreamInfoFormat(AudioProcessConfig &config)
@@ -328,11 +354,12 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
 
     std::string name = "fuzz_test";
     ipcStream->RegisterThreadPriority(0, name, METHOD_START);
+    bool ret = false;
     uint32_t sessionId = 0;
     ipcStream->GetAudioSessionID(sessionId);
     ipcStream->Start();
     ipcStream->Pause();
-    ipcStream->Drain();
+    ipcStream->Drain(ret);
     AudioPlaybackCaptureConfig config = {{{STREAM_USAGE_MUSIC}, FilterMode::INCLUDE, {0}, FilterMode::INCLUDE}, false};
     ipcStream->UpdatePlaybackCaptureConfig(config);
     uint64_t framePos = 0;
@@ -365,7 +392,7 @@ void CallStreamFuncs(sptr<IpcStreamInServer> ipcStream)
     ipcStream->SetMute(false);
     ipcStream->SetDuckFactor(volume);
     ipcStream->Stop();
-    ipcStream->Release();
+    ipcStream->Release(false);
 }
 
 void DoStreamFuzzTest(const AudioProcessConfig &config, const uint8_t *rawData, size_t size)
@@ -376,7 +403,7 @@ void DoStreamFuzzTest(const AudioProcessConfig &config, const uint8_t *rawData, 
         return;
     }
 
-    uint32_t code = GetData<uint32_t>() % (IpcStream::IpcStreamMsg::IPC_STREAM_MAX_MSG);
+    uint32_t code = 20;
     rawData = rawData + sizeof(uint32_t);
     size = size - sizeof(uint32_t);
 
@@ -449,8 +476,11 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     ModifyProcessConfig(config);
 
     int32_t errorCode = 0;
-    auto remoteObj = GetServerPtr()->CreateAudioProcess(config, errorCode);
-    if (remoteObj != nullptr) {
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    sptr<IRemoteObject> ret = nullptr;
+    CHECK_AND_RETURN(GetServerPtr() != nullptr);
+    GetServerPtr()->CreateAudioProcess(config, errorCode, filterConfig, ret);
+    if (ret != nullptr) {
         DoStreamFuzzTest(config, rawData, size);
     }
     if (config.appInfo.appUid == 0) {

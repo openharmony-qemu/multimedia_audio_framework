@@ -17,9 +17,10 @@
 #define ST_AUDIO_SESSION_H
 
 #include <mutex>
-
+#include <vector>
 #include "audio_interrupt_info.h"
 #include "audio_session_info.h"
+#include "audio_device_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,7 +39,17 @@ public:
     AudioSession(const int32_t callerPid, const AudioSessionStrategy &strategy,
         const std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor);
     ~AudioSession();
-
+    bool IsSceneParameterSet();
+    int32_t SetAudioSessionScene(AudioSessionScene audioSessionScene);
+    bool IsActivated();
+    std::vector<AudioInterrupt> GetStreams();
+    AudioStreamType GetFakeStreamType();
+    void AddStreamInfo(const AudioInterrupt &incomingInterrupt);
+    void RemoveStreamInfo(uint32_t streamId);
+    uint32_t GetFakeStreamId();
+    void SaveFakeStreamId(uint32_t fakeStreamId);
+    bool ShouldExcludeStreamType(const AudioInterrupt &audioInterrupt);
+    void Dump(std::string &dumpString);
     int32_t Activate();
     int32_t Deactivate();
     AudioSessionState GetSessionState();
@@ -49,16 +60,27 @@ public:
     int32_t RemoveAudioInterrptByStreamId(const uint32_t &streamId);
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();
+    int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType);
+    void GetSessionDefaultOutputDevice(DeviceType &deviceType);
+    bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
+    bool IsNeedToFetchDefaultDevice();
 
 private:
+    StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
+    bool IsLegalDevice(const DeviceType deviceType);
+    int32_t EnableDefaultDevice();
     std::mutex sessionMutex_;
-
     int32_t callerPid_;
+    bool needToFetch_ = false;
     AudioSessionStrategy strategy_;
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
-
+    AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
+    // These are streams included in audiosession focus.
+    std::vector<AudioInterrupt> bypassStreamInfoVec_;
+    uint32_t fakeStreamId_ {0};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     std::unordered_map<uint32_t, std::pair<AudioInterrupt, AudioFocuState>> interruptMap_;
+    DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
 };
 } // namespace AudioStandard
 } // namespace OHOS

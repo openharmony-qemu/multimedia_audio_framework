@@ -36,12 +36,14 @@ public:
     int32_t OnReadData(int8_t *outputData, size_t requestDataLen) override;
 
     int32_t ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer);
+    int32_t ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+        uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame);
     int32_t GetSessionId(uint32_t &sessionId);
     int32_t Start();
     int32_t Pause();
     int32_t Flush();
     int32_t Stop();
-    int32_t Release();
+    int32_t Release(bool isSwitchStream = false);
 
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp);
     int32_t GetLatency(uint64_t &latency);

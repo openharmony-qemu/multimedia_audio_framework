@@ -36,6 +36,7 @@
 #include "dfx_msg_manager.h"
 
 #include "audio_source_clock.h"
+#include "capturer_clock.h"
 #include "capturer_clock_manager.h"
 
 namespace OHOS {
@@ -46,7 +47,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 2;
+const uint8_t TESTSIZE = 3;
 constexpr uint32_t MOCK_SAMPLE_RATE = 48000;
 
 typedef void (*TestFuncs)();
@@ -102,9 +103,23 @@ void GetRecordCaptureDeviceFuzzTest()
     CapturerClockManager::GetInstance().audioSrcClockPool_.size();
 }
 
+void CaptureClockStartAndStopFuzzTest()
+{
+    uint32_t capturerSampleRate = GetData<uint32_t>();
+    CapturerClock clock(capturerSampleRate);
+    clock.Start();
+    uint64_t time = GetData<uint64_t>();
+    uint32_t srcSampleRate = GetData<uint32_t>();
+    uint64_t posIncSize = GetData<uint64_t>();
+
+    clock.SetTimeStampByPosition(time, srcSampleRate, posIncSize);
+    clock.Stop();
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     GetMediaRenderDeviceFuzzTest,
     GetRecordCaptureDeviceFuzzTest,
+    CaptureClockStartAndStopFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

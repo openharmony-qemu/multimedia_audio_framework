@@ -32,15 +32,19 @@ public:
     HpaeMixerNode(HpaeNodeInfo &nodeInfo);
     virtual bool Reset() override;
     int32_t SetupAudioLimiter();
+    int32_t InitAudioLimiter();
 protected:
     HpaePcmBuffer *SignalProcess(const std::vector<HpaePcmBuffer *> &inputs) override;
 private:
     bool CheckUpdateInfo(HpaePcmBuffer *input);
+    bool CheckUpdateInfoForDisConnect();
+    void DrainProcess();
     std::unordered_map<uint32_t, float> streamVolumeMap_;
     PcmBufferInfo pcmBufferInfo_;
     HpaePcmBuffer mixedOutput_;
     HpaePcmBuffer tmpOutput_;
     std::unique_ptr<AudioLimiter> limiter_ = nullptr;
+    uint32_t waitFrames_ = 0;
 #ifdef ENABLE_HOOK_PCM
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;;
 #endif

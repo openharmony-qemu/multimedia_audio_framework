@@ -41,12 +41,12 @@ int32_t MMAAudioManagerImpl::GetAudioScene()
     return scene;
 }
 
-int64_t MMAAudioManagerImpl::GetStreamManger(int32_t* errorCode)
+int64_t MMAAudioManagerImpl::GetStreamManager(int32_t* errorCode)
 {
     auto mgr = FFIData::Create<MMAAudioStreamManagerImpl>();
     if (!mgr) {
         *errorCode = CJ_ERR_SYSTEM;
-        AUDIO_ERR_LOG("Create StreamManger error");
+        AUDIO_ERR_LOG("Create StreamManager error");
         return CJ_ERR_INVALID_RETURN_VALUE;
     }
     *errorCode = SUCCESS_CODE;

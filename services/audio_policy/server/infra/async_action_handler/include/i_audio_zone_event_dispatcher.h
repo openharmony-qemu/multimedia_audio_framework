@@ -16,6 +16,8 @@
 #ifndef I_AUDIO_ZONE_EVENT_DISPATCHER_H
 #define I_AUDIO_ZONE_EVENT_DISPATCHER_H
 
+#include <list>
+
 #include "audio_zone_info.h"
 #include "audio_interrupt_info.h"
 

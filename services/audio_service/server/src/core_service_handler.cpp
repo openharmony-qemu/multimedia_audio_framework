@@ -62,6 +62,12 @@ int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOp
     return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
+int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    return iCoreServiceProvider_->ReloadCaptureSession(sessionId, operation);
+}
+
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
@@ -72,19 +78,24 @@ int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutpu
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId);
+    std::string ret{};
+    iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId, ret);
+    return ret;
 }
 
-int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+    bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
 }
 
 uint32_t CoreServiceHandler::GenerateSessionId()
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
-    return iCoreServiceProvider_->GenerateSessionId();
+    uint32_t ret{};
+    iCoreServiceProvider_->GenerateSessionId(ret);
+    return ret;
 }
 } // namespace AudioStandard
 } // namespace OHOS

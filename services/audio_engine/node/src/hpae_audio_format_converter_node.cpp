@@ -20,7 +20,6 @@
 #include "audio_utils.h"
 #include "cinttypes"
 
-static constexpr uint32_t DEFAULT_EFFECT_RATE = 48000;
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
@@ -100,6 +99,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
 #ifdef ENABLE_HOOK_PCM
     if (inputPcmDumper_ != nullptr) {
+        inputPcmDumper_->CheckAndReopenHandle();
         inputPcmDumper_->Dump((int8_t *)(srcData),
             inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
     }
@@ -122,6 +122,7 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
 
 #ifdef ENABLE_HOOK_PCM
     if (outputPcmDumper_ != nullptr) {
+        outputPcmDumper_->CheckAndReopenHandle();
         outputPcmDumper_->Dump((int8_t *)dstData,
             converterOutput_.GetFrameLen() * sizeof(float) * channelConverter_.GetOutChannelInfo().numChannels);
     }
@@ -164,26 +165,25 @@ int32_t HpaeAudioFormatConverterNode::ConverterProcess(float *srcData, float *ds
 // return true if output info is updated
 bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
 {
-    // update channelLayout and numChannels
     if (nodeFormatInfoCallback_ == nullptr) {
         return false;
     }
     
-    uint32_t numChannels = 0;
-    uint64_t channelLayout = CH_LAYOUT_UNKNOWN;
-    // effectnode input is 48k by default now
-    uint32_t sampleRate = DEFAULT_EFFECT_RATE;
+    AudioBasicFormat basicFormat;
+    basicFormat.rate = preNodeInfo_.samplingRate;
     
-    // if there exists an effect node, converter node output is effect node input
-    // update channels and channelLayout
-    
-    nodeFormatInfoCallback_->GetEffectNodeInputChannelInfo(numChannels, channelLayout);
-    
-    if (numChannels == 0 ||  channelLayout == CH_LAYOUT_UNKNOWN) {
+    // if there exists an effect node, converter node output is common input of loudness node and effectnode
+    // Must check loudness node input before effectnode
+    nodeFormatInfoCallback_->GetNodeInputFormatInfo(preNodeInfo_.sessionId, basicFormat);
+
+    uint32_t numChannels = basicFormat.audioChannelInfo.numChannels;
+    AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;
+    AudioSamplingRate sampleRate = basicFormat.rate;
+    if (numChannels == 0 || channelLayout == CH_LAYOUT_UNKNOWN) {
         // set to node info, which is device output info
         AUDIO_INFO_LOG("Fail to check format into from effect node");
         numChannels = GetChannelCount();
-        channelLayout = (uint64_t)GetChannelLayout();
+        channelLayout = GetChannelLayout();
         sampleRate = GetSampleRate();
     }
 

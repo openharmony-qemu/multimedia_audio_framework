@@ -29,7 +29,6 @@
 #endif
 
 #include "i_audio_process_stream.h"
-#include "i_audio_process.h"
 #include "audio_info.h"
 #include "audio_device_descriptor.h"
 #include "ipc_stream_in_server.h"
@@ -87,7 +86,7 @@ public:
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
-    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config);
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
         const AudioProcessConfig &clientConfig, bool isVoipStream);
 
@@ -99,8 +98,8 @@ public:
     void Dump(std::string &dumpString);
     float GetMaxAmplitude(bool isOutputDevice);
 
-    void RemoveRenderer(uint32_t sessionId);
-    void RemoveCapturer(uint32_t sessionId);
+    void RemoveRenderer(uint32_t sessionId, bool isSwitchStream = false);
+    void RemoveCapturer(uint32_t sessionId, bool isSwitchStream = false);
     int32_t EnableDualToneList(uint32_t sessionId);
     int32_t DisableDualToneList(uint32_t sessionId);
     int32_t SetOffloadMode(uint32_t sessionId, int32_t state, bool isAppBack);
@@ -137,6 +136,7 @@ public:
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
+    void RenderersCheckForAudioWorkgroup(int32_t pid);
 
 private:
     AudioService();
@@ -174,6 +174,8 @@ private:
     void ReLinkProcessToEndpoint();
     void AddFilteredRender(int32_t innerCapId, std::shared_ptr<RendererInServer> renderer);
     bool IsMuteSwitchStream(uint32_t sessionId);
+    float GetSystemVolume();
+    void UpdateSystemVolume(AudioStreamType streamType, float volume);
 
 private:
     std::mutex foregroundSetMutex_;
@@ -221,6 +223,8 @@ private:
     std::map<uint32_t, MuteStateChangeCallbck> muteStateCallbacks_{};
     std::mutex muteStateMapMutex_;
     std::map<uint32_t, bool> muteStateMap_{};
+    std::mutex musicOrVoipSystemVolumeMutex_;
+    float musicOrVoipSystemVolume_ = 0.0f;
 };
 } // namespace AudioStandard
 } // namespace OHOS

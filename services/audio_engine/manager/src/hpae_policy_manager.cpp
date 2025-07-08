@@ -205,6 +205,13 @@ void HpaePolicyManager::SetAudioParameter(const std::string &adapterName, const 
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
     deviceManager->SetAudioParameter(adapterName, key, condition, value);
 }
+
+void HpaePolicyManager::SendInitCommandToAlgo()
+{
+    AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
+    audioEnhanceChainManager->SendInitCommand();
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

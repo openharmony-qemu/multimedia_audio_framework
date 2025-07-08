@@ -33,6 +33,8 @@ constexpr int32_t SAMPLE_FORMAT = 1;
 constexpr int32_t FRAME_SIZE = 240; // 240:FRAME_SIZE value
 constexpr float MAX_AUDIO_VOLUME = 1.0f; // volume range is between 0 to 1.
 constexpr float MIN_AUDIO_VOLUME = 0.0f; // volume range is between 0 to 1.
+constexpr float VALID_LOUDNESS_GAIN = 10.0f;
+constexpr float INVALID_LOUDNESS_GAIN = 25.0f;
 constexpr int32_t DURATIONMS = 40; // 40:fade out latency ms
 constexpr int32_t CHANNEL_2 = 2;
 
@@ -129,7 +131,6 @@ struct UserData {
 public:
     enum {
         WRITE_DATA_CALLBACK,
-
         WRITE_DATA_CALLBACK_WITH_RESULT
     } writeDataCallbackType;
 };

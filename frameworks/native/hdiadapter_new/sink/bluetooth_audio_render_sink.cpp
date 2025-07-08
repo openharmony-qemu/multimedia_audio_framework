@@ -28,12 +28,16 @@
 #include "audio_performance_monitor.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_monitor.h"
 #include "adapter/i_device_manager.h"
 
 using namespace OHOS::HDI::Audio_Bluetooth;
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+constexpr int64_t MONITOR_WRITE_COST = 1 * 1000 * 1000 * 1000; // 1s
+}
 BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency)
     : isBluetoothLowLatency_(isBluetoothLowLatency)
 {
@@ -138,6 +142,8 @@ int32_t BluetoothAudioRenderSink::Start(void)
         int32_t ret = audioRender_->control.Start(reinterpret_cast<AudioHandle>(audioRender_));
         if (ret) {
             AUDIO_ERR_LOG("start fail, remain %{public}d attempt(s)", tryCount);
+            HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp start "
+                "failed:" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             continue;
         }
@@ -283,6 +289,11 @@ int32_t BluetoothAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t
     runningLock_->UpdateAppsUidToPowerMgr();
 #endif
     return ret;
+}
+
+int64_t BluetoothAudioRenderSink::GetVolumeDataCount()
+{
+    return volumeDataCount_;
 }
 
 int32_t BluetoothAudioRenderSink::SuspendRenderSink(void)
@@ -776,10 +787,10 @@ void BluetoothAudioRenderSink::CheckUpdateState(char *data, uint64_t len)
 int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen)
 {
     int32_t ret = SUCCESS;
-
+    int64_t stamp = 0;
     while (true) {
         Trace trace("BluetoothAudioRenderSink::DoRenderFrame");
-        int64_t stamp = ClockTime::GetCurNano();
+        stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void *)&data, len, &writeLen);
         AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
@@ -797,6 +808,11 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
             ret = ERR_WRITE_FAILED;
         }
         break;
+    }
+
+    if (stamp > MONITOR_WRITE_COST) {
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_TIMEOUT,
+            static_cast<int32_t>(stamp), ("call RenderFrame too long!"));
     }
 
     return ret;

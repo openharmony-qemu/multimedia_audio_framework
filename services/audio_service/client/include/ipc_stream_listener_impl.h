@@ -17,7 +17,7 @@
 #define IPC_STREAM_LISTERNER_IMPL_H
 
 #include "message_parcel.h"
-
+#include "i_stream_listener.h"
 #include "ipc_stream_listener_stub.h"
 
 namespace OHOS {
@@ -29,7 +29,8 @@ public:
     virtual ~IpcStreamListenerImpl() = default;
 
     // IpcStreamListenerStub
-    int32_t OnOperationHandled(Operation operation, int64_t result) override;
+    int32_t OnOperationHandled(int32_t operation, int64_t result) override;
+    int32_t OnOperationHandledLazy(int32_t operation, int64_t result) override;
 private:
     std::weak_ptr<IStreamListener> innerListener_;
 };

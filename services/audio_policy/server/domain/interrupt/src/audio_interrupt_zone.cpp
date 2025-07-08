@@ -112,7 +112,7 @@ int32_t AudioInterruptZoneManager::ReleaseAudioInterruptZone(const int32_t zoneI
             it->first.streamUsage == STREAM_USAGE_MOVIE)) {
             ForceStopAudioFocusInZone(zoneId, it->first);
         } else {
-            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "");
+            int32_t destZoneId = func(it->first.uid, it->first.deviceTag, "", it->first.streamUsage);
             service_->ActivateAudioInterruptInternal(zoneId, it->first, false, updateScene);
         }
     }
@@ -150,7 +150,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
     bool isMigrate = false;
     bool updateScene = false;
     for (auto itFocus = focusInfoList.begin(); itFocus != focusInfoList.end();) {
-        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "");
+        int32_t toZoneId = func(itFocus->first.uid, itFocus->first.deviceTag, "", itFocus->first.streamUsage);
         if (toZoneId == zoneId) {
             ++itFocus;
             continue;

@@ -20,7 +20,7 @@
 #include "policy_handler.h"
 
 #include "securec.h"
-
+#include "iprocess_cb.h"
 #include "audio_errors.h"
 #include "audio_capturer_log.h"
 #include "audio_service.h"
@@ -39,7 +39,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace {
-static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volume
 }
 
 sptr<AudioProcessInServer> AudioProcessInServer::Create(const AudioProcessConfig &processConfig,
@@ -59,7 +58,9 @@ AudioProcessInServer::AudioProcessInServer(const AudioProcessConfig &processConf
         sessionId_ = processConfig.originalSessionId;
     }
 
-    const auto [samplingRate, encoding, format, channels, channelLayout] = processConfig.streamInfo;
+    AudioSamplingRate samplingRate = processConfig_.streamInfo.samplingRate;
+    AudioSampleFormat format = processConfig_.streamInfo.format;
+    AudioChannel channels = processConfig_.streamInfo.channels;
     // eg: 100005_dump_process_server_audio_48000_2_1.pcm
     dumpFileName_ = std::to_string(sessionId_) + '_' + "_dump_process_server_audio_" +
         std::to_string(samplingRate) + '_' + std::to_string(channels) + '_' + std::to_string(format) +
@@ -93,6 +94,28 @@ AudioProcessInServer::~AudioProcessInServer()
         TurnOffMicIndicator(CAPTURER_INVALID);
     }
     AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(processConfig_.originalSessionId);
+}
+
+static CapturerState HandleStreamStatusToCapturerState(const StreamStatus &status)
+{
+    switch (status) {
+        case STREAM_IDEL:
+        case STREAM_STAND_BY:
+            return CAPTURER_PREPARED;
+        case STREAM_STARTING:
+        case STREAM_RUNNING:
+            return CAPTURER_RUNNING;
+        case STREAM_PAUSING:
+        case STREAM_PAUSED:
+            return CAPTURER_PAUSED;
+        case STREAM_STOPPING:
+        case STREAM_STOPPED:
+            return CAPTURER_STOPPED;
+        case STREAM_RELEASED:
+            return CAPTURER_RELEASED;
+        default:
+            return CAPTURER_INVALID;
+    }
 }
 
 int32_t AudioProcessInServer::GetSessionId(uint32_t &sessionId)
@@ -143,7 +166,8 @@ void AudioProcessInServer::EnableStandby()
     WriterRenderStreamStandbySysEvent(sessionId_, 1);
 }
 
-int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
+int32_t AudioProcessInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<OHAudioBufferBase> &buffer,
+    uint32_t &spanSizeInFrame)
 {
     AUDIO_INFO_LOG("ResolveBuffer start");
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_, ERR_ILLEGAL_STATE,
@@ -153,12 +177,13 @@ int32_t AudioProcessInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buff
         AUDIO_ERR_LOG("ResolveBuffer failed, buffer is nullptr.");
     }
     buffer = processBuffer_;
+    spanSizeInFrame = spanSizeInframe_;
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, ERR_ILLEGAL_STATE, "ResolveBuffer failed, processBuffer_ is null.");
 
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
+int32_t AudioProcessInServer::RequestHandleInfo()
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE, "buffer not inited!");
@@ -168,6 +193,12 @@ int32_t AudioProcessInServer::RequestHandleInfo(bool isAsync)
     }
     return SUCCESS;
 }
+
+int32_t AudioProcessInServer::RequestHandleInfoAsync()
+{
+    return RequestHandleInfo();
+}
+
 
 bool AudioProcessInServer::CheckBGCapturer()
 {
@@ -211,7 +242,7 @@ bool AudioProcessInServer::TurnOnMicIndicator(CapturerState capturerState)
     } else {
         CHECK_AND_RETURN_RET_LOG(PermissionUtil::NotifyPrivacyStart(tokenId, sessionId_),
             false, "NotifyPrivacyStart failed!");
-        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off"
+        AUDIO_INFO_LOG("Turn on micIndicator of stream:%{public}d from off "
             "after NotifyPrivacyStart success!", sessionId_);
         isMicIndicatorOn_ = true;
     }
@@ -368,7 +399,7 @@ int32_t AudioProcessInServer::Resume()
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::Stop(AudioProcessStage stage)
+int32_t AudioProcessInServer::Stop(int32_t stage)
 {
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
@@ -446,6 +477,7 @@ ProcessDeathRecipient::ProcessDeathRecipient(AudioProcessInServer *processInServ
 void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
 {
     CHECK_AND_RETURN_LOG(processHolder_ != nullptr, "processHolder_ is null.");
+    CHECK_AND_RETURN_LOG(processInServer_ != nullptr, "processInServer_ is nullptr");
     auto config = processInServer_->GetAudioProcessConfig();
     if (config.capturerInfo.isLoopback || config.rendererInfo.isLoopback) {
         AudioService::GetInstance()->DisableLoopback();
@@ -454,7 +486,7 @@ void ProcessDeathRecipient::OnRemoteDied(const wptr<IRemoteObject> &remote)
     AUDIO_INFO_LOG("OnRemoteDied ret: %{public}d %{public}" PRId64 "", ret, createTime_);
 }
 
-int32_t AudioProcessInServer::RegisterProcessCb(sptr<IRemoteObject> object)
+int32_t AudioProcessInServer::RegisterProcessCb(const sptr<IRemoteObject>& object)
 {
     sptr<IProcessCb> processCb = iface_cast<IProcessCb>(object);
     CHECK_AND_RETURN_RET_LOG(processCb != nullptr, ERR_INVALID_PARAM, "RegisterProcessCb obj cast failed");
@@ -516,7 +548,7 @@ void AudioProcessInServer::Dump(std::string &dumpString)
     dumpString += "\n";
 }
 
-std::shared_ptr<OHAudioBuffer> AudioProcessInServer::GetStreamBuffer()
+std::shared_ptr<OHAudioBufferBase> AudioProcessInServer::GetStreamBuffer()
 {
     CHECK_AND_RETURN_RET_LOG(isBufferConfiged_ && processBuffer_ != nullptr,
         nullptr, "GetStreamBuffer failed:process buffer not config.");
@@ -566,30 +598,12 @@ int32_t AudioProcessInServer::InitBufferStatus()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_ILLEGAL_STATE,
         "InitBufferStatus failed, null buffer.");
 
-    uint32_t spanCount = processBuffer_->GetSpanCount();
-    for (uint32_t i = 0; i < spanCount; i++) {
-        SpanInfo *spanInfo = processBuffer_->GetSpanInfoByIndex(i);
-        CHECK_AND_RETURN_RET_LOG(spanInfo != nullptr, ERR_ILLEGAL_STATE,
-            "InitBufferStatus failed, null spaninfo");
-        spanInfo->spanStatus = SPAN_READ_DONE;
-        spanInfo->offsetInFrame = 0;
-
-        spanInfo->readStartTime = 0;
-        spanInfo->readDoneTime = 0;
-
-        spanInfo->writeStartTime = 0;
-        spanInfo->writeDoneTime = 0;
-
-        spanInfo->volumeStart = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->volumeEnd = 1 << VOLUME_SHIFT_NUMBER; // 65536 for initialize
-        spanInfo->isMute = false;
-    }
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     return SUCCESS;
 }
 
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
-    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBuffer> &buffer)
+    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -598,7 +612,8 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     // check
     CHECK_AND_RETURN_RET_LOG(totalSizeInframe != 0 && spanSizeInframe != 0 && totalSizeInframe % spanSizeInframe == 0,
         ERR_INVALID_PARAM, "ConfigProcessBuffer failed: ERR_INVALID_PARAM");
-    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && serverStreamInfo.channels.size() > 0,
+    std::set<AudioChannel> channels = serverStreamInfo.GetChannels();
+    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && channels.size() > 0,
         ERR_INVALID_PARAM, "Invalid stream info in server");
     uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / *serverStreamInfo.samplingRate.rbegin();
     spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
@@ -607,11 +622,11 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
-    if (*serverStreamInfo.channels.rbegin() != processConfig_.streamInfo.channels ||
+    if (*channels.rbegin() != processConfig_.streamInfo.channels ||
         serverStreamInfo.format != processConfig_.streamInfo.format) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-            uint32_t serverByteSize = *serverStreamInfo.channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);
+            uint32_t serverByteSize = *channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);
             spanSizeInByte = static_cast<size_t>(spanSizeInframe * serverByteSize);
         } else {
             spanSizeInByte = static_cast<size_t>(spanSizeInframe_ * byteSizePerFrame_);
@@ -623,7 +638,7 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
 
     if (buffer == nullptr) {
         // create OHAudioBuffer in server.
-        processBuffer_ = OHAudioBuffer::CreateFromLocal(totalSizeInframe_, spanSizeInframe_, byteSizePerFrame_);
+        processBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInframe_, byteSizePerFrame_);
         CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_OPERATION_FAILED, "Create process buffer failed.");
 
         CHECK_AND_RETURN_RET_LOG(processBuffer_->GetBufferHolder() == AudioBufferHolder::AUDIO_SERVER_SHARED,
@@ -673,14 +688,20 @@ int32_t AudioProcessInServer::RemoveProcessStatusListener(std::shared_ptr<IProce
     return SUCCESS;
 }
 
-int32_t AudioProcessInServer::RegisterThreadPriority(pid_t tid, const std::string &bundleName,
-    BoostTriggerMethod method)
+int32_t AudioProcessInServer::RegisterThreadPriority(int32_t tid, const std::string &bundleName, uint32_t method)
 {
     pid_t pid = IPCSkeleton::GetCallingPid();
     CHECK_AND_RETURN_RET_LOG(method < METHOD_MAX, ERR_INVALID_PARAM, "err param %{public}u", method);
-    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, tid, bundleName);
+    auto sharedGuard = SharedAudioScheduleGuard::Create(pid, static_cast<pid_t>(tid), bundleName);
     std::lock_guard lock(scheduleGuardsMutex_);
     scheduleGuards_[method].swap(sharedGuard);
+    return SUCCESS;
+}
+
+int32_t AudioProcessInServer::SetAudioHapticsSyncId(int32_t audioHapticsSyncId)
+{
+    AUDIO_INFO_LOG("AudioProcessInServer::SetAudioHapticsSyncId %{public}d", audioHapticsSyncId);
+    audioHapticsSyncId_.store(audioHapticsSyncId);
     return SUCCESS;
 }
 
@@ -721,10 +742,11 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
     }
 }
 
-int32_t AudioProcessInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
 {
-    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, sessionId_,
-        processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+    CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERROR, "streamStatus_ is nullptr");
+    return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice),
+        sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
 }
 
 int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
@@ -792,6 +814,11 @@ StreamStatus AudioProcessInServer::GetStreamStatus()
     return streamStatus_->load();
 }
 
+int32_t AudioProcessInServer::GetAudioHapticsSyncId()
+{
+    return audioHapticsSyncId_.load();
+}
+
 int64_t AudioProcessInServer::GetLastAudioDuration()
 {
     auto ret = lastStopTime_ - lastStartTime_;
@@ -802,13 +829,28 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
 {
     RestoreStatus restoreStatus = processBuffer_->SetRestoreStatus(NEED_RESTORE);
     if (restoreStatus == NEED_RESTORE) {
+        if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
+            SwitchStreamInfo info = {
+                sessionId_,
+                processConfig_.callerUid,
+                processConfig_.appInfo.appUid,
+                processConfig_.appInfo.appPid,
+                processConfig_.appInfo.appTokenId,
+                HandleStreamStatusToCapturerState(streamStatus_->load())
+            };
+            AUDIO_INFO_LOG("Insert fast record stream:%{public}u uid:%{public}d tokenId:%{public}u "
+                "into switchStreamRecord because restoreStatus:NEED_RESTORE",
+                sessionId_, info.callerUid, info.appTokenId);
+            SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_WAITING);
+        }
+
         processBuffer_->SetRestoreInfo(restoreInfo);
     }
     return restoreStatus;
 }
 
-int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId, std::string adjustTime,
-    uint32_t code)
+int32_t AudioProcessInServer::SaveAdjustStreamVolumeInfo(float volume, uint32_t sessionId,
+    const std::string& adjustTime, uint32_t code)
 {
     AudioService::GetInstance()->SaveAdjustStreamVolumeInfo(volume, sessionId, adjustTime, code);
     return SUCCESS;
@@ -819,6 +861,16 @@ int32_t AudioProcessInServer::StopSession()
     CHECK_AND_RETURN_RET_LOG(processBuffer_ != nullptr, ERR_INVALID_PARAM, "processBuffer_ is nullptr");
     processBuffer_->SetStopFlag(true);
     return SUCCESS;
+}
+
+uint32_t AudioProcessInServer::GetSpanSizeInFrame()
+{
+    return spanSizeInframe_;
+}
+
+uint32_t AudioProcessInServer::GetByteSizePerFrame()
+{
+    return byteSizePerFrame_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

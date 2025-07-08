@@ -46,7 +46,7 @@ enum class AudioZoneFocusStrategy {
     DISTRIBUTED_FOCUS_STRATEGY = 1,
 };
 
-class AudioZoneContext {
+class AudioZoneContext : public Parcelable {
 public:
     AudioZoneFocusStrategy focusStrategy_ = AudioZoneFocusStrategy::LOCAL_FOCUS_STRATEGY;
 
@@ -57,9 +57,15 @@ public:
         return parcel.WriteInt32(static_cast<int32_t>(focusStrategy_));
     }
 
-    void Unmarshalling(Parcel &parcel)
+    static AudioZoneContext *Unmarshalling(Parcel &parcel)
     {
-        focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        auto info = new AudioZoneContext();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->focusStrategy_ = static_cast<AudioZoneFocusStrategy>(parcel.ReadInt32());
+        return info;
     }
 };
 
@@ -93,7 +99,7 @@ public:
         return true;
     }
 
-    void Unmarshalling(Parcel &parcel)
+    void UnmarshallingSelf(Parcel &parcel)
     {
         zoneId_ = parcel.ReadInt32();
         name_ = parcel.ReadString();
@@ -105,25 +111,64 @@ public:
         }
 
         for (size_t i = 0; i < size; i++) {
-            std::shared_ptr<AudioDeviceDescriptor> device = std::make_shared<AudioDeviceDescriptor>();
+            std::shared_ptr<AudioDeviceDescriptor> device(AudioDeviceDescriptor::Unmarshalling(parcel));
             if (device == nullptr) {
                 devices_.clear();
                 return;
             }
-            device->UnmarshallingToDeviceDescriptor(parcel);
             devices_.emplace_back(device);
         }
     }
 
-    static std::shared_ptr<AudioZoneDescriptor> UnmarshallingPtr(Parcel &parcel)
+    static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)
     {
-        std::shared_ptr<AudioZoneDescriptor> desc = std::make_shared<AudioZoneDescriptor>();
+        auto desc = new AudioZoneDescriptor();
         if (desc == nullptr) {
             return nullptr;
         }
 
-        desc->Unmarshalling(parcel);
+        desc->UnmarshallingSelf(parcel);
         return desc;
+    }
+};
+
+struct AudioZoneStream : public Parcelable {
+    StreamUsage streamUsage = STREAM_USAGE_INVALID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    bool isPlay = true;
+    bool operator==(const AudioZoneStream &value) const
+    {
+        return streamUsage == value.streamUsage && sourceType == value.sourceType && isPlay == value.isPlay;
+    }
+
+    bool operator<(const AudioZoneStream &value) const
+    {
+        return streamUsage < value.streamUsage || (streamUsage == value.streamUsage && sourceType < value.sourceType);
+    }
+
+    bool operator>(const AudioZoneStream &value) const
+    {
+        return streamUsage > value.streamUsage || (streamUsage == value.streamUsage && sourceType > value.sourceType);
+    }
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteInt32(static_cast<int32_t>(sourceType))
+            && parcel.WriteBool(isPlay);
+    }
+
+    static AudioZoneStream *Unmarshalling(Parcel &parcel)
+    {
+        auto stream = new AudioZoneStream();
+        if (stream == nullptr) {
+            return nullptr;
+        }
+
+        stream->streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        stream->sourceType = static_cast<SourceType>(parcel.ReadInt32());
+        stream->isPlay = parcel.ReadBool();
+        return stream;
     }
 };
 } // namespace AudioStandard

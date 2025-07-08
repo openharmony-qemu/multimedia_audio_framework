@@ -16,11 +16,12 @@
 #ifndef AUDIO_STREAM_COLLECTOR_H
 #define AUDIO_STREAM_COLLECTOR_H
 
-#include "audio_policy_client.h"
+#include "iaudio_policy_client.h"
 #include "audio_system_manager.h"
 #include "audio_policy_server_handler.h"
 #include "audio_concurrency_service.h"
 #include "audio_ability_manager.h"
+#include "audio_stream_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,7 +37,6 @@ public:
     AudioStreamCollector();
     ~AudioStreamCollector();
 
-    void AddAudioPolicyClientProxyMap(int32_t clientPid, const sptr<IAudioPolicyClient>& cb);
     void ReduceAudioPolicyClientProxyMap(pid_t clientPid);
     int32_t RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
         const sptr<IRemoteObject> &object);
@@ -51,13 +51,15 @@ public:
     int32_t UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo);
     int32_t GetCurrentRendererChangeInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos);
     int32_t GetCurrentCapturerChangeInfos(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos);
-    void RegisteredTrackerClientDied(int32_t uid);
+    int32_t GetRunningRendererInfos(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &infos);
+    void RegisteredTrackerClientDied(int32_t uid, int32_t pid);
     int32_t UpdateStreamState(int32_t clientUid, StreamSetStateEventInternal &streamSetStateEventInternal);
     void HandleAppStateChange(int32_t uid, int32_t pid, bool mute, bool &notifyMute, bool hasBackTask);
-    void HandleForegroundUnmute(int32_t uid);
+    void HandleKaraokeAppToBack(int32_t uid, int32_t pid);
+    void HandleForegroundUnmute(int32_t uid, int32_t pid);
     void HandleFreezeStateChange(int32_t pid, bool mute, bool hasSession);
     void HandleBackTaskStateChange(int32_t uid, bool hasSession);
-    void HandleStartStreamMuteState(int32_t uid, bool mute, bool skipMedia);
+    void HandleStartStreamMuteState(int32_t uid, int32_t pid, bool mute, bool skipMedia);
     bool IsStreamActive(AudioStreamType volumeType);
     bool CheckVoiceCallActive(int32_t sessionId);
     bool IsVoiceCallActive();
@@ -134,7 +136,7 @@ private:
         std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     void SetCapturerStreamParam(AudioStreamChangeInfo &streamChangeInfo,
         std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    void RegisteredRendererTrackerClientDied(const int32_t uid);
+    void RegisteredRendererTrackerClientDied(const int32_t uid, const int32_t pid);
     void RegisteredCapturerTrackerClientDied(const int32_t uid);
     void SendCapturerInfoEvent(const std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos);
     bool CheckRendererStateInfoChanged(AudioStreamChangeInfo &streamChangeInfo);

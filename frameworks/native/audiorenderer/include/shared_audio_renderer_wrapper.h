@@ -283,6 +283,7 @@ public:
         return sharedAudioRenderer_->GetLowPowerVolume();
     }
 
+    // in plan:need remove
     int32_t SetOffloadAllowed(bool isAllowed) override
     {
         return sharedAudioRenderer_->SetOffloadAllowed(isAllowed);
@@ -464,6 +465,11 @@ public:
     void SetAudioHapticsSyncId(int32_t audioHapticsSyncId) override
     {
         sharedAudioRenderer_->SetAudioHapticsSyncId(audioHapticsSyncId);
+    }
+
+    void ResetFirstFrameState() override
+    {
+        sharedAudioRenderer_->ResetFirstFrameState();
     }
 
     int32_t StopDataCallback() override

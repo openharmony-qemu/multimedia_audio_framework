@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package OHOS.AudioStandard;
+
+sequenceable audio_info..OHOS.AudioStandard.VolumeEvent;
+sequenceable audio_interrupt_info..OHOS.AudioStandard.AudioInterrupt;
+sequenceable audio_policy_interface..OHOS.AudioStandard.DeviceChangeAction;
+sequenceable audio_system_manager..OHOS.AudioStandard.MicrophoneBlockedInfo;
+sequenceable audio_info..OHOS.AudioStandard.MicStateChangeEvent;
+sequenceable audio_info..OHOS.AudioStandard.AudioRendererInfo;
+sequenceable audio_info..OHOS.AudioStandard.AudioCapturerInfo;
+sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+sequenceable audio_stream_change_info..OHOS.AudioStandard.AudioRendererChangeInfo;
+sequenceable audio_stream_change_info..OHOS.AudioStandard.AudioCapturerChangeInfo;
+sequenceable audio_device_info..OHOS.AudioStandard.AudioStreamDeviceChangeReasonExt;
+sequenceable audio_info..OHOS.AudioStandard.StreamVolumeEvent;
+interface IAudioPolicyClient {
+    [ipccode 0, customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnVolumeKeyEvent([in] VolumeEvent volumeEvent);
+    [oneway] void OnAudioFocusInfoChange([in] List<OrderedMap<AudioInterrupt, int>> focusInfoList); // const std::list<std::pair<AudioInterrupt, AudioFocuState>> &focusInfoList 
+    [oneway] void OnAudioFocusRequested([in] AudioInterrupt requestFocus);
+    [oneway] void OnAudioFocusAbandoned([in] AudioInterrupt abandonFocus);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnDeviceChange([in] DeviceChangeAction deviceChangeAction);
+    [oneway] void OnAppVolumeChanged([in] int appUid, [in] VolumeEvent volumeEvent);
+    [oneway] void OnActiveVolumeTypeChanged([in] int volumeType); // const AudioVolumeType& volumeType
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnRingerModeUpdated([in] int ringerMode); // AudioRingerMode  ringerMode
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnMicStateUpdated([in] MicStateChangeEvent micStateChangeEvent);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnPreferredOutputDeviceUpdated([in] AudioRendererInfo rendererInfo,
+        [in] List<sharedptr<AudioDeviceDescriptor>> desc); // const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnPreferredInputDeviceUpdated([in] AudioCapturerInfo capturerInfo,
+        [in] List<sharedptr<AudioDeviceDescriptor>> desc); // const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnRendererStateChange([in] List<sharedptr<AudioRendererChangeInfo>> audioRendererChangeInfos); // std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnCapturerStateChange([in] List<sharedptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos); // std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnRendererDeviceChange([in] unsigned int sessionId,
+        [in] AudioDeviceDescriptor deviceInfo, [in] AudioStreamDeviceChangeReasonExt reason);
+    [oneway] void OnRecreateRendererStreamEvent([in] unsigned int sessionId, [in] int streamFlag,
+        [in] AudioStreamDeviceChangeReasonExt reason);
+    [oneway] void OnRecreateCapturerStreamEvent([in] unsigned int sessionId, [in] int streamFlag,
+        [in] AudioStreamDeviceChangeReasonExt reason);
+    [oneway] void OnHeadTrackingDeviceChange([in] Map<String, boolean> changeInfo); // const std::unordered_map<std::string, bool> &
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnSpatializationEnabledChange([in] boolean enabled);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnSpatializationEnabledChangeForAnyDevice(
+        [in] sharedptr<AudioDeviceDescriptor> deviceDescriptor, [in] boolean enabled);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnHeadTrackingEnabledChange([in] boolean enabled);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnHeadTrackingEnabledChangeForAnyDevice(
+        [in] sharedptr<AudioDeviceDescriptor> deviceDescriptor, [in] boolean enabled);
+    [oneway] void OnNnStateChange([in] int nnState);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnAudioSessionDeactive([in] int deactiveEvent); // AudioSessionDeactiveEvent deactiveEvent
+    [oneway] void OnMicrophoneBlocked([in] MicrophoneBlockedInfo microphoneBlockedInfo);
+    [oneway] void OnAudioSceneChange([in] int audioScene); // const AudioScene &audioScene
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnSpatializationEnabledChangeForCurrentDevice([in] boolean enabled);
+    [oneway] void OnFormatUnsupportedError([in] int errorCode); // const AudioErrors &errorCode
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnStreamVolumeChange([in]StreamVolumeEvent streamVolumeEvent);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnSystemVolumeChange([in] VolumeEvent volumeEvent);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
+    void OnAudioSessionStateChanged([in] int stateChangeHint /* AudioSessionStateChangedEvent */);
+}

@@ -31,7 +31,7 @@ IpcStreamListenerImpl::IpcStreamListenerImpl(std::shared_ptr<IStreamListener> in
     innerListener_ = innerListener;
 }
 
-int32_t IpcStreamListenerImpl::OnOperationHandled(Operation operation, int64_t result)
+int32_t IpcStreamListenerImpl::OnOperationHandled(int32_t operation, int64_t result)
 {
     std::shared_ptr<IStreamListener> listener = innerListener_.lock();
     if (listener == nullptr) {
@@ -39,7 +39,13 @@ int32_t IpcStreamListenerImpl::OnOperationHandled(Operation operation, int64_t r
             "%{public}" PRId64".", operation, result);
         return ERR_ILLEGAL_STATE;
     }
-    return listener->OnOperationHandled(operation, result);
+    return listener->OnOperationHandled(static_cast<Operation>(operation), result);
 }
+
+int32_t IpcStreamListenerImpl::OnOperationHandledLazy(int32_t operation, int64_t result)
+{
+    return OnOperationHandled(operation, result);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

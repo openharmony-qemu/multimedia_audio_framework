@@ -20,7 +20,11 @@
 #include <securec.h>
 #include <cstring>
 #include "hdf_device_class.h"
-#include "v5_0/audio_types.h"
+
+namespace {
+    #include "v5_0/audio_types.h"
+}
+
 
 #ifdef BLUETOOTH_ENABLE
 
@@ -31,6 +35,7 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_core_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -42,6 +47,7 @@ const std::string DP_ADDRESS = "card=0;port=";
 const uint8_t EVENT_NUM_TYPE = 2;
 const uint8_t EVENT_PARAMS = 4;
 const uint8_t D_EVENT_PARAMS = 5;
+const std::string DEVICE_STREAM_INFO_PREFIX = "CAPS=";
 
 static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
 {
@@ -80,6 +86,33 @@ static DeviceType GetInternalDeviceType(PnpDeviceType pnpDeviceType)
     return internalDeviceType;
 }
 
+static std::list<DeviceStreamInfo> ParseDeviceStreamInfo(const std::string &info)
+{
+    std::string deviceStreamInfoStr;
+    auto pos = info.find(DEVICE_STREAM_INFO_PREFIX);
+    CHECK_AND_RETURN_RET_LOG(pos != std::string::npos, {}, "invalid info");
+    pos += DEVICE_STREAM_INFO_PREFIX.length();
+    auto endPos = info.find(";", pos);
+    deviceStreamInfoStr = endPos == std::string::npos ? info.substr(pos) : info.substr(pos, endPos - pos);
+    AUDIO_INFO_LOG("deviceStreamInfo: %{public}s", deviceStreamInfoStr.c_str());
+    return DeviceStreamInfo::DeserializeList(deviceStreamInfoStr);
+}
+
+static void ReceiveRemoteOffloadInfo(std::string &info, DStatusInfo &statusInfo)
+{
+    if (statusInfo.isConnected) {
+        CHECK_AND_RETURN(info.find(DEVICE_STREAM_INFO_PREFIX) != std::string::npos);
+        auto deviceStreamInfoList = ParseDeviceStreamInfo(info);
+        AUDIO_INFO_LOG("device stream info size: %{public}zu", deviceStreamInfoList.size());
+        statusInfo.streamInfo = deviceStreamInfoList;
+        std::list<std::string> supportDevices = { "Distributed_Output" };
+        AudioCoreService::GetCoreService()->UpdateStreamPropInfo("remote", "offload_distributed_output",
+            deviceStreamInfoList, supportDevices);
+    } else {
+        AudioCoreService::GetCoreService()->ClearStreamPropInfo("remote", "offload_distributed_output");
+    }
+}
+
 static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::string & info,
     DeviceStatusListener * devListener)
 {
@@ -97,6 +130,7 @@ static void ReceviceDistributedInfo(struct ServiceStatus* serviceStatus, std::st
         }
 
         statusInfo.isConnected = (pnpEventType == PNP_EVENT_DEVICE_ADD) ? true : false;
+        ReceiveRemoteOffloadInfo(info, statusInfo);
         devListener->deviceObserver_.OnDeviceStatusUpdated(statusInfo);
     } else if (serviceStatus->status == SERVIE_STATUS_STOP) {
         AUDIO_DEBUG_LOG("distributed service offline");

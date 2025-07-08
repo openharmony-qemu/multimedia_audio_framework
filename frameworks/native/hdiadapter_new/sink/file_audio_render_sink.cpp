@@ -30,9 +30,6 @@ FileAudioRenderSink::~FileAudioRenderSink()
 
 int32_t FileAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
-    if (attr.filePath == nullptr) {
-        return ERROR;
-    }
     filePath_.assign(attr.filePath);
     return SUCCESS;
 }
@@ -114,6 +111,12 @@ int32_t FileAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &wri
     writeLen = realWriteLen;
 
     return SUCCESS;
+}
+
+int64_t FileAudioRenderSink::GetVolumeDataCount()
+{
+    AUDIO_WARNING_LOG("not supported");
+    return 0;
 }
 
 int32_t FileAudioRenderSink::SuspendRenderSink(void)

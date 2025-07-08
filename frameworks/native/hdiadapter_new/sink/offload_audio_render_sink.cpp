@@ -225,6 +225,11 @@ int32_t OffloadAudioRenderSink::RenderFrame(char &data, uint64_t len, uint64_t &
     return SUCCESS;
 }
 
+int64_t OffloadAudioRenderSink::GetVolumeDataCount()
+{
+    return volumeDataCount_;
+}
+
 int32_t OffloadAudioRenderSink::SuspendRenderSink(void)
 {
     return SUCCESS;

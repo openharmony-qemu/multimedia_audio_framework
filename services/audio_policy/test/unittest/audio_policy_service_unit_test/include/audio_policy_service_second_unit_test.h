@@ -32,6 +32,70 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 };
+
+class MockSleAudioOperationCallback : public IStandardSleAudioOperationCallback {
+public:
+    sptr<IRemoteObject> AsObject() override
+    {
+        return nullptr;
+    }
+
+    int32_t GetSleAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t GetSleVirtualAudioDeviceList(std::vector<AudioDeviceDescriptor> &devices) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t IsInBandRingOpen(const std::string &device, bool &ret) override
+    {
+        return 0;
+    }
+
+    int32_t GetSupportStreamType(const std::string &device, uint32_t &retType) override
+    {
+        return 0;
+    }
+
+    int32_t SetActiveSinkDevice(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t ConnectAllowedProfiles(const std::string &remoteAddr, int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t SetDeviceAbsVolume(const std::string &remoteAddr, uint32_t volume, uint32_t streamType,
+        int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t SendUserSelection(const std::string &device, uint32_t streamType, int32_t &ret) override
+    {
+        return SUCCESS;
+    }
+
+    int32_t GetRenderPosition(const std::string &device, uint32_t &delayValue) override
+    {
+        return SUCCESS;
+    }
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_SERVICE_EXT_UNIT_TEST_H

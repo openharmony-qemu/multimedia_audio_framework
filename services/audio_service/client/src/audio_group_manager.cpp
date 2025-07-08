@@ -17,7 +17,6 @@
 #endif
 
 #include "audio_errors.h"
-#include "audio_manager_proxy.h"
 #include "audio_policy_manager.h"
 #include "audio_service_log.h"
 #include "iservice_registry.h"
@@ -25,6 +24,7 @@
 #include "audio_utils.h"
 
 #include "audio_group_manager.h"
+#include "istandard_audio_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,8 +40,7 @@ AudioGroupManager::~AudioGroupManager()
     }
 }
 
-// LCOV_EXCL_START
-int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag)
+int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume, int32_t volumeFlag, int32_t uid)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
@@ -77,7 +76,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
-    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag);
+    return AudioPolicyManager::GetInstance().SetSystemVolumeLevel(volumeType, volume, false, volumeFlag, uid);
 }
 
 AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
@@ -85,12 +84,14 @@ AudioStreamType AudioGroupManager::GetActiveVolumeType(const int32_t clientUid)
     return AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
 }
 
-int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
+int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
 {
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=1;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
-        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        std::string value;
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERROR, "g_sProxy is nullptr");
+        g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
         int32_t convertValue = 0;
         CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
             "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
@@ -120,7 +121,7 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType)
             return ERR_NOT_SUPPORTED;
     }
 
-    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType);
+    return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);
 }
 
 int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
@@ -131,7 +132,8 @@ int32_t AudioGroupManager::GetMaxVolume(AudioVolumeType volumeType)
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=3;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE=" +
             std::to_string(volumeType) + ";";
-        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        std::string value;
+        g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
         int32_t convertValue = 0;
         CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
             "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
@@ -159,7 +161,8 @@ int32_t AudioGroupManager::GetMinVolume(AudioVolumeType volumeType)
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=2;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE" +
             std::to_string(volumeType) + ";";
-        std::string value = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        std::string value;
+        g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, value);
         int32_t convertValue = 0;
         CHECK_AND_RETURN_RET_LOG(StringConverter(value, convertValue), 0,
             "[AudioGroupManger]: convert invalid value: %{public}s", value.c_str());
@@ -223,7 +226,9 @@ int32_t AudioGroupManager::IsStreamMute(AudioVolumeType volumeType, bool &isMute
     if (connectType_ == CONNECT_TYPE_DISTRIBUTED) {
         std::string condition = "EVENT_TYPE=4;VOLUME_GROUP_ID=" + std::to_string(groupId_) + ";AUDIO_VOLUME_TYPE="
             + std::to_string(volumeType) + ";";
-        std::string ret = g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition);
+        CHECK_AND_RETURN_RET_LOG(g_sProxy != nullptr, ERROR, "g_sProxy is nullptr");
+        std::string ret;
+        g_sProxy->GetAudioParameter(netWorkId_, AudioParamKey::VOLUME, condition, ret);
         isMute = (ret == "1" ? true : false);
         return SUCCESS;
     }

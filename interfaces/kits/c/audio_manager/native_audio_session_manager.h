@@ -44,6 +44,8 @@
 #define NATIVE_AUDIO_SESSION_MANAGER_H
 
 #include "native_audio_common.h"
+#include "native_audiostream_base.h"
+#include "native_audio_device_base.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -82,6 +84,50 @@ typedef enum {
      */
     CONCURRENCY_PAUSE_OTHERS = 3,
 } OH_AudioSession_ConcurrencyMode;
+
+/**
+ * @brief Declare the audio session scene.
+ *
+ * @since 20
+ */
+typedef enum {
+    /**
+     * @brief scene for media
+     */
+    AUDIO_SESSION_SCENE_MEDIA = 0,
+
+    /**
+     * @brief scene for game
+     */
+    AUDIO_SESSION_SCENE_GAME = 1,
+
+    /**
+     * @brief scene for voice communication
+     */
+    AUDIO_SESSION_SCENE_VOICE_COMMUNICATION = 2,
+} OH_AudioSession_Scene;
+
+/**
+ * @brief Declare the audio session state change hints.
+ *
+ * @since 20
+ */
+typedef enum {
+    /**
+     * @brief paused/pause the playback
+     */
+    AUDIO_SESSION_STATE_CHANGE_HINT_PAUSE = 0,
+
+    /**
+     * @brief stopped/stop the playback.
+     */
+    AUDIO_SESSION_STATE_CHANGE_HINT_STOP = 1,
+
+    /**
+     * @brief stopped/stop the playback due to no audio stream for a long time.
+     */
+    AUDIO_SESSION_STATE_CHANGE_HINT_TIME_OUT_STOP = 2,
+} OH_AudioSession_StateChangeHint;
 
 /**
  * @brief Declare the audio deactivated reasons.
@@ -123,6 +169,28 @@ typedef struct OH_AudioSession_DeactivatedEvent {
      */
     OH_AudioSession_DeactivatedReason reason;
 } OH_AudioSession_DeactivatedEvent;
+
+/**
+ * @brief declare the audio session state change event
+ *
+ * @since 20
+ */
+typedef struct OH_AudioSession_StateChangedEvent {
+    /**
+     * @brief audio session state change hints.
+     */
+    OH_AudioSession_StateChangeHint stateChangeHint;
+} OH_AudioSession_StateChangedEvent;
+
+/**
+ * @brief This function pointer will point to the callback function that
+ * is used to return the audio session state change event.
+ *
+ * @param event the {@link #OH_AudioSession_StateChangedEvent} state change triggering event.
+ * @since 20
+ */
+typedef int32_t (*OH_AudioSession_StateChangedCallback) (
+    OH_AudioSession_StateChangedEvent event);
 
 /**
  * @brief This function pointer will point to the callback function that
@@ -214,6 +282,78 @@ OH_AudioCommon_Result OH_AudioSessionManager_RegisterSessionDeactivatedCallback(
  */
 OH_AudioCommon_Result OH_AudioSessionManager_UnregisterSessionDeactivatedCallback(
     OH_AudioSessionManager *audioSessionManager, OH_AudioSession_DeactivatedCallback callback);
+
+/**
+ * @brief Set scene for audio session.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param scene the {@link #OH_AudioSession_Scene}
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_ILLEGAL_STATE} if system illegal state
+ * @since 20
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_SetScene(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_Scene scene);
+
+/**
+ * @brief Register the audio session state change event callback.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param callback the {@link #OH_AudioSession_StateChangedCallback} which is used
+ * to receive the state change event
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
+ * @since 20
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_RegisterStateChangeCallback(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_StateChangedCallback callback);
+
+/**
+ * @brief Unregister the audio session state change event callback.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param callback the {@link #OH_AudioSession_StateChangedCallback} which is used
+ * to receive the state change event
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
+ * @since 20
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_UnregisterStateChangeCallback(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioSession_StateChangedCallback callback);
+
+/**
+ * @brief Set the default audio device for the current audio session.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param deviceType The target device. The available deviceTypes are:
+ *                                             EARPIECE: Built-in earpiece
+ *                                             SPEAKER: Built-in speaker
+ *                                             DEFAULT: System default output device
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
+ * @since 20
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_SetDefaultOutputDevice(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDevice_Type deviceType);
+
+/**
+ * @brief Get the default audio device for the current audio session.
+ *
+ * @param audioSessionManager the {@link #OH_AudioSessionManager}
+ * returned by the {@link #OH_AudioManager_GetAudioSessionManager}
+ * @param deviceType the seession default device
+ * @return {@link #AUDIOCOMMON_RESULT_SUCCESS} if execution succeeds
+ * or {@link #AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM} if parameter validation fails
+ * @since 20
+ */
+OH_AudioCommon_Result OH_AudioSessionManager_GetDefaultOutputDevice(
+    OH_AudioSessionManager *audioSessionManager, OH_AudioDevice_Type *deviceType);
+
 #ifdef __cplusplus
 }
 #endif

@@ -60,6 +60,7 @@ ohos_unittest("audio_opensles_player_unit_test") {
     "hilog:libhilog",
     "opensles:libSLES",
     "pulseaudio:pulse",
+    "ipc:ipc_single",
   ]
 
   resource_config_file =
