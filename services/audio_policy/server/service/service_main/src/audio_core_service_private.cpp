@@ -213,7 +213,7 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
         desc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(
             std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchInputDeviceAndRoute();
+        FetchInputDeviceAndRoute("BluetoothScoFetch");
         return;
     }
 
@@ -241,7 +241,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     } else {
         pipeManager_->UpdateModemStreamStatus(STREAM_STATUS_STOPPED);
     }
-    descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1);
+    descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "CheckModemScene");
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
     pipeManager_->UpdateModemStreamDevice(descs);
     AUDIO_INFO_LOG("Update route %{public}d, reason %{public}d",
@@ -324,7 +324,7 @@ void AudioCoreService::UpdateInputDeviceWhenStopping(int32_t uid)
     for (const auto &sessionID : sessionIDSet) {
         audioDeviceManager_.RemoveSelectedInputDevice(sessionID);
     }
-    FetchInputDeviceAndRoute();
+    FetchInputDeviceAndRoute("UpdateInputDeviceWhenStopping");
 }
 
 int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -590,11 +590,11 @@ bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, con
     }
 }
 
-int32_t AudioCoreService::FetchDeviceAndRoute(const AudioStreamDeviceChangeReasonExt reason)
+int32_t AudioCoreService::FetchDeviceAndRoute(std::string caller, const AudioStreamDeviceChangeReasonExt reason)
 {
-    int32_t ret = FetchOutputDeviceAndRoute(reason);
+    int32_t ret = FetchOutputDeviceAndRoute(caller + "FetchDeviceAndRoute", reason);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Fetch output device failed");
-    return FetchInputDeviceAndRoute();
+    return FetchInputDeviceAndRoute(caller + "FetchDeviceAndRoute");
 }
 
 int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -1599,7 +1599,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
         desc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(
             std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchOutputDeviceAndRoute(reason);
+        FetchOutputDeviceAndRoute("HandleScoOutputDeviceFetched_1", reason);
         return ERROR;
     }
     Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true));
@@ -1621,7 +1621,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
         desc->exceptionFlag_ = true;
         audioDeviceManager_.UpdateDevicesListInfo(
             std::make_shared<AudioDeviceDescriptor>(*desc), EXCEPTION_FLAG_UPDATE);
-        FetchOutputDeviceAndRoute(reason);
+        FetchOutputDeviceAndRoute("HandleScoOutputDeviceFetched_2", reason);
         return ERROR;
     }
     if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -1799,7 +1799,8 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
         isRunning ? "running" : "not running", sessionID);
     int32_t ret = audioDeviceManager_.SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
     if (ret == NEED_TO_FETCH) {
-        FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
         return SUCCESS;
     }
     return ret;
@@ -1809,7 +1810,7 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream()
 {
     AUDIO_PRERELEASE_LOGI("No running stream need update several device state");
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1);
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, "HandleFetchOutputWhenNoRunningStream");
     CHECK_AND_RETURN_RET_LOG(!descs.empty(), ERROR, "descs is empty");
     AudioDeviceDescriptor tmpOutputDeviceDesc = audioActiveDevice_.GetCurrentOutputDevice();
     if (descs.front()->deviceType_ == DEVICE_TYPE_NONE || IsSameDevice(descs.front(), tmpOutputDeviceDesc)) {
@@ -2013,7 +2014,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetStreamDescById(
             streamChangeInfo.audioRendererChangeInfo.sessionId), isRemoved);
-        FetchOutputDeviceAndRoute();
+        FetchOutputDeviceAndRoute("UpdateTracker_1");
     }
 
     const auto &capturerState = streamChangeInfo.audioCapturerChangeInfo.capturerState;
@@ -2021,7 +2022,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         AUDIO_INFO_LOG("[ADeviceEvent] fetch device for capturer stream %{public}d released",
             streamChangeInfo.audioCapturerChangeInfo.sessionId);
         audioDeviceManager_.RemoveSelectedInputDevice(streamChangeInfo.audioCapturerChangeInfo.sessionId);
-        FetchInputDeviceAndRoute();
+        FetchInputDeviceAndRoute("UpdateTracker");
     }
 
     if (enableDualHalToneState_ && (mode == AUDIO_MODE_PLAYBACK)
@@ -2043,7 +2044,7 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         // After the ringtone ends, there may still be residual audio data in the pipeline.
         // Switching the device immediately can cause pop noise due the undrained buffers.
         usleep(RING_DUAL_END_DELAY_US);
-        FetchOutputDeviceAndRoute();
+        FetchOutputDeviceAndRoute("UpdateTracker_2");
         for (std::pair<AudioStreamType, StreamUsage> stream :  streamsWhenRingDualOnPrimarySpeaker_) {
             audioPolicyManager_.SetInnerStreamMute(stream.first, false, stream.second);
         }
@@ -2458,9 +2459,9 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             deviceDesc->exceptionFlag_ = true;
             audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, EXCEPTION_FLAG_UPDATE);
             if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK) {
-                FetchOutputDeviceAndRoute(reason);
+                FetchOutputDeviceAndRoute("ActivateNearlinkDevice", reason);
             } else {
-                FetchInputDeviceAndRoute();
+                FetchInputDeviceAndRoute("ActivateNearlinkDevice");
             }
         }
     }

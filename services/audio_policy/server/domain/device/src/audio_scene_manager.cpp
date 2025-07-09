@@ -108,13 +108,14 @@ void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene
     vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
     switch (audioScene) {
         case AUDIO_SCENE_RINGING:
-            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1);
+            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1, "DealAudioSceneOutputDevices_1");
             if (!descs.empty()) {
                 audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
             }
             break;
         case AUDIO_SCENE_VOICE_RINGING:
-            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_RINGTONE, -1);
+            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_RINGTONE, -1,
+                "DealAudioSceneOutputDevices_2");
             if (!descs.empty()) {
                 audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
             }

@@ -2023,7 +2023,7 @@ int32_t AudioPolicyServer::SetInputDevice(int32_t deviceType, uint32_t sessionID
     int32_t ret = audioDeviceManager_.SetInputDevice(static_cast<DeviceType>(deviceType), sessionID,
         static_cast<SourceType>(sourceType), isRunning);
     if (ret == NEED_TO_FETCH) {
-        coreService_->FetchInputDeviceAndRoute();
+        coreService_->FetchInputDeviceAndRoute("SetInputDevice");
         return SUCCESS;
     }
     return ret;
@@ -4257,9 +4257,11 @@ int32_t AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, int32_t 
         return ERR_PERMISSION_DENIED;
     }
     std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1, ROUTER_TYPE_USER_SELECT).front();
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
+            "SaveRemoteInfo_1", ROUTER_TYPE_USER_SELECT).front();
     std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, ROUTER_TYPE_USER_SELECT).front();
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+            "SaveRemoteInfo_2", ROUTER_TYPE_USER_SELECT).front();
     CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr && newCallDescriptor != nullptr, ERROR,
         "newMediaDescriptor or newCallDescriptor is nullptr");
     if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
@@ -4523,7 +4525,8 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
     ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy);
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
-        coreService_->FetchOutputDeviceAndRoute(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        coreService_->FetchOutputDeviceAndRoute("ActivateAudioSession",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
 
     return ret;
@@ -4585,7 +4588,7 @@ int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
         int32_t callerPid = IPCSkeleton::GetCallingPid();
         ret = interruptService_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
         if (ret == NEED_TO_FETCH) {
-            coreService_->FetchOutputDeviceAndRoute(
+            coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
                 AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
             return SUCCESS;
         }

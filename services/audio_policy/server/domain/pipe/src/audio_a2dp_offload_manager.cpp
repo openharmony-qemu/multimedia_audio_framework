@@ -474,7 +474,7 @@ void AudioA2dpOffloadManager::FetchStreamForA2dpOffload(const bool &requireReset
         }
         vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
             audioRouterCenter_.FetchOutputDevices(rendererChangeInfo->rendererInfo.streamUsage,
-            rendererChangeInfo->clientUID);
+            rendererChangeInfo->clientUID, "FetchStreamForA2dpOffload");
 
         if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
             if (requireReset) {

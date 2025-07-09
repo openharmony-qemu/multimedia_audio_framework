@@ -137,7 +137,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         audioPolicyManager_.ResetRemoteCastDeviceVolume();
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
-        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute(
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleRemoteCastDevice_1",
             AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE_EXT);
         UnloadInnerCapturerSink(REMOTE_CAST_INNER_CAPTURER_SINK_NAME);
     }
@@ -148,8 +148,8 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
         AUDIO_INFO_LOG("Enable remotecast device for audio zone, remove from global list");
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, descForCb);
     }
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute();
-    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute();
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleRemoteCastDevice_2");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleRemoteCastDevice_2");
 
     // update a2dp offload
     if (audioA2dpOffloadManager_) {
@@ -458,7 +458,7 @@ bool AudioCapturerSession::IsVoipDeviceChanged(const AudioDeviceDescriptor &inpu
         realInputDevice = *inputDesc;
     }
     vector<std::shared_ptr<AudioDeviceDescriptor>> outputDesc =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1);
+        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1, "IsVoipDeviceChanged");
     if (outputDesc.size() > 0 && outputDesc.front() != nullptr) {
         realOutputDevice = *outputDesc.front();
     }
