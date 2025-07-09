@@ -124,8 +124,7 @@ int32_t AudioEndpointInner::SetVolume(AudioStreamType streamType, float volume)
 MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 {
     AUDIO_INFO_LOG("DupStream %{public}u create MockCallbacks", streamIndex_);
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         dumpDupOutFileName_ = std::to_string(streamIndex_) + "_endpoint_dup_out_" + ".pcm";
         DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpDupOutFileName_, &dumpDupOut_);
     }
@@ -133,8 +132,7 @@ MockCallbacks::MockCallbacks(uint32_t streamIndex) : streamIndex_(streamIndex)
 
 MockCallbacks::~MockCallbacks()
 {
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         DumpFileUtil::CloseDumpFile(&dumpDupOut_);
     }
 }
@@ -153,8 +151,7 @@ int32_t MockCallbacks::OnWriteData(size_t length)
 int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
 {
     Trace trace("DupStream::OnWriteData length " + std::to_string(requestDataLen));
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1 && dupRingBuffer_ != nullptr) {
+    if (GetEngineFlag() == 1 && dupRingBuffer_ != nullptr) {
         OptResult result = dupRingBuffer_->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
@@ -348,8 +345,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     AUDIO_INFO_LOG("Disable dup renderer %{public}d with Endpoint status: %{public}s",
         captureInfo.dupStream->GetStreamIndex(), GetStatusStr(endpointStatus_).c_str());
 
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         uint32_t dupStreamIndex = captureInfo.dupStream->GetStreamIndex();
         if (AudioVolume::GetInstance() != nullptr) {
         AudioVolume::GetInstance()->RemoveStreamVolume(dupStreamIndex);
@@ -1243,9 +1239,8 @@ void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcD
     dstStream.bufferDesc = temp;
     FormatConverter::DataAccumulationFromVolume(tempList, dstStream);
 
-    int32_t engineFlag = GetEngineFlag();
     int32_t ret;
-    if (engineFlag == 1) {
+    if (GetEngineFlag() == 1) {
         WriteDupBufferInner(temp, innerCapId);
     } else {
         ret = fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
@@ -1592,7 +1587,11 @@ void AudioEndpointInner::ProcessToDupStream(const std::vector<AudioStreamData> &
 
             dstStreamData.bufferDesc = temp;
             HandleRendererDataParams(audioDataList[0], dstStreamData, false);
-            fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
+            if (GetEngineFlag() == 1) {
+                WriteDupBufferInner(temp, innerCapId);
+            } else {
+                fastCaptureInfos_[innerCapId].dupStream->EnqueueBuffer(temp);
+            }
         }
     } else {
         MixToDupStream(audioDataList, innerCapId);

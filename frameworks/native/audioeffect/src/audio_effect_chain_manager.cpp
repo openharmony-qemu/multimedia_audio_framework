@@ -1802,7 +1802,7 @@ bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, co
 {
     std::string sceneTypeAndDeviceKey = sceneType + "_&_" + GetDeviceTypeName();
     CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKey) > 0 &&
-        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
+        sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, false, "null audioEffectChain");
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     for (auto it = sessionIDToEffectInfoMap_.begin(); it != sessionIDToEffectInfoMap_.end(); ++it) {
         if (it->first == sessionID || it->second.sceneMode == "EFFECT_NONE") {
@@ -1811,7 +1811,7 @@ bool AudioEffectChainManager::IsEffectChainStop(const std::string &sceneType, co
         std::string sceneTypeTemp = it->second.sceneType;
         std::string sceneTypeAndDeviceKeyTemp = sceneTypeTemp + "_&_" + GetDeviceTypeName();
         CHECK_AND_RETURN_RET_LOG(sceneTypeToEffectChainMap_.count(sceneTypeAndDeviceKeyTemp) > 0 &&
-            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, ERROR, "null audioEffectChain");
+            sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp] != nullptr, false, "null audioEffectChain");
         auto audioEffectChainTemp = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKeyTemp];
         if (audioEffectChainTemp == audioEffectChain) {
             return false;

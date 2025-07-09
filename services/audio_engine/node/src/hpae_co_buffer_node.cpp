@@ -79,6 +79,7 @@ void HpaeCoBufferNode::DoProcess()
     // write silence data if enqueue is not running
     if (!enqueueRunning_) {
         outputStream_.WriteDataToOutput(&silenceData_);
+        return;
     }
     
     // process output buffer
