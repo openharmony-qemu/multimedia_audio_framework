@@ -214,6 +214,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     int32_t floatRet = 0;
 
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -222,11 +223,13 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnInitInnerCapList_001, TestSize.Level1
     config.privacyType = AudioPrivacyType::PRIVACY_TYPE_PUBLIC;
     AudioService::GetInstance()->GetAudioProcess(config);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->workingConfig_.filterOptions.usages.emplace_back(STREAM_USAGE_MEDIA);
     AudioService::GetInstance()->OnInitInnerCapList(1);
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     config = {};
@@ -383,6 +386,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
     int32_t floatRet = 0;
     AudioService::GetInstance()->FilterAllFastProcess();
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->ResetAudioEndpoint();
     floatRet = AudioService::GetInstance()->GetMaxAmplitude(true);
     EXPECT_EQ(0, floatRet);
@@ -396,6 +400,7 @@ HWTEST(AudioServiceUnitTest, AudioServiceDump_001, TestSize.Level1)
 
     AudioService::GetInstance()->workingConfig_.filterOptions.pids.emplace_back(1);
     AudioService::GetInstance()->OnInitInnerCapList(1);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     AudioService::GetInstance()->OnUpdateInnerCapList(1);
     EXPECT_EQ(0, floatRet);
     std::string dumpString = "This is Dump string";
@@ -1687,6 +1692,7 @@ HWTEST(AudioServiceUnitTest, OnInitInnerCapList_001, TestSize.Level1)
 
     int32_t innerCapId = 0;
     int32_t ret = audioService->OnInitInnerCapList(innerCapId);
+    AudioService::GetInstance()->InitAllDupBuffer(1);
     EXPECT_EQ(ret, SUCCESS);
 
     audioService->allRendererMap_.clear();

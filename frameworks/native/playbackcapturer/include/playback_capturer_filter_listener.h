@@ -32,6 +32,7 @@ public:
 
     // This will be called when a filter released.
     virtual int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) = 0;
+    virtual void InitAllDupBuffer(int32_t innerCapId) = 0;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
