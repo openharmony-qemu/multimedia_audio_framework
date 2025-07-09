@@ -162,6 +162,9 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, DeInit_001, TestSize.Level1)
     EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
+    EXPECT_EQ(hpaeInnerCapturerManager_->DeInit(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->IsInit(), false);
 }
 
 /**

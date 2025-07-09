@@ -848,14 +848,19 @@ int32_t HpaeRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    outputCluster_->Stop();
-    outputCluster_->DeInit();
+    if (outputCluster_ != nullptr) {
+        outputCluster_->Stop();
+        outputCluster_->DeInit();
+    }
     for (const auto &item : sceneClusterMap_) {
         if (item.second) {
             item.second->SetConnectedFlag(false);
         }
     }
-    outputCluster_->ResetAll();
+    if (outputCluster_ != nullptr) {
+        outputCluster_->ResetAll();
+        outputCluster_ = nullptr;
+    }
     isInit_.store(false);
     return SUCCESS;
 }
@@ -1068,6 +1073,7 @@ void HpaeRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &latency
 
 void HpaeRendererManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 

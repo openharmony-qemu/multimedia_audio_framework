@@ -933,6 +933,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
 
 void HpaeCapturerManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 
