@@ -149,6 +149,10 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     defines += [ "SUPPORT_LOW_LATENCY" ]
   }
 
+  if (!audio_framework_feature_new_engine_flag) {
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
+
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }

@@ -57,9 +57,11 @@ void AudioEndpointPlusUnitTest::TearDown(void)
 
 static const size_t BIGNUMBER = 2808348670;
 static const size_t NUMFIVE = 5;
+#ifdef SUPPORT_OLD_ENGINE
 static constexpr uint32_t MORE_SESSIONID = MAX_STREAMID + 1;
 static const int32_t CAPTURER_FLAG = 10;
 static const uint32_t SESSIONID = 123456;
+#endif
 
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 
@@ -1058,6 +1060,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_036, TestSize.Level1)
  * @tc.desc  : Test AudioEndpointInner::ProcessToDupStream()
  */
 #ifdef HAS_FEATURE_INNERCAPTURER
+#ifdef SUPPORT_OLD_ENGINE
 HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1102,6 +1105,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_037, TestSize.Level1)
     AudioSystemManager::GetInstance()->ReleaseCaptureLimit(1);
     EXPECT_EQ(dstStreamData.bufferDesc.bufLength, audioDataList[0].bufferDesc.bufLength);
 }
+#endif
 #endif
 /*
  * @tc.name  : Test AudioEndpointInner API

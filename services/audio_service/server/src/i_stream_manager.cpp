@@ -15,7 +15,9 @@
 
 #include "audio_utils.h"
 #include "audio_engine_log.h"
+#ifdef SUPPORT_OLD_ENGINE
 #include "pa_adapter_manager.h"
+#endif
 #include "hpae_adapter_manager.h"
 #include "pro_audio_stream_manager.h"
 
@@ -35,6 +37,7 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
             return voipManager;
         case PLAYBACK:
         default:
+#ifdef SUPPORT_OLD_ENGINE
             int32_t engineFlag = GetEngineFlag();
             if (engineFlag == 1) {
                 static HpaeAdapterManager adapterManager(PLAYBACK);
@@ -43,11 +46,16 @@ IStreamManager &IStreamManager::GetPlaybackManager(ManagerType managerType)
                 static PaAdapterManager adapterManager(PLAYBACK);
                 return adapterManager;
             }
+#else
+            static HpaeAdapterManager adapterManager(PLAYBACK);
+            return adapterManager;
+#endif
     }
 }
 
 IStreamManager &IStreamManager::GetDupPlaybackManager()
 {
+#ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         static HpaeAdapterManager adapterManager(DUP_PLAYBACK);
@@ -56,10 +64,15 @@ IStreamManager &IStreamManager::GetDupPlaybackManager()
         static PaAdapterManager adapterManager(DUP_PLAYBACK);
         return adapterManager;
     }
+#else
+        static HpaeAdapterManager adapterManager(DUP_PLAYBACK);
+        return adapterManager;
+#endif
 }
 
 IStreamManager &IStreamManager::GetDualPlaybackManager()
 {
+#ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         static HpaeAdapterManager adapterManager(DUAL_PLAYBACK);
@@ -68,10 +81,15 @@ IStreamManager &IStreamManager::GetDualPlaybackManager()
         static PaAdapterManager adapterManager(DUAL_PLAYBACK);
         return adapterManager;
     }
+#else
+        static HpaeAdapterManager adapterManager(DUAL_PLAYBACK);
+        return adapterManager;
+#endif
 }
 
 IStreamManager &IStreamManager::GetRecorderManager()
 {
+#ifdef SUPPORT_OLD_ENGINE
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
         static HpaeAdapterManager adapterManager(RECORDER);
@@ -80,6 +98,10 @@ IStreamManager &IStreamManager::GetRecorderManager()
         static PaAdapterManager adapterManager(RECORDER);
         return adapterManager;
     }
+#else
+        static HpaeAdapterManager adapterManager(RECORDER);
+        return adapterManager;
+#endif
 }
 } // namespace AudioStandard
 } // namespace OHOS
