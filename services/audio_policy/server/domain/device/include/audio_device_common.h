@@ -95,8 +95,6 @@ public:
         std::shared_ptr<AudioDeviceDescriptor> &inputDevice);
     DeviceType GetSpatialDeviceType(const std::string& macAddress);
 
-    bool GetHasDpFlag();
-    void SetHasDpFlag(bool flag);
     int32_t ActivateA2dpDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
@@ -250,7 +248,6 @@ private:
 private:
     std::unordered_map<std::string, DeviceType> spatialDeviceMap_;
     bool isCurrentRemoteRenderer = false;
-    bool hasDpDevice_ = false; // Only the first dp device is supported.
     bool enableDualHalToneState_ = false;
     int32_t enableDualHalToneSessionId_ = -1;
     bool isOpenRemoteDevice = false;

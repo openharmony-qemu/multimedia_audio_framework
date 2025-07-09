@@ -874,7 +874,7 @@ HWTEST_F(AudioCoreServiceUnitTest, AddAudioCapturerMicrophoneDescriptor_001, Tes
 /**
 * @tc.name  : Test AudioCoreServiceUnit
 * @tc.number: GetCurrentRendererChangeInfos_001
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test GetCurrentRendererChangeInfos interface.
 */
 HWTEST_F(AudioCoreServiceUnitTest, GetCurrentRendererChangeInfos_001, TestSize.Level1)
 {

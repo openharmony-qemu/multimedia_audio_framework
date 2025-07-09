@@ -30,7 +30,7 @@ void AudioDeviceLockUnitTest::TearDown(void) {}
 
 /**
 * @tc.name  :  AudioDeviceLock_020
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_020, TestSize.Level1)
 {
@@ -48,7 +48,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_020, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_021
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_021, TestSize.Level1)
 {
@@ -66,7 +66,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_021, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_022
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_022, TestSize.Level1)
 {
@@ -84,7 +84,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_022, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_023
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_023, TestSize.Level1)
 {
@@ -102,7 +102,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_023, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_024
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_024, TestSize.Level1)
 {
@@ -120,7 +120,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_024, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_025
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_025, TestSize.Level1)
 {
@@ -138,7 +138,7 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_025, TestSize.Level1)
 
 /**
 * @tc.name  :  AudioDeviceLock_026
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceLock interface.
 */
 HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_026, TestSize.Level1)
 {

@@ -40,7 +40,6 @@
 #include "hpae_policy_manager.h"
 #include "audio_policy_state_monitor.h"
 #include "audio_device_info.h"
-#include "audio_server.h"
 #include "audio_effect_volume.h"
 
 namespace OHOS {
@@ -595,8 +594,7 @@ void MuteSinkPortFuzzTest()
     AudioStreamDeviceChangeReasonExt reason =
         static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
-    audioDeviceCommon.GetHasDpFlag();
+    audioDeviceCommon.audioDeviceManager_.NoDp();
 }
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
@@ -661,15 +659,12 @@ void ResetOffloadAndMchModeFuzzTest()
     outputDevice->deviceType_ = DeviceTypeVec[deviceTypeCount];
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
-    audioDeviceCommon.GetHasDpFlag();
 }
 
 void JudgeIfLoadMchModuleFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(GetData<uint32_t>() % NUM_2);
     AudioIOHandle moduleId = 0;
     std::string moduleName = "MCH_Speaker";
     audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
