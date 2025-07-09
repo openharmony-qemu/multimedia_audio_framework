@@ -289,10 +289,11 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
     return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
 }
 
-int32_t AudioZoneService::FindAudioZoneByUsage(StreamUsage usage)
+int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
-    return FindAudioZoneByKey(INVALID_ZONEID, "", "", usage);
+    int32_t zoneId = FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+    return zoneId != 0 ? zoneId : FindAudioZoneByKey(INVALID_ZONEID, "", "", usage);
 }
 
 int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &deviceTag,

@@ -2297,7 +2297,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
                 audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
             }
         }
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
+            audioInterrupt.streamUsage);
         return AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
     }
     return ERR_UNKNOWN;
@@ -2306,7 +2307,8 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
+            audioInterrupt.streamUsage);
         return AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;

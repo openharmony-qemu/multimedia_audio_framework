@@ -220,11 +220,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(clientUID);
-    if (zoneId != 0) {
-        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
-    }
-    zoneId = AudioZoneService::GetInstance().FindAudioZoneByUsage(streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
     if (zoneId != 0) {
         return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
     }
