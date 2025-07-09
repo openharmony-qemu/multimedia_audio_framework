@@ -814,7 +814,7 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
     ret = RingBufferWrapper{{{
         {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
         {.buffer = nullptr, .bufLength = 0}}},
-        .dataLength = spanSizeInByte_}.MemCopyFrom(ringBuffer);
+        .dataLength = spanSizeInByte_}.CopyInputBufferValueToCurBuffer(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
@@ -994,31 +994,28 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
 
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc)
 {
+    BufferDesc tmpDstDesc;
     if (dstDesc.dataLength <= dstDesc.basicBufferDescs[0].bufLength) {
-        BufferDesc tmpDstDesc;
         tmpDstDesc.buffer = dstDesc.basicBufferDescs[0].buffer;
         tmpDstDesc.dataLength = dstDesc.dataLength;
         tmpDstDesc.bufLength = dstDesc.dataLength;
         return ProcessData(srcDesc, tmpDstDesc);
-    } else {
-        std::lock_guard lock(tmpBufferMutex_);
-        tmpBuffer_.resize(0);
-        tmpBuffer_.resize(dstDesc.dataLength);
-        BufferDesc tmpDstDesc;
-        tmpDstDesc.buffer = tmpBuffer_.data();
-        tmpDstDesc.dataLength = dstDesc.dataLength;
-        tmpDstDesc.bufLength = dstDesc.dataLength;
-        int32_t ret = ProcessData(srcDesc, tmpDstDesc);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
-
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
-
-        RingBufferWrapper(dstDesc).MemCopyFrom(ringBufferDescForCotinueData);
-        return SUCCESS;
     }
+
+    std::lock_guard lock(tmpBufferMutex_);
+    tmpBuffer_.resize(0);
+    tmpBuffer_.resize(dstDesc.dataLength);
+    tmpDstDesc.buffer = tmpBuffer_.data();
+    tmpDstDesc.dataLength = dstDesc.dataLength;
+    tmpDstDesc.bufLength = dstDesc.dataLength;
+    int32_t ret = ProcessData(srcDesc, tmpDstDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
+    RingBufferWrapper ringBufferDescForCotinueData;
+    ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
+    ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
+    ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
+    RingBufferWrapper(dstDesc).CopyInputBufferValueToCurBuffer(ringBufferDescForCotinueData);
+    return SUCCESS;
 }
 
 void AudioProcessInClientInner::WaitForWritableSpace()
@@ -1642,8 +1639,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) < spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1659,8 +1656,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) >= spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) >= spanSizeInFrame_)) {
             return true;
         }
         return false;

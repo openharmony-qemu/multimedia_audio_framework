@@ -631,7 +631,7 @@ BufferDesc RendererInServer::PrepareOutputBuffer(const RingBufferWrapper& ringBu
         tmpWrapper.dataLength = ringBufferDesc.dataLength;
         tmpWrapper.basicBufferDescs[0].buffer = rendererTmpBuffer_.data();
         tmpWrapper.basicBufferDescs[0].bufLength = ringBufferDesc.dataLength;
-        tmpWrapper.MemCopyFrom(ringBufferDesc);
+        tmpWrapper.CopyInputBufferValueToCurBuffer(ringBufferDesc);
 
         bufferDesc.buffer = rendererTmpBuffer_.data();
         bufferDesc.bufLength = ringBufferDesc.dataLength;
@@ -717,7 +717,7 @@ void RendererInServer::CopyDataToInputBuffer(int8_t* inputData, size_t requestDa
         .dataLength = requestDataLen
     };
 
-    CHECK_AND_RETURN_LOG(wrapperInputData.MemCopyFrom(ringBufferDesc) == 0,
+    CHECK_AND_RETURN_LOG(wrapperInputData.CopyInputBufferValueToCurBuffer(ringBufferDesc) == 0,
         "memcpy error");
 }
 

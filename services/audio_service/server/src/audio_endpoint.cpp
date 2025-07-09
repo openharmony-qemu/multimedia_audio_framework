@@ -1473,7 +1473,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
         ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
         ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.MemCopyFrom(ringBuffer);
+        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
         streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
         streamData.bufferDesc.bufLength = ringBuffer.dataLength;
         streamData.bufferDesc.dataLength = ringBuffer.dataLength;
@@ -1900,7 +1900,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 int32_t AudioEndpointInner::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
 {
-    return writeBuf.MemCopyFrom(RingBufferWrapper{
+    return writeBuf.CopyInputBufferValueToCurBuffer(RingBufferWrapper{
         .basicBufferDescs = {{
             {.buffer = buffer.buffer, .bufLength = buffer.bufLength},
             {.buffer = nullptr, .bufLength = 0}}},
