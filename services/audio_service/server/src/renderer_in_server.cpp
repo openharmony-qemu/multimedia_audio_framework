@@ -2166,5 +2166,20 @@ bool RendererInServer::CollectInfosForWorkgroup(float systemVolume)
     return running && haveStreamSound && haveSystemSound &&
         !isInSilentState_ && !silentModeAndMixWithOthers_ && !lastWriteStandbyEnableStatus_;
 }
+
+void RendererInServer::InitDupBuffer(int32_t innerCapId)
+{
+    std::lock_guard<std::mutex> lock(dupMutex_);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) != innerCapIdToDupStreamCallbackMap_.end(),
+        "innerCapIdToDupStreamCallbackMap_ is no find innerCapId", innerCapId);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
+        "innerCapIdToDupStreamCallbackMap_ is null", innerCapId);
+    CHECK_AND_RETURN_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
+        "DupRingBuffe is null", innerCapId);
+    innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->
+        ReConfig(dupTotalSizeInFrame_ * dupByteSizePerFrame_, false);
+    AUDIO_INFO_LOG("InitDupBuffer success, innerCapId: %{public}d, stream sessionId: %{public}u",
+        innerCapId, streamIndex_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

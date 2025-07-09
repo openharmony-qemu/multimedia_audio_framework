@@ -232,5 +232,11 @@ bool PlaybackCapturerManager::CheckReleaseUnloadModernInnerCapSink(int32_t inner
     }
     return result;
 }
+
+void PlaybackCapturerManager::InitAllDupBuffer(int32_t innerCapId)
+{
+    CHECK_AND_RETURN_LOG(listener_ != nullptr, "listener is null!");
+    return listener_->InitAllDupBuffer(innerCapId);
+}
 } // namespace OHOS
 } // namespace AudioStandard

@@ -588,6 +588,9 @@ int32_t CapturerInServer::StartInner()
     }
 
     status_ = I_STATUS_STARTING;
+    if (processConfig_.capturerInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE) {
+        PlaybackCapturerManager::GetInstance()->InitAllDupBuffer(innerCapId_);
+    }
     int32_t ret = stream_->Start();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Start stream failed, reason: %{public}d", ret);
     resetTime_ = true;

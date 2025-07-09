@@ -66,6 +66,7 @@ public:
     int32_t OnCapturerFilterChange(uint32_t sessionId, const AudioPlaybackCaptureConfig &newConfig,
         int32_t innerCapId) override;
     int32_t OnCapturerFilterRemove(uint32_t sessionId, int32_t innerCapId) override;
+    void InitAllDupBuffer(int32_t innerCapId) override;
 
     void SaveForegroundList(std::vector<std::string> list);
     // if match, keep uid for speed up, used in create process.
