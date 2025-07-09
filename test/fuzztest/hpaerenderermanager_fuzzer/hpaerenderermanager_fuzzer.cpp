@@ -453,7 +453,7 @@ void HpaeRendererManagerUpdateMaxLengthFuzzTest()
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
-    int32_t maxLength = GetData<int32_t>();
+    uint32_t maxLength = GetData<uint32_t>();
     rendererManager->UpdateMaxLength(sessionId, maxLength);
 }
 
@@ -491,7 +491,7 @@ void HpaeRendererManagerAddNodeToSinkFuzzTest()
     HpaeNodeInfo nodeInfo;
     InitNodeInfo(nodeInfo);
     auto node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    rendererManager->AddNodeToSink(noide);
+    rendererManager->AddNodeToSink(node);
 }
 
 void HpaeRendererManagerAddAllNodesToSinkFuzzTest()
@@ -544,7 +544,7 @@ void HpaeRendererManagerOnRequestLatencyFuzzTest()
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
-    int32_t latency = GetData<int32_t>();
+    uint64_t latency = GetData<uint64_t>();
     rendererManager->OnRequestLatency(sessionId, latency);
 }
 
@@ -553,7 +553,6 @@ void HpaeRendererManagerOnNotifyQueueFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
     rendererManager->OnNotifyQueue();
 }
 
