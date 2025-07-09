@@ -495,7 +495,7 @@ int32_t AudioSystemManager::GetExtraParameters(const std::string &mainKey,
     CHECK_AND_RETURN_RET_LOG(gasp != nullptr, 0, "Audio service unavailable.");
     std::vector<StringPair> resultPair;
     int32_t ret = gasp->GetExtraParameters(mainKey, subKeys, resultPair);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, 0, "Get extra parameters failed");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "Get extra parameters failed");
     for (auto &pair : resultPair) {
         result.push_back(std::make_pair(pair.firstParam, pair.secondParam));
     }
