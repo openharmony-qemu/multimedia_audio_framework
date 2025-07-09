@@ -405,12 +405,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
         A2dpDeviceConfigInfo configInfo = {audioStreamInfo, false};
         audioA2dpDevice_.AddA2dpInDevice(updatedDesc.macAddress_, configInfo);
-    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {               // DP device only for output.
-        CheckAndWriteDeviceChangeExceptionEvent(!audioDeviceCommon_.GetHasDpFlag(),
-            AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE, updatedDesc.deviceType_,
-            updatedDesc.deviceRole_, ERROR, "DP device already exists, ignore this one.");
-        CHECK_AND_RETURN_RET_LOG(!audioDeviceCommon_.GetHasDpFlag(), ERROR,
-            "DP device already exists, ignore this one.");
+    } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
         int32_t result = HandleDpDevice(updatedDesc.deviceType_, updatedDesc.macAddress_);
         if (result != SUCCESS) {
             result = RehandlePnpDevice(updatedDesc.deviceType_, OUTPUT_DEVICE, updatedDesc.macAddress_);
@@ -419,7 +414,6 @@ int32_t AudioDeviceStatus::HandleLocalDeviceConnected(AudioDeviceDescriptor &upd
             AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE,
             updatedDesc.deviceType_, updatedDesc.deviceRole_, result, "Load dp failed.");
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Load dp failed.");
-        audioDeviceCommon_.SetHasDpFlag(true);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_HEADSET ||
         updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_LOCAL, "usb");
@@ -612,6 +606,8 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
         pnpDeviceList_.push_back({pnpDesc, isConnected});
         return;
     }
+    CHECK_AND_RETURN_LOG(!isConnected || desc.deviceType_ != DEVICE_TYPE_DP || audioDeviceManager_.NoDp(),
+        "DP device already exists, ignore this one.");
     AudioStreamInfo streamInfo = {};
     OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
 }

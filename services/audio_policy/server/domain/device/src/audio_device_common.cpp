@@ -338,7 +338,6 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenDisconnecting(const AudioDevic
     audioDeviceManager_.GetAllConnectedDeviceByType(updatedDesc.networkId_, updatedDesc.deviceType_,
         updatedDesc.macAddress_, updatedDesc.deviceRole_, descForCb);
     for (const auto& desc : descForCb) {
-        if (desc->deviceType_ == DEVICE_TYPE_DP) { hasDpDevice_ = false; }
         if (audioStateManager_.GetPreferredMediaRenderDevice() != nullptr &&
             desc->IsSameDeviceDesc(*audioStateManager_.GetPreferredMediaRenderDevice())) {
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_MEDIA_RENDER,
@@ -1663,16 +1662,6 @@ DeviceType AudioDeviceCommon::GetSpatialDeviceType(const std::string& macAddress
     }
     AUDIO_INFO_LOG("Update a2dpOffloadFlag spatialDevice: %{public}d", spatialDevice);
     return spatialDevice;
-}
-
-bool AudioDeviceCommon::GetHasDpFlag()
-{
-    return hasDpDevice_;
-}
-
-void AudioDeviceCommon::SetHasDpFlag(bool flag)
-{
-    hasDpDevice_ = flag;
 }
 
 bool AudioDeviceCommon::IsRingOverPlayback(AudioMode &mode, RendererState rendererState)

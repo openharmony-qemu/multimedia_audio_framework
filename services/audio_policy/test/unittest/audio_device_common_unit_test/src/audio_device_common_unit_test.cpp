@@ -30,7 +30,7 @@ void AudioDeviceCommonUnitTest::TearDown(void) {}
 /**
 * @tc.name  : Test AudioDeviceCommon.
 * @tc.number: AudioDeviceCommon_001
-* @tc.desc  : Test GetHasDpFlag interface.
+* @tc.desc  : Test AudioDeviceCommon interface.
 */
 HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_001, TestSize.Level1)
 {
@@ -429,7 +429,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_028, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
 }
 
 /**
@@ -448,7 +447,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_029, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(false, audioDeviceCommon.hasDpDevice_);
+    EXPECT_EQ(true, audioDeviceCommon.audioDeviceManager_.NoDp());
 }
 
 /**
@@ -1197,8 +1196,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_073, TestSize.Level1)
     outputDevice->networkId_ = "";
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1216,8 +1213,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_074, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1235,8 +1230,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_075, TestSize.Level1)
     outputDevice->deviceType_ = DEVICE_TYPE_DP;
     outputDevices.push_back(std::move(outputDevice));
     audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-    audioDeviceCommon.SetHasDpFlag(false);
-    EXPECT_EQ(false, audioDeviceCommon.GetHasDpFlag());;
 }
 
 /**
@@ -1248,15 +1241,11 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_076, TestSize.Level1)
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(false);
-    EXPECT_EQ(false, audioDeviceCommon.GetHasDpFlag());
 
     AudioIOHandle moduleId = 0;
     std::string moduleName = "MCH_Speaker";
     audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
     audioDeviceCommon.JudgeIfLoadMchModule();
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1272,8 +1261,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_077, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1289,8 +1276,6 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_078, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     descs.push_back(std::move(desc));
     audioDeviceCommon.FetchStreamForSpkMchStream(rendererChangeInfo, descs);
-    audioDeviceCommon.SetHasDpFlag(true);
-    EXPECT_EQ(true, audioDeviceCommon.GetHasDpFlag());
 }
 
 /**
@@ -1359,52 +1344,31 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_081, TestSize.Level1)
     std::string newSinkName = "Offload_Speaker";
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::OVERRODE;
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    bool ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     oldSinkname = "Offload_Speaker";
     newSinkName = "";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
     newSinkName = "Offload_Speaker";
     oldSinkname = "";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     newSinkName = "";
     oldSinkname = "Offload_Speaker";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_DEFAULT);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     audioDeviceCommon.audioSceneManager_.SetAudioScenePre(AUDIO_SCENE_RINGING);
     audioDeviceCommon.audioPolicyManager_.SetRingerMode(RINGER_MODE_SILENT);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(false);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(false, ret);
 
     reason = AudioStreamDeviceChangeReason::UNKNOWN;
     oldSinkname = "RemoteCastInnerCapturer";
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.SetHasDpFlag(true);
-    ret = audioDeviceCommon.GetHasDpFlag();
-    EXPECT_EQ(true, ret);
 }
 
 /**
