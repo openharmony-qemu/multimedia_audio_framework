@@ -55,7 +55,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 3;
+const uint8_t TESTSIZE = 8;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -113,10 +113,84 @@ void DumpAllMemBlockFuzzTest()
     audioCacheMgrInner.DumpAllMemBlock();
 }
 
+void CacheDataFuzzTest()
+{
+    std::string dumpFileName;
+    void* srcDataPointer;
+    size_t dataLength;
+    uint8_t srcBuffer[THRESHOLD] = {0};
+    auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
+    if (audioCacheMgrInner == nullptr) {
+        return;
+    }
+    dumpFileName = "test.txt";
+    srcDataPointer = static_cast<void *>(srcBuffer);
+    dataLength = TESTSIZE;
+    audioCacheMgrInner->isInited_ = GetData<uint32_t>() % NUM_2;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
+    audioCacheMgrInner->isDumpingData_ = GetData<uint32_t>() % NUM_2;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
+    audioCacheMgrInner->totalMemChunkNums_ = (GetData<uint32_t>() % NUM_2) * NUM_2 - 1;
+    audioCacheMgrInner->CacheData(dumpFileName, srcDataPointer, dataLength);
+}
+
+void GetCachedDurationFuzzTest()
+{
+    int64_t startTime = 0;
+    int64_t endTime = 0;
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    if (memChunk == nullptr) {
+        return;
+    }
+    AudioCacheMgrInner audioCacheMgrInner;
+    audioCacheMgrInner.isInited_ = GetData<uint32_t>() % NUM_2;
+    audioCacheMgrInner.GetCachedDuration(startTime, endTime);
+    audioCacheMgrInner.memChunkDeque_.push_back(memChunk);
+    audioCacheMgrInner.memChunkDeque_.push_back(memChunk);
+    audioCacheMgrInner.GetCachedDuration(startTime, endTime);
+}
+
+void GetDumpParameterFuzzTest()
+{
+    std::vector<std::string> subKeys;
+    std::vector<std::pair<std::string, std::string>> result;
+    AudioCacheMgrInner audioCacheMgrInner;
+    std::vector<std::string> roleList = {"STATUS", "TIME", "MEMORY", "test"};
+    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
+    subKeys.push_back(roleList[roleListCount]);
+    audioCacheMgrInner.GetDumpParameter(subKeys, result);
+}
+
+void SetDumpParameterFuzzTest()
+{
+    std::vector<std::pair<std::string, std::string>> params;
+    AudioCacheMgrInner audioCacheMgrInner;
+    std::vector<std::string> roleList = {"OPEN", "CLOSE", "UPLOAD", "test1"};
+    uint32_t roleListCount = GetData<uint32_t>() % roleList.size();
+    params.push_back(std::make_pair(roleList[roleListCount], "test"));
+    audioCacheMgrInner.SetDumpParameter(params);
+}
+
+void OnHandleFuzzTest()
+{
+    int64_t data = 0;
+    auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
+    if (audioCacheMgrInner == nullptr) {
+        return;
+    }
+    uint32_t code = GetData<uint32_t>() % (AudioCacheMgrInner::RAISE_PRIORITY + 1);
+    audioCacheMgrInner->OnHandle(code, data);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     InitFuzzTest,
     DeInitFuzzTest,
     DumpAllMemBlockFuzzTest,
+    CacheDataFuzzTest,
+    GetCachedDurationFuzzTest,
+    GetDumpParameterFuzzTest,
+    SetDumpParameterFuzzTest,
+    OnHandleFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
