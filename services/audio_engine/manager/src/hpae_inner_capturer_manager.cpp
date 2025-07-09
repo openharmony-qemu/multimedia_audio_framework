@@ -851,12 +851,17 @@ uint32_t HpaeInnerCapturerManager::GetSinkInputNodeIdInner()
 
 std::string HpaeInnerCapturerManager::GetThreadName()
 {
+    if (sinkInfo_.deviceName == "RemoteCastInnerCapturer") {
+        AUDIO_INFO_LOG("threadName is RemoteCast");
+        return "RemoteCast";
+    }
     std::string threadName = "InnerCap";
     for (auto ch : sinkInfo_.deviceName) {
         if (ch >= '0' && ch <= '9') {
             threadName += ch;
         }
     }
+    AUDIO_INFO_LOG("threadName change to %{public}s", threadName.c_str());
     return threadName;
 }
 

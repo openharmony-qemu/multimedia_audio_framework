@@ -468,12 +468,20 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, GetThreadName_001, TestSize.Level1)
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     std::string threadName = hpaeInnerCapturerManager_->GetThreadName();
     EXPECT_EQ(threadName, "InnerCap1");
+
     sinkInfo.deviceName = "InnerCap";
     hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
     threadName = hpaeInnerCapturerManager_->GetThreadName();
     EXPECT_EQ(threadName, "InnerCap");
+
+    sinkInfo.deviceName = "RemoteCastInnerCapturer";
+    hpaeInnerCapturerManager_ = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
+    EXPECT_EQ(hpaeInnerCapturerManager_->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    threadName = hpaeInnerCapturerManager_->GetThreadName();
+    EXPECT_EQ(threadName, "RemoteCast");
 }
 
 /**
