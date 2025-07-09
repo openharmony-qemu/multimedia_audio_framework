@@ -1735,7 +1735,7 @@ int32_t AudioService::InitAllDupBuffer(int32_t innerCapId)
             }
         }
     }
-    lock.unlock(); 
+    lock.unlock();
 }
 } // namespace AudioStandard
 } // namespace OHOS
