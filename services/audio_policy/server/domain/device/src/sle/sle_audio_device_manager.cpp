@@ -253,7 +253,8 @@ int32_t SleAudioDeviceManager::SendUserSelection(const AudioDeviceDescriptor &de
 
 int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        deviceDesc.connectState_ == CONNECTED, ERROR, "device type is not nearlink");
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     deviceVolumeConfigInfo_[deviceDesc.macAddress_] =
         std::make_pair(SleVolumeConfigInfo{STREAM_MUSIC, deviceDesc.mediaVolume_},
@@ -263,7 +264,8 @@ int32_t SleAudioDeviceManager::AddNearlinkDevice(const AudioDeviceDescriptor &de
 
 int32_t SleAudioDeviceManager::RemoveNearlinkDevice(const AudioDeviceDescriptor &deviceDesc)
 {
-    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
+    CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK &&
+        deviceDesc.connectState_ == CONNECTED, ERROR, "device type is not nearlink");
     std::lock_guard<std::mutex> lock(deviceVolumeConfigMutex_);
     deviceVolumeConfigInfo_.erase(deviceDesc.macAddress_);
     startedSleStreamType_.erase(deviceDesc.macAddress_);
@@ -324,6 +326,10 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
         StreamUsage streamUsage = streamDesc->rendererInfo_.streamUsage;
         streamType = GetSleStreamTypeByStreamUsage(streamUsage);
 
+        if (IsNearlinkMoveToOtherDevice(streamDesc)) {
+            oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
+            UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
+        }
         if (IsMoveToNearlinkDevice(streamDesc)) {
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
             if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -335,15 +341,15 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             if (isRemoved) {
                 UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
             }
-        }
-        if (IsNearlinkMoveToOtherDevice(streamDesc)) {
-            oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
-            UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
         }
     } else {
         SourceType sourceType = streamDesc->capturerInfo_.sourceType;
         streamType = GetSleStreamTypeBySourceType(sourceType);
 
+        if (IsNearlinkMoveToOtherDevice(streamDesc)) {
+            oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
+            UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
+        }
         if (IsMoveToNearlinkDevice(streamDesc)) {
             newDeviceAddr = streamDesc->newDeviceDescs_[0]->macAddress_;
             if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
@@ -355,10 +361,6 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             if (isRemoved) {
                 UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
             }
-        }
-        if (IsNearlinkMoveToOtherDevice(streamDesc)) {
-            oldDeviceAddr = streamDesc->oldDeviceDescs_[0]->macAddress_;
-            UpdateStreamTypeMap(oldDeviceAddr, streamType, sessionId, false);
         }
     }
 }
