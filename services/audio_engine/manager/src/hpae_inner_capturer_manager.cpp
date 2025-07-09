@@ -300,7 +300,7 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
         ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InnerCapManagerDeInit error, ret %{public}d.\n", ret);
         hpaeInnerCapSinkNode_->ResetAll();
-        hpaeInnerCapSinkNode_ = nullptr
+        hpaeInnerCapSinkNode_ = nullptr;
     }
     isInit_.store(false);
     if (isMoveDefault) {
