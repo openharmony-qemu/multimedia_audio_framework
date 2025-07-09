@@ -1718,7 +1718,7 @@ void AudioService::RenderersCheckForAudioWorkgroup(int32_t pid)
     }
 }
 
-int32_t AudioService::InitAllDupBuffer(int32_t innerCapId)
+void AudioService::InitAllDupBuffer(int32_t innerCapId)
 {
     AUDIO_INFO_LOG("InitAllDupBuffer, innerCapId: %{public}d", innerCapId);
 
