@@ -1629,8 +1629,8 @@ float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     float out = -1;
-    gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, out);
-    return out;
+    int32_t ret = gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, out);
+    return ret == SUCCESS ? out : ERR_INVALID_PARAM;
 }
 
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
@@ -1753,7 +1753,8 @@ bool AudioPolicyManager::IsSpatializationEnabled()
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool ret = false;
-    return gsp->IsSpatializationEnabled(ret);
+    gsp->IsSpatializationEnabled(ret);
+    return ret;
 }
 
 bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
@@ -1761,7 +1762,8 @@ bool AudioPolicyManager::IsSpatializationEnabled(const std::string address)
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
     bool ret = false;
-    return gsp->IsSpatializationEnabled(address, ret);
+    gsp->IsSpatializationEnabled(address, ret);
+    return ret;
 }
 
 bool AudioPolicyManager::IsSpatializationEnabledForCurrentDevice()

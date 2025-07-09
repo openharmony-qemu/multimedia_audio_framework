@@ -3344,8 +3344,8 @@ void AudioPolicyServer::RegisterDataObserver()
 
 int32_t AudioPolicyServer::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
 {
-    int32_t ret = audioPolicyService_.QueryEffectManagerSceneMode(supportedEffectConfig);
-    return ret;
+    audioPolicyService_.QueryEffectManagerSceneMode(supportedEffectConfig);
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::GetHardwareOutputSamplingRate(const std::shared_ptr<AudioDeviceDescriptor> &desc,

@@ -373,7 +373,7 @@ struct SupportedEffectConfig : public Parcelable {
             MarshallingStream(parcel, item);
         }
 
-        uint32_t countPost = static_cast<uint32_t>(preProcessNew.stream.size());
+        uint32_t countPost = static_cast<uint32_t>(postProcessNew.stream.size());
         parcel.WriteInt32(countPost);
         for (const auto &item : postProcessNew.stream) {
             MarshallingStream(parcel, item);
