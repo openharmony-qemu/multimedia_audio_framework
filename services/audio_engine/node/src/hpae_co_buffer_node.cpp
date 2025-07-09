@@ -36,8 +36,11 @@ HpaeCoBufferNode::HpaeCoBufferNode()
       coBufferOut_(pcmBufferInfo_),
       silenceData_(pcmBufferInfo_)
 {
-    const size_t size = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
-        sizeof(float) * MAX_CACHE_SIZE / MS_PER_SECOND;
+    const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
+                        static_cast<size_t>(STEREO) *
+                        sizeof(float) *
+                        static_cast<size_t>(MAX_CACHE_SIZE) /
+                        static_cast<size_t>(MS_PER_SECOND);
     AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
@@ -209,8 +212,11 @@ void HpaeCoBufferNode::ProcessOutputFrameInner()
 {
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Ring cache is null");
     
-    const size_t requestDataLen = SAMPLE_RATE_48000 * static_cast<int32_t>(STEREO) *
-                                sizeof(float) * DEFAULT_FRAME_LEN_MS / MS_PER_SECOND;
+    const size_t requestDataLen = static_cast<size_t>(SAMPLE_RATE_48000) *
+                                  static_cast<size_t>(STEREO) *
+                                  sizeof(float) *
+                                  static_cast<size_t>(DEFAULT_FRAME_LEN_MS) /
+                                  static_cast<size_t>(MS_PER_SECOND);
     
     // check readable size
     OptResult result = ringCache_->GetReadableSize();
