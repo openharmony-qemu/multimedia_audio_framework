@@ -180,16 +180,6 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_LIVE,
 };
 
-static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
-{
-    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
-        if (streamUsage == item) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
     return streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA;
@@ -1725,7 +1715,8 @@ void AudioServer::SendCreateErrorInfo(const AudioProcessConfig &config, int32_t 
     bool isPlayBack = config.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0;
     bean->Add("IS_PLAYBACK", (isPlayBack ? 1 : 0));
     bean->Add("CLIENT_UID", config.appInfo.appUid);
-    bean->Add("STREAM_TYPE", isPlayBack ? config.rendererInfo.streamUsage : config.capturerInfo.sourceType);
+    bean->Add("STREAM_TYPE", isPlayBack ? static_cast<int32_t>(config.rendererInfo.streamUsage) :
+        static_cast<int32_t>(config.capturerInfo.sourceType));
     bean->Add("ERROR_CODE", errorCode);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
@@ -1857,8 +1848,8 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
 
 bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingUid)
 {
-    return resetConfig.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
-        callingUid == UID_FOUNDATION_SA && resetConfig.rendererInfo.isSatellite;
+    return config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        callingUid == UID_FOUNDATION_SA && config.rendererInfo.isSatellite;
 }
 
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,

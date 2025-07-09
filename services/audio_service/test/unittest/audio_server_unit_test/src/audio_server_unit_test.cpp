@@ -1191,19 +1191,19 @@ HWTEST_F(AudioServerUnitTest, IsSatellite_001, TestSize.Level1)
     AudioProcessConfig config;
     config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
     int32_t callerUid = 0;
-    bool result = audioServer.IsSatellite(config, callerUid);
+    bool result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "streamUsage is not MODEM_COMMUNICATION, should be false";
 
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    result = audioServer.IsSatellite(config, callerUid);
+    result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "callerUid is 0, should be false";
 
     callerUid = 5523; // foundation
-    result = audioServer.IsSatellite(config, callerUid);
+    result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, false) << "isSatellite is false, should be false";
 
-    resetConfig.rendererInfo.isSatellite = true;
-    result = audioServer.IsSatellite(config, callerUid);
+    config.rendererInfo.isSatellite = true;
+    result = audioServer->IsSatellite(config, callerUid);
     EXPECT_EQ(result, true) << "all meet, should be true";
 }
 
@@ -1310,7 +1310,7 @@ HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
     ret = audioServer->CheckPlaybackPermission(config);
     EXPECT_EQ(ret, false);
 
-    config.callerUid = UID_MSDP_SA;
+    config.callerUid = 6699; // msdp
     ret = audioServer->CheckPlaybackPermission(config);
     EXPECT_EQ(ret, true);
 }
