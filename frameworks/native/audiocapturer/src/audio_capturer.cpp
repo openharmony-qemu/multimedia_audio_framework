@@ -39,6 +39,7 @@ static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 static constexpr int32_t MINIMUM_BUFFER_SIZE_MSEC = 5;
 static constexpr int32_t MAXIMUM_BUFFER_SIZE_MSEC = 20;
 static constexpr uint32_t DECIMAL_BASE = 10;
+static constexpr int32_t UID_MEDIA_SA = 1013;
 
 std::map<AudioStreamType, SourceType> AudioCapturerPrivate::streamToSource_ = {
     {AudioStreamType::STREAM_MUSIC, SourceType::SOURCE_TYPE_MIC},
@@ -772,6 +773,10 @@ bool AudioCapturerPrivate::Start()
     // When the cellular call stream is starting, only need to activate audio interrupt.
     CHECK_AND_RETURN_RET(!isVoiceCallCapturer_, true);
     CHECK_AND_RETURN_RET(audioStream_ != nullptr, false, "audioStream_ is null");
+    if (state == CAPTURER_STOPPED && getuid() == UID_MEDIA_SA) {
+        AUDIO_INFO_LOG("Media SA is startting, flush data.");
+        audioStream_->FlushAudioStream();
+    }
     bool result = audioStream_->StartAudioStream();
     if (!result) {
         AUDIO_ERR_LOG("Start audio stream failed");
