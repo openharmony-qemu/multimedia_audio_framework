@@ -266,6 +266,7 @@ ohos_unittest("renderer_in_client_unit_test") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "hilog:libhilog",
+    "hisysevent:libhisysevent",
     "ipc:ipc_single",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
