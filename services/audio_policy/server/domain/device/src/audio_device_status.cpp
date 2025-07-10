@@ -1038,7 +1038,8 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
 void AudioDeviceStatus::OnPreferredDeviceUpdated(const AudioDeviceDescriptor& activeOutputDevice,
     DeviceType activeInputDevice)
 {
-    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(activeOutputDevice);
+    audioDeviceCommon_.OnPreferredOutputDeviceUpdated(activeOutputDevice,
+        AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
     audioDeviceCommon_.OnPreferredInputDeviceUpdated(activeInputDevice, LOCAL_NETWORK_ID);
 }
 

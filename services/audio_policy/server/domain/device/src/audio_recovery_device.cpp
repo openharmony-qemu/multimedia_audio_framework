@@ -173,10 +173,9 @@ int32_t AudioRecoveryDevice::HandleExcludedOutputDevicesRecovery(AudioDeviceUsag
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] " \
-        " mac[%{public}s] streamUsage[%{public}d] callerUid[%{public}d]",
-        audioRendererFilter->uid, selectedDesc[0]->deviceType_, selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID,
-        GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
+    AUDIO_WARNING_LOG("[ADeviceEvent] uid[%{public}d] type[%{public}d] islocal [%{public}d] mac[%{public}s] "
+        "streamUsage[%{public}d] callerUid[%{public}d]", audioRendererFilter->uid, selectedDesc[0]->deviceType_,
+        selectedDesc[0]->networkId_ == LOCAL_NETWORK_ID, GetEncryptAddr(selectedDesc[0]->macAddress_).c_str(),
         audioRendererFilter->rendererInfo.streamUsage, IPCSkeleton::GetCallingUid());
 
     CHECK_AND_RETURN_RET_LOG(selectedDesc.size() == 1 && selectedDesc[0] &&
@@ -226,7 +225,8 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
     audioActiveDevice_.NotifyUserSelectionEventToBt(selectedDesc[0], strUsage);
     HandleFetchDeviceChange(AudioStreamDeviceChangeReason::OVERRODE, "SelectOutputDevice");
     if (selectedDesc[0]->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice());
+        audioDeviceCommon_.OnPreferredOutputDeviceUpdated(audioActiveDevice_.GetCurrentOutputDevice(),
+            AudioStreamDeviceChangeReason::OVERRODE);
     }
     WriteSelectOutputSysEvents(selectedDesc, strUsage);
     return SUCCESS;

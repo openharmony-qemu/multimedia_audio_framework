@@ -245,6 +245,7 @@ private:
     static napi_ref audioLoopbackStatus_;
     static napi_ref audioSessionScene_;
     static napi_ref audioSessionStateChangeHint_;
+    static napi_ref deviceChangeRecommendedAction_;
 
     static const std::map<std::string, int32_t> audioChannelMap;
     static const std::map<std::string, int32_t> samplingRateMap;
@@ -298,6 +299,7 @@ private:
     static const std::map<std::string, int32_t> audioLoopbackStatusMap;
     static const std::map<std::string, int32_t> audioSessionSceneMap;
     static const std::map<std::string, int32_t> audioSessionStateChangeHintMap;
+    static const std::map<std::string, int32_t> deviceChangeRecommendedActionMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;
