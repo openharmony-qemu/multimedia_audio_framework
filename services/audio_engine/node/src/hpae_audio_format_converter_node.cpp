@@ -56,11 +56,6 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeConverterNodeInput_sessionId_" + std::to_string(GetSessionId()) +
-        + "_nodeId_" + std::to_string(GetNodeId()) +
-        "_ch_" + std::to_string(preNodeInfo_.channels) + "_rate_" +
-        std::to_string(preNodeInfo_.samplingRate) + "_" + GetTime() + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
         "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
         + "_nodeId_" + std::to_string(GetNodeId()) +
@@ -97,13 +92,6 @@ HpaePcmBuffer *HpaeAudioFormatConverterNode::SignalProcess(const std::vector<Hpa
         return &silenceData_;
     }
     float *srcData = (*(inputs[0])).GetPcmDataBuffer();
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump((int8_t *)(srcData),
-            inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount() * sizeof(float));
-    }
-#endif
     converterOutput_.Reset();
     tmpOutBuf_.Reset();
 

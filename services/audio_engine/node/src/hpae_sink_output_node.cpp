@@ -41,12 +41,7 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeSinkOutputNode_Out_bit_" + std::to_string(GetBitWidth()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + ".pcm");
     AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
-#endif
 }
 
 void HpaeSinkOutputNode::HandleRemoteTiming()
@@ -71,8 +66,6 @@ void HpaeSinkOutputNode::DoProcess()
         return;
     }
     
-    HandleHapticParam(renderFrameTimes_);
-    renderFrameTimes_ += MS_PER_FRAME;
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
@@ -86,11 +79,9 @@ void HpaeSinkOutputNode::DoProcess()
     HighResolutionTimer timer;
     timer.Start();
     intervalTimer_.Stop();
-    if (outputPcmDumper_) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
-    }
 #endif
+    HandleHapticParam(renderFrameTimes_);
+    renderFrameTimes_ += MS_PER_FRAME;
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
@@ -194,9 +185,6 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         interval,
         ret);
     std::string adapterName = sinkOutAttr_.adapterName;
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSinkOutputNode_" + adapterName + "_bit_" + std::to_string(GetBitWidth()) + "_ch_" +
-        std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
     return ret;
 }
@@ -400,7 +388,7 @@ void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
         std::string condition = "haptic";
         std::string param = "haptic_sessionid=" + std::to_string(syncId_) +
             ";haptic_offset=" + std::to_string(syncTime);
-        audioRendererSink_->SetAudioParameter(key, condition, param); // to do: judge nullptr
+        audioRendererSink_->SetAudioParameter(key, condition, param);
     }
 }
 }  // namespace HPAE

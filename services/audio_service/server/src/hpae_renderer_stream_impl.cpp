@@ -73,7 +73,7 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
 }
 HpaeRendererStreamImpl::~HpaeRendererStreamImpl()
 {
-    AUDIO_DEBUG_LOG("~HpaeRendererStreamImpl");
+    AUDIO_INFO_LOG("~HpaeRendererStreamImpl [%{public}u]", streamIndex_);
     if (dumpEnqueueIn_ != nullptr) {
         DumpFileUtil::CloseDumpFile(&dumpEnqueueIn_);
     }
@@ -131,7 +131,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
 
 int32_t HpaeRendererStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Start");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
@@ -143,7 +143,7 @@ int32_t HpaeRendererStreamImpl::Start()
 
 int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 {
-    AUDIO_INFO_LOG("StartWithSyncId");
+    AUDIO_INFO_LOG("[%{public}u] Enter syncId: %{public}d", streamIndex_, syncId);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
@@ -156,7 +156,7 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
 
 int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("Pause");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Pause is error");
@@ -168,7 +168,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 
 int32_t HpaeRendererStreamImpl::Flush()
 {
-    AUDIO_PRERELEASE_LOGI("Flush Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Flush is error");
@@ -179,7 +179,7 @@ int32_t HpaeRendererStreamImpl::Flush()
 
 int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 {
-    AUDIO_INFO_LOG("Drain Enter %{public}d", stopFlag);
+    AUDIO_INFO_LOG("[%{public}u] Enter %{public}d", streamIndex_, stopFlag);
     int32_t ret = IHpaeManager::GetHpaeManager().Drain(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Drain is error");
@@ -190,7 +190,7 @@ int32_t HpaeRendererStreamImpl::Drain(bool stopFlag)
 
 int32_t HpaeRendererStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Stop Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Stop is error");
@@ -206,7 +206,7 @@ int32_t HpaeRendererStreamImpl::Release()
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
         IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     }
-    AUDIO_INFO_LOG("Release Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId);
     if (ret != 0) {
@@ -441,7 +441,7 @@ void HpaeRendererStreamImpl::GetSpanSizePerFrame(size_t &spanSizeInFrame) const
 
 void HpaeRendererStreamImpl::SetStreamIndex(uint32_t index)
 {
-    AUDIO_INFO_LOG("Using index/sessionId %{public}d", index);
+    AUDIO_INFO_LOG("Using index/sessionId %{public}u", index);
     streamIndex_ = index;
 }
 

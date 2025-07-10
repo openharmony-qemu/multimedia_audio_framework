@@ -24,7 +24,6 @@
 #include "high_resolution_timer.h"
 #ifdef ENABLE_HOOK_PCM
 #include "high_resolution_timer.h"
-#include "hpae_pcm_dumper.h"
 #endif
 namespace OHOS {
 namespace AudioStandard {
@@ -79,7 +78,6 @@ private:
     uint64_t renderFrameTimes_ = 0;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
 };
 

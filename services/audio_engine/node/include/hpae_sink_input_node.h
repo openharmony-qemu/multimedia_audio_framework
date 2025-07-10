@@ -23,9 +23,7 @@
 #include "audio_info.h"
 #include "i_renderer_stream.h"
 #include "linear_pos_time_model.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -78,9 +76,6 @@ private:
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     float loudnessGain_ = 0.0f;
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
-#endif
 };
 
 }  // namespace HPAE
