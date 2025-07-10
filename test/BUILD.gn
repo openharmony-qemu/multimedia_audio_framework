@@ -94,6 +94,7 @@ group("audio_unit_test") {
     "../services/audio_engine/test/unittest:hpae_signal_process_thread_test",
     "../services/audio_engine/test/unittest:hpae_sink_input_node_test",
     "../services/audio_engine/test/unittest:hpae_sink_output_node_test",
+    "../services/audio_engine/test/unittest:hpae_soft_link_unit_test",
     "../services/audio_engine/test/unittest:hpae_source_input_cluster_test",
     "../services/audio_engine/test/unittest:hpae_source_input_node_test",
     "../services/audio_engine/test/unittest:hpae_source_output_node_test",

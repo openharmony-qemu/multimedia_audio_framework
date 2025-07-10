@@ -640,7 +640,7 @@ int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(int8_t *inputData, size_
     return SUCCESS;
 }
 
-void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation)
+void HpaeRendererStreamImpl::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
     auto statusCallback = statusCallback_.lock();
     if (statusCallback) {

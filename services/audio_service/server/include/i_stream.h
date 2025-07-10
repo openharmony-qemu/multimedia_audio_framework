@@ -60,6 +60,11 @@ public:
     virtual void OnStatusUpdate(IOperation operation) = 0;
 };
 
+class IStreamStatusCallback {
+public:
+    virtual void OnStatusUpdate(IOperation operation, uint32_t streamIndex) = 0;
+};
+
 class IStream {
 public:
     virtual void SetStreamIndex(uint32_t index) = 0;

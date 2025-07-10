@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#ifndef HPAE_SOFT_LINK_H
+#define HPAE_SOFT_LINK_H
+#include "i_hpae_soft_link.h"
+#include "i_capturer_stream.h"
+#include "i_renderer_stream.h"
+#include "hpae_define.h"
+#include "audio_ring_cache.h"
+
+
+namespace OHOS {
+namespace AudioStandard {
+namespace HPAE {
+
+enum class HpaeSoftLinkState : int32_t {
+    INVALID = -1,
+    NEW,
+    PREPARED,
+    RUNNING,
+    STOPPED,
+    RELEASED,
+};
+
+class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
+                     public IHpaeSoftLink,
+                     public IStreamStatusCallback,
+                     public IStreamCallback,
+                     public ICapturerStreamCallback {
+public:
+    HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode);
+    ~HpaeSoftLink();
+    static uint32_t GenerateSessionId();
+    int32_t Init() override;
+    int32_t Start() override;
+    int32_t Stop() override;
+    int32_t Release() override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
+    int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
+    int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
+    void OnDeviceInfoReceived();
+
+    // for unit test
+    HpaeSoftLinkState GetStreamStateById(uint32_t sessionId);
+private:
+    int32_t GetSinkInfoByIdx();
+    int32_t GetSourceInfoByIdx();
+    int32_t CreateStream();
+    void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
+private:
+    static std::atomic<uint32_t> HpaeSoftLink::g_sessionId;
+    int32_t renderIdx_ = -1;
+    int32_t captureIdx_ = -1;
+    SoftLinkMode linkMode_ = SoftLinkMode::HEARING_AID;
+    HpaeSinkInfo sinkInfo_;
+    HpaeSourceInfo sourceInfo_;
+    HpaeStreamInfo rendererStreamInfo_;
+    HpaeStreamInfo capturerStreamInfo_;
+    std::unique_ptr<AudioRingCache> bufferQueue_ = nullptr;
+    std::vector<char> tempBuffer_;
+    HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
+    std::mutex stateMutex_;
+    std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
+    std::mutex callbackMutex_;
+    std::condition_variable callbackCV_;
+    bool isOperationFinish_ = false;
+    int32_t overFlowCount_ = 0;
+    int32_t underRunCount_ = 0;
+};
+} // namespace HPAE
+} // namespace AudioStandard
+} // namespace OHOS
+#endif // HPAE_SOFT_LINK_H
