@@ -44,7 +44,7 @@ HpaeCapturerStreamImpl::HpaeCapturerStreamImpl(AudioProcessConfig processConfig)
 
 HpaeCapturerStreamImpl::~HpaeCapturerStreamImpl()
 {
-    AUDIO_DEBUG_LOG("~HpaeCapturerStreamImpl");
+    AUDIO_INFO_LOG("~HpaeCapturerStreamImpl [%{public}u]", streamIndex_);
     if (capturerServerDumpFile_) {
         fclose(capturerServerDumpFile_);
         capturerServerDumpFile_ = nullptr;
@@ -76,7 +76,7 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 
 int32_t HpaeCapturerStreamImpl::Start()
 {
-    AUDIO_INFO_LOG("Start");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed");
     state_ = RUNNING;
@@ -85,7 +85,7 @@ int32_t HpaeCapturerStreamImpl::Start()
 
 int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 {
-    AUDIO_INFO_LOG("Pause");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error");
     return SUCCESS;
@@ -114,7 +114,7 @@ int32_t HpaeCapturerStreamImpl::GetLatency(uint64_t &latency)
 
 int32_t HpaeCapturerStreamImpl::Flush()
 {
-    AUDIO_INFO_LOG("Flush");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error");
     return SUCCESS;
@@ -122,7 +122,7 @@ int32_t HpaeCapturerStreamImpl::Flush()
 
 int32_t HpaeCapturerStreamImpl::Stop()
 {
-    AUDIO_INFO_LOG("Stop");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Stop failed");
     state_ = STOPPING;
@@ -135,7 +135,7 @@ int32_t HpaeCapturerStreamImpl::Release()
         AUDIO_ERR_LOG("%{public}u Release state_ is RUNNING", processConfig_.originalSessionId);
         IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
     }
-    AUDIO_INFO_LOG("Release Enter");
+    AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD,
         processConfig_.originalSessionId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Release is error");

@@ -42,11 +42,6 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
 
-#ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSinkInputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
-        "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
-#endif
     if (nodeInfo.historyFrameCount > 0) {
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
@@ -149,15 +144,7 @@ void HpaeSinkInputNode::DoProcess()
     if (!ReadToAudioBuffer(ret)) {
         return;
     }
-
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
-            GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
-    }
-#endif
-    
+ 
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());

@@ -56,9 +56,6 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
     AUDIO_INFO_LOG(
         "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeGainNodeInput_id_" + std::to_string(GetSessionId()) +
-                                                      "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                      std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) + "_ch_" +
                                                        std::to_string(GetChannelCount()) + "_rate_" +
                                                        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
@@ -82,12 +79,6 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     float *inputData = (float *)inputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = inputs[0]->GetFrameLen();
     uint32_t channelCount = inputs[0]->GetChannelCount();
-
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->Dump((int8_t *)(inputData), (frameLen * sizeof(float) * channelCount));
-    }
-#endif
     
     if (needGainState_) {
         DoGain(inputs[0], frameLen, channelCount);

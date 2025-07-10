@@ -49,7 +49,6 @@ private:
     // if there is render effect, the effect node decides the output format of converter node
     INodeFormatInfoCallback *nodeFormatInfoCallback_ = nullptr;
 #ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
 };

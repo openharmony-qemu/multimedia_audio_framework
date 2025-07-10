@@ -57,8 +57,6 @@ private:
     bool isByPassEffect_ = false;
     bool isDisplayEffectZeroVolume_ = false;
 #ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_;
     std::unique_ptr<HpaePcmDumper> directPcmDumper_;
     std::unique_ptr<HpaePcmDumper> collaborativePcmDumper_;
 #endif

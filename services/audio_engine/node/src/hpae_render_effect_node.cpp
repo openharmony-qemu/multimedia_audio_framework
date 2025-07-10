@@ -62,10 +62,6 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     }
     AUDIO_INFO_LOG("render effect node created, scene type: %{public}s", sceneType_.c_str());
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeInput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeRenderEffectNodeOutput_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     if (sceneType_ == "SCENE_COLLABORATIVE") {
         directPcmDumper_ = std::make_unique<HpaePcmDumper>(
             "HpaeRenderEffectNodeDirect_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
@@ -140,14 +136,6 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
         return inputs[0];
     }
 
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump((int8_t *)inputs[0]->GetPcmDataBuffer(),
-            inputs[0]->GetFrameLen() * sizeof(float) * inputs[0]->GetChannelCount());
-    }
-#endif
-
     ReconfigOutputBuffer();
 
     auto eBufferAttr = std::make_unique<EffectBufferAttr>(
@@ -161,14 +149,6 @@ HpaePcmBuffer *HpaeRenderEffectNode::SignalProcess(const std::vector<HpaePcmBuff
 
     int32_t ret = AudioEffectChainManager::GetInstance()->ApplyAudioEffectChain(sceneType_, eBufferAttr);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, inputs[0], "apply audio effect chain fail");
-
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)effectOutput_.GetPcmDataBuffer(),
-            effectOutput_.GetFrameLen() * sizeof(float) * effectOutput_.GetChannelCount());
-    }
-#endif
 
     effectOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &effectOutput_;
