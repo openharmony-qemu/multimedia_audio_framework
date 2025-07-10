@@ -283,6 +283,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
     RingBufferWrapper ringbufferWrapper;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
     EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(true, ringbufferWrapper.IsLegal());
 
     posInFrame = 3000 + 1;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
@@ -485,6 +486,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
     RingBufferWrapper buffer;
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(true, buffer.IsLegal());
     EXPECT_EQ(buffer.dataLength, totalSizeInBytes - byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes - byteSizePerFrame);

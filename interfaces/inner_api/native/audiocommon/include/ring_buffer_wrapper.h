@@ -34,6 +34,32 @@ struct BasicBufferDesc {
     uint8_t *buffer = nullptr;
     size_t bufLength = 0;
 
+    bool IsLegal() const
+    {
+        if ((buffer == nullptr) && (bufLength == 0)) {
+            return true;
+        }
+
+        if ((buffer != nullptr) && (bufLength > 0)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    bool IsBufferOverlap(const BasicBufferDesc &inBuffer) const
+    {
+        if ((buffer == nullptr) || (inBuffer.buffer == nullptr)) {
+            return false;
+        }
+
+        if ((buffer >= (inBuffer.buffer + inBuffer.bufLength)) || (inBuffer.buffer >= buffer + bufLength)) {
+            return false;
+        }
+
+        return true;
+    }
+
     int32_t SeekFromStart(size_t offset)
     {
         if (offset > bufLength) {
@@ -64,13 +90,34 @@ struct RingBufferWrapper {
     std::array<BasicBufferDesc, DESC_SIZE> basicBufferDescs = {};
     size_t dataLength = 0;
 
-    size_t GetBufferSize()
+    size_t GetBufferSize() const
     {
         size_t size = 0;
         for (const auto &[buffer, bufLength] : basicBufferDescs) {
             size += bufLength;
         }
         return size;
+    }
+
+    bool IsLegal() const
+    {
+        if ((!basicBufferDescs[0].IsLegal()) || (!basicBufferDescs[1].IsLegal())) {
+            return false;
+        }
+
+        if (basicBufferDescs[0].IsBufferOverlap(basicBufferDescs[1])) {
+            return false;
+        }
+
+        if (dataLength > GetBufferSize()) {
+            return false;
+        }
+
+        if ((basicBufferDescs[0].buffer) == nullptr && (basicBufferDescs[1].buffer != nullptr)) {
+            return false;
+        }
+
+        return true;
     }
 
     void Reset()
@@ -124,7 +171,7 @@ struct RingBufferWrapper {
         return SUCCESS;
     }
 
-    int32_t MemCopyFrom(const RingBufferWrapper &buffer)
+    int32_t CopyInputBufferValueToCurBuffer(const RingBufferWrapper &buffer)
     {
         if (GetBufferSize() < buffer.dataLength) {
             return ERR_INVALID_PARAM;

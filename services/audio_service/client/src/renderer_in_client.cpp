@@ -563,7 +563,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         CHECK_AND_RETURN_RET(ret == SUCCESS && (ringBuffer.dataLength > 0), ERROR);
         auto copySize = std::min(remainSize, ringBuffer.dataLength);
         inBuffer.dataLength = copySize;
-        ret = ringBuffer.MemCopyFrom(inBuffer);
+        ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
         clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
         inBuffer.SeekFromStart(copySize);
