@@ -35,11 +35,6 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
       framesRead_(0), totalFrames_(0)
 {
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSourceOutputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
-        "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
-#endif
 }
 
 void HpaeSourceOutputNode::DoProcess()
@@ -58,12 +53,6 @@ void HpaeSourceOutputNode::DoProcess()
     }
     ConvertFromFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_) {
-        outputPcmDumper_->Dump(
-            (int8_t *)sourceOutputData_.data(), GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
-    }
-#endif
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);

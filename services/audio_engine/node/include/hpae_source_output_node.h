@@ -20,9 +20,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_info.h"
 #include "i_capturer_stream.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -55,9 +53,6 @@ private:
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     uint64_t totalFrames_;
     int32_t appUid_ = -1;
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
-#endif
 };
 
 }  // namespace HPAE
