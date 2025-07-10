@@ -19,7 +19,6 @@
 #include "audio_endpoint.h"
 #include "audio_endpoint_private.h"
 
-#include "xcollie/watchdog.h"
 
 #include "audio_errors.h"
 #include "audio_service_log.h"
@@ -56,8 +55,6 @@ namespace {
     static constexpr int64_t DELTA_TO_REAL_READ_START_TIME = 0; // 0ms
     const uint16_t GET_MAX_AMPLITUDE_FRAMES_THRESHOLD = 40;
     static const int32_t START_DEVICE_TIMEOUT = 10; // 10s
-    constexpr int32_t WATCHDOG_INTERVAL_TIME_MS = 3000; // 3000ms
-    constexpr int32_t WATCHDOG_DELAY_TIME_MS = 10 * 1000; // 10000ms
     static const int32_t ONE_MINUTE = 60;
     const int32_t DUP_COMMON_LEN = 40; // 40 -> 40ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
@@ -1998,32 +1995,6 @@ int32_t AudioEndpointInner::ReadFromEndpoint(uint64_t curReadPos)
     return SUCCESS;
 }
 
-void EndPointRemoveWatchdog(const std::string &message, const std::string &endPointName)
-{
-    std::string watchDogMessage = message;
-    watchDogMessage += endPointName;
-    HiviewDFX::Watchdog::GetInstance().RemovePeriodicalTask(watchDogMessage);
-    AUDIO_INFO_LOG("%{public}s end %{public}s", watchDogMessage.c_str(), endPointName.c_str());
-}
-
-void AudioEndpointInner::WatchingRecordEndpointWorkLoopFuc()
-{
-    recordEndpointWorkLoopFucThreadStatus_.store(true);
-    auto taskFunc = [this]() {
-        if (recordEndpointWorkLoopFucThreadStatus_.load()) {
-            AUDIO_DEBUG_LOG("Set recordEndpointWorkLoopFucThreadStatus_ to false");
-            recordEndpointWorkLoopFucThreadStatus_.store(false);
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string endPointName = GetEndpointName();
-    std::string watchDogMessage = "WatchingRecordEndpointWorkLoopFuc" + endPointName;
-    AUDIO_INFO_LOG("watchdog start");
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
-}
-
 void AudioEndpointInner::RecordEndpointWorkLoopFuc()
 {
     SetThreadQosLevel();
@@ -2031,11 +2002,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
     uint64_t curReadPos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Record endpoint work loop fuc start.");
-    // add watchdog
-    WatchingRecordEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -2043,7 +2011,6 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
             RecordReSyncPosition();
             wakeUpTime = ClockTime::GetCurNano();
             needReSyncPosition_ = false;
-            recordEndpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         curTime = ClockTime::GetCurNano();
@@ -2066,29 +2033,8 @@ void AudioEndpointInner::RecordEndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        recordEndpointWorkLoopFucThreadStatus_.store(true);
     }
     ResetThreadQosLevel();
-    // stop watchdog
-    EndPointRemoveWatchdog("WatchingRecordEndpointWorkLoopFuc", GetEndpointName());
-}
-
-void AudioEndpointInner::WatchingEndpointWorkLoopFuc()
-{
-    endpointWorkLoopFucThreadStatus_.store(true);
-    auto taskFunc = [this]() {
-        if (endpointWorkLoopFucThreadStatus_.load()) {
-            AUDIO_DEBUG_LOG("Set endpointWorkLoopFucThreadStatus_ to false");
-            endpointWorkLoopFucThreadStatus_.store(false);
-        } else {
-            AUDIO_INFO_LOG("watchdog happened");
-        }
-    };
-    std::string endPointName = GetEndpointName();
-    std::string watchDogMessage = "WatchingEndpointWorkLoopFuc" + endPointName;
-    AUDIO_INFO_LOG("watchDog start");
-    HiviewDFX::Watchdog::GetInstance().RunPeriodicalTask(watchDogMessage, taskFunc,
-        WATCHDOG_INTERVAL_TIME_MS, WATCHDOG_DELAY_TIME_MS);
 }
 
 void AudioEndpointInner::BindCore()
@@ -2146,11 +2092,8 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     uint64_t curWritePos = 0;
     int64_t wakeUpTime = ClockTime::GetCurNano();
     AUDIO_INFO_LOG("Endpoint work loop fuc start");
-    // add watchdog
-    WatchingEndpointWorkLoopFuc();
     while (isInited_.load()) {
         if (!KeepWorkloopRunning()) {
-            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
         threadStatus_ = INRUNNING;
@@ -2160,7 +2103,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
             ReSyncPosition();
             wakeUpTime = curTime;
             needReSyncPosition_ = false;
-            endpointWorkLoopFucThreadStatus_.store(true);
             continue;
         }
 
@@ -2182,7 +2124,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
         threadStatus_ = SLEEPING;
         CheckWakeUpTime(wakeUpTime);
         ClockTime::AbsoluteSleep(wakeUpTime);
-        endpointWorkLoopFucThreadStatus_.store(true);
     }
     AUDIO_DEBUG_LOG("Endpoint work loop fuc end");
     if (setPriorityResult) {
@@ -2190,8 +2131,6 @@ void AudioEndpointInner::EndpointWorkLoopFuc()
     } else {
         ResetThreadQosLevel();
     }
-    // stop watchdog
-    EndPointRemoveWatchdog("WatchingEndpointWorkLoopFuc", GetEndpointName());
 }
 
 void AudioEndpointInner::ProcessUpdateAppsUidForPlayback()

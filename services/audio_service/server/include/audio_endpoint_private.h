@@ -197,8 +197,6 @@ private:
     void EndpointWorkLoopFuc();
     void RecordEndpointWorkLoopFuc();
 
-    void WatchingEndpointWorkLoopFuc();
-    void WatchingRecordEndpointWorkLoopFuc();
     // Call GetMmapHandlePosition in ipc may block more than a cycle, call it in another thread.
     void AsyncGetPosTime();
     bool DelayStopDevice();
@@ -351,8 +349,6 @@ private:
     bool latencyMeasEnabled_ = false;
     size_t detectedTime_ = 0;
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
-    std::atomic_bool endpointWorkLoopFucThreadStatus_ { false };
-    std::atomic_bool recordEndpointWorkLoopFucThreadStatus_ { false };
     std::unordered_map<int32_t, CaptureInfo> fastCaptureInfos_;
     bool coreBinded_ = false;
     bool isExistLoopback_ = false;
