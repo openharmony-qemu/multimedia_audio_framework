@@ -372,13 +372,16 @@ int32_t AudioPolicyClientStubImpl::RemoveActiveVolumeTypeChangeCallback(
     const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(activeVolumeTypeChangeMutex_);
-    auto iter = activeVolumeTypeChangeCallbackList_.begin();
-    while (iter != activeVolumeTypeChangeCallbackList_.end()) {
-        if (*iter != cb) {
-            iter++;
-            continue;
-        }
-        iter = activeVolumeTypeChangeCallbackList_.erase(iter);
+    if (cb == nullptr) {
+        activeVolumeTypeChangeCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(activeVolumeTypeChangeCallbackList_.begin(), activeVolumeTypeChangeCallbackList_.end(),
+        [&cb](const std::weak_ptr<AudioManagerActiveVolumeTypeChangeCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != activeVolumeTypeChangeCallbackList_.end()) {
+        activeVolumeTypeChangeCallbackList_.erase(it);
     }
     return SUCCESS;
 }
@@ -387,13 +390,6 @@ int32_t AudioPolicyClientStubImpl::AddActiveVolumeTypeChangeCallback(
     const std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(activeVolumeTypeChangeMutex_);
-    for (auto iter : activeVolumeTypeChangeCallbackList_) {
-        if (iter.get() == cb.get()) {
-            AUDIO_INFO_LOG("activeVolumeTypeChangeCallbackList_ No need pushback");
-            return SUCCESS;
-        }
-    }
-
     activeVolumeTypeChangeCallbackList_.push_back(cb);
     AUDIO_INFO_LOG("Add activeVolumeTypeChangeCallback P : %{private}p", cb.get());
     return SUCCESS;
@@ -556,8 +552,9 @@ int32_t AudioPolicyClientStubImpl::OnActiveVolumeTypeChanged(int32_t volumeType)
 {
     std::lock_guard<std::mutex> lockCbMap(activeVolumeTypeChangeMutex_);
     for (auto it = activeVolumeTypeChangeCallbackList_.begin(); it != activeVolumeTypeChangeCallbackList_.end(); ++it) {
-        if (*it != nullptr) {
-            (*it)->OnActiveVolumeTypeChanged(static_cast<AudioVolumeType>(volumeType));
+        std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback> activeVolumeTypeCallback = (*it).lock();
+        if (activeVolumeTypeCallback != nullptr) {
+            activeVolumeTypeCallback->OnActiveVolumeTypeChanged(static_cast<AudioVolumeType>(volumeType));
         }
     }
     return SUCCESS;

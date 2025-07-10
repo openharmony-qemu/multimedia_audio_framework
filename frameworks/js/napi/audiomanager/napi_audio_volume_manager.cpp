@@ -1069,19 +1069,19 @@ napi_value NapiAudioVolumeManager::RegisterActiveVolumeTypeChangeCallback(napi_e
     if (napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ == nullptr) {
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ =
             std::make_shared<NapiAudioManagerActiveVolumeTypeChangeCallback>(env);
-    }
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
-        "RegisterActiveVolumeTypeChangeForUidCallback: Memory Allocation Failed !");
-    int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetActiveVolumeTypeCallback(
-        napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
-    if (ret != SUCCESS) {
-        if (ret == ERROR_INVALID_PARAM) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
-        } else if (ret == ERR_PERMISSION_DENIED) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
-        } else {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+        CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ != nullptr,
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
+            "RegisterActiveVolumeTypeChangeForUidCallback: Memory Allocation Failed !");
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetActiveVolumeTypeCallback(
+            napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
+        if (ret != SUCCESS) {
+            if (ret == ERROR_INVALID_PARAM) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+            } else if (ret == ERR_PERMISSION_DENIED) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
+            } else {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+            }
         }
     }
     std::shared_ptr<NapiAudioManagerActiveVolumeTypeChangeCallback> cb =
