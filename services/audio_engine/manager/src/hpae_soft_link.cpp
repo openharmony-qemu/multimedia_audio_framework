@@ -162,9 +162,12 @@ int32_t HpaeSoftLink::CreateStream()
     IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_PLAY, rendererSessionId,
         shared_from_this());
     IHpaeManager::GetHpaeManager().RegisterWriteCallback(rendererSessionId, shared_from_this());
-    AudioVolume::GetInstance()->AddStreamVolume(rendererSessionId, rendererStreamInfo_.streamType,
+    StreamVolumeParams streamVolumeParams = {
+        rendererSessionId, rendererStreamInfo_.streamType,
         rendererStreamInfo_.effectInfo.streamUsage, -1, -1,
-        false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL);
+        false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL, false
+    }
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
 
     uint32_t &capturerSessionId = capturerStreamInfo_.sessionId;
