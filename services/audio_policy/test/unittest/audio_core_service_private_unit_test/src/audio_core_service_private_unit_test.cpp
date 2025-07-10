@@ -1991,6 +1991,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_001, TestSize.Level1)
     EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
     AudioStreamStatus status = audioCoreService->pipeManager_->modemCommunicationIdMap_[0]->streamStatus_;
     EXPECT_EQ(status, STREAM_STATUS_STARTED);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
 }
 
 /**
@@ -2018,6 +2019,54 @@ HWTEST(AudioCoreServicePrivateTest, CheckModemScene_002, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckModemScene_003
+ * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to started if scene is AUDIO_SCENE_PHONE_CALL
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckModemScene_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    audioCoreService->CheckModemScene(modemDescs, reason);
+    EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
+    AudioStreamStatus status = audioCoreService->pipeManager_->modemCommunicationIdMap_[0]->streamStatus_;
+    EXPECT_EQ(status, STREAM_STATUS_STARTED);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckModemScene_004
+ * @tc.desc  : Test AudioCoreService::CheckModemScene, set streamStatus to stopped if scene is AUDIO_SCENE_DEFAULT
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckModemScene_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs;
+    audioCoreService->CheckModemScene(modemDescs, reason);
+    EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
+    AudioStreamStatus status = audioCoreService->pipeManager_->modemCommunicationIdMap_[0]->streamStatus_;
+    EXPECT_EQ(status, STREAM_STATUS_STOPPED);
+}
+
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: UpdateModemRoute_001
  * @tc.desc  : Test AudioCoreService::UpdateModemRoute
  */
@@ -2035,6 +2084,27 @@ HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_001, TestSize.Level1)
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
     int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: UpdateModemRoute_002
+ * @tc.desc  : Test AudioCoreService::UpdateModemRoute
+ */
+HWTEST(AudioCoreServicePrivateTest, UpdateModemRoute_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    ASSERT_NE(audioCoreService->pipeManager_, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    audioCoreService->pipeManager_->modemCommunicationIdMap_.insert(std::make_pair(0, streamDesc));
+    EXPECT_NE(audioCoreService->pipeManager_->modemCommunicationIdMap_[0], nullptr);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> modemDescs =
+        audioCoreService->audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "");
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+    int32_t ret = audioCoreService->UpdateModemRoute(modemDescs);
     EXPECT_EQ(ret, SUCCESS);
 }
 

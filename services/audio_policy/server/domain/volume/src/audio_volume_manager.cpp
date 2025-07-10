@@ -227,7 +227,7 @@ int32_t AudioVolumeManager::GetSystemVolumeLevelNoMuteState(AudioStreamType stre
     return audioPolicyManager_.GetSystemVolumeLevelNoMuteState(streamType);
 }
 
-void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
+int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor,
     const std::string &newSinkName, bool enableSetVoiceCallVolume)
 {
     Trace trace("AudioVolumeManager::SetVolumeForSwitchDevice:" + std::to_string(deviceDescriptor.deviceType_));
@@ -238,6 +238,7 @@ void AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDe
     if (enableSetVoiceCallVolume && audioSceneManager_.GetAudioScene(true) == AUDIO_SCENE_PHONE_CALL) {
         SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     }
+    return SUCCESS;
 }
 
 int32_t AudioVolumeManager::SetVoiceRingtoneMute(bool isMute)
