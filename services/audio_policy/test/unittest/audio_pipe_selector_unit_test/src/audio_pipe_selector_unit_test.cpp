@@ -530,7 +530,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
     streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
 
-    temp = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.front() = std::make_shared<AudioDeviceDescriptor>();
     audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
 
     // test nullptr

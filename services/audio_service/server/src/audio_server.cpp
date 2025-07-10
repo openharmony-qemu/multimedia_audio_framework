@@ -71,6 +71,7 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
+constexpr int32_t UID_MSDP_SA = 6699;
 constexpr int32_t INTELL_VOICE_SERVICR_UID = 1042;
 uint32_t AudioServer::paDaemonTid_;
 std::map<std::string, std::string> AudioServer::audioParameters;
@@ -178,16 +179,6 @@ static const std::vector<SourceType> AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES = 
     SOURCE_TYPE_UNPROCESSED,
     SOURCE_TYPE_LIVE,
 };
-
-static bool IsNeedVerifyPermission(const StreamUsage streamUsage)
-{
-    for (const auto& item : STREAMS_NEED_VERIFY_SYSTEM_PERMISSION) {
-        if (streamUsage == item) {
-            return true;
-        }
-    }
-    return false;
-}
 
 static bool IsVoiceModemCommunication(StreamUsage streamUsage, int32_t callingUid)
 {
@@ -1640,6 +1631,7 @@ bool AudioServer::CheckRendererFormat(const AudioProcessConfig &config)
 {
     if (NotContain(AUDIO_SUPPORTED_STREAM_USAGES, config.rendererInfo.streamUsage)) {
         AUDIO_ERR_LOG("Check format failed invalid streamUsage:%{public}d", config.rendererInfo.streamUsage);
+        SendCreateErrorInfo(config, ERR_INVALID_PARAM);
         return false;
     }
     return true;
@@ -1649,11 +1641,13 @@ bool AudioServer::CheckRecorderFormat(const AudioProcessConfig &config)
 {
     if (NotContain(AUDIO_SUPPORTED_SOURCE_TYPES, config.capturerInfo.sourceType)) {
         AUDIO_ERR_LOG("Check format failed invalid sourceType:%{public}d", config.capturerInfo.sourceType);
+        SendCreateErrorInfo(config, ERR_INVALID_PARAM);
         return false;
     }
     if (config.capturerInfo.capturerFlags != AUDIO_FLAG_NORMAL && NotContain(AUDIO_FAST_STREAM_SUPPORTED_SOURCE_TYPES,
         config.capturerInfo.sourceType)) {
         AUDIO_ERR_LOG("Check format failed invalid fast sourceType:%{public}d", config.capturerInfo.sourceType);
+        SendCreateErrorInfo(config, ERR_INVALID_PARAM);
         return false;
     }
     return true;
@@ -1662,6 +1656,7 @@ bool AudioServer::CheckRecorderFormat(const AudioProcessConfig &config)
 bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
 {
     if (!CheckStreamInfoFormat(config)) {
+        SendCreateErrorInfo(config, ERR_INVALID_PARAM);
         return false;
     }
     if (config.audioMode == AUDIO_MODE_PLAYBACK) {
@@ -1672,6 +1667,7 @@ bool AudioServer::CheckConfigFormat(const AudioProcessConfig &config)
         return CheckRecorderFormat(config);
     }
 
+    SendCreateErrorInfo(config, ERR_INVALID_PARAM);
     AUDIO_ERR_LOG("Check format failed invalid mode.");
     return false;
 }
@@ -1711,47 +1707,18 @@ bool AudioServer::IsFastBlocked(int32_t uid, PlayerType playerType)
     return result == "true";
 }
 
-void AudioServer::SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
-    const int32_t &errorCode)
+void AudioServer::SendCreateErrorInfo(const AudioProcessConfig &config, int32_t errorCode)
 {
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::AUDIO_STREAM_CREATE_ERROR_STATS,
         Media::MediaMonitor::FREQUENCY_AGGREGATION_EVENT);
-    bean->Add("IS_PLAYBACK", 1);
-    bean->Add("CLIENT_UID", static_cast<int32_t>(getuid()));
-    bean->Add("STREAM_TYPE", sreamUsage);
+    bool isPlayBack = config.audioMode == AUDIO_MODE_PLAYBACK ? 1 : 0;
+    bean->Add("IS_PLAYBACK", (isPlayBack ? 1 : 0));
+    bean->Add("CLIENT_UID", config.appInfo.appUid);
+    bean->Add("STREAM_TYPE", isPlayBack ? static_cast<int32_t>(config.rendererInfo.streamUsage) :
+        static_cast<int32_t>(config.capturerInfo.sourceType));
     bean->Add("ERROR_CODE", errorCode);
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
-}
-
-int32_t AudioServer::CheckParam(const AudioProcessConfig &config)
-{
-    ContentType contentType = config.rendererInfo.contentType;
-    if (contentType < CONTENT_TYPE_UNKNOWN || contentType > CONTENT_TYPE_ULTRASONIC) {
-        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid content type");
-        return ERR_INVALID_PARAM;
-    }
-
-    StreamUsage streamUsage = config.rendererInfo.streamUsage;
-    if (streamUsage < STREAM_USAGE_UNKNOWN || streamUsage > STREAM_USAGE_MAX) {
-        SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
-            ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid stream usage");
-        return ERR_INVALID_PARAM;
-    }
-
-    if (contentType == CONTENT_TYPE_ULTRASONIC || IsNeedVerifyPermission(streamUsage)) {
-        if (!PermissionUtil::VerifySystemPermission()) {
-            SendRendererCreateErrorInfo(config.rendererInfo.streamUsage,
-                ERR_PERMISSION_DENIED);
-            AUDIO_ERR_LOG("CreateAudioRenderer failed! CONTENT_TYPE_ULTRASONIC or STREAM_USAGE_SYSTEM or "\
-                "STREAM_USAGE_VOICE_MODEM_COMMUNICATION: No system permission");
-            return ERR_PERMISSION_DENIED;
-        }
-    }
-    return SUCCESS;
 }
 
 int32_t AudioServer::CheckMaxRendererInstances()
@@ -1879,6 +1846,12 @@ int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_
     return SUCCESS;
 }
 
+bool AudioServer::IsSatellite(const AudioProcessConfig &config, int32_t callingUid)
+{
+    return config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION &&
+        callingUid == UID_FOUNDATION_SA && config.rendererInfo.isSatellite;
+}
+
 sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig)
 {
@@ -1894,8 +1867,6 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
     CHECK_AND_RETURN_RET_LOG(PermissionChecker(resetConfig), nullptr, "Create audio process failed, no permission");
 
     std::lock_guard<std::mutex> lock(streamLifeCycleMutex_);
-    int32_t ret = CheckParam(config);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, nullptr, "Check params failed");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (resetConfig.audioMode == AUDIO_MODE_PLAYBACK &&
         !IsVoiceModemCommunication(resetConfig.rendererInfo.streamUsage, callingUid)) {
@@ -1912,8 +1883,7 @@ sptr<IRemoteObject> AudioServer::CreateAudioProcessInner(const AudioProcessConfi
         errorCode = CheckMaxLoopbackInstances(resetConfig.audioMode);
         CHECK_AND_RETURN_RET(errorCode == SUCCESS, nullptr);
     }
-    if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION && callingUid == UID_FOUNDATION_SA
-        && config.rendererInfo.isSatellite) {
+    if (IsSatellite(resetConfig, callingUid)) {
         bool isSupportSate = OHOS::system::GetBoolParameter(TEL_SATELLITE_SUPPORT, false);
         CHECK_AND_RETURN_RET_LOG(isSupportSate, nullptr, "Do not support satellite");
         HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -2187,6 +2157,12 @@ bool AudioServer::CheckPlaybackPermission(const AudioProcessConfig &config)
     if (needVerifyPermission == false) {
         return true;
     }
+
+    if (streamUsage == STREAM_USAGE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
+        AUDIO_ERR_LOG("not msdp using ultrasonic uid:%{public}d", config.callerUid);
+        return false;
+    }
+
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), false,
         "Check playback permission failed, no system permission");
     return true;
@@ -2255,6 +2231,10 @@ bool AudioServer::CheckRecorderPermission(const AudioProcessConfig &config)
     // All record streams should be checked for MICROPHONE_PERMISSION
     bool res = VerifyClientPermission(MICROPHONE_PERMISSION, tokenId);
     CHECK_AND_RETURN_RET_LOG(res, false, "Check record permission failed: No permission.");
+
+    if (sourceType == SOURCE_TYPE_ULTRASONIC && config.callerUid != UID_MSDP_SA) {
+        return false;
+    }
 
     if (sourceType == SOURCE_TYPE_WAKEUP) {
         bool hasSystemPermission = PermissionUtil::VerifySystemPermission();

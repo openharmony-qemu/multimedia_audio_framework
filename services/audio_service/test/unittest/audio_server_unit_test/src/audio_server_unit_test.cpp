@@ -1180,38 +1180,31 @@ HWTEST_F(AudioServerUnitTest, AudioServerLoadAudioEffectLibraries_001, TestSize.
 }
 
 /**
- * @tc.name  : Test CheckParam API
+ * @tc.name  : Test IsSatellite API
  * @tc.type  : FUNC
- * @tc.number: CheckParam_001
- * @tc.desc  : Test CheckParam interface.
+ * @tc.number: IsSatellite_001
+ * @tc.desc  : Test IsSatellite interface.
  */
-HWTEST_F(AudioServerUnitTest, CheckParam_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, IsSatellite_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
-    config.rendererInfo.contentType = static_cast<ContentType>(-1);
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-    config.rendererInfo.contentType = static_cast<ContentType>(100);
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    int32_t callerUid = 0;
+    bool result = audioServer->IsSatellite(config, callerUid);
+    EXPECT_EQ(result, false) << "streamUsage is not MODEM_COMMUNICATION, should be false";
 
-    config.rendererInfo.contentType = CONTENT_TYPE_ULTRASONIC;
-    config.rendererInfo.streamUsage = static_cast<StreamUsage>(-1);
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-    config.rendererInfo.streamUsage = static_cast<StreamUsage>(100);
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
-    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    result = audioServer->IsSatellite(config, callerUid);
+    EXPECT_EQ(result, false) << "callerUid is 0, should be false";
+
+    callerUid = 5523; // foundation
+    result = audioServer->IsSatellite(config, callerUid);
+    EXPECT_EQ(result, false) << "isSatellite is false, should be false";
+
+    config.rendererInfo.isSatellite = true;
+    result = audioServer->IsSatellite(config, callerUid);
+    EXPECT_EQ(result, true) << "all meet, should be true";
 }
 
 /**
@@ -1293,6 +1286,31 @@ HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
     EXPECT_EQ(ret, true);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_002
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    bool ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.callerUid = 0;
+    config.rendererInfo.streamUsage = STREAM_USAGE_ULTRASONIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, false);
+
+    config.callerUid = 6699; // msdp
     ret = audioServer->CheckPlaybackPermission(config);
     EXPECT_EQ(ret, true);
 }
@@ -1998,123 +2016,6 @@ HWTEST_F(AudioServerUnitTest, IsFastBlocked_002, TestSize.Level1)
     playerType = PLAYER_TYPE_AV_PLAYER;
     bool ret = audioServer->IsFastBlocked(callingUid, playerType);
     EXPECT_EQ(ret, false);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_002
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = static_cast<ContentType>(-1);
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_003
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_003, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = static_cast<ContentType>(100);
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_004
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_004, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = static_cast<StreamUsage>(-2);
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_005
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_005, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = static_cast<StreamUsage>(100);
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_006
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_006, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-    /**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_007
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_007, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = CONTENT_TYPE_ULTRASONIC;
-    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test CheckParam API
- * @tc.type  : FUNC
- * @tc.number: CheckParam_008
- * @tc.desc  : Test CheckParam interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckParam_008, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioProcessConfig config;
-    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
-    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    int32_t ret = audioServer->CheckParam(config);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

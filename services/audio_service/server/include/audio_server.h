@@ -321,9 +321,8 @@ private:
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
-    int32_t CheckParam(const AudioProcessConfig &config);
-    void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
-        const int32_t &errorCode);
+    bool IsSatellite(const AudioProcessConfig &config, int32_t callingUid);
+    void SendCreateErrorInfo(const AudioProcessConfig &config, int32_t errorCode);
     int32_t CheckMaxRendererInstances();
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
