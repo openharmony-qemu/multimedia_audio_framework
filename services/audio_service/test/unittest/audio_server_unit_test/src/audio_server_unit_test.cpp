@@ -1246,7 +1246,7 @@ HWTEST_F(AudioServerUnitTest, SetVoiceVolume_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, OffloadSetVolume_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t ret = audioServer->OffloadSetVolume(0.5f);
+    int32_t ret = audioServer->OffloadSetVolume(0.5f, "offload", "default");
     EXPECT_EQ(ret, ERROR);
 }
 

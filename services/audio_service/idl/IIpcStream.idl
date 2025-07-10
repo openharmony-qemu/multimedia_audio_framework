@@ -58,6 +58,7 @@ interface IIpcStream {
     void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
     void SetOffloadDataCallbackState([in] int state);
+    void SetSpeed([in] float speed);
     void SetLoudnessGain([in] float loudnessGain);
     void ResolveBufferBaseAndGetServerSpanSize([out] sharedptr<OHAudioBufferBase> buffer,
         [out] unsigned int spanSizeInFrame, [out] unsigned long engineTotalSizeInFrame);

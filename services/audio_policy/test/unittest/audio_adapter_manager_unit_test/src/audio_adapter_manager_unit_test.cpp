@@ -176,21 +176,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolume_001, TestSize.Level1)
     audioAdapterManager_->Init();
     AudioStreamType streamType = STREAM_MUSIC;
     float volumeDb = 1;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SPEECH;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SYSTEM;
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SYSTEM;
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     auto interruptServiceTest = GetTnterruptServiceTest();
     audioAdapterManager_->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
     EXPECT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 }
 
 /**

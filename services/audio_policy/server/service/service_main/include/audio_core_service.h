@@ -256,6 +256,7 @@ private:
     void UpdateStreamPropInfo(const std::string &adapterName, const std::string &pipeName,
         const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
+    uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);

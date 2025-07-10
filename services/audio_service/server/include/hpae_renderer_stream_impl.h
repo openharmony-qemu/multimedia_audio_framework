@@ -48,6 +48,7 @@ public:
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
     int32_t GetPrivacyType(int32_t &privacyType) override;
+    int32_t SetSpeed(float speed) override;
 
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override;
@@ -85,6 +86,8 @@ private:
     int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
+    int32_t GetRemoteOffloadLatency(uint64_t &latency);
+    int32_t GetRemoteOffloadCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index

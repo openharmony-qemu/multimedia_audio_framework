@@ -365,6 +365,12 @@ int32_t ProRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetSpeed(float speed)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 void ProRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("enter in");

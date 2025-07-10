@@ -63,7 +63,7 @@ interface IStandardAudioService {
     void SetWakeupSourceCallback([in] IRemoteObject object);
     void UpdateSpatializationState([in] AudioSpatializationState spatializationState);
     void UpdateSpatialDeviceType([in] int spatialDeviceType);
-    void OffloadSetVolume([in] float volume);
+    void OffloadSetVolume([in] float volume, [in] String deviceClass, [in] String networkId);
     void NotifyStreamVolumeChanged([in] int streamType, [in] float volume);
     void SetSpatializationSceneType([in] int spatializationSceneType);
     void GetMaxAmplitude([in] boolean isOutputDevice, [in] String deviceClass, [in] int sourceType, [out] float maxAmplitude);

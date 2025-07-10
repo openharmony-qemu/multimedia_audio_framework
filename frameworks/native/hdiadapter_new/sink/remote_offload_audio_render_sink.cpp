@@ -353,6 +353,7 @@ int32_t RemoteOffloadAudioRenderSink::GetVolume(float &left, float &right)
 
 int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
 {
+    std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::GetLatency");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
@@ -371,8 +372,37 @@ int32_t RemoteOffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
 
 int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    Trace trace("RemoteOffloadAudioRenderSink::GetPresentationPosition");
+    CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
+    CHECK_AND_RETURN_RET_LOG(!isFlushing_.load(), ERR_OPERATION_FAILED, "during flushing");
+
+    uint64_t tmpFrames;
+    struct AudioTimeStamp stamp = {};
+    int32_t ret = audioRender_->GetRenderPosition(tmpFrames, stamp);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get render position fail, ret: %{public}d", ret);
+    int64_t maxSec = 9223372036; // (9223372036 + 1) * 10^9 > INT64_MAX, seconds should not bigger than it
+    CHECK_AND_RETURN_RET_LOG(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
+        stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
+        "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
+    frames = tmpFrames * SECOND_TO_MICROSECOND / attr_.sampleRate;
+    timeSec = stamp.tvSec;
+    timeNanoSec = stamp.tvNSec;
+
+    // check hdi timestamp out of range 40 * 1000 * 1000 ns
+    struct timespec curStamp;
+    if (clock_gettime(CLOCK_MONOTONIC, &curStamp) >= 0) {
+        int64_t curNs = curStamp.tv_sec * AUDIO_NS_PER_SECOND + curStamp.tv_nsec;
+        int64_t hdiNs = stamp.tvSec * AUDIO_NS_PER_SECOND + stamp.tvNSec;
+        int64_t outNs = 40 * 1000 * 1000; // 40 * 1000 * 1000 ns
+        if (curNs <= hdiNs || curNs > hdiNs + outNs) {
+            AUDIO_PRERELEASE_LOGW("HDI time is not in the range, hdi: %{public}" PRId64 ", cur: %{public}" PRId64,
+                hdiNs, curNs);
+            timeSec = curStamp.tv_sec;
+            timeNanoSec = curStamp.tv_nsec;
+        }
+    }
+    return ret;
 }
 
 float RemoteOffloadAudioRenderSink::GetMaxAmplitude(void)
@@ -433,6 +463,16 @@ int32_t RemoteOffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     }
 
     return SUCCESS;
+}
+
+void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+
+    AUDIO_INFO_LOG("speed: %{public}f", speed);
+    int32_t ret = audioRender_->SetRenderSpeed(speed);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set speed fail, ret: %{public}d", ret);
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,

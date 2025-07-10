@@ -90,6 +90,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
+    void SetSpeed(float speed) override;
 
     int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
         bool scoExcludeFlag = false) override;

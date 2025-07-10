@@ -2113,6 +2113,12 @@ int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int3
     return SUCCESS;
 }
 
+int32_t RendererInServer::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "stream_ is null");
+    return stream_->SetSpeed(speed);
+}
+
 int32_t RendererInServer::SetOffloadDataCallbackState(int32_t state)
 {
     return stream_->SetOffloadDataCallbackState(state);

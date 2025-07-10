@@ -701,6 +701,11 @@ int32_t PaRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
+int32_t PaRendererStreamImpl::SetSpeed(float speed)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
 
 void PaRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
