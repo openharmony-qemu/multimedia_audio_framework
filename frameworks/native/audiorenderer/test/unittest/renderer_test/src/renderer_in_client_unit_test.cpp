@@ -1553,10 +1553,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_059, TestSize.Level1
 /**
  * @tc.name  : Test RendererInClientInner API
  * @tc.type  : FUNC
- * @tc.number: RendererInClientInner_060
+ * @tc.number: GetFastStatus_001
  * @tc.desc  : Test RendererInClientInner::GetFastStatus
  */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_060, TestSize.Level1)
+HWTEST(RendererInClientInnerUnitTest, GetFastStatus_001, TestSize.Level1)
 {
     AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid = 1;
