@@ -34,6 +34,7 @@ public:
     int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) override;
     int32_t ReleaseRender(uint32_t streamIndex_) override;
     int32_t StartRender(uint32_t streamIndex) override;
+    int32_t StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId) override;
     int32_t StopRender(uint32_t streamIndex) override;
     int32_t PauseRender(uint32_t streamIndex) override;
     int32_t GetStreamCount() const noexcept override;

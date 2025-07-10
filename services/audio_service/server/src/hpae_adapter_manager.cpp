@@ -139,6 +139,19 @@ int32_t HpaeAdapterManager::StartRender(uint32_t streamIndex)
     return rendererStreamMap_[streamIndex]->Start();
 }
 
+int32_t HpaeAdapterManager::StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)
+{
+    AUDIO_DEBUG_LOG("Enter StartRender");
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
+    }
+    return syncId > 0 ? rendererStreamMap_[streamIndex]->StartWithSyncId(syncId) :
+        rendererStreamMap_[streamIndex]->Start();
+}
+
 int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
 {
     AUDIO_DEBUG_LOG("Enter StopRender");

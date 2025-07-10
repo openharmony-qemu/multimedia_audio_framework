@@ -50,6 +50,7 @@ public:
     virtual bool IsProcessClusterConnected(HpaeProcessorType sceneType);
     virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
     virtual int32_t SetPriPaPower(void);
+    virtual int32_t SetSyncId(int32_t syncId);
     uint32_t GetLatency();
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;

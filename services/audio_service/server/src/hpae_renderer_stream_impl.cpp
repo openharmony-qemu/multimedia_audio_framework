@@ -141,6 +141,19 @@ int32_t HpaeRendererStreamImpl::Start()
     return SUCCESS;
 }
 
+int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
+{
+    AUDIO_INFO_LOG("StartWithSyncId");
+    ClockTime::GetAllTimeStamp(timestamp_);
+    int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
+        processConfig_.originalSessionId, syncId);
+    if (ret != 0) {
+        AUDIO_ERR_LOG("StartWithSyncId is error");
+        return ERR_INVALID_PARAM;
+    }
+    return SUCCESS;
+}
+
 int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("Pause");

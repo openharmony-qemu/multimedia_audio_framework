@@ -1393,6 +1393,39 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
     return SUCCESS;
 }
 
+int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId)
+{
+    auto request = [this, streamClassType, sessionId, syncId]() {
+        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
+            AUDIO_WARNING_LOG("StartWithSyncId session:%{public}u failed. session already released.", sessionId);
+            return;
+        }
+        AUDIO_INFO_LOG(
+            "HpaeManager::StartWithSyncId sessionId: %{public}u streamClassType:%{public}d syncId: %{public}d",
+            sessionId, streamClassType, syncId);
+        if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
+            HPAE_SESSION_RUNNING, OPERATION_STARTED)) {
+            return;
+        }
+        if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY &&
+            rendererIdSinkNameMap_.find(sessionId) != rendererIdSinkNameMap_.end()) {
+            AUDIO_INFO_LOG("renderer Start sessionId: %{public}u deviceName:%{public}s",
+                sessionId, rendererIdSinkNameMap_[sessionId].c_str());
+            CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
+                "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
+            rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
+            rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
+            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED);
+        } else {
+            AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
+                "sessionId %{public}u syncId: %{public}d",
+                streamClassType, sessionId, syncId);
+        }
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {

@@ -538,6 +538,27 @@ int32_t HpaeRendererManager::Start(uint32_t sessionId)
     return SUCCESS;
 }
 
+int32_t HpaeRendererManager::StartWithSyncId(uint32_t sessionId, int32_t syncId)
+{
+    auto request = [this, sessionId, syncId]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::StartWithSyncId");
+        AUDIO_INFO_LOG("StartWithSyncId sessionId %{public}u, deviceName %{public}s",
+            sessionId, sinkInfo_.deviceName.c_str());
+        if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
+            sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
+        }
+        HandlePriPaPower(sessionId);
+        ConnectInputSession(sessionId);
+        SetSessionState(sessionId, HPAE_SESSION_RUNNING);
+        SetSessionFade(sessionId, OPERATION_STARTED);
+        if (syncId >= 0) {
+            HandleSyncId(sessionId, syncId);
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 int32_t HpaeRendererManager::DisConnectInputSession(uint32_t sessionId)
 {
     if (!SafeGetMap(sinkInputNodeMap_, sessionId)) {
@@ -1280,6 +1301,14 @@ void HpaeRendererManager::DisableCollaboration()
         }
     }
     hpaeCoBufferNode_.reset();
+}
+
+int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
+{
+    if (!SafeGetMap(sinkInputNodeMap_, sessionId) || sinkInfo_.deviceClass != "primary") {
+        return ERR_INVALID_OPERATION;
+    }
+    return outputCluster_->SetSyncId(syncId);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
