@@ -170,6 +170,14 @@ int32_t AudioRecoveryDevice::HandleExcludedOutputDevicesRecovery(AudioDeviceUsag
     return ERROR;
 }
 
+void AudioRecoveryDevice::SetDeviceEnableAndUsage(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    deviceDesc->isEnable_ = true;
+    audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, ENABLE_UPDATE);
+    deviceDesc->deviceUsage_ = ALL_USAGE;
+    audioDeviceManager_.UpdateDevicesListInfo(deviceDesc, USAGE_UPDATE);
+}
+
 int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
@@ -189,20 +197,19 @@ int32_t AudioRecoveryDevice::SelectOutputDevice(sptr<AudioRendererFilter> audioR
         CHECK_AND_RETURN_RET_LOG(res == SUCCESS, res, "UnexcludeOutputDevicesInner fail");
     }
 
+    bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
+    if (isVirtualDevice == true) {
+        selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
+    }
+
+    SetDeviceEnableAndUsage(selectedDesc[0]);
+
     if (audioRendererFilter->uid != -1) {
         return SelectOutputDeviceByFilterInner(audioRendererFilter, selectedDesc);
     }
     if (audioRendererFilter->rendererInfo.rendererFlags == STREAM_FLAG_FAST) {
         return SelectOutputDeviceForFastInner(audioRendererFilter, selectedDesc);
     }
-
-    bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
-    if (isVirtualDevice == true) {
-        selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
-    }
-
-    selectedDesc[0]->isEnable_ = true;
-    audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
 
     if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         AudioPolicyUtils::GetInstance().ClearScoDeviceSuspendState(selectedDesc[0]->macAddress_);
@@ -352,15 +359,6 @@ int32_t AudioRecoveryDevice::SelectFastOutputDevice(sptr<AudioRendererFilter> au
 int32_t AudioRecoveryDevice::SelectOutputDeviceByFilterInner(sptr<AudioRendererFilter> audioRendererFilter,
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc)
 {
-    if (selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-        selectedDesc[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
-        selectedDesc[0]->isEnable_ = true;
-        audioDeviceManager_.UpdateDevicesListInfo(selectedDesc[0], ENABLE_UPDATE);
-        bool isVirtualDevice = audioDeviceManager_.IsVirtualConnectedDevice(selectedDesc[0]);
-        if (isVirtualDevice == true) {
-            selectedDesc[0]->connectState_ = VIRTUAL_CONNECTED;
-        }
-    }
     audioAffinityManager_.AddSelectRendererDevice(audioRendererFilter->uid, selectedDesc[0]);
     std::vector<std::shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);

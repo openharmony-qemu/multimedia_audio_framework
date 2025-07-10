@@ -344,6 +344,7 @@ enum DeviceInfoUpdateCommand {
     CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
     ENABLE_UPDATE,
+    USAGE_UPDATE,
     EXCEPTION_FLAG_UPDATE,
 };
 
