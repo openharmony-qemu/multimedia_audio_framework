@@ -303,8 +303,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
         GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
+
+    AUDIO_INFO_LOG("Action: %{public}u  %{public}u -- %{public}u", action, stream->sessionId_, cmpStream->sessionId_);
     uint32_t newFlag;
-    AUDIO_INFO_LOG("Action: %{public}u", action);
     switch (action) {
         case PLAY_BOTH:
             stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
