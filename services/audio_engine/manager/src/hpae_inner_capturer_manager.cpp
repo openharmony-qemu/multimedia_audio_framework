@@ -295,9 +295,13 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
         hpaeSignalProcessThread_ = nullptr;
     }
     hpaeNoLockQueue_.HandleRequests();
-    int32_t ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InnerCapManagerDeInit error, ret %{public}d.\n", ret);
-    hpaeInnerCapSinkNode_->ResetAll();
+    int32_t ret = SUCCESS;
+    if (hpaeInnerCapSinkNode_  != nullptr) {
+        ret = hpaeInnerCapSinkNode_->InnerCapturerSinkDeInit();
+        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InnerCapManagerDeInit error, ret %{public}d.\n", ret);
+        hpaeInnerCapSinkNode_->ResetAll();
+        hpaeInnerCapSinkNode_ = nullptr;
+    }
     isInit_.store(false);
     if (isMoveDefault) {
         std::string sinkName = "";

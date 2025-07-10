@@ -125,6 +125,9 @@ void TestIRendererManagerInit()
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
 }
 
 template <class RenderManagerType>

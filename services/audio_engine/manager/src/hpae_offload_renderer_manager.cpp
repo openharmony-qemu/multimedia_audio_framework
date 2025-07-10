@@ -490,9 +490,13 @@ int32_t HpaeOffloadRendererManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSink(sinkName, ids, MOVE_ALL);
     }
-    sinkOutputNode_->RenderSinkStop();
-    sinkOutputNode_->RenderSinkDeInit();
-    sinkOutputNode_->ResetAll();
+    if (sinkOutputNode_ != nullptr) {
+        sinkOutputNode_->RenderSinkStop();
+        sinkOutputNode_->RenderSinkDeInit();
+        sinkOutputNode_->ResetAll();
+        sinkOutputNode_ = nullptr;
+    }
+    
     isInit_.store(false);
     return SUCCESS;
 }
@@ -674,6 +678,7 @@ void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime)
 
 void HpaeOffloadRendererManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ offloadrenderer is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 
