@@ -132,16 +132,21 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
     info.format = sinkInfo_.format;
     info.channelLayout = sinkInfo_.channelLayout;
     info.frameLen = DEFAULT_FRAME_LEN_MS * static_cast<uint32_t>(sinkInfo_.samplingRate) / MS_PER_SECOND;
-    info.streamType = STREAM_DEFAULT; // todo : check which streamType
-    info.fadeType = DEFAULT_FADE;
     info.streamClassType = streamClassType;
     // info.effectInfo; // todo : check effect mode
     info.isMoveAble = false;
     info.sessionId = GenerateSessionId();
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        info.streamType = STREAM_DEFAULT;
         info.deviceName = sinkInfo_.deviceName;
         info.sourceType = SOURCE_TYPE_INVALID;
+        info.fadeType = DEFAULT_FADE;
+        info.effectInfo.effectMode = EFFECT_DEFAULT;
+        info.effectInfo.effectScene = SCENE_VOIP_DOWN;
+        info.effectInfo.volumeType = STREAM_VOICE_CALL;
+        info.effectInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     } else {
+        info.streamType = STREAM_SOURCE_VOICE_CALL;
         info.deviceName = sourceInfo_.deviceName;
         info.sourceType = SOURCE_TYPE_MIC;
     }
