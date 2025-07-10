@@ -552,7 +552,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_028, TestSize.Level1)
     int32_t rate = RENDER_RATE_NORMAL;
     EXPECT_EQ(unit->SetRate(rate), SUCCESS);
 }
-}
 
 /**
  * @tc.name  : Test StartWithSyncId.
@@ -567,5 +566,6 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_029, TestSize.Level1)
     EXPECT_NE(unit, nullptr);
     int32_t ret = unit->StartWithSyncId(syncId);
     EXPECT_EQ(ret, SUCCESS);
+}
 }
 }

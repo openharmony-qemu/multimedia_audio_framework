@@ -281,6 +281,19 @@ HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_005, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySink API
+ * @tc.number : PrimarySinkUnitTest_006
+ * @tc.desc   : Test primary sink set audio param
+ */
+HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_006, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    primarySink_->SetAudioParameter(NONE, "", "param=0");
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test UsbSink API
  * @tc.number : UsbSinkUnitTest_001
  * @tc.desc   : Test usb sink create
