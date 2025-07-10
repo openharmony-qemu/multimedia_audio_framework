@@ -83,6 +83,7 @@ int32_t HpaeSoftLink::Init()
         DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
     size_t size = DEFAULT_RING_BUFFER_NUM * frameBytes;
     bufferQueue_ = AudioRingCache::Create(size);
+    CHECK_AND_RETURN_RET_LOG(bufferQueue_ != nullptr, ERR_OPERATION_FAILED, "bufferQueue create error");
     tempBuffer_.resize(frameBytes);
     ret = CreateStream();
     if (ret == SUCCESS) {
