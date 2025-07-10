@@ -21,7 +21,6 @@
 #include "audio_service_hpae_callback.h"
 #include "audio_service_hpae_dump_callback.h"
 #include "audio_effect.h"
-#include "hpae_node.h"
 
 namespace OHOS {
 namespace AudioStandard {

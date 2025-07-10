@@ -147,7 +147,7 @@ TEST_F(HpaeSoftLinkTest, testSoftLink)
     EXPECT_EQ(softLink_->Init(), ERR_ILLEGAL_STATE); // init after start
     EXPECT_EQ(softLink_->Start(), SUCCESS); // start after start
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2000ms for sleep
 
     EXPECT_EQ(softLink_->Stop(), SUCCESS);
     EXPECT_EQ(softLink_->state_, HpaeSoftLinkState::STOPPED);
@@ -176,7 +176,7 @@ TEST_F(HpaeSoftLinkTest, testCapturerOverFlow)
     }
 
     CloseAudioPort();
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2000ms for sleep
     if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
         softLink_->streamStateMap_.find(capturerSessionId) != softLink_->streamStateMap_.end()) {
         AUDIO_INFO_LOG("capturer has stopped");
@@ -204,7 +204,7 @@ TEST_F(HpaeSoftLinkTest, testRendererUnderRun)
     }
 
     CloseAudioPort(false);
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2s for sleep
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000)); // 2000ms for sleep
     if (softLink_->state_ == HpaeSoftLinkState::RUNNING &&
         softLink_->streamStateMap_.find(rendererSessionId) != softLink_->streamStateMap_.end()) {
         AUDIO_INFO_LOG("renderer has stopped");

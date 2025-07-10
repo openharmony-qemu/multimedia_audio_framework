@@ -60,7 +60,7 @@ private:
     int32_t CreateStream();
     void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
 private:
-    static std::atomic<uint32_t> HpaeSoftLink::g_sessionId;
+    static std::atomic<uint32_t> g_sessionId;
     int32_t renderIdx_ = -1;
     int32_t captureIdx_ = -1;
     SoftLinkMode linkMode_ = SoftLinkMode::HEARING_AID;

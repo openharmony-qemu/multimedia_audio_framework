@@ -245,7 +245,7 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
             streamStateMap_[streamIndex] = HpaeSoftLinkState::RUNNING;
         } else if (operation == OPERATION_STOPPED) {
             streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
-        } else if (operation == OPERATION_RELEASED){
+        } else if (operation == OPERATION_RELEASED) {
             streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
         } else {
             return;
