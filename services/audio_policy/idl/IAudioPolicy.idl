@@ -288,6 +288,7 @@ interface IAudioPolicy {
     void SetAudioSessionScene([in] int audioSessionScene /* AudioSessionScene */);
     void GetDefaultOutputDevice([out] int deviceType /* deviceType */);
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
+    void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
 }

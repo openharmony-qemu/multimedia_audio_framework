@@ -2225,5 +2225,11 @@ bool AudioSystemManager::IsValidToStartGroup(int32_t workgroupId)
     }
     return false;
 }
+
+int32_t AudioSystemManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
+{
+    AUDIO_INFO_LOG("volumeType:%{public}d, dyration:%{public}d", volumeType, duration);
+    return AudioPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -3054,6 +3054,15 @@ bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &captu
     return isAvailable;
 }
 
+int32_t AudioPolicyManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    int32_t ret = ERROR;
+    gsp->ForceVolumeKeyControlType(static_cast<int32_t>(volumeType), duration, ret);
+    return ret;
+}
+
 AudioPolicyManager& AudioPolicyManager::GetInstance()
 {
     static AudioPolicyManager policyManager;

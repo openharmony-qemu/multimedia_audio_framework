@@ -1762,6 +1762,16 @@ public:
     */
     int32_t StopGroup(int32_t workgroupId);
 
+    /**
+    * @brief set focus stream type when process volume key event.
+    *
+    * @param volumeType Audio stream type.
+    * @param duration duration time to last or cancel force type.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
     public:

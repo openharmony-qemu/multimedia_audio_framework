@@ -469,6 +469,34 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_022, TestSize.Level1)
     audioVolumeManager->audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
     audioVolumeManager->GetAllDeviceVolumeInfo();
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_023
+* @tc.desc  : Test ForceVolumeKeyControlType interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_023, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_RING, 3);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_RING);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, 3);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_MEDIA);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, -1);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_DEFAULT);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, false);
+
+    audioVolumeManager.ForceVolumeKeyControlType(STREAM_MEDIA, 1);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_MEDIA);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, true);
+    usleep(1500000);
+    EXPECT_EQ(audioVolumeManager.forceControlVolumeType_, STREAM_DEFAULT);
+    EXPECT_EQ(audioVolumeManager.needForceControlVolumeType_, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

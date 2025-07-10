@@ -534,7 +534,7 @@ void AudioPolicyServer::TriggerMuteCheck()
         // print volume info
         int32_t streamType = STREAM_DEFAULT;
         GetStreamInFocus(DEFAULT_ZONEID, streamType);
-        AudioStreamType streamInFocus = static_cast<AudioStreamType>(streamType);
+        AudioStreamType streamInFocus = GetCurrentStreamInFocus(static_cast<AudioStreamType>(streamType));
         int32_t volume = GetSystemVolumeLevelInternal(VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus));
         AUDIO_WARNING_LOG("StreamInFocus is [%{public}d], volume is %{public}d", streamInFocus, volume);
     }
@@ -553,7 +553,8 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     } else {
         int32_t streamType = STREAM_DEFAULT;
         GetStreamInFocus(zoneId, streamType);
-        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+        streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+            GetCurrentStreamInFocus(static_cast<AudioStreamType>(streamType)));
     }
     bool active = false;
     IsStreamActive(streamInFocus, active);
@@ -621,7 +622,8 @@ int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
                 int32_t zoneID = 0;
                 int32_t streamType = STREAM_DEFAULT;
                 GetStreamInFocus(zoneID, streamType);
-                streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+                streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+                    GetCurrentStreamInFocus(static_cast<AudioStreamType>(streamType)));
             }
             std::lock_guard<std::mutex> lock(systemVolumeMutex_);
             isStreamMuted = GetStreamMuteInternal(streamInFocus);
@@ -1067,7 +1069,8 @@ AudioStreamType AudioPolicyServer::GetSystemActiveVolumeTypeInternal(const int32
     int32_t streamType = STREAM_DEFAULT;
     GetStreamInFocus(zoneID, streamType);
     AudioStreamType streamInFocus = STREAM_DEFAULT;
-    streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+    streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+        GetCurrentStreamInFocus(static_cast<AudioStreamType>(streamType)));
     if (clientUid != 0) {
         GetStreamInFocusByUid(clientUid, zoneID, streamType);
         streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
@@ -1200,7 +1203,8 @@ int32_t AudioPolicyServer::AdjustVolumeByStep(int32_t adjustTypeIn)
     int32_t zoneID = 0;
     int32_t streamType = STREAM_DEFAULT;
     GetStreamInFocus(zoneID, streamType);
-    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(static_cast<AudioStreamType>(streamType));
+    AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+        GetCurrentStreamInFocus(static_cast<AudioStreamType>(streamType)));
     if (streamInFocus == AudioStreamType::STREAM_DEFAULT) {
         streamInFocus = AudioStreamType::STREAM_MUSIC;
     }
@@ -2526,6 +2530,13 @@ void AudioPolicyServer::OnAudioStreamRemoved(const uint64_t sessionID)
 {
     CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is nullptr");
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionID, false);
+}
+
+AudioStreamType AudioPolicyServer::GetCurrentStreamInFocus(const AudioStreamType streamInFocus)
+{
+    CHECK_AND_RETURN_RET(audioVolumeManager_.IsNeedForceControlVolumeType(), streamInFocus);
+    AUDIO_INFO_LOG("force volume type, type:%{public}d", audioVolumeManager_.GetForceControlVolumeType());
+    return audioVolumeManager_.GetForceControlVolumeType();
 }
 
 int32_t AudioPolicyServer::GetStreamInFocus(int32_t zoneID, int32_t &streamType)
@@ -4843,6 +4854,16 @@ int32_t AudioPolicyServer::IsCapturerFocusAvailable(const AudioCapturerInfo &cap
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     ret = interruptService_->IsCapturerFocusAvailable(zoneId, capturerInfo);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(VerifyPermission(MODIFY_AUDIO_SETTINGS_PERMISSION), ERR_PERMISSION_DENIED,
+        "MODIFY_AUDIO_SETTINGS_PERMISSION permission check failed");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(),
+        ERR_SYSTEM_PERMISSION_DENIED, "no system permission");
+    ret = audioVolumeManager_.ForceVolumeKeyControlType(static_cast<AudioVolumeType>(volumeType), duration);
     return SUCCESS;
 }
 
