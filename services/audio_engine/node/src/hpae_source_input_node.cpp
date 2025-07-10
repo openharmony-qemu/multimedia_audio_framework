@@ -36,17 +36,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-    static std::string TransSourceBufferTypeToString(HpaeSourceBufferType &type)
-{
-    switch (type) {
-        case HPAE_SOURCE_BUFFER_TYPE_EC:
-            return "_EC.pcm";
-        case HPAE_SOURCE_BUFFER_TYPE_MICREF:
-            return "_MICREF.pcm";
-        default:
-            return ".pcm";
-    }
-}
 
 HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), sourceInputNodeType_(nodeInfo.sourceInputNodeType)
