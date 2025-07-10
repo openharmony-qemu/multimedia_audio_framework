@@ -166,7 +166,7 @@ int32_t HpaeSoftLink::CreateStream()
         rendererSessionId, rendererStreamInfo_.streamType,
         rendererStreamInfo_.effectInfo.streamUsage, -1, -1,
         false, AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL, false
-    }
+    };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     streamStateMap_[rendererStreamInfo_.sessionId] = HpaeSoftLinkState::PREPARED;
 
