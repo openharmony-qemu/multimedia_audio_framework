@@ -299,6 +299,10 @@ napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env en
         CHECK_AND_RETURN_LOG(CheckAudioCollaborativeManagerStatus(napiAudioCollaborativeManager, context),
             "audio collaborative manager state is error.");
         
+        if (!napiAudioCollaborativeManager->audioCollaborativeMngr_->IsCollaborativePlaybackSupported()) {
+            context->SignError(NAPI_ERR_UNAVAILABLE_ON_DEVICE);
+        }
+        
         context->intValue =
             napiAudioCollaborativeManager->audioCollaborativeMngr_->SetCollaborativePlaybackEnabledForDevice(
                 context->deviceDescriptor, context->collaborativeEnable);
