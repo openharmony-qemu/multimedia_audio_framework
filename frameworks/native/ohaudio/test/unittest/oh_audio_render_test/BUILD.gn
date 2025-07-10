@@ -37,6 +37,9 @@ config("audio_renderer_config") {
     "-Werror",
     "-fno-access-control",
   ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-std=c++20" ]
 }
 
 config("audio_ohaudio_config") {
@@ -70,5 +73,9 @@ ohos_unittest("audio_oh_render_unit_test") {
     "../../../../ohaudio:ohaudio",
   ]
 
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog"
+  ]
 }
