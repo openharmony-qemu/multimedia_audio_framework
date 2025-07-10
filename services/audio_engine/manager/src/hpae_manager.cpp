@@ -1410,7 +1410,6 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
             CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_[sessionId].statusCallback.lock() != nullptr,
                 "statusCallback for stream[%{public}u] is nullptr", sessionId);
             rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED, sessionId);
-
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Start sessionId: %{public}u deviceName:%{public}s",
