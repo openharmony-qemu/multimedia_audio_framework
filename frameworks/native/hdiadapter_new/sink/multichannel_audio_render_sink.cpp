@@ -583,9 +583,6 @@ void MultichannelAudioRenderSink::InitAudioSampleAttr(struct AudioSampleAttribut
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_RENDER_PERIOD_SIZE / (param.frameSize);
     }
-    if (halName_ == HDI_ID_INFO_DP) {
-        param.type = AUDIO_DP;
-    }
 }
 
 void MultichannelAudioRenderSink::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc)
