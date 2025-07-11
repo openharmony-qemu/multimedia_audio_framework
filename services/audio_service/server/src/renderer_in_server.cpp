@@ -110,7 +110,7 @@ int32_t RendererInServer::ConfigServerBuffer()
     bufferTotalSizeInFrame_ = engineTotalSizeInFrame_ + maxClientCbBufferInFrame;
 
     spanSizeInByte_ = spanSizeInFrame_ * byteSizePerFrame_;
-    CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed");
+    CHECK_AND_RETURN_RET_LOG(spanSizeInByte_ != 0, ERR_OPERATION_FAILED, "Config oh audio buffer failed!");
     AUDIO_INFO_LOG("engineTotalSizeInFrame_: %{public}zu, spanSizeInFrame_: %{public}zu, byteSizePerFrame_:%{public}zu "
         "spanSizeInByte_: %{public}zu, bufferTotalSizeInFrame_: %{public}zu", engineTotalSizeInFrame_,
         spanSizeInFrame_, byteSizePerFrame_, spanSizeInByte_, bufferTotalSizeInFrame_);
@@ -133,7 +133,7 @@ int32_t RendererInServer::ConfigServerBuffer()
 int32_t RendererInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
         return ERR_ILLEGAL_STATE;
     }
     return SUCCESS;
@@ -228,7 +228,7 @@ void RendererInServer::OnStatusUpdate(IOperation operation)
     AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
         (standByEnable_ ? "true" : "false"));
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
-    CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released");
+    CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released!");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
     CHECK_AND_RETURN_LOG((stateListener != nullptr && playerDfx_ != nullptr), "nullptr");
     CHECK_AND_RETURN_LOG(audioServerBuffer_->GetStreamStatus() != nullptr,
@@ -310,7 +310,7 @@ void RendererInServer::HandleOperationStarted()
 void RendererInServer::OnStatusUpdateSub(IOperation operation)
 {
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr");
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "StreamListener is nullptr!");
     int32_t engineFlag = GetEngineFlag();
     switch (operation) {
         case OPERATION_RELEASED:

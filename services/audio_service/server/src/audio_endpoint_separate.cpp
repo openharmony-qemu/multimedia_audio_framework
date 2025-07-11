@@ -107,7 +107,7 @@ void AudioEndpointSeparate::Release()
     // Wait for thread end and then clear other data to avoid using any cleared data in thread.
     AUDIO_INFO_LOG("%{public}s enter.", __func__);
     if (!isInited_.load()) {
-        AUDIO_WARNING_LOG("already released");
+        AUDIO_WARNING_LOG("already released!");
         return;
     }
 
@@ -191,7 +191,7 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
     fastRenderId_ = manager.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST, "endpoint_sep_" + std::to_string(id_), true);
     std::shared_ptr<IAudioRenderSink> sink = manager.GetRenderSink(fastRenderId_, true);
     if (sink == nullptr) {
-        AUDIO_ERR_LOG("fast sink is nullptr");
+        AUDIO_ERR_LOG("fast sink is nullptr!");
         manager.ReleaseId(fastRenderId_);
         return false;
     }
@@ -200,7 +200,7 @@ bool AudioEndpointSeparate::Config(const AudioDeviceDescriptor &deviceInfo)
     InitSinkAttr(attr, deviceInfo);
     sink->Init(attr);
     if (!sink->IsInited()) {
-        AUDIO_ERR_LOG("fastSinkInit failed");
+        AUDIO_ERR_LOG("fastSinkInit failed!");
         manager.ReleaseId(fastRenderId_);
         return false;
     }

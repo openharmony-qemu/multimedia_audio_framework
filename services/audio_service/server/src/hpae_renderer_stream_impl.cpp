@@ -135,7 +135,7 @@ int32_t HpaeRendererStreamImpl::Start()
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Start is error");
+        AUDIO_ERR_LOG("Start is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -148,7 +148,7 @@ int32_t HpaeRendererStreamImpl::StartWithSyncId(const int32_t &syncId)
     int32_t ret = IHpaeManager::GetHpaeManager().StartWithSyncId(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId, syncId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("StartWithSyncId is error");
+        AUDIO_ERR_LOG("StartWithSyncId is error!");
         return ERR_INVALID_PARAM;
     }
     return SUCCESS;
@@ -159,7 +159,7 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Pause is error");
+        AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
@@ -193,7 +193,7 @@ int32_t HpaeRendererStreamImpl::Stop()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
     if (ret != 0) {
-        AUDIO_ERR_LOG("Stop is error");
+        AUDIO_ERR_LOG("Stop is error!");
         return ERR_INVALID_PARAM;
     }
     state_ = STOPPING;
@@ -239,7 +239,7 @@ uint32_t HpaeRendererStreamImpl::GetA2dpOffloadLatency()
     auto& handle = PolicyHandler::GetInstance();
     int32_t ret = handle.OffloadGetRenderPosition(a2dpOffloadLatency, a2dpOffloadSendDataSize, a2dpOffloadTimestamp);
     if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("OffloadGetRenderPosition failed");
+        AUDIO_ERR_LOG("OffloadGetRenderPosition failed!");
     }
     return a2dpOffloadLatency;
 }
