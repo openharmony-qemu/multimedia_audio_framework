@@ -343,7 +343,6 @@ config("audio_service_config") {
     "../../interfaces/inner_api/native/audiocommon/include",
     "../../interfaces/inner_api/native/audiomanager/include",
     "../../frameworks/native/audioclock/include",
-    "../audio_engine/plugin/resample/include",
   ]
 
   cflags = []

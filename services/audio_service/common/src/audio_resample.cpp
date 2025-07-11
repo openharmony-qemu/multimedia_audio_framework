@@ -16,6 +16,7 @@
 #include "audio_errors.h"
 #include "audio_service_log.h"
 #include "audio_utils.h"
+#include "audio_proresampler.h"
 #include <cinttypes>
 
 namespace OHOS {

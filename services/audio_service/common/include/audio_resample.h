@@ -16,10 +16,12 @@
 #define AUDIO_RESAMPLE_H
 
 #include <vector>
-#include "audio_proresampler.h"
 
 namespace OHOS {
 namespace AudioStandard {
+namespace HPAE {
+class ProResampler;
+}
 class AudioResample {
 public:
     AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity);
