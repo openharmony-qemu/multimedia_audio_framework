@@ -278,13 +278,6 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
         return NapiParamUtils::GetUndefinedValue(env);
     }
 
-    if ((context->deviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
-        (context->deviceDescriptor->connectState_ != CONNECTED)) {
-        NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "invalid arguments, device is not A2DP or device is connected");
-        return NapiParamUtils::GetUndefinedValue(env);
-    }
-
     return UpdateCollaborativeEnabled(env, context);
 }
 
@@ -301,8 +294,13 @@ napi_value NapiAudioCollaborativeManager::UpdateCollaborativeEnabled(napi_env en
         
         if (!napiAudioCollaborativeManager->audioCollaborativeMngr_->IsCollaborativePlaybackSupported()) {
             context->SignError(NAPI_ERR_UNAVAILABLE_ON_DEVICE);
+            return;
         }
-        
+        if ((context->deviceDescriptor->deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
+            (context->deviceDescriptor->connectState_ != CONNECTED)) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+            return;
+        }
         context->intValue =
             napiAudioCollaborativeManager->audioCollaborativeMngr_->SetCollaborativePlaybackEnabledForDevice(
                 context->deviceDescriptor, context->collaborativeEnable);
