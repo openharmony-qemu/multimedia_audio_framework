@@ -399,13 +399,13 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_resource_service.cpp",
   ]
 
-  #if (!audio_framework_feature_new_engine_flag) {
+  if (!audio_framework_feature_new_engine_flag) {
     sources += [
       "server/src/pa_adapter_manager.cpp",
       "server/src/pa_capturer_stream_impl.cpp",
       "server/src/pa_renderer_stream_impl.cpp",
     ]
-  #}
+  }
 
   if (audio_framework_feature_low_latency) {
     sources += [
@@ -453,11 +453,11 @@ audio_ohos_library("audio_process_service") {
     "qos_manager:concurrent_task_client",
   ]
 
-  #if (!audio_framework_feature_new_engine_flag) {
+  if (!audio_framework_feature_new_engine_flag) {
     external_deps += [
       "pulseaudio:pulse",
     ]
-  #}
+  }
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
 
