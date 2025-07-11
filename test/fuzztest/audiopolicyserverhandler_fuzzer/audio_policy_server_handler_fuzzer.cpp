@@ -56,7 +56,9 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 1;
+const uint8_t TESTSIZE = 16;
+static int32_t NUM_2 = 2;
+std::mutex paElementsMutex_;
 
 typedef void (*TestFuncs)();
 
@@ -89,9 +91,57 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+vector<AudioDeviceUsage> AudioDeviceUsageVec = {
+    MEDIA_OUTPUT_DEVICES,
+    MEDIA_INPUT_DEVICES,
+    ALL_MEDIA_DEVICES,
+    CALL_OUTPUT_DEVICES,
+    CALL_INPUT_DEVICES,
+    ALL_CALL_DEVICES,
+    D_ALL_DEVICES,
+};
+
+vector<AudioStreamType> AudioStreamTypeVec = {
+    STREAM_DEFAULT,
+    STREAM_VOICE_CALL,
+    STREAM_MUSIC,
+    STREAM_RING,
+    STREAM_MEDIA,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_SYSTEM,
+    STREAM_ALARM,
+    STREAM_NOTIFICATION,
+    STREAM_BLUETOOTH_SCO,
+    STREAM_ENFORCED_AUDIBLE,
+    STREAM_DTMF,
+    STREAM_TTS,
+    STREAM_ACCESSIBILITY,
+    STREAM_RECORDING,
+    STREAM_MOVIE,
+    STREAM_GAME,
+    STREAM_SPEECH,
+    STREAM_SYSTEM_ENFORCED,
+    STREAM_ULTRASONIC,
+    STREAM_WAKEUP,
+    STREAM_VOICE_MESSAGE,
+    STREAM_NAVIGATION,
+    STREAM_INTERNAL_FORCE_STOP,
+    STREAM_SOURCE_VOICE_CALL,
+    STREAM_VOICE_COMMUNICATION,
+    STREAM_VOICE_RING,
+    STREAM_VOICE_CALL_ASSISTANT,
+    STREAM_CAMCORDER,
+    STREAM_APP,
+    STREAM_TYPE_MAX,
+    STREAM_ALL,
+};
+
 void AddAudioPolicyClientProxyMapFuzzTest()
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
     int32_t clientPid = GetData<int32_t>();
     std::shared_ptr<AudioPolicyClientHolder> cb = nullptr;
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
@@ -100,8 +150,206 @@ void AddAudioPolicyClientProxyMapFuzzTest()
     audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb2);
 }
 
+void RemoveAudioPolicyClientProxyMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = GetData<int32_t>();
+    audioPolicyServerHandler_->RemoveAudioPolicyClientProxyMap(clientPid);
+}
+
+void AddExternInterruptCbsMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = GetData<int32_t>();
+    std::shared_ptr<AudioInterruptCallback> audioInterruptCallback = nullptr;
+    audioPolicyServerHandler_->AddExternInterruptCbsMap(clientPid, audioInterruptCallback);
+}
+
+void AddAvailableDeviceChangeMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = GetData<int32_t>();
+    uint32_t usageCount = GetData<uint32_t>() % AudioDeviceUsageVec.size();
+    AudioDeviceUsage usage = AudioDeviceUsageVec[usageCount];
+    std::shared_ptr<AudioPolicyManagerListenerCallback> cb = nullptr;
+    audioPolicyServerHandler_->AddAvailableDeviceChangeMap(1, AudioDeviceUsage::ALL_CALL_DEVICES, cb);
+    audioPolicyServerHandler_->AddAvailableDeviceChangeMap(1, AudioDeviceUsage::ALL_MEDIA_DEVICES, cb);
+    audioPolicyServerHandler_->AddAvailableDeviceChangeMap(clientPid, AudioDeviceUsage::CALL_INPUT_DEVICES, cb);
+    audioPolicyServerHandler_->RemoveAvailableDeviceChangeMap(clientPid, usage);
+}
+
+void AddDistributedRoutingRoleChangeCbsMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = GetData<int32_t>();
+    sptr<IStandardAudioRoutingManagerListener> cb = nullptr;
+    audioPolicyServerHandler_->AddDistributedRoutingRoleChangeCbsMap(clientPid, cb);
+}
+
+void SendDeviceChangedCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    bool isConnected = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendDeviceChangedCallback(descForCb, isConnected);
+}
+
+void SendAvailableDeviceChangeFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    bool isConnected = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendAvailableDeviceChange(descForCb, isConnected);
+}
+
+void SendAudioSessionDeactiveCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::pair<int32_t, AudioSessionDeactiveEvent> sessionDeactivePair;
+    audioPolicyServerHandler_->SendAudioSessionDeactiveCallback(sessionDeactivePair);
+}
+
+void SendActiveVolumeTypeChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    uint32_t index = GetData<uint32_t>() % AudioStreamTypeVec.size();
+    AudioVolumeType streamType = AudioStreamTypeVec[index];
+    audioPolicyServerHandler_->SendActiveVolumeTypeChangeCallback(streamType);
+}
+
+void SendMicStateUpdatedCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    MicStateChangeEvent micStateChangeEvent;
+    micStateChangeEvent.mute = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendMicStateUpdatedCallback(micStateChangeEvent);
+}
+
+void SendMicStateWithClientIdCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = GetData<int32_t>();
+    MicStateChangeEvent micStateChangeEvent;
+    micStateChangeEvent.mute = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendMicStateWithClientIdCallback(micStateChangeEvent, clientPid);
+}
+
+void SendInterruptEventInternalCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEventInternal;
+    audioPolicyServerHandler_->SendInterruptEventInternalCallback(interruptEventInternal);
+}
+
+void SendInterruptEventWithStreamIdCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEventInternal;
+    uint32_t streamId = GetData<uint32_t>();
+    audioPolicyServerHandler_->SendInterruptEventWithStreamIdCallback(interruptEventInternal, streamId);
+}
+
+void SendRendererDeviceChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientPid = 1;
+    uint64_t sessionId = 0;
+    AudioDeviceDescriptor outputDeviceInfo;
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    audioPolicyServerHandler_->SendRendererDeviceChangeEvent(clientPid, sessionId, outputDeviceInfo, reason);
+}
+
+void SendCapturerCreateEventFuzzTest()
+{
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (AudioCoreService::GetCoreService() == nullptr) {
+        return;
+    }
+    AudioCoreService::GetCoreService()->Init();
+    if (audioPolicyServerHandler_ == nullptr || AudioCoreService::GetCoreService()->eventEntry_ == nullptr) {
+        return;
+    }
+    AudioCapturerInfo capturerInfo;
+    AudioStreamInfo streamInfo;
+    uint64_t sessionId = 0;
+    bool isSync = GetData<uint32_t>() % NUM_2;
+    int32_t error = 0;
+    audioPolicyServerHandler_->SendCapturerCreateEvent(capturerInfo, streamInfo, sessionId, isSync, error);
+}
+
+void SendCapturerRemovedEventFuzzTest()
+{
+    std::lock_guard<std::mutex> lock(paElementsMutex_);
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (AudioCoreService::GetCoreService() == nullptr) {
+        return;
+    }
+    AudioCoreService::GetCoreService()->Init();
+    if (audioPolicyServerHandler_ == nullptr || AudioCoreService::GetCoreService()->eventEntry_ == nullptr) {
+        return;
+    }
+    uint64_t sessionId = 0;
+    bool isSync = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, isSync);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     AddAudioPolicyClientProxyMapFuzzTest,
+    RemoveAudioPolicyClientProxyMapFuzzTest,
+    AddExternInterruptCbsMapFuzzTest,
+    AddAvailableDeviceChangeMapFuzzTest,
+    AddDistributedRoutingRoleChangeCbsMapFuzzTest,
+    SendDeviceChangedCallbackFuzzTest,
+    SendAvailableDeviceChangeFuzzTest,
+    SendAudioSessionDeactiveCallbackFuzzTest,
+    SendActiveVolumeTypeChangeCallbackFuzzTest,
+    SendMicStateUpdatedCallbackFuzzTest,
+    SendMicStateWithClientIdCallbackFuzzTest,
+    SendInterruptEventInternalCallbackFuzzTest,
+    SendInterruptEventWithStreamIdCallbackFuzzTest,
+    SendRendererDeviceChangeEventFuzzTest,
+    SendCapturerCreateEventFuzzTest,
+    SendCapturerRemovedEventFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
