@@ -1134,6 +1134,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBufferBase> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
+    AudioVolume::GetInstance()->RemoveStreamVolume(processStream->GetAudioSessionId());
 
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
