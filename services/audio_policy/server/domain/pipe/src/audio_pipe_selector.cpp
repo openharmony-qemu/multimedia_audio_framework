@@ -300,11 +300,11 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
 {
     if ((stream->routeFlag_ & AUDIO_OUTPUT_FLAG_LOWPOWER) &&
         (cmpStream->capturerInfo_.isLoopback || cmpStream->rendererInfo_.isLoopback)) {
-            AUDIO_INFO_LOG("loopback incomming, offload will be changed to normal");
-            stream->streamAction_ = AUDIO_STREAM_ACTION_RECREATE;
-            stream->routeFlag_ = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
-                AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-            return true;
+        AUDIO_INFO_LOG("loopback incomming, offload will be changed to normal");
+        stream->streamAction_ = AUDIO_STREAM_ACTION_RECREATE;
+        stream->routeFlag_ = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
+            AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+        return true;
     }
     bool isUpdate = false;
     std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
