@@ -831,7 +831,7 @@ HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter002, TestSize.Level0)
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
     params.clear();
-    params.push_back({"live_effect", "invalidValue"});
+    params.push_back({"live_effect_enable", "invalidValue"});
     result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);
 }
@@ -843,7 +843,7 @@ HWTEST_F(HpaeManagerUnitTest, SetEffectLiveParameter003, TestSize.Level0)
     EXPECT_EQ(hpaeManager_->IsInit(), true);
     sleep(1);
     std::vector<std::pair<std::string, std::string>> params;
-    params.push_back({"live_effect", "NRON"});
+    params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->effectLiveState_ = "NoSupport";
     bool result = hpaeManager_->SetEffectLiveParameter(params);
     EXPECT_EQ(result, false);

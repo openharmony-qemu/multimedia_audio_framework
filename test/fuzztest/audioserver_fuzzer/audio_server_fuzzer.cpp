@@ -44,7 +44,7 @@ typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
     "PCM_DUMP",
-    "live_effect",
+    "hpae_effect",
     "test",
 };
 

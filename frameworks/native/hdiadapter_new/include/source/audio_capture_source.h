@@ -109,7 +109,7 @@ private:
     int32_t DoStop(void);
     void DumpData(char *frame, uint64_t &replyBytes);
     void InitRunningLock(void);
-    void checkAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
+    void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;
