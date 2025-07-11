@@ -69,8 +69,15 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.pid = processConfig_.appInfo.appPid;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = true;
-    int32_t ret = IHpaeManager::GetHpaeManager().CreateStream(streamInfo);
+    auto &hpaeManager = IHpaeManager::GetHpaeManager();
+    int32_t ret = hpaeManager.CreateStream(streamInfo);
     CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR_INVALID_PARAM, "CreateStream is error");
+
+    // Register Callback
+    ret = hpaeManager.RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error");
+    ret = hpaeManager.RegisterReadCallback(streamInfo.sessionId, shared_from_this());
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error");
     return SUCCESS;
 }
 
@@ -150,18 +157,12 @@ int32_t HpaeCapturerStreamImpl::Release()
 void HpaeCapturerStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("RegisterStatusCallback in");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD,
-        processConfig_.originalSessionId, callback);
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterStatusCallback is error");
     statusCallback_ = callback;
 }
 
 void HpaeCapturerStreamImpl::RegisterReadCallback(const std::weak_ptr<IReadCallback> &callback)
 {
     AUDIO_INFO_LOG("RegisterReadCallback start");
-    int32_t ret = IHpaeManager::GetHpaeManager().RegisterReadCallback(processConfig_.originalSessionId,
-        shared_from_this());
-    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterReadCallback is error");
     readCallback_ = callback;
 }
 
@@ -177,6 +178,14 @@ int32_t HpaeCapturerStreamImpl::OnStreamData(AudioCallBackCapturerStreamInfo &ca
         return readCallback_.lock()->OnReadData(callBackStreamInfo.outputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;
+}
+
+void HpaeCapturerStreamImpl::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
+{
+    auto statusCallback = statusCallback_.lock();
+    if (statusCallback) {
+        statusCallback->OnStatusUpdate(operation);
+    }
 }
 
 BufferDesc HpaeCapturerStreamImpl::DequeueBuffer(size_t length)

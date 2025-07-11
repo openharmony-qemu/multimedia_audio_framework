@@ -22,6 +22,7 @@
 namespace OHOS {
 namespace AudioStandard {
 class HpaeCapturerStreamImpl : public std::enable_shared_from_this<HpaeCapturerStreamImpl>,
+                               public IStreamStatusCallback,
                                public ICapturerStreamCallback,
                                public ICapturerStream {
 public:
@@ -50,6 +51,7 @@ public:
     int32_t DropBuffer() override;
     void AbortCallback(int32_t abortTimes);
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo &callBackStreamInfo) override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 
 private:
 

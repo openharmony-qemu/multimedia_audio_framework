@@ -135,7 +135,7 @@ int32_t WriteIncDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
     return 0;
 }
 
-void StatusChangeCb::OnStatusUpdate(IOperation operation)
+void StatusChangeCb::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
     switch (operation) {
         case OPERATION_STARTED:

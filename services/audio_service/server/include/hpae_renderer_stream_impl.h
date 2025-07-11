@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
-                               public IStatusCallback,
+                               public IStreamStatusCallback,
                                public IStreamCallback,
                                public IRendererStream {
 public:
@@ -79,7 +79,7 @@ public:
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
-    void OnStatusUpdate(IOperation operation) override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();

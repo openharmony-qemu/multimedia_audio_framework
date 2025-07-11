@@ -93,6 +93,20 @@ int32_t HpaeManagerImpl::CloseAudioPort(int32_t audioHandleIndex)
     return manager_->CloseAudioPort(audioHandleIndex);
 }
 
+int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->GetSinkInfoByIdx(renderIdx, sinkInfo, result, callback);
+}
+
+int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+    std::function<void()> callback)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->GetSourceInfoByIdx(captureIdx, sourceInfo, result, callback);
+}
+
 int32_t HpaeManagerImpl::GetAllSinkInputs()
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE,
@@ -247,7 +261,7 @@ int32_t HpaeManagerImpl::Release(HpaeStreamClassType streamClassType, uint32_t s
 }
 
 int32_t HpaeManagerImpl::RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-    const std::weak_ptr<IStatusCallback> &callback)
+    const std::weak_ptr<IStreamStatusCallback> &callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
     return manager_->RegisterStatusCallback(streamClassType, sessionId, callback);

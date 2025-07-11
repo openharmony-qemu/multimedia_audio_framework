@@ -1443,4 +1443,52 @@ HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level1)
     EXPECT_EQ(hpaeManager_->ReloadAudioPort(audioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 }
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    HpaeSinkInfo sinkInfo;
+    HpaeSourceInfo sourceInfo;
+    int32_t ret = -1;
+
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(0, sinkInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(0, sourceInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    int32_t portId = callback->GetPortId();
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(portId, sinkInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(std::to_string(sinkInfo.channels) == audioModuleInfo1.channels, true);
+    EXPECT_EQ(std::to_string(sinkInfo.samplingRate) == audioModuleInfo1.rate, true);
+    hpaeManager_->CloseAudioPort(portId);
+    WaitForMsgProcessing(hpaeManager_);
+
+    AudioModuleInfo audioModuleInfo2 = GetSourceAudioModeInfo();
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo2), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    portId = callback->GetPortId();
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(portId, sourceInfo, ret, []() {}), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(std::to_string(sourceInfo.channels) == audioModuleInfo2.channels, true);
+    EXPECT_EQ(std::to_string(sourceInfo.samplingRate) == audioModuleInfo2.rate, true);
+    hpaeManager_->CloseAudioPort(portId);
+    WaitForMsgProcessing(hpaeManager_);
+}
 }  // namespace
