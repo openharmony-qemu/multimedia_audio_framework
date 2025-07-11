@@ -493,7 +493,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     AUDIO_INFO_LOG("IoHandleId: %{public}u, paIndex: %{public}u, stream num: %{public}zu",
         activateDeviceIOHandle, curPaIndex, streamDescs.size());
     int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
+    if (engineFlag != 1) {
         int32_t result = audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle, curPaIndex);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "CloseAudioPort failed %{public}d", result);
     }

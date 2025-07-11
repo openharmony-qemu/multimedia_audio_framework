@@ -50,6 +50,7 @@ ohos_shared_library("audio_common") {
     "../audio_policy/services/pipe/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../audio_engine/plugin/resample/include",
   ]
 
   sources = [
@@ -95,6 +96,7 @@ ohos_shared_library("audio_common") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../audio_engine:audio_engine_plugins",
   ]
 
   external_deps = [
@@ -110,12 +112,6 @@ ohos_shared_library("audio_common") {
 
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
-  }
-
-  if (speex_enable == true) {
-    cflags += [ "-DSPEEX_ENABLE" ]
-    include_dirs += [ "//third_party/pulseaudio/speex/include" ]
-    external_deps += [ "pulseaudio:speexresampler" ]
   }
 
   cflags_cc = cflags
