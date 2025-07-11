@@ -87,10 +87,10 @@ napi_status NapiAudioVolumeGroupManager::InitNapiAudioVolumeGroupManager(napi_en
         DECLARE_NAPI_FUNCTION("getActiveVolumeTypeSync", GetActiveVolumeTypeSync),
         DECLARE_NAPI_FUNCTION("getVolume", GetVolume),
         DECLARE_NAPI_FUNCTION("getVolumeSync", GetVolumeSync),
-        DECLARE_NAPI_FUNCTION("getSystemVolumeFromUid", GetSystemVolumeFromUid),
+        DECLARE_NAPI_FUNCTION("getSystemVolumeByUid", GetSystemVolumeByUid),
         DECLARE_NAPI_FUNCTION("setVolume", SetVolume),
         DECLARE_NAPI_FUNCTION("setVolumeWithFlag", SetVolumeWithFlag),
-        DECLARE_NAPI_FUNCTION("setSystemVolumeFromUid", SetSystemVolumeFromUid),
+        DECLARE_NAPI_FUNCTION("setSystemVolumeByUid", SetSystemVolumeByUid),
         DECLARE_NAPI_FUNCTION("getMaxVolume", GetMaxVolume),
         DECLARE_NAPI_FUNCTION("getMaxVolumeSync", GetMaxVolumeSync),
         DECLARE_NAPI_FUNCTION("getMinVolume", GetMinVolume),
@@ -319,7 +319,7 @@ napi_value NapiAudioVolumeGroupManager::GetVolumeSync(napi_env env, napi_callbac
     return result;
 }
 
-napi_value NapiAudioVolumeGroupManager::GetSystemVolumeFromUid(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeGroupManager::GetSystemVolumeByUid(napi_env env, napi_callback_info info)
 {
     napi_value result = nullptr;
     size_t argc = ARGS_TWO;
@@ -457,11 +457,11 @@ napi_value NapiAudioVolumeGroupManager::SetVolumeWithFlag(napi_env env, napi_cal
     return NapiAsyncWork::Enqueue(env, context, "SetVolumeWithFlag", executor, complete);
 }
 
-napi_value NapiAudioVolumeGroupManager::SetSystemVolumeFromUid(napi_env env, napi_callback_info info)
+napi_value NapiAudioVolumeGroupManager::SetSystemVolumeByUid(napi_env env, napi_callback_info info)
 {
     auto context = std::make_shared<AudioVolumeGroupManagerAsyncContext>();
     if (context == nullptr) {
-        AUDIO_ERR_LOG("SetSystemVolumeFromUid failed : no memory");
+        AUDIO_ERR_LOG("SetSystemVolumeByUid failed : no memory");
         NapiAudioError::ThrowError(env, "SetVolumeWithFlag failed : no memory", NAPI_ERR_NO_MEMORY);
         return NapiParamUtils::GetUndefinedValue(env);
     }
@@ -494,14 +494,14 @@ napi_value NapiAudioVolumeGroupManager::SetSystemVolumeFromUid(napi_env env, nap
             "audio volume group manager state is error.");
         context->intValue = napiAudioVolumeGroupManager->audioGroupMngr_->SetVolume(
             NapiAudioEnum::GetNativeAudioVolumeType(context->volType), context->volLevel, false, context->uid);
-        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetSystemVolumeFromUid failed",
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->intValue == SUCCESS, "SetSystemVolumeByUid failed",
             NAPI_ERR_SYSTEM);
     };
 
     auto complete = [env](napi_value &output) {
         output = NapiParamUtils::GetUndefinedValue(env);
     };
-    return NapiAsyncWork::Enqueue(env, context, "SetSystemVolumeFromUid", executor, complete);
+    return NapiAsyncWork::Enqueue(env, context, "SetSystemVolumeByUid", executor, complete);
 }
 
 napi_value NapiAudioVolumeGroupManager::GetMaxVolume(napi_env env, napi_callback_info info)
