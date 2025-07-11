@@ -372,7 +372,8 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
 {
     Trace trace("AudioDeviceStatus::HandleAccessoryDevice");
     std::string defaulyAccessoryInfo = "";
-    GetModuleInfo(ClassType::TYPE_ACCESSORY, defaulyAccessoryInfo);
+    auto res = GetModuleInfo(ClassType::TYPE_ACCESSORY, defaulyAccessoryInfo);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "get module info failed");
     CHECK_AND_RETURN_RET_LOG(deviceType != DEVICE_TYPE_NONE, ERR_DEVICE_NOT_SUPPORTED, "Invalid device");
     char sampleRate[10] = {0};
     // default samplerate of accessory is 16000
