@@ -16,6 +16,7 @@
 #define AUDIO_RESAMPLE_H
 
 #include <vector>
+#include "audio_proresampler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -27,8 +28,7 @@ public:
     int32_t ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output);
 
 private:
-    struct SpeexResample;
-    std::unique_ptr<SpeexResample> speex_;
+    std::unique_ptr<HPAE::ProResampler> resampler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
