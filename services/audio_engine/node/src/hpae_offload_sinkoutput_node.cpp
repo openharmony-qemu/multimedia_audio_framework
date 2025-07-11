@@ -65,16 +65,15 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
 {
-    static uint32_t suspendCount = 0;
     if (!GetPreOutNum()) {
-        suspendCount++;
+        suspendCount_++;
         usleep(TIME_US_PER_MS * FRAME_TIME_IN_MS);
-        if (suspendCount > timeoutThdFrames_) {
+        if (suspendCount_ > timeoutThdFrames_) {
             RenderSinkStop();
         }
         return true;
     } else {
-        suspendCount = 0;
+        suspendCount_ = 0;
         return false;
     }
 }
