@@ -25,7 +25,6 @@
 #include "taihe_audio_session_manager.h"
 #include "taihe_audio_stream_manager.h"
 #include "taihe_audio_volume_manager.h"
-#include "taihe_audio_spatialization_manager.h"
 #include "taihe_param_utils.h"
 
 namespace ANI::Audio {
@@ -167,11 +166,6 @@ AudioSessionManager AudioManagerImpl::GetSessionManager()
 AudioEffectManager AudioManagerImpl::GetEffectManager()
 {
     return AudioEffectManagerImpl::CreateEffectManagerWrapper();
-}
-
-AudioSpatializationManager AudioManagerImpl::GetSpatializationManager()
-{
-    return AudioSpatializationManagerImpl::CreateSpatializationManagerWrapper();
 }
 
 AudioScene AudioManagerImpl::GetAudioSceneSync()

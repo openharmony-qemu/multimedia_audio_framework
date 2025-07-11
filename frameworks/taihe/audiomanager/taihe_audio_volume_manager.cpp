@@ -60,15 +60,18 @@ int32_t AudioVolumeManagerImpl::GetAppVolumePercentageForUidSync(int32_t uid)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return volLevel;
     }
-    volLevel = audioSystemMngr_->GetAppVolume(appUid);
-    if (volLevel == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+    int32_t ret = audioSystemMngr_->GetAppVolume(appUid, volLevel);
+    CHECK_AND_RETURN_RET(ret != OHOS::AudioStandard::SUCCESS, volLevel);
+    if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
         return volLevel;
-    } else if (volLevel == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+    } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
         return volLevel;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return volLevel;
     }
-    return volLevel;
 }
 
 void AudioVolumeManagerImpl::SetAppVolumePercentageForUidSync(int32_t uid, int32_t volume)
@@ -105,8 +108,18 @@ bool AudioVolumeManagerImpl::IsAppVolumeMutedForUidSync(int32_t uid, bool owned)
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return isMute;
     }
-    isMute = audioSystemMngr_->IsAppVolumeMute(appUid, isOwned);
-    return isMute;
+    int32_t ret = audioSystemMngr_->IsAppVolumeMute(appUid, isOwned, isMute);
+    CHECK_AND_RETURN_RET(ret != OHOS::AudioStandard::SUCCESS, isMute);
+    if (ret == OHOS::AudioStandard::ERR_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_NO_PERMISSION);
+        return isMute;
+    } else if (ret == OHOS::AudioStandard::ERR_SYSTEM_PERMISSION_DENIED) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED);
+        return isMute;
+    } else {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return isMute;
+    }
 }
 
 void AudioVolumeManagerImpl::SetAppVolumeMutedForUidSync(int32_t uid, bool muted)
@@ -138,8 +151,13 @@ int32_t AudioVolumeManagerImpl::GetAppVolumePercentageSync()
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "audioSystemMngr_ is nullptr");
         return volLevel;
     }
-    volLevel = audioSystemMngr_->GetSelfAppVolume();
-    return volLevel;
+    int32_t ret = audioSystemMngr_->GetSelfAppVolume(volLevel);
+    if (ret != OHOS::AudioStandard::SUCCESS) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return volLevel;
+    } else {
+        return volLevel;
+    }
 }
 
 void AudioVolumeManagerImpl::SetAppVolumePercentageSync(int32_t volume)

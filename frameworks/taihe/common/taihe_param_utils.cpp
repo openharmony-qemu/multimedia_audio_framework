@@ -270,7 +270,10 @@ int32_t TaiheParamUtils::GetAudioDeviceDescriptorVector(
     for (AudioDeviceDescriptor &element : in) {
         std::shared_ptr<OHOS::AudioStandard::AudioDeviceDescriptor> selectedAudioDevice =
             std::make_shared<OHOS::AudioStandard::AudioDeviceDescriptor>();
-        GetAudioDeviceDescriptor(selectedAudioDevice, argTransFlag, element);
+        int32_t ret = GetAudioDeviceDescriptor(selectedAudioDevice, argTransFlag, element);
+        if (ret != AUDIO_OK) {
+            AUDIO_ERR_LOG("GetAudioDeviceDescriptor failed");
+        }
         if (!argTransFlag) {
             return AUDIO_OK;
         }
@@ -302,7 +305,10 @@ int32_t TaiheParamUtils::GetAudioCapturerFilter(OHOS::sptr<OHOS::AudioStandard::
         audioCapturerFilter->uid = in.uid.value();
     }
     if (in.capturerInfo.has_value()) {
-        GetCapturerInfo(audioCapturerFilter->capturerInfo, in.capturerInfo.value());
+        int32_t ret = GetCapturerInfo(audioCapturerFilter->capturerInfo, in.capturerInfo.value());
+        if (ret != AUDIO_OK) {
+            AUDIO_ERR_LOG("GetCapturerInfo failed");
+        }
     }
     return AUDIO_OK;
 }
@@ -319,7 +325,10 @@ int32_t TaiheParamUtils::GetAudioRendererFilter(
     }
 
     if (in.rendererInfo.has_value()) {
-        GetRendererInfo(audioRendererFilter->rendererInfo, in.rendererInfo.value());
+        int32_t ret = GetRendererInfo(audioRendererFilter->rendererInfo, in.rendererInfo.value());
+        if (ret != AUDIO_OK) {
+            AUDIO_ERR_LOG("GetCapturerInfo failed");
+        }
     }
 
     if (in.rendererId.has_value()) {
