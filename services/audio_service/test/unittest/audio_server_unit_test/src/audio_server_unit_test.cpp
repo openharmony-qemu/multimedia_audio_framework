@@ -1689,7 +1689,7 @@ HWTEST_F(AudioServerUnitTest, SetEffectLiveParameter_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, GetExtraParameters_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    std::string mainKey = "live_effect";
+    std::string mainKey = "hpae_effect";
     std::vector<std::string> subKeys;
     std::vector<StringPair> result_;
     result_.push_back({"key1", "value1"});

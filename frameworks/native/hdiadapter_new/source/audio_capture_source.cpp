@@ -656,7 +656,7 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
     return hdiAudioInputType;
 }
 
-void AudioCaptureSource::checkAcousticEchoCancelerSupported(int32_t sourceType, int32_t &hdiAudioInputType)
+void AudioCaptureSource::CheckAcousticEchoCancelerSupported(int32_t sourceType, int32_t &hdiAudioInputType)
 {
     CHECK_AND_RETURN(sourceType == SOURCE_TYPE_LIVE);
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
@@ -815,7 +815,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
     param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
-    checkAcousticEchoCancelerSupported(attr_.sourceType, param.sourceType);
+    CheckAcousticEchoCancelerSupported(attr_.sourceType, param.sourceType);
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
         param.ecSampleAttributes.ecInterleaved = true;
@@ -924,7 +924,7 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
     int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
-    checkAcousticEchoCancelerSupported(attr_.sourceType, inputType);
+    CheckAcousticEchoCancelerSupported(attr_.sourceType, inputType);
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
     int32_t ret = deviceManager->SetInputRoute(adapterNameCase_, inputDevice, streamId, inputType);
