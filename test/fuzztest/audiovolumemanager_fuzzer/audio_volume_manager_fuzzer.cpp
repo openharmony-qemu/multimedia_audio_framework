@@ -379,6 +379,13 @@ void AudioVolumeManagerInitKVStoreFuzzTest(const uint8_t *rawData, size_t size)
     audioVolumeManager.InitKVStore();
 }
 
+void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.ForceVolumeKeyControlType(static_cast<AudioVolumeType>(size), size);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -404,6 +411,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitKVStoreFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest,
 };
 
 /* Fuzzer entry point */

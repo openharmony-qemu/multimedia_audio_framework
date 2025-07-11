@@ -52,6 +52,8 @@ private:
         bool isOwned;
         std::string networkId;
         std::vector<sptr<VolumeGroupInfo>> volumeGroupInfos;
+        int32_t volumeType;
+        int32_t duration;
     };
 
     static bool CheckContextStatus(std::shared_ptr<AudioVolumeManagerAsyncContext> context);
@@ -119,6 +121,7 @@ private:
 
     static napi_value Construct(napi_env env, napi_callback_info info);
     static void Destructor(napi_env env, void *nativeObject, void *finalizeHint);
+    static napi_value ForceVolumeKeyControlType(napi_env env, napi_callback_info info);
     AudioSystemManager *audioSystemMngr_;
 
     int32_t cachedClientId_ = -1;

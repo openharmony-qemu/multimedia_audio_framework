@@ -45,9 +45,12 @@
 #include "audio_scene_manager.h"
 #include "audio_connected_device.h"
 #include "audio_offload_stream.h"
+#include "audio_policy_state_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
+
+class ForceControlVolumeTypeMonitor;
 
 using InternalDeviceType = DeviceType;
 
@@ -128,6 +131,11 @@ public:
     std::vector<std::shared_ptr<AllDeviceVolumeInfo>> GetAllDeviceVolumeInfo();
     void GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo);
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+    void OnTimerExpired();
+    bool IsNeedForceControlVolumeType();
+    AudioVolumeType GetForceControlVolumeType();
+
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
@@ -224,8 +232,30 @@ private:
     AudioConnectedDevice& audioConnectedDevice_;
     AudioOffloadStream& audioOffloadStream_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
+    std::mutex forceControlVolumeTypeMutex_;
+    bool needForceControlVolumeType_ = false;
+    AudioVolumeType forceControlVolumeType_ = STREAM_DEFAULT;
+    std::shared_ptr<ForceControlVolumeTypeMonitor> forceControlVolumeTypeMonitor_;
 };
 
+class ForceControlVolumeTypeMonitor : public AudioPolicyStateMonitorCallback {
+public:
+    ForceControlVolumeTypeMonitor() : audioVolumeManager_(AudioVolumeManager::GetInstance()) {};
+    ~ForceControlVolumeTypeMonitor();
+    void OnTimeOut() override;
+    void SetTimer(int32_t duration, std::shared_ptr<ForceControlVolumeTypeMonitor> cb);
+
+private:
+    static constexpr int32_t MAX_DURATION_TIME_S = 10;
+
+    void StartMonitor(int32_t duration, std::shared_ptr<ForceControlVolumeTypeMonitor> cb);
+    void StopMonitor();
+
+    AudioVolumeManager &audioVolumeManager_;
+    int32_t duration_ = 0;
+    int32_t cbId_ = INVALID_CB_ID;
+    std::mutex mtx_;
+};
 }
 }
 

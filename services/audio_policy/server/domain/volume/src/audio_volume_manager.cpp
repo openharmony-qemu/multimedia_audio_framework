@@ -96,6 +96,8 @@ bool AudioVolumeManager::Init(std::shared_ptr<AudioPolicyServerHandler> audioPol
         sharedAbsVolumeScene_ = reinterpret_cast<bool *>(policyVolumeMap_->GetBase()) +
             IPolicyProvider::GetVolumeVectorSize() * sizeof(Volume);
     }
+    CHECK_AND_RETURN_RET(forceControlVolumeTypeMonitor_ == nullptr, true);
+    forceControlVolumeTypeMonitor_ = std::make_shared<ForceControlVolumeTypeMonitor>();
     return true;
 }
 void AudioVolumeManager::DeInit(void)
@@ -104,6 +106,7 @@ void AudioVolumeManager::DeInit(void)
     sharedAbsVolumeScene_ = nullptr;
     policyVolumeMap_ = nullptr;
     safeVolumeExit_ = true;
+    forceControlVolumeTypeMonitor_ = nullptr;
     if (calculateLoopSafeTime_ != nullptr && calculateLoopSafeTime_->joinable()) {
         calculateLoopSafeTime_->join();
         calculateLoopSafeTime_.reset();
@@ -1339,6 +1342,84 @@ void AudioVolumeManager::GetSystemVolumeLevelInfo(std::vector<AdjustVolumeInfo> 
 void AudioVolumeManager::GetVolumeKeyRegistrationInfo(std::vector<VolumeKeyEventRegistration> &keyRegistrationInfo)
 {
     keyRegistrationInfo = volumeKeyRegistrations_->GetData();
+}
+
+int32_t AudioVolumeManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
+{
+    CHECK_AND_RETURN_RET_LOG(duration >= -1, ERR_INVALID_PARAM, "invalid duration");
+    CHECK_AND_RETURN_RET_LOG(forceControlVolumeTypeMonitor_ != nullptr, ERR_UNKNOWN,
+        "forceControlVolumeTypeMonitor_ is nullptr");
+    std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
+    needForceControlVolumeType_ = (duration == -1 ? false : true);
+    forceControlVolumeType_ = (duration == -1 ? STREAM_DEFAULT : volumeType);
+    forceControlVolumeTypeMonitor_->SetTimer(duration, forceControlVolumeTypeMonitor_);
+    return SUCCESS;
+}
+
+void AudioVolumeManager::OnTimerExpired()
+{
+    std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
+    needForceControlVolumeType_ = false;
+    forceControlVolumeType_ = STREAM_DEFAULT;
+}
+
+bool AudioVolumeManager::IsNeedForceControlVolumeType()
+{
+    std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
+    return needForceControlVolumeType_;
+}
+
+AudioVolumeType AudioVolumeManager::GetForceControlVolumeType()
+{
+    std::lock_guard<std::mutex> lock(forceControlVolumeTypeMutex_);
+    return forceControlVolumeType_;
+}
+
+ForceControlVolumeTypeMonitor::~ForceControlVolumeTypeMonitor()
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    StopMonitor();
+}
+
+void ForceControlVolumeTypeMonitor::OnTimeOut()
+{
+    {
+        std::lock_guard<std::mutex> lock(mtx_);
+        StopMonitor();
+    }
+    audioVolumeManager_.OnTimerExpired();
+}
+
+void ForceControlVolumeTypeMonitor::StartMonitor(int32_t duration,
+    std::shared_ptr<ForceControlVolumeTypeMonitor> cb)
+{
+    int32_t cbId = DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->RegisterCallback(
+        cb, duration, CallbackType::ONE_TIME);
+    if (cbId == INVALID_CB_ID) {
+        AUDIO_ERR_LOG("Register AudioPolicyStateMonitor failed");
+    } else {
+        cbId_ = cbId;
+    }
+}
+
+void ForceControlVolumeTypeMonitor::StopMonitor()
+{
+    if (cbId_ != INVALID_CB_ID) {
+        DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->UnRegisterCallback(cbId_);
+        cbId_ = INVALID_CB_ID;
+    }
+}
+
+void ForceControlVolumeTypeMonitor::SetTimer(int32_t duration,
+    std::shared_ptr<ForceControlVolumeTypeMonitor> cb)
+{
+    std::lock_guard<std::mutex> lock(mtx_);
+    StopMonitor();
+    if (duration == -1) {
+        return;
+    }
+    duration_ = (duration > MAX_DURATION_TIME_S ? MAX_DURATION_TIME_S : duration);
+    StartMonitor(duration_, cb);
 }
 }
 }
