@@ -381,6 +381,7 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
 
     auto rate_begin = defaulyAccessoryInfo.find("rate=");
     auto rate_end = defaulyAccessoryInfo.find_first_of(" ", rate_begin);
+    CHECK_AND_RETURN_RET_LOG(rate_end > rate_begin, ERR_OPERATION_FAILED, "get rate failed");
     defaulyAccessoryInfo.replace(rate_begin + std::strlen("rate="),
         rate_end - rate_begin - std::strlen("rate="), sampleRate);
 
