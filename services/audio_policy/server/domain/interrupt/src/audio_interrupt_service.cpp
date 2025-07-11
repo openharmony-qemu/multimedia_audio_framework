@@ -226,10 +226,6 @@ int32_t AudioInterruptService::ActivateAudioSession(
 
     if (sessionService_->IsAudioSessionFocusMode(callerPid)) {
         AUDIO_INFO_LOG("Enter audio session focus mode, pid = %{public}d", callerPid);
-        if (zoneId != ZONEID_DEFAULT) {
-            AUDIO_INFO_LOG("Only support default zone, current zoneId = %{public}d", zoneId);
-            return ERROR;
-        }
         bool updateScene = false;
         result = ProcessFocusEntryForAudioSession(zoneId, callerPid, updateScene);
         if (result != SUCCESS || !updateScene) {
@@ -1813,7 +1809,7 @@ int32_t AudioInterruptService::ProcessFocusEntryForAudioSession(
 
     AudioInterrupt audioInterrupt = sessionService_->GenerateFakeAudioInterrupt(callerPid);
     auto iter = std::find_if(audioFocusInfoList.begin(), audioFocusInfoList.end(), isAudioSessionFocusPresent);
-    // It is possible that the reactivation of the audio session was caused by changing the AudioSessionScene.
+    // It is possible that the reactivation of the audio session was caused by changing the session scene or strategy.
     bool isFirstTimeActiveAudioSession = true;
     if (iter != audioFocusInfoList.end()) {
         audioFocusInfoList.erase(iter);

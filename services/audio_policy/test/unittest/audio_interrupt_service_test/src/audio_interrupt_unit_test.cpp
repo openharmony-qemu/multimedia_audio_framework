@@ -3669,27 +3669,301 @@ HWTEST(AudioInterruptUnitTest, RegisterDefaultVolumeTypeListenerTest, TestSize.L
  */
 HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_001, TestSize.Level1)
 {
-    auto interruptServiceTest = GetTnterruptServiceTest();
-    ASSERT_NE(interruptServiceTest, nullptr);
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
 
-    interruptServiceTest->zonesMap_.clear();
-    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
-    interruptServiceTest->SetCallbackHandler(GetServerHandlerTest());
-
-    int32_t fakePid = 123;
-    AudioInterrupt incomingInterrupt;
-    incomingInterrupt.pid = fakePid;
-    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
-    incomingInterrupt.streamId = 888; // 888 is a fake stream id.
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.pid = CALLER_PID;
+    movieInterrupt.streamId = 123; // fake stream id.
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+    int ret = audioInterruptService->ActivateAudioInterrupt(DEFAULT_ZONE_ID, movieInterrupt, false);
+    EXPECT_EQ(SUCCESS, ret);
 
     std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
-    ASSERT_TRUE(sessionService != nullptr);
-    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    ASSERT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
     EXPECT_EQ(SUCCESS, ret);
     AudioSessionStrategy audioSessionStrategy;
     audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
-    ret = interruptServiceTest->ActivateAudioSession(0, fakePid, audioSessionStrategy);
+    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
     EXPECT_EQ(SUCCESS, ret);
+
+    movieInterrupt.streamId = 456; // fake stream id.
+    ret = audioInterruptService->ActivateAudioInterrupt(DEFAULT_ZONE_ID, movieInterrupt, false);
+    EXPECT_EQ(SUCCESS, ret);
+
+    ret = audioInterruptService->DeactivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_002
+ * @tc.desc  : Test ActivateAudioSession interrupt other focus
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_002, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{ACTIVE});
+    audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    auto &newAudioInterruptZone = audioInterruptService->zonesMap_[DEFAULT_ZONE_ID];
+    EXPECT_EQ(1, newAudioInterruptZone->audioFocusInfoList.size());
+
+    ret = audioInterruptService->DeactivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_003
+ * @tc.desc  : Test AudioSessionAbnormalCase
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_003, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+
+    audioInterruptService->sessionService_ = nullptr;
+    int ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(ERR_UNKNOWN, ret);
+    bool updateScene = false;
+    ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
+    EXPECT_EQ(ERR_UNKNOWN, ret);
+
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+
+    audioInterruptService->TryHandleStreamCallbackInSession(DEFAULT_ZONE_ID, movieInterrupt);
+
+    InterruptEventInternal interruptEventInternal;
+    audioInterruptService->DispatchInterruptEventForAudioSession(interruptEventInternal, movieInterrupt);
+
+    audioInterruptService->SendAudioSessionInterruptEventCallback(interruptEventInternal, movieInterrupt);
+
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    audioInterruptService->SendAudioSessionInterruptEventCallback(interruptEventInternal, movieInterrupt);
+
+    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_004
+ * @tc.desc  : Test ShouldBypassAudioSessionFocus
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.pid = CALLER_PID;
+    movieInterrupt.streamId = SESSION_ID_TEST;
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+
+    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_FALSE(result);
+
+    movieInterrupt.isAudioSessionInterrupt = true;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{ACTIVE});
+    audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
+
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_FALSE(result);
+
+    movieInterrupt.isAudioSessionInterrupt = false;
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_FALSE(result);
+
+    audioInterruptService->sessionService_ = nullptr;
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_FALSE(result);
+
+    audioInterruptService->sessionService_ = sessionService;
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    movieInterrupt.isAudioSessionInterrupt = false;
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_005
+ * @tc.desc  : Test AudioSessionTimeOut
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_005, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = audioInterruptService->ActivateAudioSession(DEFAULT_ZONE_ID, CALLER_PID, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+
+    bool result = audioInterruptService->IsAudioSessionActivated(CALLER_PID);
+    EXPECT_TRUE(result);
+
+    ret = sessionService->DeactivateAudioSession(CALLER_PID);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioInterruptService->HandleSessionTimeOutEvent(CALLER_PID);
+    result = audioInterruptService->IsAudioSessionActivated(CALLER_PID);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_006
+ * @tc.desc  : Test AudioSessionCallbackEvent
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_006, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.pid = CALLER_PID;
+    movieInterrupt.streamId = SESSION_ID_TEST;
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+
+    InterruptEventInternal duckInterruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_DUCK, 1.0f};
+    InterruptEventInternal stopInterruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+    audioInterruptService->SendAudioSessionInterruptEventCallback(duckInterruptEvent, movieInterrupt);
+    audioInterruptService->SendAudioSessionInterruptEventCallback(stopInterruptEvent, movieInterrupt);
+
+    audioInterruptService->Init(GetPolicyServerTest());
+
+    audioInterruptService->TryHandleStreamCallbackInSession(DEFAULT_ZONE_ID, movieInterrupt);
+    audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
+    audioInterruptService->TryHandleStreamCallbackInSession(DEFAULT_ZONE_ID, movieInterrupt);
+    audioInterruptService->SendAudioSessionInterruptEventCallback(duckInterruptEvent, movieInterrupt);
+    audioInterruptService->SendAudioSessionInterruptEventCallback(stopInterruptEvent, movieInterrupt);
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    movieInterrupt.isAudioSessionInterrupt = true;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{PAUSE});
+    audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
+    audioInterruptService->TryHandleStreamCallbackInSession(DEFAULT_ZONE_ID, movieInterrupt);
+    audioInterruptService->SendAudioSessionInterruptEventCallback(duckInterruptEvent, movieInterrupt);
+    audioInterruptService->SendAudioSessionInterruptEventCallback(stopInterruptEvent, movieInterrupt);
+
+    audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{PAUSE});
+    audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
+    audioInterruptService->TryHandleStreamCallbackInSession(DEFAULT_ZONE_ID, movieInterrupt);
+
+    AudioSessionStrategy audioSessionStrategy;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    ret = sessionService->ActivateAudioSession(CALLER_PID, audioSessionStrategy);
+    EXPECT_EQ(SUCCESS, ret);
+    ret = sessionService->DeactivateAudioSession(CALLER_PID);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test AudioSessionFocusMode
+ * @tc.number: AudioSessionFocusMode_007
+ * @tc.desc  : Test ProcessFocusEntryForAudioSession
+ */
+HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_007, TestSize.Level1)
+{
+    int32_t CALLER_PID = IPCSkeleton::GetCallingPid();
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+    audioInterruptService->Init(GetPolicyServerTest());
+
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(nullptr, sessionService);
+    audioInterruptService->sessionService_ = sessionService;
+    int ret = audioInterruptService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    bool updateScene = false;
+    ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioInterrupt movieInterrupt;
+    movieInterrupt.pid = CALLER_PID;
+    movieInterrupt.streamId = SESSION_ID_TEST;
+    movieInterrupt.audioFocusType.streamType = STREAM_MOVIE;
+    movieInterrupt.audioFocusType.isPlay = true;
+    movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{ACTIVE});
+    audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
+
+    ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioInterruptService->isPreemptMode_ = true;
+    ret = audioInterruptService->ProcessFocusEntryForAudioSession(DEFAULT_ZONE_ID, CALLER_PID, updateScene);
+    EXPECT_EQ(ERR_FOCUS_DENIED, ret);
 }
 
 } // namespace AudioStandard
