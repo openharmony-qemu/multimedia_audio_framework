@@ -639,6 +639,8 @@ public:
     bool IsAcousticEchoCancelerSupported(SourceType sourceType);
     bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
     bool SetKaraokeParameters(const std::string &parameters);
+    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);

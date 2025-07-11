@@ -140,6 +140,22 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
     offloadCloseCondition_[type].notify_all();
 }
 
+void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    for (auto &streamDesc : streamDescs) {
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "invalid streamDesc");
+        std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+        uint32_t sessionId = streamDesc->sessionId_;
+        CHECK_AND_CONTINUE_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId %{public}u not registed",
+            sessionId);
+        auto callback = routeUpdateCallback_[sessionId];
+        CHECK_AND_CONTINUE_LOG(callback != nullptr, "callback is nullptr");
+        std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "device desc is nullptr");
+        callback->OnRouteUpdate(streamDesc->routeFlag_, desc->networkId_);
+    }
+}
+
 int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -163,6 +179,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     }
     pipeManager_->UpdateRendererPipeInfos(pipeInfos);
     RemoveUnusedPipe();
+    NotifyRouteUpdate(streamDescs);
     return SUCCESS;
 }
 
