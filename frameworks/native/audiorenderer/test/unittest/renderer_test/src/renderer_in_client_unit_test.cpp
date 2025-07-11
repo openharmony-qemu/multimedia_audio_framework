@@ -19,6 +19,7 @@
 #include "renderer_in_client.h"
 #include "renderer_in_client_private.h"
 #include "i_stream_listener.h"
+#include "meta/audio_types.h"
 
 
 using namespace testing::ext;
@@ -29,6 +30,7 @@ namespace AudioStandard {
 
 const uint64_t TEST_POSITION = 20000;
 const uint64_t TEST_TIMESTAMP_NS = 20000;
+static constexpr int32_t AVS3METADATA_SIZE = 19824;
 
 class RendererInClientUnitTest : public testing::Test {
 public:
@@ -1637,6 +1639,558 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 0); // after flush
     }
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_061
+ * @tc.desc  : Test RendererInClientInner::SetAudioStreamInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_061, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    AudioStreamParams info {
+        .samplingRate = AudioSamplingRate::SAMPLE_RATE_8000,
+        .encoding = AudioEncodingType::ENCODING_AUDIOVIVID,
+        .format = AudioSampleFormat::SAMPLE_U8,
+        .channels = AudioChannel::STEREO,
+    };
+    int32_t ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, SUCCESS);
+
+    info.format = OHOS::Media::Plugins::AudioSampleFormat::SAMPLE_U8P;
+    info.channels = AudioChannel::STEREO;
+    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    info.format = AudioSampleFormat::SAMPLE_U8;
+    info.channels = AudioChannel::CHANNEL_UNKNOW;
+    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    info.encoding = AudioEncodingType::ENCODING_PCM;
+    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+
+    info.channels = AudioChannel::STEREO;
+    ptrRendererInClientInner->state_ = State::INVALID;
+    ret = ptrRendererInClientInner->SetAudioStreamInfo(info, nullptr);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_062
+ * @tc.desc  : Test RendererInClientInner::GetState
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_062, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->switchingInfo_.isSwitching_ = true;
+    State state = ptrRendererInClientInner->GetState();
+    EXPECT_EQ(state, INVALID);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_063
+ * @tc.desc  : Test RendererInClientInner::GetAudioTime
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_063, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->paramsIsSet_ = true;
+    ptrRendererInClientInner->state_ = State::RUNNING;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    ptrRendererInClientInner->clientBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
+    ptrRendererInClientInner->offloadEnable_ = false;
+    Timestamp timestamp;
+    Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
+    auto ret = ptrRendererInClientInner->GetAudioTime(timestamp, base);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_064
+ * @tc.desc  : Test RendererInClientInner::GetBufferSize
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_064, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->curStreamParams_.encoding = ENCODING_AUDIOVIVID;
+    size_t bufferSize = 0;
+    int32_t ret = ptrRendererInClientInner->GetBufferSize(bufferSize);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_065
+ * @tc.desc  : Test RendererInClientInner::GetFrameCount
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_065, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->curStreamParams_.encoding = ENCODING_AUDIOVIVID;
+    ptrRendererInClientInner->curStreamParams_.channels = AudioChannel::STEREO;;
+    ptrRendererInClientInner->streamParams_.channels = AudioChannel::STEREO;
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    ptrRendererInClientInner->cbBufferSize_ = 4;
+
+    uint32_t frameCount = 0;
+    ptrRendererInClientInner->GetFrameCount(frameCount);
+    EXPECT_EQ(frameCount, 1);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_066
+ * @tc.desc  : Test RendererInClientInner::SetVolume
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_066, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    float volume = -0.1f;
+    int32_t ret = ptrRendererInClientInner->SetVolume(volume);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    volume = 1.1f;
+    ret = ptrRendererInClientInner->SetVolume(volume);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    volume = 0.1f;
+    ptrRendererInClientInner->volumeRamp_.isVolumeRampActive_ = true;
+    ret = ptrRendererInClientInner->SetVolume(volume);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_067
+ * @tc.desc  : Test RendererInClientInner::SetDuckVolume
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_067, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    float volume = -0.1f;
+    int32_t ret = ptrRendererInClientInner->SetDuckVolume(volume);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+
+    volume = 1.1f;
+    ret = ptrRendererInClientInner->SetDuckVolume(volume);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_068
+ * @tc.desc  : Test RendererInClientInner::SetStreamCallback
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_068, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    int32_t ret = ptrRendererInClientInner->SetStreamCallback(nullptr);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_069
+ * @tc.desc  : Test RendererInClientInner::SetRenderMode
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_069, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    AudioRenderMode renderMode = RENDER_MODE_NORMAL;
+    int32_t ret = ptrRendererInClientInner->SetRenderMode(renderMode);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_070
+ * @tc.desc  : Test RendererInClientInner::GetBufferDesc
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_070, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    BufferDesc bufDesc;
+    int32_t ret = ptrRendererInClientInner->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    ptrRendererInClientInner->curStreamParams_.encoding = ENCODING_AUDIOVIVID;
+    ret = ptrRendererInClientInner->GetBufferDesc(bufDesc);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_071
+ * @tc.desc  : Test RendererInClientInner::GetBufQueueState
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_071, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    BufferQueueState bufState;
+    int32_t ret = ptrRendererInClientInner->GetBufQueueState(bufState);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_072
+ * @tc.desc  : Test RendererInClientInner::Enqueue
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_072, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    BufferDesc bufDesc;
+    int32_t ret = ptrRendererInClientInner->Enqueue(bufDesc);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+
+    bufDesc.buffer = new uint8_t[1024] {0};
+    bufDesc.bufLength = 1024;
+    bufDesc.metaBuffer = new uint8_t[AVS3METADATA_SIZE] {0};
+    bufDesc.metaLength = AVS3METADATA_SIZE;
+    ptrRendererInClientInner->converter_ = std::make_unique<AudioSpatialChannelConverter>();
+    ptrRendererInClientInner->converter_->encoding_ = ENCODING_AUDIOVIVID;
+    ptrRendererInClientInner->converter_->inChannel_ = 1;
+    ptrRendererInClientInner->converter_->bps_ = 1;
+    ptrRendererInClientInner->state_ = RELEASED;
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    ret = ptrRendererInClientInner->Enqueue(bufDesc);
+    delete bufDesc.buffer;
+    delete bufDesc.metaBuffer;
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_073
+ * @tc.desc  : Test RendererInClientInner::Clear
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_073, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    int32_t ret = ptrRendererInClientInner->Clear();
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_074
+ * @tc.desc  : Test RendererInClientInner::StartAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_074, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->state_ = PREPARED;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    AudioStreamDeviceChangeReasonExt reason;
+    bool ret = ptrRendererInClientInner->StartAudioStream(cmdType, reason);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_075
+ * @tc.desc  : Test RendererInClientInner::FlushBeforeStart
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_075, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->flushAfterStop_ = true;
+    ptrRendererInClientInner->FlushBeforeStart();
+    EXPECT_FALSE(ptrRendererInClientInner->flushAfterStop_);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_076
+ * @tc.desc  : Test RendererInClientInner::PauseAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_076, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->state_ = PREPARED;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    EXPECT_FALSE(ptrRendererInClientInner->PauseAudioStream(cmdType));
+
+    ptrRendererInClientInner->state_ = RUNNING;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    EXPECT_FALSE(ptrRendererInClientInner->PauseAudioStream(cmdType));
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_077
+ * @tc.desc  : Test RendererInClientInner::StopAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_077, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->state_ = RUNNING;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    EXPECT_FALSE(ptrRendererInClientInner->StopAudioStream());
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_078
+ * @tc.desc  : Test RendererInClientInner::FlushAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_078, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->state_ = RUNNING;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    ptrRendererInClientInner->converter_ = std::make_unique<AudioSpatialChannelConverter>();
+    ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
+    EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
+
+    ptrRendererInClientInner->notifiedOperation_ = MAX_OPERATION_CODE;
+    EXPECT_FALSE(ptrRendererInClientInner->FlushAudioStream());
+
+    ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
+    ptrRendererInClientInner->notifiedResult_ = ERR_INVALID_OPERATION;
+    EXPECT_FALSE(ptrRendererInClientInner->FlushAudioStream());
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_079
+ * @tc.desc  : Test RendererInClientInner::SetBufferSizeInMsec
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_079, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    int32_t bufferSizeInMsec = 1024;
+    int32_t ret = ptrRendererInClientInner->SetBufferSizeInMsec(bufferSizeInMsec);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_080
+ * @tc.desc  : Test RendererInClientInner::InitCallbackHandler
+ *             Test RendererInClientInner::StateCmdTypeToParams
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_080, TestSize.Level1)
+{
+    // Test RendererInClientInner::InitCallbackHandler
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->callbackHandler_ =
+        CallbackHandler::GetInstance(ptrRendererInClientInner, "TEST_AudioStateCB");
+    ptrRendererInClientInner->InitCallbackHandler();
+
+    //Test RendererInClientInner::StateCmdTypeToParams
+    int64_t params = RendererInClientInner::HANDLER_PARAM_INVALID;
+    State state = RUNNING;
+    StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
+    ptrRendererInClientInner->StateCmdTypeToParams(params, state, cmdType);
+    EXPECT_EQ(params, RendererInClientInner::HANDLER_PARAM_RUNNING_FROM_SYSTEM);
+
+    state = PAUSED;
+    ptrRendererInClientInner->StateCmdTypeToParams(params, state, cmdType);
+    EXPECT_EQ(params, RendererInClientInner::HANDLER_PARAM_PAUSED_FROM_SYSTEM);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_081
+ * @tc.desc  : Test RendererInClientInner::ParamsToStateCmdType
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_081, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    State state = INVALID;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    int64_t params = RendererInClientInner::HANDLER_PARAM_INVALID;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, INVALID);
+
+    params = RendererInClientInner::HANDLER_PARAM_NEW;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, NEW);
+
+    params = RendererInClientInner::HANDLER_PARAM_RELEASED;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, RELEASED);
+
+    params = RendererInClientInner::HANDLER_PARAM_STOPPING;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, STOPPING);
+
+    params = RendererInClientInner::HANDLER_PARAM_RUNNING_FROM_SYSTEM;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, RUNNING);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
+
+    params = RendererInClientInner::HANDLER_PARAM_PAUSED_FROM_SYSTEM;
+    ptrRendererInClientInner->ParamsToStateCmdType(params, state, cmdType);
+    EXPECT_EQ(state, PAUSED);
+    EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_082
+ * @tc.desc  : Test RendererInClientInner::HandleRendererPositionChanges
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_082, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    size_t bytesWritten = 4;
+    ptrRendererInClientInner->rendererPeriodSize_ = 1;
+    ptrRendererInClientInner->HandleRendererPositionChanges(bytesWritten);
+    EXPECT_TRUE(ptrRendererInClientInner->rendererMarkReached_);
+    EXPECT_EQ(ptrRendererInClientInner->rendererPeriodWritten_, 0);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_083
+ * @tc.desc  : Test RendererInClientInner::RestoreAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_083, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
+    ptrRendererInClientInner->state_ = RUNNING;
+    bool needStoreState = false;
+    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    ptrRendererInClientInner->rendererInfo_.pipeType = PIPE_TYPE_OFFLOAD;
+    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_084
+ * @tc.desc  : Test RendererInClientInner::RestoreAudioStream
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_084, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->proxyObj_ = std::make_shared<AudioClientTrackerTest>();
+    ptrRendererInClientInner->streamParams_.samplingRate = AudioSamplingRate::SAMPLE_RATE_8000,
+    ptrRendererInClientInner->streamParams_.encoding = AudioEncodingType::ENCODING_AUDIOVIVID,
+    ptrRendererInClientInner->streamParams_.format = AudioSampleFormat::SAMPLE_U8,
+    ptrRendererInClientInner->streamParams_.channels = AudioChannel::STEREO,
+    ptrRendererInClientInner->state_ = RUNNING;
+    bool needStoreState = false;
+    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    needStoreState = true;
+    ptrRendererInClientInner->isDataLinkConnected_ = true;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    ptrRendererInClientInner->state_ = PAUSED;
+    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    ptrRendererInClientInner->state_ = STOPPED;
+    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    ptrRendererInClientInner->state_ = STOPPING;
+    EXPECT_FALSE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+
+    ptrRendererInClientInner->state_ = INVALID;
+    EXPECT_TRUE(ptrRendererInClientInner->RestoreAudioStream(needStoreState));
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_085
+ * @tc.desc  : Test RendererInClientInner::SetSwitchingStatus
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_085, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    bool isSwitching = true;
+    ptrRendererInClientInner->SetSwitchingStatus(isSwitching);
+    EXPECT_TRUE(ptrRendererInClientInner->switchingInfo_.isSwitching_);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_086
+ * @tc.desc  : Test RendererInClientInner::SetRestoreInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_086, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    ptrRendererInClientInner->cbThreadReleased_ = false;
+    ptrRendererInClientInner->SetRestoreInfo(restoreInfo);
+    EXPECT_FALSE(ptrRendererInClientInner->cbThreadReleased_);
+
+    restoreInfo.restoreReason = SERVER_DIED;
+    ptrRendererInClientInner->SetRestoreInfo(restoreInfo);
+    EXPECT_TRUE(ptrRendererInClientInner->cbThreadReleased_);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_087
+ * @tc.desc  : Test RendererInClientInner::FetchDeviceForSplitStream
+ *             Test RendererInClientInner::GetCallbackLoopTid
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_087, TestSize.Level1)
+{
+    // Test RendererInClientInner::FetchDeviceForSplitStream
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->FetchDeviceForSplitStream();
+
+    ptrRendererInClientInner->audioStreamTracker_.reset();
+    ptrRendererInClientInner->FetchDeviceForSplitStream();
+
+    // Test RendererInClientInner::GetCallbackLoopTid
+    ptrRendererInClientInner->callbackLoopTid_ = -1;
+    int32_t ret = ptrRendererInClientInner->GetCallbackLoopTid();
+    EXPECT_EQ(ret, 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
