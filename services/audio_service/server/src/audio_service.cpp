@@ -787,7 +787,8 @@ bool AudioService::IsEndpointTypeVoip(const AudioProcessConfig &config, AudioDev
 sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfig &config)
 {
     int32_t ret =  SUCCESS;
-    if (config.streamType != STREAM_VOICE_CALL && config.streamType != STREAM_VOICE_COMMUNICATION) {
+    if (config.streamType != STREAM_VOICE_CALL && config.streamType != STREAM_VOICE_COMMUNICATION &&
+        !config.rendererInfo.isLoopback && !config.capturerInfo.isLoopback) {
         AudioPipeType incomingPipe = config.audioMode == AUDIO_MODE_PLAYBACK ?
             PIPE_TYPE_LOWLATENCY_OUT : PIPE_TYPE_LOWLATENCY_IN;
         ret = PolicyHandler::GetInstance().ActivateConcurrencyFromServer(incomingPipe);
