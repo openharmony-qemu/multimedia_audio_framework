@@ -501,11 +501,13 @@ void AudioProcessInServer::SetInnerCapState(bool isInnerCapped, int32_t innerCap
 {
     AUDIO_INFO_LOG("process[%{public}u] innercapped: %{public}s, innerCapId:%{public}d",
         sessionId_, isInnerCapped ? "true" : "false", innerCapId);
+    std::lock_guard<std::mutex> lock(innerCapStateMutex_);
     innerCapStates_[innerCapId] = isInnerCapped;
 }
 
 bool AudioProcessInServer::GetInnerCapState(int32_t innerCapId)
 {
+    std::lock_guard<std::mutex> lock(innerCapStateMutex_);
     if (innerCapStates_.count(innerCapId) && innerCapStates_[innerCapId]) {
         return true;
     }
@@ -514,6 +516,7 @@ bool AudioProcessInServer::GetInnerCapState(int32_t innerCapId)
 
 std::unordered_map<int32_t, bool> AudioProcessInServer::GetInnerCapState()
 {
+    std::lock_guard<std::mutex> lock(innerCapStateMutex_);
     return  innerCapStates_;
 }
 
