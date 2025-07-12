@@ -145,6 +145,8 @@ private:
 
 class PermissionUtil {
 public:
+    static bool IsFoldAble(const char ch);
+    static void UpdateBGSet();
     static bool VerifyIsAudio();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();

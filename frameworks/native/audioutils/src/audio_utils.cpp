@@ -33,6 +33,7 @@
 #endif
 #include "bundle_mgr_interface.h"
 #include "parameter.h"
+#include "parameters.h"
 #include "tokenid_kit.h"
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -92,8 +93,12 @@ const char* DUMP_PULSE_DIR = "/data/data/.pulse_dir/";
 const char* DUMP_SERVICE_DIR = "/data/local/tmp/";
 const char* DUMP_APP_DIR = "/data/storage/el2/base/cache/";
 
-
-const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
+// keep same with fold_screen_state_internel.h
+const std::string FOLD_TYPE_KEY = "const.window.foldscreen.type";
+const char DUAL_DISPLAY = '2';
+const char SINGLE_POCKET_DISPLAY = '4';
+const char SUPER_FOLD_DISPLAY = '5';
+std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
 #ifdef AUDIO_BUILD_VARIANT_ROOT
     0, // UID_ROOT
 #endif
@@ -101,7 +106,6 @@ const std::set<int32_t> RECORD_ALLOW_BACKGROUND_LIST = {
     UID_INTELLIGENT_VOICE_SA,
     UID_CAAS_SA,
     UID_DISTRIBUTED_AUDIO_SA,
-    UID_THPEXTRA_SA,
     UID_TELEPHONY_SA, // used in distributed communication call
     UID_DMSDP_SA
 };
@@ -528,6 +532,27 @@ bool PermissionUtil::VerifyPermission(const std::string &permissionName, uint32_
         false, "Permission denied [%{public}s]", permissionName.c_str());
 
     return true;
+}
+
+bool PermissionUtil::IsFoldAble(const char ch)
+{
+    if (ch == DUAL_DISPLAY || ch == SINGLE_POCKET_DISPLAY || ch == SUPER_FOLD_DISPLAY) {
+        return true;
+    }
+    return false;
+}
+
+void PermissionUtil::UpdateBGSet()
+{
+    std::string screenType = system::GetParameter(FOLD_TYPE_KEY, "0,0,0,0");
+    AUDIO_INFO_LOG("FoldType param is %{public}s", screenType.c_str());
+    if (screenType.empty()) {
+        return;
+    }
+    if (IsFoldAble(screenType[0])) {
+        AUDIO_INFO_LOG("Is fold device!");
+        RECORD_ALLOW_BACKGROUND_LIST.insert(UID_THPEXTRA_SA);
+    }
 }
 
 bool PermissionUtil::NeedVerifyBackgroundCapture(int32_t callingUid, SourceType sourceType)
