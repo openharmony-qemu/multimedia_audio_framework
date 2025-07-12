@@ -312,29 +312,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
 }
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
-* @tc.name  : Test LoadSplitModule.
-* @tc.number: LoadSplitModule_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest LoadSplitModule_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    const std::string networkIdOne = "";
-    const std::string splitArgOne = "";
-    int32_t result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgOne, networkIdOne);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
-
-    const std::string networkIdTwo = LOCAL_NETWORK_ID;
-    const std::string splitArgTwo = "11.22";
-    result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgTwo, networkIdTwo);
-    EXPECT_EQ(ERR_INVALID_HANDLE, result);
-}
-
-/**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
 * @tc.desc  : Test AudioPolicyService interfaces.

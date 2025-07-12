@@ -348,8 +348,6 @@ void AudioPolicyServiceTestII()
         = CONNECTION_STATUS_CONNECTING;
     GetServerPtr()->
         audioPolicyService_.audioA2dpOffloadManager_->OnA2dpPlayingStateChanged("A2dpMacAddress", playingState);
-    GetServerPtr()->audioPolicyService_.LoadSplitModule("", NETWORKID);
-    GetServerPtr()->audioPolicyService_.LoadSplitModule(SPLITARGS, NETWORKID);
 }
 
 void AudioPolicyServiceTestIII()
