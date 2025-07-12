@@ -624,6 +624,7 @@ void AudioServer::ParseAudioParameter()
         audioExtraParameterCacheVector_.clear();
     }
     AUDIO_INFO_LOG("Audio extra parameters replay cached successfully.");
+    PermissionUtil::UpdateBGSet();
 }
 
 void AudioServer::WriteServiceStartupError()
