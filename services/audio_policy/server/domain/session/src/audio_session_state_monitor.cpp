@@ -21,7 +21,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session timeout duration : 60 seconds
 
 class AudioSessionStateMonitorCallback : public AudioPolicyStateMonitorCallback {
 public:
@@ -45,7 +44,7 @@ private:
     std::weak_ptr<AudioSessionStateMonitor> stateMonitor_;
 };
 
-void AudioSessionStateMonitor::StartMonitor(int32_t pid)
+void AudioSessionStateMonitor::StartMonitor(int32_t pid, time_t duration)
 {
     std::unique_lock<std::mutex> lock(sessionMonitorMutex_);
     if (pidCbIdMap_.count(pid) > 0) {
@@ -56,7 +55,7 @@ void AudioSessionStateMonitor::StartMonitor(int32_t pid)
 
     auto cb = std::make_shared<AudioSessionStateMonitorCallback>(pid, GetSelfSharedPtr());
     int32_t cbId = DelayedSingleton<AudioPolicyStateMonitor>::GetInstance()->RegisterCallback(
-        cb, AUDIO_SESSION_TIME_OUT_DURATION_S, CallbackType::ONE_TIME);
+        cb, duration, CallbackType::ONE_TIME);
     if (cbId == INVALID_CB_ID) {
         AUDIO_ERR_LOG("Register AudioSessionStateMonitorCallback failed.");
     } else {

@@ -20,6 +20,7 @@
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_utils.h"
+#include "audio_stream_id_allocator.h"
 #include "ipc_skeleton.h"
 
 namespace OHOS {
@@ -28,6 +29,9 @@ namespace AudioStandard {
 static const uint32_t START_FAKE_STREAM_ID = 888;
 static const uint32_t MAX_SESSION_NUM = 1000;
 static bool g_streamIdHash[MAX_SESSION_NUM] = {0};
+
+static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session timeout duration : 60 seconds
+static constexpr time_t AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S = 10; // Audio sessionV2 timeout duration : 10 seconds
 
 static const std::unordered_map<AudioStreamType, AudioSessionType> SESSION_TYPE_MAP = {
     {STREAM_ALARM, AudioSessionType::SONIFICATION},
@@ -103,8 +107,17 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
 
     sessionMap_[callerPid]->Activate(strategy);
 
+    StopMonitor(callerPid);
     if (sessionMap_[callerPid]->IsAudioSessionEmpty()) {
-        StartMonitor(callerPid);
+        // session v1 60s
+        if (!sessionMap_[callerPid]->IsSceneParameterSet()) {
+            StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
+        }
+
+        // session v2 background 10s
+        if (sessionMap_[callerPid]->IsSceneParameterSet() && sessionMap_[callerPid]->IsBackGroundApp()) {
+            StartMonitor(callerPid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
+        }
     }
 
     return SUCCESS;
@@ -261,7 +274,6 @@ bool AudioSessionService::ShouldBypassFocusForStream(const AudioInterrupt &audio
     auto session = sessionMap_.find(audioInterrupt.pid);
     if (session != sessionMap_.end() && sessionMap_[audioInterrupt.pid] != nullptr) {
         sessionMap_[audioInterrupt.pid]->AddStreamInfo(audioInterrupt);
-        sessionMap_[audioInterrupt.pid]->AddAudioInterrpt(std::make_pair(audioInterrupt, ACTIVE));
     }
 
     return true;
@@ -315,14 +327,7 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
 
 void AudioSessionService::GenerateFakeStreamId(int32_t callerPid)
 {
-    uint32_t fakeStreamId = START_FAKE_STREAM_ID;
-    for (uint32_t i = 0; i < MAX_SESSION_NUM; i++) {
-        if (!g_streamIdHash[i]) {
-            fakeStreamId = START_FAKE_STREAM_ID + i;
-            g_streamIdHash[i] = true;
-            break;
-        }
-    }
+    uint32_t fakeStreamId = AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 
     auto session = sessionMap_.find(callerPid);
     if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
@@ -343,6 +348,16 @@ void AudioSessionService::RemoveStreamInfo(const AudioInterrupt &audioInterrupt)
         return;
     }
     return session->second->RemoveStreamInfo(audioInterrupt.streamId);
+}
+
+void AudioSessionService::ClearStreamInfo(const int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if ((sessionMap_.count(callerPid) == 0) || (sessionMap_[callerPid] == nullptr)) {
+        return;
+    }
+
+    sessionMap_[callerPid]->ClearStreamInfo();
 }
 
 void AudioSessionService::AudioSessionInfoDump(std::string &dumpString)
@@ -421,6 +436,32 @@ bool AudioSessionService::IsSessionNeedToFetchOutputDevice(const int32_t callerP
     }
 
     return false;
+}
+
+void AudioSessionService::NotifyAppStateChange(const int32_t pid, bool isBackState)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    if (sessionMap_.count(pid) == 0) {
+        return;
+    }
+
+    if (sessionMap_[pid] == nullptr) {
+        AUDIO_WARNING_LOG("audio session is nullptr, pid: %{public}d!", pid);
+        return;
+    }
+
+    // v2 foreground
+    if (!isBackState && sessionMap_[pid]->IsSceneParameterSet()) {
+        StopMonitor(pid);
+        return;
+    }
+
+    // v2 background
+    if (sessionMap_[pid]->IsActivated() &&
+        sessionMap_[pid]->IsSceneParameterSet() &&
+        sessionMap_[pid]->IsAudioSessionEmpty()) {
+        StartMonitor(pid, AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S);
+    }
 }
 
 } // namespace AudioStandard

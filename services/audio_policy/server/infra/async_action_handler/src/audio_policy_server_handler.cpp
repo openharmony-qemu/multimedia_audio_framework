@@ -1196,8 +1196,8 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
                 "device of session %{public}d is not changed", it->first);
             deviceChangedEvent.changeReason = eventContextObj->reason_;
             deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(eventContextObj) ?
-                DeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
-                DeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
             sessionDeviceChangeCb->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
         }
     }

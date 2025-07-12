@@ -90,7 +90,7 @@ napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
 napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
 napi_ref NapiAudioEnum::audioSessionScene_ = nullptr;
 napi_ref NapiAudioEnum::audioSessionStateChangeHint_ = nullptr;
-napi_ref NapiAudioEnum::deviceChangeRecommendedAction_ = nullptr;
+napi_ref NapiAudioEnum::outputDeviceChangeRecommendedAction_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -579,9 +579,10 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintM
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
 };
 
-const std::map<std::string, int32_t> NapiAudioEnum::deviceChangeRecommendedActionMap = {
-    {"DEVICE_CHANGE_RECOMMEND_TO_CONTINUE", static_cast<int32_t>(DeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE)},
-    {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(DeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
+const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommendedActionMap = {
+    {"DEVICE_CHANGE_RECOMMEND_TO_CONTINUE",
+        static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE)},
+    {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -766,8 +767,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap, audioSessionScene_)),
         DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
             CreateEnumObject(env, audioSessionStateChangeHintMap, audioSessionStateChangeHint_)),
-        DECLARE_NAPI_PROPERTY("DeviceChangeRecommendedAction",
-            CreateEnumObject(env, deviceChangeRecommendedActionMap, deviceChangeRecommendedAction_)),
+        DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
+            CreateEnumObject(env, outputDeviceChangeRecommendedActionMap, outputDeviceChangeRecommendedAction_)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }

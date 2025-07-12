@@ -636,6 +636,30 @@ int32_t AudioCoreService::GetPreferredOutputStreamType(AudioRendererInfo &render
     return flag;
 }
 
+int32_t AudioCoreService::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    if (audioSessionService_ == nullptr) {
+        AUDIO_ERR_LOG("GetSessionDefaultOutputDevice audioSessionService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    deviceType = audioSessionService_->GetSessionDefaultOutputDevice(callerPid);
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType)
+{
+    CHECK_AND_RETURN_RET_LOG(AudioPolicyConfigManager::GetInstance().GetHasEarpiece(), ERR_NOT_SUPPORTED,
+        "the device has no earpiece");
+
+    if (audioSessionService_ == nullptr) {
+        AUDIO_ERR_LOG("SetSessionDefaultOutputDevice audioSessionService_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
+
+    return audioSessionService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
 int32_t AudioCoreService::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     // Use GetPreferredInputDeviceDescriptors instead of currentActiveDevice, if prefer != current, recreate stream

@@ -232,6 +232,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/session/src/audio_session_service.cpp",
     "server/domain/session/src/audio_session_state_monitor.cpp",
     "server/domain/stream/audio_stream_collector.cpp",
+    "server/domain/stream/audio_stream_id_allocator.cpp",
     "server/domain/tone/audio_tone_manager.cpp",
     "server/domain/volume/src/audio_adapter_manager.cpp",
     "server/domain/volume/src/audio_adapter_manager_handler.cpp",

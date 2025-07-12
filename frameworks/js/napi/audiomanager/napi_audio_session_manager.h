@@ -95,10 +95,6 @@ private:
 
     std::mutex sessionStateCbMutex_;
     std::mutex sessionDeviceCbMutex_;
-
-    std::mutex setDefaultOutputDeviceMutex_;
-    bool setDefaultOutputDevice_ = false;
-    DeviceType setDeviceType_ = DEVICE_TYPE_INVALID;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

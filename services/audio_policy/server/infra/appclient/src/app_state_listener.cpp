@@ -30,6 +30,7 @@
 #include "iservice_registry.h"
 #include "audio_bundle_manager.h"
 #include "audio_stream_monitor.h"
+#include "audio_session_service.h"
 
 
 namespace OHOS {
@@ -62,6 +63,12 @@ void AppStateListener::OnAppStateChanged(const AppExecFwk::AppProcessData& appPr
         HandleAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
         HandleBackgroundAppStateChange(appProcessData.pid, appData.uid, static_cast<int32_t>(appProcessData.appState));
         AudioStreamMonitor::GetInstance().NotifyAppStateChange(appData.uid,
+            (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
+    }
+
+    std::shared_ptr<AudioSessionService> sessionService = AudioSessionService::GetAudioSessionService();
+    if (sessionService != nullptr) {
+        sessionService->NotifyAppStateChange(appProcessData.pid,
             (appProcessData.appState == AppExecFwk::ApplicationState::APP_STATE_BACKGROUND));
     }
 }
