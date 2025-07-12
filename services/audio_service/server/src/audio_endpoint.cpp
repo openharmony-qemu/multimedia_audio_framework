@@ -84,7 +84,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed.");
+        AUDIO_ERR_LOG("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -157,7 +157,7 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
             result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed!");\
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
@@ -237,11 +237,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex,
         GetStatusStr(endpointStatus_).c_str());
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid!");
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
-    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr!");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -294,7 +294,7 @@ int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
 
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
     return SUCCESS;
 }
 
@@ -335,7 +335,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     }
     if (captureInfo.dupStream == nullptr) {
         captureInfo.isInnerCapEnabled = false;
-        AUDIO_INFO_LOG("dupStream is nullptr");
+        AUDIO_INFO_LOG("dupStream is nullptr.");
         return SUCCESS;
     }
     captureInfo.isInnerCapEnabled = false;
@@ -1325,10 +1325,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
-        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is nullptr!");
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
@@ -1446,7 +1446,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     RingBufferWrapper ringBuffer;
     if (!PrepareRingBuffer(i, curRead, ringBuffer)) {
         auto tempProcess = processList_[i];
-        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
+        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr!");
         if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
             tempProcess->AddNoDataFrameSize();
         }

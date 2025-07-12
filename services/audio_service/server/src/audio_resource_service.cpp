@@ -81,7 +81,7 @@ int32_t AudioResourceService::CreateAudioWorkgroup(int32_t pid, const sptr<IRemo
     CHECK_AND_RETURN_RET_LOG(pid > 0, ERR_INVALID_PARAM, "CreateAudioWorkgroup for pid < 0");
 
     if (!object) {
-        AUDIO_ERR_LOG("[AudioResourceService] object is nullptr");
+        AUDIO_ERR_LOG("[AudioResourceService] object is nullptr!");
         return ERR_OPERATION_FAILED;
     }
 

@@ -184,7 +184,7 @@ int32_t AudioServer::SetAsrAecMode(int32_t asrAecMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
     deviceManager->SetAudioParameter("primary", parmKey, "", valueAec);
     return 0;
@@ -199,7 +199,7 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     std::string asrAecModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {
@@ -215,7 +215,7 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
         } else if (asrAecSink == "ASR_AEC=OFF") {
             asrAecMode = static_cast<int>(AsrAecMode::BYPASS);
         } else {
-            AUDIO_ERR_LOG("get value failed.");
+            AUDIO_ERR_LOG("get value failed!");
             return ERR_INVALID_PARAM;
         }
         return 0;
@@ -230,11 +230,11 @@ int32_t AudioServer::GetAsrAecMode(int32_t& asrAecMode)
         if (itAecMode != AEC_MODE_MAP.end()) {
             asrAecMode = static_cast<int>(itAecMode->second);
         } else {
-            AUDIO_ERR_LOG("get value failed.");
+            AUDIO_ERR_LOG("get value failed!");
             return ERR_INVALID_PARAM;
         }
     } else {
-        AUDIO_ERR_LOG("get value failed.");
+        AUDIO_ERR_LOG("get value failed!");
         return ERR_INVALID_PARAM;
     }
     return 0;
@@ -259,7 +259,7 @@ int32_t AudioServer::SetAsrNoiseSuppressionMode(int32_t asrNoiseSuppressionMode)
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     deviceManager->SetAudioParameter("primary", parmKey, "", value);
     return 0;
 }
@@ -273,7 +273,7 @@ int32_t AudioServer::GetAsrNoiseSuppressionMode(int32_t& asrNoiseSuppressionMode
     AudioParamKey parmKey = AudioParamKey::NONE;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr");
+    CHECK_AND_RETURN_RET_LOG(deviceManager != nullptr, ERROR, "local device manager is nullptr!");
     std::string asrNoiseSuppressionModeSink = deviceManager->GetAudioParameter("primary", parmKey, key);
     auto it = AudioServer::audioParameters.find(key);
     if (it != AudioServer::audioParameters.end()) {

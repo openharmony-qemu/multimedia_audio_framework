@@ -75,9 +75,9 @@ int32_t HpaeCapturerStreamImpl::InitParams(const std::string &deviceName)
 
     // Register Callback
     ret = hpaeManager.RegisterStatusCallback(HPAE_STREAM_CLASS_TYPE_RECORD, streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterStatusCallback is error!");
     ret = hpaeManager.RegisterReadCallback(streamInfo.sessionId, shared_from_this());
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR_INVALID_PARAM, "RegisterReadCallback is error!");
     return SUCCESS;
 }
 
@@ -85,7 +85,7 @@ int32_t HpaeCapturerStreamImpl::Start()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed");
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ERR_INVALID_PARAM, "Start failed!");
     state_ = RUNNING;
     return SUCCESS;
 }
@@ -94,7 +94,7 @@ int32_t HpaeCapturerStreamImpl::Pause(bool isStandby)
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Pause(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Pause error!");
     return SUCCESS;
 }
 
@@ -123,7 +123,7 @@ int32_t HpaeCapturerStreamImpl::Flush()
 {
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().Flush(HPAE_STREAM_CLASS_TYPE_RECORD, processConfig_.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_INVALID_PARAM, "Flush error!");
     return SUCCESS;
 }
 

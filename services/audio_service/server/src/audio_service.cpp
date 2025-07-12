@@ -166,7 +166,7 @@ void AudioService::DisableLoopback()
 {
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr");
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "local device manager is nullptr!");
     deviceManager->SetAudioParameter("primary", AudioParamKey::NONE, "", "Karaoke_enable=disable");
 }
 

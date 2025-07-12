@@ -132,14 +132,14 @@ int32_t IpcStreamInServer::ConfigRenderer()
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "Create RendererInServer failed");
     int32_t ret = rendererInServer_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed!");
     return SUCCESS;
 }
 
 int32_t IpcStreamInServer::ConfigCapturer()
 {
     capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
-    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
+    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed!");
     int32_t ret = capturerInServer_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init CapturerInServer failed");
     return SUCCESS;
@@ -147,9 +147,9 @@ int32_t IpcStreamInServer::ConfigCapturer()
 
 int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& object)
 {
-    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
+    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed!");
     sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed");
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed!");
     streamListenerHolder_->RegisterStreamListener(listener);
 
     // in plan: get session id, use it as key to find IpcStreamInServer

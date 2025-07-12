@@ -62,7 +62,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
     SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -303,7 +303,7 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
         std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        AUDIO_ERR_LOG("Create rendererStream failed!");
         return nullptr;
     }
     return rendererStream;
