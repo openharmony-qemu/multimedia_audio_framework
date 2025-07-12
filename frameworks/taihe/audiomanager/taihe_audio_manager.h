@@ -44,6 +44,7 @@ public:
     AudioSessionManager GetSessionManager();
     AudioEffectManager GetEffectManager();
     AudioScene GetAudioSceneSync();
+    AudioSpatializationManager GetSpatializationManager();
 
     friend AudioManager GetAudioManager();
 

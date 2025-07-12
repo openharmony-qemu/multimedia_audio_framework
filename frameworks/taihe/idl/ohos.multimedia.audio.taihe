@@ -91,6 +91,7 @@ enum DeviceType: i32 {
   DISPLAY_PORT = 23,
   REMOTE_CAST = 24,
   USB_DEVICE = 25,
+  ACCESSORY = 26,
   HDMI = 27,
   LINE_DIGITAL = 28,
   REMOTE_DAUDIO = 29,
@@ -307,6 +308,7 @@ interface AudioManager {
   GetStreamManager(): AudioStreamManager;
   GetRoutingManager(): AudioRoutingManager;
   GetSessionManager(): AudioSessionManager;
+  GetSpatializationManager(): AudioSpatializationManager;
   GetEffectManager(): AudioEffectManager;
 
   @gen_promise("disableSafeMediaVolume")
@@ -1244,6 +1246,18 @@ enum AudioChannelLayout: i64 {
 
 function GetAudioManager(): AudioManager;
 
+@gen_async("createAudioCapturer")
+@gen_promise("createAudioCapturer")
+function CreateAudioCapturerSync(options: AudioCapturerOptions): AudioCapturer;
+
+@gen_async("createAudioRenderer")
+@gen_promise("createAudioRenderer")
+function CreateAudioRendererSync(options: AudioRendererOptions): AudioRenderer;
+
+@gen_async("createTonePlayer")
+@gen_promise("createTonePlayer")
+function CreateTonePlayerSync(options: AudioRendererInfo): TonePlayer;
+
 struct AudioSpatialEnabledStateForDevice {
   deviceDescriptor: AudioDeviceDescriptor;
   enabled: bool;
@@ -1346,3 +1360,5 @@ interface AsrProcessingController {
   SetAsrWhisperDetectionMode(mode: AsrWhisperDetectionMode): bool;
   GetAsrWhisperDetectionMode(): AsrWhisperDetectionMode;
 }
+
+function CreateAsrProcessingController(audioCapturer: AudioCapturer): AsrProcessingController;
