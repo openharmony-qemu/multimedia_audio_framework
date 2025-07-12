@@ -129,7 +129,6 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    GetServerPtr();
 }
 } // namespace AudioStandard
 } // namesapce OHOS
