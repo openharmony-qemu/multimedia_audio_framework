@@ -114,7 +114,6 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
     Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
-    Bluetooth::AudioHfpManager::IsRecognitionStatus();
 }
 
 void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
