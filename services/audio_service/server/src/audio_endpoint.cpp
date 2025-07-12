@@ -576,7 +576,9 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 
     Volume vol = {true, 1.0f, 0};
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+    if ((clientConfig_.streamType == STREAM_VOICE_COMMUNICATION || clientConfig_.streamType == STREAM_VOICE_CALL) &&
+        endpointType_ == TYPE_VOIP_MMAP) {
+        PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
         sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
         AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
     } else {
