@@ -112,6 +112,7 @@ private:
     uint32_t timeoutThdFrames_ = 0;
     // first stand for pos(in us), second stand for time
     std::pair<uint64_t, TimePoint> hdiPos_;
+    uint32_t suspendCount_ = 0;
 };
 
 }  // namespace HPAE
