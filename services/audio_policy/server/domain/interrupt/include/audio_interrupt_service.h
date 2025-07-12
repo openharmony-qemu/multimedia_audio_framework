@@ -304,6 +304,7 @@ private:
         const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt);
     void TryHandleStreamCallbackInSession(const int32_t zoneId, const AudioInterrupt &incomingInterrupt);
     bool HasAudioSessionFakeInterrupt(const int32_t zoneId, const int32_t callerPid);
+    int32_t HandleExistStreamsForSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
 
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,

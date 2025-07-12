@@ -53,10 +53,6 @@ bool AudioSession::IsSceneParameterSet()
 int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    if (state_ == AudioSessionState::SESSION_ACTIVE) {
-        AUDIO_ERR_LOG("AudioSessionScene cannot be modified cannot be modified during activation.");
-        return ERR_NOT_SUPPORTED;
-    }
 
     if (scene != AudioSessionScene::MEDIA &&
         scene != AudioSessionScene::GAME &&
@@ -155,9 +151,10 @@ void AudioSession::Dump(std::string &dumpString)
     }
 }
 
-int32_t AudioSession::Activate()
+int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
+    strategy_ = strategy;
     state_ = AudioSessionState::SESSION_ACTIVE;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
@@ -227,12 +224,6 @@ AudioSessionState AudioSession::GetSessionState()
     std::lock_guard<std::mutex> lock(sessionMutex_);
     AUDIO_INFO_LOG("pid %{public}d, state %{public}d", callerPid_, static_cast<int32_t>(state_));
     return state_;
-}
-
-void AudioSession::SetSessionStrategy(const AudioSessionStrategy strategy)
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    strategy_ = strategy;
 }
 
 AudioSessionStrategy AudioSession::GetSessionStrategy()

@@ -101,8 +101,7 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         GenerateFakeStreamId(callerPid);
     }
 
-    sessionMap_[callerPid]->SetSessionStrategy(strategy);
-    sessionMap_[callerPid]->Activate();
+    sessionMap_[callerPid]->Activate(strategy);
 
     if (sessionMap_[callerPid]->IsAudioSessionEmpty()) {
         StartMonitor(callerPid);
@@ -205,11 +204,6 @@ std::shared_ptr<AudioSessionStateMonitor> AudioSessionService::GetSelfSharedPtr(
 
 int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene)
 {
-    if (IsAudioSessionActivated(callerPid)) {
-        AUDIO_ERR_LOG("Scene cannot be modified during AudioSession activation. pid: %{public}d", callerPid);
-        return ERROR;
-    }
-
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     if (sessionMap_.count(callerPid) != 0 && sessionMap_[callerPid] != nullptr) {
         // The audio session of the callerPid is already created. The strategy will be updated.
