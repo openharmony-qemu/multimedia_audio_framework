@@ -1053,6 +1053,8 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
+    AddEndpointStreamVolume(processStream);
+
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
         std::unique_lock<std::mutex> lock(loopThreadLock_);
@@ -1100,6 +1102,20 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     return SUCCESS;
 }
 
+void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStream)
+{
+    Trace trace("AudioEndpointInner::AddEndpointStreamVolume");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
+    StreamVolumeParams streamVolumeParams = { processStream->GetAudioSessionId(),
+        processStream->GetAudioProcessConfig().streamType,
+        processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
+        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode,
+        processStream->GetAudioProcessConfig().rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
+}
+
 void AudioEndpointInner::LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase>& processBuffer)
 {
@@ -1113,6 +1129,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBufferBase> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
+    AudioVolume::GetInstance()->RemoveStreamVolume(processStream->GetAudioSessionId());
 
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
