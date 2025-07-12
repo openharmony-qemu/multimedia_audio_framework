@@ -485,7 +485,7 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
 {
     muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
-    audioBuffer_->SetDuckFactor(muteVolumeInFloat_);
+    audioBuffer_->SetMuteFactor(muteVolumeInFloat_);
     return SUCCESS;
 }
 
