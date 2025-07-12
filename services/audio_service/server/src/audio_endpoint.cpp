@@ -75,12 +75,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-         deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, clientConfig.streamType);
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {

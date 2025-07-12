@@ -96,8 +96,6 @@ public:
 
     int32_t GetMaxRendererInstances() override;
 
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) override;
-
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
@@ -174,11 +172,6 @@ int32_t MockPolicyProvider::GetAndSaveClientType(uint32_t uid, const std::string
 }
 
 int32_t MockPolicyProvider::GetMaxRendererInstances()
-{
-    return SUCCESS;
-}
-
-int32_t MockPolicyProvider::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
 {
     return SUCCESS;
 }

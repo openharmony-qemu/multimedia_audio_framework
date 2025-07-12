@@ -27,7 +27,6 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 
-#include "audio_config_manager.h"
 #include "audio_server_proxy.h"
 
 

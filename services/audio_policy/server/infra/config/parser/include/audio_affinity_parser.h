@@ -21,7 +21,6 @@
 #include <string>
 #include <sstream>
 
-#include "iport_observer.h"
 #include "parser.h"
 #include "audio_affinity_manager.h"
 #include "audio_xml_parser.h"

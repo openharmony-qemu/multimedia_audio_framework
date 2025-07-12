@@ -867,14 +867,6 @@ struct CaptureFilterOptions {
         this->pidFilterMode = pFilterMode;
     }
 
-    CaptureFilterOptions(const CaptureFilterOptions &filter)
-    {
-        usages = filter.usages;
-        usageFilterMode = filter.usageFilterMode;
-        pids = filter.pids;
-        pidFilterMode = filter.pidFilterMode;
-    }
-
     bool operator ==(CaptureFilterOptions& filter)
     {
         std::sort(filter.usages.begin(), filter.usages.end());
@@ -896,11 +888,6 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     AudioPlaybackCaptureConfig() = default;
     AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool slient)
         : filterOptions(filter), silentCapture(slient)
-    {
-    }
-
-    AudioPlaybackCaptureConfig(const AudioPlaybackCaptureConfig &capturerConfig)
-        : filterOptions(capturerConfig.filterOptions), silentCapture(capturerConfig.silentCapture)
     {
     }
 

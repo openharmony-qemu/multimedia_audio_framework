@@ -2328,21 +2328,6 @@ HWTEST(AudioCapturerUnitTest, FindStreamTypeBySourceType_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test ConcedeStream.
-* @tc.number: ConcedeStream
-* @tc.desc  : Test ConcedeStream.
-*/
-HWTEST(AudioCapturerUnitTest, ConcedeStream_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioCapturerPrivate> audioCapturer =
-        std::make_shared<AudioCapturerPrivate>(STREAM_MUSIC, appInfo, true);
-
-    audioCapturer->ConcedeStream();
-    EXPECT_EQ(audioCapturer != nullptr, true);
-}
-
-/**
 * @tc.name  : Test IsDeviceChanged.
 * @tc.number: IsDeviceChanged
 * @tc.desc  : Test IsDeviceChanged.

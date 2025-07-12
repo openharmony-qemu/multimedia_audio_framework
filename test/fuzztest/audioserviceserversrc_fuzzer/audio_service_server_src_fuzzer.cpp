@@ -179,82 +179,6 @@ void NoneMixEngineRemoveRendererFuzzTest()
     ReleaseNoneEngine();
 }
 
-
-void AudioEndPointSeparateStartDeviceFuzzTest(std::shared_ptr<AudioEndpointSeparate> audioEndpoint)
-{
-    audioEndpoint->StartDevice();
-    audioEndpoint->GetEndpointName();
-    audioEndpoint->ShouldInnerCap(1);
-    audioEndpoint->EnableFastInnerCap(1);
-    audioEndpoint->DisableFastInnerCap(1);
-    return;
-}
-
-void AudioEndPointGetPreferBufferInfoFuzzTest(std::shared_ptr<AudioEndpointSeparate> audioEndpoint)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-
-    uint32_t spanSizeInFrame = GetData<uint32_t>();
-    uint32_t totalSizeInFrame = GetData<uint32_t>();
-    uint32_t byteSizePerFrame = GetData<uint32_t>();
-    if (spanSizeInFrame == 0) {
-        spanSizeInFrame++;
-    }
-    if (byteSizePerFrame == 0) {
-        byteSizePerFrame++;
-    }
-    std::shared_ptr<OHAudioBuffer> oHAudioBuffer =
-        OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-    if (audioEndpoint == nullptr) {
-        return;
-    }
-    audioEndpoint->GetBuffer();
-    audioEndpoint->GetStatus();
-    audioEndpoint->OnStart(processStream);
-    audioEndpoint->OnPause(processStream);
-    audioEndpoint->OnUpdateHandleInfo(processStream);
-    audioEndpoint->LinkProcessStream(processStream);
-    audioEndpoint->UnlinkProcessStream(processStream);
-    audioEndpoint->GetPreferBufferInfo(totalSizeInFrame, spanSizeInFrame);
-}
-
-void AudioEndPointSeparateConfigFuzzTest()
-{
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    DeviceStreamInfo audioStreamInfo = {
-        SAMPLE_RATE_48000,
-        ENCODING_PCM,
-        SAMPLE_S16LE,
-        CH_LAYOUT_STEREO
-    };
-    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
-    std::shared_ptr<AudioEndpointSeparate> audioEndpoint = nullptr;
-    uint64_t id = GetData<uint64_t>();
-    AudioEndpoint::EndpointType type = GetData<AudioEndpoint::EndpointType>();
-    AudioStreamType streamType = GetData<AudioStreamType>();
-    audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, streamType);
-    audioEndpoint->Config(deviceInfo);
-    AudioEndPointSeparateStartDeviceFuzzTest(audioEndpoint);
-    audioEndpoint->fastRenderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FAST,
-        HDI_ID_INFO_DEFAULT, true);
-    float volume = GetData<float>();
-    audioEndpoint->SetVolume(streamType, volume);
-    AudioEndPointGetPreferBufferInfoFuzzTest(audioEndpoint);
-    std::string dumpString = "";
-    audioEndpoint->Dump(dumpString);
-    audioEndpoint->GetEndpointType();
-    audioEndpoint->GetDeviceInfo();
-    audioEndpoint->GetDeviceRole();
-    audioEndpoint->GetMaxAmplitude();
-    audioEndpoint->Release();
-    audioEndpoint->StopDevice();
-    return;
-}
-
 typedef void (*TestFuncs[9])();
 
 TestFuncs g_testFuncs = {
@@ -266,7 +190,6 @@ TestFuncs g_testFuncs = {
     NoneMixEngineFlushFuzzTest,
     NoneMixEngineAddRendererFuzzTest,
     NoneMixEngineRemoveRendererFuzzTest,
-    AudioEndPointSeparateConfigFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

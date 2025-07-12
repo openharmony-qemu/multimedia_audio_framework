@@ -22,9 +22,9 @@
 #include <sstream>
 
 #include "audio_policy_log.h"
-#include "iport_observer.h"
 #include "parser.h"
 #include "audio_xml_parser.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

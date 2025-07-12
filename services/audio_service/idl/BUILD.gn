@@ -53,7 +53,6 @@ idl_gen_interface("audio_policy_idl_interface") {
     "${audio_policy_idl_location}/IStandardAudioRoutingManagerListener.idl",
     "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
     "${audio_policy_idl_location}/IStandardClientTracker.idl",
-    "${audio_policy_idl_location}/IStandardConcurrencyStateListener.idl",
     "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
     "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
   ]

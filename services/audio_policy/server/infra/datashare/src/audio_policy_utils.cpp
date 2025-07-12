@@ -28,7 +28,6 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
-#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 

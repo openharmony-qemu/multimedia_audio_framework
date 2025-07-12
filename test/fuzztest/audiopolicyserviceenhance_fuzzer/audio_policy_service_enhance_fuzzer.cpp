@@ -380,26 +380,6 @@ void AudioPolicyServiceEnhanceNineFuzzTest()
     AudioDeviceUsage usage = GetData<AudioDeviceUsage>();
     GetServerPtr()->audioPolicyService_.SetAvailableDeviceChangeCallback(clientId, usage, object, true);
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-    std::vector<AudioChannel> audioChannel = {
-        MONO,
-        STEREO,
-        CHANNEL_3,
-        CHANNEL_4,
-        CHANNEL_5,
-        CHANNEL_6,
-    };
-    uint32_t audioChannelInt = GetData<uint32_t>() % audioChannel.size();
-    uint32_t channelCount = audioChannel[audioChannelInt];
-    std::vector<DeviceType> DeviceTypeVec = {
-        DEVICE_TYPE_FILE_SINK,
-        DEVICE_TYPE_FILE_SOURCE,
-        DEVICE_TYPE_BLUETOOTH_A2DP,
-    };
-    uint32_t deviceTypeInt = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeInt];
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceOutput sourceOutput;
 }
 
 void AudioPolicyServiceEnhanceTenFuzzTest()

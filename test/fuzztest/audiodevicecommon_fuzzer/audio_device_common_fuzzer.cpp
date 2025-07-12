@@ -332,14 +332,6 @@ void UpdateDualToneStateFuzzTest()
     audioDeviceCommon.UpdateDualToneState(enable, sessionId);
 }
 
-void FetchDeviceFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isOutputDevice = GetData<uint32_t>() % NUM_2;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.FetchDevice(isOutputDevice, reason);
-}
-
 void IsFastFromA2dpToA2dpFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -1096,7 +1088,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,
     UpdateDualToneStateFuzzTest,
-    FetchDeviceFuzzTest,
     IsFastFromA2dpToA2dpFuzzTest,
     SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest,
     FetchOutputDeviceFuzzTest,

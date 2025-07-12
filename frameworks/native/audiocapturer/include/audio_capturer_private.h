@@ -19,7 +19,6 @@
 #include <mutex>
 #include <shared_mutex>
 #include "audio_utils.h"
-#include "audio_concurrency_callback.h"
 #include "audio_interrupt_callback.h"
 #include "i_audio_stream.h"
 #include "audio_stream_descriptor.h"
@@ -32,7 +31,6 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class AudioCapturerStateChangeCallbackImpl;
 class CapturerPolicyServiceDiedCallback;
 class InputDeviceChangeWithInfoCallbackImpl;
-class AudioCapturerConcurrencyCallbackImpl;
 
 class AudioCapturerPrivate : public AudioCapturer, public std::enable_shared_from_this<AudioCapturerPrivate> {
 public:
@@ -107,7 +105,6 @@ public:
 
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
-    void ConcedeStream();
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
 
     std::shared_ptr<IAudioStream> audioStream_;
@@ -154,11 +151,9 @@ private:
     void HandleAudioInterruptWhenServerDied();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     int32_t InitAudioStream(const AudioStreamParams &AudioStreamParams);
-    int32_t InitAudioConcurrencyCallback();
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     void CheckSignalData(uint8_t *buffer, size_t bufferSize) const;
-    void ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass);
     void WriteOverflowEvent() const;
     int32_t GetCurrentInputDevicesInner(AudioDeviceDescriptor &deviceInfo) const;
     int32_t GetAudioStreamIdInner(uint32_t &sessionID) const;
@@ -187,11 +182,9 @@ private:
     bool isValid_ = true;
     std::shared_ptr<AudioCapturerStateChangeCallbackImpl> audioStateChangeCallback_ = nullptr;
     std::shared_ptr<CapturerPolicyServiceDiedCallback> audioPolicyServiceDiedCallback_ = nullptr;
-    std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> audioConcurrencyCallback_ = nullptr;
     std::shared_ptr<AudioCapturerPolicyServiceDiedCallback> policyServiceDiedCallback_ = nullptr;
     AudioDeviceDescriptor currentDeviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
     bool latencyMeasEnabled_ = false;
-    int32_t firstConcurrencyResult_ = 0; // 0 is SUCCESS in error code
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     mutable std::mutex signalDetectAgentMutex_;
     FILE *dumpFile_ = nullptr;
@@ -315,26 +308,6 @@ private:
     AudioInterrupt audioInterrupt_;
     void RestoreTheadLoop();
     std::atomic<int32_t> taskCount_ = 0;
-};
-
-class AudioCapturerConcurrencyCallbackImpl : public AudioConcurrencyCallback {
-public:
-    explicit AudioCapturerConcurrencyCallbackImpl();
-    virtual ~AudioCapturerConcurrencyCallbackImpl();
-    void OnConcedeStream() override;
-    void SetAudioCapturerObj(std::weak_ptr<AudioCapturerPrivate> capturerObj)
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        capturer_ = capturerObj;
-    }
-    void UnsetAudioCapturerObj()
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        capturer_.reset();
-    }
-private:
-    std::weak_ptr<AudioCapturerPrivate> capturer_;
-    std::mutex mutex_;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

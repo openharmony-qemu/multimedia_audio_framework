@@ -1212,20 +1212,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_040, TestSize.Level1
 
 /**
 * @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_041
-* @tc.desc  : Test ActivateAudioConcurrency.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_041, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-
-    int32_t ret = collector.ActivateAudioConcurrency(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
 * @tc.number: AudioStreamCollector_042
 * @tc.desc  : Test GetAllRendererSessionIDForUID.
 */

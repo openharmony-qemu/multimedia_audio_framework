@@ -57,13 +57,8 @@ void AudioEndpointUnitTest::TearDown(void)
 static std::shared_ptr<AudioEndpointInner> CreateEndpointInner(AudioEndpoint::EndpointType type, uint64_t id,
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
-    std::shared_ptr<AudioEndpointInner> audioEndpoint = nullptr;
-    if (type == AudioEndpoint::EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-        deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        return nullptr;
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    std::shared_ptr<AudioEndpointInner> audioEndpoint =
+        std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
@@ -202,35 +197,6 @@ HWTEST_F(AudioEndpointUnitTest, AudioEndpointCreateEndpoint_002, TestSize.Level1
     deviceInfo.networkId_ = LOCAL_NETWORK_ID;
     std::shared_ptr<AudioEndpoint> audioEndpoint =
         AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
-    EXPECT_NE(nullptr, audioEndpoint);
-}
-
-/*
- * @tc.name  : Test CreateEndpoint API
- * @tc.type  : FUNC
- * @tc.number: EnableCreateEndpoint_003
- * @tc.desc  : Test CreateEndpoint interface
- */
-HWTEST_F(AudioEndpointUnitTest, EnableCreateEndpoint_003, TestSize.Level1)
-{
-    AudioProcessConfig config = {};
-    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
-    deviceInfo.audioStreamInfo_ = { audioStreamInfo };
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    std::shared_ptr<AudioEndpoint> audioEndpoint =
-        AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
-    EXPECT_NE(nullptr, audioEndpoint);
-
-    deviceInfo.networkId_ = REMOTE_NETWORK_ID;
-    audioEndpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
-    EXPECT_EQ(nullptr, audioEndpoint);
-
-    deviceInfo.deviceRole_ = DeviceRole::INPUT_DEVICE;
-    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-    config.audioMode = AUDIO_MODE_RECORD;
-    audioEndpoint = AudioEndpoint::CreateEndpoint(AudioEndpoint::TYPE_INDEPENDENT, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpoint);
 }
 

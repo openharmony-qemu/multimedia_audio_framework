@@ -791,29 +791,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleHeadTrackingEnabledChangeForAnyDe
 }
 
 /**
- * @tc.name  : HandleConcurrencyEventWithSessionID_001
- * @tc.number: HandleConcurrencyEventWithSessionID_001
- * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, HandleConcurrencyEventWithSessionID_001, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    int32_t clientPid = 1;
-    std::shared_ptr<AudioPolicyClientHolder> cb;
-    audioPolicyServerHandler_->AddAudioPolicyClientProxyMap(clientPid, cb);
-    AppExecFwk::InnerEvent::Pointer event =
-        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
-    int32_t ret =
-        audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->HandleConcurrencyEventWithSessionID(event);
-    audioPolicyServerHandler_->SetClientCallbacksEnable(
-        CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
-    audioPolicyServerHandler_->HandleConcurrencyEventWithSessionID(event);
-    EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
-}
-
-/**
  * @tc.name  : HandleServiceEvent_001
  * @tc.number: HandleServiceEvent_001
  * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
@@ -829,7 +806,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
     int32_t ret =
         audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->HandleConcurrencyEventWithSessionID(event);
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
     uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::AUDIO_DEVICE_CHANGE;
@@ -883,12 +859,9 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleOtherServiceEvent_001, TestSize.L
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
     int32_t ret =
         audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->HandleConcurrencyEventWithSessionID(event);
     audioPolicyServerHandler_->SetClientCallbacksEnable(
         CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
-    uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID;
-    audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED;
+    uint32_t eventId = AudioPolicyServerHandler::EventAudioServerCmd::PREFERRED_OUTPUT_DEVICE_UPDATED;
     audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE;
     audioPolicyServerHandler_->HandleOtherServiceEvent(eventId, event);
@@ -911,7 +884,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, ProcessEvent_001, TestSize.Level2)
         AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
     int32_t ret =
         audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->HandleConcurrencyEventWithSessionID(event);
     audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_HEAD_TRACKING_ENABLED_CHANGE, true);
     event->innerEventId_ = AudioPolicyServerHandler::EventAudioServerCmd::VOLUME_KEY_EVENT;
     audioPolicyServerHandler_->ProcessEvent(event);
@@ -1247,19 +1219,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_007, T
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     bool ret = audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_UNKNOWN);
-    EXPECT_NE(ret, false);
-}
-/**
- * @tc.name  : AudioPolicyServerHandlerUnitTest_008
- * @tc.number: AudioPolicyServerHandlerUnitTest_008
- * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_008, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    uint64_t sessionId = 0;
-    bool ret = audioPolicyServerHandler_->SendConcurrencyEventWithSessionIDCallback(sessionId);
     EXPECT_NE(ret, false);
 }
 
