@@ -1739,7 +1739,7 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
 
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
 {
-    bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+    bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }

@@ -1768,18 +1768,27 @@ bool AudioStreamCollector::HasRunningRecognitionCapturerStream()
     return hasRunningRecognitionCapturerStream;
 }
 
-bool AudioStreamCollector::HasRunningNormalCapturerStream()
+bool AudioStreamCollector::HasRunningNormalCapturerStream(DeviceType type)
 {
     std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     // judge stream state is running
     bool hasStream = std::any_of(audioCapturerChangeInfos_.begin(), audioCapturerChangeInfos_.end(),
-        [](const auto &changeInfo) {
-            return ((changeInfo->capturerState == CAPTURER_RUNNING) &&
-                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_RECOGNITION) &&
-                (changeInfo->capturerInfo.sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION));
+        [type](const auto &changeInfo) {
+            if ((changeInfo->capturerState == CAPTURER_RUNNING) &&
+                ((changeInfo->capturerInfo.sourceType == SOURCE_TYPE_MIC) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_MESSAGE)
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER)
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) &&
+                ((type == DEVICE_TYPE_NONE) || ((type != DEVICE_TYPE_NONE) &&
+                (changeInfo->inputDeviceInfo.deviceType_ == type)))) {
+                AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
+                    changeInfo->sessionId, type);
+                return true;
+            }
+            return false;
         });
 
-        AUDIO_INFO_LOG("Has Running Normal Capturer stream : %{public}d", hasStream);
     return hasStream;
 }
 
