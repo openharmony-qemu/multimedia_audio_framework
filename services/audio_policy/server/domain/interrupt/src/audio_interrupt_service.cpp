@@ -1686,8 +1686,7 @@ std::string AudioInterruptService::GetRealBundleName(uint32_t uid)
         auto info = AudioBundleManager::GetBundleInfoFromUid(uid);
         return info.name;
     }
-    std::string bundleName = AudioBundleManager::GetBundleName();
-    return bundleName;
+    return AudioBundleManager::GetBundleName();
 }
 
 void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
@@ -1761,9 +1760,9 @@ bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrup
     }
     if (((focusEntry.actionOn == INCOMING && focusEntry.hintType == INTERRUPT_HINT_PAUSE) || focusEntry.isReject) &&
         (IsAudioSourceConcurrency((iterActive->first).audioFocusType.sourceType, incomingSourceType,
-        (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources)
+        (iterActive->first).currencySources.sourcesTypes, incomingConcurrentSources) ||
         // if the rejection is caused by the existing peeling recording, just ignore it
-        || IsLowestPriorityRecording(iterActive->first))) {
+        IsLowestPriorityRecording(iterActive->first))) {
         return true;
     }
     return false;
