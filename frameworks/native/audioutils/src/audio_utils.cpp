@@ -146,7 +146,7 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
 
-static std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
+static const std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
     {DEVICE_TYPE_EARPIECE, "EARPIECE"},
     {DEVICE_TYPE_SPEAKER, "SPEAKER"},
     {DEVICE_TYPE_WIRED_HEADSET, "WIRED_HEADSET"},
@@ -1680,9 +1680,8 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
 {
     std::string device;
-    std::unordered_map<DeviceType, std::string> map = DEVICE_TYPE_NAME_MAP;
-    auto it = map.find(deviceType);
-    if (it != map.end()) {
+    auto it = DEVICE_TYPE_NAME_MAP.find(deviceType);
+    if (it != DEVICE_TYPE_NAME_MAP.end()) {
         device = it->second;
     } else {
         device = "UNKNOWN";

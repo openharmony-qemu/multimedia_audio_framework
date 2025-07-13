@@ -470,7 +470,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(ACCESSORY_SOURCE);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_HEARING_AID) {
-        if (audioA2dpDevice_.DelA2dpInDevice(updatedDesc.macAddress_) == 0) {
+        if (audioA2dpDevice_.DelHearingAidDevice(updatedDesc.macAddress_) == 0) {
             audioIOHandleMap_.ClosePortAndEraseIOHandle(HEARING_AID_SPEAKER);
         }
     }
