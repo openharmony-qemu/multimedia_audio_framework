@@ -33,7 +33,53 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+class MockAudioProcessStream : public IAudioProcessStream {
+public:
+    // Pure virtual methods
+    MOCK_METHOD(std::shared_ptr<OHAudioBufferBase>, GetStreamBuffer, (), (override));
+    MOCK_METHOD(AudioStreamInfo, GetStreamInfo, (), (override));
+    MOCK_METHOD(uint32_t, GetAudioSessionId, (), (override));
+    MOCK_METHOD(AudioStreamType, GetAudioStreamType, (), (override));
 
+    MOCK_METHOD(void, SetInnerCapState, (bool isInnerCapped, int32_t innerCapId), (override));
+    MOCK_METHOD(bool, GetInnerCapState, (int32_t innerCapId), (override));
+
+    using RetTypeUnorderedMap = std::unordered_map<int32_t, bool>;
+    MOCK_METHOD(RetTypeUnorderedMap, GetInnerCapState, (), (override));
+
+    MOCK_METHOD(AppInfo, GetAppInfo, (), (override));
+    MOCK_METHOD(BufferDesc&, GetConvertedBuffer, (), (override));
+    MOCK_METHOD(bool, GetMuteState, (), (override));
+    MOCK_METHOD(AudioProcessConfig, GetAudioProcessConfig, (), (override));
+    MOCK_METHOD(void, WriteDumpFile, (void* buffer, size_t bufferSize), (override));
+
+    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice), (override));
+    MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
+
+    MOCK_METHOD(uint32_t, GetSpanSizeInFrame, (), (override));
+    MOCK_METHOD(uint32_t, GetByteSizePerFrame, (), (override));
+
+    // Non-pure virtual methods (with default implementations in interface)
+    MOCK_METHOD(void, EnableStandby, (), (override));
+
+    // Time and state control
+    MOCK_METHOD(std::time_t, GetStartMuteTime, (), (override));
+    MOCK_METHOD(void, SetStartMuteTime, (std::time_t time), (override));
+
+    MOCK_METHOD(bool, GetSilentState, (), (override));
+    MOCK_METHOD(void, SetSilentState, (bool state), (override));
+
+    MOCK_METHOD(void, AddMuteWriteFrameCnt, (int64_t muteFrameCnt), (override));
+    MOCK_METHOD(void, AddMuteFrameSize, (int64_t muteFrameCnt), (override));
+    MOCK_METHOD(void, AddNormalFrameSize, (), (override));
+    MOCK_METHOD(void, AddNoDataFrameSize, (), (override));
+
+    MOCK_METHOD(StreamStatus, GetStreamStatus, (), (override));
+
+    // Audio-Haptics sync
+    MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
+    MOCK_METHOD(int32_t, GetAudioHapticsSyncId, (), (override));
+};
 
 void AudioEndpointPlusUnitTest::SetUpTestCase(void)
 {
@@ -1131,6 +1177,8 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_039, TestSize.Level1)
     EXPECT_NE(processBuffer->basicBufferInfo_, nullptr);
 
     audioEndpointInner->processBufferList_.push_back(processBuffer);
+    MockAudioProcessStream mockProcessStream;
+    audioEndpointInner->processList_.push_back(&mockProcessStream);
 
     std::function<void()> moveClientIndex;
     audioEndpointInner->GetAllReadyProcessData(audioDataList, moveClientIndex);

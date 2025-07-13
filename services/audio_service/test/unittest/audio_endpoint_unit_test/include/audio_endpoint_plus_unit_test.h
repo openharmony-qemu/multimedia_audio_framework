@@ -17,6 +17,7 @@
 #define AUDIO_ENDPOINT_PLUS_UNIT_TEST_H
 
 #include "gtest/gtest.h"
+#include "gmock/gmock.h"
 
 namespace OHOS {
 namespace AudioStandard {

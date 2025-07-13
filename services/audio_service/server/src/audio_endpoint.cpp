@@ -1915,6 +1915,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 int32_t AudioEndpointInner::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
 {
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength > 0, ERR_WRITE_FAILED, "failed");
     return writeBuf.CopyInputBufferValueToCurBuffer(RingBufferWrapper{
         .basicBufferDescs = {{
             {.buffer = buffer.buffer, .bufLength = buffer.bufLength},
