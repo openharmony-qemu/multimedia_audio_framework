@@ -1777,8 +1777,8 @@ bool AudioStreamCollector::HasRunningNormalCapturerStream(DeviceType type)
             if ((changeInfo->capturerState == CAPTURER_RUNNING) &&
                 ((changeInfo->capturerInfo.sourceType == SOURCE_TYPE_MIC) ||
                 (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_WAKEUP) ||
-                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_MESSAGE)
-                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER)
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_MESSAGE) ||
+                (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER) ||
                 (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) &&
                 ((type == DEVICE_TYPE_NONE) || ((type != DEVICE_TYPE_NONE) &&
                 (changeInfo->inputDeviceInfo.deviceType_ == type)))) {

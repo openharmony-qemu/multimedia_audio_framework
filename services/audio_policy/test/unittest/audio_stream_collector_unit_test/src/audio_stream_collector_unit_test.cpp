@@ -1771,7 +1771,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_001, TestSize.L
 HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_002, TestSize.Level1)
 {
     AudioStreamCollector collector;
-    auto info = make_shared<AudioCapturerChangeInfo>();
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
     info->capturerState = CAPTURER_RUNNING;
     info->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
     info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
@@ -1788,7 +1788,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_002, TestSize.L
 HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_003, TestSize.Level1)
 {
     AudioStreamCollector collector;
-    auto info = make_shared<AudioCapturerChangeInfo>();
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
     info->capturerState = CAPTURER_RUNNING;
     info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
     info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
@@ -1805,7 +1805,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_003, TestSize.L
 HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_004, TestSize.Level1)
 {
     AudioStreamCollector collector;
-    auto info = make_shared<AudioCapturerChangeInfo>();
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
     info->capturerState = CAPTURER_RUNNING;
     info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
     info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
@@ -1822,13 +1822,13 @@ HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_004, TestSize.L
 HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_005, TestSize.Level1)
 {
     AudioStreamCollector collector;
-    auto info = make_shared<AudioCapturerChangeInfo>();
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
     info->capturerState = CAPTURER_RUNNING;
     info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
     info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
     collector.audioCapturerChangeInfos_.push_back(move(info));
 
-    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), false);
+    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), true);
 }
 
 /**
