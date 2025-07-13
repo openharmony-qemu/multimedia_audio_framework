@@ -2487,8 +2487,6 @@ int32_t AudioCoreService::SwitchActiveHearingAidDevice(std::shared_ptr<AudioDevi
         ERR_INVALID_PARAM, "Target HearingAid device doesn't exist.");
     int32_t result = ERROR;
 #ifdef BLUETOOTH_ENABLE
-    deviceDescriptor->deviceType_ = DEVICE_TYPE_HEARING_AID;
-
     if (audioIOHandleMap_.CheckIOHandleExist(HEARING_AID_SPEAKER)) {
         AUDIO_WARNING_LOG("HearingAid device [%{public}s] [%{public}s] is already active",
             GetEncryptAddr(deviceDescriptor->macAddress_).c_str(), deviceDescriptor->deviceName_.c_str());
@@ -2497,7 +2495,8 @@ int32_t AudioCoreService::SwitchActiveHearingAidDevice(std::shared_ptr<AudioDevi
 
     AudioStreamInfo audioStreamInfo = {};
     DeviceStreamInfo hearingAidStreamInfo = deviceDescriptor->GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate = *hearingAidStreamInfo.samplingRate.begin();
+    audioStreamInfo.samplingRate = hearingAidStreamInfo.samplingRate.empty() ? AudioSamplingRate::SAMPLE_RATE_16000 :
+        *hearingAidStreamInfo.samplingRate.rbegin();
     audioStreamInfo.encoding = hearingAidStreamInfo.encoding;
     audioStreamInfo.format = hearingAidStreamInfo.format;
     audioStreamInfo.channelLayout = hearingAidStreamInfo.channelLayout.empty() ? AudioChannelLayout::CH_LAYOUT_UNKNOWN :
@@ -2526,7 +2525,12 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
         AUDIO_ERR_LOG("load adapter failed");
     }
     for (auto &moduleInfo : moduleInfoList) {
-        DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
+        if (moduleInfo.role != "sink") {
+            AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}s]",
+                moduleInfo.name.c_str(), moduleInfo.role.c_str());
+            continue;
+        }
+        DeviceRole configRole = OUTPUT_DEVICE;
         DeviceRole deviceRole = deviceType == DEVICE_TYPE_HEARING_AID ? OUTPUT_DEVICE : INPUT_DEVICE;
         AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}d], config role[%{public}d]",
             moduleInfo.name.c_str(), deviceRole, configRole);
@@ -2546,11 +2550,9 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
             std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
             pipeInfo->id_ = ioHandle;
             pipeInfo->paIndex_ = paIndex;
-            if (moduleInfo.role == "sink") {
-                pipeInfo->name_ = "hearing_aid_output";
-                pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
-                pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
-            }
+            pipeInfo->name_ = "hearing_aid_output";
+            pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
             pipeInfo->adapterName_ = "hearing_aid";
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
