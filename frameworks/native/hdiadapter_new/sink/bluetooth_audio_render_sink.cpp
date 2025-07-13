@@ -38,15 +38,18 @@ namespace AudioStandard {
 namespace {
 constexpr int64_t MONITOR_WRITE_COST = 1 * 1000 * 1000 * 1000; // 1s
 }
-BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency)
-    : isBluetoothLowLatency_(isBluetoothLowLatency)
+BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency, const std::string &halName)
+    : isBluetoothLowLatency_(isBluetoothLowLatency), halName_(halName)
 {
+    if (halName_ == HDI_ID_INFO_HEARING_AID) {
+        sinkType_ = ADAPTER_TYPE_HEARING_AID;
+    }
 }
 
 BluetoothAudioRenderSink::~BluetoothAudioRenderSink()
 {
     DeInit();
-    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(ADAPTER_TYPE_BLUETOOTH);
+    AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
 
@@ -96,7 +99,12 @@ void BluetoothAudioRenderSink::DeInit(void)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN(deviceManager != nullptr);
-    std::string adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp";
+    std::string adapterNameCase;
+    if (halName_ == HDI_ID_INFO_HEARING_AID) {
+        adapterNameCase = "bt_hearing_aid";
+    } else {
+        adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp";
+    }
     if (IsValidState()) {
         deviceManager->DestroyRender(adapterNameCase, hdiRenderId_);
     }
@@ -147,7 +155,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
             usleep(WAIT_TIME_FOR_RETRY_IN_MICROSECOND);
             continue;
         }
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
         started_ = true;
         return CheckBluetoothScenario();
     }
@@ -206,7 +214,7 @@ int32_t BluetoothAudioRenderSink::Resume(void)
     }
     int32_t ret = audioRender_->control.Resume(reinterpret_cast<AudioHandle>(audioRender_));
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "resume fail");
-    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, INIT_LASTWRITTEN_TIME);
+    AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, INIT_LASTWRITTEN_TIME);
     paused_ = false;
     return SUCCESS;
 }
@@ -658,7 +666,9 @@ int32_t BluetoothAudioRenderSink::CreateRender(void)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     std::string adapterNameCase = "";
-    if (attr_.adapterName == "dp") {
+    if (halName_ == HDI_ID_INFO_HEARING_AID) {
+        adapterNameCase = "bt_hearing_aid";
+    } else if (attr_.adapterName == "dp") {
         adapterNameCase = attr_.adapterName;
     } else {
         adapterNameCase = isBluetoothLowLatency_ ? "bt_a2dp_fast" : "bt_a2dp"; // set sound card infomation
@@ -792,7 +802,7 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
         Trace trace("BluetoothAudioRenderSink::DoRenderFrame");
         stamp = ClockTime::GetCurNano();
         ret = audioRender_->RenderFrame(audioRender_, (void *)&data, len, &writeLen);
-        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(ADAPTER_TYPE_BLUETOOTH, ClockTime::GetCurNano());
+        AudioPerformanceMonitor::GetInstance().RecordTimeStamp(sinkType_, ClockTime::GetCurNano());
         stamp = (ClockTime::GetCurNano() - stamp) / AUDIO_US_PER_SECOND;
         if (logMode_ || stamp >= STAMP_THRESHOLD_MS) {
             AUDIO_PRERELEASE_LOGW("A2dp RenderFrame, len: [%{public}" PRIu64 "], cost: [%{public}" PRId64 "]ms, "
@@ -821,7 +831,13 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
 // must be called with sinkMutex_ held
 void BluetoothAudioRenderSink::UpdateSinkState(bool started)
 {
-    callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_BLUETOOTH), started);
+    if (halName_ == HDI_ID_INFO_HEARING_AID) {
+        callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_HEARING_AID),
+            started);
+    } else {
+        callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_BLUETOOTH),
+            started);
+    }
 }
 
 bool BluetoothAudioRenderSink::IsValidState(void)

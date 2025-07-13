@@ -146,6 +146,23 @@ static std::unordered_map<AudioStreamType, std::string> STREAM_TYPE_NAME_MAP = {
     {STREAM_VOICE_CALL_ASSISTANT, "VOICE_CALL_ASSISTANT"},
 };
 
+static std::unordered_map<DeviceType, std::string> DEVICE_TYPE_NAME_MAP = {
+    {DEVICE_TYPE_EARPIECE, "EARPIECE"},
+    {DEVICE_TYPE_SPEAKER, "SPEAKER"},
+    {DEVICE_TYPE_WIRED_HEADSET, "WIRED_HEADSET"},
+    {DEVICE_TYPE_WIRED_HEADPHONES, "WIRED_HEADPHONES"},
+    {DEVICE_TYPE_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, "BLUETOOTH_A2DP"},
+    {DEVICE_TYPE_NEARLINK, "NEARLINK"},
+    {DEVICE_TYPE_MIC, "MIC"},
+    {DEVICE_TYPE_HDMI, "HDMI"},
+    {DEVICE_TYPE_WAKEUP, "WAKEUP"},
+    {DEVICE_TYPE_NONE, "NONE"},
+    {DEVICE_TYPE_INVALID, "INVALID"},
+    {DEVICE_TYPE_REMOTE_CAST, "REMOTE_CAST"},
+    {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
+};
+
 uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
 {
     uint32_t audioPerSampleLength = 2; // 2 byte
@@ -1663,48 +1680,12 @@ const std::string AudioInfoDumpUtils::GetStreamName(AudioStreamType streamType)
 const std::string AudioInfoDumpUtils::GetDeviceTypeName(DeviceType deviceType)
 {
     std::string device;
-    switch (deviceType) {
-        case DEVICE_TYPE_EARPIECE:
-            device = "EARPIECE";
-            break;
-        case DEVICE_TYPE_SPEAKER:
-            device = "SPEAKER";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-            device = "WIRED_HEADSET";
-            break;
-        case DEVICE_TYPE_WIRED_HEADPHONES:
-            device = "WIRED_HEADPHONES";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-             device = "BLUETOOTH_SCO";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            device = "BLUETOOTH_A2DP";
-            break;
-        case DEVICE_TYPE_NEARLINK:
-            device = "NEARLINK";
-            break;
-        case DEVICE_TYPE_MIC:
-            device = "MIC";
-            break;
-        case DEVICE_TYPE_HDMI:
-            device = "HDMI";
-            break;
-        case DEVICE_TYPE_WAKEUP:
-            device = "WAKEUP";
-            break;
-        case DEVICE_TYPE_NONE:
-            device = "NONE";
-            break;
-        case DEVICE_TYPE_INVALID:
-            device = "INVALID";
-            break;
-        case DEVICE_TYPE_REMOTE_CAST:
-            device = "REMOTE_CAST";
-            break;
-        default:
-            device = "UNKNOWN";
+    std::unordered_map<DeviceType, std::string> map = DEVICE_TYPE_NAME_MAP;
+    auto it = map.find(deviceType);
+    if (it != map.end()) {
+        device = it->second;
+    } else {
+        device = "UNKNOWN";
     }
 
     const std::string deviceTypeName = device;

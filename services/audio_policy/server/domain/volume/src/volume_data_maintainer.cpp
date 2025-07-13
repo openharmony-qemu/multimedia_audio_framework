@@ -786,6 +786,9 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
         case DEVICE_TYPE_NEARLINK:
             type = "_wireless";
             return type;
+        case DEVICE_TYPE_HEARING_AID:
+            type = "_hearing_aid";
+            return type;
         case DEVICE_TYPE_WIRED_HEADSET:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:

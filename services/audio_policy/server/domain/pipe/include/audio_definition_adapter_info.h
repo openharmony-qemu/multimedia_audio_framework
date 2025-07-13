@@ -33,6 +33,7 @@ static const char* STR_INITED = "";
 
 static const char* ADAPTER_TYPE_PRIMARY = "primary";
 static const char* ADAPTER_TYPE_A2DP = "a2dp";
+static const char* ADAPTER_TYPE_HEARING_AID = "hearing_aid";
 static const char* ADAPTER_TYPE_REMOTE = "remote";
 static const char* ADAPTER_TYPE_FILE = "file";
 static const char* ADAPTER_TYPE_USB = "usb";
@@ -65,6 +66,7 @@ enum class AudioAdapterType {
     TYPE_DP,
     TYPE_ACCESSORY,
     TYPE_SLE,
+    TYPE_HEARING_AID,
     TYPE_INVALID
 };
 

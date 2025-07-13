@@ -87,6 +87,7 @@ constexpr uid_t UID_TV_PROCESS_SA = 7501;
 constexpr uid_t UID_DP_PROCESS_SA = 7062;
 constexpr uid_t UID_NEARLINK_SA = 7030;
 constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
+constexpr uid_t UID_PENCIL_BLUETOOTH_SA = 1130;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
 constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
@@ -4707,7 +4708,7 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
         desc->deviceType_, desc->deviceRole_, isConnected);
 
     std::vector<uid_t> allowedUids = {
-        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA,
+        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA, UID_PENCIL_BLUETOOTH_SA
     };
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED,
         "uid permission denied");

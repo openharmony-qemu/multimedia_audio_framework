@@ -54,7 +54,8 @@ enum AdapterType : uint8_t {
     ADAPTER_TYPE_REMOTE = 5,
     ADAPTER_TYPE_BLUETOOTH = 6,
     ADAPTER_TYPE_VOIP_FAST = 7,
-    ADAPTER_TYPE_MAX = 8,
+    ADAPTER_TYPE_HEARING_AID = 8,
+    ADAPTER_TYPE_MAX = 9,
 };
 
 struct FrameRecordInfo {

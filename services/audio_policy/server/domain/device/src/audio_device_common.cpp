@@ -391,9 +391,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
     // Use speaker streaminfo for all output devices cap
-    auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
-    if (itr != nullptr) {
-        audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID) {
+        auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
+        if (itr != nullptr) {
+            audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+        }
     }
     bool wasVirtualConnected = audioDeviceManager_.IsVirtualConnectedDevice(audioDescriptor);
     if (!wasVirtualConnected) {

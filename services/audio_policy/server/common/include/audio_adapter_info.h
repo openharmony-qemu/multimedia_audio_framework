@@ -31,6 +31,7 @@ static const char* STR_INIT = "";
 
 static const char* ADAPTER_PRIMARY_TYPE = "primary";
 static const char* ADAPTER_A2DP_TYPE = "a2dp";
+static const char* ADAPTER_HEARING_AID_TYPE = "hearing_aid";
 static const char* ADAPTER_REMOTE_TYPE = "remote";
 static const char* ADAPTER_FILE_TYPE = "file";
 static const char* ADAPTER_USB_TYPE = "usb";
@@ -46,6 +47,7 @@ static const char* ADAPTER_DEVICE_PRIMARY_BT_SCO = "Bt Sco";
 static const char* ADAPTER_DEVICE_PRIMARY_BT_OFFLOAD = "Bt Offload";
 static const char* ADAPTER_DEVICE_PRIMARY_BT_HEADSET_HIFI = "Usb Headset Hifi";
 static const char* ADAPTER_DEVICE_A2DP_BT_A2DP = "Bt A2dp";
+static const char* ADAPTER_DEVICE_HEARING_AID = "Hearing Aid";
 static const char* ADAPTER_DEVICE_REMOTE_SINK = "Remote Sink";
 static const char* ADAPTER_DEVICE_REMOTE_SOURCE = "Remote Source";
 static const char* ADAPTER_DEVICE_FILE_SINK = "File Sink";
