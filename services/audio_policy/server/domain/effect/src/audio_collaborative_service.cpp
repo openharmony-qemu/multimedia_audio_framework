@@ -42,6 +42,7 @@ static std::string GetEncryptAddr(const std::string &addr)
 void AudioCollaborativeService::Init(const std::vector<EffectChain> &effectChains)
 {
     AUDIO_INFO_LOG("AudioCollaborative service initialized!");
+    isCollaborativePlaybackSupported_ = false;
     for (auto effectChain: effectChains) {
         if (effectChain.name != BLUETOOTH_EFFECT_CHAIN_NAME) { // only support bluebooth effectchain?
             continue;
