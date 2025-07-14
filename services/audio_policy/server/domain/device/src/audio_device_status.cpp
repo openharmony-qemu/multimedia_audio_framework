@@ -1334,6 +1334,30 @@ void AudioDeviceStatus::UpdateAllUserSelectDevice(
     }
 }
 
+void AudioDeviceStatus::RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    AUDIO_INFO_LOG("remove device from global list only");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(desc, descForCb);
+    TriggerDeviceChangedCallback(descForCb, false);
+    TriggerAvailableDeviceChangedCallback(descForCb, false);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("RemoveDeviceFromGlobalOnly");
+}
+
+void AudioDeviceStatus::AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is nullptr");
+    AUDIO_INFO_LOG("add device back to global list only");
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descForCb = {};
+    audioDeviceCommon_.UpdateConnectedDevicesWhenConnecting(desc, descForCb);
+    TriggerDeviceChangedCallback(descForCb, true);
+    TriggerAvailableDeviceChangedCallback(descForCb, true);
+    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+    AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("AddDeviceBackToGlobalOnly");
+}
+
 void AudioDeviceStatus::HandleOfflineDistributedDevice()
 {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceChangeDescriptor = {};
