@@ -595,7 +595,8 @@ void MuteSinkPortFuzzTest()
     AudioStreamDeviceChangeReasonExt reason =
         static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.audioDeviceManager_.NoDp();
+    audioDeviceCommon.audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP);
+    audioDeviceCommon.audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP, "card=0;port=0");
 }
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
