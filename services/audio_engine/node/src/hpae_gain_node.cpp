@@ -149,6 +149,17 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     GetFadeLength(byteLength, input);
+    // do fade out
+    if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
+        AUDIO_INFO_LOG("GainNode: fade out started!");
+        ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
+        fadeOutState_ = FadeOutState::DONE_FADEOUT;
+        AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
+        auto statusCallback = GetNodeStatusCallback().lock();
+        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
+        statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
+    }
+    // do fade in
     if (fadeInState_) {
         if (!input->IsValid()) {
             AUDIO_WARNING_LOG("GainNode: invalid data no need to do fade in");
@@ -161,15 +172,6 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
         AUDIO_INFO_LOG("GainNode: fade in started!");
         ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
         fadeInState_ = false;
-    }
-    if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
-        AUDIO_INFO_LOG("GainNode: fade out started!");
-        ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
-        fadeOutState_ = FadeOutState::DONE_FADEOUT;
-        AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
-        auto statusCallback = GetNodeStatusCallback().lock();
-        CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
-        statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
     }
 }
 
