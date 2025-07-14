@@ -85,11 +85,21 @@ uint32_t GetArrLength(T& arr)
 
 void DumpFuzzTest()
 {
-    AudioPipeInfo audioPipeInfo;
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    if (pipeInfo ==nullptr) {
+        return;
+    }
+    int32_t audioPipeRoleCount = static_cast<int32_t>(AudioPipeRole::PIPE_ROLE_NONE) + 1;
+    pipeInfo->pipeRole_ = static_cast<AudioPipeRole>(GetData<uint8_t>() % audioPipeRoleCount);
+    AudioPipeInfo audioPipeInfo(pipeInfo);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (streamDesc ==nullptr) {
+        return;
+    }
+    audioPipeInfo.streamDescriptors_.push_back(streamDesc);
     std::string dumpString = "";
     audioPipeInfo.Dump(dumpString);
 }
-
 
 void DumpCommonAttrsFuzzTest()
 {
