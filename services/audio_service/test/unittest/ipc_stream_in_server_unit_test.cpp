@@ -28,6 +28,7 @@
 #include "iipc_stream.h"
 #include "message_parcel.h"
 #include "parcel.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
@@ -1642,6 +1643,23 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
     EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test IpcStreamInServer API
+ * @tc.type  : FUNC
+ * @tc.number: IpcStreamInServer_074
+ * @tc.desc  : Test IpcStreamInServer interface when flag is DIRECT_PLAYBACK.
+ */
+HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    configRet.rendererInfo.audioFlag = (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT);
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    ipcStreamInServerRet.ConfigRenderer();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, DIRECT_PLAYBACK);
 }
 }
 }

@@ -510,6 +510,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   install_enable = false
 
   include_dirs = [
+    "../../../../frameworks/native/audiodefinitions/include",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/audioutils/include",
     "../../../../frameworks/native/audioclock/include",
