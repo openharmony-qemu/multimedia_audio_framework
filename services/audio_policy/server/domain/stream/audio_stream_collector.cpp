@@ -1780,8 +1780,7 @@ bool AudioStreamCollector::HasRunningNormalCapturerStream(DeviceType type)
                 (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_VOICE_MESSAGE) ||
                 (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_CAMCORDER) ||
                 (changeInfo->capturerInfo.sourceType == SOURCE_TYPE_UNPROCESSED)) &&
-                ((type == DEVICE_TYPE_NONE) || ((type != DEVICE_TYPE_NONE) &&
-                (changeInfo->inputDeviceInfo.deviceType_ == type)))) {
+                ((type == DEVICE_TYPE_NONE) || (changeInfo->inputDeviceInfo.deviceType_ == type))) {
                 AUDIO_INFO_LOG("Running Normal Capturer stream : %{public}d with device %{public}d",
                     changeInfo->sessionId, type);
                 return true;
