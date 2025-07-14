@@ -15,35 +15,37 @@ import("//build/ohos.gni")
 import("../../../../config.gni")
 
 group("pa_extend_modules") {
-  deps = [
-    ":pa_client_config",
-    ":pa_daemon_config",
-    ":pa_default_config",
-    "hdi:module-hdi-sink",
-    "hdi:module-hdi-source",
-    "hdi:module-split-stream-sink",
-  ]
+  if (!audio_framework_feature_new_engine_flag) {
+    deps = [
+        ":pa_client_config",
+        ":pa_daemon_config",
+        ":pa_default_config",
+        "hdi:module-hdi-sink",
+        "hdi:module-hdi-source",
+        "hdi:module-split-stream-sink",
+    ]
 
-  if (audio_framework_feature_inner_capturer) {
-    deps += [ "capturer:module-inner-capturer-sink" ]
+    if (audio_framework_feature_inner_capturer) {
+        deps += [ "capturer:module-inner-capturer-sink" ]
+    }
+
+    external_deps = [
+      "pulseaudio:cli",
+      "pulseaudio:module-cli-protocol-unix",
+      "pulseaudio:module-native-protocol-fd",
+      "pulseaudio:module-native-protocol-tcp",
+      "pulseaudio:module-native-protocol-unix",
+      "pulseaudio:module-suspend-on-idle",
+      "pulseaudio:protocol-cli",
+      "pulseaudio:protocol-native",
+      "pulseaudio:pulse",
+      "pulseaudio:pulse-simple",
+      "pulseaudio:pulseaudio",
+      "pulseaudio:pulsecommon",
+      "pulseaudio:pulsecore",
+      "pulseaudio:sonic",
+    ]
   }
-
-  external_deps = [
-    "pulseaudio:cli",
-    "pulseaudio:module-cli-protocol-unix",
-    "pulseaudio:module-native-protocol-fd",
-    "pulseaudio:module-native-protocol-tcp",
-    "pulseaudio:module-native-protocol-unix",
-    "pulseaudio:module-suspend-on-idle",
-    "pulseaudio:protocol-cli",
-    "pulseaudio:protocol-native",
-    "pulseaudio:pulse",
-    "pulseaudio:pulse-simple",
-    "pulseaudio:pulseaudio",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
-    "pulseaudio:sonic",
-  ]
 }
 
 ohos_prebuilt_etc("pa_daemon_config") {
