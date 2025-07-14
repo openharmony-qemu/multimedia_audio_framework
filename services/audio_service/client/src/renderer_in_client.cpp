@@ -36,7 +36,6 @@
 #include "audio_policy_manager.h"
 #include "audio_manager_base.h"
 #include "audio_renderer_log.h"
-#include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
@@ -177,10 +176,9 @@ void RendererInClientInner::InitDirectPipeType()
 int32_t RendererInClientInner::DeinitIpcStream()
 {
     Trace trace("RendererInClientInner::DeinitIpcStream");
-    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr && ringCache_ != nullptr, ERROR,
-        "ipcStream_ or ringCache_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERROR,
+        "ipcStream_ is nullptr");
     ipcStream_->Release(false);
-    ringCache_->ResetBuffer();
     return SUCCESS;
 }
 
