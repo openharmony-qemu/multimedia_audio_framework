@@ -287,11 +287,6 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
 {
-    if (fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_INFO_LOG("InnerCap is already enabled");
-        return SUCCESS;
-    }
-
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
@@ -1231,7 +1226,6 @@ void AudioEndpointInner::WaitAllProcessReady(uint64_t curWritePos)
 void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId)
 {
     Trace trace("AudioEndpointInner::MixToDupStream");
-    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_LOG(fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].dupStream != nullptr,
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
@@ -1544,13 +1538,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
     }
     AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(type, ClockTime::GetCurNano());
-
-    for (auto &capture: fastCaptureInfos_) {
-        if (capture.second.isInnerCapEnabled) {
-            ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+    {
+        std::lock_guard<std::mutex> captureLock(dupMutex_);
+        for (auto &capture: fastCaptureInfos_) {
+            if (capture.second.isInnerCapEnabled) {
+                ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+            }
         }
     }
-
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);

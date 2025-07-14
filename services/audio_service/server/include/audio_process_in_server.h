@@ -159,6 +159,7 @@ private:
 private:
     std::atomic<bool> muteFlag_ = false;
     std::atomic<bool> silentModeAndMixWithOthers_ = false;
+    std::mutex innerCapStateMutex_;
     std::unordered_map<int32_t, bool> innerCapStates_;
     ProcessReleaseCallback *releaseCallback_ = nullptr;
     sptr<IRemoteObject> object_ = nullptr;
