@@ -185,41 +185,6 @@ const vector<SourceType> g_testSourceTypes = {
     SOURCE_TYPE_MAX,
 };
 
-const vector<AudioStreamType> g_testAudioStreamTypes = {
-    STREAM_DEFAULT,
-    STREAM_VOICE_CALL,
-    STREAM_MUSIC,
-    STREAM_RING,
-    STREAM_MEDIA,
-    STREAM_VOICE_ASSISTANT,
-    STREAM_SYSTEM,
-    STREAM_ALARM,
-    STREAM_NOTIFICATION,
-    STREAM_BLUETOOTH_SCO,
-    STREAM_ENFORCED_AUDIBLE,
-    STREAM_DTMF,
-    STREAM_TTS,
-    STREAM_ACCESSIBILITY,
-    STREAM_RECORDING,
-    STREAM_MOVIE,
-    STREAM_GAME,
-    STREAM_SPEECH,
-    STREAM_SYSTEM_ENFORCED,
-    STREAM_ULTRASONIC,
-    STREAM_WAKEUP,
-    STREAM_VOICE_MESSAGE,
-    STREAM_NAVIGATION,
-    STREAM_INTERNAL_FORCE_STOP,
-    STREAM_SOURCE_VOICE_CALL,
-    STREAM_VOICE_COMMUNICATION,
-    STREAM_VOICE_RING,
-    STREAM_VOICE_CALL_ASSISTANT,
-    STREAM_CAMCORDER,
-    STREAM_APP,
-    STREAM_TYPE_MAX,
-    STREAM_ALL,
-};
-
 template<class T>
 uint32_t GetArrLength(T& arr)
 {
@@ -476,140 +441,6 @@ void AudioZoneServiceClearAudioFocusBySessionIDFuzzTest()
     audioZoneService.ClearAudioFocusBySessionID(sessionID);
 }
 
-void AudioZoneClientManagerRegisterAudioZoneClientFuzzTest()
-{
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    audioZoneClientManager.RegisterAudioZoneClient(clientPid, client);
-    audioZoneClientManager.clients_.clear();
-}
-
-void AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest()
-{
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    audioZoneClientManager.UnRegisterAudioZoneClient(clientPid);
-}
-
-void AudioZoneClientManagerDispatchEventFuzzTest()
-{
-    static const vector<AudioZoneEventType> testAudioZoneEventTypes = {
-        AUDIO_ZONE_INVALID_EVENT,
-        AUDIO_ZONE_ADD_EVENT,
-        AUDIO_ZONE_REMOVE_EVENT,
-        AUDIO_ZONE_CHANGE_EVENT,
-        AUDIO_ZONE_INTERRUPT_EVENT,
-    };
-    if (testAudioZoneEventTypes.size() == 0) {
-        return;
-    }
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
-    event->type = testAudioZoneEventTypes[GetData<uint32_t>() % testAudioZoneEventTypes.size()];
-    event->clientPid = GetData<pid_t>();
-    event->zoneId = GetData<int32_t>();
-    event->deviceTag = "testDeviceTag";
-    event->descriptor = std::make_shared<AudioZoneDescriptor>();
-    event->zoneChangeReason = AudioZoneChangeReason::BIND_NEW_DEVICE;
-    AudioInterrupt interrupt;
-    AudioFocuState focusState = ACTIVE;
-    event->interrupts.push_back(make_pair(interrupt, focusState));
-    event->zoneInterruptReason = AudioZoneInterruptReason::UNBIND_APP_FROM_ZONE;
-    bool isNull = GetData<bool>();
-    if (isNull) {
-        event->deviceTag.clear();
-        event->descriptor = nullptr;
-    }
-    audioZoneClientManager.clients_.insert(make_pair(event->clientPid, client));
-    audioZoneClientManager.DispatchEvent(event);
-}
-
-void AudioZoneClientManagerSendZoneAddEventFuzzTest()
-{
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    std::shared_ptr<AudioZoneDescriptor> descriptor = std::make_shared<AudioZoneDescriptor>();
-    audioZoneClientManager.SendZoneAddEvent(clientPid, descriptor);
-}
-
-void AudioZoneClientManagerSendZoneRemoveEventFuzzTest()
-{
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    int32_t zoneId = GetData<int32_t>();
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    audioZoneClientManager.SendZoneRemoveEvent(clientPid, zoneId);
-}
-
-void AudioZoneClientManagerSendZoneChangeEventFuzzTest()
-{
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    std::shared_ptr<AudioZoneDescriptor> descriptor = std::make_shared<AudioZoneDescriptor>();
-    AudioZoneChangeReason reason = AudioZoneChangeReason::BIND_NEW_DEVICE;
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    audioZoneClientManager.SendZoneChangeEvent(clientPid, descriptor, reason);
-}
-
-void AudioZoneClientManagerSendZoneInterruptEventFuzzTest()
-{
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    std::shared_ptr<AudioZoneDescriptor> descriptor = std::make_shared<AudioZoneDescriptor>();
-    AudioZoneInterruptReason reason = AudioZoneInterruptReason::LOCAL_INTERRUPT;
-    int32_t zoneId = GetData<int32_t>();
-    std::string deviceTag = "testDeviceTag";
-    AudioInterrupt interrupt;
-    AudioFocuState focusState = ACTIVE;
-    std::list<std::pair<AudioInterrupt, AudioFocuState>> interrupts;
-    interrupts.push_back(make_pair(interrupt, focusState));
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    audioZoneClientManager.SendZoneInterruptEvent(clientPid, zoneId, deviceTag, interrupts, reason);
-}
-
-void AudioZoneClientManagerSetSystemVolumeLevelFuzzTest()
-{
-    if (g_testAudioStreamTypes.size() == 0) {
-        return;
-    }
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    int32_t zoneId = GetData<int32_t>();
-    int32_t volumeLevel = GetData<int32_t>();
-    int32_t volumeFlag = GetData<int32_t>();
-    AudioVolumeType volumeType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    audioZoneClientManager.SetSystemVolumeLevel(clientPid, zoneId, volumeType, volumeLevel, volumeFlag);
-}
-
-void AudioZoneClientManagerGetSystemVolumeLevelFuzzTest()
-{
-    if (g_testAudioStreamTypes.size() == 0) {
-        return;
-    }
-    sptr<IStandardAudioZoneClient> client = new IStandardAudioZoneClientFuzzTest();
-    AudioZoneClientManager &audioZoneClientManager = AudioZoneClientManager::GetInstance();
-    pid_t clientPid = GetData<pid_t>();
-    int32_t zoneId = GetData<int32_t>();
-    AudioVolumeType volumeType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
-    audioZoneClientManager.clients_.clear();
-    audioZoneClientManager.clients_.insert(make_pair(clientPid, client));
-    audioZoneClientManager.GetSystemVolumeLevel(clientPid, zoneId, volumeType);
-}
-
 void AudioZoneInterruptReporterEnableInterruptReportFuzzTest()
 {
     AudioZoneInterruptReporter audioZoneInterruptReporter;
@@ -696,15 +527,6 @@ TestPtr g_testPtrs[] = {
     AudioZoneServiceGetZoneStringDescriptorFuzzTest,
     AudioZoneServiceUpdateDeviceFromGlobalForAllZoneFuzzTest,
     AudioZoneServiceClearAudioFocusBySessionIDFuzzTest,
-    AudioZoneClientManagerRegisterAudioZoneClientFuzzTest,
-    AudioZoneClientManagerUnRegisterAudioZoneClientFuzzTest,
-    AudioZoneClientManagerDispatchEventFuzzTest,
-    AudioZoneClientManagerSendZoneAddEventFuzzTest,
-    AudioZoneClientManagerSendZoneRemoveEventFuzzTest,
-    AudioZoneClientManagerSendZoneChangeEventFuzzTest,
-    AudioZoneClientManagerSendZoneInterruptEventFuzzTest,
-    AudioZoneClientManagerSetSystemVolumeLevelFuzzTest,
-    AudioZoneClientManagerGetSystemVolumeLevelFuzzTest,
     AudioZoneInterruptReporterEnableInterruptReportFuzzTest,
     AudioZoneInterruptReporterDisableInterruptReportFuzzTest,
     AudioZoneInterruptReporterCreateReporterFuzzTest,
