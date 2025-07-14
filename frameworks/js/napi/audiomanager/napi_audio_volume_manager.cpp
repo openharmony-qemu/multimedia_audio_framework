@@ -1556,7 +1556,7 @@ napi_value NapiAudioVolumeManager::ForceVolumeKeyControlType(napi_env env, napi_
         CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
             "audio volume manager state is error.");
         context->intValue = napiAudioVolumeManager->audioSystemMngr_->ForceVolumeKeyControlType(
-            static_cast<AudioVolumeType>(context->volumeType), context->duration);
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volumeType), context->duration);
         CHECK_AND_RETURN(context->intValue != SUCCESS);
         if (context->intValue == ERR_PERMISSION_DENIED) {
             context->SignError(NAPI_ERR_NO_PERMISSION);
