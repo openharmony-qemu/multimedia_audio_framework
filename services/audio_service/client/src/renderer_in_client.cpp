@@ -624,7 +624,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     std::lock_guard<std::mutex> lock(writeMutex_);
 
-    unprocessedFramesBytes_.fetch_add(bufferSize);
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
@@ -642,6 +641,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
+    unprocessedFramesBytes_.fetch_add(result);
     MonitorMutePlay(false);
     return result;
 }
