@@ -82,7 +82,12 @@ int32_t AudioMicrophoneDescriptor::InitPersistentMicrophoneMuteState(bool &isMut
     // Ensure persistent mic mute state takes effect when first startup
     if (isMicrophoneMutePersistent_) {
         AUDIO_INFO_LOG("Mute_state has been set.");
-        return ERROR;
+        ret = AudioPolicyManagerFactory::GetAudioPolicyManager().SetPersistMicMuteState(isMicrophoneMutePersistent_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to save the persistent microphone mute status in setting database.");
+            return ERROR;
+        }
+        return SUCCESS;
     }
     isMicrophoneMutePersistent_ = isMute;
     ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMutePersistent_);
