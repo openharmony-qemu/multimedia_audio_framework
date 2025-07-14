@@ -3371,7 +3371,7 @@ HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
     int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
     bool isStreamActive = true;
 
-    int32_t ret = server->IsStreamActiveByStreamUsage(streamUsage, IsStreamActive);
+    int32_t ret = server->IsStreamActiveByStreamUsage(streamUsage, isStreamActive);
     EXPECT_EQ(ret, SUCCESS);
 }
 

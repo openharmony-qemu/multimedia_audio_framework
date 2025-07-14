@@ -640,7 +640,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetVolumeInUnitOfDb API
- * @tc.number：GetVolumeInUnitOfDb_001
+ * @tc.number: GetVolumeInUnitOfDb_001
  * @tc.tesc  : Test GetVolumeInUnitOfDb interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
@@ -657,7 +657,7 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetMaxVolumeByUsage API
- * @tc.number：GetMaxVolumeByUsage_001
+ * @tc.number: GetMaxVolumeByUsage_001
  * @tc.tesc  : Test GetMaxVolumeByUsage interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
@@ -679,7 +679,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetMinVolumeByUsage API
- * @tc.number：GetMinVolumeByUsage_001
+ * @tc.number: GetMinVolumeByUsage_001
  * @tc.tesc  : Test GetMinVolumeByUsage interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
@@ -701,7 +701,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetVolumeByUsage API
- * @tc.number：GetVolumeByUsage_001
+ * @tc.number: GetVolumeByUsage_001
  * @tc.tesc  : Test GetVolumeByUsage interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
@@ -723,7 +723,7 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test IsStreamMuteByUsage API
- * @tc.number：IsStreamMuteByUsage_001
+ * @tc.number: IsStreamMuteByUsage_001
  * @tc.tesc  : Test IsStreamMuteByUsage interface
  */
 HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_001, TestSize.Level1)
@@ -744,7 +744,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetVolumeInDbByStream API
- * @tc.number：GetVolumeInDbByStream_001
+ * @tc.number: GetVolumeInDbByStream_001
  * @tc.tesc  : Test GetVolumeInDbByStream interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
@@ -771,7 +771,7 @@ HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetSupportedAudioVolumeTypes API
- * @tc.number：GetSupportedAudioVolumeTypes_001
+ * @tc.number: GetSupportedAudioVolumeTypes_001
  * @tc.tesc  : Test GetSupportedAudioVolumeTypes interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
@@ -786,7 +786,7 @@ HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Le
 
 /**
  * @tc.name  : Test GetAudioVolumeTypeByStreamUsage API
- * @tc.number：GetAudioVolumeTypeByStreamUsage_001
+ * @tc.number: GetAudioVolumeTypeByStreamUsage_001
  * @tc.tesc  : Test GetAudioVolumeTypeByStreamUsage interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
@@ -801,7 +801,7 @@ HWTEST(AudioSystemManagerUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize
 
 /**
  * @tc.name  : Test GetStreamUsagesByVolumeType API
- * @tc.number：GetStreamUsagesByVolumeType_001
+ * @tc.number: GetStreamUsagesByVolumeType_001
  * @tc.tesc  : Test GetStreamUsagesByVolumeType interface
  */
 HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
@@ -816,7 +816,7 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Lev
 
 /**
  * @tc.name  : Test RegisterSystemVolumeChnageCallback API
- * @tc.number：RegisterSystemVolumeChnageCallback_001
+ * @tc.number: RegisterSystemVolumeChnageCallback_001
  * @tc.tesc  : Test RegisterSystemVolumeChnageCallback interface
  */
 HWTEST(AudioSystemManagerUnitTest, RegisterSystemVolumeChnageCallback_001, TestSize.Level1)
