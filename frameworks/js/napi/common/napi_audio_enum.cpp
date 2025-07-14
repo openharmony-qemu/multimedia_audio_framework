@@ -311,6 +311,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"VOICE_ASSISTANT", NapiAudioEnum::VOICE_ASSISTANT},
     {"ALARM", NapiAudioEnum::ALARM},
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
+    {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
     {"ALL", NapiAudioEnum::ALL}
 };
