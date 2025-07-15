@@ -31,7 +31,7 @@ static uint32_t g_sessionId = FIRST_SESSIONID; // begin from 100000
 
 uint32_t AudioStreamIdAllocator::GenerateStreamId()
 {
-    std::lock_guard<std::mutex> lock(sessionIdAllocatoeMutex_);
+    std::lock_guard<std::mutex> lock(sessionIdAllocatorMutex_);
     uint32_t sessionId = g_sessionId++;
     if (g_sessionId > MAX_VALID_SESSIONID) {
         AUDIO_WARNING_LOG("sessionId is too large, reset it!");
