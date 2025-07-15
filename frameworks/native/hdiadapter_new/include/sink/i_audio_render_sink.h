@@ -102,7 +102,10 @@ public:
     // offload extend function
     virtual int32_t Drain(AudioDrainType type) NOT_SUPPORT_RET
     virtual void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
-    virtual void RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
+    virtual int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
+    {
+        return SUCCESS;
+    }
     virtual int32_t SetBufferSize(uint32_t sizeMs) NOT_SUPPORT_RET
     virtual int32_t SetOffloadRenderCallbackType(RenderCallbackType type) NOT_SUPPORT_RET
     virtual int32_t LockOffloadRunningLock(void) NOT_SUPPORT_RET

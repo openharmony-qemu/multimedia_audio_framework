@@ -81,7 +81,7 @@ public:
     int32_t UpdateAppsUid(const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size) final;
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
-    void RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
+    int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     void DumpInfo(std::string &dumpString) override;
 
 private:
