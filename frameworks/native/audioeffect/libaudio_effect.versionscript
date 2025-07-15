@@ -96,6 +96,7 @@
     *CheckProcessClusterInstances*;
     *QueryEffectChannelInfo*;
     *ResetInfo*;
+    *SetAbsVolumeStateToEffect*;
   local:
     *;
 };

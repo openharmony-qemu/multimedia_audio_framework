@@ -406,6 +406,11 @@ int32_t HpaeManagerImpl::SetEffectSystemVolume(const int32_t systemVolumeType, c
     return manager_->SetEffectSystemVolume(systemVolumeType, systemVolume);
 }
 
+int32_t HpaeManagerImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
+    return manager_->SetAbsVolumeStateToEffect(absVolumeState);
+}
 int32_t HpaeManagerImpl::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");

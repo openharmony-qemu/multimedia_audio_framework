@@ -2967,6 +2967,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
 {
     AUDIO_PRERELEASE_LOGI("SetAbsVolumeScene: %{public}d", isAbsVolumeScene);
     isAbsVolumeScene_ = isAbsVolumeScene;
+    audioServerProxy_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SetVolumeDb(STREAM_MUSIC);

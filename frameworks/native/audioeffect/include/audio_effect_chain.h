@@ -79,6 +79,7 @@ public:
     void SetCurrChannelNoCheck(const uint32_t channel);
     void SetCurrChannelLayoutNoCheck(const uint64_t channelLayout);
     void updateDumpName();
+    void SetAbsVolumeStateToEffectChain(const bool absVolumeState);
 private:
     AudioEffectConfig GetIoBufferConfig();
     void ReleaseEffectChain();
@@ -119,6 +120,7 @@ private:
     uint32_t currChannelNoCheck_ = STEREO;
     uint64_t currchannelLayoutNoCheck_ = CH_LAYOUT_STEREO;
     std::vector<float> effectBuffer_;
+    bool absVolumeState_ = true;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

@@ -262,6 +262,7 @@ public:
     void OnDataTransferStateChange(const int32_t &pid, const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
     int32_t SetBtHdiInvalidState() override;
+    int32_t SetAbsVolumeStateToEffect(bool absVolumeState) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
