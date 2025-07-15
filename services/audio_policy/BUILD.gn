@@ -208,7 +208,6 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
     "server/domain/pipe/src/audio_capturer_session.cpp",
     "server/domain/pipe/src/audio_concurrency_service.cpp",
-    "server/domain/pipe/src/audio_config_manager.cpp",
     "server/domain/pipe/src/audio_definition_adapter_info.cpp",
     "server/domain/pipe/src/audio_definition_policy_utils.cpp",
     "server/domain/pipe/src/audio_ec_manager.cpp",
@@ -258,7 +257,6 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/config/parser/src/audio_focus_parser.cpp",
     "server/infra/config/parser/src/audio_policy_config_parser.cpp",
     "server/infra/config/parser/src/audio_policy_global_parser.cpp",
-    "server/infra/config/parser/src/audio_policy_parser.cpp",
     "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
     "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
     "server/infra/config/parser/src/audio_volume_parser.cpp",
@@ -278,8 +276,6 @@ audio_ohos_library("audio_policy_service") {
     "server/service/service_main/src/device_init_callback.cpp",
     "server/src/audio_client_tracker_callback_listener.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
-    "server/src/audio_concurrency_state_listener_callback.cpp",
-    "server/src/audio_concurrency_state_listener_service.cpp",
     "server/src/audio_policy_manager_listener.cpp",
     "server/src/audio_spatialization_state_change_callback.cpp",
     "server/src/audio_spatialization_state_change_listener.cpp",
@@ -575,7 +571,6 @@ audio_ohos_library("audio_policy_client") {
     "client/stub/src/sle_audio_operation_callback_stub_impl.cpp",
     "server/domain/volume/src/audio_volume_group_info.cpp",
     "server/src/audio_client_tracker_callback_service.cpp",
-    "server/src/audio_concurrency_state_listener_service.cpp",
     "server/src/audio_spatialization_state_change_listener.cpp",
   ]
 

@@ -242,26 +242,6 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyServer.
-* @tc.number: AudioPolicyServer_007
-* @tc.desc  : Test ReconfigureAudioChannel.
-*/
-HWTEST(AudioPolicyUnitTest, AudioPolicyServer_007, TestSize.Level1)
-{
-    #ifdef AUDIO_BUILD_VARIANT_ROOT
-    #undef AUDIO_BUILD_VARIANT_ROOT
-    #endif
-    auto policyServerTest = GetPolicyServerUnitTest();
-    int32_t systemAbilityId = 3009;
-    bool runOnCreate = false;
-    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
-    uint32_t count = 2;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_DEFAULT;
-    int32_t result = server->ReconfigureAudioChannel(count, deviceType);
-    EXPECT_NE(result, ERR_PERMISSION_DENIED);
-}
-
-/**
-* @tc.name  : Test AudioPolicyServer.
 * @tc.number: AudioPolicyServer_008
 * @tc.desc  : Test ArgInfoDump.
 */

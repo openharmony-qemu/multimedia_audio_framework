@@ -18,7 +18,9 @@
 
 #include <sstream>
 #include "audio_policy_config_parser.h"
+
 #include "audio_errors.h"
+#include "audio_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -31,51 +31,6 @@ config("module_private_config") {
   ]
 }
 
-ohos_unittest("audio_endpoint_separate_unit_test") {
-  testonly = true
-  module_out_path = module_output_path
-  sources = [ "audio_endpoint_separate_unit_test.cpp" ]
-
-  cflags = [ "-fno-access-control" ]
-
-  include_dirs = [
-    "../../server/include",
-    "../../../../frameworks/native/hdiadapter_new/include",
-    "../../../../services/audio_service/server/include",
-    "../../../../services/audio_service/common/include/dfx",
-    "../../../../services/audio_service/server/src",
-    "../../../../frameworks/native/audioschedule/include",
-    "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../frameworks/native/audioclock/include",
-  ]
-
-  deps = [
-    "../../../../frameworks/native/audioclock:audio_clock",
-    "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../audio_service:audio_client",
-    "../../../audio_service:audio_common",
-    "../../../audio_service:audio_process_service_static",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_5.0",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  defines = []
-  if (audio_framework_feature_low_latency) {
-    defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
-}
-
 ohos_unittest("audio_balance_unit_test") {
   testonly = true
   module_out_path = module_output_path
@@ -864,7 +819,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
-      "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
   }
   if (audio_framework_feature_inner_capturer) {
@@ -984,7 +938,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
-      "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
   }
   if (audio_framework_feature_inner_capturer) {

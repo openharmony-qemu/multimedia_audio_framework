@@ -38,8 +38,6 @@
 
 #include "device_status_listener.h"
 #include "iaudio_policy_interface.h"
-#include "iport_observer.h"
-#include "audio_policy_parser_factory.h"
 #include "audio_effect_service.h"
 #include "audio_volume_config.h"
 #include "policy_provider_stub.h"
@@ -163,8 +161,6 @@ public:
     int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
         bool hasBTPermission, bool hasSystemPermission);
 
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
     void SetParameterCallback(const std::shared_ptr<AudioParameterCallback>& callback);
 
     void RegiestPolicy();
@@ -222,8 +218,6 @@ public:
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>>& descs);
 
     void NotifyAccountsChanged(const int &id);
-
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
 
     int32_t DynamicUnloadModule(const AudioPipeType pipeType);
     // for effect V3

@@ -964,13 +964,6 @@ void AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest(const uint8_t *raw
     audioStreamCollector_.UpdateCapturerInfoMuteStatus(randIntValue, true);
 }
 
-void AudioStreamCollectorActivateAudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size) % g_testPipeTypes.size();
-    AudioPipeType pipeType = g_testPipeTypes[index];
-    audioStreamCollector_.ActivateAudioConcurrency(pipeType);
-}
-
 void AudioStreamCollectorIsCallStreamUsageFuzzTest(const uint8_t *rawData, size_t size)
 {
     uint32_t index = static_cast<uint32_t>(size) % g_testStreamUsages.size();
@@ -1182,7 +1175,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorUnsetOffloadModeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetSingleStreamVolumeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorUpdateCapturerInfoMuteStatusFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorActivateAudioConcurrencyFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsCallStreamUsageFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningStreamUsageNoUltrasonicFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorGetRunningSourceTypeNoUltrasonicFuzzTest,

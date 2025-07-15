@@ -1109,32 +1109,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetCurrentCapturerChangeInfos_001, Tes
 }
 
 /**
- * @tc.name  : Test ReconfigureAudioChannel.
- * @tc.number: ReconfigureAudioChannel_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, ReconfigureAudioChannel_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    uint32_t channelCount = 2;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-    int32_t ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SOURCE;
-    ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    deviceType = DeviceType::DEVICE_TYPE_INVALID;
-    ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
  * @tc.name  : Test IsAbsVolumeScene.
  * @tc.number: IsAbsVolumeScene_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1802,21 +1776,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetInputDevice_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 #endif
-
-/**
- * @tc.name  : Test ActivateConcurrencyFromServer.
- * @tc.number: ActivateConcurrencyFromServer_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    int32_t ret = server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ret, SUCCESS);
-}
 
 /**
  * @tc.name  : Test CheckConnectedDevice.

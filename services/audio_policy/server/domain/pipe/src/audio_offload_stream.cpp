@@ -27,7 +27,6 @@
 
 #include "audio_policy_utils.h"
 #include "audio_server_proxy.h"
-#include "audio_config_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -90,11 +89,6 @@ void AudioOffloadStream::SetOffloadMode()
 
 void AudioOffloadStream::OffloadStreamSetCheck(uint32_t sessionId)
 {
-    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
-    int32_t ret = AudioStreamCollector::GetAudioStreamCollector().ActivateAudioConcurrency(pipeType);
-    if (ret != SUCCESS) {
-        return;
-    }
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     std::string curOutputNetworkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
     std::string curOutputMacAddr = audioActiveDevice_.GetCurrentOutputDeviceMacAddr();
@@ -478,16 +472,6 @@ bool AudioOffloadStream::CheckStreamMultichannelMode(const int64_t activateSessi
     // The multi-channel algorithm needs to be supported in the DSP
     return AudioServerProxy::GetInstance().GetEffectOffloadEnabledProxy();
 }
-void AudioOffloadStream::CheckStreamMode(const int64_t activateSessionId)
-{
-    Trace trace("AudioOffloadStream::CheckStreamMode:activateSessionId:" + std::to_string(activateSessionId));
-    if (CheckStreamMultichannelMode(activateSessionId)) {
-        AudioPipeType pipeMultiChannel = PIPE_TYPE_MULTICHANNEL;
-        int32_t ret = streamCollector_.ActivateAudioConcurrency(pipeMultiChannel);
-        CHECK_AND_RETURN_LOG(ret == SUCCESS, "concede incoming multichannel");
-        MoveToNewPipeInner(activateSessionId, PIPE_TYPE_MULTICHANNEL);
-    }
-}
 
 std::vector<SinkInput> AudioOffloadStream::FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs)
 {
@@ -523,14 +507,6 @@ void AudioOffloadStream::ResetOffloadModeOnSpatializationChanged(std::vector<int
             OffloadStreamReleaseCheck(*offloadSessionID_);
         }
     }
-}
-
-int32_t AudioOffloadStream::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
-{
-    std::lock_guard<std::mutex> lock(offloadMutex_);
-    CHECK_AND_RETURN_RET_LOG(!offloadSessionID_.has_value(),
-        ERR_ILLEGAL_STATE, "Offload stream existing, concede incoming lowlatency stream");
-    return SUCCESS;
 }
 
 void AudioOffloadStream::ResetOffloadStatus(uint32_t sessionId)

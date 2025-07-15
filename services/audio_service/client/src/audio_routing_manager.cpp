@@ -123,11 +123,6 @@ int32_t AudioRoutingManager::UnsetAudioDeviceRefinerCallback()
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
-{
-    return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
-}
-
 int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {

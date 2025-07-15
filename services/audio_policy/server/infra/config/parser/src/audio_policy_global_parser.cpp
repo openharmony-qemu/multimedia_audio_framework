@@ -17,8 +17,11 @@
 #endif
 
 #include "audio_policy_global_parser.h"
-#include "audio_errors.h"
+
 #include "media_monitor_manager.h"
+
+#include "audio_policy_log.h"
+#include "audio_errors.h"
 
 namespace OHOS {
 namespace AudioStandard {

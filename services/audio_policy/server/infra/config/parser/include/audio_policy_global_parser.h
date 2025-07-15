@@ -24,7 +24,6 @@
 #include <libxml/tree.h>
 
 #include "audio_info.h"
-#include "iport_observer.h"
 #include "parser.h"
 
 namespace OHOS {

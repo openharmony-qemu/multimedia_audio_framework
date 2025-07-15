@@ -169,24 +169,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, HandleA2dpDeviceInOffload_001, TestSize.
 }
 
 /**
- * @tc.name  : Test ReconfigureAudioChannel.
- * @tc.number: ReconfigureAudioChannel_001
- * @tc.desc  : Test ReconfigureAudioChannel interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, ReconfigureAudioChannel_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    uint32_t channelCount = 1;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
-    int32_t ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, ERROR);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-    ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
  * @tc.name  : Test WriteAllDeviceSysEvents.
  * @tc.number: WriteAllDeviceSysEvents_001
  * @tc.desc  : Test WriteAllDeviceSysEvents interfaces.

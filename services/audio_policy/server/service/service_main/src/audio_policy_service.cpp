@@ -528,40 +528,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
     return status;
 }
 
-int32_t AudioPolicyService::ReconfigureAudioChannel(const uint32_t &channelCount, DeviceType deviceType)
-{
-    if (audioActiveDevice_.GetCurrentOutputDeviceType() != DEVICE_TYPE_FILE_SINK) {
-        AUDIO_INFO_LOG("FILE_SINK_DEVICE is not active. Cannot reconfigure now");
-        return ERROR;
-    }
-
-    std::string module = FILE_SINK;
-
-    if (deviceType == DeviceType::DEVICE_TYPE_FILE_SINK) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_8 && channelCount >= MONO, ERROR, "Invalid sink channel");
-        module = FILE_SINK;
-    } else if (deviceType == DeviceType::DEVICE_TYPE_FILE_SOURCE) {
-        CHECK_AND_RETURN_RET_LOG(channelCount <= CHANNEL_6 && channelCount >= MONO, ERROR, "Invalid src channel");
-        module = FILE_SOURCE;
-    } else {
-        AUDIO_ERR_LOG("Invalid DeviceType");
-        return ERROR;
-    }
-
-    audioIOHandleMap_.ClosePortAndEraseIOHandle(module);
-
-    std::list<AudioModuleInfo> moduleInfoList;
-    audioConfigManager_.GetModuleListByType(ClassType::TYPE_FILE_IO, moduleInfoList);
-    for (auto &moduleInfo : moduleInfoList) {
-        if (module == moduleInfo.name) {
-            moduleInfo.channels = to_string(channelCount);
-            audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
-            audioPolicyManager_.SetDeviceActive(deviceType, module, true);
-        }
-    }
-    return SUCCESS;
-}
-
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     AUDIO_WARNING_LOG("No bt permission");
@@ -1227,11 +1193,6 @@ int32_t AudioPolicyService::SetSleAudioOperationCallback(const sptr<IRemoteObjec
     sleAudioDeviceManager_.SetSleAudioOperationCallback(sleAudioOperationCallback);
 
     return SUCCESS;
-}
-
-int32_t AudioPolicyService::ActivateConcurrencyFromServer(AudioPipeType incomingPipe)
-{
-    return audioOffloadStream_.ActivateConcurrencyFromServer(incomingPipe);
 }
 
 int32_t AudioPolicyService::NotifyCapturerRemoved(uint64_t sessionId)

@@ -239,11 +239,6 @@ void AudioPolicyServiceThirdTest()
     GetServerPtr()->audioPolicyService_.RegisterRemoteDevStatusCallback();
     GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DEVICE_TYPE_BLUETOOTH_A2DP;
-    uint32_t channelcount = GetData<uint32_t>();
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SINK);
-    GetServerPtr()->audioPolicyService_.ReconfigureAudioChannel(channelcount, DEVICE_TYPE_FILE_SOURCE);
     std::vector<DeviceType> DeviceTypeVec = {
         DEVICE_TYPE_BLUETOOTH_A2DP,
         DEVICE_TYPE_BLUETOOTH_SCO,

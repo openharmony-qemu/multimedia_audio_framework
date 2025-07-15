@@ -55,7 +55,6 @@ public:
     void ResetOffloadMode(int32_t sessionId);
     int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     void RemoteOffloadStreamRelease(uint32_t sessionId);
-    void CheckStreamMode(const int64_t activateSessionId);
     bool CheckStreamMultichannelMode(const int64_t activateSessionId);
     int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
     std::vector<SinkInput> FilterSinkInputs(int32_t sessionId, std::vector<SinkInput> sinkInputs);
@@ -65,7 +64,6 @@ public:
     int32_t LoadMchModule();
     bool GetOffloadAvailableFromXml() const;
     void ResetOffloadModeOnSpatializationChanged(std::vector<int32_t> &allSessions);
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
     void SetOffloadStatus(uint32_t sessionId);
     void ResetOffloadStatus(uint32_t sessionId);
 private:
