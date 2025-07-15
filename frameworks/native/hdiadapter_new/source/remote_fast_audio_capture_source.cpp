@@ -559,7 +559,7 @@ int32_t RemoteFastAudioCaptureSource::CheckPositionTime(void)
     return ERR_OPERATION_FAILED;
 }
 
-void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

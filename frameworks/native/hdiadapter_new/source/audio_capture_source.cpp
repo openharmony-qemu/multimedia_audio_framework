@@ -179,7 +179,7 @@ int32_t AudioCaptureSource::Start(void)
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "start fail");
     started_.store(true);
 
-    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(true);
     }
 
@@ -199,7 +199,7 @@ int32_t AudioCaptureSource::Stop(void)
     futurePromiseEnsureLock.get();
     stopThread.detach();
 
-    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+    if (halName_ == HDI_ID_INFO_ACCESSORY && dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
         SetAccessoryDeviceState(false);
     }
 
@@ -840,9 +840,9 @@ void AudioCaptureSource::InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc
     if (halName_ == HDI_ID_INFO_USB) {
         deviceDesc.pins = PIN_IN_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
-        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+        if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
             deviceDesc.pins = PIN_IN_PENCIL;
-        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+        } else if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_UWB) {
             deviceDesc.pins = PIN_IN_UWB;
         }
     }
@@ -857,9 +857,9 @@ void AudioCaptureSource::InitSceneDesc(struct AudioSceneDescriptor &sceneDesc, A
     if (halName_ == HDI_ID_INFO_USB) {
         port = PIN_IN_USB_HEADSET;
     } else if (halName_ == HDI_ID_INFO_ACCESSORY) {
-        if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+        if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
             port = PIN_IN_PENCIL;
-        } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+        } else if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_UWB) {
             port = PIN_IN_UWB;
         }
     }
@@ -1190,13 +1190,21 @@ void AudioCaptureSource::DumpData(char *frame, uint64_t &replyBytes)
     }
 }
 
-void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void AudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
-    dmDeviceType_ = dmDeviceType;
+    std::lock_guard<std::mutex> lock(statusMutex_);
+    bool isDmDeviceTypeUpdated = (deviceType == currentActiveDevice_ && dmDeviceTypeMap_[deviceType] != dmDeviceType);
+    dmDeviceTypeMap_[deviceType] = dmDeviceType;
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
-    deviceManager->SetDmDeviceType(dmDeviceType);
+    deviceManager->SetDmDeviceType(dmDeviceType, deviceType);
+
+    if (isDmDeviceTypeUpdated) {
+        AUDIO_INFO_LOG("dm deviceType update, need update input port pin");
+        int32_t ret = DoSetInputRoute(currentActiveDevice_);
+        CHECK_AND_RETURN_LOG(ret == SUCCESS, "DoSetInputRoute fails");
+    }
 }
 
 } // namespace AudioStandard

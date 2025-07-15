@@ -294,6 +294,21 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_012, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test SetDmDeviceType API
+ * @tc.number : SetDmDeviceType_001
+ * @tc.desc   : Test SetDmDeviceType
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, SetDmDeviceType_001, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    primarySource_->UpdateActiveDevice(DEVICE_TYPE_MIC);
+    primarySource_->SetDmDeviceType(DM_DEVICE_TYPE_DEFAULT, DEVICE_TYPE_MIC);
+    primarySource_->SetDmDeviceType(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_MIC);
+    DeInitPrimarySource();
+}
+
+/**
  * @tc.name   : Test UsbSource API
  * @tc.number : UsbSourceUnitTest_001
  * @tc.desc   : Test usb source create

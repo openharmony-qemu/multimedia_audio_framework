@@ -94,7 +94,7 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
-    void SetDmDeviceType(uint16_t dmDeviceType) override;
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     AudioCaptureSource audioCaptureSource_;

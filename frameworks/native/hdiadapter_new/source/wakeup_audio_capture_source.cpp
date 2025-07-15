@@ -300,7 +300,7 @@ void WakeupAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: WakeupSource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
 
-void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }
