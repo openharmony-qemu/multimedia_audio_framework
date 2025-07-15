@@ -240,7 +240,7 @@ napi_value NapiAudioCollaborativeManager::SetCollaborativePlaybackEnabledForDevi
     napi_env env, napi_callback_info info)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission");
+        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED), "No system permission.");
 
     auto context = std::make_shared<AudioCollaborativeManagerAsyncContext>();
     if (context == nullptr) {
