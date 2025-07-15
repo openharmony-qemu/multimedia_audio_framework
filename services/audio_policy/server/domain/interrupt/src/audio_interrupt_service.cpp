@@ -2016,7 +2016,11 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {
         audioFocusInfoList = itZone->second->audioFocusInfoList;
     }
-    for (const auto&[interrupt, focuState] : audioFocusInfoList) {
+    for (const auto &[interrupt, focuState] : audioFocusInfoList) {
+        if (interrupt.isAudioSessionInterrupt) {
+            audioScene = GetHighestPriorityAudioSceneFromAudioSession(interrupt, audioScene);
+            continue;
+        }
         AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(interrupt);
         int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
         if (itAudioScenePriority >= audioScenePriority) {
@@ -2025,22 +2029,56 @@ AudioScene AudioInterruptService::GetHighestPriorityAudioScene(const int32_t zon
             ownerPid_ = interrupt.pid;
             ownerUid_ = interrupt.uid;
         }
+    }
 
-        if (interrupt.isAudioSessionInterrupt && sessionService_ != nullptr) {
-            const auto &streamsInSession = sessionService_->GetStreams(interrupt.pid);
-            for (auto &it : streamsInSession) {
-                AudioScene innerAudioScene = GetAudioSceneFromAudioInterrupt(it);
-                int innerAudioScenePriority = GetAudioScenePriority(innerAudioScene);
-                if (innerAudioScenePriority >= audioScenePriority) {
-                    audioScene = innerAudioScene;
-                    audioScenePriority = innerAudioScenePriority;
-                    ownerPid_ = interrupt.pid;
-                    ownerUid_ = interrupt.uid;
-                }
-            }
+    return audioScene;
+}
+
+AudioScene AudioInterruptService::GetHighestPriorityAudioSceneFromAudioSession(
+    const AudioInterrupt &audioInterrupt, const AudioScene &audioScene) const
+{
+    if (sessionService_ == nullptr) {
+        return audioScene;
+    }
+
+    int audioScenePriority = GetAudioScenePriority(audioScene);
+    AudioScene finalAudioScene = audioScene;
+    bool hasRingtoneInVoip = false;
+
+    // Handle streams in audio session
+    const auto &streamsInSession = sessionService_->GetStreams(audioInterrupt.pid);
+    for (auto &it : streamsInSession) {
+        AudioScene innerAudioScene = GetAudioSceneFromAudioInterrupt(it);
+        int innerAudioScenePriority = GetAudioScenePriority(innerAudioScene);
+        if (innerAudioScenePriority >= audioScenePriority) {
+            finalAudioScene = innerAudioScene;
+            audioScenePriority = innerAudioScenePriority;
+            ownerPid_ = audioInterrupt.pid;
+            ownerUid_ = audioInterrupt.uid;
+        }
+
+        // In the VoIP session scene, the STREAM_VOICE_RING AudioScene should be kept independent
+        if (it.audioFocusType.streamType == STREAM_RING &&
+            audioInterrupt.audioFocusType.streamType == STREAM_VOICE_COMMUNICATION) {
+            hasRingtoneInVoip = true;
         }
     }
-    return audioScene;
+
+    if (hasRingtoneInVoip) {
+        return finalAudioScene;
+    }
+
+    // Update audio scene for audio session fake audioInterrupt
+    AudioScene itAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
+    int itAudioScenePriority = GetAudioScenePriority(itAudioScene);
+    if (itAudioScenePriority >= audioScenePriority) {
+        finalAudioScene = itAudioScene;
+        audioScenePriority = itAudioScenePriority;
+        ownerPid_ = audioInterrupt.pid;
+        ownerUid_ = audioInterrupt.uid;
+    }
+
+    return finalAudioScene;
 }
 
 bool AudioInterruptService::HadVoipStatus(const AudioInterrupt &audioInterrupt,
@@ -2408,6 +2446,10 @@ void AudioInterruptService::ResumeAudioFocusList(const int32_t zoneId, bool isSe
 AudioScene AudioInterruptService::RefreshAudioSceneFromAudioInterrupt(const AudioInterrupt &audioInterrupt,
     AudioScene &highestPriorityAudioScene)
 {
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        return GetHighestPriorityAudioSceneFromAudioSession(audioInterrupt, highestPriorityAudioScene);
+    }
+
     AudioScene targetAudioScene = GetAudioSceneFromAudioInterrupt(audioInterrupt);
     if (GetAudioScenePriority(targetAudioScene) >= GetAudioScenePriority(highestPriorityAudioScene)) {
         highestPriorityAudioScene = targetAudioScene;
