@@ -67,8 +67,6 @@ public:
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
-    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
-    int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
 
     // deprecated interrupt interfaces
     int32_t SetAudioManagerInterruptCallback(const sptr<IRemoteObject> &object);

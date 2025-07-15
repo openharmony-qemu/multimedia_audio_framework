@@ -493,7 +493,7 @@ void OHAudioSessionDeviceCallback::OnAudioSessionCurrentDeviceChanged(
 
     callback_(audioDeviceDescriptorArray,
         static_cast<OH_AudioStream_DeviceChangeReason>(deviceChangedEvent.changeReason),
-        static_cast<OH_AudioSession_DeviceChangeRecommendedAction>(deviceChangedEvent.recommendedAction));
+        static_cast<OH_AudioSession_OutputDeviceChangeRecommendedAction>(deviceChangedEvent.recommendedAction));
 }
 
 } // namespace AudioStandard

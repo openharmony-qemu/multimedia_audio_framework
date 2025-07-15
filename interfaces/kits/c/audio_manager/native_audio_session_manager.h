@@ -159,7 +159,7 @@ typedef enum {
      * @brief recommend to stop the playback.
      */
     DEVICE_CHANGE_RECOMMEND_TO_STOP = 1,
-} OH_AudioSession_DeviceChangeRecommendedAction;
+} OH_AudioSession_OutputDeviceChangeRecommendedAction;
 
 /**
  * @brief Declare the audio deactivated reasons.
@@ -231,17 +231,17 @@ typedef void (*OH_AudioSession_StateChangedCallback) (
  * @param audioDeviceDescriptorArray the {@link OH_AudioDeviceDescriptorArray}
  * pointer variable which will be set the audio device descriptors value.
  * Do not release the audioDeviceDescriptorArray pointer separately
- * instead call {@link OH_AudioSessionManager_ReleaseDevices} to release the DeviceDescriptor array
- * when it is no use anymore.
+ * instead call {@link OH_AudioSessionManager_ReleaseDevices}
+ * to release the DeviceDescriptor array when it is no use anymore.
  * @param changeReason the {@link #OH_AudioStream_DeviceChangeReason} indicates that why does the device changes.
- * @param recommendedAction the {@link #OH_AudioSession_DeviceChangeRecommendedAction} recommend action
- * when device change.
+ * @param recommendedAction the {@link #OH_AudioSession_OutputDeviceChangeRecommendedAction}
+ * recommend action when device change.
  * @since 20
  */
 typedef void (*OH_AudioSession_CurrentOutputDeviceChangedCallback) (
     OH_AudioDeviceDescriptorArray *devices,
     OH_AudioStream_DeviceChangeReason changeReason,
-    OH_AudioSession_DeviceChangeRecommendedAction recommendedAction);
+    OH_AudioSession_OutputDeviceChangeRecommendedAction recommendedAction);
 
 /**
  * @brief This function pointer will point to the callback function that
@@ -268,6 +268,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(
 
 /**
  * @brief Activate the audio session for the current pid application.
+ * If {@link #OH_AudioSessionManager_SetScene} is called, it will take focus when calling this method.
  *
  * @param audioSessionManager the {@link #OH_AudioSessionManager}
  * returned by the {@link #OH_AudioManager_GetAudioSessionManager}

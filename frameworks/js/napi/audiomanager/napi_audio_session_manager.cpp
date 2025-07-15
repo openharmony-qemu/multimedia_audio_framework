@@ -190,12 +190,6 @@ napi_value NapiAudioSessionMgr::ActivateAudioSession(napi_env env, napi_callback
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM, "System error. Set app volume fail.");
         }
-
-        std::lock_guard<std::mutex> lock(napiSessionMgr->setDefaultOutputDeviceMutex_);
-        if (napiSessionMgr->setDefaultOutputDevice_) {
-            AUDIO_INFO_LOG("need SetDefaultOutputDevice");
-            napiSessionMgr->audioSessionMngr_->SetDefaultOutputDevice(napiSessionMgr->setDeviceType_);
-        }
     };
 
     auto complete = [env, context](napi_value &output) {
@@ -777,11 +771,6 @@ napi_value NapiAudioSessionMgr::SetDefaultOutputDevice(napi_env env, napi_callba
         context->intValue = napiSessionMgr->audioSessionMngr_->SetDefaultOutputDevice(deviceType);
         if (context->intValue != SUCCESS) {
             context->SignError(NAPI_ERR_SYSTEM);
-        } else {
-            AUDIO_INFO_LOG("SetDefaultOutputDevice sucessed.");
-            std::lock_guard<std::mutex> lock(napiSessionMgr->setDefaultOutputDeviceMutex_);
-            napiSessionMgr->setDefaultOutputDevice_ = true;
-            napiSessionMgr->setDeviceType_ = deviceType;
         }
     };
 

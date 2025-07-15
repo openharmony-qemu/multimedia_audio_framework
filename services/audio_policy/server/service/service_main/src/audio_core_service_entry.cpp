@@ -483,6 +483,19 @@ int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRenderer
     return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
 }
 
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
 int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);

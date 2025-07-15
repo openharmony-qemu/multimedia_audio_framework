@@ -3005,7 +3005,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
         audioMicrophoneDescriptor_.SetMicrophoneMute(false);
     }
-    if (interruptService_ != nullptr && interruptService_->IsAudioSessionActivated(pid)) {
+    if (interruptService_ != nullptr) {
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(uid);
         AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", pid, zoneId);
         interruptService_->DeactivateAudioSession(zoneId, pid);
@@ -4547,29 +4547,31 @@ int32_t AudioPolicyServer::SetAudioSessionScene(int32_t audioSessionScene)
 
 int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
 {
-    DeviceType deviceTypeOut = DEVICE_TYPE_NONE;
-    if (interruptService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        int32_t ret = interruptService_->GetSessionDefaultOutputDevice(callerPid, deviceTypeOut);
-        deviceType = deviceTypeOut;
-        return ret;
+    if (eventEntry_ == nullptr) {
+        AUDIO_ERR_LOG("eventEntry_ is nullptr!");
+        return ERR_UNKNOWN;
     }
 
-    return ERR_ILLEGAL_STATE;
+    DeviceType deviceTypeOut = DEVICE_TYPE_NONE;
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    int32_t ret = eventEntry_->GetSessionDefaultOutputDevice(callerPid, deviceTypeOut);
+    deviceType = static_cast<int32_t>(deviceTypeOut);
+    return ret;
 }
 
 int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
 {
-    int32_t ret = ERR_ILLEGAL_STATE;
+    if (eventEntry_ == nullptr) {
+        AUDIO_ERR_LOG("eventEntry_ is nullptr!");
+        return ERR_UNKNOWN;
+    }
 
-    if (interruptService_ != nullptr) {
-        int32_t callerPid = IPCSkeleton::GetCallingPid();
-        ret = interruptService_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
-        if (ret == NEED_TO_FETCH) {
-            coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
-                AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-            return SUCCESS;
-        }
+    int32_t callerPid = IPCSkeleton::GetCallingPid();
+    int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
+    if (ret == NEED_TO_FETCH) {
+        coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+        return SUCCESS;
     }
 
     return ret;

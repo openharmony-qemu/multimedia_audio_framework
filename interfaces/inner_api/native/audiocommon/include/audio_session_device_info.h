@@ -25,7 +25,7 @@ namespace AudioStandard {
  * Enumerates the recommend action when device changed.
  * @since 20
  */
-enum class DeviceChangeRecommendedAction {
+enum class OutputDeviceChangeRecommendedAction {
     /**
      * No special recommendations, the playback can be continue or not.
      */
@@ -55,7 +55,7 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
      * Recommend action when device changed.
      * @since 20
      */
-    DeviceChangeRecommendedAction recommendedAction;
+    OutputDeviceChangeRecommendedAction recommendedAction;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -77,7 +77,7 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
         }
 
         info->changeReason = static_cast<AudioStreamDeviceChangeReason>(parcel.ReadInt32());
-        info->recommendedAction = static_cast<DeviceChangeRecommendedAction>(parcel.ReadInt32());
+        info->recommendedAction = static_cast<OutputDeviceChangeRecommendedAction>(parcel.ReadInt32());
         int32_t size = parcel.ReadInt32();
         for (int32_t i = 0; i < size; i++) {
             info->devices.emplace_back(AudioDeviceDescriptor::Unmarshalling(parcel));

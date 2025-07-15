@@ -134,7 +134,7 @@ void AudioInterruptZoneManager::ForceStopAudioFocusInZone(int32_t zoneId, const 
 
     auto audioSession = service_->sessionService_->GetAudioSessionByPid(interrupt.pid);
     CHECK_AND_RETURN_LOG(audioSession != nullptr, "audio session is nullptr");
-    audioSession->RemoveAudioInterrptByStreamId(interrupt.streamId);
+    audioSession->RemoveStreamInfo(interrupt.streamId);
 }
 
 int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneId, GetZoneIdFunc func)
@@ -291,7 +291,7 @@ void AudioInterruptZoneManager::RemoveAudioZoneInterrupts(int32_t zoneId, const 
     for (auto &it : focus) {
         auto audioSession = service_->sessionService_->GetAudioSessionByPid(it->first.pid);
         if (audioSession != nullptr) {
-            audioSession->RemoveAudioInterrptByStreamId(it->first.streamId);
+            audioSession->RemoveStreamInfo(it->first.streamId);
         }
         AUDIO_DEBUG_LOG("remove interrupt %{public}d from zone %{public}d",
             it->first.streamId, zoneId);

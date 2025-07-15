@@ -28,6 +28,7 @@
 #include "audio_usb_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_collaborative_service.h"
+#include "audio_stream_id_allocator.h"
 #include "ipc_skeleton.h"
 
 namespace OHOS {
@@ -868,17 +869,9 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId, Au
     return SUCCESS;
 }
 
-std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 100000
-
 uint32_t AudioCoreService::GenerateSessionId()
 {
-    uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("sessionId:%{public}d", sessionId);
-    if (g_sessionId > MAX_VALID_SESSIONID) {
-        AUDIO_WARNING_LOG("sessionId is too large, reset it!");
-        g_sessionId = FIRST_SESSIONID;
-    }
-    return sessionId;
+    return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
 void AudioCoreService::AddSessionId(const uint32_t sessionId)

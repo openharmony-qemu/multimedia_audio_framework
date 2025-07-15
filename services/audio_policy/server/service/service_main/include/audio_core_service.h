@@ -45,6 +45,7 @@
 #include "audio_core_service_utils.h"
 #include "sle_audio_device_manager.h"
 #include "audio_event_utils.h"
+#include "audio_stream_id_allocator.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -121,6 +122,7 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
         int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+        int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
         // Functions related to get operations - device related
         bool IsArmUsbDevice(const AudioDeviceDescriptor &deviceDesc);
@@ -138,6 +140,7 @@ public:
             bool hasBTPermission, bool hasSystemPermission);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
         int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+        int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
 private:
@@ -220,6 +223,7 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
     int32_t UnexcludeOutputDevices(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
+    int32_t SetSessionDefaultOutputDevice(const int32_t callerPid, const DeviceType &deviceType);
 
     // Functions related to get operations - device related
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetDevices(DeviceFlag deviceFlag);
@@ -237,6 +241,7 @@ private:
         bool hasBTPermission, bool hasSystemPermission);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
     int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
+    int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
     bool GetVolumeGroupInfos(std::vector<sptr<VolumeGroupInfo>> &infos);
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
