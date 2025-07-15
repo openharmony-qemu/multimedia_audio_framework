@@ -641,7 +641,7 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     }
 
     unprocessedFramesBytes_.fetch_add(oriBufferSize);
-    ringCacheLatency_.store(static_cast<int64>(bufferSize));
+    ringCacheLatencyBytes_.store(static_cast<int64_t>(bufferSize));
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
     return result;
