@@ -2398,7 +2398,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr());
-    EXPECT_NE(result,HDI_INVALID_ID);
+    EXPECT_NE(result, HDI_INVALID_ID);
 }
 
 /**
