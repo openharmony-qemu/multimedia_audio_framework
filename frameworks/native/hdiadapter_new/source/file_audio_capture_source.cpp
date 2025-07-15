@@ -190,7 +190,7 @@ void FileAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: FileSource\n";
 }
 
-void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

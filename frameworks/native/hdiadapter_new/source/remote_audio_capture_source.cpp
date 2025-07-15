@@ -454,7 +454,7 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
     }
 }
 
-void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

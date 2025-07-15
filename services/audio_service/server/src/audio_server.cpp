@@ -1374,13 +1374,21 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
-int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType)
+int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-    std::shared_ptr<IAudioCaptureSource> source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
-    source->SetDmDeviceType(dmDeviceType);
+
+    std::shared_ptr<IAudioCaptureSource> source;
+    if (static_cast<DeviceType>(deviceType) == DEVICE_TYPE_NEARLINK_IN) {
+        source = GetSourceByProp(HDI_ID_TYPE_PRIMARY);
+    } else {
+        source = GetSourceByProp(HDI_ID_TYPE_ACCESSORY, HDI_ID_INFO_ACCESSORY, true);
+    }
+    CHECK_AND_RETURN_RET_LOG(source != nullptr, ERROR, "has no valid source");
+
+    source->SetDmDeviceType(dmDeviceType, static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 

@@ -573,7 +573,7 @@ bool BluetoothAudioCaptureSource::IsValidState(void)
     return validState_;
 }
 
-void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void BluetoothAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

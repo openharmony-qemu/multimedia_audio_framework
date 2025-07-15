@@ -75,7 +75,7 @@ public:
     int32_t SetAccessoryDeviceState(bool state);
     void DumpInfo(std::string &dumpString) override;
 
-    void SetDmDeviceType(uint16_t dmDeviceType) override;
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -171,7 +171,7 @@ private:
     AudioScene currentAudioScene_ = AUDIO_SCENE_INVALID;
     std::atomic<bool> muteState_ = false;
     std::string address_ = "";
-    uint16_t dmDeviceType_ = 0;
+    std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
 };

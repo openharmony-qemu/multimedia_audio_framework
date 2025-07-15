@@ -107,7 +107,7 @@ public:
     int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName) override;
-    int32_t SetDmDeviceType(uint16_t dmDeviceType) override;
+    int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;

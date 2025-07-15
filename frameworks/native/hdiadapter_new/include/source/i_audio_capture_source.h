@@ -81,7 +81,7 @@ public:
 
     virtual void DumpInfo(std::string &dumpString) {}
 
-    virtual void SetDmDeviceType(uint16_t dmDeviceType) {}
+    virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
