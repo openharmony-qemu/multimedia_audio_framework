@@ -1924,10 +1924,10 @@ int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolu
 
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
         auto audioEffectChain = it->second;
-
         if (audioEffectChain == nullptr) {
             continue;
         }
+        
         audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState);
         int32_t ret = audioEffectChain->UpdateEffectParam();
         CHECK_AND_CONTINUE_LOG(ret == 0, "set ap rotation failed");

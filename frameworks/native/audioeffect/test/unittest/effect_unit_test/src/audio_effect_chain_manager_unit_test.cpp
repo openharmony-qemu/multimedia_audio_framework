@@ -3949,5 +3949,32 @@ HWTEST(AudioEffectChainManagerUnitTest, ExistAudioEffectChainInner_003, TestSize
     result = AudioEffectChainManager::GetInstance()->ExistAudioEffectChainInner(sceneType, effectMode);
     EXPECT_EQ(false, result);
 }
+
+/**
+* @tc.name   : Test SetAbsVolumeStateToEffect API
+* @tc.number : SetAbsVolumeStateToEffect_004
+* @tc.desc   : Test SetAbsVolumeStateToEffect interface.
+*/
+HWTEST(AudioEffectChainManagerUnitTest, SetAbsVolumeStateToEffect_001, TestSize.Level1)
+{
+    std::string scene = "SCENE_MUSIC";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    ASSERT_TRUE(audioEffectChain != nullptr);
+
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"1", nullptr});
+    bool absVolumeState = true;
+    int32_t ret = AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
+    EXPECT_EQ(ret, SUCCESS);
+    absVolumeState = false;
+    ret = AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = AudioEffectChainManager::GetInstance()->EffectDspAbsVolumeStateUpdate(absVolumeState);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = AudioEffectChainManager::GetInstance()->EffectApAbsVolumeStateUpdate(absVolumeState);
+    EXPECT_EQ(ret, SUCCESS);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+}
 } // namespace AudioStandard
 } // namespace OHOS
