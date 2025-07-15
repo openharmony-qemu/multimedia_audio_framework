@@ -1985,7 +1985,7 @@ HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
     info.clientUID = 1000;
     info.sessionId = 1;
     info.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
-    info-stateChangeType = DataTransferStateChangeType::AUDIO_STREAM_START;
+    info.stateChangeType = DataTransferStateChangeType::AUDIO_STREAM_START;
     info.isBackground = false;
     info.badDataRatio[0] = 0;
     info.badDataRatio[1] = 0;
