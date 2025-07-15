@@ -2204,5 +2204,67 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Level1
     audioCoreService->RemoveUnusedPipe();
     EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: LoadSplitModule_001
+ * @tc.desc  : Test AudioCoreService::LoadSplitModule.
+ */
+HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    auto ret = audioCoreService->LoadSplitModule("", "");
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: LoadSplitModule_002
+ * @tc.desc  : Test AudioCoreService::LoadSplitModule.
+ */
+HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string splitArgs = "";
+    std::string networkId = "b94d27b9934d3e08a52e52d7da";
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: LoadSplitModule_003
+ * @tc.desc  : Test AudioCoreService::LoadSplitModule.
+ */
+HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string splitArgs = "8:4096:1";
+    std::string networkId = "";
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: LoadSplitModule_004
+ * @tc.desc  : Test AudioCoreService::LoadSplitModule.
+ */
+HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::string splitArgs = "8:4096:1";
+    std::string networkId = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
+    auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
+    EXPECT_EQ(ret, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

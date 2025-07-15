@@ -564,6 +564,44 @@ void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audi
     }
 }
 
+int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
+    if (splitArgs.empty() || networkId.empty()) {
+        std::string anonymousNetworkId = networkId.empty() ? "" : networkId.substr(0, 2) + "***";
+        AUDIO_ERR_LOG("invalid param, splitArgs:'%{public}s', networkId:'%{public}s'",
+            splitArgs.c_str(), anonymousNetworkId.c_str());
+        return ERR_INVALID_PARAM;
+    }
+    std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
+    std::string currentActivePort = REMOTE_CLASS;
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+    AudioIOHandle oldModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
+        pipeManager_->GetStreamDescsByIoHandle(oldModuleId);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+
+    AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
+        OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
+    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
+    moudleInfo.extra = splitArgs;
+    moudleInfo.needEmptyChunk = false;
+
+    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    if (openRet != 0) {
+        AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    }
+    AudioIOHandle newModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
+    pipeManager_->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
+    AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
+    FetchOutputDeviceAndRoute("LoadSplitModule");
+    AUDIO_INFO_LOG("fetch device after split stream and open port.");
+    return openRet;
+}
+
 bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "invalid deviceDesc");

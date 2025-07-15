@@ -4583,7 +4583,7 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
         AUDIO_ERR_LOG("callerUid %{public}d is not allow LoadSplitModule", callerUid);
         return ERR_PERMISSION_DENIED;
     }
-    return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+    return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
 int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed)

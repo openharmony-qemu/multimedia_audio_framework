@@ -234,7 +234,6 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
     bool getFastControlParam();
 
-    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
     void OnReceiveEvent(const EventFwk::CommonEventData &eventData);
     void SubscribeSafeVolumeEvent();
     int32_t NotifyCapturerRemoved(uint64_t sessionId);

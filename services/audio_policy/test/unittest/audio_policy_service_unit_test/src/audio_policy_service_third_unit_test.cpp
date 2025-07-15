@@ -1681,68 +1681,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetRotationToEffect_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    auto ret = server->audioPolicyService_.LoadSplitModule("", "");
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_002
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_002, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "";
-    std::string networkId = "b94d27b9934d3e08a52e52d7da";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_003
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_003, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "8:4096:1";
-    std::string networkId = "";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_004
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_004, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "8:4096:1";
-    std::string networkId = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
  * @tc.name  : Test IsCurrentActiveDeviceA2dp.
  * @tc.number: IsCurrentActiveDeviceA2dp_001
  * @tc.desc  : Test AudioPolicyService interfaces.
