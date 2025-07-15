@@ -640,8 +640,9 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
         audioBlend_.Process(buffer, bufferSize);
     }
 
+    unprocessedFramesBytes_.fetch_add(oriBufferSize);
+    ringCacheLatencyBytes_.store(static_cast<int64_t>(bufferSize));
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
-    unprocessedFramesBytes_.fetch_add(result);
     MonitorMutePlay(false);
     return result;
 }

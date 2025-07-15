@@ -433,6 +433,7 @@ private:
     std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
     std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
     std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
+    std::atomic<int64_t> ringCacheLatencyBytes_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";
