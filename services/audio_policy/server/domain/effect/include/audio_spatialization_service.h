@@ -30,7 +30,6 @@
 #include "ipc_skeleton.h"
 
 #include "iaudio_policy_interface.h"
-#include "iport_observer.h"
 #include "audio_policy_server_handler.h"
 #include "istandard_audio_service.h"
 

@@ -1109,32 +1109,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, GetCurrentCapturerChangeInfos_001, Tes
 }
 
 /**
- * @tc.name  : Test ReconfigureAudioChannel.
- * @tc.number: ReconfigureAudioChannel_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, ReconfigureAudioChannel_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    uint32_t channelCount = 2;
-    DeviceType deviceType = DeviceType::DEVICE_TYPE_FILE_SINK;
-
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_ = DEVICE_TYPE_FILE_SINK;
-    int32_t ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    deviceType = DeviceType::DEVICE_TYPE_FILE_SOURCE;
-    ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    deviceType = DeviceType::DEVICE_TYPE_INVALID;
-    ret = server->audioPolicyService_.ReconfigureAudioChannel(channelCount, deviceType);
-    EXPECT_EQ(ret, ERROR);
-}
-
-/**
  * @tc.name  : Test IsAbsVolumeScene.
  * @tc.number: IsAbsVolumeScene_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1707,68 +1681,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetRotationToEffect_001, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    auto ret = server->audioPolicyService_.LoadSplitModule("", "");
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_002
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_002, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "";
-    std::string networkId = "b94d27b9934d3e08a52e52d7da";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_003
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_003, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "8:4096:1";
-    std::string networkId = "";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test LoadSplitModule.
- * @tc.number: LoadSplitModule_004
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, LoadSplitModule_004, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    std::string splitArgs = "8:4096:1";
-    std::string networkId = "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9";
-    auto ret = server->audioPolicyService_.LoadSplitModule(splitArgs, networkId);
-    EXPECT_NE(ret, 0);
-}
-
-/**
  * @tc.name  : Test IsCurrentActiveDeviceA2dp.
  * @tc.number: IsCurrentActiveDeviceA2dp_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -1802,21 +1714,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, SetInputDevice_001, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 #endif
-
-/**
- * @tc.name  : Test ActivateConcurrencyFromServer.
- * @tc.number: ActivateConcurrencyFromServer_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    int32_t ret = server->audioPolicyService_.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ret, SUCCESS);
-}
 
 /**
  * @tc.name  : Test CheckConnectedDevice.

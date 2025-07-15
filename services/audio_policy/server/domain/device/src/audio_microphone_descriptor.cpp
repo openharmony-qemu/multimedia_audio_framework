@@ -27,7 +27,6 @@
 #include "audio_policy_manager_factory.h"
 #include "audio_stream_collector.h"
 
-#include "audio_config_manager.h"
 #include "audio_server_proxy.h"
 
 
@@ -80,6 +79,15 @@ int32_t AudioMicrophoneDescriptor::InitPersistentMicrophoneMuteState(bool &isMut
         return ret;
     }
     // Ensure persistent mic mute state takes effect when first startup
+    if (isMicrophoneMutePersistent_) {
+        AUDIO_INFO_LOG("Mute_state has been set.");
+        ret = AudioPolicyManagerFactory::GetAudioPolicyManager().SetPersistMicMuteState(isMicrophoneMutePersistent_);
+        if (ret != SUCCESS) {
+            AUDIO_ERR_LOG("Failed to save the persistent microphone mute status in setting database.");
+            return ERROR;
+        }
+        return SUCCESS;
+    }
     isMicrophoneMutePersistent_ = isMute;
     ret = AudioServerProxy::GetInstance().SetMicrophoneMuteProxy(isMicrophoneMutePersistent_);
     if (ret == SUCCESS) {

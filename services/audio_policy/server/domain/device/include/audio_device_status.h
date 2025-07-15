@@ -79,6 +79,8 @@ public:
         bool isConnected);
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
     uint16_t GetDmDeviceType();
+    void RemoveDeviceFromGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
+    void AddDeviceBackToGlobalOnly(std::shared_ptr<AudioDeviceDescriptor> desc);
 private:
     AudioDeviceStatus() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         streamCollector_(AudioStreamCollector::GetAudioStreamCollector()),

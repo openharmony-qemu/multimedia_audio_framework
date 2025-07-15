@@ -77,6 +77,7 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
+        int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
         // IDeviceStatusObserver
         void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command) override;
@@ -175,6 +176,7 @@ private:
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
     uint32_t GenerateSessionId();
+    int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);
@@ -292,6 +294,9 @@ private:
         SourceType sourceType);
     void RecordSelectDevice(const std::string &history);
     bool IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo);
+    int32_t SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
+    int32_t LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
+        std::string networkId, std::string sinkName, SourceType sourceType);
 #ifdef BLUETOOTH_ENABLE
     void RegisterBluetoothDeathCallback();
     static void BluetoothServiceCrashedCallback(pid_t pid, pid_t uid);

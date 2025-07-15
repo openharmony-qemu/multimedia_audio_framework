@@ -546,7 +546,7 @@ static void MultiplyFilterSymmetricEvenDownMultichannel(SingleStagePolyphaseResa
     const float* inputs, float* outputs, int32_t subfilterNum)
 {
     const uint32_t n = state->filterLength;
-    const int32_t numChannels = state->numChannels;
+    const uint32_t numChannels = state->numChannels;
     const uint32_t decimateFactor = state->decimateFactor;
     uint32_t i;
     uint32_t j;

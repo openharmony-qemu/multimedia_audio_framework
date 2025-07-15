@@ -87,7 +87,7 @@ int32_t PaCapturerStreamImpl::InitParams()
     // Get byte size per frame
     const pa_sample_spec *sampleSpec = pa_stream_get_sample_spec(paStream_);
     CHECK_AND_RETURN_RET_LOG(sampleSpec != nullptr, ERR_OPERATION_FAILED,
-        "pa_sample_spec sampleSpec is nullptr");
+        "pa_sample_spec sampleSpec is nullptr!");
     if (sampleSpec->channels != processConfig_.streamInfo.channels) {
         AUDIO_WARNING_LOG("Unequal channels, in server: %{public}d, in client: %{public}d", sampleSpec->channels,
             processConfig_.streamInfo.channels);
@@ -101,12 +101,12 @@ int32_t PaCapturerStreamImpl::InitParams()
     // Get min buffer size in frame
     const pa_buffer_attr *bufferAttr = pa_stream_get_buffer_attr(paStream_);
     if (bufferAttr == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr");
+        AUDIO_ERR_LOG("pa_stream_get_buffer_attr returned nullptr!");
         return ERR_OPERATION_FAILED;
     }
     minBufferSize_ = (size_t)bufferAttr->fragsize;
     if (byteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero.");
+        AUDIO_ERR_LOG("byteSizePerFrame_ should not be zero!");
         return ERR_INVALID_PARAM;
     }
     spanSizeInFrame_ = minBufferSize_ / byteSizePerFrame_;
@@ -148,7 +148,7 @@ int32_t PaCapturerStreamImpl::Pause(bool isStandby)
 
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Stop Failed");
+        AUDIO_ERR_LOG("Stream Stop failed!");
         return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = pa_stream_cork(paStream_, 1, PAStreamPauseSuccessCb, reinterpret_cast<void *>(this));
@@ -159,7 +159,7 @@ int32_t PaCapturerStreamImpl::Pause(bool isStandby)
 int32_t PaCapturerStreamImpl::GetStreamFramesRead(uint64_t &framesRead)
 {
     if (byteSizePerFrame_ == 0) {
-        AUDIO_ERR_LOG("Error frame size");
+        AUDIO_ERR_LOG("Error frame size!");
         return ERR_OPERATION_FAILED;
     }
     framesRead = totalBytesRead_ / byteSizePerFrame_;
@@ -180,12 +180,12 @@ int32_t PaCapturerStreamImpl::GetCurrentTimeStamp(uint64_t &timestamp)
         }
         pa_operation_unref(operation);
     } else {
-        AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+        AUDIO_ERR_LOG("pa_stream_update_timing_info failed!");
     }
 
     const pa_timing_info *info = pa_stream_get_timing_info(paStream_);
     if (info == nullptr) {
-        AUDIO_ERR_LOG("pa_stream_get_timing_info failed");
+        AUDIO_ERR_LOG("pa_stream_get_timing_info failed!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -220,7 +220,7 @@ int32_t PaCapturerStreamImpl::GetLatency(uint64_t &latency)
         if (operation != nullptr) {
             pa_operation_unref(operation);
         } else {
-            AUDIO_ERR_LOG("pa_stream_update_timing_info failed");
+            AUDIO_ERR_LOG("pa_stream_update_timing_info failed!");
         }
         if (pa_stream_get_latency(paStream_, &paLatency, &negative) >= 0) {
             if (negative) {
@@ -255,13 +255,13 @@ int32_t PaCapturerStreamImpl::Flush()
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Flush Failed");
+        AUDIO_ERR_LOG("Stream Flush failed!");
         return ERR_ILLEGAL_STATE;
     }
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, reinterpret_cast<void *>(this));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("Stream Flush Operation Failed");
+        AUDIO_ERR_LOG("Stream Flush Operation failed!");
         return ERR_OPERATION_FAILED;
     }
     pa_operation_unref(operation);
@@ -278,7 +278,7 @@ int32_t PaCapturerStreamImpl::Stop()
 
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Stop Failed");
+        AUDIO_ERR_LOG("Stream Stop failed!");
         return ERR_ILLEGAL_STATE;
     }
     pa_operation *operation = pa_stream_cork(paStream_, 1, PAStreamStopSuccessCb, reinterpret_cast<void *>(this));
@@ -381,7 +381,7 @@ void PaCapturerStreamImpl::PAStreamReadCb(pa_stream *stream, size_t length, void
     if (readCallback != nullptr) {
         readCallback->OnReadData(length);
     } else {
-        AUDIO_ERR_LOG("Read callback is nullptr");
+        AUDIO_ERR_LOG("Read callback is nullptr!");
     }
 }
 

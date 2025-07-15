@@ -28,7 +28,6 @@
 #include "audio_policy_proxy.h"
 #include "audio_server_death_recipient.h"
 #include "audio_spatialization_state_change_listener.h"
-#include "audio_concurrency_state_listener_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1413,13 +1412,6 @@ int32_t AudioPolicyManager::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo
     return ret;
 }
 
-int32_t AudioPolicyManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ReconfigureAudioChannel(count, deviceType);
-}
-
 int32_t AudioPolicyManager::GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -2604,38 +2596,6 @@ int32_t AudioPolicyManager::SetAudioVKBInfoMgrCallback(
     return gsp->SetAudioVKBInfoMgrCallback(object);
 }
 
-int32_t AudioPolicyManager::SetAudioConcurrencyCallback(const uint32_t sessionID,
-    const std::shared_ptr<AudioConcurrencyCallback> &callback)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
-
-    sptr<AudioConcurrencyStateListenerService> listener = new(std::nothrow) AudioConcurrencyStateListenerService();
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
-    listener->SetConcurrencyCallback(callback);
-
-    sptr<IRemoteObject> object = listener->AsObject();
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
-
-    return gsp->SetAudioConcurrencyCallback(sessionID, object);
-}
-
-int32_t AudioPolicyManager::UnsetAudioConcurrencyCallback(const uint32_t sessionID)
-{
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->UnsetAudioConcurrencyCallback(sessionID);
-}
-
-int32_t AudioPolicyManager::ActivateAudioConcurrency(const AudioPipeType &pipeType)
-{
-    Trace trace("AudioPolicyManager::ActivateAudioConcurrency:" + std::to_string(pipeType));
-    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
-    return gsp->ActivateAudioConcurrency(pipeType);
-}
-
 // When AudioPolicyServer died, clear client tracker stubs. New tracker stubs will be added
 // in IAudioStream::RestoreAudioStream. Only called in AudioPolicyServerDied().
 void AudioPolicyManager::ResetClientTrackerStubMap()
@@ -3138,7 +3098,7 @@ bool AudioPolicyManager::IsCapturerFocusAvailable(const AudioCapturerInfo &captu
 int32_t AudioPolicyManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, false, "audio policy manager proxy is NULL.");
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     int32_t ret = ERROR;
     gsp->ForceVolumeKeyControlType(static_cast<int32_t>(volumeType), duration, ret);
     return ret;

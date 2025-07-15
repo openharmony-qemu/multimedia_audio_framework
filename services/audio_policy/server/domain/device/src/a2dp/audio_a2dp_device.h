@@ -47,6 +47,9 @@ public:
     void AddA2dpInDevice(const std::string& device, const A2dpDeviceConfigInfo& config);
     size_t DelA2dpInDevice(const std::string& device);
     bool GetA2dpDeviceMute(const std::string& device, bool& isMute);
+    void AddHearingAidDevice(const std::string& device, const A2dpDeviceConfigInfo& config);
+    size_t DelHearingAidDevice(const std::string& device);
+    bool CheckHearingAidDeviceExist(const std::string& device);
 private:
     AudioA2dpDevice() {}
     ~AudioA2dpDevice() {}
@@ -55,6 +58,8 @@ private:
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpDeviceMap_;
     mutable std::mutex a2dpInDeviceMapMutex_;
     std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedA2dpInDeviceMap_;
+    mutable std::mutex hearingAidDeviceMapMutex_;
+    std::unordered_map<std::string, A2dpDeviceConfigInfo> connectedHearingAidDeviceMap_;
 };
 }
 }

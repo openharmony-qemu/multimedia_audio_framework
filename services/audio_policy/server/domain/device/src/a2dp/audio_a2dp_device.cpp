@@ -177,5 +177,25 @@ bool AudioA2dpDevice::SetA2dpDeviceVolumeLevel(const std::string& device, const 
     return true;
 }
 
+void AudioA2dpDevice::AddHearingAidDevice(const std::string& device, const A2dpDeviceConfigInfo& config)
+{
+    std::lock_guard<std::mutex> lock(hearingAidDeviceMapMutex_);
+    connectedHearingAidDeviceMap_.insert_or_assign(device, config);
+}
+
+size_t AudioA2dpDevice::DelHearingAidDevice(const std::string& device)
+{
+    std::lock_guard<std::mutex> lock(hearingAidDeviceMapMutex_);
+    connectedHearingAidDeviceMap_.erase(device);
+    return connectedHearingAidDeviceMap_.size();
+}
+
+bool AudioA2dpDevice::CheckHearingAidDeviceExist(const std::string& device)
+{
+    std::lock_guard<std::mutex> lock(hearingAidDeviceMapMutex_);
+    auto configInfoPos = connectedHearingAidDeviceMap_.find(device);
+    return configInfoPos != connectedHearingAidDeviceMap_.end();
+}
+
 }
 }

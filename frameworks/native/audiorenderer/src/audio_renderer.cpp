@@ -2662,42 +2662,6 @@ void AudioRendererPrivate::MockPcmData(uint8_t *buffer, size_t bufferSize) const
     }
 }
 
-void AudioRendererPrivate::ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
-    const AudioStreamType &streamType, IAudioStream::StreamClass &streamClass)
-{
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    if (rendererInfo_.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
-        rendererInfo_.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION ||
-        rendererInfo_.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) {
-        rendererInfo_.pipeType = PIPE_TYPE_CALL_OUT;
-    } else if (streamClass == IAudioStream::FAST_STREAM) {
-        rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
-    } else if (streamType == STREAM_MUSIC && audioStreamParams.samplingRate >= SAMPLE_RATE_48000 &&
-        audioStreamParams.format >= SAMPLE_S24LE) {
-        std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors =
-            AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo_, true);
-        if (!deviceDescriptors.empty() && deviceDescriptors[0] != nullptr) {
-            if ((deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_USB_HEADSET ||
-                deviceDescriptors[0]->deviceType_ == DEVICE_TYPE_WIRED_HEADSET)) {
-                rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-            }
-        }
-    }
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(rendererInfo_.pipeType);
-    if (ret != SUCCESS) {
-        if (streamClass == IAudioStream::FAST_STREAM) {
-            streamClass = IAudioStream::PA_STREAM;
-        }
-        rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    }
-    return;
-}
-
-void AudioRendererPrivate::ConcedeStream()
-{
-    AUDIO_WARNING_LOG("Not in use");
-}
-
 void AudioRendererPrivate::EnableVoiceModemCommunicationStartStream(bool enable)
 {
     isEnableVoiceModemCommunicationStartStream_ = enable;

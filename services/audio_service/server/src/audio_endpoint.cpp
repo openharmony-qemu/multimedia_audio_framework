@@ -75,16 +75,11 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-         deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, clientConfig.streamType);
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
-        AUDIO_ERR_LOG("Config AudioEndpoint failed.");
+        AUDIO_ERR_LOG("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
@@ -157,7 +152,7 @@ int32_t MockCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
             result.size, requestDataLen);
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupRingBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
-        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");\
+        CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed!");\
         DumpFileUtil::WriteDumpFile(dumpDupOut_, static_cast<void *>(inputData), requestDataLen);
     }
     return SUCCESS;
@@ -237,11 +232,11 @@ int32_t AudioEndpointInner::InitDupStream(int32_t innerCapId)
 
     AUDIO_INFO_LOG("Dup Renderer %{public}d with Endpoint status: %{public}s", dupStreamIndex,
         GetStatusStr(endpointStatus_).c_str());
-    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid");
+    CHECK_AND_RETURN_RET_LOG(endpointStatus_ != INVALID, ERR_ILLEGAL_STATE, "Endpoint is invalid!");
 
     // buffer init
     dupBufferSize_ = dstSpanSizeInframe_ * dstByteSizePerFrame_; // each
-    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr");
+    CHECK_AND_RETURN_RET_LOG(dstAudioBuffer_ != nullptr, ERR_OPERATION_FAILED, "DstAudioBuffer is nullptr!");
     CHECK_AND_RETURN_RET_LOG(dupBufferSize_ < dstAudioBuffer_->GetDataSize(), ERR_OPERATION_FAILED, "Init buffer fail");
     dupBuffer_ = std::make_unique<uint8_t []>(dupBufferSize_);
     ret = memset_s(reinterpret_cast<void *>(dupBuffer_.get()), dupBufferSize_, 0, dupBufferSize_);
@@ -287,14 +282,9 @@ int32_t AudioEndpointInner::InitDupBuffer(AudioProcessConfig processConfig, int3
 
 int32_t AudioEndpointInner::EnableFastInnerCap(int32_t innerCapId)
 {
-    if (fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].isInnerCapEnabled) {
-        AUDIO_INFO_LOG("InnerCap is already enabled");
-        return SUCCESS;
-    }
-
     CHECK_AND_RETURN_RET_LOG(deviceInfo_.deviceRole_ == OUTPUT_DEVICE, ERR_INVALID_OPERATION, "Not output device!");
     int32_t ret = InitDupStream(innerCapId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init dup stream failed!");
     return SUCCESS;
 }
 
@@ -335,7 +325,7 @@ int32_t AudioEndpointInner::HandleDisableFastCap(CaptureInfo &captureInfo)
     }
     if (captureInfo.dupStream == nullptr) {
         captureInfo.isInnerCapEnabled = false;
-        AUDIO_INFO_LOG("dupStream is nullptr");
+        AUDIO_INFO_LOG("dupStream is nullptr.");
         return SUCCESS;
     }
     captureInfo.isInnerCapEnabled = false;
@@ -576,7 +566,9 @@ bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
 
     Volume vol = {true, 1.0f, 0};
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
-    if (PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol)) {
+    if ((clientConfig_.streamType == STREAM_VOICE_COMMUNICATION || clientConfig_.streamType == STREAM_VOICE_CALL) &&
+        endpointType_ == TYPE_VOIP_MMAP) {
+        PolicyHandler::GetInstance().GetSharedVolume(STREAM_VOICE_CALL, deviceType, vol);
         sink->SetVolume(vol.volumeFloat, vol.volumeFloat);
         AUDIO_INFO_LOG("Init Volume %{public}f with Device %{public}d", vol.volumeFloat, deviceType);
     } else {
@@ -1051,6 +1043,8 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     processBuffer->SetSessionId(processStream->GetAudioSessionId());
     bool needEndpointRunning = processBuffer->GetStreamStatus()->load() == STREAM_RUNNING;
 
+    AddEndpointStreamVolume(processStream);
+
     if (endpointStatus_ == STARTING) {
         AUDIO_INFO_LOG("LinkProcessStream wait start begin.");
         std::unique_lock<std::mutex> lock(loopThreadLock_);
@@ -1098,6 +1092,20 @@ int32_t AudioEndpointInner::LinkProcessStream(IAudioProcessStream *processStream
     return SUCCESS;
 }
 
+void AudioEndpointInner::AddEndpointStreamVolume(IAudioProcessStream *processStream)
+{
+    Trace trace("AudioEndpointInner::AddEndpointStreamVolume");
+    bool isSystemApp = CheckoutSystemAppUtil::CheckoutSystemApp(processStream->GetAppInfo().appUid);
+    StreamVolumeParams streamVolumeParams = { processStream->GetAudioSessionId(),
+        processStream->GetAudioProcessConfig().streamType,
+        processStream->GetAudioProcessConfig().rendererInfo.streamUsage,
+        processStream->GetAppInfo().appUid, processStream->GetAppInfo().appPid, isSystemApp,
+        processStream->GetAudioProcessConfig().rendererInfo.volumeMode,
+        processStream->GetAudioProcessConfig().rendererInfo.isVirtualKeyboard };
+    AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
+    AUDIO_INFO_LOG("when stream start, add streamVolume for this stream");
+}
+
 void AudioEndpointInner::LinkProcessStreamExt(IAudioProcessStream *processStream,
     const std::shared_ptr<OHAudioBufferBase>& processBuffer)
 {
@@ -1111,6 +1119,7 @@ int32_t AudioEndpointInner::UnlinkProcessStream(IAudioProcessStream *processStre
     CHECK_AND_RETURN_RET_LOG(processStream != nullptr, ERR_INVALID_PARAM, "IAudioProcessStream is null");
     std::shared_ptr<OHAudioBufferBase> processBuffer = processStream->GetStreamBuffer();
     CHECK_AND_RETURN_RET_LOG(processBuffer != nullptr, ERR_INVALID_PARAM, "processBuffer is null");
+    AudioVolume::GetInstance()->RemoveStreamVolume(processStream->GetAudioSessionId());
 
     bool isFind = false;
     std::lock_guard<std::mutex> lock(listLock_);
@@ -1212,7 +1221,6 @@ void AudioEndpointInner::WaitAllProcessReady(uint64_t curWritePos)
 void AudioEndpointInner::MixToDupStream(const std::vector<AudioStreamData> &srcDataList, int32_t innerCapId)
 {
     Trace trace("AudioEndpointInner::MixToDupStream");
-    std::lock_guard<std::mutex> lock(dupMutex_);
     CHECK_AND_RETURN_LOG(fastCaptureInfos_.count(innerCapId) && fastCaptureInfos_[innerCapId].dupStream != nullptr,
         "captureInfo is errro");
     CHECK_AND_RETURN_LOG(dupBuffer_ != nullptr, "Buffer is not ready");
@@ -1325,10 +1333,10 @@ void AudioEndpointInner::GetAllReadyProcessData(std::vector<AudioStreamData> &au
     audioHapticsSyncId_ = 0;
     std::vector<std::function<void()>> moveClientIndexVector;
     for (size_t i = 0; i < processBufferList_.size(); i++) {
-        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr");
+        CHECK_AND_CONTINUE_LOG(processBufferList_[i] != nullptr, "this processBuffer is nullptr!");
         uint64_t curRead = processBufferList_[i]->GetCurReadFrame();
         Trace trace("AudioEndpoint::ReadProcessData->" + std::to_string(curRead));
-        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is null");
+        CHECK_AND_CONTINUE_LOG(processList_[i] != nullptr, "this process is nullptr!");
         auto processConfig = processList_[i]->GetAudioProcessConfig();
         if (processConfig.rendererInfo.isLoopback) {
             isExistLoopback_ = true;
@@ -1446,7 +1454,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
     RingBufferWrapper ringBuffer;
     if (!PrepareRingBuffer(i, curRead, ringBuffer)) {
         auto tempProcess = processList_[i];
-        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
+        CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr!");
         if (tempProcess->GetStreamStatus() == STREAM_RUNNING) {
             tempProcess->AddNoDataFrameSize();
         }
@@ -1525,13 +1533,14 @@ bool AudioEndpointInner::ProcessToEndpointDataHandle(uint64_t curWritePos, std::
     }
     AdapterType type = endpointType_ == TYPE_VOIP_MMAP ? ADAPTER_TYPE_VOIP_FAST : ADAPTER_TYPE_FAST;
     AudioPerformanceMonitor::GetInstance().RecordTimeStamp(type, ClockTime::GetCurNano());
-
-    for (auto &capture: fastCaptureInfos_) {
-        if (capture.second.isInnerCapEnabled) {
-            ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+    {
+        std::lock_guard<std::mutex> captureLock(dupMutex_);
+        for (auto &capture: fastCaptureInfos_) {
+            if (capture.second.isInnerCapEnabled) {
+                ProcessToDupStream(audioDataList, dstStreamData, capture.first);
+            }
         }
     }
-
     if (AudioDump::GetInstance().GetVersionType() == DumpFileUtil::BETA_VERSION) {
         DumpFileUtil::WriteDumpFile(dumpHdi_, static_cast<void *>(dstStreamData.bufferDesc.buffer),
             dstStreamData.bufferDesc.bufLength);
@@ -1896,6 +1905,7 @@ int32_t AudioEndpointInner::WriteToSpecialProcBuf(const std::shared_ptr<OHAudioB
 
 int32_t AudioEndpointInner::WriteToRingBuffer(RingBufferWrapper &writeBuf, const BufferDesc &buffer)
 {
+    CHECK_AND_RETURN_RET_LOG(buffer.buffer != nullptr && buffer.bufLength > 0, ERR_WRITE_FAILED, "failed");
     return writeBuf.CopyInputBufferValueToCurBuffer(RingBufferWrapper{
         .basicBufferDescs = {{
             {.buffer = buffer.buffer, .bufLength = buffer.bufLength},

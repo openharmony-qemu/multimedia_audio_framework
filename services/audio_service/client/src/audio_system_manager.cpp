@@ -1436,11 +1436,6 @@ int32_t AudioSystemManager::AbandonAudioFocus(const AudioInterrupt &audioInterru
     return AudioPolicyManager::GetInstance().AbandonAudioFocus(clientId, audioInterrupt);
 }
 
-int32_t AudioSystemManager::ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType)
-{
-    return AudioPolicyManager::GetInstance().ReconfigureAudioChannel(count, deviceType);
-}
-
 int32_t AudioSystemManager::GetVolumeGroups(std::string networkId, std::vector<sptr<VolumeGroupInfo>> &infos)
 {
     return AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
@@ -2228,7 +2223,7 @@ bool AudioSystemManager::IsValidToStartGroup(int32_t workgroupId)
 
 int32_t AudioSystemManager::ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration)
 {
-    AUDIO_INFO_LOG("volumeType:%{public}d, dyration:%{public}d", volumeType, duration);
+    AUDIO_INFO_LOG("volumeType:%{public}d, duration:%{public}d", volumeType, duration);
     return AudioPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
 }
 } // namespace AudioStandard

@@ -30,6 +30,7 @@ namespace AudioStandard {
 namespace {
 static const char* PRIMARY_CLASS = "primary";
 static const char* A2DP_CLASS = "a2dp";
+static const char* HEARING_AID_CLASS = "hearing_aid";
 static const char* USB_CLASS = "usb";
 static const char* DP_CLASS = "dp";
 static const char* ACCESSORY_CLASS = "accessory";
@@ -41,6 +42,7 @@ static const char* INVALID_CLASS = "invalid";
 static const char* DIRECT_VOIP_CLASS = "primary_direct_voip";
 static const char* MMAP_VOIP_CLASS = "primary_mmap_voip";
 static const char* BLUETOOTH_SPEAKER = "Bt_Speaker";
+static const char* HEARING_AID_SPEAKER = "Hearing_Aid_Speaker";
 static const char* BLUETOOTH_MIC = "Bt_Mic";
 static const char* PRIMARY_SPEAKER = "Speaker";
 static const char* OFFLOAD_PRIMARY_SPEAKER = "Offload_Speaker";
@@ -86,6 +88,7 @@ enum ClassType {
     TYPE_REMOTE_AUDIO,
     TYPE_DP,
     TYPE_ACCESSORY,
+    TYPE_HEARING_AID,
     TYPE_INVALID
 };
 

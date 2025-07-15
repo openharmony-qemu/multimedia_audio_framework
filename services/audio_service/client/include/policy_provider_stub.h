@@ -39,7 +39,6 @@ public:
     int32_t NearlinkGetRenderPosition(uint32_t &delayValue) override;
     int32_t GetAndSaveClientType(uint32_t uid, const std::string &bundleName) override;
     int32_t GetMaxRendererInstances(int32_t &maxInstances) override;
-    int32_t ActivateConcurrencyFromServer(int32_t incomingPipe) override;
     int32_t NotifyCapturerRemoved(uint64_t sessionId) override;
 // #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;

@@ -391,9 +391,11 @@ void AudioDeviceCommon::UpdateConnectedDevicesWhenConnectingForOutputDevice(
     std::shared_ptr<AudioDeviceDescriptor> audioDescriptor = std::make_shared<AudioDeviceDescriptor>(updatedDesc);
     audioDescriptor->deviceRole_ = OUTPUT_DEVICE;
     // Use speaker streaminfo for all output devices cap
-    auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
-    if (itr != nullptr) {
-        audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+    if (updatedDesc.deviceType_ != DEVICE_TYPE_HEARING_AID) {
+        auto itr = audioConnectedDevice_.GetConnectedDeviceByType(DEVICE_TYPE_SPEAKER);
+        if (itr != nullptr) {
+            audioDescriptor->SetDeviceCapability(itr->audioStreamInfo_, 0);
+        }
     }
     bool wasVirtualConnected = audioDeviceManager_.IsVirtualConnectedDevice(audioDescriptor);
     if (!wasVirtualConnected) {
@@ -473,22 +475,6 @@ void AudioDeviceCommon::UpdateDualToneState(const bool &enable, const int32_t &s
     Trace trace("AudioDeviceCommon::UpdateDualToneState sessionId:" + std::to_string(sessionId));
     auto ret = AudioServerProxy::GetInstance().UpdateDualToneStateProxy(enable, sessionId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the dual tone state for sessionId:%{public}d", sessionId);
-}
-
-void AudioDeviceCommon::FetchDevice(bool isOutputDevice, const AudioStreamDeviceChangeReasonExt reason)
-{
-    Trace trace("AudioDeviceCommon::FetchDevice reason:" + std::to_string(static_cast<int>(reason)));
-    AUDIO_DEBUG_LOG("FetchDevice start");
-
-    if (isOutputDevice) {
-        vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-        streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-        FetchOutputDevice(rendererChangeInfos, reason);
-    } else {
-        vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-        streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        FetchInputDevice(capturerChangeInfos, reason);
-    }
 }
 
 bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,

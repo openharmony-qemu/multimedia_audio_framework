@@ -21,7 +21,6 @@
 #include "bundle_mgr_proxy.h"
 
 #include "audio_manager_base.h"
-#include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
@@ -379,7 +378,6 @@ private:
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
-    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     std::mutex writeMutex_; // used for prevent multi thread call write
 
     // Mark reach and period reach callback
@@ -435,6 +433,7 @@ private:
     std::atomic<WrittenFramesWithSpeed> writtenAtSpeedChange_; // afterSpeed
     std::atomic<uint64_t> unprocessedFramesBytes_ = 0;
     std::atomic<uint64_t> totalBytesWrittenAfterFlush_ = 0;
+    std::atomic<int64_t> ringCacheLatencyBytes_ = 0;
 
     std::string traceTag_;
     std::string spatializationEnabled_ = "Invalid";

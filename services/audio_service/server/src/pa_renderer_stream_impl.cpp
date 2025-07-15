@@ -198,7 +198,7 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Stop Failed");
+        AUDIO_ERR_LOG("Stream Stop failed!");
         return ERR_OPERATION_FAILED;
     }
 
@@ -252,14 +252,14 @@ int32_t PaRendererStreamImpl::Flush()
     pa_operation *operation = nullptr;
     pa_stream_state_t state = pa_stream_get_state(paStream_);
     if (state != PA_STREAM_READY) {
-        AUDIO_ERR_LOG("Stream Flush Failed");
+        AUDIO_ERR_LOG("Stream Flush failed!");
         return ERR_OPERATION_FAILED;
     }
 
     streamFlushStatus_ = 0;
     operation = pa_stream_flush(paStream_, PAStreamFlushSuccessCb, reinterpret_cast<void *>(this));
     if (operation == nullptr) {
-        AUDIO_ERR_LOG("Stream Flush Operation Failed");
+        AUDIO_ERR_LOG("Stream Flush Operation failed!");
         return ERR_OPERATION_FAILED;
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
@@ -635,7 +635,7 @@ int32_t PaRendererStreamImpl::SetRate(int32_t rate)
     if (operation != nullptr) {
         pa_operation_unref(operation);
     } else {
-        AUDIO_ERR_LOG("SetRate: operation is nullptr");
+        AUDIO_ERR_LOG("SetRate: operation is nullptr!");
     }
     return SUCCESS;
 }
@@ -661,7 +661,7 @@ int32_t PaRendererStreamImpl::SetAudioEffectMode(int32_t effectMode)
     pa_operation *updatePropOperation = pa_stream_proplist_update(paStream_, PA_UPDATE_REPLACE, propList,
         nullptr, nullptr);
     pa_proplist_free(propList);
-    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr");
+    CHECK_AND_RETURN_RET_LOG(updatePropOperation != nullptr, ERR_OPERATION_FAILED, "updatePropOperation is nullptr!");
     pa_operation_unref(updatePropOperation);
 
     return SUCCESS;
@@ -742,7 +742,7 @@ int32_t PaRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
     PaLockGuard palock(mainloop_, true);
 
     if (paStream_ == nullptr) {
-        AUDIO_ERR_LOG("paStream is nullptr");
+        AUDIO_ERR_LOG("paStream is nullptr!");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -762,7 +762,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr");
+        AUDIO_ERR_LOG("streamImpl is nullptr!");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
@@ -774,7 +774,7 @@ void PaRendererStreamImpl::PAStreamWriteCb(pa_stream *stream, size_t length, voi
     if (writeCallback != nullptr) {
         writeCallback->OnWriteData(length);
     } else {
-        AUDIO_ERR_LOG("Write callback is nullptr");
+        AUDIO_ERR_LOG("Write callback is nullptr!");
     }
 }
 
@@ -789,7 +789,7 @@ void PaRendererStreamImpl::PAStreamMovedCb(pa_stream *stream, void *userdata)
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr");
+        AUDIO_ERR_LOG("streamImpl is nullptr!");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();
@@ -817,7 +817,7 @@ void PaRendererStreamImpl::PAStreamUnderFlowCb(pa_stream *stream, void *userdata
 
     std::weak_ptr<PaRendererStreamImpl> paRendererStreamWeakPtr;
     if (rendererStreamInstanceMap_.Find(userdata, paRendererStreamWeakPtr) == false) {
-        AUDIO_ERR_LOG("streamImpl is nullptr");
+        AUDIO_ERR_LOG("streamImpl is nullptr!");
         return;
     }
     auto streamImpl = paRendererStreamWeakPtr.lock();

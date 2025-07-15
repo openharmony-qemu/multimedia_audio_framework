@@ -902,12 +902,6 @@ AudioPolicyServer::AudioPolicyServerPowerStateCallback::AudioPolicyServerPowerSt
     AudioPolicyServer* policyServer) : PowerMgr::PowerStateCallbackStub(), policyServer_(policyServer)
 {}
 
-void AudioPolicyServer::CheckStreamMode(const int64_t activateSessionId)
-{
-    Trace trace("AudioPolicyServer::CheckStreamMode: activateSessionId: " + std::to_string(activateSessionId));
-    audioOffloadStream_.CheckStreamMode(activateSessionId);
-}
-
 void AudioPolicyServer::AudioPolicyServerPowerStateCallback::OnAsyncPowerStateChanged(PowerMgr::PowerState state)
 {
     policyServer_->audioOffloadStream_.HandlePowerStateChanged(state);
@@ -2633,23 +2627,6 @@ bool AudioPolicyServer::VerifyBluetoothPermission()
     return true;
 }
 
-int32_t AudioPolicyServer::ReconfigureAudioChannel(uint32_t count, int32_t deviceTypeIn)
-{
-    DeviceType deviceType = static_cast<DeviceType>(deviceTypeIn);
-#ifdef AUDIO_BUILD_VARIANT_ROOT
-    // Only root users should have access to this api
-    if (ROOT_UID != IPCSkeleton::GetCallingUid()) {
-        AUDIO_INFO_LOG("Unautorized user. Cannot modify channel");
-        return ERR_PERMISSION_DENIED;
-    }
-
-    return audioPolicyService_.ReconfigureAudioChannel(count, deviceType);
-#else
-    // this api is not supported
-    return ERR_NOT_SUPPORTED;
-#endif
-}
-
 void AudioPolicyServer::GetStreamVolumeInfoMap(StreamVolumeInfoMap &streamVolumeInfos)
 {
     audioPolicyManager_.GetStreamVolumeInfoMap(streamVolumeInfos);
@@ -4336,23 +4313,6 @@ int32_t AudioPolicyServer::MoveToNewPipe(uint32_t sessionId, int32_t pipeType)
     return audioOffloadStream_.MoveToNewPipe(sessionId, static_cast<AudioPipeType>(pipeType));
 }
 
-int32_t AudioPolicyServer::SetAudioConcurrencyCallback(uint32_t sessionID, const sptr<IRemoteObject> &object)
-{
-    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_NULL_OBJECT, "object is nullptr");
-    return streamCollector_.SetAudioConcurrencyCallback(sessionID, object);
-}
-
-int32_t AudioPolicyServer::UnsetAudioConcurrencyCallback(uint32_t sessionID)
-{
-    return streamCollector_.UnsetAudioConcurrencyCallback(sessionID);
-}
-
-int32_t AudioPolicyServer::ActivateAudioConcurrency(int32_t pipeType)
-{
-    Trace trace("AudioPolicyServer::ActivateAudioConcurrency" + std::to_string(pipeType));
-    return streamCollector_.ActivateAudioConcurrency(static_cast<AudioPipeType>(pipeType));
-}
-
 void AudioPolicyServer::CheckHibernateState(bool hibernate)
 {
     AudioServerProxy::GetInstance().CheckHibernateStateProxy(hibernate);
@@ -4622,7 +4582,7 @@ int32_t AudioPolicyServer::LoadSplitModule(const std::string &splitArgs, const s
         AUDIO_ERR_LOG("callerUid %{public}d is not allow LoadSplitModule", callerUid);
         return ERR_PERMISSION_DENIED;
     }
-    return audioPolicyService_.LoadSplitModule(splitArgs, networkId);
+    return eventEntry_->LoadSplitModule(splitArgs, networkId);
 }
 
 int32_t AudioPolicyServer::IsAllowedPlayback(int32_t uid, int32_t pid, bool &isAllowed)
@@ -4707,7 +4667,7 @@ int32_t AudioPolicyServer::SetDeviceConnectionStatus(const std::shared_ptr<Audio
         desc->deviceType_, desc->deviceRole_, isConnected);
 
     std::vector<uid_t> allowedUids = {
-        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA,
+        UID_TV_PROCESS_SA, UID_DP_PROCESS_SA, UID_PENCIL_PROCESS_SA, UID_NEARLINK_SA, UID_BLUETOOTH_SA
     };
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::CheckCallingUidPermission(allowedUids), ERR_PERMISSION_DENIED,
         "uid permission denied");

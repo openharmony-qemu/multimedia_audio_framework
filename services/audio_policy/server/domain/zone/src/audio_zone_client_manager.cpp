@@ -75,7 +75,8 @@ void AudioZoneClientManager::DispatchEvent(std::shared_ptr<AudioZoneEvent> event
 
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(event->clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(event->clientPid) != clients_.end(),
+        "client %{public}d not register", event->clientPid);
 
     switch (event->type) {
         case AudioZoneEventType::AUDIO_ZONE_ADD_EVENT:
@@ -108,7 +109,8 @@ void AudioZoneClientManager::SendZoneAddEvent(pid_t clientPid, std::shared_ptr<A
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -125,7 +127,8 @@ void AudioZoneClientManager::SendZoneRemoveEvent(pid_t clientPid, int32_t zoneId
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -143,7 +146,8 @@ void AudioZoneClientManager::SendZoneChangeEvent(pid_t clientPid, std::shared_pt
     CHECK_AND_RETURN_LOG(descriptor != nullptr, "descriptor is null");
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");
@@ -163,7 +167,8 @@ void AudioZoneClientManager::SendZoneInterruptEvent(pid_t clientPid, int32_t zon
 {
     std::lock_guard<std::mutex> lock(clientMutex_);
     CHECK_AND_RETURN_LOG(handler_ != nullptr, "handler is null");
-    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(), "client not register");
+    CHECK_AND_RETURN_LOG(clients_.find(clientPid) != clients_.end(),
+        "client %{public}d not register", clientPid);
 
     std::shared_ptr<AudioZoneEvent> event = std::make_shared<AudioZoneEvent>();
     CHECK_AND_RETURN_LOG(event != nullptr, "event is null");

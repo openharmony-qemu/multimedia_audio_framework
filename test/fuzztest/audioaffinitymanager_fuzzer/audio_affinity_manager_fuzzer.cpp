@@ -45,7 +45,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 12;
+const uint8_t TESTSIZE = 16;
 static int32_t NUM_2 = 2;
 static int32_t NUM_3 = 3;
 constexpr int32_t K_HUNDRED = 100;
@@ -397,6 +397,40 @@ void DelActiveGroupAffinityMapFuzzTest()
     affinityManager.DelActiveGroupAffinityMap(clientUID, testDeviceInfoMap);
 }
 
+void AudioAffinityManagerAddSelectRendererDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    int32_t clientUID = GetData<int32_t>();
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    affinityManager.AddSelectRendererDevice(clientUID, desc);
+}
+
+void AudioAffinityManagerAddSelectCapturerDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    int32_t clientUID = GetData<int32_t>();
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    affinityManager.AddSelectCapturerDevice(clientUID, desc);
+}
+
+void AudioAffinityManagerDelSelectRendererDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    int32_t clientUID = GetData<int32_t>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    affinityManager.activeRendererDeviceMap_.insert({clientUID, desc});
+    affinityManager.DelSelectRendererDevice(clientUID);
+}
+
+void AudioAffinityManagerDelSelectCapturerDeviceFuzzTest()
+{
+    AudioAffinityManager affinityManager;
+    int32_t clientUID = GetData<int32_t>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    affinityManager.activeRendererDeviceMap_.insert({clientUID, desc});
+    affinityManager.DelSelectCapturerDevice(clientUID);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     ParseAffinityXmlFuzzTest,
     OnXmlParsingCompletedFuzzTest,
@@ -410,6 +444,10 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     GetActiveAffinityDeviceMapByGroupNameFuzzTest,
     GetAffinityClientUIDFuzzTest,
     DelActiveGroupAffinityMapFuzzTest,
+    AudioAffinityManagerAddSelectRendererDeviceFuzzTest,
+    AudioAffinityManagerAddSelectCapturerDeviceFuzzTest,
+    AudioAffinityManagerDelSelectRendererDeviceFuzzTest,
+    AudioAffinityManagerDelSelectCapturerDeviceFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

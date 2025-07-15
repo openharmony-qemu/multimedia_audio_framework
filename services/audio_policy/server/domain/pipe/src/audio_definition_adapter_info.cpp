@@ -244,6 +244,8 @@ AudioAdapterType PolicyAdapterInfo::GetAdapterType(const std::string &adapterNam
         return AudioAdapterType::TYPE_PRIMARY;
     } else if (adapterName == ADAPTER_TYPE_A2DP) {
         return AudioAdapterType::TYPE_A2DP;
+    } else if (adapterName == ADAPTER_TYPE_HEARING_AID) {
+        return AudioAdapterType::TYPE_HEARING_AID;
     } else if (adapterName == ADAPTER_TYPE_REMOTE) {
         return AudioAdapterType::TYPE_REMOTE_AUDIO;
     } else if (adapterName == ADAPTER_TYPE_FILE) {

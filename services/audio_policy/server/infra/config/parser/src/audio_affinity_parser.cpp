@@ -17,8 +17,10 @@
 #endif
 
 #include "audio_affinity_parser.h"
-#include "audio_errors.h"
+
 #include "media_monitor_manager.h"
+#include "audio_errors.h"
+#include "audio_policy_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,6 +40,7 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
     {"DEVICE_TYPE_ACCESSORY", DEVICE_TYPE_ACCESSORY},
     {"DEVICE_TYPE_MIC", DEVICE_TYPE_MIC},
     {"DEVICE_TYPE_HDMI", DEVICE_TYPE_HDMI},
+    {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
 };
 
 bool AudioAffinityParser::LoadConfiguration()

@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 25;
+const uint8_t TESTSIZE = 57;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -121,6 +121,34 @@ vector<AudioFlag> AudioFlagVec = {
     AUDIO_INPUT_FLAG_VOIP_FAST,
     AUDIO_INPUT_FLAG_WAKEUP,
     AUDIO_FLAG_MAX,
+};
+
+const vector<SourceType> g_testSourceTypes = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MAX,
+};
+
+const vector<DeviceRole> g_testDeviceRoles = {
+    DEVICE_ROLE_NONE,
+    INPUT_DEVICE,
+    OUTPUT_DEVICE,
+    DEVICE_ROLE_MAX,
 };
 
 void ScoInputDeviceFetchedForRecongnitionFuzzTest()
@@ -461,6 +489,516 @@ void IsNewDevicePlaybackSupportedFuzzTest()
     audioCoreService->IsNewDevicePlaybackSupported(streamDesc);
 }
 
+void AudioCoreServicePrivateGetEncryptAddrFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    std::string addr = "12345678901234567";
+    audioCoreService->GetEncryptAddr(addr);
+}
+
+void AudioCoreServicePrivateUpdateDefaultOutputDeviceWhenStoppingFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    int32_t uid = GetData<int32_t>();
+    audioCoreService->UpdateDefaultOutputDeviceWhenStopping(uid);
+}
+
+void AudioCoreServicePrivateUpdateInputDeviceWhenStoppingFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    int32_t uid = GetData<int32_t>();
+    audioCoreService->UpdateInputDeviceWhenStopping(uid);
+}
+
+void AudioCoreServicePrivateLoadA2dpModuleFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || DeviceTypeVec.size() == 0 || g_testSourceTypes.size() == 0) {
+        return;
+    }
+
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    AudioStreamInfo audioStreamInfo;
+    std::string networkId = "abc";
+    std::string sinkName = "abc";
+    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
+
+    audioCoreService->LoadA2dpModule(deviceType, audioStreamInfo, networkId, sinkName, sourceType);
+}
+
+void AudioCoreServicePrivateRemoveUnusedPipeFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    if (audioCoreService->pipeManager_ == nullptr || pipeInfo == nullptr) {
+        return;
+    }
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
+    audioCoreService->RemoveUnusedPipe();
+}
+
+void AudioCoreServicePrivateRemoveUnusedRecordPipeFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    if (audioCoreService->pipeManager_ == nullptr || pipeInfo == nullptr) {
+        return;
+    }
+    audioCoreService->pipeManager_->AddAudioPipeInfo(pipeInfo);
+    audioCoreService->RemoveUnusedRecordPipe();
+}
+
+void AudioCoreServicePrivateIsStreamBelongToUidFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    uid_t uid = GetData<uid_t>();
+    uint32_t sessionId = GetData<uint32_t>();
+    audioCoreService->sessionIdMap_.insert(std::make_pair(sessionId, uid));
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        audioCoreService->sessionIdMap_.clear();
+    }
+    audioCoreService->IsStreamBelongToUid(uid, sessionId);
+}
+
+void AudioCoreServicePrivateMoveToNewOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->MoveToNewOutputDevice(streamDesc, pipeInfo, reason);
+}
+
+void AudioCoreServicePrivateOnForcedDeviceSelectedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    std::string macAddress = "00:00:00:00:00:00";
+    std::string deviceName = "TestDevice";
+    AudioStreamInfo streamInfo;
+    DeviceType devType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    audioCoreService->OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
+}
+
+void AudioCoreServicePrivateMoveToRemoteOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::vector<SinkInput> sinkInputIds;
+    SinkInput sinkInputId;
+    sinkInputIds.push_back(sinkInputId);
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioCoreService->MoveToRemoteOutputDevice(sinkInputIds, pipeInfo, remoteDeviceDescriptor);
+}
+
+void AudioCoreServicePrivateMoveToRemoteInputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::vector<SourceOutput> sourceOutputs;
+    SourceOutput sourceOutput;
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioCoreService->MoveToRemoteInputDevice(sourceOutputs, remoteDeviceDescriptor);
+}
+
+void AudioCoreServicePrivateUpdateOutputRouteFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (streamDesc == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioCoreService->UpdateOutputRoute(streamDesc);
+}
+
+void AudioCoreServicePrivateOnPreferredOutputDeviceUpdatedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    AudioStreamDeviceChangeReason reason = AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
+    audioCoreService->OnPreferredOutputDeviceUpdated(deviceDescriptor, reason);
+}
+
+void AudioCoreServicePrivateOnPreferredInputDeviceUpdatedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    std::string networkId = "testNetworkId";
+    audioCoreService->OnPreferredInputDeviceUpdated(deviceType, networkId);
+}
+
+void AudioCoreServicePrivateClearRingMuteWhenCallStartFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+    bool pre = GetData<bool>();
+    bool after = false;
+    std::pair<AudioStreamType, StreamUsage> preType;
+    AudioStreamType preStreamType = STREAM_DEFAULT;
+    StreamUsage preUsage = STREAM_USAGE_UNKNOWN;
+    audioCoreService->streamsWhenRingDualOnPrimarySpeaker_.push_back(std::make_pair(preStreamType, preUsage));
+    audioCoreService->ClearRingMuteWhenCallStart(pre, after);
+}
+
+void AudioCoreServicePrivateSelectRingerOrAlarmDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioCoreService->SelectRingerOrAlarmDevices(streamDesc);
+}
+
+void AudioCoreServicePrivateUpdateDualToneStateFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    bool enable = GetData<bool>();
+    int32_t sessionId = GetData<int32_t>();
+    audioCoreService->UpdateDualToneState(enable, sessionId);
+}
+
+void AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest()
+{
+    static const vector<AudioStreamStatus> testAudioStreamStatus = {
+        STREAM_STATUS_NEW,
+        STREAM_STATUS_STARTED,
+        STREAM_STATUS_PAUSED,
+        STREAM_STATUS_STOPPED,
+        STREAM_STATUS_RELEASED,
+    };
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || testAudioStreamStatus.size() == 0) {
+        return;
+    }
+
+    AudioStreamStatus status = testAudioStreamStatus[GetData<uint32_t>() % testAudioStreamStatus.size()];
+    audioCoreService->HandleStreamStatusToCapturerState(status);
+}
+
+void AudioCoreServicePrivateIsPaRouteFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    uint32_t routeFlag = GetData<uint32_t>();
+    audioCoreService->IsPaRoute(routeFlag);
+}
+
+void AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr) {
+        return;
+    }
+
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->HandleScoOutputDeviceFetched(desc, reason);
+}
+
+void AudioCoreServicePrivateSendA2dpConnectedWhileRunningFuzzTest()
+{
+    static const vector<RendererState> testRendererStates = {
+        RENDERER_INVALID,
+        RENDERER_NEW,
+        RENDERER_PREPARED,
+        RENDERER_RUNNING,
+        RENDERER_STOPPED,
+        RENDERER_RELEASED,
+        RENDERER_PAUSED
+    };
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || testRendererStates.size() == 0) {
+        return;
+    }
+
+    uint32_t sessionId = GetData<uint32_t>();
+    RendererState rendererState = testRendererStates[GetData<uint32_t>() % testRendererStates.size()];
+    audioCoreService->SendA2dpConnectedWhileRunning(rendererState, sessionId);
+}
+
+void AudioCoreServicePrivateUpdateTrackerDeviceChangeFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || g_testDeviceRoles.size() == 0) {
+        return;
+    }
+
+    vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceRole_ = g_testDeviceRoles[GetData<uint32_t>() % g_testDeviceRoles.size()];
+    desc.push_back(audioDeviceDescriptor);
+    audioCoreService->UpdateTrackerDeviceChange(desc);
+}
+
+void AudioCoreServicePrivateUpdateOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || g_testDeviceRoles.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceRole_ = g_testDeviceRoles[GetData<uint32_t>() % g_testDeviceRoles.size()];
+    int32_t uid = GetData<int32_t>();
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->UpdateOutputDevice(audioDeviceDescriptor, uid, reason);
+}
+
+void AudioCoreServicePrivateUpdateInputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || g_testDeviceRoles.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceRole_ = g_testDeviceRoles[GetData<uint32_t>() % g_testDeviceRoles.size()];
+    int32_t uid = GetData<int32_t>();
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->UpdateInputDevice(audioDeviceDescriptor, uid, reason);
+}
+
+void AudioCoreServicePrivateWriteOutputRouteChangeEventFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || g_testDeviceRoles.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceRole_ = g_testDeviceRoles[GetData<uint32_t>() % g_testDeviceRoles.size()];
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->WriteOutputRouteChangeEvent(audioDeviceDescriptor, reason);
+}
+
+void AudioCoreServicePrivateHandleDeviceChangeForFetchOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptorNew == nullptr) {
+        return;
+    }
+    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    AudioStreamDeviceChangeReasonExt reason;
+    audioCoreService->HandleDeviceChangeForFetchOutputDevice(streamDesc, reason);
+}
+
+void AudioCoreServicePrivateHandleDeviceChangeForFetchInputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptorNew == nullptr) {
+        return;
+    }
+    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    audioCoreService->HandleDeviceChangeForFetchInputDevice(streamDesc);
+}
+
+void AudioCoreServicePrivateCheckOffloadStreamFuzzTest()
+{
+    static const vector<RendererState> testRendererStates = {
+        RENDERER_INVALID,
+        RENDERER_NEW,
+        RENDERER_PREPARED,
+        RENDERER_RUNNING,
+        RENDERER_STOPPED,
+        RENDERER_RELEASED,
+        RENDERER_PAUSED
+    };
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    if (audioCoreService == nullptr || testRendererStates.size() == 0) {
+        return;
+    }
+
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioRendererChangeInfo.rendererState =
+        testRendererStates[GetData<uint32_t>() % testRendererStates.size()];
+    audioCoreService->CheckOffloadStream(streamChangeInfo);
+}
+
+void AudioCoreServicePrivateMuteSinkForSwitchGeneralDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+
+    AudioStreamDeviceChangeReasonExt reason;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptorNew == nullptr) {
+        return;
+    }
+    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    audioCoreService->MuteSinkForSwitchGeneralDevice(streamDesc, reason);
+}
+
+void AudioCoreServicePrivateMuteSinkForSwitchBluetoothDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+
+    AudioStreamDeviceChangeReasonExt reason;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptorNew == nullptr) {
+        return;
+    }
+    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    audioCoreService->MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
+}
+
+void AudioCoreServicePrivateActivateInputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptorNew == nullptr) {
+        return;
+    }
+    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
+    bool isClear = GetData<bool>();
+    if (isClear) {
+        streamDesc->oldDeviceDescs_.clear();
+    }
+    audioCoreService->ActivateInputDevice(streamDesc);
+}
+
+void LoadSplitModuleFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    CHECK_AND_RETURN(audioCoreService != nullptr);
+    audioCoreService->LoadSplitModule("", "networkId");
+    audioCoreService->LoadSplitModule("splitArgs", "networkId");
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     ScoInputDeviceFetchedForRecongnitionFuzzTest,
     BluetoothScoFetchFuzzTest,
@@ -487,6 +1025,38 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SwitchActiveA2dpDeviceFuzzTest,
     MoveToNewInputDeviceFuzzTest,
     IsNewDevicePlaybackSupportedFuzzTest,
+    AudioCoreServicePrivateGetEncryptAddrFuzzTest,
+    AudioCoreServicePrivateUpdateDefaultOutputDeviceWhenStoppingFuzzTest,
+    AudioCoreServicePrivateUpdateInputDeviceWhenStoppingFuzzTest,
+    AudioCoreServicePrivateLoadA2dpModuleFuzzTest,
+    AudioCoreServicePrivateRemoveUnusedPipeFuzzTest,
+    AudioCoreServicePrivateRemoveUnusedRecordPipeFuzzTest,
+    AudioCoreServicePrivateIsStreamBelongToUidFuzzTest,
+    AudioCoreServicePrivateMoveToNewOutputDeviceFuzzTest,
+    AudioCoreServicePrivateOnForcedDeviceSelectedFuzzTest,
+    AudioCoreServicePrivateMoveToRemoteOutputDeviceFuzzTest,
+    AudioCoreServicePrivateMoveToRemoteInputDeviceFuzzTest,
+    AudioCoreServicePrivateUpdateOutputRouteFuzzTest,
+    AudioCoreServicePrivateOnPreferredOutputDeviceUpdatedFuzzTest,
+    AudioCoreServicePrivateOnPreferredInputDeviceUpdatedFuzzTest,
+    AudioCoreServicePrivateClearRingMuteWhenCallStartFuzzTest,
+    AudioCoreServicePrivateSelectRingerOrAlarmDevicesFuzzTest,
+    AudioCoreServicePrivateUpdateDualToneStateFuzzTest,
+    AudioCoreServicePrivateHandleStreamStatusToCapturerStateFuzzTest,
+    AudioCoreServicePrivateIsPaRouteFuzzTest,
+    AudioCoreServicePrivateHandleScoOutputDeviceFetchedFuzzTest,
+    AudioCoreServicePrivateSendA2dpConnectedWhileRunningFuzzTest,
+    AudioCoreServicePrivateUpdateTrackerDeviceChangeFuzzTest,
+    AudioCoreServicePrivateUpdateOutputDeviceFuzzTest,
+    AudioCoreServicePrivateUpdateInputDeviceFuzzTest,
+    AudioCoreServicePrivateWriteOutputRouteChangeEventFuzzTest,
+    AudioCoreServicePrivateHandleDeviceChangeForFetchOutputDeviceFuzzTest,
+    AudioCoreServicePrivateHandleDeviceChangeForFetchInputDeviceFuzzTest,
+    AudioCoreServicePrivateCheckOffloadStreamFuzzTest,
+    AudioCoreServicePrivateMuteSinkForSwitchGeneralDeviceFuzzTest,
+    AudioCoreServicePrivateMuteSinkForSwitchBluetoothDeviceFuzzTest,
+    AudioCoreServicePrivateActivateInputDeviceFuzzTest,
+    LoadSplitModuleFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

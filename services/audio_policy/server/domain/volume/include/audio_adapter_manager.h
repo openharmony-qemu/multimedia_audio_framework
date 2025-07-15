@@ -292,6 +292,7 @@ public:
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
+    void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
 private:

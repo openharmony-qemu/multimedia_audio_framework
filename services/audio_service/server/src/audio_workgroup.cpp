@@ -50,7 +50,7 @@ int32_t AudioWorkgroup::AddThread(int32_t tid)
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_ADD_THREAD, tid, workgroupId, reply);
     if (reply.paramA < 0) {
-        AUDIO_INFO_LOG("AudioWorkgroup AddThread Failed\n");
+        AUDIO_INFO_LOG("AudioWorkgroup AddThread Failed!\n");
         return AUDIO_ERR;
     }
     threads[tid] = true;
@@ -63,7 +63,7 @@ int32_t AudioWorkgroup::RemoveThread(int32_t tid)
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().SetAudioDeadline(
         ConcurrentTask::AUDIO_DDL_REMOVE_THREAD, tid, workgroupId, reply);
     if (reply.paramA < 0) {
-        AUDIO_INFO_LOG("AudioWorkgroup RemoveThread Failed\n");
+        AUDIO_INFO_LOG("AudioWorkgroup RemoveThread Failed!\n");
         return AUDIO_ERR;
     }
     threads.erase(tid);
@@ -73,12 +73,12 @@ int32_t AudioWorkgroup::RemoveThread(int32_t tid)
 int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 {
     if (deadlineTime <= startTime) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Invalid params When Start.");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Invalid params When Start!");
         return AUDIO_ERR;
     }
     SetFrameRateAndPrioType(workgroupId, MS_PER_SECOND/(deadlineTime - startTime), 0);
     if (BeginFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame failed");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline BeginFrame Failed!");
         return AUDIO_ERR;
     }
     return AUDIO_OK;
@@ -87,7 +87,7 @@ int32_t AudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 int32_t AudioWorkgroup::Stop()
 {
     if (EndFrameFreq(0) != 0) {
-        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame failed");
+        AUDIO_ERR_LOG("[WorkgroupInServer] Audio Deadline EndFrame Failed!");
         return AUDIO_ERR;
     }
     return AUDIO_OK;

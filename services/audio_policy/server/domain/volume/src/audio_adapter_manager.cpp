@@ -107,6 +107,7 @@ const std::unordered_map<DeviceType, std::vector<std::string>> DEVICE_CLASS_MAP 
     {DEVICE_TYPE_FILE_SOURCE, {FILE_CLASS}},
     {DEVICE_TYPE_HDMI, {PRIMARY_CLASS}},
     {DEVICE_TYPE_ACCESSORY, {ACCESSORY_CLASS}},
+    {DEVICE_TYPE_HEARING_AID, {HEARING_AID_CLASS}},
 };
 } // namespace
 
@@ -2298,6 +2299,7 @@ bool AudioAdapterManager::LoadVolumeMap(void)
         if (!result) {
             AUDIO_ERR_LOG("LoadVolumeMap: Could not load volume for streamType[%{public}d] from kvStore", streamType);
             HandleDistributedVolume(streamType);
+            HandleHearingAidVolume(streamType);
         }
     }
 
@@ -3159,6 +3161,18 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
         AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
+    }
+}
+
+void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
+{
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        if (streamType == STREAM_MUSIC || streamType == STREAM_VOICE_CALL ||
+            streamType == STREAM_VOICE_ASSISTANT) {
+            int32_t defaultVolume = static_cast<int32_t>(std::ceil(GetMaxVolumeLevel(streamType) * 0.8));
+            AUDIO_INFO_LOG("first time switch hearingAid, use default volume");
+            SetSystemVolumeLevel(streamType, defaultVolume);
+        }
     }
 }
 

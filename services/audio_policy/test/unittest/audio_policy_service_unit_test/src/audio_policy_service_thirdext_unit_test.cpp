@@ -312,29 +312,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateRoute_002, TestSize.Level1)
 }
 #ifdef AUDIO_POLICY_SERVICE_UNIT_TEST_DIFF
 /**
-* @tc.name  : Test LoadSplitModule.
-* @tc.number: LoadSplitModule_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadSplitModule_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest LoadSplitModule_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    const std::string networkIdOne = "";
-    const std::string splitArgOne = "";
-    int32_t result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgOne, networkIdOne);
-    EXPECT_EQ(ERR_INVALID_PARAM, result);
-
-    const std::string networkIdTwo = LOCAL_NETWORK_ID;
-    const std::string splitArgTwo = "11.22";
-    result = GetServerUtil::GetServerPtr()->audioPolicyService_.LoadSplitModule(
-        splitArgTwo, networkIdTwo);
-    EXPECT_EQ(ERR_INVALID_HANDLE, result);
-}
-
-/**
 * @tc.name  : Test UpdateDefaultOutputDeviceWhenStopping.
 * @tc.number: UpdateDefaultOutputDeviceWhenStopping_001
 * @tc.desc  : Test AudioPolicyService interfaces.
@@ -560,49 +537,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, GetAudioEnhanceProperty_001, TestSize
 
     AudioEnhancePropertyArray propertyArrayTest;
     GetServerUtil::GetServerPtr()->GetAudioEnhanceProperty(propertyArrayTest);
-}
-
-/**
-* @tc.name  : Test SetAudioConcurrencyCallback.
-* @tc.number: SetAudioConcurrencyCallback_001
-* @tc.desc  : Test SetAudioConcurrencyCallback interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, SetAudioConcurrencyCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest SetAudioConcurrencyCallback_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    sptr<IRemoteObject> objectSptrTest = nullptr;
-    GetServerUtil::GetServerPtr()->SetAudioConcurrencyCallback(TEST_SESSIONID, objectSptrTest);
-}
-
-/**
-* @tc.name  : Test UnsetAudioConcurrencyCallback.
-* @tc.number: UnsetAudioConcurrencyCallback_001
-* @tc.desc  : Test UnsetAudioConcurrencyCallback interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, UnsetAudioConcurrencyCallback_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest UnsetAudioConcurrencyCallback_001 start");
-    AudioPolicyServer* server = GetServerUtil::GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    sptr<IRemoteObject> objectSptrTest = nullptr;
-    server->SetAudioConcurrencyCallback(TEST_SESSIONID, objectSptrTest);
-    server->UnsetAudioConcurrencyCallback(TEST_SESSIONID);
-}
-
-/**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: ActivateAudioConcurrency_001
-* @tc.desc  : Test ActivateAudioConcurrency interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateAudioConcurrency_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateAudioConcurrency_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    GetServerUtil::GetServerPtr()->ActivateAudioConcurrency(PIPE_TYPE_UNKNOWN);
 }
 
 /**
@@ -961,7 +895,7 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_001, TestSize.L
 }
 
 /**
-* @tc.name  : Test ActivateConcurrencyFromServer.
+* @tc.name  : Test NotifyCapturerRemoved.
 * @tc.number: NotifyCapturerRemoved_002
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
@@ -973,21 +907,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, NotifyCapturerRemoved_002, TestSize.L
     uint64_t sessionId = 0;
     server->audioPolicyService_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
     EXPECT_EQ(SUCCESS, server->audioPolicyService_.NotifyCapturerRemoved(sessionId));
-}
-
-/**
-* @tc.name  : Test ActivateConcurrencyFromServer.
-* @tc.number: ActivateConcurrencyFromServer_001
-* @tc.desc  : Test AudioPolicyService interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, ActivateConcurrencyFromServer_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest ActivateConcurrencyFromServer_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    int32_t result = server->audioPolicyService_.ActivateConcurrencyFromServer(pipeType);
-    EXPECT_EQ(SUCCESS, result);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER

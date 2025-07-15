@@ -891,8 +891,9 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
 
     // case1 InternalDeviceType::DEVICE_TYPE_BLUETOOTH_A2DP
     deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    AudioPolicyUtils::GetInstance().audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_OFFLOAD);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
-    EXPECT_EQ(BLUETOOTH_SPEAKER, retPortName);
+    EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 aaa");
     AUDIO_INFO_LOG("AudioPolicyServiceUnitTest GetSinkPortName_001 bbb");
     pipeType = PIPE_TYPE_OFFLOAD;
@@ -907,6 +908,7 @@ HWTEST_F(AudioPolicyServiceUnitTest, GetSinkPortName_001, TestSize.Level1)
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(PRIMARY_SPEAKER, retPortName);
 
+    AudioPolicyUtils::GetInstance().audioA2dpOffloadFlag_.SetA2dpOffloadFlag(A2DP_NOT_OFFLOAD);
     retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType, pipeType);
     EXPECT_EQ(BLUETOOTH_SPEAKER, retPortName);
 

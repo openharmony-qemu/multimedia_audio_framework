@@ -2906,6 +2906,33 @@ HWTEST(AudioUtilsUnitTest, ConvertNetworkId_003, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test UpdateBGSet  API
+* @tc.type  : FUNC
+* @tc.number: UpdateBGSet_001
+* @tc.desc  : Test UpdateBGSet API
+*/
+HWTEST(AudioUtilsUnitTest, UpdateBGSet_001, TestSize.Level1)
+{
+    PermissionUtil::UpdateBGSet();
+
+    char ch = '0';
+    bool result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, false);
+
+    ch = '2';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+
+    ch = '4';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+
+    ch = '5';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+}
+
+/**
 * @tc.name  : Test NeedVerifyBackgroundCapture  API
 * @tc.type  : FUNC
 * @tc.number: NeedVerifyBackgroundCapture_001

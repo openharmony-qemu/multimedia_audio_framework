@@ -114,7 +114,6 @@ void AudioHfpManagerFuzzTest(const uint8_t *rawData, size_t size)
     Bluetooth::AudioHfpManager::SetActiveHfpDevice(macAddress);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene);
     Bluetooth::AudioHfpManager::IsAudioScoStateConnect();
-    Bluetooth::AudioHfpManager::IsRecognitionStatus();
 }
 
 void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t size)
@@ -130,7 +129,6 @@ void FetchOutputDeviceForTrackInternalFuzzTest(const uint8_t *rawData, size_t si
 
     AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.Unmarshalling(data);
-    AudioPolicyServer AudioPolicyServerPtr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
 }
 } // namespace AudioStandard
 } // namesapce OHOS

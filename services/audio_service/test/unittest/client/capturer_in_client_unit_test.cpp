@@ -20,7 +20,6 @@
 #include "iremote_broker.h"
 #include "audio_policy_manager.h"
 #include "system_ability_definition.h"
-#include "capturer_in_client.h"
 #include "audio_service_types.h"
 #include "capturer_in_client_inner.h"
 

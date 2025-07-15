@@ -188,6 +188,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
@@ -310,6 +311,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"VOICE_ASSISTANT", NapiAudioEnum::VOICE_ASSISTANT},
     {"ALARM", NapiAudioEnum::ALARM},
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
+    {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
     {"ALL", NapiAudioEnum::ALL}
 };
@@ -1622,6 +1624,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
         case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
         case DeviceType::DEVICE_TYPE_NEARLINK:
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
             result = true;
             break;
         default:

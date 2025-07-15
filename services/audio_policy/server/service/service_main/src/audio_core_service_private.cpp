@@ -564,6 +564,44 @@ void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audi
     }
 }
 
+int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
+    if (splitArgs.empty() || networkId.empty()) {
+        std::string anonymousNetworkId = networkId.empty() ? "" : networkId.substr(0, 2) + "***";
+        AUDIO_ERR_LOG("invalid param, splitArgs:'%{public}s', networkId:'%{public}s'",
+            splitArgs.c_str(), anonymousNetworkId.c_str());
+        return ERR_INVALID_PARAM;
+    }
+    std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
+    std::string currentActivePort = REMOTE_CLASS;
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+    AudioIOHandle oldModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
+        pipeManager_->GetStreamDescsByIoHandle(oldModuleId);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+
+    AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
+        OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
+    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
+    moudleInfo.extra = splitArgs;
+    moudleInfo.needEmptyChunk = false;
+
+    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    if (openRet != 0) {
+        AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    }
+    AudioIOHandle newModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
+    pipeManager_->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
+    AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
+    FetchOutputDeviceAndRoute("LoadSplitModule");
+    AUDIO_INFO_LOG("fetch device after split stream and open port.");
+    return openRet;
+}
+
 bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "invalid deviceDesc");
@@ -1376,6 +1414,7 @@ bool AudioCoreService::IsRingerOrAlarmerDualDevicesRange(const InternalDeviceTyp
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
         case DEVICE_TYPE_NEARLINK:
+        case DEVICE_TYPE_HEARING_AID:
             return true;
         default:
             return false;
@@ -1839,6 +1878,9 @@ int32_t AudioCoreService::HandleFetchOutputWhenNoRunningStream(const AudioStream
     audioVolumeManager_.SetVolumeForSwitchDevice(*descs.front());
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         SwitchActiveA2dpDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
+    }
+    if (descs.front()->deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(*descs.front()));
     }
     if (audioSceneManager_.GetAudioScene(true) != AUDIO_SCENE_DEFAULT) {
         audioActiveDevice_.UpdateActiveDeviceRoute(descs.front()->deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
@@ -2473,6 +2515,90 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             }
         }
     }
+    return SUCCESS;
+}
+
+int32_t AudioCoreService::SwitchActiveHearingAidDevice(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor)
+{
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr &&
+        audioA2dpDevice_.CheckHearingAidDeviceExist(deviceDescriptor->macAddress_),
+        ERR_INVALID_PARAM, "Target HearingAid device doesn't exist.");
+    int32_t result = ERROR;
+#ifdef BLUETOOTH_ENABLE
+    if (audioIOHandleMap_.CheckIOHandleExist(HEARING_AID_SPEAKER)) {
+        AUDIO_WARNING_LOG("HearingAid device [%{public}s] [%{public}s] is already active",
+            GetEncryptAddr(deviceDescriptor->macAddress_).c_str(), deviceDescriptor->deviceName_.c_str());
+        return SUCCESS;
+    }
+
+    AudioStreamInfo audioStreamInfo = {};
+    DeviceStreamInfo hearingAidStreamInfo = deviceDescriptor->GetDeviceStreamInfo();
+    audioStreamInfo.samplingRate = hearingAidStreamInfo.samplingRate.empty() ? AudioSamplingRate::SAMPLE_RATE_16000 :
+        *hearingAidStreamInfo.samplingRate.rbegin();
+    audioStreamInfo.encoding = hearingAidStreamInfo.encoding;
+    audioStreamInfo.format = hearingAidStreamInfo.format;
+    audioStreamInfo.channelLayout = hearingAidStreamInfo.channelLayout.empty() ? AudioChannelLayout::CH_LAYOUT_UNKNOWN :
+        *hearingAidStreamInfo.channelLayout.rbegin();
+    audioStreamInfo.channels = hearingAidStreamInfo.GetChannels().empty() ? AudioChannel::CHANNEL_UNKNOW :
+        *hearingAidStreamInfo.GetChannels().rbegin();
+
+    std::string networkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
+    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_HEARING_AID);
+    result = LoadHearingAidModule(DEVICE_TYPE_HEARING_AID, audioStreamInfo, networkId, sinkName, SOURCE_TYPE_INVALID);
+    CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "LoadHearingAidModule failed %{public}d", result);
+#endif
+    return result;
+}
+
+int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const AudioStreamInfo &audioStreamInfo,
+    std::string networkId, std::string sinkName, SourceType sourceType)
+{
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_HEARING_AID, moduleInfoList);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "HearingAid module is not exist in the configuration file");
+
+    int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH,
+        "bt_hearing_aid");
+    if (loadRet) {
+        AUDIO_ERR_LOG("load adapter failed");
+    }
+    for (auto &moduleInfo : moduleInfoList) {
+        if (moduleInfo.role != "sink") {
+            AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}s]",
+                moduleInfo.name.c_str(), moduleInfo.role.c_str());
+            continue;
+        }
+        DeviceRole configRole = OUTPUT_DEVICE;
+        DeviceRole deviceRole = deviceType == DEVICE_TYPE_HEARING_AID ? OUTPUT_DEVICE : INPUT_DEVICE;
+        AUDIO_INFO_LOG("Load hearingAid module [%{public}s], role[%{public}d], config role[%{public}d]",
+            moduleInfo.name.c_str(), deviceRole, configRole);
+        if (configRole != deviceRole) {continue;}
+        if (audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name) == false) {
+            AUDIO_INFO_LOG("hearingAid device connects for the first time");
+            // HearingAid device connects for the first time
+            GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+            uint32_t paIndex = 0;
+            AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+            CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID,
+                ERR_INVALID_HANDLE, "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+            CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE,
+                ERR_OPERATION_FAILED, "OpenAudioPort failed paId[%{public}u]", paIndex);
+            audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
+
+            std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+            pipeInfo->id_ = ioHandle;
+            pipeInfo->paIndex_ = paIndex;
+            pipeInfo->name_ = "hearing_aid_output";
+            pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+            pipeInfo->adapterName_ = "hearing_aid";
+            pipeInfo->moduleInfo_ = moduleInfo;
+            pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+            pipeManager_->AddAudioPipeInfo(pipeInfo);
+            AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAid.", pipeInfo->id_);
+        }
+    }
+
     return SUCCESS;
 }
 } // namespace AudioStandard

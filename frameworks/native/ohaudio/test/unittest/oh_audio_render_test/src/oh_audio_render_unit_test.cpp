@@ -15,9 +15,11 @@
 
 #include <thread>
 #include <chrono>
+#include "gmock/gmock.h"
 #include "oh_audio_render_unit_test.h"
 
 using namespace testing::ext;
+using namespace testing;
 using namespace std::chrono;
 using namespace OHOS::AudioStandard::OHAudioRenderUT;
 
@@ -30,6 +32,26 @@ int32_t AudioRendererOnWriteData(OH_AudioRenderer* capturer,
     int32_t bufferLen)
 {
     return 0;
+}
+
+class MockAudioRendererCallback {
+public:
+    virtual ~MockAudioRendererCallback() = default;
+    virtual int32_t OnWriteData(
+        OH_AudioRenderer* renderer, void* userData, void* audioData, int32_t audioDataSize) = 0;
+};
+
+class MockAudioRendererCallbackImpl : public MockAudioRendererCallback {
+public:
+    MOCK_METHOD(int32_t, OnWriteData,
+        (OH_AudioRenderer* renderer, void* userData, void* audioData, int32_t audioDataSize),
+        (override));
+};
+
+int32_t AdvancedWriteDataProxy(
+    OH_AudioRenderer* renderer, void* userData, void* audioData, int32_t audioDataSize) {
+    auto* mock = static_cast<MockAudioRendererCallback*>(userData);
+    return mock->OnWriteData(renderer, userData, audioData, audioDataSize);
 }
 
 void AudioRendererOnMarkReachedCb(OH_AudioRenderer* renderer, uint32_t samplePos, void* userData)
@@ -1520,6 +1542,59 @@ HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_035, TestSize.Level0)
 
     auto ret = oHAudioRendererErrorCallback->GetErrorResult(errorCode);
     EXPECT_EQ(ret, AUDIOSTREAM_ERROR_UNSUPPORTED_FORMAT);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced API via legal state.
+ * @tc.number: OH_Audio_Render_WriteDataCallbackAdvanced_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced interface.
+ *             Returns true if result is successful.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_001, TestSize.Level0)
+{
+    std::atomic<bool> flagEndTest = false;
+    MockAudioRendererCallbackImpl mockCallback;
+    EXPECT_CALL(mockCallback, OnWriteData(
+        _,          // renderer
+        NotNull(),  // userData
+        NotNull(),  // audioData
+        Gt(0)       // audioDataSize > 0
+    ))
+    .Times(AtLeast(4))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return 0;
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return CHANNEL_COUNT * FORMAT_SIZE; // a sampling point
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        // Non-integer sampling points. Note that this is not a correct usage, it is only used to test robustness.
+        return CHANNEL_COUNT * FORMAT_SIZE + 1;
+    }))
+    .WillOnce(Invoke([&flagEndTest](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        flagEndTest = true;
+        flagEndTest.notify_all();
+        return audioDataSize;
+    }))
+    .WillRepeatedly(Return(0));
+
+    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(builder, AdvancedWriteDataProxy, &mockCallback);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    flagEndTest.wait(false);
+
+    CleanupAudioResources(builder, audioRenderer);
 }
 
 /**

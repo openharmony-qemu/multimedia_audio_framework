@@ -1121,6 +1121,72 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     audioServerPtr->SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
 }
 
+void AudioServerNotifyDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::string networkId = "test_network_id";
+    bool connected = *reinterpret_cast<const bool*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->NotifyDeviceInfo(networkId, connected);
+}
+
+void AudioServerSetVoiceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    float volume = *reinterpret_cast<const float*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->SetVoiceVolume(volume);
+}
+
+void AudioServerCheckRemoteDeviceStateFuzzTest(const uint8_t *rawData, size_t size)
+{
+    static const vector<DeviceRole> testDeviceRole = {
+        DEVICE_ROLE_NONE,
+        INPUT_DEVICE,
+        OUTPUT_DEVICE,
+        DEVICE_ROLE_MAX,
+    };
+    if (rawData == nullptr || size < LIMITSIZE || testDeviceRole.size() == 0) {
+        return;
+    }
+
+    std::string networkId = "test_network_id";
+    uint32_t deviceId = *reinterpret_cast<const uint32_t*>(rawData);
+    DeviceRole deviceRole = testDeviceRole[deviceId % testDeviceRole.size()];
+    bool isStartDevice = *reinterpret_cast<const bool*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->CheckRemoteDeviceState(networkId, deviceRole, isStartDevice);
+}
+
+void AudioServerSetAudioBalanceValueFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    float audioBalance = *reinterpret_cast<const float*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->SetAudioBalanceValue(audioBalance);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1176,6 +1242,10 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerGetAudioParameterByKeyTest,
     OHOS::AudioStandard::AudioServerGetDPParameterTest,
     OHOS::AudioStandard::AudioServerSetAudioSceneByDeviceTypeTest,
+    OHOS::AudioStandard::AudioServerNotifyDeviceInfoFuzzTest,
+    OHOS::AudioStandard::AudioServerSetVoiceVolumeFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateFuzzTest,
+    OHOS::AudioStandard::AudioServerSetAudioBalanceValueFuzzTest,
 };
 
 /* Fuzzer entry point */
