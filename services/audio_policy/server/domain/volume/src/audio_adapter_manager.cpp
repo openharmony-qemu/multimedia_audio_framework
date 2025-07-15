@@ -756,10 +756,6 @@ void AudioAdapterManager::SetOffloadVolume(AudioStreamType streamType, float vol
     if (!(streamType == STREAM_MUSIC || streamType == STREAM_SPEECH)) {
         return;
     }
-    DeviceType dev = GetActiveDevice();
-    if (!(dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_BLUETOOTH_A2DP || dev == DEVICE_TYPE_USB_HEADSET)) {
-        return;
-    }
     CHECK_AND_RETURN_LOG(audioServerProxy_ != nullptr, "audioServerProxy_ null");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
     if (offloadSessionID_.has_value()) { // need stream volume and system volume
