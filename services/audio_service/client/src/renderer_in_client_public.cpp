@@ -1815,8 +1815,8 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // cal latency between readIdx and framesWritten
     uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
-    int64_t ringcacheLatency = ringCacheLatencyBytes_.load() / sizePerFrameInByte_;
-    deepLatency += ringcacheLatency > 0 : static_cast<uint64_t>(ringcacheLatency) : 0;
+    int64_t ringcacheLatency = ringCacheLatencyBytes_.load();
+    deepLatency += ringcacheLatency > 0 ? static_cast<uint64_t>(ringcacheLatency) / sizePerFrameInByte_ : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
     uint64_t lastSpeedPosition = fsPair.writtenFrames;
