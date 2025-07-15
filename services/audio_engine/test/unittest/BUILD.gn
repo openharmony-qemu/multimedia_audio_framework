@@ -24,6 +24,7 @@ config("audio_engine_private_config") {
     "-Wall",
     "-Werror",
     "-fno-access-control",
+    "-DENABLE_HIDUMP_DFX",
   ]
 
   include_dirs = [
