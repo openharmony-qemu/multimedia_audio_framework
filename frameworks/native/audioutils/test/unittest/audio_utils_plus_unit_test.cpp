@@ -23,6 +23,7 @@
 #include "audio_errors.h"
 #include "audio_performance_monitor.h"
 #include "audio_stream_info.h"
+#include "audio_performance_monitor_c.h"
 
 using namespace testing::ext;
 using namespace std;
@@ -686,5 +687,23 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_007, TestSize.Level3)
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().overTimeDetectMap_.size(), static_cast<size_t>(0));
 }
 
+/**
+* @tc.name  : Test RecordPaSilenceState API
+* @tc.type  : FUNC
+* @tc.number: RecordPaSilenceState_001
+* @tc.desc  : Test RecordPaSilenceState
+*/
+HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
+{
+    uint32_t sessionId = 111111;
+    bool isSilence = true;
+    enum PA_PIPE_TYPE papipeType = static_cast<PA_PIPE_TYPE>(100);
+    uint32_t  uid = 1000;
+    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_NORMAL, uid);
+    RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
+    RecordPaSilenceState(sessionId, isSilence, papipeType, uid);
+    AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor();
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), static_cast<size_t>(0));
+}
 } // namespace AudioStandard
 } // namespace OHOS

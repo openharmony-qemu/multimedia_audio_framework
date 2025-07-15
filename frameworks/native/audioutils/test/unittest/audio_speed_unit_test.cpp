@@ -213,5 +213,21 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_008, TestSize.Level1)
     auto result = audioSpeed->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
     EXPECT_EQ(result, bufferSize);
 }
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_009.
+* @tc.desc  : Test ChangeSpeedFor32Bit.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_009, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_F32LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->LoadChangeSpeedFunc();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
