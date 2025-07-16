@@ -99,7 +99,7 @@ public:
     int32_t GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType);
     bool HasRunningRendererStream();
     bool HasRunningRecognitionCapturerStream();
-    bool HasRunningNormalCapturerStream();
+    bool HasRunningNormalCapturerStream(DeviceType type);
     bool IsMediaPlaying();
     bool IsVoipStreamActive();
     void UpdateAppVolume(int32_t appUid, int32_t volume);
