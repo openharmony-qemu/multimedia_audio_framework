@@ -248,7 +248,7 @@ void GetAudioEffectPropertyV3FuzzTest()
 {
     SetUp();
     AudioEffectPropertyArrayV3 propertyArray;
-    impl_->GetAudioEffectPropertyV3(propertyArray);
+    impl_->GetAudioEffectProperty(propertyArray);
 }
 
 void GetAudioEffectPropertyFuzzTest()

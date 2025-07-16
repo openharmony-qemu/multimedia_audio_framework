@@ -40,9 +40,7 @@ ohos_fuzztest("HpaeEngineFuzzTest") {
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  sources = [ 
-    "hpaepcmprocess_fuzzer.cpp",
-    ]
+  sources = [ "hpaeengine_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/hdiadapter_new:hdiadapter_new",

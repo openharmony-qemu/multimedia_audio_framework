@@ -44,7 +44,7 @@ ohos_fuzztest("HpaePcmProcessFuzzTest") {
   sources = [ 
     "hpaepcmprocess_fuzzer.cpp",
     "../../../frameworks/native/hdiadapter_new/util/id_handler.cpp",
-    "../../../frameworks/native/audioadapter/src/pro_audio_service_adapter.cpp",
+    "../../../frameworks/native/audioadapter/src/audio_service_adapter.cpp",
     "../../../services/audio_engine/buffer/hpae_pcm_process.cpp",
     "../../../services/audio_engine/buffer/hpae_pcm_process.h",
     ]
