@@ -29,8 +29,8 @@ namespace AudioStandard {
 enum class AudioSessionState {
     SESSION_INVALID = -1,
     SESSION_NEW = 0,
-    SESSION_ACTIVATED = 1,
-    SESSION_DEACTIVATED = 2,
+    SESSION_ACTIVE = 1,
+    SESSION_DEACTIVE = 2,
     SESSION_RELEASED = 3,
 };
 
@@ -55,7 +55,6 @@ public:
     void Dump(std::string &dumpString);
     int32_t Activate(const AudioSessionStrategy strategy);
     int32_t Deactivate();
-    AudioSessionState GetSessionState();
     AudioSessionStrategy GetSessionStrategy();
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();

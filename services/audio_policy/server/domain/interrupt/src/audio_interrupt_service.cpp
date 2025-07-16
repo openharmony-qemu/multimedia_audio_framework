@@ -822,7 +822,7 @@ void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
 {
     // In audio session mode, the focus policy is uniformly managed by the session and not handled separately here.
     if (sessionService_ != nullptr && sessionService_->IsAudioSessionFocusMode(audioInterrupt.pid)) {
-        AUDIO_INFO_LOG(
+        AUDIO_DEBUG_LOG(
             "In audio session focus mode, no need to check app stream type. pid = %{public}d", audioInterrupt.pid);
         return;
     }
