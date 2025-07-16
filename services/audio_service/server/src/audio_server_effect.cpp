@@ -545,22 +545,6 @@ int32_t AudioServer::IsAudioLoopbackSupported(int32_t mode, bool &isSupported)
     AUDIO_ERR_LOG("IsAudioLoopbackSupported not support");
     return SUCCESS;
 }
-
-int32_t AudioServer::SetAbsVolumeStateToEffect(bool absVolumeState)
-{
-    AUDIO_INFO_LOG("SetAbsVolumeStateToEffect absVolumeState: %{public}d", absVolumeState);
-
-    int32_t engineFlag = GetEngineFlag();
-    if (engineFlag == 1) {
-        HPAE::IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
-    } else {
-        AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-        CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
-        audioEffectChainManager->SetAbsVolumeStateToEffect(absVolumeState);
-    }
-
-    return SUCCESS;
-}
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

@@ -135,7 +135,6 @@ interface IStandardAudioService {
     void SetBtHdiInvalidState();
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
-    void SetAbsVolumeStateToEffect([in] boolean absVolumeState);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
 

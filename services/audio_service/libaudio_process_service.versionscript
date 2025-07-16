@@ -75,7 +75,6 @@
     *StartGroup*;
     *StopGroup*;
     *AudioWorkgroupCallback*;
-    *SetAbsVolumeStateToEffect*;
   local:
     *;
 };
