@@ -447,7 +447,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_029, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(true, audioDeviceCommon.audioDeviceManager_.NoDp());
+    EXPECT_EQ(false, audioDeviceCommon.audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP));
+    EXPECT_EQ(false, audioDeviceCommon.audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP,
+        audioDeviceDescriptorSptr->macAddress_));
 }
 
 /**

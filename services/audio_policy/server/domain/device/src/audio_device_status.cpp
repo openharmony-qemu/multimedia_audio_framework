@@ -615,8 +615,15 @@ void AudioDeviceStatus::OnPnpDeviceStatusUpdated(AudioDeviceDescriptor &desc, bo
         pnpDeviceList_.push_back({pnpDesc, isConnected});
         return;
     }
-    CHECK_AND_RETURN_LOG(!isConnected || desc.deviceType_ != DEVICE_TYPE_DP || audioDeviceManager_.NoDp(),
-        "DP device already exists, ignore this one.");
+    if (desc.deviceType_ == DEVICE_TYPE_DP) {
+        if (isConnected) {
+            auto exists = audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP);
+            CHECK_AND_RETURN_LOG(!exists, "DP device already exists, ignore this one.");
+        } else {
+            auto exists = audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP, desc.macAddress_);
+            CHECK_AND_RETURN_LOG(exists, "DP device does not exist, can not disconnect.");
+        }
+    }
     AudioStreamInfo streamInfo = {};
     OnDeviceStatusUpdated(desc.deviceType_, isConnected, desc.macAddress_, desc.deviceName_, streamInfo);
 }

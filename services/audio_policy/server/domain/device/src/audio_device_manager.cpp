@@ -1485,12 +1485,20 @@ bool AudioDeviceManager::IsSessionSetDefaultDevice(uint32_t sessionId)
     return selectedDefaultOutputDeviceInfo_.find(sessionId) != selectedDefaultOutputDeviceInfo_.end();
 }
 
-bool AudioDeviceManager::NoDp() const
+bool AudioDeviceManager::ExistsByType(DeviceType devType) const
 {
-    auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [](auto &item) {
-        return item->deviceType_ == DEVICE_TYPE_DP;
+    auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType](auto &item) {
+        return item->deviceType_ == devType;
     });
-    return it == connectedDevices_.cend();
+    return it != connectedDevices_.cend();
+}
+
+bool AudioDeviceManager::ExistsByTypeAndAddress(DeviceType devType, const string &address) const
+{
+    auto it = find_if(connectedDevices_.cbegin(), connectedDevices_.cend(), [devType, &address](auto &item) {
+        return item->deviceType_ == devType && item->macAddress_ == address;
+    });
+    return it != connectedDevices_.cend();
 }
 
 bool AudioDeviceManager::ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc)
