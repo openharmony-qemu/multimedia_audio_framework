@@ -1981,7 +1981,7 @@ HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t callbackId = 1;
-    AudioRendererDataTransferStateChangeInfo info;    
+    AudioRendererDataTransferStateChangeInfo info;
     info.clientUID = 1000;
     info.sessionId = 1;
     info.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
@@ -2061,7 +2061,7 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_002, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     AudioProcessConfig config;
     config.streamInfo.format = SAMPLE_S16LE;
-    config.streamInfo.samplingRate = AudioSanplingRate::SAMPLE_RATE_48000;
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     config.audioMode = AUDIO_MODE_PLAYBACK;
     config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
     config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
@@ -2072,11 +2072,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_002, TestSize.Level1)
 
     config.capturerInfo.capturerFlags = AUDIO_FLAG_DIRECT;
     config.audioMode = AUDIO_MODE_RECORD;
-    config.capturerInfo.isLookback = true;
+    config.capturerInfo.isLoopback = true;
     remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
 
-    config.capturerInfo.isLookback = false;
+    config.capturerInfo.isLoopback = false;
     remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
     EXPECT_EQ(nullptr, remoteObject);
 }
@@ -2093,7 +2093,7 @@ HWTEST_F(AudioServerUnitTest, NotifyProcessStatus_001, TestSize.Level1)
     audioServer->NotifyProcessStatus();
 }
 
-#ifdef HASFEATURE_INNERCAPTURER
+#ifdef HAS_FEATURE_INNERCAPTURER
 /**
  * @tc.name  : Test HandleCheckCaptureLimit API
  * @tc.type  : FUNC
@@ -2148,7 +2148,7 @@ HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, OnCapturerState_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    audioServer->OnCapturerState(true, 0, 1));
+    audioServer->OnCapturerState(true, 0, 1);
 }
 
 /**
@@ -2162,8 +2162,8 @@ HWTEST_F(AudioServerUnitTest, OnCapturerState_002, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     std::shared_ptr<WakeUpSourceCallback> callback = std::make_shared<WakeUpSourceCallbackTest>();
     audioServer->wakeupCallback_ = callback;
-    audioServer->OnCapturerState(true, 1, 1));
-    audioServer->OnCapturerState(true, 0, 1));
+    audioServer->OnCapturerState(true, 1, 1);
+    audioServer->OnCapturerState(true, 0, 1);
 }
 
 /**
@@ -2201,11 +2201,11 @@ HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
     EXPECT_NE(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
     config.innerCapMode = MODERN_INNER_CAP;
-    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAOTURE;
+    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
 
     config.innerCapMode = INVALID_CAP_MODE;
-    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAOTURE;
+    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
     EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_UNKNOWN);
 
     config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
@@ -2299,10 +2299,10 @@ HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_002, TestSize
     AudioProcessConfig config;
     config.callerUid = 1001;
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
-    EXPECT_TRUE(audioServer->CheckInnerRecorderPermission(config));
+    EXPECT_TRUE(audioServer->HandleCheckRecorderBackgroundCapture(config));
 
     config.callerUid = 1000;
-    EXPECT_FALSE(audioServer->CheckInnerRecorderPermission(config));
+    EXPECT_FALSE(audioServer->HandleCheckRecorderBackgroundCapture(config));
 }
 
 /**
@@ -2314,7 +2314,7 @@ HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_002, TestSize
 HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr());
+    uint32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr());
     EXPECT_EQ(result, 0);
 }
 
@@ -2327,11 +2327,11 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    HDiIdBase idBase = HDI_ID_BASE_RENDER;
-    HDiIdType idType = HDI_ID_TYPE_PRIMARY;
+    HdiIdBase idBase = HDI_ID_BASE_RENDER;
+    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
     std::string idInfo = "test";
     IAudioSinkAttr attr;
-    int32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2344,11 +2344,11 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateSinkPort_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    HDiIdBase idBase = HDI_ID_BASE_RENDER;
-    HDiIdType idType = HDI_ID_TYPE_FAST;
+    HdiIdBase idBase = HDI_ID_BASE_RENDER;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
     std::string idInfo = "test";
     IAudioSinkAttr attr;
-    int32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2361,12 +2361,12 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_002, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    HDiIdBase idBase = HDI_ID_BASE_CAPTURE;
-    HDiIdType idType = HDI_ID_TYPE_FAST;
+    HdiIdBase idBase = HDI_ID_BASE_CAPTURE;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
     std::string idInfo = "test";
-    IAudioSinkAttr attr;
+    IAudioSourceAttr attr;
     attr.sourceType = 1;
-    int32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2379,12 +2379,12 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    HDiIdBase idBase = HDI_ID_BASE_CAPTURE;
-    HDiIdType idType = HDI_ID_TYPE_PRIMARY;
+    HdiIdBase idBase = HDI_ID_BASE_CAPTURE;
+    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
     std::string idInfo = "test";
-    IAudioSinkAttr attr;
+    IAudioSourceAttr attr;
     attr.sourceType = 100;
-    int32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2397,7 +2397,7 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr());
+    uint32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr());
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
