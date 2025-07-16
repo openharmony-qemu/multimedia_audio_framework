@@ -35,6 +35,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const size_t TestSize = 1024;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
@@ -138,7 +139,7 @@ void GetFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
-    std::vector<float> frameData(1024, 0.0f);
+    std::vector<float> frameData(TestSize, 0.0f);
     hpaePcmBuffer->GetFrameData(frameData);
 }
 
@@ -154,7 +155,7 @@ void PushFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
-    std::vector<float> frameData(1024, 0.0f);
+    std::vector<float> frameData(TestSize, 0.0f);
     hpaePcmBuffer->PushFrameData(frameData);
 }
 

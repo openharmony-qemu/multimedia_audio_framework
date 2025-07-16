@@ -1,0 +1,2613 @@
+diff --git a/test/BUILD.gn b/test/BUILD.gn
+index 25e33c95e5fc7342fd5c84cd98ab1c16ef318b0c..1d009ba404f5679ee702a73f892a892a43510445 100644
+--- a/test/BUILD.gn
++++ b/test/BUILD.gn
+@@ -222,6 +222,13 @@ group("audio_fuzz_test") {
+     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
+     "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
+ 
++    "fuzztest/audiohpaeengine_fuzzer:fuzztest",
++    "fuzztest/audiohpaepcmbuffer_fuzzer:fuzztest",
++    "fuzztest/audiohpaepcmprocess_fuzzer:fuzztest",
++    "fuzztest/audiohpaecapturermanager_fuzzer:fuzztest",
++    "fuzztest/audiohpaeinnercapturermanager_fuzzer:fuzztest",
++    #"fuzztest/audiohpaemanagerimpl_fuzzer:fuzztest",
++
+     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
+     "fuzztest/audiopolicyserverhandler_fuzzer:fuzztest",
+ 
+diff --git a/test/fuzztest/audiohpaecapturermanager_fuzzer/BUILD.gn b/test/fuzztest/audiohpaecapturermanager_fuzzer/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..3ef255d377df733ac418fa602699214ccb546e50
+--- /dev/null
++++ b/test/fuzztest/audiohpaecapturermanager_fuzzer/BUILD.gn
+@@ -0,0 +1,105 @@
++# Copyright (c) 2024 Huawei Device Co., Ltd.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++import("//build/config/features.gni")
++import("//build/test.gni")
++import("../../../accessibility.gni")
++import("../../../config.gni")
++
++ohos_fuzztest("AudioHpaeCapturerManagerFuzzTest") {
++  module_out_path = "audio_framework/audio_framework_engine"
++  fuzz_config_file = "../audiohpaecapturermanager_fuzzer"
++
++  include_dirs = [
++    "../../../frameworks/native/audioschedule/include",
++    "../../../frameworks/native/hdiadapter_new/include/manager",
++    "../../../interfaces/inner_api/native/audiocommon/include",
++    "../../../services/audio_service/server/include",
++    "../../../services/audio_engine/buffer",
++    "../../../services/audio_engine/manager/include",
++    "../../../services/audio_engine/node/include",
++    "../../../services/audio_engine/plugin/channel_converter/include",
++    "../../../services/audio_engine/plugin/resample/include",
++    "../../../services/audio_policy/server/include/service",
++    "../../../services/audio_engine/utils",
++    "../../../services/audio_engine/simd",
++    "../../../services/audio_engine/dfx",
++  ]
++
++  cflags = [
++    "-g",
++    "-O0",
++    "-Wno-unused-variable",
++    "-fno-omit-frame-pointer",
++  ]
++
++  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
++
++  sources = [ 
++    "audiohpaecapturermanager_fuzzer.cpp" ,
++    ]
++
++  deps = [
++    "../../../frameworks/native/audioutils:audio_utils",
++    "../../../frameworks/native/audioschedule:audio_schedule",
++    "../../../services/audio_engine:audio_engine_manager",
++    "../../../services/audio_policy:audio_policy_service",
++    "../../../services/audio_service:audio_common",
++  ]
++
++  external_deps = [
++    "ability_base:want",
++    "ability_runtime:extension_manager",
++    "ability_runtime:wantagent_innerkits",
++    "access_token:libaccesstoken_sdk",
++    "access_token:libprivacy_sdk",
++    "access_token:libtokensetproc_shared",
++    "background_task_mgr:bgtaskmgr_innerkits",
++    "bundle_framework:appexecfwk_base",
++    "bundle_framework:appexecfwk_core",
++    "c_utils:utils",
++    "data_share:datashare_common",
++    "data_share:datashare_consumer",
++    "hdf_core:libhdf_ipc_adapter",
++    "hdf_core:libhdi",
++    "hdf_core:libpub_utils",
++    "hilog:libhilog",
++    "ipc:ipc_single",
++    "kv_store:distributeddata_inner",
++    "media_foundation:media_monitor_client",
++    "media_foundation:media_monitor_common",
++    "os_account:os_account_innerkits",
++    "power_manager:powermgr_client",
++    "pulseaudio:pulse",
++    "relational_store:native_appdatafwk",
++    "safwk:system_ability_fwk",
++    "samgr:samgr_proxy",
++  ]
++
++  if (accessibility_enable == true) {
++    external_deps += [
++      "accessibility:accessibility_common",
++      "accessibility:accessibilityconfig",
++    ]
++  }
++
++defines = []
++  if (use_libfuzzer || use_clang_coverage) {
++    defines += [ "TEST_COVERAGE" ]
++  }
++}
++
++group("fuzztest") {
++  testonly = true
++  deps = [ ":AudioHpaeCapturerManagerFuzzTest" ]
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaecapturermanager_fuzzer/audiohpaecapturermanager_fuzzer.cpp b/test/fuzztest/audiohpaecapturermanager_fuzzer/audiohpaecapturermanager_fuzzer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..06d67fedb65d40ca96cfa6cbd728d7788e6255cb
+--- /dev/null
++++ b/test/fuzztest/audiohpaecapturermanager_fuzzer/audiohpaecapturermanager_fuzzer.cpp
+@@ -0,0 +1,389 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include <cstddef>
++#include <cstdint>
++#include <vector>
++#include <memory>
++#include <queue>
++#include <string>
++#undef private
++#include "audio_info.h"
++#include "i_stream.h"
++#include "hpae_capturer_manager.h"
++using namespace std;
++using namespace OHOS::AudioStandard::HPAE;
++
++std::shared_ptr<HpaeCapturerManager> HpaeCapturerManager_ = nullptr
++
++namespace OHOS {
++namespace AudioStandard {
++using namespace std;
++const uint8_t TESTSIZE = 32;
++static const uint8_t *RAW_DATA = nullptr;
++static size_t g_dataSize = 0;
++static size_t g_pos;
++const size_t THRESHOLD = 10;
++typedef void (*TestPtr)(const uint8_t *,size_t)
++
++template<class T>
++T GetData()
++{
++    T object {};
++    size_t objectSize = sizeof(object);
++    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
++        return object;
++    }
++    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
++    if (ret != EOK) {
++        return {};
++    }
++    g_pos += objectSize;
++    return object;
++}
++
++template<class T>
++uint32_t GetArrLength(T& arr)
++{
++    if (arr == nullptr) {
++        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
++        return 0;
++    }
++    return sizeof(arr) / sizeof(arr[0]);
++}
++
++void CreateStreamFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeStreamInfo streamInfo;
++    HpaeCapturerManager_->CreateStream(streamInfo);
++}
++
++void DestroyStreamFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->DestroyStream(sessionId);
++}
++
++void StartFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Start(sessionId);
++}
++
++void PauseFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Pause(sessionId);
++}
++
++void FlushFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Flush(sessionId);
++}
++
++void DrainFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Drain(sessionId);
++}
++
++void StopFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Stop(sessionId);
++}
++
++void ReleaseFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeCapturerManager_->Release(sessionId);
++}
++
++void MoveStreamFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    const std::string &sourceName = sourceInfo.sourceName;
++    HpaeCapturerManager_->MoveStream(sessionId,sourceName);
++}
++
++void MoveAllStreamFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    const std::vector<uint32_t> &sessionIds = {1,2,3};
++    const std::string &sourceName = sourceInfo.sourceName;
++    HpaeCapturerManager_->MoveAllStream(sourceName,sessionIds);
++}
++
++void SetMuteFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    bool isMute = false;
++    HpaeCapturerManager_->SetMute(isMute);
++}
++
++void ProcessFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->Process();
++}
++
++void HandleMsgFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->HandleMsg();
++}
++
++void InitFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->Init();
++}
++
++void DeInitFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->DeInit();
++}
++
++void IsInitFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->IsInit();
++}
++
++void IsRunningFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->IsRunning();
++}
++
++void IsMsgProcessingFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->IsMsgProcessing();
++}
++
++void DeactivateThreadFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->DeactivateThread();
++}
++
++void RegisterReadCallbackFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    const std::weak_ptr<ICapturerStreamCallback> &callback = std::weak_ptr<ICapturerStreamCallback>();
++    HpaeCapturerManager_->RegisterReadCallback(sessionId,callback);
++}
++
++void GetSourceOutputInfoFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    HpaeSourceOutputInfo sourceOutputInfo;
++    HpaeCapturerManager_->GetSourceOutputInfo(sessionId,sourceOutputInfo);
++}
++
++void GetSourceInfoFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->GetSourceInfo();
++}
++
++void GetAllSourceInfoFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->GetAllSourceInfo();
++}
++
++void OnNodeStatusUpdateFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    IOperation operation = IOperation::OPERATION_INVALID;
++    HpaeCapturerManager_->OnNodeStatusUpdate(sessionId,operation);
++}
++
++void OnNotifyQueueFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->OnNotifyQueue();
++}
++
++void OnRequestLatencyFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t sessionId = 0;
++    uint64_t latency = 0;
++    HpaeCapturerManager_->OnRequestLatency(sessionId,latency);
++}
++
++void AddNodeToSourceFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCaptureMoveInfo moveInfo;
++    HpaeCapturerManager_->AddNodeToSource(moveInfo);
++}
++
++void AddAllNodesToSourceFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    std::vector<HpaeCaptureMoveInfo> moveInfoVector;
++    std::vector<HpaeCaptureMoveInfo> &moveInfos = moveInfoVector;
++    bool isConnect = false;
++    HpaeCapturerManager_->AddAllNodesToSource(moveInfos,isConnect);
++}
++
++void GetTheadNameFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->GetTheadName();
++}
++
++void SetCaptureIdFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    uint32_t captureId = 3;
++    HpaeCapturerManager_->SetCaptureId(captureId);
++}
++
++void ReloadCaptureManagerFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->ReloadCaptureManager(sourceInfo);
++}
++
++void GetDeviceHDFDumpInfoFuzzTest()
++{
++    HpaeSourceInfo sourceInfo;
++    HpaeCapturerManager_ = std::make_shared<HpaeCapturerManager>(sourceInfo);
++    HpaeCapturerManager_->GetDeviceHDFDumpInfo();
++}
++
++typedef void (*TestFuncs[32])();
++
++TestFuncs g_testFuncs = {
++    CreateStreamFuzzTest,
++    DestroyStreamFuzzTest,
++    StartFuzzTest,
++    PauseFuzzTest,
++    FlushFuzzTest,
++    DrainFuzzTest,
++    StopFuzzTest,
++    ReleaseFuzzTest,
++    MoveStreamFuzzTest,
++    MoveAllStreamFuzzTest,
++    SetMuteFuzzTest,
++    ProcessFuzzTest,
++    HandleMsgFuzzTest,
++    InitFuzzTest,
++    DeInitFuzzTest,
++    IsInitFuzzTest,
++    IsRunningFuzzTest,
++    IsMsgProcessingFuzzTest,
++    DeactivateThreadFuzzTest,
++    RegisterReadCallbackFuzzTest,
++    GetSourceOutputInfoFuzzTest,
++    GetSourceInfoFuzzTest,
++    GetAllSourceInfoFuzzTest,
++    OnNodeStatusUpdateFuzzTest,
++    OnNotifyQueueFuzzTest,
++    OnRequestLatencyFuzzTest,
++    AddNodeToSourceFuzzTest,
++    AddAllNodesToSourceFuzzTest,
++    GetTheadNameFuzzTest,
++    ReloadCaptureManagerFuzzTest,
++    GetDeviceHDFDumpInfoFuzzTest,
++};
++
++bool FuzzTest(const uint8_t* rawData, size_t size)
++{
++    if (rawData == nullptr) {
++        return false;
++    }
++
++    // initialize data
++    RAW_DATA = rawData;
++    g_dataSize = size;
++    g_pos = 0;
++
++    uint32_t code = GetData<uint32_t>();
++    uint32_t len = GetArrLength(g_testFuncs);
++    if (len > 0) {
++        g_testFuncs[code % len]();
++    } else {
++        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
++    }
++
++    return true;
++}
++
++
++} // namespace AudioStandard
++} // namesapce OHOS
++
++/* Fuzzer entry point */
++extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
++{
++    if (size < OHOS::AudioStandard::THRESHOLD) {
++        return 0;
++    }
++
++    OHOS::AudioStandard::FuzzTest(data, size);
++    return 0;
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaecapturermanager_fuzzer/project.xml b/test/fuzztest/audiohpaecapturermanager_fuzzer/project.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7133b2b92440904a5ed04b838733acea0f97486a
+--- /dev/null
++++ b/test/fuzztest/audiohpaecapturermanager_fuzzer/project.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<fuzz_config>
++  <fuzztest>
++    <!-- maximum length of a test input -->
++    <max_len>1000</max_len>
++    <!-- maximum total time in seconds to run the fuzzer -->
++    <max_total_time>300</max_total_time>
++    <!-- memory usage limit in Mb -->
++    <rss_limit_mb>4096</rss_limit_mb>
++  </fuzztest>
++</fuzz_config>
+diff --git a/test/fuzztest/audiohpaeengine_fuzzer/BUILD.gn b/test/fuzztest/audiohpaeengine_fuzzer/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..4ddb8f2d583133009694af100b1ac542269f61fc
+--- /dev/null
++++ b/test/fuzztest/audiohpaeengine_fuzzer/BUILD.gn
+@@ -0,0 +1,101 @@
++# Copyright (c) 2024 Huawei Device Co., Ltd.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++import("//build/config/features.gni")
++import("//build/test.gni")
++import("../../../accessibility.gni")
++import("../../../config.gni")
++
++ohos_fuzztest("AudioHpaeEngineFuzzTest") {
++  module_out_path = "audio_framework/audio_framework_engine"
++  fuzz_config_file = "../audiohpaeengine_fuzzer"
++
++  include_dirs = [
++    "../../../frameworks/native/audioadapter/include",
++    "../../../frameworks/native/hdiadapter_new/include/manager",
++    "../../../frameworks/native/hdiadapter_new/include/util",
++    "../../../interfaces/inner_api/native/audiocommon/include",
++    "../../../services/audio_engine/manager/include",
++    "../../../services/audio_policy/server/include/service",
++    "../../../services/audio_policy/server/include",
++    "../../../services/audio_service/server/include",
++  ]
++  cflags = [
++    "-g",
++    "-O0",
++    "-Wno-unused-variable",
++    "-fno-omit-frame-pointer",
++    "-fno-access-control",
++  ]
++
++  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
++
++  sources = [ 
++    "audiohpaepcmprocess_fuzzer.cpp",
++    ]
++
++  deps = [
++    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
++    "../../../frameworks/native/audioadapter:pulse_audio_service_adapter",
++    "../../../frameworks/native/audioutils:audio_utils",
++    "../../../services/audio_engine:audio_engine_manager",
++    "../../../services/audio_policy:audio_policy_service",
++    "../../../services/audio_service:audio_common",
++  ]
++
++  external_deps = [
++    "ability_base:want",
++    "ability_runtime:extension_manager",
++    "ability_runtime:wantagent_innerkits",
++    "access_token:libaccesstoken_sdk",
++    "access_token:libprivacy_sdk",
++    "access_token:libtokensetproc_shared",
++    "background_task_mgr:bgtaskmgr_innerkits",
++    "bundle_framework:appexecfwk_base",
++    "bundle_framework:appexecfwk_core",
++    "c_utils:utils",
++    "data_share:datashare_common",
++    "data_share:datashare_consumer",
++    "hdf_core:libhdf_ipc_adapter",
++    "hdf_core:libhdi",
++    "hdf_core:libpub_utils",
++    "hilog:libhilog",
++    "hisysevent:libhisysevent",
++    "ipc:ipc_single",
++    "kv_store:distributeddata_inner",
++    "media_foundation:media_monitor_client",
++    "media_foundation:media_monitor_common",
++    "os_account:os_account_innerkits",
++    "power_manager:powermgr_client",
++    "pulseaudio:pulse",
++    "safwk:system_ability_fwk",
++    "samgr:samgr_proxy",
++  ]
++
++  if (accessibility_enable == true) {
++    external_deps += [
++      "accessibility:accessibility_common",
++      "accessibility:accessibilityconfig",
++    ]
++  }
++
++defines = []
++  if (use_libfuzzer || use_clang_coverage) {
++    defines += [ "TEST_COVERAGE" ]
++  }
++}
++
++group("fuzztest") {
++  testonly = true
++  deps = [ ":AudioHpaeEngineFuzzTest" ]
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaeengine_fuzzer/audiohpaeengine_fuzzer.cpp b/test/fuzztest/audiohpaeengine_fuzzer/audiohpaeengine_fuzzer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..f65082d87fdf4e02939d884f4cebe0e2780f65de
+--- /dev/null
++++ b/test/fuzztest/audiohpaeengine_fuzzer/audiohpaeengine_fuzzer.cpp
+@@ -0,0 +1,449 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <sstream>
++#include <iostream>
++#include <cstddef>
++#include <cstdint>
++#include "audio_info.h"
++#include "id_handler.h"
++#include "hdi_adapter_manager.h"
++#include "pro_audio_service_adapter_impl.h"
++#include "audio_device_info.h"
++#include "i_hpae_manager.h"
++#include "audio_effect.h"
++#include "audio_log.h"
++
++using namespace std;
++using namespace OHOS::AudioStandard::HPAE;
++namespace OHOS {
++namespace AudioStandard {
++std::shared_ptr<ProAudioServiceAdapterImpl> impl_ = nullptr;
++static std::string g_rootPath = "/data/";
++static const uint8_t *RAW_DATA = nullptr;
++static size_t g_dataSize = 0;
++static size_t g_pos;
++const size_t THRESHOLD = 10;
++typedef void (*TestPtr)(const uint8_t *,size_t)
++std::mutex lock_;
++
++template<class T>
++T GetData()
++{
++    T object {};
++    size_t objectSize = sizeof(object);
++    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
++        return object;
++    }
++    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
++    if (ret != EOK) {
++        return {};
++    }
++    g_pos += objectSize;
++    return object;
++}
++
++template<class T>
++uint32_t GetArrLength(T& arr)
++{
++    if (arr == nullptr) {
++        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
++        return 0;
++    }
++    return sizeof(arr) / sizeof(arr[0]);
++}
++
++class AudioServiceAdapterCallbackTest : public AudioServiceAdapterCallback {
++public:
++    void OnAudioStreamRemoved(const uint64_t sessionID) override
++    {
++        return;
++    }
++    void OnSetVolumeDbCb() override
++    {
++        return;
++    }
++};
++
++static AudioModuleInfo InitSinkAudioModeInfo()
++{
++    AudioModuleInfo audioModuleInfo;
++    audioModuleInfo.lib = "libmodule-hdi-sink.z.so";
++    audioModuleInfo.channels = "2";
++    audioModuleInfo.rate = "48000";
++    audioModuleInfo.name = "Speaker_File";
++    audioModuleInfo.adapterName = "file_io";
++    audioModuleInfo.className = "file_io";
++    audioModuleInfo.bufferSize = "7680";
++    audioModuleInfo.format = "s32le";
++    audioModuleInfo.fixedLatency = "1";
++    audioModuleInfo.offloadEnable = "0";
++    audioModuleInfo.networkId = "LocalDevice";
++    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" + audioModuleInfo.channels
++    + "_" + audioModuleInfo.format + ".pcm";
++    std::stringstream typeValue;
++    typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
++    audioModuleInfo.deviceType = typeValue.str();
++    return audioModuleInfo;
++}
++
++static AudioModuleInfo InitSourceAudioModeInfo()
++{
++    AudioModuleInfo audioModuleInfo;
++    audioModuleInfo.lib = "libmodule-hdi-Source.z.so";
++    audioModuleInfo.channels = "2";
++    audioModuleInfo.rate = "48000";
++    audioModuleInfo.name = "mic";
++    audioModuleInfo.adapterName = "file_io";
++    audioModuleInfo.className = "file_io";
++    audioModuleInfo.bufferSize = "3840";
++    audioModuleInfo.format = "s16le";
++    audioModuleInfo.fixedLatency = "1";
++    audioModuleInfo.offloadEnable = "0";
++    audioModuleInfo.networkId = "LocalDevice";
++    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" + audioModuleInfo.channels
++    + "_" + audioModuleInfo.format + ".pcm";
++    std::stringstream typeValue;
++    typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
++    audioModuleInfo.deviceType = typeValue.str();
++    return audioModuleInfo;
++}
++
++void SetUp()
++{
++    lock_guard<mutex> lock(lock_);
++    if (impl_ != nullptr) {
++        return;
++    }
++    IdHandler::GetInstance();
++    HdiAdapterManager::GetInstance();
++    std::unique_ptr<AudioServiceAdapterCallbackTest> cb = std::make_unique<AudioServiceAdapterCallbackTest>();
++    impl_ = std::static_pointer_cast<ProAudioServiceAdapterImpl>(
++        OHOS::AudioStandard::AudioServiceAdapter::CreateAudioAdapter(std::move(cb),true));
++    impl_->Connect();
++    HPAE::IHpaeManager::GetHpaeManager().Init();
++}
++
++void OpenAudioPortFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
++}
++
++void CloseAudioPortFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
++    impl_->CloseAudioPort(portId);
++}
++
++void SetDefaultSinkFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    impl_->SetDefaultSink(moduleInfo.name);
++}
++
++void SetDefaultSourceFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    impl_->SetDefaultSource(moduleInfo.name);
++}
++
++void SetSourceOutputMuteFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    int32_t portId = impl_->OpenAudioPort(moduleInfo,lib,moduleInfo);
++    impl_->SetSourceOutputMute(portId,true);
++}
++
++void SuspendAudioDeviceFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    impl_->SuspendAudioDevice(moduleInfo.name,true);
++}
++
++void SetSinkMuteFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
++    impl_->SetSinkMute(moduleInfo.name,true);
++}
++
++void GetAllSinkInputsFuzzTest()
++{
++    SetUp();
++    impl_->GetAllSinkInputs();
++}
++
++void GetAllSourceOutputsFuzzTest()
++{
++    SetUp();
++    impl_->GetAllSourceOutputs();
++}
++
++void DisconnectFuzzTest()
++{
++    SetUp();
++    impl_->DisconnectFuzzTest();
++}
++
++void GetTargetSinksFuzzTest()
++{
++    SetUp();
++    std::string adapterName = "adapterNameFuzzTest";
++    impl_->GetTargetSinks(adapterName);
++}
++
++void GetAllSinksFuzzTest()
++{
++    SetUp();
++    std::string adapterName = "adapterNameFuzzTest";
++    impl_->GetAllSinks(adapterName);
++}
++
++void SetLocalDefaultSinkFuzzTest()
++{
++    SetUp();
++    std::string name = "SinkName";
++    impl_->SetLocalDefaultSink(name);
++}
++
++void MoveSinkInputByIndexOrNameFuzzTest()
++{
++    SetUp();
++    uint32_t sinkInputId = 100;
++    uint32_t sinkIndex = 0;
++    std::string sinkName = "SinkInputName";
++    impl_->MoveSinkInputByIndexOrName(sinkInputId,sinkIndex,sinkName);
++}
++
++void MoveSourceOutputByIndexOrNameFuzzTest()
++{
++    SetUp();
++    uint32_t sinkInputId = 1111;
++    uint32_t sinkIndex = 0;
++    std::string sinkName = "SourceOutputName";
++    impl_->MoveSourceOutputByIndexOrName(sinkInputId,sinkIndex,sinkName);
++}
++
++void GetAudioEffectPropertyV3FuzzTest()
++{
++    SetUp();
++    AudioEffectPropertyArrayV3 propertyArray;
++    impl_->GetAudioEffectPropertyV3(propertyArray);
++}
++
++void GetAudioEffectPropertyFuzzTest()
++{
++    SetUp();
++    AudioEffectPropertyArray propertyArray;
++    impl_->GetAudioEffectProperty(propertyArray);
++}
++
++void GetAudioEnhancePropertyV3FuzzTest()
++{
++    SetUp();
++    AudioEffectPropertyArrayV3 propertyArray;
++    impl_->GetAudioEnhancePropertyV3(propertyArray);
++}
++
++void GetAudioEnhancePropertyFuzzTest()
++{
++    SetUp();
++    AudioEnhancePropertyArray propertyArray;
++    impl_->GetAudioEnhanceProperty(propertyArray);
++}
++
++void OnOpenAudioPortCbFuzzTest()
++{
++    SetUp();
++    AudioModuleInfo moduleInfo =  InitSinkAudioModeInfo();
++    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
++    impl_->OnOpenAudioPortCb(portId);
++}
++
++void OnCloseAudioPortCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnCloseAudioPortCb(result);
++}
++
++void OnSetSinkMuteCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnSetSinkMuteCb(result);
++}
++
++void OnSetSourceOutputMuteCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnSetSourceOutputMuteCb(result);
++}
++
++void OnGetAllSinkInputsCbFuzzTest()
++{
++    SetUp();
++    std::vector<SinkInput> sinkInputs = impl_->GetAllSinkInputs();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAllSinkInputsCb(result,sinkInputs);
++}
++
++void OnGetAllSourceOutputsCbFuzzTest()
++{
++    SetUp();
++    std::vector<SourceOutput> sourceOutputs = impl_->GetAllSourceOutputs();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAllSourceOutputsCb(result,sourceOutputs);
++}
++
++void OnGetAllSinksCbFuzzTest()
++{
++    SetUp();
++    std::vector<SinkInfo> sinks();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAllSinkCb(result,sinks);
++}
++
++void OnMoveSinkInputByIndexOrNameCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnMoveSinkInputByIndexOrNameCb(result);
++}
++
++void OnMoveSourceOutputByIndexOrNameCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnMoveSourceOutputByIndexOrNameCb(result);
++}
++
++void OnGetAudioEffectPropertyCbV3FuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAudioEffectPropertyCbV3(result);
++}
++
++void OnGetAudioEffectPropertyCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAudioEffectPropertyCb(result);
++}
++
++void OnGetAudioEnhancePropertyCbV3FuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAudioEnhancePropertyCbV3(result);
++}
++
++void OnGetAudioEnhancePropertyCbFuzzTest()
++{
++    SetUp();
++    int32_t result = GetData<int32_t>();
++    impl_->OnGetAudioEnhancePropertyCb(result);
++}
++
++void HandleSourceAudioStreamRemovedFuzzTest()
++{
++    SetUp();
++    uint32_t sessionId = GetData<int32_t>();
++    impl_->HandleSourceAudioStreamRemoved(sessionId);
++}
++
++typedef void (*TestFuncs[33])();
++
++TestFuncs g_testFuncs = {
++    OpenAudioPortFuzzTest,
++    CloseAudioPortFuzzTest,
++    SetDefaultSinkFuzzTest,
++    SetDefaultSourceFuzzTest,
++    SetSourceOutputMuteFuzzTest,
++    SuspendAudioDeviceFuzzTest,
++    SetSinkMuteFuzzTest,
++    GetAllSinkInputsFuzzTest,
++    GetAllSourceOutputsFuzzTest,
++    DisconnectFuzzTest,
++    GetTargetSinksFuzzTest,
++    GetAllSinksFuzzTest,
++    SetLocalDefaultSinkFuzzTest,
++    MoveSinkInputByIndexOrNameFuzzTest,
++    MoveSourceOutputByIndexOrNameFuzzTest,
++    GetAudioEffectPropertyV3FuzzTest,
++    GetAudioEffectPropertyFuzzTest,
++    GetAudioEnhancePropertyV3FuzzTest,
++    GetAudioEnhancePropertyFuzzTest,
++    OnOpenAudioPortCbFuzzTest,
++    OnCloseAudioPortCbFuzzTest,
++    OnSetSinkMuteCbFuzzTest,
++    OnSetSourceOutputMuteCbFuzzTest,
++    OnGetAllSinkInputsCbFuzzTest,
++    OnGetAllSourceOutputsCbFuzzTest,
++    OnGetAllSinksCbFuzzTest,
++    OnMoveSinkInputByIndexOrNameCbFuzzTest,
++    OnMoveSourceOutputByIndexOrNameCbFuzzTest,
++    OnGetAudioEffectPropertyCbV3FuzzTest,
++    OnGetAudioEffectPropertyCbFuzzTest,
++    OnGetAudioEnhancePropertyCbV3FuzzTest,
++    OnGetAudioEnhancePropertyCbFuzzTest,
++    HandleSourceAudioStreamRemovedFuzzTest,
++};
++
++bool FuzzTest(const uint8_t* rawData, size_t size)
++{
++    if (rawData == nullptr) {
++        return false;
++    }
++
++    // initialize data
++    RAW_DATA = rawData;
++    g_dataSize = size;
++    g_pos = 0;
++
++    uint32_t code = GetData<uint32_t>();
++    uint32_t len = GetArrLength(g_testFuncs);
++    if (len > 0) {
++        g_testFuncs[code % len]();
++    } else {
++        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
++    }
++
++    return true;
++}
++
++} // namespace AudioStandard
++} // namesapce OHOS
++
++/* Fuzzer entry point */
++extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
++{
++    if (size < OHOS::AudioStandard::THRESHOLD) {
++        return 0;
++    }
++
++    OHOS::AudioStandard::FuzzTest(data, size);
++    return 0;
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaeengine_fuzzer/project.xml b/test/fuzztest/audiohpaeengine_fuzzer/project.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7133b2b92440904a5ed04b838733acea0f97486a
+--- /dev/null
++++ b/test/fuzztest/audiohpaeengine_fuzzer/project.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<fuzz_config>
++  <fuzztest>
++    <!-- maximum length of a test input -->
++    <max_len>1000</max_len>
++    <!-- maximum total time in seconds to run the fuzzer -->
++    <max_total_time>300</max_total_time>
++    <!-- memory usage limit in Mb -->
++    <rss_limit_mb>4096</rss_limit_mb>
++  </fuzztest>
++</fuzz_config>
+diff --git a/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/BUILD.gn b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..f6642f13233b1bb3bccfefda5006987f40a48274
+--- /dev/null
++++ b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/BUILD.gn
+@@ -0,0 +1,101 @@
++# Copyright (c) 2024 Huawei Device Co., Ltd.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++import("//build/config/features.gni")
++import("//build/test.gni")
++import("../../../accessibility.gni")
++import("../../../config.gni")
++
++ohos_fuzztest("AudioHpaeEngineFuzzTest") {
++  module_out_path = "audio_framework/audio_framework_engine"
++  fuzz_config_file = "../audiohpaeinnercapturermanager_fuzzer"
++
++  include_dirs = [
++    "../../../services/audio_engine/dfx",
++    "../../../services/audio_engine/utils",
++    "../../../services/audio_engine/plugin/channel_converter/include",
++    "../../../services/audio_engine/plugin/resample/include",
++    "../../../services/audio_engine/node/include",
++    "../../../services/audio_engine/buffer",
++    "../../../services/audio_service/common/include/limiter",
++    "../../../services/audio_service/server/include",
++    "../../../services/audio_engine/manager/include",
++  ]
++  cflags = [
++    "-g",
++    "-O0",
++    "-Wno-unused-variable",
++    "-fno-omit-frame-pointer",
++    "-fno-access-control",
++  ]
++
++  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
++
++  sources = [ 
++    "audiohpaeinnercapturermanager_fuzzer.cpp",
++    ]
++
++  deps = [
++    "../../../services/audio_engine:audio_engine_node",
++    "../../../services/audio_engine:audio_engine_manager",
++    "../../..services/audio_service:audio_service,
++    "../../../frameworks/native/audioutils:audio_utils",
++    "../../../frameworks/native/audioschedule:audio_schedule",
++  ]
++
++  external_deps = [
++    "ability_base:want",
++    "ability_runtime:extension_manager",
++    "ability_runtime:wantagent_innerkits",
++    "access_token:libaccesstoken_sdk",
++    "access_token:libprivacy_sdk",
++    "access_token:libtokensetproc_shared",
++    "background_task_mgr:bgtaskmgr_innerkits",
++    "bundle_framework:appexecfwk_base",
++    "bundle_framework:appexecfwk_core",
++    "c_utils:utils",
++    "data_share:datashare_common",
++    "data_share:datashare_consumer",
++    "hdf_core:libhdf_ipc_adapter",
++    "hdf_core:libhdi",
++    "hdf_core:libpub_utils",
++    "hilog:libhilog",
++    "hisysevent:libhisysevent",
++    "ipc:ipc_single",
++    "kv_store:distributeddata_inner",
++    "media_foundation:media_monitor_client",
++    "media_foundation:media_monitor_common",
++    "os_account:os_account_innerkits",
++    "power_manager:powermgr_client",
++    "pulseaudio:pulse",
++    "safwk:system_ability_fwk",
++    "samgr:samgr_proxy",
++  ]
++
++  if (accessibility_enable == true) {
++    external_deps += [
++      "accessibility:accessibility_common",
++      "accessibility:accessibilityconfig",
++    ]
++  }
++
++defines = []
++  if (use_libfuzzer || use_clang_coverage) {
++    defines += [ "TEST_COVERAGE" ]
++  }
++}
++
++group("fuzztest") {
++  testonly = true
++  deps = [ ":AudioHpaeInnerCapturerManagerFuzzTest" ]
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/audiohpaeinnercapturermanager_fuzzer.cpp b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/audiohpaeinnercapturermanager_fuzzer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..0400e2b2dd0513dda5fc50dad653c810a1fa3ce7
+--- /dev/null
++++ b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/audiohpaeinnercapturermanager_fuzzer.cpp
+@@ -0,0 +1,500 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include <cstddef>
++#include <cstdint>
++#include <vector>
++#include <memory>
++#include <queue>
++#include <string>
++#undef private
++#include "audio_info.h"
++#include "hpae_inner_capturer_manager.h"
++#include "i_hpae_renderer_manager.h"
++
++using namespace std;
++using namespace OHOS::AudioStandard::HPAE;
++
++
++namespace OHOS {
++namespace AudioStandard {
++using namespace std;
++static const uint8_t *RAW_DATA = nullptr;
++static size_t g_dataSize = 0;
++static size_t g_pos;
++const size_t THRESHOLD = 10;
++typedef void (*TestPtr)(const uint8_t *,size_t)
++
++template<class T>
++T GetData()
++{
++    T object {};
++    size_t objectSize = sizeof(object);
++    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
++        return object;
++    }
++    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
++    if (ret != EOK) {
++        return {};
++    }
++    g_pos += objectSize;
++    return object;
++}
++
++template<class T>
++uint32_t GetArrLength(T& arr)
++{
++    if (arr == nullptr) {
++        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
++        return 0;
++    }
++    return sizeof(arr) / sizeof(arr[0]);
++}
++
++
++void CreateStreamFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    const HpaeStreamInfo streamInfo = {};
++    hpaeInnerCapturerManager->CreateStream(streamInfo);
++}
++
++void DestroyStreamFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->DestroyStream(sessionId);
++}
++
++void StartFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Start(sessionId);
++}
++
++void PauseFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Pause(sessionId);
++}
++
++void FlushFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Flush(sessionId);
++}
++
++void DrainFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Drain(sessionId);
++}
++
++void StopFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Stop(sessionId);
++}
++
++void ReleaseFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->Release(sessionId);
++}
++
++void MoveStreamFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    const std::string &sinkName = "13222";
++    hpaeInnerCapturerManager->MoveStream(sessionId,sinkName);
++}
++
++void MoveAllStreamFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    const std::vector<uint32_t> &sessionId = {GetData<uint32_t>(),GetData<uint32_t>(),GetData<uint32_t>()};
++    const std::string &sinkName = "13222";
++    hpaeInnerCapturerManager->MoveAllStream(sinkName,sessionId);
++}
++
++void SuspendStreamManagerFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    bool isSuspend = GetData<bool>();
++    hpaeInnerCapturerManager->SuspendStreamManager(isSuspend);
++}
++
++void SetMuteFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    bool isMute = GetData<bool>();
++    hpaeInnerCapturerManager->SetMute(isMute);
++}
++
++void ProcessFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->Process();
++}
++
++void HandleMsgFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->HandleMsg();
++}
++
++void InitFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->Init();
++}
++
++void DeInitFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->DeInit();
++}
++
++void IsInitFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->IsInit();
++}
++
++void IsRunningFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->IsRunning();
++}
++
++void IsMsgProcessingFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->IsMsgProcessing();
++}
++
++void DeactivateThreadFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->DeactivateThread();
++}
++
++void SetClientVolumeFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    float volume = GetData<float>();
++    hpaeInnerCapturerManager->SetClientVolume(sessionId,volume);
++}
++
++void SetRateFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    int32_t rate = GetData<int32_t>();
++    hpaeInnerCapturerManager->SetRate(sessionId,rate);
++}
++
++void SetAudioEffectModeFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    int32_t effectMode = GetData<int32_t>();
++    hpaeInnerCapturerManager->SetAudioEffectMode(sessionId,effectMode);
++}
++
++void GetAudioEffectModeFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    int32_t e = GetData<int32_t>();
++    int32_t &effectMode = e;
++    hpaeInnerCapturerManager->GetAudioEffectMode(sessionId,effectMode);
++}
++
++void SetPrivacyTypeFuzzTest()
++
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    int32_t privacyType = GetData<int32_t>();
++    hpaeInnerCapturerManager->SetPrivacyType(sessionId,privacyType);
++}
++
++void GetPrivacyTypeFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    int32_t p = GetData<int32_t>();
++    int32_t &privacyType = p;
++    hpaeInnerCapturerManager->GetprivacyType(sessionId,privacyType);
++}
++
++void RegisterWriteCallbackFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    const std::weak_ptr<IStreamCallback> &callback = std::weak_ptr<IStreamCallback>();
++    hpaeInnerCapturerManager->RegisterWriteCallback(sessionId,callback);
++}
++
++void GetWritableSizeFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->GetWritableSize(sessionId);
++}
++
++void UpdateSpatializationStateFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    hpaeInnerCapturerManager->UpdateSpatializationState(sessionId,true,true);
++}
++
++void UpdateMaxLengthFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    uint32_t maxLength = GetData<uint32_t>();
++    hpaeInnerCapturerManager->UpdateMaxLength(sessionId,maxLength);
++}
++
++void GetAllSinkInputsInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->GetAllSinkInputsInfo();
++}
++
++void GetSinkInputInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    HpaeSinkInputInfo sinkInputInfo;
++    hpaeInnerCapturerManager->GetSinkInputInfo(sessionId,sinkInputInfo);
++}
++
++void GetSinkInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->GetSinkInfo();
++}
++
++void OnNodeStatusUpdateFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    IOperation operation = IOperation::OPERATION_INVALID;
++    hpaeInnerCapturerManager->OnNodeStatusUpdate(sessionId,operation);
++}
++
++void OnFadeDoneFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    IOperation operation = IOperation::OPERATION_INVALID;
++    hpaeInnerCapturerManager->OnFadeDone(sessionId,operation);
++}
++
++void AddNodeToSinkFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    HpaeNodeInfo nodeInfo;
++    const std::shared_ptr<HpaeSinkInputNode> &node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
++    hpaeInnerCapturerManager->AddNodeToSink(node);
++}
++
++void AddAllNodesToSinkFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    std::vector<std::shared_ptr<HpaeSinkInputNode>> inputs;
++    const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs = inputs;
++    hpaeInnerCapturerManager->AddAllNodesToSink(sinkInputs,true);
++}
++
++void RegisterReadCallbackFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    const std::weak_ptr<ICapturerStreamCallback> &callback = std::weak_ptr<ICapturerStreamCallback>();
++    hpaeInnerCapturerManager->RegisterReadCallback(sessionId,callback);
++}
++
++void GetSourceOutputInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    uint32_t sessionId = GetData<uint32_t>();
++    HpaeSourceOutputInfo sourceOutputInfo;
++    hpaeInnerCapturerManager->GetSourceOutputInfo(sessionId,sourceOutputInfo);
++}
++
++void GetAllSourceOutputsInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->GetAllSourceOutputsInfo();
++}
++
++void GetThreadNameFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->GetThreadName();
++}
++
++void ReloadRenderManagerFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo);
++}
++
++void GetDeviceHDFDumpInfoFuzzTest()
++{
++    HpaeSinkInfo sinkInfo;
++    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
++    hpaeInnerCapturerManager->GetDeviceHDFDumpInfo();
++}
++
++typedef void (*TestFuncs[43])();
++
++TestFuncs g_testFuncs = {
++    CreateStreamFuzzTest,
++    DestroyStreamFuzzTest,
++    StartFuzzTest,
++    PauseFuzzTest,
++    FlushFuzzTest,
++    DrainFuzzTest
++    StopFuzzTest,
++    ReleaseFuzzTest,
++    MoveStreamFuzzTest,
++    MoveAllStreamFuzzTest,
++    SuspendStreamManagerFuzzTest,
++    SetMuteFuzzTest,
++    ProcessFuzzTest,
++    HandleMsgFuzzTest,
++    InitFuzzTest,
++    DeInitFuzzTest,
++    IsInitFuzzTest,
++    IsRunningFuzzT,
++    IsMsgProcessingFuzzTest,
++    DeactivateThreadFuzzTest,
++    SetClientVolumeFuzzTest,
++    SetRateFuzzTest,
++    SetAudioEffectModeFuzzTest
++    GetAudioEffectModeFuzzTest,
++    SetPrivacyTypeFuzzTest,
++    GetPrivacyTypeFuzzTest,
++    RegisterWriteCallbackFuzzTest,
++    GetWritableSizeFuzzTest,
++    UpdateSpatializationStateFuzzTest,
++    UpdateMaxLengthFuzzTest,
++    GetAllSinkInputsInfoFuzzTest,
++    GetSinkInputInfoFuzzTest,
++    GetSinkInfoFuzzTest,
++    OnNodeStatusUpdateFuzzTest,
++    OnFadeDoneFuzzTest,
++    AddNodeToSinkFuzzTest,
++    AddAllNodesToSinkFuzzTest,
++    RegisterReadCallbackFuzzTest,
++    GetSourceOutputInfoFuzzTest,
++    GetAllSourceOutputsInfoFuzzTest,
++    GetThreadNameFuzzTest,
++    ReloadRenderManagerFuzzTest,
++    GetDeviceHDFDumpInfoFuzzTest,
++};
++
++bool FuzzTest(const uint8_t* rawData, size_t size)
++{
++    if (rawData == nullptr) {
++        return false;
++    }
++
++    // initialize data
++    RAW_DATA = rawData;
++    g_dataSize = size;
++    g_pos = 0;
++
++    uint32_t code = GetData<uint32_t>();
++    uint32_t len = GetArrLength(g_testFuncs);
++    if (len > 0) {
++        g_testFuncs[code % len]();
++    } else {
++        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
++    }
++
++    return true;
++}
++
++} // namespace AudioStandard
++} // namesapce OHOS
++
++/* Fuzzer entry point */
++extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
++{
++    if (size < OHOS::AudioStandard::THRESHOLD) {
++        return 0;
++    }
++
++    OHOS::AudioStandard::FuzzTest(data, size);
++    return 0;
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/project.xml b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/project.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7133b2b92440904a5ed04b838733acea0f97486a
+--- /dev/null
++++ b/test/fuzztest/audiohpaeinnercapturermanager_fuzzer/project.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<fuzz_config>
++  <fuzztest>
++    <!-- maximum length of a test input -->
++    <max_len>1000</max_len>
++    <!-- maximum total time in seconds to run the fuzzer -->
++    <max_total_time>300</max_total_time>
++    <!-- memory usage limit in Mb -->
++    <rss_limit_mb>4096</rss_limit_mb>
++  </fuzztest>
++</fuzz_config>
+diff --git a/test/fuzztest/audiohpaepcmbuffer_fuzzer/BUILD.gn b/test/fuzztest/audiohpaepcmbuffer_fuzzer/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..6c1415b8f27ca69a8e8a7954531aaf3e66c4fbff
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmbuffer_fuzzer/BUILD.gn
+@@ -0,0 +1,104 @@
++# Copyright (c) 2024 Huawei Device Co., Ltd.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++import("//build/config/features.gni")
++import("//build/test.gni")
++import("../../../accessibility.gni")
++import("../../../config.gni")
++
++ohos_fuzztest("AudioHpaePcmBufferFuzzTest") {
++  module_out_path = "audio_framework/audio_framework_engine"
++  fuzz_config_file = "../audiohpaepcmbuffer_fuzzer"
++
++  include_dirs = [
++    "../../../frameworks/native/audioadapter/include",
++    "../../../frameworks/native/hdiadapter_new/include/manager",
++    "../../../frameworks/native/hdiadapter_new/include/util",
++    "../../../interfaces/inner_api/native/audiocommon/include",
++    "../../../services/audio_engine/buffer",
++    "../../../services/audio_engine/manager/include",
++    "../../../services/audio_policy/server/include/service",
++    "../../../services/audio_engine/simd",
++  ]
++
++  cflags = [
++    "-g",
++    "-O0",
++    "-Wno-unused-variable",
++    "-fno-omit-frame-pointer",
++    "-fno-access-control",
++  ]
++
++  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
++
++  sources = [ 
++    "audiohpaepcmbuffer_fuzzer.cpp",
++    "../../../frameworks/native/hdiadapter_new/util/id_handler.cpp",
++    "../../../frameworks/native/audioadapter/src/audio_service_adapter.cpp",
++    "../../../services/audio_engine/buffer/hpae_pcm_buffer.cpp",
++    "../../../services/audio_engine/buffer/hpae_pcm_buffer.h",
++    ]
++
++  deps = [
++    "../../../frameworks/native/audioutils:audio_utils",
++    "../../../services/audio_engine:audio_engine_manager",
++    "../../../services/audio_policy:audio_policy_service",
++    "../../../services/audio_service:audio_common",
++  ]
++
++  external_deps = [
++    "ability_base:want",
++    "ability_runtime:extension_manager",
++    "ability_runtime:wantagent_innerkits",
++    "access_token:libaccesstoken_sdk",
++    "access_token:libprivacy_sdk",
++    "access_token:libtokensetproc_shared",
++    "background_task_mgr:bgtaskmgr_innerkits",
++    "bundle_framework:appexecfwk_base",
++    "bundle_framework:appexecfwk_core",
++    "c_utils:utils",
++    "data_share:datashare_common",
++    "data_share:datashare_consumer",
++    "hdf_core:libhdf_ipc_adapter",
++    "hdf_core:libhdi",
++    "hdf_core:libpub_utils",
++    "hilog:libhilog",
++    "hisysevent:libhisysevent",
++    "ipc:ipc_single",
++    "kv_store:distributeddata_inner",
++    "media_foundation:media_monitor_client",
++    "media_foundation:media_monitor_common",
++    "os_account:os_account_innerkits",
++    "power_manager:powermgr_client",
++    "pulseaudio:pulse",
++    "safwk:system_ability_fwk",
++    "samgr:samgr_proxy",
++  ]
++
++  if (accessibility_enable == true) {
++    external_deps += [
++      "accessibility:accessibility_common",
++      "accessibility:accessibilityconfig",
++    ]
++  }
++
++defines = []
++  if (use_libfuzzer || use_clang_coverage) {
++    defines += [ "TEST_COVERAGE" ]
++  }
++}
++
++group("fuzztest") {
++  testonly = true
++  deps = [ ":AudioHpaePcmBufferFuzzTest" ]
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaepcmbuffer_fuzzer/audiohpaepcmbuffer_fuzzer.cpp b/test/fuzztest/audiohpaepcmbuffer_fuzzer/audiohpaepcmbuffer_fuzzer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e872170f96a052cc01b1fe0062698888803bef7
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmbuffer_fuzzer/audiohpaepcmbuffer_fuzzer.cpp
+@@ -0,0 +1,365 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include <cstddef>
++#include <cstdint>
++#include <vector>
++#include <memory>
++#include <queue>
++#include <string>
++#undef private
++#include "audio_info.h"
++#include "simd_utils.h"
++#include "hpae_pcm_buffer.h"
++#include "audio_log.h"
++using namespace std;
++using namespace OHOS::AudioStandard::HPAE;
++
++namespace OHOS {
++namespace AudioStandard {
++using namespace std;
++static const uint8_t *RAW_DATA = nullptr;
++static size_t g_dataSize = 0;
++static size_t g_pos;
++const size_t THRESHOLD = 10;
++typedef void (*TestPtr)(const uint8_t *,size_t)
++
++template<class T>
++T GetData()
++{
++    T object {};
++    size_t objectSize = sizeof(object);
++    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
++        return object;
++    }
++    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
++    if (ret != EOK) {
++        return {};
++    }
++    g_pos += objectSize;
++    return object;
++}
++
++template<class T>
++uint32_t GetArrLength(T& arr)
++{
++    if (arr == nullptr) {
++        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
++        return 0;
++    }
++    return sizeof(arr) / sizeof(arr[0]);
++}
++
++void GetPcmBufferInfoFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetPcmBufferInfo();
++}
++
++void GetChannelCountFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetChannelCount();
++}
++
++void GetFrameLenFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetFrameLen();
++}
++
++void GetSampleRateFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetSampleRate();
++}
++
++void IsValidFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->IsValid();
++}
++
++void IsSilenceFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->IsSilence();
++}
++
++void GetBufferStateFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetBufferState();
++}
++
++void GetChannelLayoutFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetChannelLayout();
++}
++
++void ReConfigFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->ReConfig(pcmBufferInfo);
++}
++
++void GetFrameDataFuzzTest1()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    HpaePcmBuffer frameData = HpaePcmBuffer(pcmBufferInfo);
++    hpaePcmBuffer->GetFrameData(frameData);
++}
++
++void GetFrameDataFuzzTest2()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    std::vector<float> frameData(1024,0.0f);
++    hpaePcmBuffer->GetFrameData(frameData);
++}
++
++void PushFrameDataFuzzTest1()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    HpaePcmBuffer frameData = HpaePcmBuffer(pcmBufferInfo);
++    hpaePcmBuffer->PushFrameData(frameData);
++}
++
++void PushFrameDataFuzzTest2()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    std::vector<float> frameData(1024,0.0f);
++    hpaePcmBuffer->PushFrameData(frameData);
++}
++
++void StoreFrameDataFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    HpaePcmBuffer frameData = HpaePcmBuffer(pcmBufferInfo);
++    hpaePcmBuffer->StoreFrameData(frameData);
++}
++
++void SizeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->Size();
++}
++
++void DataSizeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->DataSize();
++}
++
++void GetFramesFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetFrames();
++}
++
++void GetReadPosFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetReadPos();
++}
++
++void GetWritePosFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetWritePos();
++}
++
++void UpdateReadPosFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    size_t readPos = hpaePcmBuffer -> GetReadPos();
++    hpaePcmBuffer->UpdateReadPos(readPos);
++}
++
++void UpdateWritePosFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    size_t readPos = hpaePcmBuffer -> GetReadPos();
++    hpaePcmBuffer->UpdateWritePos(readPos);
++}
++
++void SetBufferValidFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    bool vaild = GetData<bool>();
++    hpaePcmBuffer->SetBufferValid(vaild);
++}
++
++void SetBufferSilenceFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    bool silence = GetData<bool>();
++    hpaePcmBuffer->SetBufferSilence(silence);
++}
++
++void SetBufferStateFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    uint32_t state = hpaePcmBuffer -> GetBufferState();
++    hpaePcmBuffer->SetBufferState(state);
++}
++
++void GetCurFramesFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetCurFrames();
++}
++
++void GetPcmDataBufferFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetPcmDataBuffer();
++}
++
++void GetFrameSampleFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetFrameSample();
++}
++
++void GetSourceBufferTypeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetSourceBufferType();
++}
++
++void SetSourceBufferTypeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    HpaeSourceBufferType type = hpaePcmBuffer->GetSourceBufferType();
++    hpaePcmBuffer->SetSourceBufferType(type);
++}
++
++void GetSplitStreamTypeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    hpaePcmBuffer->GetSplitStreamType();
++}
++
++void SetSplitStreamTypeFuzzTest()
++{
++    PcmBufferInfo pcmBufferInfo;
++    auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
++    HpaeSplitStreamType type = hpaePcmBuffer->GetSplitStreamType();
++    hpaePcmBuffer->SetSplitStreamType(type);
++}
++
++typedef void (*TestFuncs[31])();
++
++TestFuncs g_testFuncs = {
++    GetPcmBufferInfoFuzzTest,
++    GetChannelCountFuzzTest,
++    GetFrameLenFuzzTest,
++    GetSampleRateFuzzTest,
++    IsValidFuzzTest,
++    IsSilenceFuzzTest,
++    GetBufferStateFuzzTest,
++    GetChannelLayoutFuzzTest,
++    ReConfigFuzzTest,
++    GetFrameDataFuzzTest1,
++    GetFrameDataFuzzTest2,
++    PushFrameDataFuzzTest1,
++    PushFrameDataFuzzTest2,
++    StoreFrameDataFuzzTest,
++    SizeFuzzTest,
++    DataSizeFuzzTest,
++    GetFramesFuzzTest,
++    GetReadPosFuzzTest,
++    GetWritePosFuzzTest,
++    UpdateReadPosFuzzTest,
++    UpdateWritePosFuzzTest,
++    SetBufferValidFuzzTest,
++    SetBufferSilenceFuzzTest,
++    SetBufferStateFuzzTest,
++    GetCurFramesFuzzTest,
++    GetPcmDataBufferFuzzTest,
++    GetFrameSampleFuzzTest,
++    GetSourceBufferTypeFuzzTest,
++    SetSourceBufferTypeFuzzTest,
++    GetSplitStreamTypeFuzzTest,
++    SetSplitStreamTypeFuzzTest,
++};
++
++bool FuzzTest(const uint8_t* rawData, size_t size)
++{
++    if (rawData == nullptr) {
++        return false;
++    }
++
++    // initialize data
++    RAW_DATA = rawData;
++    g_dataSize = size;
++    g_pos = 0;
++
++    uint32_t code = GetData<uint32_t>();
++    uint32_t len = GetArrLength(g_testFuncs);
++    if (len > 0) {
++        g_testFuncs[code % len]();
++    } else {
++        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
++    }
++
++    return true;
++}
++
++} // namespace AudioStandard
++} // namesapce OHOS
++
++/* Fuzzer entry point */
++extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
++{
++    if (size < OHOS::AudioStandard::THRESHOLD) {
++        return 0;
++    }
++
++    OHOS::AudioStandard::FuzzTest(data, size);
++    return 0;
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaepcmbuffer_fuzzer/project.xml b/test/fuzztest/audiohpaepcmbuffer_fuzzer/project.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7133b2b92440904a5ed04b838733acea0f97486a
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmbuffer_fuzzer/project.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<fuzz_config>
++  <fuzztest>
++    <!-- maximum length of a test input -->
++    <max_len>1000</max_len>
++    <!-- maximum total time in seconds to run the fuzzer -->
++    <max_total_time>300</max_total_time>
++    <!-- memory usage limit in Mb -->
++    <rss_limit_mb>4096</rss_limit_mb>
++  </fuzztest>
++</fuzz_config>
+diff --git a/test/fuzztest/audiohpaepcmprocess_fuzzer/BUILD.gn b/test/fuzztest/audiohpaepcmprocess_fuzzer/BUILD.gn
+new file mode 100644
+index 0000000000000000000000000000000000000000..250cf54ccb5a6bedc049ef91c1eee2ac0e14c83d
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmprocess_fuzzer/BUILD.gn
+@@ -0,0 +1,104 @@
++# Copyright (c) 2024 Huawei Device Co., Ltd.
++# Licensed under the Apache License, Version 2.0 (the "License");
++# you may not use this file except in compliance with the License.
++# You may obtain a copy of the License at
++#
++#     http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing, software
++# distributed under the License is distributed on an "AS IS" BASIS,
++# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++# See the License for the specific language governing permissions and
++# limitations under the License.
++
++import("//build/config/features.gni")
++import("//build/test.gni")
++import("../../../accessibility.gni")
++import("../../../config.gni")
++
++ohos_fuzztest("AudioHpaePcmProcessFuzzTest") {
++  module_out_path = "audio_framework/audio_framework_engine"
++  fuzz_config_file = "../audiohpaepcmprocess_fuzzer"
++
++  include_dirs = [
++    "../../../frameworks/native/audioadapter/include",
++    "../../../frameworks/native/hdiadapter_new/include/manager",
++    "../../../frameworks/native/hdiadapter_new/include/util",
++    "../../../interfaces/inner_api/native/audiocommon/include",
++    "../../../services/audio_engine/buffer",
++    "../../../services/audio_engine/manager/include",
++    "../../../services/audio_policy/server/include/service",
++    "../../../services/audio_engine/simd",
++  ]
++
++  cflags = [
++    "-g",
++    "-O0",
++    "-Wno-unused-variable",
++    "-fno-omit-frame-pointer",
++    "-fno-access-control",
++  ]
++
++  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
++
++  sources = [ 
++    "audiohpaepcmprocess_fuzzer.cpp",
++    "../../../frameworks/native/hdiadapter_new/util/id_handler.cpp",
++    "../../../frameworks/native/audioadapter/src/pro_audio_service_adapter.cpp",
++    "../../../services/audio_engine/buffer/hpae_pcm_process.cpp",
++    "../../../services/audio_engine/buffer/hpae_pcm_process.h",
++    ]
++
++  deps = [
++    "../../../frameworks/native/audioutils:audio_utils",
++    "../../../services/audio_engine:audio_engine_manager",
++    "../../../services/audio_policy:audio_policy_service",
++    "../../../services/audio_service:audio_common",
++  ]
++
++  external_deps = [
++    "ability_base:want",
++    "ability_runtime:extension_manager",
++    "ability_runtime:wantagent_innerkits",
++    "access_token:libaccesstoken_sdk",
++    "access_token:libprivacy_sdk",
++    "access_token:libtokensetproc_shared",
++    "background_task_mgr:bgtaskmgr_innerkits",
++    "bundle_framework:appexecfwk_base",
++    "bundle_framework:appexecfwk_core",
++    "c_utils:utils",
++    "data_share:datashare_common",
++    "data_share:datashare_consumer",
++    "hdf_core:libhdf_ipc_adapter",
++    "hdf_core:libhdi",
++    "hdf_core:libpub_utils",
++    "hilog:libhilog",
++    "hisysevent:libhisysevent",
++    "ipc:ipc_single",
++    "kv_store:distributeddata_inner",
++    "media_foundation:media_monitor_client",
++    "media_foundation:media_monitor_common",
++    "os_account:os_account_innerkits",
++    "power_manager:powermgr_client",
++    "pulseaudio:pulse",
++    "safwk:system_ability_fwk",
++    "samgr:samgr_proxy",
++  ]
++
++  if (accessibility_enable == true) {
++    external_deps += [
++      "accessibility:accessibility_common",
++      "accessibility:accessibilityconfig",
++    ]
++  }
++
++defines = []
++  if (use_libfuzzer || use_clang_coverage) {
++    defines += [ "TEST_COVERAGE" ]
++  }
++}
++
++group("fuzztest") {
++  testonly = true
++  deps = [ ":AudioHpaePcmProcessFuzzTest" ]
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaepcmprocess_fuzzer/audiohpaepcmprocess_fuzzer.cpp b/test/fuzztest/audiohpaepcmprocess_fuzzer/audiohpaepcmprocess_fuzzer.cpp
+new file mode 100644
+index 0000000000000000000000000000000000000000..ae695697eb7e15e5ea6a73ab39f2df3507dd7294
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmprocess_fuzzer/audiohpaepcmprocess_fuzzer.cpp
+@@ -0,0 +1,152 @@
++/*
++ * Copyright (c) 2024 Huawei Device Co., Ltd.
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
++#include <iostream>
++#include <cstddef>
++#include <cstdint>
++#undef private
++#include "audio_info.h"
++#include "simd_utils.h"
++#include "hpae_pcm_buffer.h"
++#include "hpae_pcm_process.h"
++#include "audio_log.h"
++using namespace std;
++using namespace OHOS::AudioStandard::HPAE;
++
++namespace OHOS {
++namespace AudioStandard {
++using namespace std;
++static const uint8_t *RAW_DATA = nullptr;
++static size_t g_dataSize = 0;
++static size_t g_pos;
++const size_t THRESHOLD = 10;
++typedef void (*TestPtr)(const uint8_t *,size_t)
++
++template<class T>
++T GetData()
++{
++    T object {};
++    size_t objectSize = sizeof(object);
++    if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
++        return object;
++    }
++    errno_t ret = memcpy_s(&object, objectSize, RAW_DATA + g_pos, objectSize);
++    if (ret != EOK) {
++        return {};
++    }
++    g_pos += objectSize;
++    return object;
++}
++
++template<class T>
++uint32_t GetArrLength(T& arr)
++{
++    if (arr == nullptr) {
++        AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
++        return 0;
++    }
++    return sizeof(arr) / sizeof(arr[0]);
++}
++
++void SizeFuzzTest()
++{
++    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
++    float *begin = pcmData.data();
++    size_t size = pcmData.size();
++    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
++    hpaePcmProcess->Size();
++}
++
++void BeginFuzzTest()
++{
++    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
++    float *begin = pcmData.data();
++    size_t size = pcmData.size();
++    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
++    hpaePcmProcess->Begin();
++}
++
++void EndFuzzTest()
++{
++    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
++    float *begin = pcmData.data();
++    size_t size = pcmData.size();
++    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
++    hpaePcmProcess->End();
++}
++
++void ResetFuzzTest()
++{
++    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
++    float *begin = pcmData.data();
++    size_t size = pcmData.size();
++    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
++    hpaePcmProcess->Reset();
++}
++
++void GetErrNoFuzzTest()
++{
++    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
++    float *begin = pcmData.data();
++    size_t size = pcmData.size();
++    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
++    hpaePcmProcess->GetErrNo();
++}
++
++typedef void (*TestFuncs[5])();
++
++TestFuncs g_testFuncs = {
++    SizeFuzzTest,
++    BeginFuzzTest,
++    EndFuzzTest,
++    ResetFuzzTest,
++    GetErrNoFuzzTest,
++};
++
++bool FuzzTest(const uint8_t* rawData, size_t size)
++{
++    if (rawData == nullptr) {
++        return false;
++    }
++
++    // initialize data
++    RAW_DATA = rawData;
++    g_dataSize = size;
++    g_pos = 0;
++
++    uint32_t code = GetData<uint32_t>();
++    uint32_t len = GetArrLength(g_testFuncs);
++    if (len > 0) {
++        g_testFuncs[code % len]();
++    } else {
++        AUDIO_INFO_LOG("%{public}s: The len length is equal to 0", __func__);
++    }
++
++    return true;
++}
++
++} // namespace AudioStandard
++} // namesapce OHOS
++
++/* Fuzzer entry point */
++extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
++{
++    if (size < OHOS::AudioStandard::THRESHOLD) {
++        return 0;
++    }
++
++    OHOS::AudioStandard::FuzzTest(data, size);
++    return 0;
++}
+\ No newline at end of file
+diff --git a/test/fuzztest/audiohpaepcmprocess_fuzzer/project.xml b/test/fuzztest/audiohpaepcmprocess_fuzzer/project.xml
+new file mode 100644
+index 0000000000000000000000000000000000000000..7133b2b92440904a5ed04b838733acea0f97486a
+--- /dev/null
++++ b/test/fuzztest/audiohpaepcmprocess_fuzzer/project.xml
+@@ -0,0 +1,25 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!-- Copyright (c) 2024 Huawei Device Co., Ltd.
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<fuzz_config>
++  <fuzztest>
++    <!-- maximum length of a test input -->
++    <max_len>1000</max_len>
++    <!-- maximum total time in seconds to run the fuzzer -->
++    <max_total_time>300</max_total_time>
++    <!-- memory usage limit in Mb -->
++    <rss_limit_mb>4096</rss_limit_mb>
++  </fuzztest>
++</fuzz_config>

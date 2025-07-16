@@ -62,45 +62,50 @@ uint32_t GetArrLength(T& arr)
 
 void SizeFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(),
+        GetData<float>()};
     float *begin = pcmData.data();
-    size_t size_ = pcmData.size();
+    size_t size = pcmData.size();
     auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Size();
 }
 
 void BeginFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(),
+        GetData<float>()};
     float *begin = pcmData.data();
-    size_t size_ = pcmData.size();
+    size_t size = pcmData.size();
     auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Begin();
 }
 
 void EndFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(),
+        GetData<float>()};
     float *begin = pcmData.data();
-    size_t size_ = pcmData.size();
+    size_t size = pcmData.size();
     auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->End();
 }
 
 void ResetFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(),
+        GetData<float>()};
     float *begin = pcmData.data();
-    size_t size_ = pcmData.size();
+    size_t size = pcmData.size();
     auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Reset();
 }
 
 void GetErrNoFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(),
+        GetData<float>()};
     float *begin = pcmData.data();
-    size_t size_ = pcmData.size();
+    size_t size = pcmData.size();
     auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->GetErrNo();
 }
