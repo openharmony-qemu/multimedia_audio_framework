@@ -141,5 +141,69 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsAcousticEchoCancele
     EXPECT_EQ(supported, false);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsFastPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsFastPlaybackSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsFastPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
+    auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsFastPlaybackSupported.
+ * @tc.number: OH_AudioStreamManager_IsFastPlaybackSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsFastPlaybackSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupported_002, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    streamInfo->samplingRate = 24000;
+    streamInfo->channelLayout = CH_LAYOUT_STEREO;
+    streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
+    streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsFastRecordingSupported.
+ * @tc.number: OH_AudioStreamManager_IsFastRecordingSupported_001
+ * @tc.desc  : Test OH_AudioStreamManager_IsFastRecordingSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastRecordingSupported_001, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_MIC;
+    auto result = OH_AudioStreamManager_IsFastRecordingSupported(audioStreamManager, streamInfo, sourceType);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamManager_IsFastRecordingSupported.
+ * @tc.number: OH_AudioStreamManager_IsFastRecordingSupported_002
+ * @tc.desc  : Test OH_AudioStreamManager_IsFastRecordingSupported.
+ */
+HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastRecordingSupported_002, TestSize.Level0)
+{
+    OH_AudioStreamManager *audioStreamManager = nullptr;
+    OH_AudioStreamInfo *streamInfo = nullptr;
+    streamInfo->samplingRate = 24000;
+    streamInfo->channelLayout = CH_LAYOUT_STEREO;
+    streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
+    streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_VOICE_CALL;
+    auto result = OH_AudioStreamManager_IsFastRecordingSupported(audioStreamManager, streamInfo, sourceType);
+    EXPECT_EQ(result, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
