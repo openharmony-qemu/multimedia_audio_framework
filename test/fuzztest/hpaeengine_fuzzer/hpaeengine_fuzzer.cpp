@@ -165,14 +165,6 @@ void SetDefaultSourceFuzzTest()
     impl_->SetDefaultSource(moduleInfo.name);
 }
 
-void SetSourceOutputMuteFuzzTest()
-{
-    SetUp();
-    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
-    impl_->SetSourceOutputMute(portId, true);
-}
-
 void SuspendAudioDeviceFuzzTest()
 {
     SetUp();
@@ -374,14 +366,13 @@ void HandleSourceAudioStreamRemovedFuzzTest()
     impl_->HandleSourceAudioStreamRemoved(sessionId);
 }
 
-typedef void (*TestFuncs[33])();
+typedef void (*TestFuncs[32])();
 
 TestFuncs g_testFuncs = {
     OpenAudioPortFuzzTest,
     CloseAudioPortFuzzTest,
     SetDefaultSinkFuzzTest,
     SetDefaultSourceFuzzTest,
-    SetSourceOutputMuteFuzzTest,
     SuspendAudioDeviceFuzzTest,
     SetSinkMuteFuzzTest,
     GetAllSinkInputsFuzzTest,
