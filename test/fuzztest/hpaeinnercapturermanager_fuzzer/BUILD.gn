@@ -16,21 +16,21 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("AudioHpaePcmBufferFuzzTest") {
+ohos_fuzztest("HpaeEngineFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../audiohpaepcmbuffer_fuzzer"
+  fuzz_config_file = "../hpaeinnercapturermanager_fuzzer"
 
   include_dirs = [
-    "../../../frameworks/native/audioadapter/include",
-    "../../../frameworks/native/hdiadapter_new/include/manager",
-    "../../../frameworks/native/hdiadapter_new/include/util",
-    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_engine/dfx",
+    "../../../services/audio_engine/utils",
+    "../../../services/audio_engine/plugin/channel_converter/include",
+    "../../../services/audio_engine/plugin/resample/include",
+    "../../../services/audio_engine/node/include",
     "../../../services/audio_engine/buffer",
+    "../../../services/audio_service/common/include/limiter",
+    "../../../services/audio_service/server/include",
     "../../../services/audio_engine/manager/include",
-    "../../../services/audio_policy/server/include/service",
-    "../../../services/audio_engine/simd",
   ]
-
   cflags = [
     "-g",
     "-O0",
@@ -42,18 +42,15 @@ ohos_fuzztest("AudioHpaePcmBufferFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ 
-    "audiohpaepcmbuffer_fuzzer.cpp",
-    "../../../frameworks/native/hdiadapter_new/util/id_handler.cpp",
-    "../../../frameworks/native/audioadapter/src/audio_service_adapter.cpp",
-    "../../../services/audio_engine/buffer/hpae_pcm_buffer.cpp",
-    "../../../services/audio_engine/buffer/hpae_pcm_buffer.h",
+    "hpaeinnercapturermanager_fuzzer.cpp",
     ]
 
   deps = [
-    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_engine:audio_engine_node",
     "../../../services/audio_engine:audio_engine_manager",
-    "../../../services/audio_policy:audio_policy_service",
-    "../../../services/audio_service:audio_common",
+    "../../..services/audio_service:audio_service,
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../frameworks/native/audioschedule:audio_schedule",
   ]
 
   external_deps = [
@@ -100,5 +97,5 @@ defines = []
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioHpaePcmBufferFuzzTest" ]
-}
+  deps = [ ":HpaeInnerCapturerManagerFuzzTest" ]
+}

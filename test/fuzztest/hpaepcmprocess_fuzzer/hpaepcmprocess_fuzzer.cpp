@@ -32,7 +32,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t)
+typedef void (*TestPtr)(const uint8_t *, size_t)
 
 template<class T>
 T GetData()
@@ -62,46 +62,46 @@ uint32_t GetArrLength(T& arr)
 
 void SizeFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
     float *begin = pcmData.data();
     size_t size_ = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Size();
 }
 
 void BeginFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
     float *begin = pcmData.data();
     size_t size_ = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Begin();
 }
 
 void EndFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
     float *begin = pcmData.data();
     size_t size_ = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->End();
 }
 
 void ResetFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
     float *begin = pcmData.data();
     size_t size_ = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->Reset();
 }
 
 void GetErrNoFuzzTest()
 {
-    std::vector<float> pcmData = {GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>(),GetData<float>()};
+    std::vector<float> pcmData = {GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>(), GetData<float>()};
     float *begin = pcmData.data();
     size_t size_ = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin,size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
     hpaePcmProcess->GetErrNo();
 }
 
@@ -115,7 +115,7 @@ TestFuncs g_testFuncs = {
     GetErrNoFuzzTest,
 };
 
-bool FuzzTest(const uint8_t* rawData, size_t size)
+bool FuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr) {
         return false;
@@ -138,10 +138,10 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 }
 
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
@@ -149,4 +149,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
-}
+}

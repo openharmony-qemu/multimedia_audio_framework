@@ -36,7 +36,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t)
+typedef void (*TestPtr)(const uint8_t *, size_t);
 std::mutex lock_;
 
 template<class T>
@@ -56,7 +56,7 @@ T GetData()
 }
 
 template<class T>
-uint32_t GetArrLength(T& arr)
+uint32_t GetArrLength(T &arr)
 {
     if (arr == nullptr) {
         AUDIO_INFO_LOG("%{public}s: The array length is equal to 0", __func__);
@@ -91,8 +91,8 @@ static AudioModuleInfo InitSinkAudioModeInfo()
     audioModuleInfo.fixedLatency = "1";
     audioModuleInfo.offloadEnable = "0";
     audioModuleInfo.networkId = "LocalDevice";
-    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" + audioModuleInfo.channels
-    + "_" + audioModuleInfo.format + ".pcm";
+    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +\
+        audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
     std::stringstream typeValue;
     typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
     audioModuleInfo.deviceType = typeValue.str();
@@ -102,7 +102,7 @@ static AudioModuleInfo InitSinkAudioModeInfo()
 static AudioModuleInfo InitSourceAudioModeInfo()
 {
     AudioModuleInfo audioModuleInfo;
-    audioModuleInfo.lib = "libmodule-hdi-Source.z.so";
+    audioModuleInfo.lib = "libmodule-hdi-source.z.so";
     audioModuleInfo.channels = "2";
     audioModuleInfo.rate = "48000";
     audioModuleInfo.name = "mic";
@@ -113,8 +113,8 @@ static AudioModuleInfo InitSourceAudioModeInfo()
     audioModuleInfo.fixedLatency = "1";
     audioModuleInfo.offloadEnable = "0";
     audioModuleInfo.networkId = "LocalDevice";
-    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" + audioModuleInfo.channels
-    + "_" + audioModuleInfo.format + ".pcm";
+    audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
+        audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
     std::stringstream typeValue;
     typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
     audioModuleInfo.deviceType = typeValue.str();
@@ -131,7 +131,7 @@ void SetUp()
     HdiAdapterManager::GetInstance();
     std::unique_ptr<AudioServiceAdapterCallbackTest> cb = std::make_unique<AudioServiceAdapterCallbackTest>();
     impl_ = std::static_pointer_cast<ProAudioServiceAdapterImpl>(
-        OHOS::AudioStandard::AudioServiceAdapter::CreateAudioAdapter(std::move(cb),true));
+        OHOS::AudioStandard::AudioServiceAdapter::CreateAudioAdapter(std::move(cb), true));
     impl_->Connect();
     HPAE::IHpaeManager::GetHpaeManager().Init();
 }
@@ -140,14 +140,14 @@ void OpenAudioPortFuzzTest()
 {
     SetUp();
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
+    impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
 }
 
 void CloseAudioPortFuzzTest()
 {
     SetUp();
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     impl_->CloseAudioPort(portId);
 }
 
@@ -169,22 +169,22 @@ void SetSourceOutputMuteFuzzTest()
 {
     SetUp();
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo,lib,moduleInfo);
-    impl_->SetSourceOutputMute(portId,true);
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
+    impl_->SetSourceOutputMute(portId, true);
 }
 
 void SuspendAudioDeviceFuzzTest()
 {
     SetUp();
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    impl_->SuspendAudioDevice(moduleInfo.name,true);
+    impl_->SuspendAudioDevice(moduleInfo.name, true);
 }
 
 void SetSinkMuteFuzzTest()
 {
     SetUp();
     AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
-    impl_->SetSinkMute(moduleInfo.name,true);
+    impl_->SetSinkMute(moduleInfo.name, true);
 }
 
 void GetAllSinkInputsFuzzTest()
@@ -202,7 +202,7 @@ void GetAllSourceOutputsFuzzTest()
 void DisconnectFuzzTest()
 {
     SetUp();
-    impl_->DisconnectFuzzTest();
+    impl_->Disconnect();
 }
 
 void GetTargetSinksFuzzTest()
@@ -216,7 +216,7 @@ void GetAllSinksFuzzTest()
 {
     SetUp();
     std::string adapterName = "adapterNameFuzzTest";
-    impl_->GetAllSinks(adapterName);
+    impl_->GetAllSinks();
 }
 
 void SetLocalDefaultSinkFuzzTest()
@@ -229,19 +229,19 @@ void SetLocalDefaultSinkFuzzTest()
 void MoveSinkInputByIndexOrNameFuzzTest()
 {
     SetUp();
-    uint32_t sinkInputId = 100;
-    uint32_t sinkIndex = 0;
+    uint32_t sinkInputId = GetData<uint32_t>();
+    uint32_t sinkIndex = GetData<uint32_t>();
     std::string sinkName = "SinkInputName";
-    impl_->MoveSinkInputByIndexOrName(sinkInputId,sinkIndex,sinkName);
+    impl_->MoveSinkInputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
 void MoveSourceOutputByIndexOrNameFuzzTest()
 {
     SetUp();
-    uint32_t sinkInputId = 1111;
-    uint32_t sinkIndex = 0;
+    uint32_t sinkInputId = GetData<uint32_t>();
+    uint32_t sinkIndex = GetData<uint32_t>();
     std::string sinkName = "SourceOutputName";
-    impl_->MoveSourceOutputByIndexOrName(sinkInputId,sinkIndex,sinkName);
+    impl_->MoveSourceOutputByIndexOrName(sinkInputId, sinkIndex, sinkName);
 }
 
 void GetAudioEffectPropertyV3FuzzTest()
@@ -275,8 +275,8 @@ void GetAudioEnhancePropertyFuzzTest()
 void OnOpenAudioPortCbFuzzTest()
 {
     SetUp();
-    AudioModuleInfo moduleInfo =  InitSinkAudioModeInfo();
-    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib,moduleInfo);
+    AudioModuleInfo moduleInfo = InitSinkAudioModeInfo();
+    int32_t portId = impl_->OpenAudioPort(moduleInfo.lib, moduleInfo);
     impl_->OnOpenAudioPortCb(portId);
 }
 
@@ -306,7 +306,7 @@ void OnGetAllSinkInputsCbFuzzTest()
     SetUp();
     std::vector<SinkInput> sinkInputs = impl_->GetAllSinkInputs();
     int32_t result = GetData<int32_t>();
-    impl_->OnGetAllSinkInputsCb(result,sinkInputs);
+    impl_->OnGetAllSinkInputsCb(result, sinkInputs);
 }
 
 void OnGetAllSourceOutputsCbFuzzTest()
@@ -314,15 +314,15 @@ void OnGetAllSourceOutputsCbFuzzTest()
     SetUp();
     std::vector<SourceOutput> sourceOutputs = impl_->GetAllSourceOutputs();
     int32_t result = GetData<int32_t>();
-    impl_->OnGetAllSourceOutputsCb(result,sourceOutputs);
+    impl_->OnGetAllSourceOutputsCb(result, sourceOutputs);
 }
 
 void OnGetAllSinksCbFuzzTest()
 {
     SetUp();
-    std::vector<SinkInfo> sinks();
+    std::vector<SinkInfo> sinks;
     int32_t result = GetData<int32_t>();
-    impl_->OnGetAllSinkCb(result,sinks);
+    impl_->OnGetAllSinksCb(result, sinks);
 }
 
 void OnMoveSinkInputByIndexOrNameCbFuzzTest()
@@ -370,7 +370,7 @@ void OnGetAudioEnhancePropertyCbFuzzTest()
 void HandleSourceAudioStreamRemovedFuzzTest()
 {
     SetUp();
-    uint32_t sessionId = GetData<int32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
     impl_->HandleSourceAudioStreamRemoved(sessionId);
 }
 
@@ -412,7 +412,7 @@ TestFuncs g_testFuncs = {
     HandleSourceAudioStreamRemovedFuzzTest,
 };
 
-bool FuzzTest(const uint8_t* rawData, size_t size)
+bool FuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr) {
         return false;
@@ -435,10 +435,10 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 }
 
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
@@ -446,4 +446,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
-}
+}

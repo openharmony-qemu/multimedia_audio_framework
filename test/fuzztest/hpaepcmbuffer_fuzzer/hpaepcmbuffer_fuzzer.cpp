@@ -35,7 +35,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t)
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
 T GetData()
@@ -138,7 +138,7 @@ void GetFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
-    std::vector<float> frameData(1024,0.0f);
+    std::vector<float> frameData(1024, 0.0f);
     hpaePcmBuffer->GetFrameData(frameData);
 }
 
@@ -154,7 +154,7 @@ void PushFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
-    std::vector<float> frameData(1024,0.0f);
+    std::vector<float> frameData(1024, 0.0f);
     hpaePcmBuffer->PushFrameData(frameData);
 }
 
@@ -354,7 +354,7 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 } // namesapce OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
@@ -362,4 +362,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
-}
+}

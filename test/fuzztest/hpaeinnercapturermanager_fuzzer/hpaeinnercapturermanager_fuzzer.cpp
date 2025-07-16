@@ -31,12 +31,11 @@ using namespace OHOS::AudioStandard::HPAE;
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t)
+typedef void (*TestPtr)(const uint8_t *, size_t)
 
 template<class T>
 T GetData()
@@ -135,16 +134,16 @@ void MoveStreamFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     const std::string &sinkName = "13222";
-    hpaeInnerCapturerManager->MoveStream(sessionId,sinkName);
+    hpaeInnerCapturerManager->MoveStream(sessionId, sinkName);
 }
 
 void MoveAllStreamFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
-    const std::vector<uint32_t> &sessionId = {GetData<uint32_t>(),GetData<uint32_t>(),GetData<uint32_t>()};
+    const std::vector<uint32_t> &sessionId = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     const std::string &sinkName = "13222";
-    hpaeInnerCapturerManager->MoveAllStream(sinkName,sessionId);
+    hpaeInnerCapturerManager->MoveAllStream(sinkName, sessionId);
 }
 
 void SuspendStreamManagerFuzzTest()
@@ -225,7 +224,7 @@ void SetClientVolumeFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     float volume = GetData<float>();
-    hpaeInnerCapturerManager->SetClientVolume(sessionId,volume);
+    hpaeInnerCapturerManager->SetClientVolume(sessionId, volume);
 }
 
 void SetRateFuzzTest()
@@ -234,7 +233,7 @@ void SetRateFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     int32_t rate = GetData<int32_t>();
-    hpaeInnerCapturerManager->SetRate(sessionId,rate);
+    hpaeInnerCapturerManager->SetRate(sessionId, rate);
 }
 
 void SetAudioEffectModeFuzzTest()
@@ -243,7 +242,7 @@ void SetAudioEffectModeFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     int32_t effectMode = GetData<int32_t>();
-    hpaeInnerCapturerManager->SetAudioEffectMode(sessionId,effectMode);
+    hpaeInnerCapturerManager->SetAudioEffectMode(sessionId, effectMode);
 }
 
 void GetAudioEffectModeFuzzTest()
@@ -253,7 +252,7 @@ void GetAudioEffectModeFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     int32_t e = GetData<int32_t>();
     int32_t &effectMode = e;
-    hpaeInnerCapturerManager->GetAudioEffectMode(sessionId,effectMode);
+    hpaeInnerCapturerManager->GetAudioEffectMode(sessionId, effectMode);
 }
 
 void SetPrivacyTypeFuzzTest()
@@ -263,7 +262,7 @@ void SetPrivacyTypeFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     int32_t privacyType = GetData<int32_t>();
-    hpaeInnerCapturerManager->SetPrivacyType(sessionId,privacyType);
+    hpaeInnerCapturerManager->SetPrivacyType(sessionId, privacyType);
 }
 
 void GetPrivacyTypeFuzzTest()
@@ -271,9 +270,8 @@ void GetPrivacyTypeFuzzTest()
     HpaeSinkInfo sinkInfo;
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
-    int32_t p = GetData<int32_t>();
-    int32_t &privacyType = p;
-    hpaeInnerCapturerManager->GetprivacyType(sessionId,privacyType);
+    int32_t privacyType = GetData<int32_t>();
+    hpaeInnerCapturerManager->GetPrivacyType(sessionId, privacyType);
 }
 
 void RegisterWriteCallbackFuzzTest()
@@ -282,7 +280,7 @@ void RegisterWriteCallbackFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     const std::weak_ptr<IStreamCallback> &callback = std::weak_ptr<IStreamCallback>();
-    hpaeInnerCapturerManager->RegisterWriteCallback(sessionId,callback);
+    hpaeInnerCapturerManager->RegisterWriteCallback(sessionId, callback);
 }
 
 void GetWritableSizeFuzzTest()
@@ -298,7 +296,7 @@ void UpdateSpatializationStateFuzzTest()
     HpaeSinkInfo sinkInfo;
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
-    hpaeInnerCapturerManager->UpdateSpatializationState(sessionId,true,true);
+    hpaeInnerCapturerManager->UpdateSpatializationState(sessionId, true, true);
 }
 
 void UpdateMaxLengthFuzzTest()
@@ -307,7 +305,7 @@ void UpdateMaxLengthFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     uint32_t maxLength = GetData<uint32_t>();
-    hpaeInnerCapturerManager->UpdateMaxLength(sessionId,maxLength);
+    hpaeInnerCapturerManager->UpdateMaxLength(sessionId, maxLength);
 }
 
 void GetAllSinkInputsInfoFuzzTest()
@@ -323,7 +321,7 @@ void GetSinkInputInfoFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     HpaeSinkInputInfo sinkInputInfo;
-    hpaeInnerCapturerManager->GetSinkInputInfo(sessionId,sinkInputInfo);
+    hpaeInnerCapturerManager->GetSinkInputInfo(sessionId, sinkInputInfo);
 }
 
 void GetSinkInfoFuzzTest()
@@ -339,7 +337,7 @@ void OnNodeStatusUpdateFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     IOperation operation = IOperation::OPERATION_INVALID;
-    hpaeInnerCapturerManager->OnNodeStatusUpdate(sessionId,operation);
+    hpaeInnerCapturerManager->OnNodeStatusUpdate(sessionId, operation);
 }
 
 void OnFadeDoneFuzzTest()
@@ -348,7 +346,7 @@ void OnFadeDoneFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     IOperation operation = IOperation::OPERATION_INVALID;
-    hpaeInnerCapturerManager->OnFadeDone(sessionId,operation);
+    hpaeInnerCapturerManager->OnFadeDone(sessionId, operation);
 }
 
 void AddNodeToSinkFuzzTest()
@@ -366,7 +364,7 @@ void AddAllNodesToSinkFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     std::vector<std::shared_ptr<HpaeSinkInputNode>> inputs;
     const std::vector<std::shared_ptr<HpaeSinkInputNode>> &sinkInputs = inputs;
-    hpaeInnerCapturerManager->AddAllNodesToSink(sinkInputs,true);
+    hpaeInnerCapturerManager->AddAllNodesToSink(sinkInputs, true);
 }
 
 void RegisterReadCallbackFuzzTest()
@@ -375,7 +373,7 @@ void RegisterReadCallbackFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     const std::weak_ptr<ICapturerStreamCallback> &callback = std::weak_ptr<ICapturerStreamCallback>();
-    hpaeInnerCapturerManager->RegisterReadCallback(sessionId,callback);
+    hpaeInnerCapturerManager->RegisterReadCallback(sessionId, callback);
 }
 
 void GetSourceOutputInfoFuzzTest()
@@ -384,7 +382,7 @@ void GetSourceOutputInfoFuzzTest()
     auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     HpaeSourceOutputInfo sourceOutputInfo;
-    hpaeInnerCapturerManager->GetSourceOutputInfo(sessionId,sourceOutputInfo);
+    hpaeInnerCapturerManager->GetSourceOutputInfo(sessionId, sourceOutputInfo);
 }
 
 void GetAllSourceOutputsInfoFuzzTest()
@@ -423,7 +421,7 @@ TestFuncs g_testFuncs = {
     StartFuzzTest,
     PauseFuzzTest,
     FlushFuzzTest,
-    DrainFuzzTest
+    DrainFuzzTest,
     StopFuzzTest,
     ReleaseFuzzTest,
     MoveStreamFuzzTest,
@@ -435,12 +433,12 @@ TestFuncs g_testFuncs = {
     InitFuzzTest,
     DeInitFuzzTest,
     IsInitFuzzTest,
-    IsRunningFuzzT,
+    IsRunningFuzzTest,
     IsMsgProcessingFuzzTest,
     DeactivateThreadFuzzTest,
     SetClientVolumeFuzzTest,
     SetRateFuzzTest,
-    SetAudioEffectModeFuzzTest
+    SetAudioEffectModeFuzzTest,
     GetAudioEffectModeFuzzTest,
     SetPrivacyTypeFuzzTest,
     GetPrivacyTypeFuzzTest,
@@ -463,7 +461,7 @@ TestFuncs g_testFuncs = {
     GetDeviceHDFDumpInfoFuzzTest,
 };
 
-bool FuzzTest(const uint8_t* rawData, size_t size)
+bool FuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr) {
         return false;
@@ -486,10 +484,10 @@ bool FuzzTest(const uint8_t* rawData, size_t size)
 }
 
 } // namespace AudioStandard
-} // namesapce OHOS
+} // namespace OHOS
 
 /* Fuzzer entry point */
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
@@ -497,4 +495,4 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
-}
+}

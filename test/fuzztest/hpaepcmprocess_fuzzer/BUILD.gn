@@ -16,9 +16,9 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("AudioHpaePcmProcessFuzzTest") {
+ohos_fuzztest("HpaePcmProcessFuzzTest") {
   module_out_path = "audio_framework/audio_framework_engine"
-  fuzz_config_file = "../audiohpaepcmprocess_fuzzer"
+  fuzz_config_file = "../hpaepcmprocess_fuzzer"
 
   include_dirs = [
     "../../../frameworks/native/audioadapter/include",
@@ -42,7 +42,7 @@ ohos_fuzztest("AudioHpaePcmProcessFuzzTest") {
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
   sources = [ 
-    "audiohpaepcmprocess_fuzzer.cpp",
+    "hpaepcmprocess_fuzzer.cpp",
     "../../../frameworks/native/hdiadapter_new/util/id_handler.cpp",
     "../../../frameworks/native/audioadapter/src/pro_audio_service_adapter.cpp",
     "../../../services/audio_engine/buffer/hpae_pcm_process.cpp",
@@ -100,5 +100,5 @@ defines = []
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioHpaePcmProcessFuzzTest" ]
-}
+  deps = [ ":HpaePcmProcessFuzzTest" ]
+}
