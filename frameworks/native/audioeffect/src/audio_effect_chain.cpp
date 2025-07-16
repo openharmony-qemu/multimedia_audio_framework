@@ -226,9 +226,7 @@ int32_t AudioEffectChain::SetEffectParamToHandle(AudioEffectHandle handle, int32
 
     cmdInfo = {sizeof(AudioEffectConfig), &tmpIoBufferConfig};
     ret = (*handle)->command(handle, EFFECT_CMD_GET_CONFIG, &cmdInfo, &cmdInfo);
-    if (ret != 0) {
-        AUDIO_WARNING_LOG("EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret);
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "EFFECT_CMD_GET_CONFIG fail, ret is %{public}d", ret);
 
     ioBufferConfig_.outputCfg.channels = tmpIoBufferConfig.outputCfg.channels;
     ioBufferConfig_.outputCfg.channelLayout = tmpIoBufferConfig.outputCfg.channelLayout;
