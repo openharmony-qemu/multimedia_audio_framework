@@ -73,6 +73,18 @@ void HpaeManagerImpl::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
     manager_->DumpAllAvailableDevice(devicesInfo);
 }
 
+void HpaeManagerImpl::DumpSinkInputsInfo()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DumpSinkInputsInfo();
+}
+
+void HpaeManagerImpl::DumpSourceOutputsInfo()
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DumpSourceOutputsInfo();
+}
+
 uint32_t HpaeManagerImpl::OpenAudioPort(const AudioModuleInfo &audioModuleInfo)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, 0,

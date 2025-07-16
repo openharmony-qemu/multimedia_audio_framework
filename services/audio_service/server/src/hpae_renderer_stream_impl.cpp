@@ -96,6 +96,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.tokenId = processConfig_.appInfo.appTokenId;
     effectMode_ = processConfig_.rendererInfo.effectMode;
     streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
         static_cast<AudioEffectMode>(effectMode_);
@@ -107,6 +108,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
+    streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
     AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);

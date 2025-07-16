@@ -74,6 +74,8 @@ public:
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
+    void DumpSinkInputsInfo() override;
+    void DumpSourceOutputsInfo() override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
@@ -227,6 +229,7 @@ private:
         HpaeSessionState status, HpaeSessionState state, IOperation operation);
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
+    bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

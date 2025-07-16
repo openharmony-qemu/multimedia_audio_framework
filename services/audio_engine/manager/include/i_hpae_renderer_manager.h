@@ -91,7 +91,7 @@ public:
     };
     virtual std::string GetThreadName() = 0;
 
-    virtual void DumpSinkInfo() {};
+    virtual int32_t DumpSinkInfo() { return 0; };
 
     virtual void UploadDumpSinkInfo(std::string& deviceName);
 

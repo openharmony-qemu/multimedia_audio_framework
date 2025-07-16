@@ -123,6 +123,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:volume_tools_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
+    "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_hpae_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
     # "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
