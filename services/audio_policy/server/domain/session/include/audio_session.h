@@ -29,8 +29,8 @@ namespace AudioStandard {
 enum class AudioSessionState {
     SESSION_INVALID = -1,
     SESSION_NEW = 0,
-    SESSION_ACTIVE = 1,
-    SESSION_DEACTIVE = 2,
+    SESSION_ACTIVATED = 1,
+    SESSION_DEACTIVATED = 2,
     SESSION_RELEASED = 3,
 };
 

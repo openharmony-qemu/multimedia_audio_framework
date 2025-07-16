@@ -308,18 +308,14 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
         return ERR_UNKNOWN;
     }
 
-    // If the application deactivates a session, the streams managed by session needs to be stoped.
+    // audio session v2
     if (HasAudioSessionFakeInterrupt(zoneId, callerPid)) {
         // If there is a fake interrupt, it needs to be deactivated.
         DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
-
-        if (handler_ != nullptr) {
-            AUDIO_INFO_LOG("Send InterruptCallbackEvent to all streams for pid %{public}d", callerPid);
-            std::vector<AudioInterrupt> streamsInSession = sessionService_->GetStreams(callerPid);
-            InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
-            for (auto &it : streamsInSession) {
-                handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, it.streamId);
-            }
+        std::vector<AudioInterrupt> streamsInSession = sessionService_->GetStreams(callerPid);
+        if (streamsInSession.size() > 0) {
+            // Wait for the streams managed by session to stop
+            DelayToDeactivateStreamsInAudioSession(callerPid, streamsInSession);
         }
     }
 
@@ -332,6 +328,37 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
     RemovePlaceholderInterruptForSession(callerPid);
 
     return SUCCESS;
+}
+
+void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
+    const int32_t callerPid, std::vector<AudioInterrupt> streamsInSession)
+{
+    auto deactivateTask = [this, callerPid, streamsInSession] {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::unique_lock<std::mutex> lock(mutex_);
+        if (sessionService_ == nullptr) {
+            AUDIO_ERR_LOG("sessionService_ is nullptr!");
+            return;
+        }
+
+        // If the audio session is reactivated, there is no need to clean up the session resources.
+        if (sessionService_->IsAudioSessionActivated(callerPid)) {
+            AUDIO_ERR_LOG("Session is reactivated, no need to deactivate interrupt, pid %{public}d", callerPid);
+            return;
+        }
+
+        // If the application deactivates a session, the streams managed by session needs to be stoped.
+        if (handler_ != nullptr) {
+            AUDIO_INFO_LOG("Send InterruptCallbackEvent to all streams for pid %{public}d", callerPid);
+            InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, 1.0f};
+            for (auto &it : streamsInSession) {
+                handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, it.streamId);
+            }
+        }
+    };
+
+    std::thread(deactivateTask).detach();
+    AUDIO_INFO_LOG("Started deactivation thread for pid %{public}d with 1s delay", callerPid);
 }
 
 // Deactivate session when fake focus is stopped.
@@ -2085,7 +2112,8 @@ void AudioInterruptService::DeactivateAudioInterruptInternal(const int32_t zoneI
         auto audioSession = sessionService_->GetAudioSessionByPid(audioInterrupt.pid);
         if (audioSession != nullptr) {
             audioSession->RemoveStreamInfo(audioInterrupt.streamId);
-            needPlaceHolder = audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
+            needPlaceHolder = !audioInterrupt.isAudioSessionInterrupt &&
+                audioInterrupt.audioFocusType.streamType != STREAM_DEFAULT &&
                 audioSession->IsAudioRendererEmpty() &&
                 !HadVoipStatus(audioInterrupt, audioFocusInfoList);
         }

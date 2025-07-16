@@ -72,7 +72,7 @@ int32_t AudioSession::SetAudioSessionScene(AudioSessionScene scene)
 bool AudioSession::IsActivated()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    return state_ == AudioSessionState::SESSION_ACTIVE;
+    return state_ == AudioSessionState::SESSION_ACTIVATED;
 }
 
 std::vector<AudioInterrupt> AudioSession::GetStreams()
@@ -105,7 +105,7 @@ void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
         return;
     }
 
-    if (state_ == AudioSessionState::SESSION_ACTIVE &&
+    if (state_ == AudioSessionState::SESSION_ACTIVATED &&
         audioSessionScene_ != AudioSessionScene::INVALID &&
         ShouldExcludeStreamType(incomingInterrupt)) {
         return;
@@ -193,7 +193,7 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
     strategy_ = strategy;
-    state_ = AudioSessionState::SESSION_ACTIVE;
+    state_ = AudioSessionState::SESSION_ACTIVATED;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
         callerPid_, static_cast<int32_t>(state_));
     needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
@@ -212,7 +212,7 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
 int32_t AudioSession::Deactivate()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    state_ = AudioSessionState::SESSION_DEACTIVE;
+    state_ = AudioSessionState::SESSION_DEACTIVATED;
     bypassStreamInfoVec_.clear();
     needToFetch_ = false;
     AUDIO_INFO_LOG("Audio session state change: pid %{public}d, state %{public}d",
@@ -222,7 +222,7 @@ int32_t AudioSession::Deactivate()
 
 int32_t AudioSession::EnableDefaultDevice()
 {
-    if ((state_ != AudioSessionState::SESSION_ACTIVE) || (defaultDeviceType_ == DEVICE_TYPE_INVALID)) {
+    if ((state_ != AudioSessionState::SESSION_ACTIVATED) || (defaultDeviceType_ == DEVICE_TYPE_INVALID)) {
         return SUCCESS;
     }
 
@@ -328,7 +328,7 @@ int32_t AudioSession::SetSessionDefaultOutputDevice(const DeviceType &deviceType
 
     defaultDeviceType_ = deviceType;
 
-    if (state_ == AudioSessionState::SESSION_ACTIVE) {
+    if (state_ == AudioSessionState::SESSION_ACTIVATED) {
         int32_t ret = EnableDefaultDevice();
         if ((ret == NEED_TO_FETCH) || (ret == SUCCESS)) {
             return ret;
