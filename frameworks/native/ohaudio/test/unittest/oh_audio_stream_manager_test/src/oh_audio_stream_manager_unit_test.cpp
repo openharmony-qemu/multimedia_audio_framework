@@ -151,7 +151,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupport
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    OH_AudioStreamI_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
     auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
     EXPECT_EQ(result, false);
 }
@@ -165,11 +165,11 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupport
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    streamInfo->samplingRate 24000;
+    streamInfo->samplingRate = 24000;
     streamInfo->channelLayout = CH_LAYOUT_STEREO;
     streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
     streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
-    OH_AudioStreamI_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
     auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
     EXPECT_EQ(result, true);
 }
@@ -197,7 +197,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastRecordingSuppor
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    streamInfo->samplingRate 24000;
+    streamInfo->samplingRate = 24000;
     streamInfo->channelLayout = CH_LAYOUT_STEREO;
     streamInfo->encodingType = AUDIOSTREAM_ENCODING_TYPE_E_AC3;
     streamInfo->sampleFormat = AUDIOSTREAM_SAMPLE_F32LE;
