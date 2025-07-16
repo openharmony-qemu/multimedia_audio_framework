@@ -58,6 +58,7 @@ public:
     int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray,
         DeviceType deviceType = DEVICE_TYPE_NONE) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     // callback Member functions
     virtual void OnOpenAudioPortCb(int32_t portId) override;
     virtual void OnReloadAudioPortCb(int32_t portId) override;

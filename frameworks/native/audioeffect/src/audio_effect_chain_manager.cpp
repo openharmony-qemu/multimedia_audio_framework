@@ -1900,11 +1900,14 @@ int32_t AudioEffectChainManager::SetAbsVolumeStateToEffectInner(const bool absVo
     } else {
         AUDIO_INFO_LOG("absVolumeState is not changed");
     }
+
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::EffectDspAbsVolumeStateUpdate(const bool absVolumeState)
 {
     //send absVolumeState to dsp, but no use now
+    
     effectHdiInput_[0] = HDI_ABS_VOLUME_STATE;
     effectHdiInput_[1] = static_cast<int8_t>(absVolumeState);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
