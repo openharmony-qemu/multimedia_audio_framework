@@ -143,6 +143,7 @@ int32_t AudioStreamCollector::AddRendererStream(AudioStreamChangeInfo &streamCha
     rendererChangeInfo->clientUID = streamChangeInfo.audioRendererChangeInfo.clientUID;
     rendererChangeInfo->sessionId = streamChangeInfo.audioRendererChangeInfo.sessionId;
     rendererChangeInfo->callerPid = streamChangeInfo.audioRendererChangeInfo.callerPid;
+    rendererChangeInfo->clientPid = streamChangeInfo.audioRendererChangeInfo.clientPid;
     rendererChangeInfo->tokenId = static_cast<int32_t>(IPCSkeleton::GetCallingTokenID());
     rendererChangeInfo->rendererState = streamChangeInfo.audioRendererChangeInfo.rendererState;
     rendererChangeInfo->rendererInfo = streamChangeInfo.audioRendererChangeInfo.rendererInfo;

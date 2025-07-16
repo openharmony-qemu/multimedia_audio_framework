@@ -2767,9 +2767,9 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
 
     pid_t pid = IPCSkeleton::GetCallingPid();
     pid_t uid = IPCSkeleton::GetCallingUid();
-    if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), uid)
+    if (id == TRACKER_CLIENT && std::find(clientDiedListenerState_.begin(), clientDiedListenerState_.end(), pid)
         != clientDiedListenerState_.end()) {
-        AUDIO_INFO_LOG("Tracker has been registered for %{public}d!", uid);
+        AUDIO_INFO_LOG("Tracker has been registered for uid:%{public}d pid:%{public}d!", uid, pid);
         return;
     }
     sptr<AudioServerDeathRecipient> deathRecipient_ = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
@@ -2784,7 +2784,7 @@ void AudioPolicyServer::RegisterClientDeathRecipient(const sptr<IRemoteObject> &
         }
         bool result = object->AddDeathRecipient(deathRecipient_);
         if (result && id == TRACKER_CLIENT) {
-            clientDiedListenerState_.push_back(uid);
+            clientDiedListenerState_.push_back(pid);
         }
         if (!result) {
             AUDIO_WARNING_LOG("failed to add deathRecipient");
@@ -2800,8 +2800,8 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
 
-    auto filter = [&uid](int val) {
-        return uid == val;
+    auto filter = [&pid](int val) {
+        return pid == val;
     };
     clientDiedListenerState_.erase(std::remove_if(clientDiedListenerState_.begin(), clientDiedListenerState_.end(),
         filter), clientDiedListenerState_.end());
