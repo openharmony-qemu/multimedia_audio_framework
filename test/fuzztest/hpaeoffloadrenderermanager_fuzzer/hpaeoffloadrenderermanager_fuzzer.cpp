@@ -157,7 +157,8 @@ void UploadDumpSinkInfoFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
-    std::shared_ptr<IHpaeRendererManager> offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    std::shared_ptr<IHpaeRendererManager> offloadRendererManager =
+        IHpaeRendererManager::CreateRendererManager(sinkInfo);
     string deviceName = "";
     offloadRendererManager->UploadDumpSinkInfo(deviceName);
 }
