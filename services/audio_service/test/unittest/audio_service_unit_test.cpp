@@ -108,6 +108,36 @@ HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test JoinCallbackLoop
+ * @tc.number: Audio_Renderer_JoinCallbackLoop_001
+ * @tc.desc  : Test JoinCallbackLoop interface
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_JoinCallbackLoop_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+
+    std::shared_ptr<FastAudioStream> fastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->JoinCallbackLoop();
+    std::shared_ptr<AudioProcessInClient> processClient = AudioProcessInClient::Create(config, fastAudioStream_);
+    fastAudioStream->JoinCallbackLoop();
+    EXPECT_EQ(processClient_, nullptr);
+}
+
+/**
  * @tc.name  : Test AudioDeviceDescriptor API
  * @tc.type  : FUNC
  * @tc.number: AudioDeviceDescriptor_001
