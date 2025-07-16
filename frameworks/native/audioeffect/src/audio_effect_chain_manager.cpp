@@ -1892,7 +1892,7 @@ int32_t AudioEffectChainManager::SetAbsVolumeStateToEffect(const bool absVolumeS
 
 int32_t AudioEffectChainManager::SetAbsVolumeStateToEffectInner(const bool absVolumeState)
 {
-    if (absVolumeState_ == absVolumeState) {
+    if (absVolumeState_ != absVolumeState) {
         EffectDspAbsVolumeStateUpdate(absVolumeState);
         EffectApAbsVolumeStateUpdate(absVolumeState);
         absVolumeState_ = absVolumeState;
@@ -1905,34 +1905,30 @@ int32_t AudioEffectChainManager::SetAbsVolumeStateToEffectInner(const bool absVo
 int32_t AudioEffectChainManager::EffectDspAbsVolumeStateUpdate(const bool absVolumeState)
 {
     //send absVolumeState to dsp, but no use now
-    AUDIO_DEBUG_LOG("send absVolumeState to dsp.");
-    AUDIO_DEBUG_LOG("absVolumeState change, new state: %{public}d, previous state: %{public}d",
-        absVolumeState, absVolumeState_);
     effectHdiInput_[0] = HDI_ABS_VOLUME_STATE;
     effectHdiInput_[1] = static_cast<int8_t>(absVolumeState);
     int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
-    AUDIO_INFO_LOG("set hdi absVolumeState: %{public}d, ret: %{public}d", effectHdiInput_[1], ret);
+    AUDIO_INFO_LOG("absVolumeState change, new state: %{public}d, previous state: %{public}d, ret: %{public}d",
+        effectHdiInput_[1], absVolumeState_, ret);
     return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolumeState)
 {
     //send absVolumeState to ap
-    AUDIO_DEBUG_LOG("send absVolumeState to ap.");
-    AUDIO_DEBUG_LOG("absVolumeState change, new state: %{public}d, previous state: %{public}d",
-        absVolumeState, absVolumeState_);
 
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
         auto audioEffectChain = it->second;
         if (audioEffectChain == nullptr) {
             continue;
         }
-        
+
         audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState);
         int32_t ret = audioEffectChain->UpdateEffectParam();
-        CHECK_AND_CONTINUE_LOG(ret == 0, "set ap rotation failed");
-        AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, absVolumeState changed to %{public}u",
-            it->first.c_str(), audioEffectChain->GetLatency(), absVolumeState);
+        CHECK_AND_CONTINUE_LOG(ret == 0, "set ap absVolumeState failed");
+        AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, new state: %{public}d, "
+            "previous state: %{public}d",
+            it->first.c_str(), audioEffectChain->GetLatency(), absVolumeState, absVolumeState_);
     }
 
     return SUCCESS;
