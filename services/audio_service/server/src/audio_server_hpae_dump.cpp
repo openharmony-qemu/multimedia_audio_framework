@@ -355,7 +355,8 @@ static std::string TransTimeToString(uint64_t timetamp)
         return "Invalid time";
     }
     char buffer[80];
-    strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Y", timeinfo);
+    CHECK_AND_RETURN_RET_LOG(strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Y", timeinfo) != 0, "error time",
+        "strftime failed");
     return buffer;
 }
 
