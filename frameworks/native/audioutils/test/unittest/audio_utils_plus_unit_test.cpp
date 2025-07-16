@@ -697,11 +697,11 @@ HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
     bool isSilence = true;
-    enum PA_PIPE_TYPE papipeType = static_cast<PA_PIPE_TYPE>(100);
+    enum PA_PIPE_TYPE paPipeType = static_cast<PA_PIPE_TYPE>(100);
     uint32_t  uid = 1000;
     RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_NORMAL, uid);
     RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
-    RecordPaSilenceState(sessionId, isSilence, papipeType, uid);
+    RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), static_cast<size_t>(0));
 }
