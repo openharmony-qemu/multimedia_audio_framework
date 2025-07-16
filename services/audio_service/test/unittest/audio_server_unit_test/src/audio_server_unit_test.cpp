@@ -2249,11 +2249,12 @@ HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
     AudioProcessConfig config;
     config.audioMode = AUDIO_MODE_PLAYBACK;
     config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
-    bool ret = audioServer->CheckPlaybackPermission(config);
+    bool ret;
+    ret = audioServer->CheckPlaybackPermission(config);
     EXPECT_EQ(ret, true);
 
     config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
-    bool ret = audioServer->CheckPlaybackPermission(config);
+    ret = audioServer->CheckPlaybackPermission(config);
     EXPECT_EQ(ret, true);
 
     config.callerUid = 0;
@@ -2314,7 +2315,8 @@ HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_002, TestSize
 HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    uint32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr());
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
     EXPECT_EQ(result, 0);
 }
 
@@ -2331,7 +2333,8 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_001, TestSize.Level1)
     HdiIdType idType = HDI_ID_TYPE_PRIMARY;
     std::string idInfo = "test";
     IAudioSinkAttr attr;
-    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2348,7 +2351,8 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_002, TestSize.Level1)
     HdiIdType idType = HDI_ID_TYPE_FAST;
     std::string idInfo = "test";
     IAudioSinkAttr attr;
-    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr);
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2366,7 +2370,8 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_001, TestSize.Level1)
     std::string idInfo = "test";
     IAudioSourceAttr attr;
     attr.sourceType = 1;
-    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
+    uint32_t captureId = 0;
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2382,9 +2387,10 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
     HdiIdBase idBase = HDI_ID_BASE_CAPTURE;
     HdiIdType idType = HDI_ID_TYPE_PRIMARY;
     std::string idInfo = "test";
+    uint32_t captureId = 0;
     IAudioSourceAttr attr;
     attr.sourceType = 100;
-    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr);
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
@@ -2397,7 +2403,8 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    uint32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr());
+    uint32_t captureId = 0;
+    uint32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
     EXPECT_NE(result, HDI_INVALID_ID);
 }
 
