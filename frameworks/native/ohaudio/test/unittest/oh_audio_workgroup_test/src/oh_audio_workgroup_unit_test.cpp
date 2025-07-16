@@ -92,7 +92,7 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_002, TestSize.Level0)
     result = OH_AudioResourceManager_ReleaseWorkgroup(audioResourceManager, group);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 
-    result = OH_AudioResourceManager_AddCurrentThread(group, tokenId);
+    result = OH_AudioWorkgroup_AddCurrentThread(group, tokenId);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 } // namespace AudioStandard
