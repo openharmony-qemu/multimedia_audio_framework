@@ -489,6 +489,10 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
+    std::string devicesName = "";
+    int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
+    AUDIO_ERROR_LOG("displayname = %{public}s", devicesName);
     AUDIO_INFO_LOG("[ADeviceEvent] targetScene[%{public}d] lastScene[%{public}d] from uid %{public}d pid %{public}d",
         audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
 

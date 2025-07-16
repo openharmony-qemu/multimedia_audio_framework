@@ -780,6 +780,7 @@ void AudioPolicyService::RegisterDataObserver()
     std::string devicesName = "";
     int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RegisterDataObserver get devicesName failed");
+    AUDIO_ERROR_LOG("displayname = %{public}s", devicesName);
     audioConnectedDevice_.SetDisplayName(devicesName, true);
     audioConnectedDevice_.RegisterNameMonitorHelper();
     audioPolicyManager_.RegisterDoNotDisturbStatus();
