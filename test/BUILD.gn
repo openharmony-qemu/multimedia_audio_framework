@@ -259,6 +259,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaeinnercapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaemanager_fuzzer:fuzztest",
     "fuzztest/hpaenolockqueue_fuzzer:fuzztest",
+    "fuzztest/hpaeoffloadrenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaepcmbuffer_fuzzer:fuzztest",
     "fuzztest/hpaepcmprocess_fuzzer:fuzztest",
     "fuzztest/hpaepolicymanager_fuzzer:fuzztest",

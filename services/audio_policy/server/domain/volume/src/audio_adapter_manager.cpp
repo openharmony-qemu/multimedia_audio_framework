@@ -136,13 +136,14 @@ bool AudioAdapterManager::Init()
     AudioVolume::GetInstance()->SetDefaultAppVolume(appConfigVolume_.defaultVolume);
     std::string defaultSafeVolume = std::to_string(GetMaxVolumeLevel(STREAM_MUSIC));
     AUDIO_INFO_LOG("defaultSafeVolume %{public}s", defaultSafeVolume.c_str());
-    char currentSafeVolumeValue[3] = {0};
+    char currentSafeVolumeValue[4] = {0};
     ret = GetParameter("const.audio.safe_media_volume", defaultSafeVolume.c_str(),
         currentSafeVolumeValue, sizeof(currentSafeVolumeValue));
     if (ret > 0) {
         safeVolume_ = atoi(currentSafeVolumeValue);
         AUDIO_INFO_LOG("Get currentSafeVolumeValue success %{public}d", safeVolume_);
     } else {
+        safeVolume_ = GetMaxVolumeLevel(STREAM_MUSIC);
         AUDIO_ERR_LOG("Get currentSafeVolumeValue failed %{public}d", ret);
     }
 

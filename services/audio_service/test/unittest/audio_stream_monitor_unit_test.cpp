@@ -58,7 +58,7 @@ void AudioStreamMonitorTest::TearDown(void)
 HWTEST(AudioStreamMonitorTest, RegisterAudioRendererDataTransferStateListener_001, TestSize.Level1)
 {
     int32_t ret = SUCCESS;
-    DataTransferMonitorParam para = {0};
+    DataTransferMonitorParam para = {};
     ret = AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(para, 10000, 10000);
     ret = AudioStreamMonitor::GetInstance().RegisterAudioRendererDataTransferStateListener(para, 10000, 10000);
     ret = AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(10000, 10000);

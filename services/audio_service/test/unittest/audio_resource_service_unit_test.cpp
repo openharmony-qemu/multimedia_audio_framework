@@ -17,8 +17,7 @@
 #include "audio_resource_service.h"
 #include "audio_workgroup.h"
 #include "audio_errors.h"
-#include "ipc_stream_stub.h"
-#include "ipc_stream.h"
+#include "iipc_stream.h"
 #include "message_parcel.h"
 #include "parcel.h"
 
