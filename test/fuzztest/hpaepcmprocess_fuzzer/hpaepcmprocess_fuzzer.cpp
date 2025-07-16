@@ -66,7 +66,7 @@ void SizeFuzzTest()
         GetData<float>()};
     float *begin = pcmData.data();
     size_t size = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size);
     hpaePcmProcess->Size();
 }
 
@@ -76,7 +76,7 @@ void BeginFuzzTest()
         GetData<float>()};
     float *begin = pcmData.data();
     size_t size = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size);
     hpaePcmProcess->Begin();
 }
 
@@ -86,7 +86,7 @@ void EndFuzzTest()
         GetData<float>()};
     float *begin = pcmData.data();
     size_t size = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size);
     hpaePcmProcess->End();
 }
 
@@ -96,7 +96,7 @@ void ResetFuzzTest()
         GetData<float>()};
     float *begin = pcmData.data();
     size_t size = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size);
     hpaePcmProcess->Reset();
 }
 
@@ -106,7 +106,7 @@ void GetErrNoFuzzTest()
         GetData<float>()};
     float *begin = pcmData.data();
     size_t size = pcmData.size();
-    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size_);
+    auto hpaePcmProcess = std::make_shared<HpaePcmProcess>(begin, size);
     hpaePcmProcess->GetErrNo();
 }
 
