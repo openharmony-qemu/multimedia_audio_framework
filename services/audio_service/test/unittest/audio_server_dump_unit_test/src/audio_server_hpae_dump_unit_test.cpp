@@ -23,12 +23,15 @@ class HpaeAudioServerHpaeDumpTest : public testing::Test {
 public:
     static void SetUpTestCase();
     static void TearDownTestCase();
-    void SetUp() {};
-    void TearDown() {};
+    void SetUp() {}
+    void TearDown() {}
     static std::shared_ptr<AudioServerHpaeDump> audioServerHpaeDump_;
-}
+};
 
-void SetUpTestCase()
+std::shared_ptr<AudioServerHpaeDump> HpaeAudioServerHpaeDumpTest::audioServerHpaeDump_ =
+    std::make_shared<AudioServerHpaeDump>();
+
+void HpaeAudioServerHpaeDumpTest::SetUpTestCase()
 {
     IHpaeManager::GetHpaeManager().Init();
     ASSERT_NE(audioServerHpaeDump_, nullptr);
@@ -36,13 +39,10 @@ void SetUpTestCase()
     std::this_thread::sleep_for(std::chrono::milliseconds(20)); // 20ms for sleep
 }
 
-void TearDownTestCase()
+void HpaeAudioServerHpaeDumpTest::TearDownTestCase()
 {
     IHpaeManager::GetHpaeManager().DeInit();
 }
-
-std::shared_ptr<AudioServerHpaeDump> HpaeAudioServerHpaeDumpTest::audioServerHpaeDump_ = 
-    std:make_shared<AudioServerHpaeDump>();
 
 TEST_F(HpaeAudioServerHpaeDumpTest, HpaeAudioServerHpaeDumpTest_001)
 {

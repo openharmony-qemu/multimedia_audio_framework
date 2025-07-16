@@ -2108,7 +2108,7 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
         "invalid token type %{public}u", tokenType);
     if (tokenType == TOKEN_HAP) {
-        HpaeTokenInfoExt tokenInfo = {};
+        HapTokenInfoExt tokenInfo = {};
         int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
         CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetHapTokenInfoExtension failed, ret: %{public}d", ret);
         return tokenInfo.baseInfo.bundleName;

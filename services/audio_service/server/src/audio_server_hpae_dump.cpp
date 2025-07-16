@@ -348,7 +348,7 @@ void AudioServerHpaeDump::RecordSourceOutputDump(std::string &dumpString)
 
 static std::string TransTimeToString(uint64_t timetamp)
 {
-    auto tp = std::chrono::system_clock::time_point(std::chron::milliseconds(timetamp));
+    auto tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(timetamp));
     time_t time = std::chrono::system_clock::to_time_t(tp);
     struct tm *timeinfo = localtime(&time);
     if (!timeinfo) {
@@ -363,14 +363,14 @@ static void TransHpaeInputOutputInfoToStr(const HpaeInputOutputInfo &info, const
 {
     std::ostringstream oss;
     oss << "  Stream " << idx << "\n"
-        <<  "  - Stream Id: " << info.sessionId << "\n"
-        <<  "  - Application Name: " << GetBundleNameByToken(info.tokenId) << "\n"
-        <<  "  - Process Id: " << info.pid << "\n"
-        <<  "  - User Id: " << info.uid << "\n"
-        <<  "  - stream can be captured: " << (info.privacyType == 0 ? "true" : "false") << "\n"
-        <<  "  - Stream Configuration: " << info.config << "\n"
-        <<  "  - Status:" << (info.state == HPAE_SESSION_RUNNING ? "RUNNING" : "STOPPED/PAUSED") << "\n"
-        << "  - Stream Start Time: " << TransTimeToString(info.startTime) << "\n\n"
+        << "  - Stream Id: " << info.sessionId << "\n"
+        << "  - Application Name: " << GetBundleNameByToken(info.tokenId) << "\n"
+        << "  - Process Id: " << info.pid << "\n"
+        << "  - User Id: " << info.uid << "\n"
+        << "  - stream can be captured: " << (info.privacyType == 0 ? "true" : "false") << "\n"
+        << "  - Stream Configuration: " << info.config << "\n"
+        << "  - Status: " << (info.state == HPAE_SESSION_RUNNING ? "RUNNING" : "STOPPED/PAUSED") << "\n"
+        << "  - Stream Start Time: " << TransTimeToString(info.startTime) << "\n\n";
     tempDumpStr += oss.str();
 }
 

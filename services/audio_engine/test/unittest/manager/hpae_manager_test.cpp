@@ -1506,7 +1506,7 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerDumpStreamInfoTest, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
     int32_t sinkPortId = callback->GetPortId();
     AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    EXPECT(hpaeManager_->OpenAudioPort(sourceAudioModuleInfo), SUCCESS);
+    EXPECT_EQ(hpaeManager_->OpenAudioPort(sourceAudioModuleInfo), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     int32_t sourcePortId = callback->GetPortId();
 
