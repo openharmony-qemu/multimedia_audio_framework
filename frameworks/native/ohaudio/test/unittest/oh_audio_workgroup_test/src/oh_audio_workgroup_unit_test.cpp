@@ -77,7 +77,7 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_001, TestSize.Level0)
 
 HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_002, TestSize.Level0)
 {
-    OH_AudioResourceManager *resourceManager = nullptr;
+    OH_AudioResourceManager *audioResourceManager = nullptr;
     OH_AudioCommon_Result result;
     OH_AudioWorkgroup *group = nullptr;
     int32_t *tokenId = nullptr;
