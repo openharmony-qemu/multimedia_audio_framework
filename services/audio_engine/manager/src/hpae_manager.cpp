@@ -2012,6 +2012,15 @@ int32_t HpaeManager::SetEffectSystemVolume(const int32_t systemVolumeType, const
     return SUCCESS;
 }
 
+int32_t HpaeManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    auto request = [absVolumeState]() {
+        HpaePolicyManager::GetInstance().SetAbsVolumeStateToEffect(absVolumeState);
+    };
+    SendRequest(request, __func__);
+    return SUCCESS;
+}
+
 int32_t HpaeManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)
 {
     auto request = [propertyArray]() {
