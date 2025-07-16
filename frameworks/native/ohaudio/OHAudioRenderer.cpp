@@ -45,6 +45,7 @@ static OH_AudioStream_Result ConvertError(int32_t err)
 
 OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer *renderer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     if (audioRenderer->Start()) {
@@ -56,6 +57,7 @@ OH_AudioStream_Result OH_AudioRenderer_Start(OH_AudioRenderer *renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer *renderer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -68,6 +70,7 @@ OH_AudioStream_Result OH_AudioRenderer_Pause(OH_AudioRenderer *renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer *renderer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -80,6 +83,7 @@ OH_AudioStream_Result OH_AudioRenderer_Stop(OH_AudioRenderer *renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer *renderer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
@@ -92,6 +96,7 @@ OH_AudioStream_Result OH_AudioRenderer_Flush(OH_AudioRenderer *renderer)
 
 OH_AudioStream_Result OH_AudioRenderer_Release(OH_AudioRenderer *renderer)
 {
+    AUDIO_INFO_LOG("in");
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
 
