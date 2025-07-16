@@ -1607,7 +1607,7 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level
     OH_AudioRenderer *renderer = nullptr;
     OH_AudioStream_FastStatus *status = nullptr;
     OH_AudioStream_Result result = OH_AudioRenderer_GetFastStatus(renderer, status);
-    EXPECT_EQ(ret, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
 } // namespace AudioStandard
 } // namespace OHOS
