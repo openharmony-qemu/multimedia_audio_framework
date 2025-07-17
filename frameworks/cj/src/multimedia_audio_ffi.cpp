@@ -606,7 +606,7 @@ bool FfiMMAAVGMIsMicrophoneMute(int64_t id, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get FfiMMAAVGMIsMicrophoneMute error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsMicrophoneMute();
@@ -618,7 +618,7 @@ bool FfiMMAAVGMIsMute(int64_t id, int32_t volumeType, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get FfiMMAAVGMIsMute error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsMute(volumeType);
@@ -630,7 +630,7 @@ bool FfiMMAAVGMIsVolumeUnadjustable(int64_t id, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get FfiMMAAVGMIsVolumeUnadjustable error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsVolumeUnadjustable();
@@ -730,7 +730,7 @@ bool FfiMMAIsMicrophoneMute(int64_t id, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsMicrophoneMute();
@@ -742,7 +742,7 @@ bool FfiMMAIsMute(int64_t id, int32_t volumeType, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsMute(volumeType);
@@ -754,7 +754,7 @@ bool FfiMMAIsVolumeUnadjustable(int64_t id, int32_t* errorCode)
     if (inst == nullptr) {
         *errorCode = CJ_ERR_SYSTEM;
         AUDIO_ERR_LOG("Get MMAAudioVolumeGroupManagerImpl error");
-        return CJ_ERR_INVALID_RETURN_VALUE;
+        return false;
     }
     *errorCode = SUCCESS_CODE;
     return inst->IsVolumeUnadjustable();
