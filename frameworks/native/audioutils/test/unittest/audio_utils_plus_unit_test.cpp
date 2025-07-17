@@ -705,5 +705,77 @@ HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), static_cast<size_t>(0));
 }
+
+/**
+* @tc.name  : Test PauseSilenceMonitor API
+* @tc.type  : FUNC
+* @tc.number: PauseSilenceMonitor_001
+* @tc.desc  : Test PauseSilenceMonitor
+*/
+HWTEST(AudioUtilsPlusUnitTest, PauseSilenceMonitor_001, TestSize.Level3)
+{
+    uint32_t sessionId = 111111;
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId);
+
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, 0);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, true);
+
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, false);
+}
+
+/**
+* @tc.name  : Test GetRunningHapNames API
+* @tc.type  : FUNC
+* @tc.number: GetRunningHapNames_001
+* @tc.desc  : Test GetRunningHapNames
+*/
+HWTEST(AudioUtilsPlusUnitTest, GetRunningHapNames_001, TestSize.Level3)
+{
+    uint32_t sessionId1 = 1001;
+    uint32_t tokenId1 = 100001;
+    uint32_t sessionId2 = 1002;
+    uint32_t tokenId2 = 100002;
+    uint32_t sessionId3 = 1003;
+    uint32_t tokenId3 = 100003;
+
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId1, tokenId1);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId1, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId2, tokenId2);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId2, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId3, tokenId3);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId3, false, PIPE_TYPE_LOWLATENCY_OUT, 0);
+
+    AudioPerformanceMonitor::GetInstance().GetRunningHapNames(PIPE_TYPE_NORMAL_OUT);
+
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId1);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId1].isRunning, false);
+
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId2].isRunning, true);
+}
+
+/**
+* @tc.name  : Test JudgeNoise API
+* @tc.type  : FUNC
+* @tc.number: JudgeNoise_001
+* @tc.desc  : Test JudgeNoise
+*/
+HWTEST(AudioUtilsPlusUnitTest, JudgeNoise_001, TestSize.Level3)
+{
+    uint32_t sessionId = 111111;
+    AudioPerformanceMonitor::GetInstance().silenceDetectMap_ = {};
+
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, false, PIPE_TYPE_NORMAL_OUT, 0);
+
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, true);
+
+    AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT, 0);
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId);
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
