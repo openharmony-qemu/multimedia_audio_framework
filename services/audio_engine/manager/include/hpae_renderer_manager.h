@@ -88,7 +88,7 @@ public:
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
-    void DumpSinkInfo() override;
+    int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;

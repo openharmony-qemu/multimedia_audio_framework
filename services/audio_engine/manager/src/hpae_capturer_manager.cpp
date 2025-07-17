@@ -949,12 +949,14 @@ std::string HpaeCapturerManager::GetThreadName()
     return sourceInfo_.deviceName;
 }
 
-void HpaeCapturerManager::DumpSourceInfo()
+int32_t HpaeCapturerManager::DumpSourceInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeCapturerManager not init");
     SendRequest([this]() {
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });
+    return SUCCESS;
 }
 
 void HpaeCapturerManager::CheckIfAnyStreamRunning()

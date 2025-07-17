@@ -87,7 +87,7 @@ public:
     void OnRewindAndFlush(uint64_t rewindTime) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
-    void DumpSinkInfo() override;
+    int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;

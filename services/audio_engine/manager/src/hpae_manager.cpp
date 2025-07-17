@@ -444,15 +444,14 @@ void HpaeManager::DumpSinkInfo(std::string deviceName)
 {
     auto request = [this, deviceName]() {
         AUDIO_INFO_LOG("DumpSinkInfo %{public}s", deviceName.c_str());
-        if (!SafeGetMap(rendererManagerMap_, deviceName)) {
-            AUDIO_WARNING_LOG("can not find sinkName: %{public}s in rendererManagerMap_", deviceName.c_str());
-            if (auto ptr = dumpCallback_.lock()) {
+        if (!SafeGetMap(rendererManagerMap_, deviceName) ||
+            rendererManagerMap_[deviceName]->DumpSinkInfo() != SUCCESS) {
+            AUDIO_WARNING_LOG("dump sink %{public}s info error", deviceName.c_str());
+            if (auto callback = dumpCallback_.lock()) {
                 std::string dumpStr;
-                ptr->OnDumpSinkInfoCb(dumpStr, ERROR);
+                callback->OnDumpSinkInfoCb(dumpStr, ERROR);
             }
-            return;
         }
-        rendererManagerMap_[deviceName]->DumpSinkInfo();
     };
     SendRequest(request, __func__);
 }
@@ -461,15 +460,14 @@ void HpaeManager::DumpSourceInfo(std::string deviceName)
 {
     auto request = [this, deviceName]() {
         AUDIO_INFO_LOG("DumpSourceInfo %{public}s", deviceName.c_str());
-        if (!SafeGetMap(capturerManagerMap_, deviceName)) {
-            AUDIO_WARNING_LOG("can not find sourceName: %{public}s in capturerManagerMap_", deviceName.c_str());
-            if (auto ptr = dumpCallback_.lock()) {
+        if (!SafeGetMap(capturerManagerMap_, deviceName) ||
+            capturerManagerMap_[deviceName]->DumpSourceInfo() != SUCCESS) {
+            AUDIO_WARNING_LOG("dump source %{public}s info error", deviceName.c_str());
+            if (auto callback = dumpCallback_.lock()) {
                 std::string dumpStr;
-                ptr->OnDumpSourceInfoCb(dumpStr, ERROR);
+                callback->OnDumpSourceInfoCb(dumpStr, ERROR);
             }
-            return;
         }
-        capturerManagerMap_[deviceName]->DumpSourceInfo();
     };
     SendRequest(request, __func__);
 }
@@ -488,8 +486,34 @@ void HpaeManager::DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo)
             devicesInfo.sourceInfos.emplace_back(
                 HpaeSinkSourceInfo{capturerPair.first, capturerPair.second->GetDeviceHDFDumpInfo()});
         }
-        if (auto ptr = dumpCallback_.lock()) {
-            ptr->OnDumpAllAvailableDeviceCb(SUCCESS);
+        if (auto callback = dumpCallback_.lock()) {
+            callback->OnDumpAllAvailableDeviceCb(SUCCESS);
+        }
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::DumpSinkInputsInfo()
+{
+    auto request = [this]() {
+        AUDIO_INFO_LOG("DumpSinkInputsInfo");
+        std::vector<HpaeInputOutputInfo> sinkInputs;
+        TransStreamInfoToStreamDumpInfo(rendererIdStreamInfoMap_, sinkInputs);
+        if (auto callback = dumpCallback_.lock()) {
+            callback->OnDumpSinkInputsInfoCb(sinkInputs, SUCCESS);
+        }
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::DumpSourceOutputsInfo()
+{
+    auto request = [this]() {
+        AUDIO_INFO_LOG("DumpSourceOutputsInfo");
+        std::vector<HpaeInputOutputInfo> sourceOutputs;
+        TransStreamInfoToStreamDumpInfo(capturerIdStreamInfoMap_, sourceOutputs);
+        if (auto callback = dumpCallback_.lock()) {
+            callback->OnDumpSourceOutputsInfoCb(sourceOutputs, SUCCESS);
         }
     };
     SendRequest(request, __func__);
@@ -1275,6 +1299,7 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo, const 
         sinkInput.uid = streamInfo.uid;
         sinkInput.startTime = static_cast<uint64_t>(ms.count());
         sinkInputs_[streamInfo.sessionId] = sinkInput;
+        rendererIdStreamInfoMap_[streamInfo.sessionId].startTime = static_cast<uint64_t>(ms.count());
     } else if (streamInfo.streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD) {
         SourceOutput sourceOutputInfo;
         sourceOutputInfo.streamId = streamInfo.sessionId;
@@ -1285,6 +1310,7 @@ void HpaeManager::AddStreamToCollection(const HpaeStreamInfo &streamInfo, const 
         sourceOutputInfo.uid = streamInfo.uid;
         sourceOutputInfo.startTime = static_cast<uint64_t>(ms.count());
         sourceOutputs_[streamInfo.sessionId] = sourceOutputInfo;
+        capturerIdStreamInfoMap_[streamInfo.sessionId].startTime = static_cast<uint64_t>(ms.count());
     }
 }
 
@@ -1386,13 +1412,28 @@ int32_t HpaeManager::DestroyStream(HpaeStreamClassType streamClassType, uint32_t
     return SUCCESS;
 }
 
+bool HpaeManager::ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId)
+{
+    if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
+        CHECK_AND_RETURN_RET_LOG(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end() &&
+            rendererIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            "renderer session: %{public}u already released", sessionId);
+    } else if (streamType == HPAE_STREAM_CLASS_TYPE_RECORD) {
+        CHECK_AND_RETURN_RET_LOG(capturerIdStreamInfoMap_.find(sessionId) != capturerIdStreamInfoMap_.end() &&
+            capturerIdStreamInfoMap_[sessionId].state != HPAE_SESSION_RELEASED, false,
+            "capturer session: %{public}u already released", sessionId);
+    } else {
+        AUDIO_WARNING_LOG("streamType[%{public}d] is invalid", streamType);
+        return false;
+    }
+    return true;
+}
+
 int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("Start session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "Start session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::Start sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_RUNNING,
@@ -1407,9 +1448,9 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_[sessionId].statusCallback.lock() != nullptr,
-                "statusCallback for stream[%{public}u] is nullptr", sessionId);
-            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED, sessionId);
+            if (auto callback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
+                callback->OnStatusUpdate(OPERATION_STARTED, sessionId);
+            }
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Start sessionId: %{public}u deviceName:%{public}s",
@@ -1436,10 +1477,8 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
 int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId)
 {
     auto request = [this, streamClassType, sessionId, syncId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("StartWithSyncId session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "StartWithSyncId session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::StartWithSyncId sessionId: %{public}u streamClassType:%{public}d syncId: %{public}d",
             sessionId, streamClassType, syncId);
@@ -1455,9 +1494,9 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_[sessionId].statusCallback.lock() != nullptr,
-                "statusCallback for stream[%{public}u] is nullptr", sessionId);
-            rendererIdStreamInfoMap_[sessionId].statusCallback.lock()->OnStatusUpdate(OPERATION_STARTED, sessionId);
+            if (auto callback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
+                callback->OnStatusUpdate(OPERATION_STARTED, sessionId);
+            }
         } else {
             AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
                 "sessionId %{public}u syncId: %{public}d",
@@ -1471,10 +1510,8 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
 int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("Pause session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "Pause session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::Pause sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_PAUSED,
@@ -1515,10 +1552,8 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
 int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("Flush session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "Flush session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::Flush sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId,
@@ -1558,10 +1593,8 @@ int32_t HpaeManager::Flush(HpaeStreamClassType streamClassType, uint32_t session
 int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("Drain session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "Drain session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::Drain sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId,
@@ -1601,10 +1634,8 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
 int32_t HpaeManager::Stop(HpaeStreamClassType streamClassType, uint32_t sessionId)
 {
     auto request = [this, streamClassType, sessionId]() {
-        if (rendererIdStreamInfoMap_[sessionId].state == HPAE_SESSION_RELEASED) {
-            AUDIO_WARNING_LOG("Stop session:%{public}u failed. session already released.", sessionId);
-            return;
-        }
+        CHECK_AND_RETURN_LOG(ShouldNotSkipProcess(streamClassType, sessionId),
+            "Stop session: %{public}u failed, session already released", sessionId);
         AUDIO_INFO_LOG(
             "HpaeManager::Stop sessionId: %{public}u streamClassType:%{public}d", sessionId, streamClassType);
         if (SetMovingStreamState(streamClassType, sessionId, HPAE_SESSION_STOPPED,

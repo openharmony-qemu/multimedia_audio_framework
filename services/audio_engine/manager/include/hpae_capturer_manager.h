@@ -72,7 +72,7 @@ public:
     std::string GetThreadName() override;
     void SetCaptureId(uint32_t captureId);
     int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) override;
-    void DumpSourceInfo() override;
+    int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 private:
     void SendRequest(Request &&request, bool isInit = false);

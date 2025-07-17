@@ -16,12 +16,25 @@
 #ifndef AUDIO_SERVICE_HPAE_DUMP_CALLBACK_H
 #define AUDIO_SERVICE_HPAE_DUMP_CALLBACK_H
 #include <string>
+#include "audio_info.h"
+#include "hpae_info.h"
 namespace OHOS {
 namespace AudioStandard {
 typedef struct {
     std::string deviceName;
     std::string config;
 } HpaeSinkSourceInfo;
+
+typedef struct {
+    uint32_t sessionId;
+    uint32_t uid;
+    uint32_t pid;
+    uint32_t tokenId;
+    AudioPrivacyType privacyType;
+    std::string config;
+    HPAE::HpaeSessionState state;
+    uint64_t startTime;
+} HpaeInputOutputInfo;
 
 typedef struct {
     std::vector<HpaeSinkSourceInfo> sinkInfos;
@@ -33,6 +46,8 @@ public:
     virtual void OnDumpSinkInfoCb(std::string& dumpStr, int32_t result) = 0;
     virtual void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) = 0;
     virtual void OnDumpAllAvailableDeviceCb(int32_t result) = 0;
+    virtual void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) = 0;
+    virtual void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result) = 0;
     virtual ~AudioServiceHpaeDumpCallback()
     {}
 };
