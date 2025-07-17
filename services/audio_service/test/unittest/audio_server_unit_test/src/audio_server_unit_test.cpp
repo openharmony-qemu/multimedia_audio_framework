@@ -1382,7 +1382,8 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
     int32_t pid = IPCSkeleton::GetCallingPid();
     audioServer->audioDataTransferCbMap_[pid] = callback;
     AudioRendererDataTransferStateChangeInfo info;
-    audioServer->OnDataTransferStateChange(pid, 0, info);
+    int callbackId = 0;
+    audioServer->OnDataTransferStateChange(pid, callbackId, info);
     audioServer->RemoveRendererDataTransferCallback(pid);
     EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
