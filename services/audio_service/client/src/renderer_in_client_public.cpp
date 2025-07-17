@@ -1040,7 +1040,6 @@ bool RendererInClientInner::PauseAudioStream(StateChangeCmdType cmdType)
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Pause();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("call server failed:%{public}u", ret);
@@ -1099,7 +1098,6 @@ bool RendererInClientInner::StopAudioStream()
     }
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
-    UpdatePauseReadIndex();
     int32_t ret = ipcStream_->Stop();
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("Stop call server failed:%{public}u", ret);

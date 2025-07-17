@@ -113,7 +113,6 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     if (operation_ == OPERATION_STARTED) {
         if (fadeInState_ == false) { // todo: add operation for softstart
             fadeInState_ = true;
-            AUDIO_INFO_LOG("need to fade in");
         } else {
             AUDIO_WARNING_LOG("fadeInState already set");
         }
@@ -124,7 +123,6 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     if (operation_ == OPERATION_PAUSED || operation_ == OPERATION_STOPPED) {
         if (fadeOutState_ == FadeOutState::NO_FADEOUT) {
             fadeOutState_ = FadeOutState::DO_FADEOUT;
-            AUDIO_INFO_LOG("need to fade out");
         } else {
             AUDIO_WARNING_LOG("current fadeout state %{public}d, cannot prepare fadeout", fadeOutState_);
         }
@@ -163,12 +161,8 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     }
     // do fade in
     if (fadeInState_) {
-        if (!input->IsValid()) {
-            AUDIO_WARNING_LOG("[%{public}d]: invalid data no need to do fade in", GetSessionId());
-            return;
-        }
-        if (IsSilentData(input)) {
-            AUDIO_DEBUG_LOG("[%{public}d]: silent data no need to do fade in", GetSessionId());
+        if (!input->IsValid() || IsSilentData(input)) {
+            AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
             return;
         }
         AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);

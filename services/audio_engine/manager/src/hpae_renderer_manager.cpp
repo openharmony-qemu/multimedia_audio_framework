@@ -707,6 +707,8 @@ int32_t HpaeRendererManager::SuspendStreamManager(bool isSuspend)
         if (isSuspend_ == isSuspend) {
             return;
         }
+        AUDIO_INFO_LOG("suspend audio device: %{public}s, isSuspend: %{public}d",
+            sinkInfo_.deviceName.c_str(), isSuspend);
         isSuspend_ = isSuspend;
         if (isSuspend_) {
             if (outputCluster_ != nullptr) {
@@ -1150,7 +1152,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
         }
         return false;
     }
-    AUDIO_INFO_LOG("get gain node of session %{public}d.", sessionId);
+    AUDIO_INFO_LOG("get gain node of session %{public}d operation %{public}d.", sessionId, operation);
     if (operation != OPERATION_STARTED) {
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPING : HPAE_SESSION_PAUSING;
         SetSessionState(sessionId, state);
