@@ -232,7 +232,7 @@ void AudioPolicyManagerStub::GetAvailableDevicesInternal(MessageParcel &data, Me
     int32_t apiVersion = HasUsbDevice(descs) ? GetApiTargetVersion() : 0;
     reply.WriteInt32(size);
     for (int32_t i = 0; i < size; i++) {
-        descs[i]->Marshalling(reply, apiVersion);
+        descs[i]->MarshallingToDeviceDescriptor(reply, apiVersion);
     }
 }
 
