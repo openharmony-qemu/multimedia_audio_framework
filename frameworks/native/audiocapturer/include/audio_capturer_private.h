@@ -216,8 +216,6 @@ public:
     void FinishSwitch();
 private:
     void NotifyEvent(const InterruptEvent &interruptEvent);
-    void HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent);
-    void NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent);
     std::shared_ptr<IAudioStream> audioStream_;
     std::weak_ptr<AudioCapturerCallback> callback_;
     bool isForcePaused_ = false;
