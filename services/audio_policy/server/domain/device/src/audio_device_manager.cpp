@@ -133,6 +133,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
     vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
         descArray.push_back(devDesc);
