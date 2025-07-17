@@ -354,7 +354,7 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(
         audioPolicyClientStubCB_->RemovePreferredOutputDeviceChangeCallback(callback);
         if (audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false);
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false, false);
         }
     }
     return SUCCESS;

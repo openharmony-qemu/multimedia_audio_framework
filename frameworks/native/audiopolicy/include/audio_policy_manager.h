@@ -52,7 +52,7 @@ struct CallbackChangeInfo {
 class AudioPolicyManager {
 public:
     static AudioPolicyManager& GetInstance();
-    static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy();
+    static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
     int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
 
@@ -669,7 +669,7 @@ private:
     ~AudioPolicyManager() {}
 
     int32_t RegisterPolicyCallbackClientFunc(const sptr<IAudioPolicy> &gsp);
-    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
+    int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable, bool block = true);
     int32_t SetCallbackStreamInfo(const CallbackChange &callbackChange);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
