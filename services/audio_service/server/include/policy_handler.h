@@ -69,8 +69,6 @@ public:
 
     int32_t GetMaxRendererInstances();
 
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
-
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
 #ifdef HAS_FEATURE_INNERCAPTURER

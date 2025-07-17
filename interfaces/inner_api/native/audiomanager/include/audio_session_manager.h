@@ -213,6 +213,11 @@ public:
      */
     int32_t UnsetAudioSessionCurrentDeviceChangeCallback(
         const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &deviceChangedCallback);
+
+private:
+    std::mutex setDefaultOutputDeviceMutex_;
+    bool setDefaultOutputDevice_ = false;
+    DeviceType setDeviceType_ = DEVICE_TYPE_INVALID;
 };
 } // namespace AudioStandard
 } // namespace OHOS

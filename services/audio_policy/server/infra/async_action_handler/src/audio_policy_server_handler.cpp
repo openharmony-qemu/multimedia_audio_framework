@@ -153,12 +153,6 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
-void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(
-    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher)
-{
-    concurrencyEventDispatcher_ = dispatcher;
-}
-
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
@@ -649,19 +643,6 @@ bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
     bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
         eventContextObj));
     CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
-    return ret;
-}
-
-bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID)
-{
-    AUDIO_INFO_LOG("session %{public}u send concurrency event", sessionID);
-    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->sessionId = sessionID;
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID,
-        eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send CONCURRENCY_EVENT_WITH_SESSIONID event failed");
     return ret;
 }
 
@@ -1196,8 +1177,8 @@ void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExec
                 "device of session %{public}d is not changed", it->first);
             deviceChangedEvent.changeReason = eventContextObj->reason_;
             deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(eventContextObj) ?
-                DeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
-                DeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
             sessionDeviceChangeCb->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
         }
     }
@@ -1487,19 +1468,6 @@ void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::Inne
     AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
 }
 
-void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
-    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-
-    std::unique_lock<std::mutex> lock(handleMapMutex_);
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-    restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
-    restoreInfo.routeFlag = AUDIO_FLAG_NONE;
-    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
-}
-
 void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1573,9 +1541,6 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
     switch (eventId) {
-        case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
-            HandleConcurrencyEventWithSessionID(event);
-            break;
         case EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
             HandleSpatializatonEnabledChangeForAnyDeviceEvent(event);
             break;

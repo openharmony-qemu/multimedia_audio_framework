@@ -143,12 +143,12 @@ int32_t AudioServerProxy::UpdateActiveDevicesRouteProxy(std::vector<std::pair<De
     return ret;
 }
 
-void AudioServerProxy::SetDmDeviceTypeProxy(uint16_t dmDeviceType)
+void AudioServerProxy::SetDmDeviceTypeProxy(uint16_t dmDeviceType, DeviceType deviceType)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_LOG(gsp != nullptr, "Service proxy unavailable");
     std::string identity = IPCSkeleton::ResetCallingIdentity();
-    gsp->SetDmDeviceType(dmDeviceType);
+    gsp->SetDmDeviceType(dmDeviceType, deviceType);
     IPCSkeleton::SetCallingIdentity(identity);
 }
 

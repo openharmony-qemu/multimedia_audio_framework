@@ -1295,5 +1295,64 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererWriteDataC
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_GenerateRenderer API via illegal state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_GenerateRenderer interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_GenerateRenderer_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioRenderer *audioRenderer = nullptr;
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_GenerateCapturer interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_GenerateCapturer_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer *audioCapturer = nullptr;
+    result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetVolumeMode API via illegal state.
+ * @tc.number: c_001
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetVolumeMode interface
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetVolumeMode_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder *builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_CAPTURER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_SetVolumeMode(builder, static_cast<OH_AudioStream_VolumeMode>(3));
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

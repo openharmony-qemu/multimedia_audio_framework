@@ -559,6 +559,14 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaboratio
     IHpaeManager::GetHpaeManager().UpdateCollaborativeState(isCollaborationEnabled);
     return SUCCESS;
 }
+
+int32_t ProAudioServiceAdapterImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    AUDIO_INFO_LOG("SetAbsVolumeStateToEffect, state %{public}d", absVolumeState);
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
+    return SUCCESS;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS
 

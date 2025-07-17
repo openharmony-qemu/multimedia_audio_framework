@@ -12,16 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef I_AUDIO_CONCURRENCY_EVENT_DISPATCHER_H
-#define I_AUDIO_CONCURRENCY_EVENT_DISPATCHER_H
+
+#ifndef AUDIO_INTERRUPT_SERVICE_SECOND_UNIT_TEST_H
+#define AUDIO_INTERRUPT_SERVICE_SECOND_UNIT_TEST_H
+
+#include "gtest/gtest.h"
+#include "audio_interrupt_service.h"
+
 namespace OHOS {
 namespace AudioStandard {
 
-// define interfaces for handler to call
-class IAudioConcurrencyEventDispatcher {
+class AudioInterruptServiceSecondUnitTest : public testing::Test {
 public:
-    virtual void DispatchConcurrencyEventWithSessionId(uint32_t sessionId) = 0;
+    // SetUpTestCase: Called before all test cases
+    static void SetUpTestCase(void);
+    // TearDownTestCase: Called after all test case
+    static void TearDownTestCase(void);
+    // SetUp: Called before each test cases
+    void SetUp(void);
+    // TearDown: Called after each test cases
+    void TearDown(void);
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif
+#endif // AUDIO_INTERRUPT_SERVICE_SECOND_UNIT_TEST_H
+ 

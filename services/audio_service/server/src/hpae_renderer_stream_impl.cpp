@@ -43,7 +43,6 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static constexpr uint64_t OFFLOAD_LATENCY_THRESHOLD = 40000; // 40ms latency threshold in microseconds
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
@@ -96,6 +95,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     streamInfo.uid = processConfig_.appInfo.appUid;
     streamInfo.pid = processConfig_.appInfo.appPid;
+    streamInfo.tokenId = processConfig_.appInfo.appTokenId;
     effectMode_ = processConfig_.rendererInfo.effectMode;
     streamInfo.effectInfo.effectMode = (effectMode_ != EFFECT_DEFAULT && effectMode_ != EFFECT_NONE) ? EFFECT_DEFAULT :
         static_cast<AudioEffectMode>(effectMode_);
@@ -107,6 +107,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;
     streamInfo.isMoveAble = isMoveAble_;
+    streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
     AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
@@ -162,7 +163,6 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
     return SUCCESS;
 }
 

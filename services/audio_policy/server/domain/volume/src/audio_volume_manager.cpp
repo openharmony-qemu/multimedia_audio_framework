@@ -1102,6 +1102,7 @@ bool AudioVolumeManager::GetStreamMute(AudioStreamType streamType, int32_t zoneI
 void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, int32_t& groupId,
     std::string networkId, bool connected, int32_t mappingId)
 {
+    std::lock_guard<std::mutex> lock(volumeGroupsMutex_);
     ConnectType connectType = CONNECT_TYPE_LOCAL;
     if (networkId != LOCAL_NETWORK_ID) {
         connectType = CONNECT_TYPE_DISTRIBUTED;
@@ -1155,6 +1156,7 @@ void AudioVolumeManager::UpdateGroupInfo(GroupType type, std::string groupName, 
 
 void AudioVolumeManager::GetVolumeGroupInfo(std::vector<sptr<VolumeGroupInfo>>& volumeGroupInfos)
 {
+    std::lock_guard<std::mutex> lock(volumeGroupsMutex_);
     for (auto& v : volumeGroups_) {
         sptr<VolumeGroupInfo> info = new(std::nothrow) VolumeGroupInfo(v->volumeGroupId_, v->mappingId_, v->groupName_,
             v->networkId_, v->connectType_);

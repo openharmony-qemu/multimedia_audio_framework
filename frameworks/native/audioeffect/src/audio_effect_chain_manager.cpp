@@ -387,6 +387,7 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetSpatializationEnabled(spatializationEnabled_);
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
+    audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
     std::string maxSession = std::to_string(maxSessionID_);
     if (sessionIDToEffectInfoMap_.count(maxSession)) {
         sceneType = sessionIDToEffectInfoMap_[maxSession].sceneType;
@@ -1880,6 +1881,59 @@ int32_t AudioEffectChainManager::QueryEffectChannelInfoInner(const std::string &
         sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] != nullptr, ERROR, "null audioEffectChain");
     auto audioEffectChain = sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey];
     audioEffectChain->GetInputChannelInfo(channels, channelLayout);
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return SetAbsVolumeStateToEffectInner(absVolumeState);
+}
+
+int32_t AudioEffectChainManager::SetAbsVolumeStateToEffectInner(const bool absVolumeState)
+{
+    if (absVolumeState_ != absVolumeState) {
+        EffectDspAbsVolumeStateUpdate(absVolumeState);
+        EffectApAbsVolumeStateUpdate(absVolumeState);
+        absVolumeState_ = absVolumeState;
+        AUDIO_INFO_LOG("absVolumeStateUpdate absVolumeState: %{public}d", absVolumeState_);
+    } else {
+        AUDIO_INFO_LOG("absVolumeState is not changed");
+    }
+
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::EffectDspAbsVolumeStateUpdate(const bool absVolumeState)
+{
+    //send absVolumeState to dsp, but no use now
+    
+    effectHdiInput_[0] = HDI_ABS_VOLUME_STATE;
+    effectHdiInput_[1] = static_cast<int8_t>(absVolumeState);
+    int32_t ret = audioEffectHdiParam_->UpdateHdiState(effectHdiInput_);
+    AUDIO_INFO_LOG("absVolumeState change, new state: %{public}d, previous state: %{public}d, ret: %{public}d",
+        effectHdiInput_[1], absVolumeState_, ret);
+    return SUCCESS;
+}
+
+int32_t AudioEffectChainManager::EffectApAbsVolumeStateUpdate(const bool absVolumeState)
+{
+    //send absVolumeState to ap
+
+    for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); it++) {
+        auto audioEffectChain = it->second;
+        if (audioEffectChain == nullptr) {
+            continue;
+        }
+
+        audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState);
+        int32_t ret = audioEffectChain->UpdateEffectParam();
+        CHECK_AND_CONTINUE_LOG(ret == 0, "set ap absVolumeState failed");
+        AUDIO_INFO_LOG("The delay of SceneType %{public}s is %{public}u, new state: %{public}d, "
+            "previous state: %{public}d",
+            it->first.c_str(), audioEffectChain->GetLatency(), absVolumeState, absVolumeState_);
+    }
+
     return SUCCESS;
 }
 } // namespace AudioStandard

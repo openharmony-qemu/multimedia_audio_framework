@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,33 +13,32 @@
  * limitations under the License.
  */
 #ifndef LOG_TAG
-#define LOG_TAG "AudioConcurrencyStateListenerCallback"
+#define LOG_TAG "AudioStreamIdAllocator"
 #endif
 
-#include "audio_policy_log.h"
-#include "audio_concurrency_state_listener_callback.h"
-#include "audio_errors.h"
+#include "audio_stream_id_allocator.h"
+
+#include "audio_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-AudioConcurrencyListenerCallback::AudioConcurrencyListenerCallback(
-    const sptr<IStandardConcurrencyStateListener> &listener) : listener_(listener)
-{
-    AUDIO_DEBUG_LOG("instance create");
+namespace {
+const uint32_t FIRST_SESSIONID = 100000;
+constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
+static uint32_t g_sessionId = FIRST_SESSIONID; // begin from 100000
 }
 
-AudioConcurrencyListenerCallback::~AudioConcurrencyListenerCallback()
+uint32_t AudioStreamIdAllocator::GenerateStreamId()
 {
-    AUDIO_DEBUG_LOG("instance destroy");
-}
-
-void AudioConcurrencyListenerCallback::OnConcedeStream()
-{
-    if (listener_ != nullptr) {
-        listener_->OnConcedeStream();
+    std::lock_guard<std::mutex> lock(sessionIdAllocatoeMutex_);
+    uint32_t sessionId = g_sessionId++;
+    if (g_sessionId > MAX_VALID_SESSIONID) {
+        AUDIO_WARNING_LOG("sessionId is too large, reset it!");
+        g_sessionId = FIRST_SESSIONID;
     }
-}
 
+    return sessionId;
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1971,6 +1971,161 @@ HWTEST(AudioRendererUnitTest, CheckAndRestoreAudioRenderer_003, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckAndRestoreAudioRenderer.
+* @tc.number: CheckAndRestoreAudioRenderer_004
+* @tc.desc  : Test CheckAndRestoreAudioRenderer when audioStream_ is nullptr.
+*/
+HWTEST(AudioRendererUnitTest, CheckAndRestoreAudioRenderer_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    audioRenderer->audioStream_ = nullptr;
+    std::string callingFunc = "test";
+    auto ret = audioRenderer->CheckAndRestoreAudioRenderer(callingFunc);
+    EXPECT_EQ(ret, ERR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test CheckAndRestoreAudioRenderer.
+* @tc.number: CheckAndRestoreAudioRenderer_005
+* @tc.desc  : Test CheckAndRestoreAudioRenderer when abortRestore_ is true.
+*/
+HWTEST(AudioRendererUnitTest, CheckAndRestoreAudioRenderer_005, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    AudioInterrupt audioInterrupt;
+    audioRenderer->audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(
+        testAudioStreamStub, audioInterrupt);
+
+    std::string callingFunc = "test";
+    audioRenderer->abortRestore_ = true;
+    EXPECT_EQ(audioRenderer->audioStream_->SetRestoreStatus(NEED_RESTORE), NEED_RESTORE);
+    auto ret = audioRenderer->CheckAndRestoreAudioRenderer(callingFunc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test StartSwitchProcess.
+* @tc.number: StartSwitchProcess_001
+* @tc.desc  : Test StartSwitchProcess when audioInterruprCallback_ is nullptr.
+*/
+HWTEST(AudioRendererUnitTest, StartSwitchProcess_001, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    RestoreInfo restoreInfo;
+    std::string callingFunc = "test";
+    audioRenderer->abortRestore_ = false;
+    audioRenderer->audioInterruptCallback_ = nullptr;
+    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::FAST_STREAM;
+    EXPECT_EQ(audioRenderer->audioStream_->SetRestoreStatus(NEED_RESTORE), NEED_RESTORE);
+    int32_t ret = audioRenderer->StartSwitchProcess(restoreInfo, targetClass, callingFunc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test StartSwitchProcess.
+* @tc.number: StartSwitchProcess_002
+* @tc.desc  : Test StartSwitchProcess when switchtotargetstream is false.
+*/
+HWTEST(AudioRendererUnitTest, StartSwitchProcess_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    AudioInterrupt audioInterrupt;
+    audioRenderer->audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(
+        testAudioStreamStub, audioInterrupt);
+
+    RestoreInfo restoreInfo;
+    std::string callingFunc = "test";
+    audioRenderer->abortRestore_ = false;
+    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::FAST_STREAM;
+    EXPECT_EQ(audioRenderer->audioStream_->SetRestoreStatus(NEED_RESTORE), NEED_RESTORE);
+    int32_t ret = audioRenderer->StartSwitchProcess(restoreInfo, targetClass, callingFunc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test StartSwitchProcess.
+* @tc.number: StartSwitchProcess_003
+* @tc.desc  : Test StartSwitchProcess when switchtotargetstream is false.
+*/
+HWTEST(AudioRendererUnitTest, StartSwitchProcess_003, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    AudioInterrupt audioInterrupt;
+    audioRenderer->audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(
+        testAudioStreamStub, audioInterrupt);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = DEFAULT_REASON;
+    std::string callingFunc = "test";
+    audioRenderer->abortRestore_ = false;
+    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::FAST_STREAM;
+    EXPECT_EQ(audioRenderer->audioStream_->SetRestoreStatus(NEED_RESTORE), NEED_RESTORE);
+    int32_t ret = audioRenderer->StartSwitchProcess(restoreInfo, targetClass, callingFunc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test StartSwitchProcess.
+* @tc.number: StartSwitchProcess_004
+* @tc.desc  : Test StartSwitchProcess when switchtotargetstream is false.
+*/
+HWTEST(AudioRendererUnitTest, StartSwitchProcess_004, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    std::shared_ptr<IAudioStream> testAudioStreamStub = std::make_shared<TestAudioStremStub>();
+    audioRenderer->audioStream_ = testAudioStreamStub;
+
+    AudioInterrupt audioInterrupt;
+    audioRenderer->audioInterruptCallback_ = std::make_shared<AudioRendererInterruptCallbackImpl>(
+        testAudioStreamStub, audioInterrupt);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = SERVER_DIED;
+    std::string callingFunc = "test";
+    audioRenderer->abortRestore_ = false;
+    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::FAST_STREAM;
+    EXPECT_EQ(audioRenderer->audioStream_->SetRestoreStatus(NEED_RESTORE), NEED_RESTORE);
+    int32_t ret = audioRenderer->StartSwitchProcess(restoreInfo, targetClass, callingFunc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
 * @tc.name  : Test SetSwitchInfo.
 * @tc.number: Audio_Renderer_SetSwitchInfo_005
 * @tc.desc  : Test SetSwitchInfo interface.
@@ -2229,86 +2384,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_RestoreAudioInLoop_002, TestSize.Le
 
     audioRenderer->callbackLoopTid_ = gettid() + 1;
     audioRenderer->RestoreAudioInLoop(restoreResult, tryCounter);
-}
-
-/**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: Audio_Renderer_ActivateAudioConcurrency_001.
-* @tc.desc  : Test ActivateAudioConcurrency interface.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    AudioStreamParams audioStreamParams;
-    AudioStreamType streamType = STREAM_MUSIC;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::FAST_STREAM;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_LOWLATENCY_OUT);
-}
-
-/**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: Audio_Renderer_ActivateAudioConcurrency_002.
-* @tc.desc  : Test ActivateAudioConcurrency interface.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    AudioStreamParams audioStreamParams;
-    AudioStreamType streamType = STREAM_MUSIC;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::FAST_STREAM;
-    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_CALL_OUT);
-
-    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_CALL_OUT);
-
-    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_VIDEO_COMMUNICATION;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_CALL_OUT);
-}
-
-/**
-* @tc.name  : Test ActivateAudioConcurrency.
-* @tc.number: Audio_Renderer_ActivateAudioConcurrency_003.
-* @tc.desc  : Test ActivateAudioConcurrency interface.
-*/
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    AudioStreamParams audioStreamParams;
-    AudioStreamType streamType = STREAM_RING;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::PA_STREAM;
-    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_INVALID;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
-
-    streamType = STREAM_MUSIC;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
-
-    streamType = STREAM_RING;
-    audioStreamParams.samplingRate = SAMPLE_RATE_48000 + 1;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
-
-    streamType = STREAM_MUSIC;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
 }
 
 /**

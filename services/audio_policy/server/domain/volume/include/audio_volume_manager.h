@@ -204,6 +204,7 @@ private:
 
     std::vector<sptr<VolumeGroupInfo>> volumeGroups_;
     std::vector<sptr<InterruptGroupInfo>> interruptGroups_;
+    std::mutex volumeGroupsMutex_;
 
     std::mutex ringerModeMuteMutex_;
     std::atomic<bool> ringerModeMute_ = true;

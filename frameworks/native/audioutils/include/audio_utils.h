@@ -585,6 +585,8 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
+
+std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

@@ -100,7 +100,8 @@ public:
     void GetAllConnectedDeviceByType(std::string networkId, DeviceType deviceType,
         std::string macAddress, DeviceRole deviceRole, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     bool IsSessionSetDefaultDevice(uint32_t sessionId);
-    bool NoDp() const;
+    bool ExistsByType(DeviceType devType) const;
+    bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:

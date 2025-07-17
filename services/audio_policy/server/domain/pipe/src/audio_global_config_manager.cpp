@@ -14,6 +14,8 @@
  */
 
 #include "audio_global_config_manager.h"
+
+#include "audio_policy_log.h"
 #include "audio_policy_global_parser.h"
 
 using namespace std;

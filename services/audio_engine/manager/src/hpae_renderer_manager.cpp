@@ -1162,13 +1162,15 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
     return true;
 }
 
-void HpaeRendererManager::DumpSinkInfo()
+int32_t HpaeRendererManager::DumpSinkInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeRendererManager not init");
     auto request = [this]() {
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
     SendRequest(request);
+    return SUCCESS;
 }
 
 int32_t HpaeRendererManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)

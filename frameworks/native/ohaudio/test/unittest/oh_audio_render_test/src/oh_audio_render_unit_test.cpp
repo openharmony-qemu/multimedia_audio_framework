@@ -1596,5 +1596,18 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_001, Tes
 
     CleanupAudioResources(builder, audioRenderer);
 }
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetFastStatus API
+* @tc.number: OH_AudioRenderer_GetFastStatus_001
+* @tc.desc  : Test OH_AudioRenderer_GetFastStatus
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level0)
+{
+    OH_AudioRenderer *renderer = nullptr;
+    OH_AudioStream_FastStatus *status = nullptr;
+    OH_AudioStream_Result result = OH_AudioRenderer_GetFastStatus(renderer, status);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

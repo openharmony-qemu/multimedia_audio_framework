@@ -28,6 +28,7 @@
 #include "audio_usb_manager.h"
 #include "audio_spatialization_service.h"
 #include "audio_collaborative_service.h"
+#include "audio_stream_id_allocator.h"
 #include "ipc_skeleton.h"
 
 namespace OHOS {
@@ -217,6 +218,9 @@ void AudioCoreService::BluetoothScoFetch(std::shared_ptr<AudioStreamDescriptor> 
         return;
     }
 
+    if (streamDesc->streamStatus_ != STREAM_STATUS_STARTED) {
+        return;
+    }
     if (Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType)) {
         ret = ScoInputDeviceFetchedForRecongnition(true, desc->macAddress_, desc->connectState_);
     } else {
@@ -290,9 +294,10 @@ void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChang
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetStreamDescById(sessionId));
         if (Util::IsScoSupportSource(sourceType)) {
             Bluetooth::AudioHfpManager::HandleScoWithRecongnition(false);
+            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(0, DEVICE_TYPE_NEARLINK_IN);
         } else {
             AUDIO_INFO_LOG("close capture app, try to disconnect sco");
-            bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+            bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
             Bluetooth::AudioHfpManager::UpdateAudioScene(audioSceneManager_.GetAudioScene(true), isRecord);
         }
         audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptorBySessionID(sessionId);
@@ -564,6 +569,44 @@ void AudioCoreService::GetA2dpModuleInfo(AudioModuleInfo &moduleInfo, const Audi
     }
 }
 
+int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    AUDIO_INFO_LOG("[ADeviceEvent] Start split args: %{public}s", splitArgs.c_str());
+    if (splitArgs.empty() || networkId.empty()) {
+        std::string anonymousNetworkId = networkId.empty() ? "" : networkId.substr(0, 2) + "***";
+        AUDIO_ERR_LOG("invalid param, splitArgs:'%{public}s', networkId:'%{public}s'",
+            splitArgs.c_str(), anonymousNetworkId.c_str());
+        return ERR_INVALID_PARAM;
+    }
+    std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId, OUTPUT_DEVICE);
+    std::string currentActivePort = REMOTE_CLASS;
+    audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
+    AudioIOHandle oldModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, oldModuleId);
+    CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager_ is nullptr");
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors =
+        pipeManager_->GetStreamDescsByIoHandle(oldModuleId);
+    audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);
+
+    AudioModuleInfo moudleInfo = AudioPolicyUtils::GetInstance().ConstructRemoteAudioModuleInfo(networkId,
+        OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
+    moudleInfo.lib = "libmodule-split-stream-sink.z.so";
+    moudleInfo.extra = splitArgs;
+    moudleInfo.needEmptyChunk = false;
+
+    int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
+    if (openRet != 0) {
+        AUDIO_ERR_LOG("open fail, OpenPortAndInsertIOHandle ret: %{public}d", openRet);
+    }
+    AudioIOHandle newModuleId;
+    audioIOHandleMap_.GetModuleIdByKey(moduleName, newModuleId);
+    pipeManager_->UpdateOutputStreamDescsByIoHandle(newModuleId, streamDescriptors);
+    AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
+    FetchOutputDeviceAndRoute("LoadSplitModule");
+    AUDIO_INFO_LOG("fetch device after split stream and open port.");
+    return openRet;
+}
+
 bool AudioCoreService::IsSameDevice(shared_ptr<AudioDeviceDescriptor> &desc, const AudioDeviceDescriptor &deviceInfo)
 {
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, ERR_NULL_POINTER, "invalid deviceDesc");
@@ -829,17 +872,9 @@ int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId, Au
     return SUCCESS;
 }
 
-std::atomic<uint32_t> g_sessionId = {FIRST_SESSIONID}; // begin at 100000
-
 uint32_t AudioCoreService::GenerateSessionId()
 {
-    uint32_t sessionId = g_sessionId++;
-    AUDIO_INFO_LOG("sessionId:%{public}d", sessionId);
-    if (g_sessionId > MAX_VALID_SESSIONID) {
-        AUDIO_WARNING_LOG("sessionId is too large, reset it!");
-        g_sessionId = FIRST_SESSIONID;
-    }
-    return sessionId;
+    return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
 void AudioCoreService::AddSessionId(const uint32_t sessionId)
@@ -2451,10 +2486,12 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
+    bool isRecognitionSource = false;
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
     } else {
         audioStreamConfig = streamDesc->capturerInfo_.sourceType;
+        isRecognitionSource = Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning](auto &&config) -> int32_t {
@@ -2464,6 +2501,8 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config);
         };
 
+        AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(isRecognitionSource ? DM_DEVICE_TYPE_NEARLINK_SCO : 0,
+            DEVICE_TYPE_NEARLINK_IN);
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",

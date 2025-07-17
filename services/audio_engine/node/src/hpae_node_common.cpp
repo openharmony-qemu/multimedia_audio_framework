@@ -410,6 +410,27 @@ void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
             nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
     }
 }
+
+void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
+    std::vector<HpaeInputOutputInfo> &dumpInfo)
+{
+    std::transform(streamInfoMap.begin(), streamInfoMap.end(), std::back_inserter(dumpInfo),
+        [](const auto &pair) {
+            const HpaeSessionInfo &sessionInfo = pair.second;
+            std::string config;
+            TransDeviceInfoToString(sessionInfo.streamInfo, config);
+            return HpaeInputOutputInfo {
+                .sessionId = sessionInfo.streamInfo.sessionId,
+                .uid = sessionInfo.streamInfo.uid,
+                .pid = sessionInfo.streamInfo.pid,
+                .tokenId = sessionInfo.streamInfo.tokenId,
+                .privacyType = sessionInfo.streamInfo.privacyType,
+                .config = config,
+                .state = sessionInfo.state,
+                .startTime = sessionInfo.startTime
+            };
+        });
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

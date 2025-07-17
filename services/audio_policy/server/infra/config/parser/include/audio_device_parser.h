@@ -22,7 +22,6 @@
 #include <sstream>
 
 #include "audio_policy_log.h"
-#include "iport_observer.h"
 #include "parser.h"
 #include "audio_device_manager.h"
 #include "audio_xml_parser.h"

@@ -75,12 +75,7 @@ std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, 
     const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    if (type == EndpointType::TYPE_INDEPENDENT && deviceInfo.deviceRole_ != INPUT_DEVICE &&
-         deviceInfo.networkId_ == LOCAL_NETWORK_ID) {
-        audioEndpoint = std::make_shared<AudioEndpointSeparate>(type, id, clientConfig.streamType);
-    } else {
-        audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
-    }
+    audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
     if (!audioEndpoint->Config(deviceInfo)) {
@@ -1374,8 +1369,8 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     DeviceType deviceType = PolicyHandler::GetInstance().GetActiveOutPutDevice();
     bool getVolumeRet = PolicyHandler::GetInstance().GetSharedVolume(volumeType, deviceType, vol);
-    int32_t doNotDisturbStatusVolume = AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(streamType,
-        clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId());
+    int32_t doNotDisturbStatusVolume = static_cast<int32_t>(AudioVolume::GetInstance()->GetDoNotDisturbStatusVolume(
+        streamType, clientConfig_.appInfo.appUid, processList_[i]->GetAudioSessionId()));
     float appVolume = AudioVolume::GetInstance()->GetAppVolume(clientConfig_.appInfo.appUid,
         clientConfig_.rendererInfo.volumeMode);
     int32_t volumeFromOhaudioBuffer = processBufferList_[i]->GetStreamVolume() *

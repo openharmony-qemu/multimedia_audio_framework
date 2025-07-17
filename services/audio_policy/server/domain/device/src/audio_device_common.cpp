@@ -477,22 +477,6 @@ void AudioDeviceCommon::UpdateDualToneState(const bool &enable, const int32_t &s
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Failed to update the dual tone state for sessionId:%{public}d", sessionId);
 }
 
-void AudioDeviceCommon::FetchDevice(bool isOutputDevice, const AudioStreamDeviceChangeReasonExt reason)
-{
-    Trace trace("AudioDeviceCommon::FetchDevice reason:" + std::to_string(static_cast<int>(reason)));
-    AUDIO_DEBUG_LOG("FetchDevice start");
-
-    if (isOutputDevice) {
-        vector<shared_ptr<AudioRendererChangeInfo>> rendererChangeInfos;
-        streamCollector_.GetCurrentRendererChangeInfos(rendererChangeInfos);
-        FetchOutputDevice(rendererChangeInfos, reason);
-    } else {
-        vector<shared_ptr<AudioCapturerChangeInfo>> capturerChangeInfos;
-        streamCollector_.GetCurrentCapturerChangeInfos(capturerChangeInfos);
-        FetchInputDevice(capturerChangeInfos, reason);
-    }
-}
-
 bool AudioDeviceCommon::IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,
     const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -1739,7 +1723,7 @@ std::vector<SourceOutput> AudioDeviceCommon::GetSourceOutputs()
 
 void AudioDeviceCommon::ClientDiedDisconnectScoNormal()
 {
-    bool isRecord = streamCollector_.HasRunningNormalCapturerStream();
+    bool isRecord = streamCollector_.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO);
     AudioScene scene = audioSceneManager_.GetAudioScene(true);
     Bluetooth::AudioHfpManager::UpdateAudioScene(scene, isRecord);
 }

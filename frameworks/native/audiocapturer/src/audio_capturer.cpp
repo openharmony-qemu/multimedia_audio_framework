@@ -460,7 +460,6 @@ int32_t AudioCapturerPrivate::InitAudioStream(const AudioStreamParams &audioStre
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "UpdatePlaybackCaptureConfig Failed");
     }
     InitLatencyMeasurement(audioStreamParams);
-    InitAudioConcurrencyCallback();
     return ret;
 }
 
@@ -915,12 +914,6 @@ bool AudioCapturerPrivate::Release()
 
     // Unregister the callaback in policy server
     (void)AudioPolicyManager::GetInstance().UnsetAudioInterruptCallback(sessionID_);
-
-    std::shared_ptr<AudioCapturerConcurrencyCallbackImpl> cb = audioConcurrencyCallback_;
-    if (cb != nullptr) {
-        cb->UnsetAudioCapturerObj();
-        AudioPolicyManager::GetInstance().UnsetAudioConcurrencyCallback(sessionID_);
-    }
 
     RemoveCapturerPolicyServiceDiedCallback();
 
@@ -1658,36 +1651,6 @@ void AudioCapturerPrivate::HandleAudioInterruptWhenServerDied()
     }
 }
 
-void AudioCapturerPrivate::ActivateAudioConcurrency(IAudioStream::StreamClass &streamClass)
-{
-    AUDIO_INFO_LOG("in");
-    capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
-    if (capturerInfo_.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
-        capturerInfo_.pipeType = PIPE_TYPE_CALL_IN;
-    } else if (streamClass == IAudioStream::FAST_STREAM) {
-        capturerInfo_.pipeType = PIPE_TYPE_LOWLATENCY_IN;
-    }
-    int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioConcurrency(capturerInfo_.pipeType);
-    if (ret != SUCCESS && streamClass == IAudioStream::FAST_STREAM) {
-        streamClass = IAudioStream::PA_STREAM;
-        capturerInfo_.pipeType = PIPE_TYPE_NORMAL_IN;
-    }
-    firstConcurrencyResult_ = ret;
-    return;
-}
-
-int32_t AudioCapturerPrivate::InitAudioConcurrencyCallback()
-{
-    if (audioConcurrencyCallback_ == nullptr) {
-        audioConcurrencyCallback_ = std::make_shared<AudioCapturerConcurrencyCallbackImpl>();
-        CHECK_AND_RETURN_RET_LOG(audioConcurrencyCallback_ != nullptr, ERROR, "Memory Allocation Failed !!");
-    }
-    CHECK_AND_RETURN_RET_LOG(audioStream_->GetAudioSessionID(sessionID_) == SUCCESS, ERR_INVALID_INDEX,
-        "Get session id failed!");
-    audioConcurrencyCallback_->SetAudioCapturerObj(weak_from_this());
-    return AudioPolicyManager::GetInstance().SetAudioConcurrencyCallback(sessionID_, audioConcurrencyCallback_);
-}
-
 void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
 {
     FastStatus newStatus = GetFastStatusInner();
@@ -1696,37 +1659,6 @@ void AudioCapturerPrivate::FastStatusChangeCallback(FastStatus status)
             fastStatusChangeCallback_->OnFastStatusChange(newStatus);
         }
     }
-}
-
-void AudioCapturerPrivate::ConcedeStream()
-{
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
-    CHECK_AND_RETURN_LOG(audioStream_->GetStreamClass() != IAudioStream::PA_STREAM,
-        "Session %{public}u is pa stream, no need for concede", sessionID_);
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
-    audioStream_->GetAudioPipeType(pipeType);
-    if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
-        AUDIO_INFO_LOG("Concede stream");
-    }
-}
-
-AudioCapturerConcurrencyCallbackImpl::AudioCapturerConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioCapturerConcurrencyCallbackImpl ctor");
-}
-
-AudioCapturerConcurrencyCallbackImpl::~AudioCapturerConcurrencyCallbackImpl()
-{
-    AUDIO_INFO_LOG("AudioCapturerConcurrencyCallbackImpl dtor");
-}
-
-void AudioCapturerConcurrencyCallbackImpl::OnConcedeStream()
-{
-    std::unique_lock lock(mutex_);
-    auto sharedCapturer = capturer_.lock();
-    lock.unlock();
-    CHECK_AND_RETURN_LOG(sharedCapturer != nullptr, "capturer is nullptr");
-    sharedCapturer->ConcedeStream();
 }
 
 AudioCapturerStateChangeCallbackImpl::AudioCapturerStateChangeCallbackImpl()

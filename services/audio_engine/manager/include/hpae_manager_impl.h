@@ -35,6 +35,8 @@ public:
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
+    void DumpSinkInputsInfo() override;
+    void DumpSourceOutputsInfo() override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
@@ -101,6 +103,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;

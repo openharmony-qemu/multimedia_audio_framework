@@ -37,6 +37,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t EffectRotationUpdate(const uint32_t rotationState);
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);

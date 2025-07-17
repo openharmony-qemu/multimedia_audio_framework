@@ -271,25 +271,6 @@ void AudioSessionFuzzTest(const uint8_t *rawData, size_t size)
     GetServerPtr()->DeactivateAudioSession();
 }
 
-void AudioConcurrencyFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-
-    sptr<IRemoteObject> object = data.ReadRemoteObject();
-    uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
-    GetServerPtr()->SetAudioConcurrencyCallback(sessionID, object);
-    GetServerPtr()->UnsetAudioConcurrencyCallback(sessionID);
-    AudioPipeType pipeType = *reinterpret_cast<const AudioPipeType *>(rawData);
-    GetServerPtr()->ActivateAudioConcurrency(pipeType);
-}
-
 void AudioVolumeKeyCallbackStub(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {

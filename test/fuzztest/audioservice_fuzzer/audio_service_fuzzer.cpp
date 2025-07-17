@@ -182,7 +182,7 @@ static void CreateFuzzTestPtr()
         deviceInfo.audioStreamInfo_.push_back(streamInfo);
         deviceInfo.networkId_ = LOCAL_NETWORK_ID;
         audioEndpointPtr_ = AudioEndpoint::CreateEndpoint(
-            AudioEndpoint::TYPE_INDEPENDENT, GetData<uint64_t>(), config, deviceInfo);
+            AudioEndpoint::TYPE_MMAP, GetData<uint64_t>(), config, deviceInfo);
     }
     if (audioProcess_ == nullptr) {
         AudioProcessConfig configProcess = {};

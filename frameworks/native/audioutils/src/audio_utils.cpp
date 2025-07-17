@@ -2098,6 +2098,27 @@ std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     }
     return interrupts;
 }
+
+std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
+{
+    using namespace Security::AccessToken;
+    AUDIO_INFO_LOG("GetBundlNameByToken id %{public}u", tokenIdNum);
+    AccessTokenID tokenId = static_cast<AccessTokenID>(tokenIdNum);
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(tokenId);
+    CHECK_AND_RETURN_RET_LOG(tokenType == TOKEN_HAP || tokenType == TOKEN_NATIVE, "unknown",
+        "invalid token type %{public}u", tokenType);
+    if (tokenType == TOKEN_HAP) {
+        HapTokenInfoExt tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetHapTokenInfoExtension failed, ret: %{public}d", ret);
+        return tokenInfo.baseInfo.bundleName;
+    } else {
+        NativeTokenInfo tokenInfo = {};
+        int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetNativeTokenInfo failed, ret: %{public}d", ret);
+        return tokenInfo.processName;
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS
 

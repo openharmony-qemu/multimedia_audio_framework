@@ -18,6 +18,7 @@
 #include "hpae_define.h"
 #include "audio_effect.h"
 #include "audio_module_info.h"
+#include "audio_service_hpae_dump_callback.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -45,11 +46,12 @@ void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationE
 void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
 AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass);
 
-// for hidumper device info trans, param should be HpaeSinkInfo or HpaeSourceInfo
+// for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>
 int32_t TransDeviceInfoToString(const T& info, std::string &config)
 {
-    if constexpr (std::is_same_v<T, HpaeSinkInfo> || std::is_same_v<T, HpaeSourceInfo>) {
+    if constexpr (std::is_same_v<T, HpaeSinkInfo> || std::is_same_v<T, HpaeSourceInfo> ||
+                  std::is_same_v<T, HpaeStreamInfo>) {
         config += TransFormatFromEnumToString(info.format) + " ";
         config += std::to_string(info.channels) + "ch ";
         config += std::to_string(info.samplingRate) + "Hz";
@@ -58,6 +60,8 @@ int32_t TransDeviceInfoToString(const T& info, std::string &config)
     AUDIO_ERR_LOG("error info type");
     return ERROR_INVALID_PARAM;
 }
+void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
+    std::vector<HpaeInputOutputInfo> &dumpInfo);
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

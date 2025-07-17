@@ -47,7 +47,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 9;
+const uint8_t TESTSIZE = 18;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -127,6 +127,16 @@ vector<DeviceType> DeviceTypeVec = {
     DEVICE_TYPE_DEFAULT,
     DEVICE_TYPE_USB_ARM_HEADSET,
     DEVICE_TYPE_MAX,
+};
+
+const vector<AudioDeviceUsage> AudioDeviceUsageVec = {
+    MEDIA_OUTPUT_DEVICES,
+    MEDIA_INPUT_DEVICES,
+    ALL_MEDIA_DEVICES,
+    CALL_OUTPUT_DEVICES,
+    CALL_INPUT_DEVICES,
+    ALL_CALL_DEVICES,
+    D_ALL_DEVICES,
 };
 
 void RegisterTrackerFuzzTest()
@@ -216,6 +226,125 @@ void SetAudioSceneFuzzTest()
     AudioScene audioScene = static_cast<AudioScene>(GetData<uint8_t>() % audioSceneCount - 1);
 }
 
+void AudioDeviceLockGetDevicesFuzzTest()
+{
+    vector<DeviceFlag> testDeviceFlags = {
+        NONE_DEVICES_FLAG,
+        OUTPUT_DEVICES_FLAG,
+        INPUT_DEVICES_FLAG,
+        ALL_DEVICES_FLAG,
+        DISTRIBUTED_OUTPUT_DEVICES_FLAG,
+        DISTRIBUTED_INPUT_DEVICES_FLAG,
+        ALL_DISTRIBUTED_DEVICES_FLAG,
+        ALL_L_D_DEVICES_FLAG,
+        DEVICE_FLAG_MAX,
+    };
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr || testDeviceFlags.size() == 0) {
+        return;
+    }
+    DeviceFlag deviceFlag = testDeviceFlags[GetData<uint32_t>() % testDeviceFlags.size()];
+    audioDeviceLock->GetDevices(deviceFlag);
+}
+
+void AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+    AudioRendererInfo rendererInfo;
+    std::string networkId = "test_network_id";
+    audioDeviceLock->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+}
+
+void AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+    AudioCapturerInfo captureInfo;
+    std::string networkId = "test_network_id";
+    audioDeviceLock->GetPreferredInputDeviceDescriptors(captureInfo, networkId);
+}
+
+void AudioDeviceLockUpdateAppVolumeFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+    int32_t appUid = GetData<int32_t>();
+    int32_t volume = GetData<int32_t>();
+    audioDeviceLock->UpdateAppVolume(appUid, volume);
+}
+
+void AudioDeviceLockOnDeviceInfoUpdatedFuzzTest()
+{
+    static const vector<DeviceInfoUpdateCommand> testDeviceInfoUpdateCommands = {
+        CATEGORY_UPDATE,
+        CONNECTSTATE_UPDATE,
+        ENABLE_UPDATE,
+        EXCEPTION_FLAG_UPDATE,
+    };
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr || testDeviceInfoUpdateCommands.size() == 0) {
+        return;
+    }
+    AudioDeviceDescriptor desc;
+    DeviceInfoUpdateCommand command =
+        testDeviceInfoUpdateCommands[GetData<uint32_t>() % testDeviceInfoUpdateCommands.size()];
+    audioDeviceLock->OnDeviceInfoUpdated(desc, command);
+}
+
+void AudioDeviceLockOnDeviceStatusUpdatedFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+
+    DStatusInfo statusInfo;
+    bool isStop = GetData<uint32_t>() % NUM_2;
+    audioDeviceLock->OnDeviceStatusUpdated(statusInfo, isStop);
+}
+
+void AudioDeviceLockGetExcludedDevicesFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr || AudioDeviceUsageVec.size() == 0) {
+        return;
+    }
+
+    AudioDeviceUsage audioDevUsage = AudioDeviceUsageVec[GetData<uint32_t>() % AudioDeviceUsageVec.size()];
+    audioDeviceLock->GetExcludedDevices(audioDevUsage);
+}
+
+void AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+
+    AudioDeviceDescriptor desc;
+    bool isConnected = GetData<uint32_t>() % NUM_2;
+    audioDeviceLock->OnPnpDeviceStatusUpdated(desc, isConnected);
+}
+
+void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    if (audioDeviceLock == nullptr) {
+        return;
+    }
+
+    std::string macAddress = "test_mac_address";
+    bool support = GetData<uint32_t>() % NUM_2;
+    audioDeviceLock->UpdateSpatializationSupported(macAddress, support);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     RegisterTrackerFuzzTest,
     SendA2dpConnectedWhileRunningFuzzTest,
@@ -226,6 +355,15 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     GetCurrentRendererChangeInfosFuzzTest,
     GetVolumeGroupInfosFuzzTest,
     SetAudioSceneFuzzTest,
+    AudioDeviceLockGetDevicesFuzzTest,
+    AudioDeviceLockGetPreferredOutputDeviceDescriptorsFuzzTest,
+    AudioDeviceLockGetPreferredInputDeviceDescriptorsFuzzTest,
+    AudioDeviceLockUpdateAppVolumeFuzzTest,
+    AudioDeviceLockOnDeviceInfoUpdatedFuzzTest,
+    AudioDeviceLockOnDeviceStatusUpdatedFuzzTest,
+    AudioDeviceLockGetExcludedDevicesFuzzTest,
+    AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest,
+    AudioDeviceLockUpdateSpatializationSupportedFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -138,6 +138,7 @@ public:
     uint32_t GetLatency(const std::string &sessionId);
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType);
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume);
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState);
     void ResetInfo();  // Use for testing temporarily.
     void UpdateDefaultAudioEffect();
     bool CheckSceneTypeMatch(const std::string &sinkSceneType, const std::string &sceneType);
@@ -185,6 +186,9 @@ private:
     int32_t InitEffectBufferInner(const std::string &sessionID);
     int32_t InitAudioEffectChainDynamicInner(const std::string &sceneType);
     int32_t QueryEffectChannelInfoInner(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    int32_t SetAbsVolumeStateToEffectInner(const bool absVolumeState);
+    int32_t EffectDspAbsVolumeStateUpdate(const bool absVolumeState);
+    int32_t EffectApAbsVolumeStateUpdate(const bool absVolumeState);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -246,6 +250,7 @@ private:
     bool hasLoadedEffectProperties_ = false;
     std::condition_variable cv_;
     bool defaultEffectChainCreated_ = false;
+    bool absVolumeState_ = true;
 
 #ifdef SENSOR_ENABLE
     std::shared_ptr<HeadTracker> headTracker_;

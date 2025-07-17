@@ -156,7 +156,6 @@ void AudioPolicyServSendFuzzTest()
     audioPolicyServerHandler->SendRendererDeviceChangeEvent(clientPid, sessionId, outputDeviceInfo, reason);
     audioPolicyServerHandler->SendRecreateRendererStreamEvent(clientPid, sessionId, streamFlag, reason);
     audioPolicyServerHandler->SendRecreateCapturerStreamEvent(clientPid, sessionId, streamFlag, reason);
-    audioPolicyServerHandler->SendConcurrencyEventWithSessionIDCallback(sessionId);
  
     AudioCapturerInfo capturerInfo;
     AudioStreamInfo streamInfo;

@@ -239,6 +239,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
     DM_DEVICE_TYPE_UWB = 0x06C,
+    DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {

@@ -213,5 +213,117 @@ HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_008, TestSize.Level1)
     auto result = audioSpeed->ChangeSpeedFor32Bit(buffer, bufferSize, outBuffer, outBufferSize);
     EXPECT_EQ(result, bufferSize);
 }
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_009.
+* @tc.desc  : Test ChangeSpeedFor32Bit.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_009, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_F32LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->LoadChangeSpeedFunc();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_010.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_010, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_U8;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_011.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_011, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_S24LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_012.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_012, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_S32LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_013.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_013, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_F32LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_014.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_014, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = SAMPLE_S16LE;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioSpeed API
+* @tc.type  : FUNC
+* @tc.number: AudioSpeedUnitTest_015.
+* @tc.desc  : Test Flush.
+*/
+HWTEST(AudioSpeedUnitTest, AudioSpeedUnitTest_015, TestSize.Level1)
+{
+    size_t rate = 0;
+    size_t format = INVALID_WIDTH;
+    size_t channels = 1;
+    auto audioSpeed = std::make_shared<AudioSpeed>(rate, format, channels);
+    auto result = audioSpeed->Flush();
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

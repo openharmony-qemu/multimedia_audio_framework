@@ -32,7 +32,6 @@ interface IPolicyProviderIpc {
     void NearlinkGetRenderPosition([out] unsigned int delayValue);
     void GetAndSaveClientType([in] unsigned int uid, [in] String bundleName);
     void GetMaxRendererInstances([out] int maxInstances);
-    void ActivateConcurrencyFromServer([in] int incomingPipe); // AudioPipeType
     void NotifyCapturerRemoved([in] unsigned long sessionId);
     void LoadModernInnerCapSink([in] int innerCapId);
     void UnloadModernInnerCapSink([in] int innerCapId);

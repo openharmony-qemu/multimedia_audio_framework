@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "AudioStateManager"
+#endif
 
 #include "audio_state_manager.h"
 #include "audio_policy_log.h"

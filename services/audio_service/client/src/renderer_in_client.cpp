@@ -918,5 +918,14 @@ void SpatializationStateChangeCallbackImpl::OnSpatializationStateChange(
         rendererInClient->OnSpatializationStateChange(spatializationState);
     }
 }
+
+void RendererInClientInner::FlushSpeedBuffer()
+{
+    std::lock_guard lock(speedMutex_);
+
+    if (audioSpeed_ != nullptr) {
+        audioSpeed_->Flush();
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

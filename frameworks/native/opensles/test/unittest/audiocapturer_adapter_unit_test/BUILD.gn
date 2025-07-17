@@ -59,5 +59,6 @@ ohos_unittest("audio_capturer_adapter_unit_test") {
     "ipc:ipc_single",
     "opensles:libSLES",
     "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
   ]
 }

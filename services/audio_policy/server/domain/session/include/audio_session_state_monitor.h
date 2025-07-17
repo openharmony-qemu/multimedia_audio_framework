@@ -25,7 +25,7 @@ class AudioSessionStateMonitor {
 public:
     virtual ~AudioSessionStateMonitor() = default;
     virtual void OnAudioSessionTimeOut(int32_t pid) = 0;
-    void StartMonitor(int32_t pid);
+    void StartMonitor(int32_t pid, time_t duration);
     void StopMonitor(int32_t pid);
     void RemoveFromMonitorMap(int32_t pid);
 

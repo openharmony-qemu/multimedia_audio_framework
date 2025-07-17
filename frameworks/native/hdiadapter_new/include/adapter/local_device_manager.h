@@ -74,7 +74,7 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
-    void SetDmDeviceType(uint16_t dmDeviceType) override;
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void SetAudioScene(const AudioScene scene) override;
 
@@ -100,7 +100,7 @@ private:
     std::mutex adapterMtx_;
     std::vector<LocalParameter> reSetParams_;
     std::mutex reSetParamsMtx_;
-    uint16_t dmDeviceType_ = 0;
+    std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::atomic<AudioScene> currentAudioScene_ = AUDIO_SCENE_DEFAULT;
 };

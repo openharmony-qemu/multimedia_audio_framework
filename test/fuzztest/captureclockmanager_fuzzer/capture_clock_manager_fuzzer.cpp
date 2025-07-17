@@ -47,8 +47,20 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 3;
+const uint8_t TESTSIZE = 5;
+static int32_t NUM_2 = 2;
+constexpr uint64_t MOCK_POSITION_INC = 960;
 constexpr uint32_t MOCK_SAMPLE_RATE = 48000;
+constexpr uint32_t MOCK_SAMPLE_RATE_2 = 96000;
+constexpr uint64_t MOCK_TIMESTAMP_1 = 1000000000;
+constexpr uint64_t MOCK_TIMESTAMP_2 = 1020000000;
+constexpr uint64_t MOCK_TIMESTAMP_4 = 1100000000;
+constexpr uint64_t MOCK_TIMESTAMP_5 = 1120000000;
+constexpr uint64_t MOCK_POSITION_1 = 0;
+constexpr uint64_t MOCK_POSITION_2 = 960;
+constexpr uint64_t MOCK_POSITION_3 = 1920;
+constexpr uint64_t MOCK_POSITION_4 = 2880;
+constexpr uint64_t MOCK_POSITION_5 = 3840;
 
 typedef void (*TestFuncs)();
 
@@ -116,10 +128,50 @@ void CaptureClockStartAndStopFuzzTest()
     clock.Stop();
 }
 
+void GetTimeStampByPositionNormalFuzzTest()
+{
+    CapturerClockManager::GetInstance().CreateCapturerClock(1, MOCK_SAMPLE_RATE);
+    std::shared_ptr<CapturerClock> capturerClock_ = CapturerClockManager::GetInstance().GetCapturerClock(1);
+    if (capturerClock_ == nullptr) {
+        return;
+    }
+    capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_1, MOCK_SAMPLE_RATE, MOCK_POSITION_INC);
+
+    capturerClock_->Start();
+    capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_1, MOCK_SAMPLE_RATE, MOCK_POSITION_INC);
+    capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_2, MOCK_SAMPLE_RATE, MOCK_POSITION_INC);
+    uint64_t timestamp;
+    capturerClock_->GetTimeStampByPosition(MOCK_POSITION_1, timestamp);
+    capturerClock_->GetTimeStampByPosition(MOCK_POSITION_2, timestamp);
+    capturerClock_->GetTimeStampByPosition(MOCK_POSITION_3, timestamp);
+    capturerClock_->Stop();
+    CapturerClockManager::GetInstance().DeleteCapturerClock(1);
+}
+
+void GetTimeStampByPositionDifferentFuzzTest()
+{
+    CapturerClockManager::GetInstance().CreateCapturerClock(1, MOCK_SAMPLE_RATE);
+    std::shared_ptr<CapturerClock> capturerClock_ = CapturerClockManager::GetInstance().GetCapturerClock(1);
+    if (capturerClock_ == nullptr) {
+        return;
+    }
+    capturerClock_->Start();
+
+    capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_4, MOCK_SAMPLE_RATE_2, MOCK_POSITION_INC * NUM_2);
+    capturerClock_->SetTimeStampByPosition(MOCK_TIMESTAMP_5, MOCK_SAMPLE_RATE_2, MOCK_POSITION_INC * NUM_2);
+
+    uint64_t timestamp;
+    capturerClock_->GetTimeStampByPosition(MOCK_POSITION_4, timestamp);
+    capturerClock_->GetTimeStampByPosition(MOCK_POSITION_5, timestamp);
+    CapturerClockManager::GetInstance().DeleteCapturerClock(1);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     GetMediaRenderDeviceFuzzTest,
     GetRecordCaptureDeviceFuzzTest,
     CaptureClockStartAndStopFuzzTest,
+    GetTimeStampByPositionNormalFuzzTest,
+    GetTimeStampByPositionDifferentFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

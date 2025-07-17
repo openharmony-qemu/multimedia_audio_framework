@@ -98,8 +98,6 @@ public:
 
     virtual int32_t GetMaxRendererInstances() = 0;
 
-    virtual int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe) = 0;
-
     virtual int32_t NotifyCapturerRemoved(uint64_t sessionId) = 0;
 
 #ifdef HAS_FEATURE_INNERCAPTURER

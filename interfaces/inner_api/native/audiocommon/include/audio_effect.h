@@ -50,6 +50,7 @@ enum HdiSetParamCommandCode {
     HDI_FOLD_STATE = 12,
     HDI_LID_STATE = 13,
     HDI_QUERY_CHANNELLAYOUT = 14,
+    HDI_ABS_VOLUME_STATE = 15,
 };
 
 enum AudioSpatialDeviceType {
@@ -658,6 +659,7 @@ enum AudioEffectChainSetParamIndex {
     FOLD_STATE_INDEX = 10,
     LID_STATE_INDEX = 11,
     LOUDNESS_GAIN_INDEX = 12,
+    ABS_VOLUME_STATE = 13,
     MAX_PARAM_INDEX,
 };
 

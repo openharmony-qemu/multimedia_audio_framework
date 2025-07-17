@@ -61,10 +61,22 @@ void AudioServerUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
+enum PermissionStatus {
+    PERMISSION_GRANTED = 0,
+    PERMISSION_DENIED = 1,
+    PERMISSION_UNKNOWN = 2,
+};
+
 class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
 public:
     void OnDataTransferStateChange(const int32_t &callbackId,
             const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
+class WakeUpSourceCallbackTest : public WakeUpSourceCallback {
+public:
+    void OnCapturerState(bool isActive) override {}
+    void OnWakeupClose() override {}
 };
 
 /**
@@ -1208,23 +1220,6 @@ HWTEST_F(AudioServerUnitTest, IsSatellite_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test Dump API
- * @tc.type  : FUNC
- * @tc.number: Dump_001
- * @tc.desc  : Test Dump interface.
- */
-HWTEST_F(AudioServerUnitTest, Dump_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    std::vector<std::u16string> args;
-    args.push_back(u"-fb");
-    args.push_back(u"test");
-
-    auto ret = audioServer->Dump(0, args);
-    EXPECT_NE(ret, 0);
-}
-
-/**
  * @tc.name  : Test SetVoiceVolume API
  * @tc.type  : FUNC
  * @tc.number: SetVoiceVolume_001
@@ -1263,97 +1258,6 @@ HWTEST_F(AudioServerUnitTest, ResetRouteForDisconnect_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     auto ret = audioServer->ResetRouteForDisconnect(deviceType);
     EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test CheckPlaybackPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaybackPermission_001
- * @tc.desc  : Test CheckPlaybackPermission interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    bool ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test CheckPlaybackPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaybackPermission_002
- * @tc.desc  : Test CheckPlaybackPermission interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_PLAYBACK;
-    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
-    bool ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-
-    config.callerUid = 0;
-    config.rendererInfo.streamUsage = STREAM_USAGE_ULTRASONIC;
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, false);
-
-    config.callerUid = 6699; // msdp
-    ret = audioServer->CheckPlaybackPermission(config);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test CheckInnerRecorderPermission API
- * @tc.type  : FUNC
- * @tc.number: CheckInnerRecorderPermission_001
- * @tc.desc  : Test CheckInnerRecorderPermission interface.
- */
-HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_RECORD;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    auto ret = audioServer->CheckInnerRecorderPermission(config);
-    EXPECT_EQ(ret, 2);
-
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC_REF;
-    ret = audioServer->CheckInnerRecorderPermission(config);
-    EXPECT_EQ(ret, 2);
-}
-
-/**
- * @tc.name  : Test HandleCheckRecorderBackgroundCapture API
- * @tc.type  : FUNC
- * @tc.number: HandleCheckRecorderBackgroundCapture_001
- * @tc.desc  : Test HandleCheckRecorderBackgroundCapture interface.
- */
-HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    AudioProcessConfig config;
-    config.audioMode = AUDIO_MODE_RECORD;
-    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
-    config.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
-    int32_t ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
-    EXPECT_EQ(ret, 0);
-
-    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
-    ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
-    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1478,7 +1382,8 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
     int32_t pid = IPCSkeleton::GetCallingPid();
     audioServer->audioDataTransferCbMap_[pid] = callback;
     AudioRendererDataTransferStateChangeInfo info;
-    audioServer->OnDataTransferStateChange(pid, 0, info);
+    int callbackId = 0;
+    audioServer->OnDataTransferStateChange(pid, callbackId, info);
     audioServer->RemoveRendererDataTransferCallback(pid);
     EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
@@ -2031,6 +1936,502 @@ HWTEST_F(AudioServerUnitTest, CheckMaxLoopbackInstances_002, TestSize.Level1)
     AudioService::GetInstance()->SetIncMaxLoopbackStreamCnt(AUDIO_MODE_RECORD);
     int32_t ret = audioServer->CheckMaxLoopbackInstances(AUDIO_MODE_RECORD);
     EXPECT_EQ(ret, ERR_EXCEED_MAX_STREAM_CNT);
+}
+
+/**
+ * @tc.name  : Test Dump API
+ * @tc.type  : FUNC
+ * @tc.number: Dump_001
+ * @tc.desc  : Test Dump interface.
+ */
+HWTEST_F(AudioServerUnitTest, Dump_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::u16string> args;
+    args.push_back(u"-fb");
+    args.push_back(u"test");
+
+    auto ret = audioServer->Dump(0, args);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test Dump API
+ * @tc.type  : FUNC
+ * @tc.number: Dump_003
+ * @tc.desc  : Test Dump interface.
+ */
+HWTEST_F(AudioServerUnitTest, Dump_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::vector<std::u16string> args;
+    args.push_back(u"-other");
+    args.push_back(u"test");
+
+    auto ret = audioServer->Dump(0, args);
+    EXPECT_NE(ret, 0);
+}
+
+/**
+ * @tc.name  : Test OnDataTransferStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnDataTransferStateChange_002
+ * @tc.desc  : Test OnDataTransferStateChange interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t callbackId = 1;
+    AudioRendererDataTransferStateChangeInfo info;
+    info.clientUID = 1000;
+    info.sessionId = 1;
+    info.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    info.stateChangeType = DataTransferStateChangeType::AUDIO_STREAM_START;
+    info.isBackground = false;
+    info.badDataRatio[0] = 0;
+    info.badDataRatio[1] = 0;
+
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    info.clientPid = pid;
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    audioServer->OnDataTransferStateChange(pid, callbackId, info);
+}
+
+/**
+ * @tc.name  : Test OnStart API
+ * @tc.type  : FUNC
+ * @tc.number: OnStart_001
+ * @tc.desc  : Test OnStart interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnStart_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->OnStart();
+}
+
+/**
+ * @tc.name  : Test ProcessKeyValuePairs API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessKeyValuePairs_001
+ * @tc.desc  : Test ProcessKeyValuePairs interface.
+ */
+HWTEST_F(AudioServerUnitTest, ProcessKeyValuePairs_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string key = "test_key";
+    std::vector<std::pair<std::string, std::string>> kvpairs = {{"sub_key1", "value1"}, {"sub_key2", "value2"}};
+    std::unordered_map<std::string, std::set<std::string>> subKeyMap = {
+        {"sub_key1", {"effect"}},
+        {"sub_key2", {"effect"}}
+    };
+    std::string value;
+
+    EXPECT_TRUE(audioServer->ProcessKeyValuePairs(key, kvpairs, subKeyMap, value));
+}
+
+/**
+ * @tc.name  : Test ProcessKeyValuePairs API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessKeyValuePairs_002
+ * @tc.desc  : Test ProcessKeyValuePairs interface.
+ */
+HWTEST_F(AudioServerUnitTest, ProcessKeyValuePairs_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::string key = "test_key";
+    std::vector<std::pair<std::string, std::string>> kvpairs = {{"sub_key1", "value1"}, {"invalid_key2", "value2"}};
+    std::unordered_map<std::string, std::set<std::string>> subKeyMap = {
+        {"sub_key1", {"effect"}},
+        {"sub_key2", {"effect"}}
+    };
+    std::string value;
+
+    EXPECT_FALSE(audioServer->ProcessKeyValuePairs(key, kvpairs, subKeyMap, value));
+}
+
+/**
+ * @tc.name  : Test CreateAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerCreateAudioStream_002
+ * @tc.desc  : Test CreateAudioStream interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerCreateAudioStream_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    sptr<IRemoteObject> remoteObject = nullptr;
+    std::shared_ptr<PipeInfoGuard> pipeinfoGuard = std::make_shared<PipeInfoGuard>(0);
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::VASSISTANT_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_DIRECT;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.isLoopback = true;
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+
+    config.capturerInfo.isLoopback = false;
+    remoteObject = audioServer->CreateAudioStream(config, AudioServer::MEDIA_SERVICE_UID, pipeinfoGuard);
+    EXPECT_EQ(nullptr, remoteObject);
+}
+
+/**
+ * @tc.name  : Test NotifyProcessStatus API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyProcessStatus_001
+ * @tc.desc  : Test NotifyProcessStatus interface.
+ */
+HWTEST_F(AudioServerUnitTest, NotifyProcessStatus_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->NotifyProcessStatus();
+}
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+/**
+ * @tc.name  : Test HandleCheckCaptureLimit API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCheckCaptureLimit_001
+ * @tc.desc  : Test HandleCheckCaptureLimit interface.
+ */
+HWTEST_F(AudioServerUnitTest, HandleCheckCaptureLimit_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig resetConfig;
+    AudioPlaybackCaptureConfig filterConfig;
+    resetConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    EXPECT_EQ(audioServer->HandleCheckCaptureLimit(resetConfig, filterConfig), true);
+    resetConfig.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_EQ(audioServer->HandleCheckCaptureLimit(resetConfig, filterConfig), false);
+}
+#endif
+
+/**
+ * @tc.name  : Test IsNormalIpcStream API
+ * @tc.type  : FUNC
+ * @tc.number: IsNormalIpcStream_001
+ * @tc.desc  : Test IsNormalIpcStream interface.
+ */
+HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
+    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.rendererFlags = AUDIO_FLAG_DIRECT;
+    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
+
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    config.audioMode = AUDIO_MODE_RECORD;
+    EXPECT_TRUE(audioServer->IsNormalIpcStream(config));
+}
+
+/**
+ * @tc.name  : Test OnCapturerState API
+ * @tc.type  : FUNC
+ * @tc.number: OnCapturerState_001
+ * @tc.desc  : Test OnCapturerState interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnCapturerState_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->OnCapturerState(true, 0, 1);
+}
+
+/**
+ * @tc.name  : Test OnCapturerState API
+ * @tc.type  : FUNC
+ * @tc.number: OnCapturerState_002
+ * @tc.desc  : Test OnCapturerState interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnCapturerState_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    std::shared_ptr<WakeUpSourceCallback> callback = std::make_shared<WakeUpSourceCallbackTest>();
+    audioServer->wakeupCallback_ = callback;
+    audioServer->OnCapturerState(true, 1, 1);
+    audioServer->OnCapturerState(true, 0, 1);
+}
+
+/**
+ * @tc.name  : Test CheckInnerRecorderPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckInnerRecorderPermission_001
+ * @tc.desc  : Test CheckInnerRecorderPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    auto ret = audioServer->CheckInnerRecorderPermission(config);
+    EXPECT_EQ(ret, 2);
+
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC_REF;
+    ret = audioServer->CheckInnerRecorderPermission(config);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+ * @tc.name  : Test CheckInnerRecorderPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckInnerRecorderPermission_002
+ * @tc.desc  : Test CheckInnerRecorderPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckInnerRecorderPermission_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.appInfo.appTokenId = 12345;
+    config.capturerInfo.sourceType = SOURCE_TYPE_REMOTE_CAST;
+    EXPECT_NE(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
+
+    config.innerCapMode = MODERN_INNER_CAP;
+    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_GRANTED);
+
+    config.innerCapMode = INVALID_CAP_MODE;
+    config.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_UNKNOWN);
+
+    config.capturerInfo.sourceType = SOURCE_TYPE_INVALID;
+    EXPECT_EQ(audioServer->CheckInnerRecorderPermission(config), PERMISSION_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_001
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    bool ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_UNKNOWN;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CheckPlaybackPermission API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaybackPermission_002
+ * @tc.desc  : Test CheckPlaybackPermission interface.
+ */
+HWTEST_F(AudioServerUnitTest, CheckPlaybackPermission_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    config.rendererInfo.streamUsage = STREAM_USAGE_SYSTEM;
+    bool ret;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+
+    config.callerUid = 0;
+    config.rendererInfo.streamUsage = STREAM_USAGE_ULTRASONIC;
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, false);
+
+    config.callerUid = 6699; // msdp
+    ret = audioServer->CheckPlaybackPermission(config);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test HandleCheckRecorderBackgroundCapture API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCheckRecorderBackgroundCapture_001
+ * @tc.desc  : Test HandleCheckRecorderBackgroundCapture interface.
+ */
+HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_MMAP;
+    int32_t ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
+    EXPECT_EQ(ret, 0);
+
+    config.capturerInfo.capturerFlags = AUDIO_FLAG_NORMAL;
+    ret = audioServer->HandleCheckRecorderBackgroundCapture(config);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test HandleCheckRecorderBackgroundCapture API
+ * @tc.type  : FUNC
+ * @tc.number: HandleCheckRecorderBackgroundCapture_002
+ * @tc.desc  : Test HandleCheckRecorderBackgroundCapture interface.
+ */
+HWTEST_F(AudioServerUnitTest, HandleCheckRecorderBackgroundCapture_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    AudioProcessConfig config;
+    config.callerUid = 1001;
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_TRUE(audioServer->HandleCheckRecorderBackgroundCapture(config));
+
+    config.callerUid = 1000;
+    EXPECT_FALSE(audioServer->HandleCheckRecorderBackgroundCapture(config));
+}
+
+/**
+ * @tc.name  : Test CreateHdiSinkPort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateHdiSinkPort_001
+ * @tc.desc  : Test CreateHdiSinkPort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test CreateSinkPort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateSinkPort_001
+ * @tc.desc  : Test CreateSinkPort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateSinkPort_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    HdiIdBase idBase = HDI_ID_BASE_RENDER;
+    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
+    std::string idInfo = "test";
+    IAudioSinkAttr attr;
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
+    EXPECT_NE(result, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CreateSinkPort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateSinkPort_002
+ * @tc.desc  : Test CreateSinkPort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateSinkPort_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    HdiIdBase idBase = HDI_ID_BASE_RENDER;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+    std::string idInfo = "test";
+    IAudioSinkAttr attr;
+    uint32_t renderId = 0;
+    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
+    EXPECT_NE(result, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CreateSourcePort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateSourcePort_001
+ * @tc.desc  : Test CreateSourcePort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateSourcePort_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    HdiIdBase idBase = HDI_ID_BASE_CAPTURE;
+    HdiIdType idType = HDI_ID_TYPE_FAST;
+    std::string idInfo = "test";
+    IAudioSourceAttr attr;
+    attr.sourceType = 1;
+    uint32_t captureId = 0;
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
+    EXPECT_NE(result, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CreateSourcePort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateSourcePort_002
+ * @tc.desc  : Test CreateSourcePort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    HdiIdBase idBase = HDI_ID_BASE_CAPTURE;
+    HdiIdType idType = HDI_ID_TYPE_PRIMARY;
+    std::string idInfo = "test";
+    uint32_t captureId = 0;
+    IAudioSourceAttr attr;
+    attr.sourceType = 100;
+    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
+    EXPECT_NE(result, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test CreateHdiSourcePort API
+ * @tc.type  : FUNC
+ * @tc.number: CreateHdiSourcePort_001
+ * @tc.desc  : Test CreateHdiSourcePort interface.
+ */
+HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    uint32_t captureId = 0;
+    uint32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
+    EXPECT_NE(result, HDI_INVALID_ID);
+}
+
+/**
+ * @tc.name  : Test SetBtHdiInvalidState API
+ * @tc.type  : FUNC
+ * @tc.number: SetBtHdiInvalidState_001
+ * @tc.desc  : Test SetBtHdiInvalidState interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetBtHdiInvalidState_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->SetBtHdiInvalidState();
+}
+
+/**
+ * @tc.name  : Test SetActiveOutputDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetActiveOutputDevice_001
+ * @tc.desc  : Test SetActiveOutputDevice interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
+    audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

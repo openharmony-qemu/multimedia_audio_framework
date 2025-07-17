@@ -41,7 +41,6 @@
 #include "audio_interrupt_callback.h"
 #include "audio_policy_stub.h"
 #include "audio_server_death_recipient.h"
-#include "session_processor.h"
 #include "audio_collaborative_service.h"
 #include "audio_spatialization_service.h"
 #include "audio_policy_server_handler.h"
@@ -270,8 +269,6 @@ public:
     void OnAudioStreamRemoved(const uint64_t sessionID) override;
 
     int32_t Dump(int32_t fd, const std::vector<std::u16string> &args) override;
-
-    int32_t ReconfigureAudioChannel(uint32_t count, int32_t deviceType) override;
 
     int32_t GetPreferredOutputStreamType(const AudioRendererInfo &rendererInfo, int32_t &streamType) override;
 
@@ -524,12 +521,6 @@ public:
 
     int32_t MoveToNewPipe(uint32_t sessionId, int32_t pipeType) override;
 
-    int32_t SetAudioConcurrencyCallback(uint32_t sessionID, const sptr<IRemoteObject> &object) override;
-
-    int32_t UnsetAudioConcurrencyCallback(uint32_t sessionID) override;
-
-    int32_t ActivateAudioConcurrency(int32_t pipeType) override;
-
     int32_t InjectInterruption(const std::string &networkId, const InterruptEvent &event) override;
 
     int32_t SetInputDevice(int32_t deviceType, uint32_t sessionID, int32_t sourceType, bool isRunning) override;
@@ -707,7 +698,6 @@ private:
 
     // offload session
     void CheckSubscribePowerStateChange();
-    void CheckStreamMode(const int64_t activateSessionId);
     bool CheckAudioSessionStrategy(const AudioSessionStrategy &sessionStrategy);
 
     // for audio volume and mute status

@@ -56,7 +56,7 @@ public:
     virtual int32_t AddAllNodesToSource(const std::vector<HpaeCaptureMoveInfo> &moveInfos, bool isConnect) = 0;
     virtual std::string GetThreadName() = 0;
     virtual int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) = 0;
-    virtual void DumpSourceInfo() {};
+    virtual int32_t DumpSourceInfo() { return 0; };
     virtual void UploadDumpSourceInfo(std::string &deviceName)
     {
 #ifdef ENABLE_HIDUMP_DFX

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,32 +13,33 @@
  * limitations under the License.
  */
 
-#ifndef ST_AUDIO_POLICY_PARSER_FACTORY_H
-#define ST_AUDIO_POLICY_PARSER_FACTORY_H
+#ifndef AUDIO_STREAM_ID_ALLOCATOR_H
+#define AUDIO_STREAM_ID_ALLOCATOR_H
 
-#include "audio_policy_parser.h"
+#include <cstdint>
+#include <mutex>
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioPolicyParserFactory {
+
+class AudioStreamIdAllocator {
 public:
-    static AudioPolicyParserFactory& GetInstance()
+    uint32_t GenerateStreamId();
+    static AudioStreamIdAllocator& GetAudioStreamIdAllocator(void)
     {
-        static AudioPolicyParserFactory instance;
-        return instance;
+        static AudioStreamIdAllocator audioStreamIdAllocator;
+        return audioStreamIdAllocator;
     }
 
-    Parser& CreateParser(IPortObserver& observer)
-    {
-        static AudioPolicyParser policyParser(observer);
-        return policyParser;
-    }
+    AudioStreamIdAllocator(const AudioStreamIdAllocator&) = delete;
+    AudioStreamIdAllocator& operator=(const AudioStreamIdAllocator&) = delete;
+
 private:
-    AudioPolicyParserFactory(AudioPolicyParserFactory&) = delete;
-    AudioPolicyParserFactory() {}
-    ~AudioPolicyParserFactory() {}
+    AudioStreamIdAllocator() {};
+    ~AudioStreamIdAllocator() {};
+
+    std::mutex sessionIdAllocatoeMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-
-#endif // ST_AUDIO_POLICY_PARSER_FACTORY_H
+#endif // AUDIO_STREAM_ID_ALLOCATOR_H
