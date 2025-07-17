@@ -29,6 +29,7 @@ ohos_unittest("audio_utils_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
@@ -66,6 +67,7 @@ ohos_unittest("audio_utils_plus_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "googletest:gmock",
     "googletest:gtest",
     "init:libbegetutil",
@@ -99,6 +101,7 @@ ohos_unittest("audio_utils_pro_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "init:libbegetutil",
     "ipc:ipc_single",
   ]
@@ -130,6 +133,7 @@ ohos_unittest("audio_speed_unit_test") {
   ]
 
   external_deps = [
+    "c_utils:utils",
     "init:libbegetutil",
     "ipc:ipc_single",
   ]
