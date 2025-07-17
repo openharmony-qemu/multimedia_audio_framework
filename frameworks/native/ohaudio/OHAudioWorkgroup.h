@@ -16,6 +16,7 @@
 #ifndef OH_AUDIO_WORKGROUP_H
 #define OH_AUDIO_WORKGROUP_H
 
+#include <unordered_map>
 #include "audio_system_manager.h"
 
 namespace OHOS {
@@ -30,8 +31,12 @@ public:
     bool RemoveThread(int32_t tokenId);
     bool Start(uint64_t startTime, uint64_t deadlineTime);
     bool Stop();
-    int32_t GetRtgFd() const;
     int32_t workgroupId;
+    bool GetNeedUpdatePrioFlag();
+    void SetNeedUpdatePrioFlag(bool flag);
+private:
+    std::unordered_map<int32_t, bool> threads_;
+    bool isNeedUpdatePrio_ = false;
 };
 
 } // namespace AudioStandard

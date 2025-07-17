@@ -1740,7 +1740,8 @@ public:
     * @return Returns {@link AUDIO_OK} if the operation is successfully.
     * @test
     */
-    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime,
+        std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
     /**
     * @brief stop the deadline workgroup.
@@ -1760,6 +1761,26 @@ public:
     * @test
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
+    class WorkgroupPrioRecorder {
+    public:
+        WorkgroupPrioRecorder(int32_t grpId);
+        ~WorkgroupPrioRecorder() = default;
+        void SetRestoreByPermission(bool isByPermission);
+        bool GetRestoreByPermission();
+        int32_t GetGrpId();
+        void RecordThreadPrio(int32_t tokenId);
+        int32_t RestoreGroupPrio(bool isByPermission);
+        int32_t RestoreThreadPrio(int32_t tokenId);
+    private:
+        int32_t grpId_;
+        std::unordered_map<int32_t, int32_t> threads_;
+        bool restoreByPermission_;
+        std::mutex workgroupThreadsMutex_;
+    };
+    std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
+    int32_t ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+        const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
@@ -1833,6 +1854,8 @@ private:
     void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info);
     bool IsValidToStartGroup(int32_t workgroupId);
     bool hasSystemPermission_ = false;
+    std::unordered_map<int32_t, std::shared_ptr<WorkgroupPrioRecorder>> workgroupPrioRecorderMap_;
+    std::mutex workgroupPrioRecorderMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

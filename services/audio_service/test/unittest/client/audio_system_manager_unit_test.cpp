@@ -623,11 +623,16 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
 HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
 {
     AudioSystemManager manager;
+    bool needUpdatePrio = true;
     int32_t testWorkgroupid = 1;
     int32_t startTimeMs = 1000;
     int32_t endTimeMs = 500;
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
 }
 
 #ifdef TEMP_DISABLE
@@ -752,6 +757,257 @@ HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
 
     int32_t result = audioSystemManager.CreateAudioWorkgroup();
     EXPECT_GT(result, 0);
+}
+
+/**
+ * @tc.name   : Test WorkgroupPrioRecorder constructor
+ * @tc.number : WorkgroupPrioRecorder_001
+ * @tc.desc   : Test WorkgroupPrioRecorder constructor
+ */
+HWTEST(AudioSystemManagerUnitTest, WorkgroupPrioRecorder_001, TestSize.Level1)
+{
+    int32_t grpId = 1;
+    AudioSystemManager::WorkgroupPrioRecorder recorder(grpId);
+    EXPECT_EQ(recorder.grpId_, grpId);
+    EXPECT_EQ(recorder.restoreByPermission_, false);
+}
+ 
+/**
+ * @tc.name   : Test SetRestoreByPermission
+ * @tc.number : SetRestoreByPermission_001
+ * @tc.desc   : Test SetRestoreByPermission when isByPermission true
+ */
+HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.SetRestoreByPermission(true);
+    EXPECT_TRUE(recorder.restoreByPermission_);
+}
+ 
+/**
+ * @tc.name   : Test SetRestoreByPermission
+ * @tc.number : SetRestoreByPermission_002
+ * @tc.desc   : Test SetRestoreByPermission when isByPermission false
+ */
+HWTEST(AudioSystemManagerUnitTest, SetRestoreByPermission_002, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.SetRestoreByPermission(false);
+    EXPECT_FALSE(recorder.restoreByPermission_);
+}
+ 
+/**
+ * @tc.name   : Test GetRestoreByPermission
+ * @tc.number : GetRestoreByPermission_001
+ * @tc.desc   : Test SetRestoreByPermission when permission is set
+ */
+HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.restoreByPermission_ = true;
+    EXPECT_TRUE(recorder.GetRestoreByPermission());
+}
+ 
+/**
+ * @tc.name   : Test GetRestoreByPermission
+ * @tc.number : GetRestoreByPermission_002
+ * @tc.desc   : Test SetRestoreByPermission when permission is not set
+ */
+HWTEST(AudioSystemManagerUnitTest, GetRestoreByPermission_002, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.restoreByPermission_ = false;
+    EXPECT_FALSE(recorder.GetRestoreByPermission());
+}
+ 
+/**
+ * @tc.name   : Test RecordThreadPrio
+ * @tc.number : RecordThreadPrio_001
+ * @tc.desc   : Test RecordThreadPrio inteface
+ */
+HWTEST(AudioSystemManagerUnitTest, RecordThreadPrio_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t tokenId = 1;
+ 
+    // Add the tokenId to the threads_ map
+    recorder.threads_[tokenId] = 2;
+ 
+    // Call the method under test
+    recorder.RecordThreadPrio(tokenId);
+ 
+    // Verify the result
+    auto it = recorder.threads_.find(tokenId);
+    ASSERT_TRUE(it != recorder.threads_.end());
+    EXPECT_EQ(it->second, 2);
+}
+ 
+/**
+ * @tc.name   : Test RestoreGroupPrio
+ * @tc.number : RestoreGroupPrio_001
+ * @tc.desc   : Test RestoreGroupPrio set permission
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t result = recorder.RestoreGroupPrio(true);
+    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_TRUE(recorder.restoreByPermission_);
+}
+ 
+/**
+ * @tc.name   : Test RestoreGroupPrio
+ * @tc.number : RestoreGroupPrio_002
+ * @tc.desc   : Test RestoreGroupPrio not set permission
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreGroupPrio_002, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t result = recorder.RestoreGroupPrio(false);
+    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_TRUE(recorder.threads_.empty());
+}
+ 
+/**
+ * @tc.name   : Test RestoreThreadPrio
+ * @tc.number : RestoreThreadPrio_001
+ * @tc.desc   : Test RestoreThreadPrio when tokenId not exist
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t tokenId = 1;
+    recorder.threads_[tokenId] = 1;
+    int32_t result = recorder.RestoreThreadPrio(tokenId + 1);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+ 
+/**
+ * @tc.name   : Test RestoreThreadPrio
+ * @tc.number : RestoreThreadPrio_002
+ * @tc.desc   : Test RestoreThreadPrio when tokenId exist
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_002, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t tokenId = 1;
+    recorder.threads_[tokenId] = 1;
+    int32_t result = recorder.RestoreThreadPrio(tokenId);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+ 
+/**
+ * @tc.name   : Test RestoreThreadPrio
+ * @tc.number : RestoreThreadPrio_003
+ * @tc.desc   : Test RestoreThreadPrio check tokenId
+ */
+HWTEST(AudioSystemManagerUnitTest, RestoreThreadPrio_003, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    int32_t tokenId = 1;
+    recorder.threads_[tokenId] = 1;
+    int32_t result = recorder.RestoreThreadPrio(tokenId);
+    EXPECT_EQ(result, AUDIO_OK);
+    EXPECT_EQ(recorder.threads_.find(tokenId), recorder.threads_.end());
+}
+ 
+/**
+ * @tc.name   : Test GetGrpId
+ * @tc.number : GetGrpId_001
+ * @tc.desc   : Test GetGrpId when call
+ */
+HWTEST(AudioSystemManagerUnitTest, GetGrpId_001, TestSize.Level1)
+{
+    AudioSystemManager::WorkgroupPrioRecorder recorder(1);
+    recorder.grpId_ = 100;
+    EXPECT_EQ(recorder.GetGrpId(), 100);
+}
+ 
+/**
+ * @tc.name   : Test GetRecorderByGrpId
+ * @tc.number : GetRecorderByGrpId_001
+ * @tc.desc   : Test GetRecorderByGrpId when grpId exist
+ */
+HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    int32_t grpId = 1;
+    auto recorder = std::make_shared<AudioSystemManager::WorkgroupPrioRecorder>(1);
+    manager.workgroupPrioRecorderMap[grpId] = recorder;
+    auto result = manager.GetRecorderByGrpId(grpId);
+    EXPECT_EQ(result, recorder);
+}
+ 
+/**
+ * @tc.name   : Test GetRecorderByGrpId
+ * @tc.number : GetRecorderByGrpId_002
+ * @tc.desc   : Test GetRecorderByGrpId when grpId not exist
+ */
+HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_002, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    int32_t grpId = 1;
+    auto result = manager.GetRecorderByGrpId(grpId);
+    EXPECT_EQ(result, nullptr);
+}
+ 
+/**
+ * @tc.name   : Test OnWorkgroupChange
+ * @tc.number : OnWorkgroupChange_001
+ * @tc.desc   : Test OnWorkgroupChange when allowed is true
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_001, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    AudioWorkgroupChangeInfo info;
+    info.pid = 1;
+    info.groupId = 1;
+    info.startAllowed = true;
+ 
+    manager.OnWorkgroupChange(info);
+ 
+    // Check if the permission is set correctly
+    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
+}
+ 
+/**
+ * @tc.name   : Test OnWorkgroupChange
+ * @tc.number : OnWorkgroupChange_002
+ * @tc.desc   : Test OnWorkgroupChange when allowed is false
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_002, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    AudioWorkgroupChangeInfo info;
+    info.pid = 1;
+    info.groupId = 1;
+    info.startAllowed = false;
+ 
+    manager.OnWorkgroupChange(info);
+ 
+    // Check if the permission is set correctly
+    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
+}
+ 
+/**
+ * @tc.name   : Test OnWorkgroupChange
+ * @tc.number : OnWorkgroupChange_003
+ * @tc.desc   : Test OnWorkgroupChange when recorder is nullptr
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_003, TestSize.Level1)
+{
+    AudioSystemManager manager;
+    AudioWorkgroupChangeInfo info;
+    info.pid = 1;
+    info.groupId = 1;
+    info.startAllowed = false;
+ 
+    manager.OnWorkgroupChange(info);
+ 
+    // Check if the permission is set correctly
+    EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
+    // Check if the recorder is nullptr
+    EXPECT_EQ(manager.GetRecorderByGrpId(info.groupId), nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

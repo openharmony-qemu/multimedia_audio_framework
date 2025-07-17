@@ -1215,6 +1215,7 @@ ohos_unittest("audio_resource_service_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
     ]
   external_deps = [
     "c_utils:utils",
