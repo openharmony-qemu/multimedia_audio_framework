@@ -240,5 +240,41 @@ int32_t AudioSpeed::ChangeSpeedForFloat(float *buffer, int32_t bufferSize,
     outBufferSize = outSamples * static_cast<int32_t>(formatSize_ * channels_);
     return bufferSize;
 }
+
+int32_t AudioSpeed::Flush()
+{
+    Trace trace("AudioSpeed::Flush");
+    sonicFlushStream(sonicStream_);
+    std::unique_ptr<uint8_t[]> tmpBuffer = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
+
+    int samplesWritten = 0;
+    const size_t channelMultiplier = static_cast<size_t>(channels_);
+    do {
+        switch (format_) {
+            case SAMPLE_U8:
+                samplesWritten = sonicReadUnsignedCharFromStream(sonicStream_,
+                    reinterpret_cast<uint8_t*>(tmpBuffer.get()),
+                    MAX_SPEED_BUFFER_SIZE / channelMultiplier);
+                break;
+            case SAMPLE_S24LE:
+            case SAMPLE_S32LE:
+            case SAMPLE_F32LE:
+                samplesWritten = sonicReadFloatFromStream(sonicStream_,
+                    reinterpret_cast<float*>(tmpBuffer.get()),
+                    MAX_SPEED_BUFFER_SIZE / (channelMultiplier * sizeof(float)));
+                break;
+            case SAMPLE_S16LE:
+                samplesWritten = sonicReadShortFromStream(sonicStream_,
+                    reinterpret_cast<short*>(tmpBuffer.get()),
+                    MAX_SPEED_BUFFER_SIZE / (channelMultiplier * sizeof(short)));
+                break;
+            default:
+                AUDIO_ERR_LOG("invalid format_");
+                samplesWritten = 0;
+                break;
+        }
+    } while (samplesWritten > 0);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS
