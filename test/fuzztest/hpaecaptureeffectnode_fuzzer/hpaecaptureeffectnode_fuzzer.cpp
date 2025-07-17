@@ -48,9 +48,6 @@ constexpr uint8_t TESTSIZE = 2;
 
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
-const uint32_t DEFAULT_FORMAT = 16;
-const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t DEFAULT_CHANNEL = 2;
 
 template<class T>
 T GetData()
@@ -87,30 +84,6 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.format = SAMPLE_S16LE;
     nodeInfo.sceneType = HPAE_SCENE_RECORD;
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
-}
-
-static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
-{
-    attr.adapterName = "";
-    attr.openMicSpeaker = 0;
-    attr.format = AudioSampleFormat::INVALID_WIDTH;
-    attr.sampleRate = SAMPLE_RATE_48000;
-    attr.channel = STEREO;
-    attr.volume = 0.0f;
-    attr.bufferSize = 0;
-    attr.isBigEndian = false;
-    attr.filePath = g_rootCapturerPath.c_str();
-    attr.deviceNetworkId = NULL;
-    attr.deviceType = 0;
-    attr.sourceType = 0;
-    attr.channelLayout = 0;
-    attr.audioStreamFlag = 0;
-}
-
-
-static AudioSampleFormat ConverFormat(uint32_t format)
-{
-    return static_cast<AudioSampleFormat>(format / BITLENGTH - 1);
 }
 
 void ConnectWithInfoFuzzTest()
