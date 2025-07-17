@@ -111,7 +111,7 @@ int32_t AudioPolicyManagerListenerStubImpl::OnBackgroundMute(const int32_t uid)
 }
 
 int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std::string &bundleName,
-    const std::string &listType, bool& ret)
+    const std::string &listType, bool &ret)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();
