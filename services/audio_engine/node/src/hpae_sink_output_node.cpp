@@ -358,6 +358,7 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 
 int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
 {
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     int32_t ret = audioRendererSink_->SetPriPaPower();
     AUDIO_INFO_LOG("Open pri pa:[%{public}s] -- [%{public}s], ret:%{public}d",
         GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
