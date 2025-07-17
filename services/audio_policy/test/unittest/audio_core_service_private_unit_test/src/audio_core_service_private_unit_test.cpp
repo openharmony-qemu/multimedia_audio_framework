@@ -2266,5 +2266,33 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
     auto ret = audioCoreService->LoadSplitModule(splitArgs, networkId);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_124
+ * @tc.desc  : Test AudioCoreService::ProcessInputPipeNew()
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    pipeInfo->moduleInfo_.name = BLUETOOTH_MIC;
+
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+    audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
+    uint32_t flag = 0;
+
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    audioCoreService->ProcessInputPipeNew(pipeInfo, flag);
+    ASSERT_NE(audioCoreService->pipeManager_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

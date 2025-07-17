@@ -1599,12 +1599,22 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     uint32_t id = OPEN_PORT_FAILURE;
     CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr && pipeInfo->streamDescriptors_.size() > 0 &&
         pipeInfo->streamDescriptors_.front() != nullptr, OPEN_PORT_FAILURE, "pipeInfo is invalid");
+    CHECK_AND_RETURN_RET_LOG(pipeInfo->streamDescriptors_.front()->newDeviceDescs_.size() > 0 &&
+        pipeInfo->streamDescriptors_.front()->newDeviceDescs_[0] != nullptr, OPEN_PORT_FAILURE, "invalid streamDesc");
     if (pipeInfo->streamDescriptors_.front()->newDeviceDescs_.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
         AUDIO_INFO_LOG("[PipeExecInfo] remote cast device do not need open pipe");
         id = pipeInfo->streamDescriptors_.front()->sessionId_;
     } else {
-        HandleCommonSourceOpened(pipeInfo);
-        id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
+        if (pipeInfo->moduleInfo_.name == BLUETOOTH_MIC &&
+            pipeInfo->streamDescriptors_.front()->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP_IN) {
+                int32_t result = OpenA2dpInAudioPort(pipeInfo);
+                CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED,
+                    "LoadA2dpModule failed %{public}d", result);
+                id = pipeInfo->id_;
+        } else {
+            HandleCommonSourceOpened(pipeInfo);
+            id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
+        }
         if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
             audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
@@ -1618,6 +1628,57 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
     audioIOHandleMap_.AddIOHandleInfo(pipeInfo->moduleInfo_.name, id);
     AUDIO_INFO_LOG("[PipeExecInfo] Get HDI id: %{public}u, paIndex %{public}u", id, paIndex);
     return id;
+}
+
+int32_t AudioCoreService::OpenA2dpInAudioPort(std::shared_ptr<AudioPipeInfo> pipeInfo)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeInfo->streamDescriptors_.front();
+    shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_[0];
+    audioActiveDevice_.SetActiveBtDeviceMac(desc->macAddress_);
+    DeviceType deviceType = desc->deviceType_;
+    AudioStreamInfo audioStreamInfo = {};
+    audioActiveDevice_.GetActiveA2dpDeviceStreamInfo(DEVICE_TYPE_BLUETOOTH_A2DP_IN, audioStreamInfo);
+    std::string networkId = audioActiveDevice_.GetCurrentOutputDeviceNetworkId();
+    std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(
+        audioActiveDevice_.GetCurrentOutputDeviceType());
+    SourceType sourceType = streamDesc->capturerInfo_.sourceType;
+
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool ret = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_A2DP, moduleInfoList);
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_OPERATION_FAILED, "A2dp module is not exist in the configuration file");
+
+    // not load bt_a2dp_fast and bt_hdap, maybe need fix
+    int32_t loadRet = AudioServerProxy::GetInstance().LoadHdiAdapterProxy(HDI_DEVICE_MANAGER_TYPE_BLUETOOTH, "bt_a2dp");
+    if (loadRet) {
+        AUDIO_ERR_LOG("load adapter failed");
+    }
+    for (auto &moduleInfo : moduleInfoList) {
+        DeviceRole configRole = moduleInfo.role == "source" ? INPUT_DEVICE : OUTPUT_DEVICE;
+        DeviceRole deviceRole = INPUT_DEVICE;
+        AUDIO_INFO_LOG("Load a2dp module [%{public}s], role[%{public}d], config role[%{public}d]",
+            moduleInfo.name.c_str(), deviceRole, configRole);
+        if (configRole != deviceRole) {continue;}
+        AUDIO_INFO_LOG("A2dp device connects for the first time");
+        // a2dp device connects for the first time
+        GetA2dpModuleInfo(moduleInfo, audioStreamInfo, sourceType);
+        uint32_t paIndex = 0;
+        AudioIOHandle ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+        CHECK_AND_RETURN_RET_LOG(ioHandle != HDI_INVALID_ID,
+            ERR_INVALID_HANDLE, "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+        CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE,
+            ERR_OPERATION_FAILED, "OpenAudioPort failed paId[%{public}u]", paIndex);
+        pipeInfo->id_ = ioHandle;
+        pipeInfo->paIndex_ = paIndex;
+        pipeInfo->name_ = "a2dp_input";
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->adapterName_ = "a2dp";
+        pipeInfo->moduleInfo_ = moduleInfo;
+        pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
+    }
+
+    return SUCCESS;
 }
 
 bool AudioCoreService::IsPaRoute(uint32_t routeFlag)
