@@ -16,14 +16,15 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeRendererManager"
 #endif
+
 #include "hpae_renderer_manager.h"
 #include "audio_stream_info.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_node_common.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_utils.h"
 #include "audio_volume.h"
+#include "audio_engine_log.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;

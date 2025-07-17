@@ -225,6 +225,7 @@ ohos_shared_library("audio_engine_manager") {
     "manager/src/hpae_inner_capturer_manager.cpp",
     "manager/src/hpae_manager.cpp",
     "manager/src/hpae_manager_impl.cpp",
+    "manager/src/hpae_msg_channel.cpp",
     "manager/src/hpae_offload_renderer_manager.cpp",
     "manager/src/hpae_policy_manager.cpp",
     "manager/src/hpae_renderer_manager.cpp",

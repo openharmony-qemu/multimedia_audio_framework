@@ -17,7 +17,6 @@
 #include <any>
 #include "i_stream.h"
 #include "hpae_info.h"
-#include "audio_engine_log.h"
 #include "hpae_pcm_buffer.h"
 
 namespace OHOS {
@@ -58,16 +57,7 @@ public:
     }
 
     template <typename... Args>
-    void TriggerCallback(HpaeMsgCode cmdID, Args &&...args)
-    {
-        if (auto callback = weakCallback_.lock()) {
-            // pack the arguments into a tuple
-            auto packed = std::make_tuple(std::forward<Args>(args)...);
-            callback->Invoke(cmdID, packed);
-        } else {
-            AUDIO_ERR_LOG("Hpae TriggerCallback callback is null");
-        }
-    }
+    void TriggerCallback(HpaeMsgCode cmdID, Args &&...args);
 };
 
 enum HpaeProcessorType {

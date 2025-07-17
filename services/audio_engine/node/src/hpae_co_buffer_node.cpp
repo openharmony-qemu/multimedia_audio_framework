@@ -18,6 +18,7 @@
 
 #include "hpae_co_buffer_node.h"
 #include "hpae_define.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

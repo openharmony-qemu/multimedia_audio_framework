@@ -16,6 +16,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeSoftLink"
 #endif
+
 #include "hpae_soft_link.h"
 #ifdef ENABLE_HOOK_PCM
 #include <thread>
@@ -24,6 +25,7 @@
 #include "audio_utils.h"
 #include "audio_volume.h"
 #include "i_hpae_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -17,12 +17,12 @@
 #define LOG_TAG "HpaeRemoteOutputCluster"
 #endif
 
+#include <sstream>
 #include "hpae_remote_output_cluster.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include <sstream>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

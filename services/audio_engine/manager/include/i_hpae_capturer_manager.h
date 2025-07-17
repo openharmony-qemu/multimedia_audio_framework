@@ -19,8 +19,8 @@
 #include "i_capturer_stream.h"
 #include "hpae_stream_manager.h"
 #include "hpae_capture_move_info.h"
-#include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

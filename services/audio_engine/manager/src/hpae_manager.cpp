@@ -15,18 +15,20 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeManager"
 #endif
+
 #include "hpae_manager.h"
 #include <string>
 #include <atomic>
 #include <unordered_map>
 #include "audio_errors.h"
 #include "audio_schedule.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "audio_setting_provider.h"
 #include "hpae_node_common.h"
 #include "system_ability_definition.h"
 #include "hpae_co_buffer_node.h"
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

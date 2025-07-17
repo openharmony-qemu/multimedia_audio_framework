@@ -14,8 +14,8 @@
  */
 
 #include <cstdio>
+#include "hpae_no_lock_queue.h"
 #include "audio_engine_log.h"
-#include <hpae_no_lock_queue.h>
 
 namespace OHOS {
 namespace AudioStandard {

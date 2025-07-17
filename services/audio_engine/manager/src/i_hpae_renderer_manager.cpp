@@ -20,6 +20,8 @@
 #include "hpae_renderer_manager.h"
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

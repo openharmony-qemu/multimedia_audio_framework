@@ -17,18 +17,17 @@
 #define LOG_TAG "HpaeGainNode"
 #endif
 
+#include <algorithm>
+#include <cmath>
 #include "hpae_gain_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_volume.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "securec.h"
 #include "volume_tools_c.h"
 #include "audio_stream_info.h"
 #include "hpae_info.h"
-
-#include <algorithm>
-#include <cmath>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
