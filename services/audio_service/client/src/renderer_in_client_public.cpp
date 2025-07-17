@@ -1211,6 +1211,8 @@ bool RendererInClientInner::FlushAudioStream()
         }
     }
 
+    FlushSpeedBuffer();
+
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, false, "ipcStream is not inited!");
     int32_t ret = ipcStream_->Flush();
     if (ret != SUCCESS) {

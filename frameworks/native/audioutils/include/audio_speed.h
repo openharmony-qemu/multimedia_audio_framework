@@ -38,6 +38,7 @@ public:
     int32_t SetSpeed(float speed);
     int32_t SetPitch(float pitch);
     float GetSpeed();
+    int32_t Flush();
 
     int32_t ChangeSpeedFor8Bit(uint8_t *buffer, int32_t bufferSize,
         std::unique_ptr<uint8_t []> &outBuffer, int32_t &outBufferSize);
