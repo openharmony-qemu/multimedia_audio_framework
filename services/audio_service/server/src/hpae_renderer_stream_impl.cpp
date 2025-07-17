@@ -43,7 +43,6 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static constexpr uint64_t OFFLOAD_LATENCY_THRESHOLD = 40000; // 40ms latency threshold in microseconds
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
@@ -164,7 +163,6 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
     return SUCCESS;
 }
 
