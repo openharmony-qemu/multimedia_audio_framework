@@ -493,6 +493,7 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
     vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
@@ -525,6 +526,7 @@ void AudioDeviceManager::RemoveNewDevice(const std::shared_ptr<AudioDeviceDescri
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : remoteRenderDevices_) {
         if (desc == nullptr) {
@@ -537,6 +539,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDev
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : remoteCaptureDevices_) {
         if (desc == nullptr) {
@@ -549,6 +552,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDe
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commRenderPrivacyDevices_) {
         if (desc == nullptr) {
@@ -561,6 +565,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPriva
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commRenderPublicDevices_) {
         if (desc == nullptr) {
@@ -573,6 +578,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPubli
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderBTCarDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs;
     for (const auto &desc : commRenderPublicDevices_) {
         if (desc == nullptr || desc->deviceCategory_ != BT_CAR) {
@@ -585,6 +591,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderBTCar
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commCapturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -597,6 +604,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePriv
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commCapturePublicDevices_) {
         if (desc == nullptr) {
@@ -609,6 +617,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePubl
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaRenderPrivacyDevices_) {
         if (desc == nullptr) {
@@ -621,6 +630,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPriv
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaRenderPublicDevices_) {
         if (desc == nullptr) {
@@ -633,6 +643,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPubl
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaCapturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -645,6 +656,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePri
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaCapturePublicDevices_) {
         if (desc == nullptr) {
@@ -657,6 +669,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePub
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : capturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -669,6 +682,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyD
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : capturePublicDevices_) {
         if (desc == nullptr) {
@@ -681,6 +695,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : reconCapturePrivacyDevices_) {
         if (desc == nullptr) {
