@@ -57,6 +57,8 @@ static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 5; // 5ms
+static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
+static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 }
 
 class ProcessCbImpl;
@@ -198,6 +200,10 @@ private:
     void WaitForWritableSpace();
 
     int32_t WriteDataChunk(const BufferDesc &bufDesc, size_t clientRemainSizeInFrame);
+
+    bool WaitIfBufferEmpty(const BufferDesc &bufDesc);
+
+    void ExitStandByIfNeed();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -1078,13 +1084,24 @@ int32_t AudioProcessInClientInner::WriteDataChunk(const BufferDesc &bufDesc, siz
     return SUCCESS;
 }
 
+bool AudioProcessInClientInner::WaitIfBufferEmpty(const BufferDesc &bufDesc)
+{
+    if (bufDesc.dataLength == 0) {
+        const uint32_t sleepTimeUs = isVoipMmap_ ? VOIP_WAIT_FOR_NEXT_CB_US : FAST_WAIT_FOR_NEXT_CB_US;
+        AUDIO_WARNING_LOG("%{public}u", sleepTimeUs);
+        usleep(sleepTimeUs);
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("AudioProcessInClient::Enqueue");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength <= clientSpanSizeInByte_ &&
-        bufDesc.dataLength <= clientSpanSizeInByte_, ERR_INVALID_PARAM,
+        bufDesc.dataLength <= bufDesc.bufLength, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
     // check if this buffer is form us.
@@ -1098,6 +1115,10 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         }
         return SUCCESS;
     };
+
+    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), ERR_INVALID_PARAM);
+
+    ExitStandByIfNeed();
 
     DoFadeInOut(bufDesc);
 
@@ -1470,6 +1491,14 @@ std::string AudioProcessInClientInner::GetStatusInfo(StreamStatus status)
     return "NO_SUCH_STATUS";
 }
 
+void AudioProcessInClientInner::ExitStandByIfNeed()
+{
+    if (streamStatus_->load() == STREAM_STAND_BY) {
+        AUDIO_INFO_LOG("Status is STAND_BY, let's call exit!");
+        CallExitStandBy();
+    }
+}
+
 bool AudioProcessInClientInner::KeepLoopRunning()
 {
     StreamStatus targetStatus = STREAM_INVALID;
@@ -1478,8 +1507,6 @@ bool AudioProcessInClientInner::KeepLoopRunning()
         case STREAM_RUNNING:
             return true;
         case STREAM_STAND_BY:
-            AUDIO_INFO_LOG("Status is STAND_BY, let's call exit!");
-            CallExitStandBy();
             return true;
         case STREAM_STARTING:
             targetStatus = STREAM_RUNNING;
@@ -1681,7 +1708,8 @@ bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
         return true;
     }
 
-    if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
+    auto status = streamStatus_->load();
+    if (status != StreamStatus::STREAM_RUNNING && status != StreamStatus::STREAM_STAND_BY) {
         return true;
     }
     // call client write
