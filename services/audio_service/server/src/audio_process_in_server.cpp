@@ -329,7 +329,7 @@ int32_t AudioProcessInServer::StartInner()
     }
 
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     AUDIO_INFO_LOG("Start in server success!");
     return SUCCESS;
 }
@@ -367,7 +367,7 @@ int32_t AudioProcessInServer::Pause(bool isFlush)
     }
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_PAUSE);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
-
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     AUDIO_PRERELEASE_LOGI("Pause in server success!");
     return SUCCESS;
 }
@@ -391,7 +391,7 @@ int32_t AudioProcessInServer::Resume()
     for (size_t i = 0; i < listenerList_.size(); i++) {
         listenerList_[i]->OnStart(this);
     }
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId_, processConfig_.appInfo.appTokenId);
     processBuffer_->SetLastWrittenTime(ClockTime::GetCurNano());
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_START);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_START, false);
@@ -437,7 +437,7 @@ int32_t AudioProcessInServer::Stop(int32_t stage)
     }
     CoreServiceHandler::GetInstance().UpdateSessionOperation(sessionId_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(sessionId_, processConfig_, false);
-
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId_);
     AUDIO_INFO_LOG("Stop in server success!");
     return SUCCESS;
 }

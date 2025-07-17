@@ -624,16 +624,16 @@ HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_003, TestSize.Level3)
 * @tc.name  : Test AudioUtilsUnitTest API
 * @tc.type  : FUNC
 * @tc.number: AudioPerformanaceMonitor_004
-* @tc.desc  : Test AudioPerformanaceMonitor::ClearSilenceMonitor
+* @tc.desc  : Test AudioPerformanaceMonitor::StartSilenceMonitor
 */
 HWTEST(AudioUtilsPlusUnitTest, AudioPerformanaceMonitor_004, TestSize.Level3)
 {
     uint32_t sessionId = 111111;
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(sessionId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, 0);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].historyStateDeque.size(),
         static_cast<size_t>(0));
     uint32_t notExistSessionId = 111112;
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(notExistSessionId);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(notExistSessionId, 0);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.find(notExistSessionId),
         AudioPerformanceMonitor::GetInstance().silenceDetectMap_.end());
 }

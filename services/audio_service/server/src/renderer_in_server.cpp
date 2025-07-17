@@ -1020,7 +1020,7 @@ int32_t RendererInServer::StartInner()
     enterStandbyTime_ = 0;
 
     dualToneStreamInStart();
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
     return SUCCESS;
 }
 
@@ -1100,6 +1100,7 @@ int32_t RendererInServer::Pause()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_PAUSE);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
@@ -1193,7 +1194,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     }
     DrainAudioBuffer();
     drainedTime_ = ClockTime::GetCurNano();
-    AudioPerformanceMonitor::GetInstance().ClearSilenceMonitor(streamIndex_);
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(streamIndex_, processConfig_.appInfo.appTokenId);
     int ret = stream_->Drain(stopFlag);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Drain stream failed, reason: %{public}d", ret);
     {
@@ -1275,6 +1276,7 @@ int32_t RendererInServer::StopInner()
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_STOP, false);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
+    AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
     return SUCCESS;
 }
 
