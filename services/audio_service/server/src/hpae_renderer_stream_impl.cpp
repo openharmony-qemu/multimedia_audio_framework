@@ -299,8 +299,6 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
 {
     std::shared_lock<std::shared_mutex> lock(latencyMutex_);
     uint64_t latencyUs = 0;
-    int32_t ret = GetRemoteOffloadCurrentPosition(framePosition, timestamp, latency);
-    CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, ret);
     GetLatencyInner(timestamp, latencyUs, base);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     framePosition = framePosition_;
