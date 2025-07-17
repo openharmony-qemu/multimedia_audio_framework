@@ -40,7 +40,7 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t);
+typedef void (*TestPtr)(const uint8_t *, size_t);
 static vector<HpaeSessionState> sessionStateMap = {
     HPAE_SESSION_INVALID,
     HPAE_SESSION_NEW,
@@ -151,7 +151,7 @@ void GetCurrentPositionFuzzTest()
     auto hpaeSinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     uint64_t framePosition = GetData<uint64_t>();
     std::vector<uint64_t> timestamp;
-    hpaeSinkInputNode->GetCurrentPosition(framePosition,timestamp);
+    hpaeSinkInputNode->GetCurrentPosition(framePosition, timestamp);
 }
 
 void RewindHistoryBufferFuzzTest()

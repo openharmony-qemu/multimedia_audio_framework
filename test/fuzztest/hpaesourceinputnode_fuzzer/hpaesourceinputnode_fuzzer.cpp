@@ -59,7 +59,7 @@ static vector<HpaeSourceInputNodeType> hpaeSourceInputNodeTypeMap = {
     HPAE_SOURCE_MICREF,
 };
 
-typedef void (*TestPtr)(const uint8_t *,size_t);
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
 T GetData()
@@ -147,7 +147,7 @@ void GetCapturerSourceInstanceFuzzTest()
     std::string deviceNetId = "LocalDevice";
     SourceType sourceType = SOURCE_TYPE_MIC;
     std::string sourceName = "mic";
-    hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass,deviceNetId,sourceType,sourceName);
+    hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
 }
 
 void CapturerSourceInitFuzzTest()
@@ -238,9 +238,9 @@ void WriteCapturerDataFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    char *data = NULL;
     int32_t dataSize = GetData<int32_t>();
-    hpaeSourceInputNode->WriteCapturerData(data,dataSize);
+    std::vector<char> testData(dataSize);
+    hpaeSourceInputNode->WriteCapturerData(testData.data(), dataSize);
 }
 
 void GetOutputPortNumFuzzTest()
@@ -285,7 +285,7 @@ void UpdateAppsUidAndSessionIdFuzzTest()
     auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
     std::vector<int32_t> appsUid = {GetData<int32_t>()};
     std::vector<int32_t> sessionsId = {GetData<int32_t>()};
-    hpaeSourceInputNode->UpdateAppsUidAndSessionId(appsUid,sessionsId);
+    hpaeSourceInputNode->UpdateAppsUidAndSessionId(appsUid, sessionsId);
 }
 
 void GetCaptureIdFuzzTest()
