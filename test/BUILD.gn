@@ -256,6 +256,7 @@ group("audio_fuzz_test") {
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
     "fuzztest/formatconverter_fuzzer:fuzztest",
     "fuzztest/futextool_fuzzer:fuzztest",
+    "fuzztest/hpaecaptureeffectnode_fuzzer:fuzztest",
     "fuzztest/hpaeengine_fuzzer:fuzztest",
     "fuzztest/hpaeinnercapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaemanager_fuzzer:fuzztest",
