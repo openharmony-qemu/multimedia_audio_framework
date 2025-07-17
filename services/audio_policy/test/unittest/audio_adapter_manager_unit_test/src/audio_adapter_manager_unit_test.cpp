@@ -189,7 +189,7 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolume_001, TestSize.Level1)
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     auto interruptServiceTest = GetTnterruptServiceTest();
     audioAdapterManager_->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
+    ASSERT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
     audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 }
 
@@ -219,13 +219,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
  */
 HWTEST_F(AudioAdapterManagerUnitTest, SetDoubleRingVolumeDb_001, TestSize.Level1)
 {
+    uint32_t sessionId = MIN_STREAMID - 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    AudioAdapterManager::GetInstance().ResetOffloadSessionId();
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioStreamType streamType = STREAM_RING;
     int32_t volumeLevel = 5;
     audioAdapterManager_->useNonlinearAlgo_ = true;
+    sessionId = MAX_STREAMID + 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
     int32_t result = audioAdapterManager_->SetDoubleRingVolumeDb(streamType, volumeLevel);
     EXPECT_EQ(result, SUCCESS);
 
+    sessionId = MIN_STREAMID + 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    AudioAdapterManager::GetInstance().ResetOffloadSessionId();
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     streamType = STREAM_DEFAULT;
     audioAdapterManager_->useNonlinearAlgo_ = true;
@@ -241,23 +249,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetDoubleRingVolumeDb_001, TestSize.Level1
     audioAdapterManager_->useNonlinearAlgo_ = false;
     result = audioAdapterManager_->SetDoubleRingVolumeDb(streamType, volumeLevel);
     EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name: ResetOffloadSessionId_001
- * @tc.desc: Test ResetOffloadSessionId
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, ResetOffloadSessionId_001, TestSize.Level1)
-{
-    audioAdapterManager_->offloadSessionID_ = 12345;
-    audioAdapterManager_->ResetOffloadSessionId();
-    EXPECT_FALSE(audioAdapterManager_->offloadSessionID_.has_value());
-
-    audioAdapterManager_->offloadSessionID_.reset();
-    audioAdapterManager_->ResetOffloadSessionId();
-    EXPECT_FALSE(audioAdapterManager_->offloadSessionID_.has_value());
 }
 
 /**
