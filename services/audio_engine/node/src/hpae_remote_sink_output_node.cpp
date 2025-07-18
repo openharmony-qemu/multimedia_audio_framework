@@ -33,7 +33,7 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
-      needEmptyChunk_(sinkInfo.needEmptyChunk);
+      needEmptyChunk_(sinkInfo.needEmptyChunk)
 {
 #ifdef ENABLE_HOOK_PCM
     outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Media_bit_" +

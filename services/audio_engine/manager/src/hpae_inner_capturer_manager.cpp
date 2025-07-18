@@ -900,8 +900,9 @@ int32_t HpaeInnerCapturerManager::SetLoudnessGain(uint32_t sessionId, float loud
     return SUCCESS;
 }
 
-void HpaeInnerCapturerManager::DumpSinkInfo()
+int32_t HpaeInnerCapturerManager::DumpSinkInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeInnerCapturerManager not init");
     auto request = [this]() {
         AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
         UploadDumpSinkInfo(sinkInfo_.deviceName);

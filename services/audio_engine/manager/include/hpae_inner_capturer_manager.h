@@ -88,7 +88,7 @@ public:
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeSourceOutputInfo &sourceOutputInfo) override;
     std::vector<SourceOutput> GetAllSourceOutputsInfo() override;
     std::string GetThreadName() override;
-    void DumpSinkInfo() override;
+    int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
