@@ -3007,7 +3007,8 @@ int32_t AudioServer::SetBtHdiInvalidState()
         "refused for %{public}d", callingUid);
     auto limitFunc = [](uint32_t id) -> bool {
         std::string info = IdHandler::GetInstance().ParseInfo(id);
-        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH) {
+        if (IdHandler::GetInstance().ParseType(id) == HDI_ID_TYPE_BLUETOOTH &&
+            IdHandler::GetInstance().ParseInfo(id) != HDI_ID_INFO_HEARING_AID) {
             return true;
         }
         return false;
