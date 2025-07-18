@@ -1436,7 +1436,6 @@ HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
     const char *streamType = "stream";
     result = GetCurVolume(sessionId, streamType, nullptr, &volumes);
     EXPECT_FLOAT_EQ(result, 1.0f);
-
 }
 
 /**
