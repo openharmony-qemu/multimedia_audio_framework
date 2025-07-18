@@ -455,7 +455,6 @@ int32_t AudioEffectChainManager::ApplyAudioEffectChain(const std::string &sceneT
 
 int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    AUDIO_INFO_LOG("send volume to dsp.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     float volumeMax = 0.0f;
     for (auto it = sceneTypeToSessionIDMap_.begin(); it != sceneTypeToSessionIDMap_.end(); ++it) {
@@ -491,7 +490,6 @@ int32_t AudioEffectChainManager::EffectDspVolumeUpdate(std::shared_ptr<AudioEffe
 
 int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    AUDIO_INFO_LOG("send volume to ap.");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto sessionId = sessionIDSet_.begin(); sessionId != sessionIDSet_.end(); ++sessionId) {
         if (sessionIDToEffectInfoMap_.find(*sessionId) == sessionIDToEffectInfoMap_.end()) {
@@ -520,7 +518,6 @@ int32_t AudioEffectChainManager::EffectApVolumeUpdate(std::shared_ptr<AudioEffec
 
 int32_t AudioEffectChainManager::SendEffectApVolume(std::shared_ptr<AudioEffectVolume> audioEffectVolume)
 {
-    AUDIO_INFO_LOG("SendEffectApVolume");
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     for (auto it = sceneTypeToEffectChainMap_.begin(); it != sceneTypeToEffectChainMap_.end(); ++it) {
         if (it->second == nullptr) {
