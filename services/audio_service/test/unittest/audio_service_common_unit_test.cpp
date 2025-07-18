@@ -134,6 +134,51 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_001, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(5, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_002, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(11, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_003, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(10, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_001
