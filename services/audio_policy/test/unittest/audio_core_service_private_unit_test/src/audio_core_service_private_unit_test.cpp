@@ -2267,6 +2267,7 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
+
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
@@ -2288,9 +2289,9 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_124, TestSize.Level1
     auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(audioStreamDescriptor, nullptr);
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
-    audioDeviceDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    audioDeviceDescriptor->sessionId_ = sessionIDTest;
-    pipeInfo->streamDescriptors_->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioStreamDescriptor->sessionId_ = sessionIDTest;
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     uint32_t paIndex = 0;
     auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
@@ -2323,15 +2324,14 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1
 
     auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(audioStreamDescriptor, nullptr);
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
-    audioDeviceDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
-    pipeInfo->streamDescriptors_->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
     uint32_t paIndex = 0;
     auto ret = audioCoreService->OpenNewAudioPortAndRoute(pipeInfo, paIndex);
 
     EXPECT_NE(ret, sessionIDTest);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
