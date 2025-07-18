@@ -341,11 +341,11 @@ HWTEST(AudioServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
     config.streamInfo.samplingRate = SAMPLE_RATE_64000;
     std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
         AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
-    DeviceType expectedDevice = static_cast<DeviceType>(1); 
+    DeviceType expectedDevice = static_cast<DeviceType>(1);
     int ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
     EXPECT_NE(ret, 0);
 
-    expectedDevice = static_cast<DeviceType>(2); 
+    expectedDevice = static_cast<DeviceType>(2);
     ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
     EXPECT_NE(ret, 0);
 }
