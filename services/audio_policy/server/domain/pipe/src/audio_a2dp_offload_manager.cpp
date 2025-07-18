@@ -443,7 +443,8 @@ int32_t AudioA2dpOffloadManager::HandleActiveDevice(AudioDeviceDescriptor device
         audioVolumeManager_.SetVolumeForSwitchDevice(deviceDescriptor);
     }
     if (audioConfigManager_.GetUpdateRouteSupport()) {
-        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDescriptor.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG);
+        audioActiveDevice_.UpdateActiveDeviceRoute(deviceDescriptor.deviceType_, DeviceFlag::OUTPUT_DEVICES_FLAG,
+            deviceDescriptor.deviceName_, deviceDescriptor.networkId_);
     }
     std::string sinkPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescriptor.deviceType_);
     std::string sourcePortName = AudioPolicyUtils::GetInstance().GetSourcePortName(deviceDescriptor.deviceType_);

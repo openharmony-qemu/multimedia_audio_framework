@@ -78,7 +78,7 @@ public:
     std::string GetCurrentOutputDeviceNetworkId();
     std::string GetCurrentOutputDeviceMacAddr();
     void UpdateActiveDeviceRoute(InternalDeviceType deviceType, DeviceFlag deviceFlag,
-        const std::string &deviceName = "");
+        const std::string &deviceName = "", std::string networkId = LOCAL_NETWORK_ID);
     void UpdateActiveDevicesRoute(std::vector<std::pair<InternalDeviceType, DeviceFlag>> &activeDevices,
         const std::string &deviceName = "");
     bool IsDeviceInVector(std::shared_ptr<AudioDeviceDescriptor> desc,
