@@ -28,6 +28,10 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace {
+const int32_t FAST_DURATION_MS = 5; // 5ms
+const int32_t NORMAL_DURAION_MS = 20; // 20ms
+}
 
 AudioPerformanceMonitor &AudioPerformanceMonitor::GetInstance()
 {
@@ -44,8 +48,8 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
         AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
         silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
         silenceDetectMap_[sessionId].historyStateDeque.clear();
-        silenceDetectMap_[sessionId].pipeType = pipeType;
     }
+    silenceDetectMap_[sessionId].pipeType = pipeType; // update pipeType info
     silenceDetectMap_[sessionId].historyStateDeque.push_back(isSilence);
     if (silenceDetectMap_[sessionId].historyStateDeque.size() > MAX_RECORD_QUEUE_SIZE) {
         silenceDetectMap_[sessionId].historyStateDeque.pop_front();
@@ -53,14 +57,26 @@ void AudioPerformanceMonitor::RecordSilenceState(uint32_t sessionId, bool isSile
     JudgeNoise(sessionId, isSilence, uid);
 }
 
-void AudioPerformanceMonitor::ClearSilenceMonitor(uint32_t sessionId)
+void AudioPerformanceMonitor::StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId)
+{
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
+    if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
+        CHECK_AND_RETURN_LOG(silenceDetectMap_.size() < MAX_MAP_SIZE, "silenceDetectMap_ overSize!");
+        AUDIO_INFO_LOG("start record silence state of sessionId : %{public}d", sessionId);
+    }
+    silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
+    silenceDetectMap_[sessionId].historyStateDeque.clear();
+    silenceDetectMap_[sessionId].tokenId = tokenId; // record tokenId to get bundle name
+    silenceDetectMap_[sessionId].isRunning = true;
+}
+
+void AudioPerformanceMonitor::PauseSilenceMonitor(uint32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(silenceMapMutex_);
     if (silenceDetectMap_.find(sessionId) == silenceDetectMap_.end()) {
         return;
     }
-    silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
-    silenceDetectMap_[sessionId].historyStateDeque.clear();
+    silenceDetectMap_[sessionId].isRunning = false;
 }
 
 void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
@@ -168,7 +184,10 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
                 sessionId, silenceDetectMap_[sessionId].pipeType, MAX_RECORD_QUEUE_SIZE, printStr.c_str());
             AUTO_CTRACE("Audio FWK detect SILENCE_EVENT, pipeType %d, PreState: %s",
                 silenceDetectMap_[sessionId].pipeType, printStr.c_str());
-            ReportEvent(SILENCE_EVENT, INT32_MAX, silenceDetectMap_[sessionId].pipeType, ADAPTER_TYPE_UNKNOWN, uid);
+            AudioPipeType pipeType = silenceDetectMap_[sessionId].pipeType;
+            int32_t periodMs = static_cast<int32_t>(silenceDetectMap_[sessionId].silenceStateCount *
+                (pipeType == PIPE_TYPE_LOWLATENCY_OUT ? FAST_DURATION_MS : NORMAL_DURAION_MS));
+            ReportEvent(SILENCE_EVENT, periodMs, pipeType, ADAPTER_TYPE_UNKNOWN, uid);
             silenceDetectMap_[sessionId].silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
             silenceDetectMap_[sessionId].historyStateDeque.clear();
             return;
@@ -177,10 +196,26 @@ void AudioPerformanceMonitor::JudgeNoise(uint32_t sessionId, bool isSilence, uin
     }
 }
 
+std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
+{
+    // eg. com.test.hap1;com.test.hap2;
+    WatchTimeout guard("GetRunningHapNames");
+    std::stringstream hapNames;
+    AudioPipeType pipeType = PIPE_TYPE_MAP[adapterType];
+    for (auto item : silenceDetectMap_) {
+        if (item.second.isRunning && item.second.pipeType == pipeType) {
+            std::string name = GetBundleNameByToken(item.second.tokenId);
+            hapNames << name << ";";
+        }
+    }
+    return hapNames.str();
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
     AdapterType adapterType, uint32_t uid)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
+    std::string hapNames = "";
     switch (reasonCode) {
         case SILENCE_EVENT:
             CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,
@@ -191,6 +226,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
             CHECK_AND_RETURN_LOG(curRealTime - overTimeLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,
                 "report overtime event too frequent!");
             overTimeLastReportTime_ = ClockTime::GetRealNano();
+            hapNames = GetRunningHapNames(adapterType);
             break;
         default:
             AUDIO_ERR_LOG("invalid DetectEvent %{public}d", reasonCode);
@@ -207,6 +243,9 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
     bean->Add("HDI_ADAPTER", adapterType);
     bean->Add("POSITION", JANK_POSITON_CODE);
     bean->Add("UID", static_cast<int32_t>(uid));
+    if (reasonCode == OVERTIME_EVENT) {
+        bean->Add("APP_NAMES", hapNames);
+    }
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
 }

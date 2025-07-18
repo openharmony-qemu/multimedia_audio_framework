@@ -2110,12 +2110,12 @@ std::string GetBundleNameByToken(const uint32_t &tokenIdNum)
     if (tokenType == TOKEN_HAP) {
         HapTokenInfoExt tokenInfo = {};
         int32_t ret = AccessTokenKit::GetHapTokenInfoExtension(tokenId, tokenInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetHapTokenInfoExtension failed, ret: %{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-hap", "hap %{public}u failed: %{public}d", tokenIdNum, ret);
         return tokenInfo.baseInfo.bundleName;
     } else {
         NativeTokenInfo tokenInfo = {};
         int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
-        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown", "GetNativeTokenInfo failed, ret: %{public}d", ret);
+        CHECK_AND_RETURN_RET_LOG(ret == 0, "unknown-native", "native %{public}u failed: %{public}d", tokenIdNum, ret);
         return tokenInfo.processName;
     }
 }
