@@ -1444,7 +1444,7 @@ HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
  * @tc.number: GetCurVolume_002
  * @tc.desc  : Test GetCurVolume_002 interface
  */
-HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_002, TestSize.Level1)
+HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_003, TestSize.Level1)
 {
     uint32_t streamIndex = -1;
     float result = GetStopFadeoutState(streamIndex);
