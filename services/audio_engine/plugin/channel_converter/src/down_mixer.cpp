@@ -18,8 +18,8 @@
 #include <algorithm>
 #include <cinttypes>
 #include "securec.h"
-#include "audio_engine_log.h"
 #include "down_mixer.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

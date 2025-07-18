@@ -19,7 +19,6 @@
 #include "hpae_adapter_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "hpae_renderer_stream_impl.h"
 #include "hpae_capturer_stream_impl.h"
@@ -27,6 +26,7 @@
 #include "audio_info.h"
 #include "core_service_handler.h"
 #include "policy_handler.h"
+#include "audio_engine_log.h"
 namespace OHOS {
 namespace AudioStandard {
 

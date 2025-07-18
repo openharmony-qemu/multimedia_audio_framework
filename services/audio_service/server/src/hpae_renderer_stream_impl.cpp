@@ -27,13 +27,13 @@
 #include <thread>
 #include "safe_map.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
 #include "down_mixer.h"
 #include "policy_handler.h"
+#include "audio_engine_log.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -333,9 +333,10 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
-    auto interval = (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US;
-    interval = interval > latencyUs ? latencyUs : interval;
-    latencyUs -= interval;
+    auto interval = (timestampCurrent[baseUsed] > timestamp_[baseUsed]) ?
+        (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US :
+        0;
+    latencyUs = latencyUs > interval ? latencyUs - interval : 0;
     timestamp = timestampCurrent[baseUsed];
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64

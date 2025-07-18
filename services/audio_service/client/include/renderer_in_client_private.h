@@ -448,7 +448,6 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
-    uint64_t stopReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {
