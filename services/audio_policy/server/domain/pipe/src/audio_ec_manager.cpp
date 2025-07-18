@@ -644,7 +644,8 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 
     audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
-        DeviceFlag::INPUT_DEVICES_FLAG);
+        DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
+        audioActiveDevice_.GetCurrentInputDevice().networkId_);
 }
 
 int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,

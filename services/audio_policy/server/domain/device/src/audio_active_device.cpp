@@ -394,9 +394,10 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
 }
 
 void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string &deviceName)
+    const std::string &deviceName, std::string networkId)
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
+    CHECK_AND_RETURN_LOG(networkId == LOCAL_NETWORK_ID, "distributed device, do not update route");
     AUDIO_INFO_LOG("[PipeExecInfo] Active route with type[%{public}d] name[%{public}s]",
         deviceType, deviceName.c_str());
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
