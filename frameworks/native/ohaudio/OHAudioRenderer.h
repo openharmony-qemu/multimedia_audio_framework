@@ -265,6 +265,8 @@ public:
     ErrorCallbackType GetRendererErrorCallbackType();
 
     void SetRendererCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData);
+
+    StreamUsage GetOriginalStreamUsage();
 private:
     std::shared_ptr<AudioRenderer> audioRenderer_;
     std::shared_ptr<AudioRendererCallback> audioRendererCallback_;
@@ -274,6 +276,7 @@ private:
     WriteDataCallbackType writeDataCallbackType_ = WRITE_DATA_CALLBACK_WITHOUT_RESULT;
     InterruptEventCallbackType interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
     ErrorCallbackType errorCallbackType_ = ERROR_CALLBACK_COMBINED;
+    StreamUsage originalStreamUsage_ = STREAM_USAGE_UNKNOWN;
 
     void SetWriteDataCallback(RendererCallback rendererCallbacks, void *userData, void *metadataUserData,
         AudioEncodingType encodingType);

@@ -190,7 +190,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
-        linearGain_ = LoudnessDbToLinearGain(loudnessGain_);
+        linearGain_ = LoudnessDbToLinearGain(loudnessGain);
         loudnessGain_ = loudnessGain;
         return SUCCESS;
     }
