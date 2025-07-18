@@ -655,7 +655,7 @@ void RendererInClientInner::ResetFramePosition()
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampval, latency,
         Timestamp::Timestampbase::MONOTONIC);
-    CHECK_AND_RETURN_RET_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
+    CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosAndTimePair_[base].first = 0;
