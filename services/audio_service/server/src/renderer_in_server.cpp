@@ -1649,9 +1649,18 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         OptResult result = dupBuffer->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
-        CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
-            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
-            result.size, requestDataLen);
+        if (result.size == 0 || result.size < requestDataLen) {
+            recoveryAntiShakeBufferCount_ = 2;
+            AUDIO_INFO_LOG("Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+                result.size, requestDataLen);
+            return ERROR;
+        }
+        if (recoveryAntiShakeBufferCount_ > 0) {
+            recoveryAntiShakeBufferCount_--;
+            AUDIO_INFO_LOG("need recovery data anti-shake, no onWriteData, recoveryAntiShakeBufferCount_: %{public}d",
+                recoveryAntiShakeBufferCount_);
+            return ERROR;
+        }
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupBuffer->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");
