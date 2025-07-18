@@ -748,7 +748,7 @@ HWTEST(AudioUtilsPlusUnitTest, GetRunningHapNames_001, TestSize.Level3)
     AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId3, tokenId3);
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId3, false, PIPE_TYPE_LOWLATENCY_OUT, 0);
 
-    AudioPerformanceMonitor::GetInstance().GetRunningHapNames(PIPE_TYPE_NORMAL_OUT);
+    AudioPerformanceMonitor::GetInstance().GetRunningHapNames(ADAPTER_TYPE_PRIMARY);
 
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId1);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId1].isRunning, false);

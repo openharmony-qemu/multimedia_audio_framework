@@ -202,7 +202,7 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     WatchTimeout guard("GetRunningHapNames");
     std::stringstream hapNames;
     AudioPipeType pipeType = PIPE_TYPE_MAP[adapterType];
-    for(auto item : silenceDetectMap_) {
+    for (auto item : silenceDetectMap_) {
         if (item.second.isRunning && item.second.pipeType == pipeType) {
             std::string name = GetBundleNameByToken(item.second.tokenId);
             hapNames << name << ";";
