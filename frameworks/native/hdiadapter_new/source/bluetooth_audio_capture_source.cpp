@@ -343,11 +343,7 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("in");
-    if (audioScene == AUDIO_SCENE_DEFAULT) {
-        validState_ = true;
-    } else {
-        validState_ = false;
-    }
+    validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
     return SUCCESS;
 }
 

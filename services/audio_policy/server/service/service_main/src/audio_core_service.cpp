@@ -489,9 +489,6 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
 
 int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
-    std::string devicesName = "";
-    int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(devicesName);
-    AUDIO_ERR_LOG("displayname = %{public}s", devicesName.c_str());
     AUDIO_INFO_LOG("[ADeviceEvent] targetScene[%{public}d] lastScene[%{public}d] from uid %{public}d pid %{public}d",
         audioScene, audioSceneManager_.GetLastAudioScene(), uid, pid);
 

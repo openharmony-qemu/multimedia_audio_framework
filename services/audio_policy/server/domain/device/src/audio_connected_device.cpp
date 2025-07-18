@@ -43,7 +43,6 @@ public:
         std::string deviceName = "";
         int32_t ret = AudioPolicyUtils::GetInstance().GetDeviceNameFromDataShareHelper(deviceName);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "Local UpdateDisplayName init device failed");
-        AUDIO_INFO_LOG("displayname = %{public}s", deviceName.c_str());
         AudioConnectedDevice::GetInstance().SetDisplayName(deviceName, true);
     }
 };
