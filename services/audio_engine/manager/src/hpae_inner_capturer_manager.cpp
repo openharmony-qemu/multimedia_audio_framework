@@ -270,6 +270,7 @@ void HpaeInnerCapturerManager::InitSinkInner(bool isReload)
     nodeInfo.samplingRate = sinkInfo_.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_OUT;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.statusCallback = weak_from_this();
     hpaeInnerCapSinkNode_ = std::make_unique<HpaeInnerCapSinkNode>(nodeInfo);
     AUDIO_INFO_LOG("Init innerCapSinkNode");
     hpaeInnerCapSinkNode_->InnerCapturerSinkInit();
@@ -330,6 +331,7 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             if (hpaeInnerCapSinkNode_->GetSinkState() != STREAM_MANAGER_RUNNING) {
                 hpaeInnerCapSinkNode_->InnerCapturerSinkStart();
             }
+            sourceOutputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
             ConnectCapturerOutputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_RUNNING);
             TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
@@ -700,6 +702,9 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     nodeInfo.samplingRate = (AudioSamplingRate)streamInfo.samplingRate;
     nodeInfo.sceneType = HPAE_SCENE_EFFECT_NONE;
     nodeInfo.sourceType = streamInfo.sourceType;
+    nodeInfo.statusCallback = weak_from_this();
+    nodeInfo.deviceClass = sinkInfo_.deviceClass;
+    nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     AUDIO_INFO_LOG("nodeInfo.channels %{public}d, nodeInfo.format %{public}hhu, nodeInfo.frameLen %{public}d",
         nodeInfo.channels, nodeInfo.format, nodeInfo.frameLen);
     sourceOutputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
@@ -707,6 +712,7 @@ int32_t HpaeInnerCapturerManager::CreateCapturerInputSessionInner(const HpaeStre
     // todo change nodeInfo
     capturerAudioFormatConverterNodeMap_[streamInfo.sessionId] =
         std::make_shared<HpaeAudioFormatConverterNode>(outputNodeInfo, nodeInfo);
+    capturerAudioFormatConverterNodeMap_[streamInfo.sessionId]->SetSourceNode(true);
     capturerSessionNodeMap_[streamInfo.sessionId].sceneType = nodeInfo.sceneType;
     return SUCCESS;
 }
@@ -761,10 +767,10 @@ int32_t HpaeInnerCapturerManager::ConnectRendererInputSessionInner(uint32_t sess
     HpaeProcessorType sceneType = sinkInputNodeMap_[sessionId]->GetSceneType();
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(rendererSceneClusterMap_, sceneType), SUCCESS,
         "miss corresponding process cluster for scene type %{public}d", sceneType);
-    rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
-    rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNodeMap_[sessionId]->GetLoudnessGain());
     // todo check if connect process cluster
     hpaeInnerCapSinkNode_->Connect(rendererSceneClusterMap_[sceneType]);
+    rendererSceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
+    rendererSceneClusterMap_[sceneType]->SetLoudnessGain(sessionId, sinkInputNodeMap_[sessionId]->GetLoudnessGain());
     return SUCCESS;
 }
 
@@ -776,8 +782,8 @@ int32_t HpaeInnerCapturerManager::ConnectCapturerOutputSessionInner(uint32_t ses
         ERR_INVALID_PARAM,
         "sessionId %{public}u can not find in capturerAudioFormatConverterNodeMap_.", sessionId);
     // todo connect gain node
-    sourceOutputNodeMap_[sessionId]->Connect(capturerAudioFormatConverterNodeMap_[sessionId]);
     capturerAudioFormatConverterNodeMap_[sessionId]->Connect(hpaeInnerCapSinkNode_);
+    sourceOutputNodeMap_[sessionId]->Connect(capturerAudioFormatConverterNodeMap_[sessionId]);
     return SUCCESS;
 }
 
@@ -892,6 +898,15 @@ int32_t HpaeInnerCapturerManager::SetLoudnessGain(uint32_t sessionId, float loud
     };
     SendRequestInner(request);
     return SUCCESS;
+}
+
+void HpaeInnerCapturerManager::DumpSinkInfo()
+{
+    auto request = [this]() {
+        AUDIO_INFO_LOG("DumpSinkInfo deviceName %{public}s", sinkInfo_.deviceName.c_str());
+        UploadDumpSinkInfo(sinkInfo_.deviceName);
+    };
+    SendRequestInner(request);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

@@ -69,6 +69,12 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
             "HpaeRenderEffectNodeCollaborative_id_" + std::to_string(GetNodeId()) + "_scene_" + sceneType_ + ".pcm");
     }
 #endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeRenderEffectNode");
+    }
+#endif
 }
 
 void HpaeRenderEffectNode::DoProcess()

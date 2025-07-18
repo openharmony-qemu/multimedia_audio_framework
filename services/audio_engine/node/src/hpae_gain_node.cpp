@@ -60,6 +60,12 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
                                                        std::to_string(GetChannelCount()) + "_rate_" +
                                                        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeGainNode");
+    }
+#endif
 }
 
 HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)

@@ -76,8 +76,6 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 {
     AUDIO_INFO_LOG("Create output node:%{public}d", streamInfo.sessionId);
     HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.nodeName = "HpaeSourceOutputNode";
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;
     nodeInfo.frameLen = streamInfo.frameLen;
@@ -829,8 +827,6 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
-    nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
-    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;

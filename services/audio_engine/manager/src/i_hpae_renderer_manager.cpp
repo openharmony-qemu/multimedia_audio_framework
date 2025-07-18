@@ -27,6 +27,7 @@ static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static const std::string DEVICE_NAME_INNER_CAP = "InnerCapturerSink";
 static const std::string DEVICE_NAME_CAST_INNER_CAP = "RemoteCastInnerCapturer";
+std::atomic<uint32_t> IHpaeRendererManager::nodeIdCounter_ = 0;
 std::shared_ptr<IHpaeRendererManager> IHpaeRendererManager::CreateRendererManager(HpaeSinkInfo &sinkInfo)
 {
     if (sinkInfo.deviceClass == DEVICE_CLASS_OFFLOAD || sinkInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {

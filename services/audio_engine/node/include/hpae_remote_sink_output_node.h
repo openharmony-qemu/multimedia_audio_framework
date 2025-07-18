@@ -33,13 +33,13 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 
 class HpaeRemoteSinkOutputNode : public InputNode<HpaePcmBuffer *> {
 public:
-    HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo);
+    HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual void DoProcess() override;
     virtual bool Reset() override;
     virtual bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
-    int32_t GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
+    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
     int32_t RenderSinkFlush(void);
@@ -73,6 +73,7 @@ private:
     std::unique_ptr<HpaePcmDumper> outputNavigationPcmDumper_ = nullptr;
     std::unique_ptr<HpaePcmDumper> outputCommunicationPcmDumper_ = nullptr;
 #endif
+    bool needEmptyChunk_ = true;
 };
 
 }  // namespace HPAE

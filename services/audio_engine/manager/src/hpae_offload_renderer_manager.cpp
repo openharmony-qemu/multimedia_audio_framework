@@ -57,8 +57,6 @@ int32_t HpaeOffloadRendererManager::CreateInputSession(const HpaeStreamInfo &str
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.nodeName = "HpaeSinkInputNode";
     sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNode_->SetAppUid(streamInfo.uid);
     return SUCCESS;
@@ -78,7 +76,6 @@ void HpaeOffloadRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeS
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // 7s history buffer to rewind
     nodeInfo.historyFrameCount = HISTORY_INTERVAL_S * nodeInfo.samplingRate / nodeInfo.frameLen;
-    nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
     node->SetNodeInfo(nodeInfo);
     uint32_t sessionId = nodeInfo.sessionId;
@@ -162,33 +159,19 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
     sinkOutputNode_->SetNodeInfo(outputNodeInfo);
 
-    // if there's no loudness algo, audio format will be converted to output device format at the first converternode
+    // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
-    nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-    converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(
-        sinkInputNode_->GetNodeInfo(), nodeInfo);
+    converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
+    sinkOutputNode_->Connect(converterForOutput_);
+    // if there's no loudness algo, audio format will be converted to output device format at the first converternode
+    loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    converterForOutput_->Connect(loudnessGainNode_);
+    converterForLoudness_ = std::make_shared<HpaeAudioFormatConverterNode>(sinkInputNode_->GetNodeInfo(), nodeInfo);
+    loudnessGainNode_->Connect(converterForLoudness_);
+    loudnessGainNode_->SetLoudnessGain(sinkInputNode_->GetLoudnessGain());
     converterForLoudness_->Connect(sinkInputNode_);
     converterForLoudness_->RegisterCallback(this);
 
-    nodeInfo.nodeName = "HpaeLoudnessGainNode";
-    nodeInfo.nodeId = OnGetNodeId();
-    loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
-    loudnessGainNode_->Connect(converterForLoudness_);
-    loudnessGainNode_->SetLoudnessGain(sinkInputNode_->GetLoudnessGain());
-
-    // single stream manager
-    outputNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-    outputNodeInfo.nodeId = OnGetNodeId();
-    converterForOutput_ = std::make_shared<HpaeAudioFormatConverterNode>(nodeInfo, outputNodeInfo);
-    converterForOutput_->Connect(loudnessGainNode_);
-    sinkOutputNode_->Connect(converterForOutput_);
-
-    OnNotifyDfxNodeInfo(true, sinkOutputNode_->GetNodeId(), converterForOutput_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(true, converterForOutput_->GetNodeId(), loudnessGainNode_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(true, loudnessGainNode_->GetNodeId(), converterForLoudness_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(true, converterForLoudness_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-    
     return SUCCESS;
 }
 
@@ -216,10 +199,6 @@ int32_t HpaeOffloadRendererManager::DisConnectInputSession()
     loudnessGainNode_->DisConnect(converterForLoudness_);
     converterForOutput_->DisConnect(loudnessGainNode_);
     sinkOutputNode_->DisConnect(converterForOutput_);
-    OnNotifyDfxNodeInfo(false, converterForLoudness_->GetNodeId(), sinkInputNode_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(false, loudnessGainNode_->GetNodeId(), converterForLoudness_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(false, converterForOutput_->GetNodeId(), loudnessGainNode_->GetNodeInfo());
-    OnNotifyDfxNodeInfo(false, sinkOutputNode_->GetNodeId(), converterForOutput_->GetNodeInfo());
     converterForLoudness_ = nullptr;
     loudnessGainNode_ = nullptr;
     converterForOutput_ = nullptr;
@@ -442,10 +421,7 @@ void HpaeOffloadRendererManager::InitSinkInner(bool isReload)
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.statusCallback = weak_from_this();
-    nodeInfo.nodeName = "HpaeOffloadSinkOutputNode";
-    nodeInfo.nodeId = OnGetNodeId();
     sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
-    OnNotifyDfxNodeInfo(true, 0, nodeInfo);
     sinkOutputNode_->SetTimeoutStopThd(sinkInfo_.suspendTime);
     // if failed, RenderSinkInit will failed either, so no need to deal ret
     AUDIO_INFO_LOG("HpaeOffloadRendererManager::GetRenderSinkInstance");

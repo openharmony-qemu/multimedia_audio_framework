@@ -45,6 +45,13 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
                        std::to_string(SAMPLE_F32LE) + "_ch_" + std::to_string(GetChannelCount()) +
                        "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeInnerCapSinkNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeInnerCapSinkNode::DoProcess()
@@ -124,12 +131,23 @@ void HpaeInnerCapSinkNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffe
 {
     AUDIO_INFO_LOG("Connect");
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeInnerCapSinkNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     AUDIO_INFO_LOG("DisConnect");
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkInit()

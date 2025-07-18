@@ -54,10 +54,13 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
         pullDataFlag_ = true;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSinkInputNode");
+    }
+#endif
 }
-
-HpaeSinkInputNode::~HpaeSinkInputNode()
-{}
 
 void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {

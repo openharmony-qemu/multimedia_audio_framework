@@ -31,19 +31,6 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)),
       hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
 {
-#ifdef ENABLE_HIDUMP_DFX
-    if (nodeInfo.statusCallback.lock()) {
-        nodeInfo.nodeName = "hpaeSinkOutputNode";
-        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        hpaeSinkOutputNode_->SetNodeInfo(nodeInfo);
-        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, hpaeSinkOutputNode_->GetNodeInfo());
-        nodeInfo.nodeName = "HpaeMixerNode";
-        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        mixerNode_->SetNodeInfo(nodeInfo);
-        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(
-            true, hpaeSinkOutputNode_->GetNodeId(), mixerNode_->GetNodeInfo());
-    }
-#endif
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("HpaeOutputCluster mixerNode SetupAudioLimiter failed!");
     }
@@ -109,36 +96,14 @@ void HpaeOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *
         preNodeInfo.nodeName.c_str(), curNodeInfo.nodeName.c_str(),
         mixerNode_->GetNodeId(), hpaeSinkOutputNode_->GetNodeId());
 
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-        curNodeInfo.nodeId = callBack->OnGetNodeId();
-        curNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-    }
-#endif
-    
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
     } else {
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(
-                false, sceneConverterMap_[sceneType]->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
-        }
-#endif
         sceneConverterMap_.erase(sceneType);
         sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
     }
-    sceneConverterMap_[sceneType]->SetNodeInfo(curNodeInfo);
-    sceneConverterMap_[sceneType]->Connect(preNode);
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-        AUDIO_INFO_LOG("HpaeOutputCluster connect curNodeInfo name %{public}s", curNodeInfo.nodeName.c_str());
-        AUDIO_INFO_LOG("HpaeOutputCluster connect preNodeInfo name %{public}s", preNodeInfo.nodeName.c_str());
-        callBack->OnNotifyDfxNodeInfo(true, mixerNode_->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
-        callBack->OnNotifyDfxNodeInfo(true, sceneConverterMap_[sceneType]->GetNodeId(), preNodeInfo);
-    }
-#endif
     mixerNode_->Connect(sceneConverterMap_[sceneType]);
+    sceneConverterMap_[sceneType]->Connect(preNode);
     connectedProcessCluster_.insert(sceneType);
 }
 
@@ -150,21 +115,9 @@ void HpaeOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffe
     if (SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType]->DisConnect(preNode);
         mixerNode_->DisConnect(sceneConverterMap_[sceneType]);
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, preNodeInfo.nodeId, preNodeInfo);
-            callBack->OnNotifyDfxNodeInfo(
-                false, sceneConverterMap_[sceneType]->GetNodeId(), sceneConverterMap_[sceneType]->GetNodeInfo());
-        }
-#endif
         sceneConverterMap_.erase(sceneType);
     } else {
         mixerNode_->DisConnect(preNode);
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = mixerNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, preNodeInfo.nodeId, preNodeInfo);
-        }
-#endif
     }
 
     if (GetPreOutNum() == 0) {
@@ -178,7 +131,7 @@ int32_t HpaeOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeOutputCluster::GetInstance(std::string deviceClass, std::string deviceNetId)
+int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
 }

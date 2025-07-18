@@ -45,6 +45,8 @@ void HpaeRemoteOutputClusterTest::TearDown()
 
 HWTEST_F(HpaeRemoteOutputClusterTest, constructNode_01, TestSize.Level0)
 {
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.needEmptyChunk = false;
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id
     nodeInfo1.frameLen = 960; // 960: frameLen
@@ -53,7 +55,7 @@ HWTEST_F(HpaeRemoteOutputClusterTest, constructNode_01, TestSize.Level0)
     nodeInfo1.channels = STEREO;
     nodeInfo1.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRemoteOutputCluster> hpaeRemoteOutputCluster =
-        std::make_shared<HpaeRemoteOutputCluster>(nodeInfo1);
+        std::make_shared<HpaeRemoteOutputCluster>(nodeInfo1, sinkInfo);
     EXPECT_NE(hpaeRemoteOutputCluster, nullptr);
 
     HpaeNodeInfo nodeInfo2;
@@ -81,6 +83,7 @@ HWTEST_F(HpaeRemoteOutputClusterTest, constructNode_01, TestSize.Level0)
 
 HWTEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01, TestSize.Level0)
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id
     nodeInfo1.frameLen = 0;
@@ -89,7 +92,7 @@ HWTEST_F(HpaeRemoteOutputClusterTest, SetTimeoutStopThd_01, TestSize.Level0)
     nodeInfo1.channels = STEREO;
     nodeInfo1.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRemoteOutputCluster> hpaeRemoteOutputCluster =
-        std::make_shared<HpaeRemoteOutputCluster>(nodeInfo1);
+        std::make_shared<HpaeRemoteOutputCluster>(nodeInfo1, sinkInfo);
     EXPECT_NE(hpaeRemoteOutputCluster, nullptr);
 
     HpaeNodeInfo nodeInfo2;

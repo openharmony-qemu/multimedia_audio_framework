@@ -98,16 +98,11 @@ void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string
 void AudioServerHpaeDump::PlaybackSinkDump(std::string &dumpString)
 {
     dumpString += "Hpae AudioServer Playback sink Dump:\n\n";
-    dumpString += DEFAULT_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, DEFAULT_SINK_NAME);
-    dumpString += OFFLOAD_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, OFFLOAD_SINK_NAME);
-    dumpString += MCH_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, MCH_SINK_NAME);
-    dumpString += BT_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, BT_SINK_NAME);
-    dumpString += DP_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, DP_SINK_NAME);
+    for (auto it = devicesInfo_.sinkInfos.begin(); it != devicesInfo_.sinkInfos.end(); it++) {
+        dumpString += it->deviceName + ":\n";
+        GetDeviceSinkInfo(dumpString, it->deviceName);
+        dumpString += "\n";
+    }
     dumpString += "\n";
     PlaybackSinkInputDump(dumpString);
 }
@@ -144,14 +139,11 @@ void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::stri
 void AudioServerHpaeDump::RecordSourceDump(std::string &dumpString)
 {
     dumpString += "Hpae AudioServer Record source Dump:\n\n";
-    dumpString += PRIMARY_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, PRIMARY_SOURCE_NAME);
-    dumpString += BT_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, BT_SOURCE_NAME);
-    dumpString += USB_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, USB_SOURCE_NAME);
-    dumpString += PRIMARY_WAKEUP_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, PRIMARY_WAKEUP_SOURCE_NAME);
+    for (auto it = devicesInfo_.sourceInfos.begin(); it != devicesInfo_.sourceInfos.end(); it++) {
+        dumpString += it->deviceName + ":\n";
+        GetDeviceSourceInfo(dumpString, it->deviceName);
+        dumpString += "\n";
+    }
     dumpString += "\n";
     RecordSourceOutputDump(dumpString);
 }
@@ -168,6 +160,9 @@ void AudioServerHpaeDump::OnDumpSourceInfoCb(std::string &dumpStr, int32_t resul
 
 void AudioServerHpaeDump::ArgDataDump(std::string &dumpString, std::queue<std::u16string> &argQue)
 {
+    if (!GetDevicesInfo()) {
+        return;
+    }
     dumpString += "Hpae AudioServer Data Dump:\n\n";
     if (argQue.empty()) {
         ServerDataDump(dumpString);
@@ -213,18 +208,6 @@ int32_t AudioServerHpaeDump::Initialize()
 void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 {
     lock_guard<mutex> lock(lock_);
-    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetHdfModulesInfo_ = false;
-    dumpHdfModulesInfo_.clear();
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetHdfModulesInfo_;  // will be true when got notified.
-    });
-    if (!stopWaiting) {
-        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout!");
-        return;
-    }
-    
     dumpHdfModulesInfo_ += "\nHDF Input Modules\n";
     AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
 
@@ -247,6 +230,23 @@ void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 
     AUDIO_INFO_LOG("HDFModulesDump : \n%{public}s end", dumpHdfModulesInfo_.c_str());
     dumpString += dumpHdfModulesInfo_;
+}
+
+bool AudioServerHpaeDump::GetDevicesInfo()
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetHdfModulesInfo_ = false;
+    dumpHdfModulesInfo_.clear();
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishGetHdfModulesInfo_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout!");
+        return false;
+    }
+    return true;
 }
 
 void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)

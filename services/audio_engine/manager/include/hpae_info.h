@@ -123,6 +123,7 @@ struct HpaeSinkInfo {
     uint32_t fixedLatency = 0;
     uint32_t sinkLatency = 0;
     std::string splitMode;
+    bool needEmptyChunk = true;
 };
 
 enum HpaeEcType {
