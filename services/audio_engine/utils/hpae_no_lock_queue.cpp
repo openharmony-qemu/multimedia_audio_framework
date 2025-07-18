@@ -29,10 +29,6 @@ HpaeNoLockQueue::HpaeNoLockQueue(size_t maxRequestCount)
         AUDIO_WARNING_LOG("[HpaeNoLockQueue] maxRequestCount %{public}zu is beyound Max Count", maxRequestCount);
         maxRequestCount = MAX_REQUEST_COUNT;
     }
-    if (maxRequestCount <= 0) {
-        AUDIO_WARNING_LOG("[HpaeNoLockQueue] maxRequestCount can not be zero");
-        return;
-    }
     InitQueue(maxRequestCount);
 }
 
