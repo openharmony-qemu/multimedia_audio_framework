@@ -161,7 +161,8 @@ void HpaeProcessCluster::CreateLoudnessGainNode(uint32_t sessionId, const HpaeNo
 {
     CHECK_AND_RETURN_LOG(!SafeGetMap(idLoudnessGainNodeMap_, sessionId),
         "sessionId %{public}d loudnessGainNode already exist", sessionId);
-    idLoudnessGainNodeMap_[sessionId] = std::make_shared<HpaeLoudnessGainNode>(preNodeInfo);
+    HpaeNodeInfo loudnessGainNodeInfo = preNodeInfo;
+    idLoudnessGainNodeMap_[sessionId] = std::make_shared<HpaeLoudnessGainNode>(loudnessGainNodeInfo);
 }
 
 void HpaeProcessCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)

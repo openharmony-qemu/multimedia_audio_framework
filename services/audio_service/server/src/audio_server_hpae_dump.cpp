@@ -31,15 +31,6 @@ using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000;  // 1000ms
-static const std::string BT_SINK_NAME = "Bt_Speaker";
-static const std::string MCH_SINK_NAME = "MCH_Speaker";
-static const std::string OFFLOAD_SINK_NAME = "Offload_Speaker";
-static const std::string DP_SINK_NAME = "DP_speaker";
-static const std::string DEFAULT_SINK_NAME = "Speaker";
-static const std::string PRIMARY_SOURCE_NAME = "Built_in_mic";
-static const std::string BT_SOURCE_NAME = "Bt_Mic";
-static const std::string USB_SOURCE_NAME = "Usb_arm_mic";
-static const std::string PRIMARY_WAKEUP_SOURCE_NAME = "Built_in_wakeup";
 
 AudioServerHpaeDump::AudioServerHpaeDump()
 {

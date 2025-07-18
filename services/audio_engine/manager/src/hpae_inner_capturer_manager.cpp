@@ -908,6 +908,7 @@ int32_t HpaeInnerCapturerManager::DumpSinkInfo()
         UploadDumpSinkInfo(sinkInfo_.deviceName);
     };
     SendRequestInner(request);
+    return SUCCESS;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
