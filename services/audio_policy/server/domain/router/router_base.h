@@ -47,16 +47,36 @@ public:
     {
         return name_;
     }
+
+    bool IsDeviceUsageSupported(AudioDeviceUsage audioDevUsage,
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+    {
+        CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, false, "deviceDesc is nullptr");
+        uint32_t deviceUsage = static_cast<uint32_t>(deviceDesc->deviceUsage_);
+        switch (audioDevUsage) {
+            case MEDIA_OUTPUT_DEVICES:
+            case MEDIA_INPUT_DEVICES:
+                return (deviceUsage & MEDIA) != 0;
+            case CALL_OUTPUT_DEVICES:
+            case CALL_INPUT_DEVICES:
+                return (deviceUsage & VOICE) != 0;
+            default:
+                return false;
+        }
+    }
+
     std::shared_ptr<AudioDeviceDescriptor> GetLatestNonExcludedConnectDevice(AudioDeviceUsage audioDevUsage,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
     {
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> filteredDescs;
         // remove abnormal device or excluded device
         for (const auto &desc : descs) {
+            CHECK_AND_CONTINUE(desc != nullptr);
             if (desc->exceptionFlag_ || !desc->isEnable_ ||
                 (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
                 (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
-                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc)) {
+                AudioStateManager::GetAudioStateManager().IsExcludedDevice(audioDevUsage, desc) ||
+                !IsDeviceUsageSupported(audioDevUsage, desc)) {
                 continue;
             }
             CHECK_AND_CONTINUE(!ExistSameRemoteCarWithA2DP(desc));

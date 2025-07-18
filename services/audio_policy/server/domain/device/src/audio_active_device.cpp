@@ -193,12 +193,6 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     NotifyUserDisSelectionEventToBt(
         std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDevice()));
 
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
-            STREAM_USAGE_INVALID);
-    }
-
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
@@ -225,6 +219,10 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
+            STREAM_USAGE_INVALID);
+    }
 }
 
 void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
