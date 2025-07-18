@@ -1182,7 +1182,7 @@ bool AudioEndpointInner::CheckAllBufferReady(int64_t checkTime, uint64_t curWrit
                 continue;
             }
             int32_t readableDataFrame = tempBuffer->GetReadableDataFrames();
-            if (readableDataFrame > 0 &&
+            if (readableDataFrame >= 0 &&
                 (static_cast<uint32_t>(readableDataFrame) < processList_[i]->GetSpanSizeInFrame())) {
                 isAllReady = false;
                 AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT,
