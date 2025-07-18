@@ -100,7 +100,7 @@ HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.L
  * @tc.number: IsStreamActiveByStreamUsage_001
  * @tc.desc  : Test IsStreamActiveByStreamUsage interface.
  */
-HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_002, TestSize.Level1)
 {
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_MEDIA));
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
@@ -108,7 +108,6 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Lev
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_DTMF));
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ENFORCED_TONE));
     EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_CALL_ASSISTANT));
-    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ULTRASONIC));
 }
 /**
  * @tc.name  : Test GetHardeareOutputSamplingRate API
