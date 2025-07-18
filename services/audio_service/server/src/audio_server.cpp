@@ -237,6 +237,10 @@ static void SetAudioSceneForAllSource(std::shared_ptr<IAudioCaptureSource> &sour
         fastVoipSource->SetAudioScene(audioScene, activeInputDevice);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> a2dpInSource = GetSourceByProp(HDI_ID_TYPE_BLUETOOTH);
+    if (a2dpInSource != nullptr && a2dpInSource->IsInited()) {
+        a2dpInSource->SetAudioScene(audioScene, activeInputDevice);
+    }
 }
 
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
