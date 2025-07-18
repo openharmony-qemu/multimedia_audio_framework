@@ -139,7 +139,7 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 * @tc.number: CheckPosTimeReasonable
 * @tc.desc  : Test CheckPosTimeReasonable interface.
 */
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_003, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_003, TestSize.Level1)
 {
     std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
     std::pair<uint64_t, int64_t> next = std::make_pair(5, 50);
@@ -154,7 +154,7 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_003, TestSize.Level1)
 * @tc.number: CheckPosTimeReasonable
 * @tc.desc  : Test CheckPosTimeReasonable interface.
 */
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_004, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_004, TestSize.Level1)
 {
     std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
     std::pair<uint64_t, int64_t> next = std::make_pair(11, 50);
@@ -169,7 +169,7 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_004, TestSize.Level1)
 * @tc.number: CheckPosTimeReasonable
 * @tc.desc  : Test CheckPosTimeReasonable interface.
 */
-HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_005, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_005, TestSize.Level1)
 {
     std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
     std::pair<uint64_t, int64_t> next = std::make_pair(10, 50);
