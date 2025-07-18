@@ -80,5 +80,103 @@ HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Lev
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamActiveByStreamUsage_001 result2:%{public}d", result);
     EXPECT_EQ(result, false);
 }
+/**
+ * @tc.name  : Test GetHardeareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardeareOutputSamplingRate_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetHardwareOutputSamplingRate_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStreamManager::GetInstance()->GetHardwareOutputSamplingRate(desc);
+
+    EXPECT_EQ(desc->deviceRole_, -1);
+}
+
+/**
+ * @tc.name  : Test IsStreamActiveByStreamUsage API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamActiveByStreamUsage_001
+ * @tc.desc  : Test IsStreamActiveByStreamUsage interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_MEDIA));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_COMMUNICATION));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_SYSTEM));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_DTMF));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ENFORCED_TONE));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_VOICE_CALL_ASSISTANT));
+    EXPECT_FALSE(AudioStreamManager::GetInstance()->IsStreamActiveByStreamUsage(STREAM_USAGE_ULTRASONIC));
+}
+/**
+ * @tc.name  : Test GetHardeareOutputSamplingRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetHardeareOutputSamplingRate_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetSupportedAudioEffectProperty_001, TestSize.Level1)
+{
+    AudioEffectPropertyArray propertyArray;
+
+    int32_t result = AudioStreamManager::GetInstance()->GetSupportedAudioEffectProperty(propertyArray);
+
+    EXPECT_NE(result, 1);
+}
+/**
+ * @tc.name  : Test GetAudioEffectProperty API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioEffectPropertye_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetAudioEffectProperty_001, TestSize.Level1)
+{
+    AudioEffectPropertyArray propertyArray;
+
+    int32_t result = AudioStreamManager::GetInstance()->GetAudioEffectProperty(propertyArray);
+    EXPECT_NE(result, 1);
+}
+/**
+ * @tc.name  : Test GetAudioEnhanceProperty API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioEnhanceProperty_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, GetAudioEnhanceProperty_001, TestSize.Level1)
+{
+    AudioEnhancePropertyArray propertyArray;
+
+    int32_t result = AudioStreamManager::GetInstance()->GetAudioEnhanceProperty(propertyArray);
+
+    EXPECT_NE(result, 1);
+}
+/**
+ * @tc.name  : Test ForceStopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: ForceStopAudioStream
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, ForceStopAudioStream_001, TestSize.Level1)
+{
+    StopAudioType audioType = STOP_ALL;
+
+    int32_t result = AudioStreamManager::GetInstance()->ForceStopAudioStream(audioType);
+    EXPECT_NE(result, 1);
+}
+/**
+ * @tc.name  : Test IsAudioLoopbackSupported API
+ * @tc.type  : FUNC
+ * @tc.number: IsAudioLoopbackSupported_001
+ * @tc.desc  : Test IsStreamActive interface.
+ */
+HWTEST(AudioStreamManagerUnitTest, IsAudioLoopbackSupported_001, TestSize.Level1)
+{
+    AudioLoopbackMode mode = LOOPBACK_HARDWARE;
+
+    int32_t result = AudioStreamManager::GetInstance()->IsAudioLoopbackSupported(mode);
+
+    EXPECT_EQ(result, 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -106,7 +106,285 @@ HWTEST(AudioServiceUnitTest, AudioProcessInClientInner_001, TestSize.Level1)
     processClient_ = AudioProcessInClient::Create(config, fastAudioStream_);
     EXPECT_EQ(processClient_, nullptr);
 }
+/**
+ * @tc.name  : Test RegisterThreadPriorityOnStart API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterThreadPriorityOnStart_001
+ * @tc.desc  : Test RegisterThreadPriorityOnStart interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, RegisterThreadPriorityOnStart_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
 
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = CMD_FROM_CLIENT;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    cmdType = CMD_FROM_SYSTEM;
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+
+    cmdType = static_cast<StateChangeCmdType>(2);
+    fastAudioStream->RegisterThreadPriorityOnStart(cmdType);
+}
+/**
+ * @tc.name  : Test RegisterThreadPriorityOnStart API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterThreadPriorityOnStart_001
+ * @tc.desc  : Test RegisterThreadPriorityOnStart interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, StartAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = CMD_FROM_SYSTEM;
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::NEW_DEVICE_AVAILABLE);
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_CLIENT;
+    ret = fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = static_cast<StateChangeCmdType>(2);
+    fastAudioStream->StartAudioStream(cmdType, reason);
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_001
+ * @tc.desc  : Test StopAudioStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, StopAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->StopAudioStream();
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream
+ * @tc.desc  : Test FetchDeviceForSplitStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, FetchDeviceForSplitStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->FetchDeviceForSplitStream();
+    EXPECT_NE(fastAudioStream, nullptr);
+}
+/**
+ * @tc.name  : Test SetCallbacksWhenRestore API
+ * @tc.type  : FUNC
+ * @tc.number: SetCallbacksWhenRestore_001
+ * @tc.desc  : Test SetCallbacksWhenRestore interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, SetCallbacksWhenRestore_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->SetCallbacksWhenRestore();
+    EXPECT_NE(ret, 0);
+}
+/**
+ * @tc.name  : Test RestoreAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioStream_001
+ * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, RestoreAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    bool needStoreState = true;
+    int ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_EQ(ret, 0);
+
+    needStoreState = false;
+    ret = fastAudioStream->RestoreAudioStream(needStoreState);
+    EXPECT_EQ(ret, 0);
+}
+/**
+ * @tc.name  : Test JoincallbackLoop API
+ * @tc.type  : FUNC
+ * @tc.number: JoincallbackLoop_001
+ * @tc.desc  : Test JoincallbackLoop interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, JoinCallbackLoop_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    fastAudioStream->JoinCallbackLoop();
+    EXPECT_NE(fastAudioStream, nullptr);
+}
+/**
+ * @tc.name  : Test SetDefaultoutputDevice API
+ * @tc.type  : FUNC
+ * @tc.number: SetDefaultoutputDevice_001
+ * @tc.desc  : Test SetDefaultoutputDevice interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, SetDefaultOutputDevice_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    DeviceType expectedDevice = static_cast<DeviceType>(1); 
+    int ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
+    EXPECT_NE(ret, 0);
+
+    expectedDevice = static_cast<DeviceType>(2); 
+    ret = fastAudioStream->SetDefaultOutputDevice(expectedDevice);
+    EXPECT_NE(ret, 0);
+}
+/**
+ * @tc.name  : Test PauseAudiStream API
+ * @tc.type  : FUNC
+ * @tc.number: PauseAudiStream
+ * @tc.desc  : Test PauseAudiStream interface using unsupported parameters.
+ */
+HWTEST(AudioServiceUnitTest, PauseAudioStream_001, TestSize.Level1)
+{
+    AudioProcessConfig config;
+    config.appInfo.appPid = getpid();
+    config.appInfo.appUid = getuid();
+
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+
+    config.rendererInfo.contentType = CONTENT_TYPE_MUSIC;
+    config.rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    config.rendererInfo.rendererFlags = RENDERER_FLAGS;
+
+    config.streamInfo.channels = STEREO;
+    config.streamInfo.encoding = ENCODING_PCM;
+    config.streamInfo.format = SAMPLE_S16LE;
+    config.streamInfo.samplingRate = SAMPLE_RATE_64000;
+    StateChangeCmdType cmdType = static_cast<StateChangeCmdType>(2);
+    std::unique_ptr<FastAudioStream> fastAudioStream = std::make_unique<FastAudioStream>(config.streamType,
+        AUDIO_MODE_PLAYBACK, config.appInfo.appUid);
+    int ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_CLIENT;
+    ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+
+    cmdType = CMD_FROM_SYSTEM;
+    ret = fastAudioStream->PauseAudioStream(cmdType);
+    EXPECT_EQ(ret, 0);
+}
 /**
  * @tc.name  : Test JoinCallbackLoop
  * @tc.number: Audio_Renderer_JoinCallbackLoop_001

@@ -1419,5 +1419,63 @@ HWTEST_F(AudioVolumeUnitTest, GetSimpleBufferAvg_002, TestSize.Level1)
     auto ret = GetSimpleBufferAvg(&buffer, length);
     EXPECT_EQ(ret, 1);
 }
+/**
+ * @tc.name  : Test GetCurVolume_001 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_001
+ * @tc.desc  : Test GetCurVolume_001 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetCurVolume_001, TestSize.Level1)
+{
+    uint32_t sessionId = 1;
+    const char *deviceClass = "device";
+    struct VolumeValues volumes;
+    float result = GetCurVolume(sessionId, nullptr, deviceClass, &volumes);
+    EXPECT_FLOAT_EQ(result, 1.0f);
+
+    const char *streamType = "stream";
+    result = GetCurVolume(sessionId, streamType, nullptr, &volumes);
+    EXPECT_FLOAT_EQ(result, 1.0f);
+
+}
+
+/**
+ * @tc.name  : Test GetCurVolume_002 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_002
+ * @tc.desc  : Test GetCurVolume_002 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_001, TestSize.Level1)
+{
+    uint32_t streamIndex = -1;
+    float result = GetStopFadeoutState(streamIndex);
+    EXPECT_EQ(result, INVALID_STATE);
+
+    streamIndex = 1;
+    GetStopFadeoutState(streamIndex);
+
+    streamIndex = 9999;
+    GetStopFadeoutState(streamIndex);
+}
+
+/**
+ * @tc.name  : Test GetCurVolume_002 API
+ * @tc.type  : FUNC
+ * @tc.number: GetCurVolume_002
+ * @tc.desc  : Test GetCurVolume_002 interface
+ */
+HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_001, TestSize.Level1)
+{
+    uint64_t DURATION_TIME_DEFAULT = 40;
+    uint64_t DURATION_TIME_SHORT = 10;
+    uint64_t DURATION_INIT = 0;
+    EXPECT_EQ(0, GetFadeStrategy(DURATION_INIT));
+    EXPECT_EQ(0, GetFadeStrategy(DURATION_TIME_DEFAULT + 1));
+    EXPECT_EQ(1, GetFadeStrategy(DURATION_TIME_SHORT));
+    EXPECT_EQ(1, GetFadeStrategy(DURATION_INIT + 1));
+    EXPECT_EQ(2, GetFadeStrategy(DURATION_TIME_SHORT + 1));
+    EXPECT_EQ(2, GetFadeStrategy(DURATION_TIME_DEFAULT - 1));
+    EXPECT_EQ(2, GetFadeStrategy(DURATION_TIME_DEFAULT));
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

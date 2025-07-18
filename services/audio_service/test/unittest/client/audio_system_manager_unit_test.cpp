@@ -960,5 +960,130 @@ HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
     int32_t result = audioSystemManager.CreateAudioWorkgroup();
     EXPECT_GT(result, 0);
 }
+/**
+ * @tc.name   : Test GetVolumeInDbByStream API
+ * @tc.number : GetVolumeInDbByStream
+ * @tc.desc   : Test GetVolumeInDbByStream interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    int32_t volumeLevel = 50;
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+
+    AudioSystemManager audioSystemManager;
+    float result = audioSystemManager.GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+    float errNotSupportedFloat = static_cast<float>(ERR_NOT_SUPPORTED);
+    float errPermissionDeniedFloat = static_cast<float>(ERR_PERMISSION_DENIED);
+
+    EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
+
+    streamUsage = static_cast<StreamUsage>(1000);
+    result = audioSystemManager.GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
+
+    streamUsage = STREAM_USAGE_SYSTEM;
+    result = audioSystemManager.GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+    EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
+
+    streamUsage = STREAM_USAGE_DTMF;
+    result = audioSystemManager.GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
+    EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
+}
+/**
+ * @tc.name   : Test IsValidToStartGroup API
+ * @tc.number : IsValidToStartGroup_001
+ * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_001, TestSize.Level1)
+{
+    int workgroupId = 1;
+
+    AudioSystemManager audioSystemManager;
+    bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
+    EXPECT_FALSE(result);
+
+    workgroupId = -1111;
+    result = audioSystemManager.IsValidToStartGroup(workgroupId);
+    EXPECT_FALSE(result);
+
+    workgroupId = 9999;
+    result = audioSystemManager.IsValidToStartGroup(workgroupId);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test StopGroup API
+ * @tc.number : StopGroupp_001
+ * @tc.desc   : Test StopGroup interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, StopGroup_001, TestSize.Level1)
+{
+    int workgroupId = 1;
+
+    AudioSystemManager audioSystemManager;
+    bool result = audioSystemManager.StopGroup(workgroupId);
+    EXPECT_TRUE(result);
+
+    workgroupId = -111;
+    result = audioSystemManager.StopGroup(workgroupId);
+    EXPECT_TRUE(result);
+
+    workgroupId = 9999;
+    result = audioSystemManager.StopGroup(workgroupId);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name   : Test GetVolumeByUsage API
+ * @tc.number : GetVolumeByUsage001
+ * @tc.desc   : Test GetVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
+{
+    StreamUsage streamUsage = STREAM_USAGE_SYSTEM;
+
+    AudioSystemManager audioSystemManager;
+    float result = audioSystemManager.GetVolumeByUsage(streamUsage);
+    float errNotSupportedFloat = static_cast<float>(ERR_NOT_SUPPORTED);
+    float errPermissionDeniedFloat = static_cast<float>(ERR_PERMISSION_DENIED);
+
+    EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
+
+    streamUsage = static_cast<StreamUsage>(1000);
+    result = audioSystemManager.GetVolumeByUsage(streamUsage);
+    EXPECT_TRUE(result != -10);
+
+    streamUsage = STREAM_USAGE_MUSIC;
+    result = audioSystemManager.GetVolumeByUsage(streamUsage);
+    EXPECT_TRUE(result != -10);
+
+    streamUsage = STREAM_USAGE_DTMF;
+    EXPECT_TRUE(result != errNotSupportedFloat && result != errPermissionDeniedFloat);
+}
+
+/**
+ * @tc.name   : Test IsWhispering API
+ * @tc.number : IsWhispering_001
+ * @tc.desc   : Test IsWhispering interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsWhispering_001, TestSize.Level1)
+{
+    AudioSystemManager audioSystemManager;
+    bool result = audioSystemManager.IsWhispering();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name   : Test IsWhispering API
+ * @tc.number : IsWhispering_001
+ * @tc.desc   : Test IsWhispering interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_001, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_MUSIC, 5, deviceType), 1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
