@@ -813,9 +813,9 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
                 CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
+                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
                 CHECK_AND_CONTINUE(audioRouterCenter_.IsConfigRouterStrategy(
                     audioCapturerChangeInfos[i]->capturerInfo.sourceType));
-                UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
                 audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc,
                     hasBTPermission, hasSystemPermission);
             }
