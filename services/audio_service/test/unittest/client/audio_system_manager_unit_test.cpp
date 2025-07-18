@@ -965,7 +965,7 @@ HWTEST(AudioSystemManagerUnitTest, CreateGroup_001, TestSize.Level1)
  * @tc.number : GetVolumeInDbByStream
  * @tc.desc   : Test GetVolumeInDbByStream interface createAudioWorkgroup
  */
-HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_002, TestSize.Level1)
 {
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
     int32_t volumeLevel = 50;
