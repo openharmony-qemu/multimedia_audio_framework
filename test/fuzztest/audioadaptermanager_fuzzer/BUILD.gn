@@ -36,7 +36,7 @@ ohos_fuzztest("AudioAdapterManagerFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../services/audio_policy:audio_policy_client",
     "../../../services/audio_policy:audio_policy_service_static",
   ]

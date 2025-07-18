@@ -25,7 +25,7 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
     "../../../services/audio_service/server/include",
     "../../../services/audio_service/client/include",
     "../../../services/audio_policy/client/include",
-    "${audio_framework_root}/interfaces/inner_api/native/audiomanager/include/",
+    "../../../interfaces/inner_api/native/audiomanager/include/",
   ]
 
   cflags = [
@@ -40,7 +40,7 @@ ohos_fuzztest("AudioServiceClientFuzzTest") {
   configs = [ "../../../services/audio_service:audio_service_config" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/audiodefinitions:audio_definitions",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../services/audio_policy:audio_policy_client",

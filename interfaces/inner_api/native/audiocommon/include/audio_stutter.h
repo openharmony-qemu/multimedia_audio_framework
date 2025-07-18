@@ -99,7 +99,7 @@ struct DataTransferMonitorParam : public Parcelable {
     {
         return parcel.WriteInt32(clientUID) &&
             parcel.WriteInt32(badDataTransferTypeBitMap) &&
-            parcel.WriteInt32(timeInterval) &&
+            parcel.WriteInt64(timeInterval) &&
             parcel.WriteInt32(badFramesRatio);
     }
 
@@ -111,7 +111,7 @@ struct DataTransferMonitorParam : public Parcelable {
         }
         param->clientUID = parcel.ReadInt32();
         param->badDataTransferTypeBitMap = parcel.ReadInt32();
-        param->timeInterval = parcel.ReadInt32();
+        param->timeInterval = parcel.ReadInt64();
         param->badFramesRatio = parcel.ReadInt32();
         return param;
     }

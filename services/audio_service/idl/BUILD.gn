@@ -14,6 +14,7 @@
 import("//build/config/components/idl_tool/idl.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
+audio_framework_root = "../../.."
 audio_policy_idl_location = "${audio_framework_root}/services/audio_policy/idl"
 
 idl_gen_interface("audio_service_idl_interface") {
@@ -59,7 +60,6 @@ idl_gen_interface("audio_policy_idl_interface") {
   sources_callback = []
   sources_common = []
 
-  # client_enable = true
   log_tag = "AudioPolicyIdl"
   hitrace = "HITRACE_TAG_ZAUDIO"
 
@@ -107,8 +107,6 @@ ohos_shared_library("audio_framework_interface") {
     "-fno-asynchronous-unwind-tables",
     "-Os",
   ]
-
-  # ldflags = [ "-Wl,--exclude-libs=ALL" ]
 
   output_values = get_target_outputs(":audio_service_idl_interface")
   output_values += get_target_outputs(":audio_policy_idl_interface")

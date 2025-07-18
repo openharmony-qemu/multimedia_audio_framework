@@ -886,8 +886,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     bool silentCapture {false}; // To be deprecated since 12
 
     AudioPlaybackCaptureConfig() = default;
-    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool slient)
-        : filterOptions(filter), silentCapture(slient)
+    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
+        : filterOptions(filter), silentCapture(silent)
     {
     }
 

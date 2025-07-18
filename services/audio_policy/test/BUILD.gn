@@ -19,6 +19,8 @@ import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
+audio_framework_root = "../../.."
+
 group("audio_policy_unittest_packages") {
   testonly = true
   deps = [
@@ -88,6 +90,7 @@ group("audio_policy_unittest_packages") {
     ":privacy_priority_router_unit_test",
     ":stream_filter_router_unit_test",
     ":volume_data_maintainer_unit_test",
+    ":audio_ipc_serialization_unit_test"
   ]
 }
 
@@ -5370,4 +5373,28 @@ ohos_unittest("client_type_manager_unit_test") {
   ldflags = [ "--coverage" ]
 
   sources = [ "./unittest/client_type_manager_unit_test/src/client_type_manager_unit_test.cpp" ]
+}
+
+ohos_unittest("audio_ipc_serialization_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [ "./unittest/audio_ipc_serialization_unit_test/include" ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  deps = [ "${audio_framework_root}/services/audio_service/idl:audio_framework_interface" ]
+
+  external_deps = [
+    "c_utils:utils",
+    "ipc:ipc_core",
+    "hilog:libhilog",
+  ]
+
+  sources = [ "./unittest/audio_ipc_serialization_unit_test/src/audio_ipc_serialization_unit_test.cpp" ]
 }
