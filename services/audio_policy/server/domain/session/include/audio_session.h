@@ -55,7 +55,6 @@ public:
     void Dump(std::string &dumpString);
     int32_t Activate(const AudioSessionStrategy strategy);
     int32_t Deactivate();
-    AudioSessionState GetSessionState();
     AudioSessionStrategy GetSessionStrategy();
     bool IsAudioSessionEmpty();
     bool IsAudioRendererEmpty();

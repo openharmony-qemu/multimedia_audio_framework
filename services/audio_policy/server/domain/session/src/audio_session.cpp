@@ -257,13 +257,6 @@ StreamUsage AudioSession::GetStreamUsageByAudioSessionScene(const AudioSessionSc
     return StreamUsage::STREAM_USAGE_UNKNOWN;
 }
 
-AudioSessionState AudioSession::GetSessionState()
-{
-    std::lock_guard<std::mutex> lock(sessionMutex_);
-    AUDIO_INFO_LOG("pid %{public}d, state %{public}d", callerPid_, static_cast<int32_t>(state_));
-    return state_;
-}
-
 AudioSessionStrategy AudioSession::GetSessionStrategy()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);

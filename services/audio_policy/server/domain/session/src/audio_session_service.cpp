@@ -414,7 +414,7 @@ bool AudioSessionService::IsStreamAllowedToSetDevice(const uint32_t streamId)
     for (const auto& pair : sessionMap_) {
         if ((pair.second != nullptr) && (pair.second->IsStreamContainedInCurrentSession(streamId))) {
             // for inactivate session, its default device cannot be used, so set it to DEVICE_TYPE_INVALID
-            if (pair.second->GetSessionState() != AudioSessionState::SESSION_ACTIVE) {
+            if (!pair.second->IsActivated()) {
                 return true;
             } else {
                 DeviceType deviceType;
