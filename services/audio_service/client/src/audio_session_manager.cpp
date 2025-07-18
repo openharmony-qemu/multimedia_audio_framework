@@ -143,7 +143,7 @@ int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
         return ret;
     }
 
-    AUDIO_INFO_LOG("SetDefaultOutputDevice sucessed.");
+    AUDIO_INFO_LOG("SetDefaultOutputDevice successful.");
     std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
     setDefaultOutputDevice_ = true;
     setDeviceType_ = deviceType;
