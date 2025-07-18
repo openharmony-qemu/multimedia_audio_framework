@@ -17,15 +17,15 @@
 #define LOG_TAG "HpaeSinkInputNode"
 #endif
 
-#include "hpae_sink_input_node.h"
 #include <iostream>
+#include <cinttypes>
+#include "hpae_sink_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "cinttypes"
 #include "audio_performance_monitor.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

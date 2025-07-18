@@ -17,9 +17,9 @@
 #include "hpae_pcm_dumper.h"
 #include "audio_dump_pcm.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "securec.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

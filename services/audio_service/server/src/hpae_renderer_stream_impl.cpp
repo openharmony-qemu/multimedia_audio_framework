@@ -27,13 +27,13 @@
 #include <thread>
 #include "safe_map.h"
 #include "audio_errors.h"
-#include "audio_service_log.h"
 #include "audio_utils.h"
 #include "i_hpae_manager.h"
 #include "audio_stream_info.h"
 #include "audio_effect_map.h"
 #include "down_mixer.h"
 #include "policy_handler.h"
+#include "audio_engine_log.h"
 
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
@@ -43,7 +43,6 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr int32_t DEFAULT_PAUSED_LATENCY = 40;
 static constexpr uint64_t OFFLOAD_LATENCY_THRESHOLD = 40000; // 40ms latency threshold in microseconds
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
@@ -164,7 +163,6 @@ int32_t HpaeRendererStreamImpl::Pause(bool isStandby)
         AUDIO_ERR_LOG("Pause is error!");
         return ERR_INVALID_PARAM;
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_PAUSED_LATENCY));
     return SUCCESS;
 }
 
@@ -335,9 +333,10 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
-    auto interval = (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US;
-    interval = interval > latencyUs ? latencyUs : interval;
-    latencyUs -= interval;
+    auto interval = (timestampCurrent[baseUsed] > timestamp_[baseUsed]) ?
+        (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US :
+        0;
+    latencyUs = latencyUs > interval ? latencyUs - interval : 0;
     timestamp = timestampCurrent[baseUsed];
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64

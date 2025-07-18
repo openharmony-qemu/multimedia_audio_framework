@@ -19,12 +19,12 @@
 
 #include "hpae_capturer_manager.h"
 #include "audio_info.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
 #include "hpae_policy_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

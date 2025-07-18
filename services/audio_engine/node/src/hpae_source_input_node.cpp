@@ -17,14 +17,14 @@
 #define LOG_TAG "HpaeSourceInputNode"
 #endif
 
+#include <cinttypes>
 #include "hpae_source_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
-#include "cinttypes"
 #include "capturer_clock_manager.h"
+#include "audio_engine_log.h"
 
 #define BYTE_SIZE_SAMPLE_U8 1
 #define BYTE_SIZE_SAMPLE_S16 2

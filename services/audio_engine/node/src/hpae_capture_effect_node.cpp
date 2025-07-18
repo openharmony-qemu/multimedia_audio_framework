@@ -20,12 +20,12 @@
 #include "hpae_capture_effect_node.h"
 #include <iostream>
 #include "hpae_pcm_buffer.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "hpae_format_convert.h"
 #include "audio_enhance_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

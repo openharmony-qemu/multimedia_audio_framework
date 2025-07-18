@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeNodeCommon"
+#endif
 
+#include <cinttypes>
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
-#include "cinttypes"
 
 namespace OHOS {
 namespace AudioStandard {

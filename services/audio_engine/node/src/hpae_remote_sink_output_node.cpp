@@ -17,13 +17,13 @@
 #define LOG_TAG "HpaeRemoteSinkOutputNode"
 #endif
 
-#include <hpae_remote_sink_output_node.h>
-#include "audio_errors.h"
 #include <iostream>
+#include "hpae_remote_sink_output_node.h"
+#include "audio_errors.h"
 #include "hpae_format_convert.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

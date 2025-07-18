@@ -196,6 +196,7 @@ private:
     std::string remoteInfoNetworkId_ = "";
     DeviceType remoteInfoDeviceType_ = DEVICE_TYPE_DEFAULT;
     std::mutex virtualDevicesMutex_;
+    std::mutex descArrayMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -25,6 +25,9 @@ namespace OHOS {
 namespace AudioStandard {
 
 const int32_t TEST_RET_NUM = 0;
+const int32_t TEST_RET_MAX_VOLUME = 15;
+const StreamUsage ILLEGAL_STREAM_USAGE = static_cast<StreamUsage>(static_cast<int32_t>(STREAM_USAGE_MAX)+999);
+const int32_t TEST_RET_ERROR_NOT_SUPPORTED = ERR_NOT_SUPPORTED;
 
 class AudioSystemManagerUnitTest : public testing::Test {
 public:
@@ -43,6 +46,11 @@ public:
 class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+};
+
+class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {
+public:
+    void OnSystemVolumeChange(VolumeEvent volumeEvent) override {}
 };
 
 /**
@@ -614,7 +622,7 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest SetAppVolumeCallbackForUid_001 end result:%{public}d", result);
     EXPECT_NE(result, TEST_RET_NUM);
 }
- 
+
 /**
  * @tc.name   : Test StartGroup API
  * @tc.number : StartGroup_001
@@ -627,6 +635,205 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
     int32_t startTimeMs = 1000;
     int32_t endTimeMs = 500;
     int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test GetVolumeInUnitOfDb API
+ * @tc.number: GetVolumeInUnitOfDb_001
+ * @tc.tesc  : Test GetVolumeInUnitOfDb interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeInUnitOfDb_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInUnitOfDb_001 start");
+    AudioSystemManager manager;
+    int32_t volLevel = 5;
+    float result = manager.GetVolumeInUnitOfDb(AudioVolumeType::STREAM_MUSIC,
+        volLevel,
+        DeviceType::DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInUnitOfDb_001 result1:%{public}f", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetMaxVolumeByUsage API
+ * @tc.number: GetMaxVolumeByUsage_001
+ * @tc.tesc  : Test GetMaxVolumeByUsage interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 start");
+    AudioSystemManager manager;
+    int32_t result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result1:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetMaxVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result2:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetMaxVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMaxVolumeByUsage_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetMinVolumeByUsage API
+ * @tc.number: GetMinVolumeByUsage_001
+ * @tc.tesc  : Test GetMinVolumeByUsage interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 start");
+    AudioSystemManager manager;
+    int32_t result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result1:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetMinVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result2:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetMinVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetMinVolumeByUsage_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetVolumeByUsage API
+ * @tc.number: GetVolumeByUsage_001
+ * @tc.tesc  : Test GetVolumeByUsage interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 start");
+    AudioSystemManager manager;
+    int32_t result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result1:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetVolumeByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result2:%{public}d", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    EXPECT_LE(result, TEST_RET_MAX_VOLUME);
+    result = manager.GetVolumeByUsage(ILLEGAL_STREAM_USAGE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test IsStreamMuteByUsage API
+ * @tc.number: IsStreamMuteByUsage_001
+ * @tc.tesc  : Test IsStreamMuteByUsage interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 start");
+    AudioSystemManager manager;
+    bool isMuted = false;
+    int32_t result = manager.IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_MUSIC, isMuted);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result1:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+    result = manager.IsStreamMuteByUsage(StreamUsage::STREAM_USAGE_ULTRASONIC, isMuted);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result2:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+    result = manager.IsStreamMuteByUsage(ILLEGAL_STREAM_USAGE, isMuted);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMuteByUsage_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetVolumeInDbByStream API
+ * @tc.number: GetVolumeInDbByStream_001
+ * @tc.tesc  : Test GetVolumeInDbByStream interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 start");
+    AudioSystemManager manager;
+    int32_t volLevel = 5;
+    float result = manager.GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_MUSIC,
+        volLevel,
+        DeviceType::DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result1:%{public}f", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    result = manager.GetVolumeInDbByStream(StreamUsage::STREAM_USAGE_ULTRASONIC,
+        volLevel,
+        DeviceType::DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result2:%{public}f", result);
+    EXPECT_GE(result, TEST_RET_NUM);
+    result = manager.GetVolumeInDbByStream(ILLEGAL_STREAM_USAGE,
+        volLevel,
+        DeviceType::DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeInDbByStream_001 result3:%{public}f", result);
+    EXPECT_EQ(result, TEST_RET_ERROR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test GetSupportedAudioVolumeTypes API
+ * @tc.number: GetSupportedAudioVolumeTypes_001
+ * @tc.tesc  : Test GetSupportedAudioVolumeTypes interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 start");
+    AudioSystemManager manager;
+    std::vector<AudioVolumeType> result = manager.GetSupportedAudioVolumeTypes();
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetSupportedAudioVolumeTypes_001 result size1:%{public}zu",
+        result.size());
+    EXPECT_GE(result.size(), TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetAudioVolumeTypeByStreamUsage API
+ * @tc.number: GetAudioVolumeTypeByStreamUsage_001
+ * @tc.tesc  : Test GetAudioVolumeTypeByStreamUsage interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioVolumeTypeByStreamUsage_001 start");
+    AudioSystemManager manager;
+    AudioVolumeType result = manager.GetAudioVolumeTypeByStreamUsage(StreamUsage::STREAM_USAGE_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetAudioVolumeTypeByStreamUsage_001 result1:%{public}d", result);
+    EXPECT_GE(result, AudioVolumeType::STREAM_DEFAULT);
+    EXPECT_LE(result, AudioVolumeType::STREAM_ALL);
+}
+
+/**
+ * @tc.name  : Test GetStreamUsagesByVolumeType API
+ * @tc.number: GetStreamUsagesByVolumeType_001
+ * @tc.tesc  : Test GetStreamUsagesByVolumeType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 start");
+    AudioSystemManager manager;
+    std::vector<StreamUsage> result = manager.GetStreamUsagesByVolumeType(AudioVolumeType::STREAM_MUSIC);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetStreamUsagesByVolumeType_001 result size1:%{public}zu",
+        result.size());
+    EXPECT_GE(result.size(), TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test RegisterSystemVolumeChnageCallback API
+ * @tc.number: RegisterSystemVolumeChnageCallback_001
+ * @tc.tesc  : Test RegisterSystemVolumeChnageCallback interface
+ */
+HWTEST(AudioSystemManagerUnitTest, RegisterSystemVolumeChnageCallback_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 start");
+    int32_t testClientId = 300300;
+    std::shared_ptr<SystemVolumeChangeCallback> callback = std::make_shared<
+            SystemVolumeChangeCallbackTest>();
+    AudioSystemManager manager;
+    int32_t result = manager.RegisterSystemVolumeChangeCallback(testClientId, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result1:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+    result = manager.UnregisterSystemVolumeChangeCallback(testClientId, callback);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result2:%{public}d", result);
+    EXPECT_EQ(result, SUCCESS);
+    result = manager.RegisterSystemVolumeChangeCallback(testClientId, nullptr);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest RegisterSystemVolumeChnageCallback_001 result3:%{public}d", result);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 

@@ -15,10 +15,11 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeAudioFormatConverterNode"
 #endif
+
 #include "hpae_audio_format_converter_node.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
-#include "cinttypes"
+#include <cinttypes>
+#include "audio_engine_log.h"
 
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr uint32_t MS_IN_SECOND = 1000;

@@ -347,9 +347,8 @@ int32_t AudioInterruptZoneManager::FindZoneByPid(int32_t pid)
 
 bool AudioInterruptZoneManager::CheckAudioInterruptZonePermission()
 {
-    auto callerUid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET(callerUid == UID_AUDIO, false);
-    return true;
+    AUDIO_INFO_LOG("audiointerruptzone permission: %{public}d", PermissionUtil::VerifySystemPermission());
+    return PermissionUtil::VerifySystemPermission();
 }
 } // namespace AudioStandard
 } // namespace OHOS

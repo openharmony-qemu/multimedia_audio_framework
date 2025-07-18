@@ -34,12 +34,8 @@ public:
     HpaeNode(){};
     virtual ~HpaeNode()
     {
-        AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.", GetNodeId(), GetNodeName().c_str());
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callback = GetNodeStatusCallback().lock()) {
-            callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
-        }
-#endif
+        AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+            nodeInfo_.nodeId, nodeInfo_.nodeName.c_str());
     };
     HpaeNode(HpaeNodeInfo& nodeInfo) : nodeInfo_(nodeInfo)
     {}

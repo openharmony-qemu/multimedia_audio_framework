@@ -3406,5 +3406,29 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_007, TestSize.Level1)
     EXPECT_TRUE(StringConverter(str2, result8Signed));
     EXPECT_EQ(result8Signed, 10);
 }
+
+/**
+* @tc.name  : Test GetSupportedAudioVolumeTypes  API
+* @tc.type  : FUNC
+* @tc.number: GetSupportedAudioVolumeTypes_001
+* @tc.desc  : Test GetSupportedAudioVolumeTypes API
+*/
+HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetSupportedAudioVolumeTypes();
+    EXPECT_GE(ret.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetStreamUsagesByVolumeType  API
+* @tc.type  : FUNC
+* @tc.number: GetStreamUsagesByVolumeType_001
+* @tc.desc  : Test GetStreamUsagesByVolumeType API
+*/
+HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
+    EXPECT_GE(ret.size(), 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -1009,8 +1009,10 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_002, TestSize.Leve
 {
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_FAST;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
+    result = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float loudnessGainSet = VALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
@@ -1031,7 +1033,9 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_003, TestSize.Leve
 {
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     float loudnessGainSet = VALID_LOUDNESS_GAIN;
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGainSet);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);

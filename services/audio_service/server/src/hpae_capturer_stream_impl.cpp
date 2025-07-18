@@ -19,12 +19,12 @@
 #include "safe_map.h"
 #include "hpae_capturer_stream_impl.h"
 #include "audio_errors.h"
-#include "audio_capturer_log.h"
 #include "audio_utils.h"
 #include "policy_handler.h"
 #include <iostream>
 #include <cinttypes>
 #include "i_hpae_manager.h"
+#include "audio_engine_log.h"
 using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {

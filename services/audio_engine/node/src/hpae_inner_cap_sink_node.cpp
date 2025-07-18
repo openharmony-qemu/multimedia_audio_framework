@@ -17,16 +17,17 @@
 #define LOG_TAG "HpaeInnerCapSinkNode"
 #endif
 
+#include <ctime>
 #include "hpae_inner_cap_sink_node.h"
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
-#include "audio_policy_log.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
-#include <ctime>
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {

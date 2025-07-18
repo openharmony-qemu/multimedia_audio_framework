@@ -400,11 +400,8 @@ int32_t AudioEcManager::GetPipeInfoByDeviceTypeForEc(const std::string &role, co
     std::shared_ptr<PolicyAdapterInfo> info;
     bool ret = audioConfigManager_.GetAdapterInfoByType(static_cast<AudioAdapterType>(
         AudioPolicyUtils::portStrToEnum[portName]), info);
-    if (!ret) {
-        AUDIO_ERR_LOG("no adapter found for deviceType: %{public}d, portName: %{public}s",
-            deviceType, portName.c_str());
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret && info != nullptr, ERR_NOT_SUPPORTED,
+        "no adapter found for deviceType: %{public}d, portName: %{public}s", deviceType, portName.c_str());
     std::string pipeName = GetPipeNameByDeviceForEc(role, deviceType);
     pipeInfo = info->GetPipeInfoByName(pipeName);
     if (pipeInfo == nullptr) {
@@ -647,7 +644,8 @@ void AudioEcManager::ReloadSourceForSession(SessionInfo sessionInfo)
     ReloadNormalSource(sessionInfo, targetInfo, targetSource);
 
     audioActiveDevice_.UpdateActiveDeviceRoute(audioActiveDevice_.GetCurrentInputDeviceType(),
-        DeviceFlag::INPUT_DEVICES_FLAG);
+        DeviceFlag::INPUT_DEVICES_FLAG, audioActiveDevice_.GetCurrentInputDevice().deviceName_,
+        audioActiveDevice_.GetCurrentInputDevice().networkId_);
 }
 
 int32_t AudioEcManager::FetchTargetInfoForSessionAdd(const SessionInfo sessionInfo, PipeStreamPropInfo &targetInfo,
