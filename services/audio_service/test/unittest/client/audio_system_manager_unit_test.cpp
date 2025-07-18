@@ -701,10 +701,10 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetVolumeByUsage API
- * @tc.number: GetVolumeByUsage_002
+ * @tc.number: GetVolumeByUsage_001
  * @tc.tesc  : Test GetVolumeByUsage interface
  */
-HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_002, TestSize.Level1)
+HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetVolumeByUsage_001 start");
     AudioSystemManager manager;
@@ -1039,7 +1039,7 @@ HWTEST(AudioSystemManagerUnitTest, StopGroup_001, TestSize.Level1)
  * @tc.number : GetVolumeByUsage001
  * @tc.desc   : Test GetVolumeByUsage interface createAudioWorkgroup
  */
-HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_001, TestSize.Level1)
+HWTEST(AudioSystemManagerUnitTest, GetVolumeByUsage_002, TestSize.Level1)
 {
     StreamUsage streamUsage = STREAM_USAGE_SYSTEM;
 
