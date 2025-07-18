@@ -1541,6 +1541,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             streamDesc->sessionId_ = switchInfo.params.originalSessionId;
         }
         streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+        streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
             streamDesc, flag, switchInfo.params.originalSessionId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
