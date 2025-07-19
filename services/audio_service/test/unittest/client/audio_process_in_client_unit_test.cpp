@@ -14,6 +14,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "audio_service_log.h"
 #include "audio_service.h"
@@ -26,6 +27,39 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+class MockIAudioProcess : public IAudioProcess {
+public:
+    MOCK_METHOD(int32_t, ResolveBufferBaseAndGetServerSpanSize,
+        (std::shared_ptr<OHAudioBufferBase> buffer, uint32_t &spanSizeInFrame), (override));
+
+    MOCK_METHOD(int32_t, GetSessionId, (uint32_t &sessionId), (override));
+    MOCK_METHOD(int32_t, Start, (), (override));
+    MOCK_METHOD(int32_t, Pause, (bool isFlush), (override));
+    MOCK_METHOD(int32_t, Resume, (), (override));
+
+    MOCK_METHOD(int32_t, Stop, (int32_t stage), (override));
+
+    MOCK_METHOD(int32_t, RequestHandleInfo, (), (override));
+
+    MOCK_METHOD(int32_t, RequestHandleInfoAsync, (), (override));
+
+    MOCK_METHOD(int32_t, Release, (bool isSwitchStream), (override));
+
+    MOCK_METHOD(int32_t, RegisterProcessCb, (const &sptr<object>), (override));
+
+    MOCK_METHOD(int32_t, RegisterThreadPriority,
+        (int32_t tid, const std::string &bundleName, uint32_t method), (override));
+
+    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice), (override));
+    MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
+    MOCK_METHOD(int32_t, SetSourceDuration, (int64_t duration), (override));
+    MOCK_METHOD(int32_t, SetUnderrunCount, (uint32_t underrunCnt), (override));
+
+    MOCK_METHOD(int32_t, SaveAdjustStreamVolumeInfo,
+        (float volume, uint32_t sessionId, const std::string &adjustTime, uint32_t code), (override));
+
+    MOCK_METHOD(int32_t, SetAudioHapticsSyncId, (int32_t audioHapticsSyncId), (override));
+};
 
 class AudioProcessInClientUnitTest : public testing::Test {
 public:
@@ -3019,6 +3053,58 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_WaitIfBufferEmpty
 
     auto ret = ptrAudioProcessInClientInner->WaitIfBufferEmpty(bufDesc);
     EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test AudioProcessInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: AudioProcessInClientInner_GetAudioTime_002
+ * @tc.desc  : Test AudioProcessInClientInner::GetAudioTime
+ */
+HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
+    uint32_t totalSizeInFrame = 0;
+    uint32_t byteSizePerFrame = 0;
+    ptrAudioProcessInClientInner->audioBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame,
+        byteSizePerFrame);
+    ASSERT_TRUE(ptrAudioProcessInClientInner->audioBuffer_ != nullptr);
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_ = new BasicBufferInfo();
+    auto ptrBufferInfo = ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_;
+    ASSERT_TRUE(ptrBufferInfo != nullptr);
+
+    auto ptrFastAudioStream = std::make_shared<FastAudioStream>(config.streamType,
+        AUDIO_MODE_RECORD, config.appInfo.appUid);
+    ptrAudioProcessInClientInner->Init(config, ptrFastAudioStream);
+
+    ptrBufferInfo->handlePos.store(0);
+    ptrBufferInfo->handleTime.store(0);
+
+    uint32_t framePos = 0;
+    int64_t sec = 0;
+    int64_t nanoSec = 0;
+    auto ret = ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(nanoSec, 0);
+
+    ptrBufferInfo->handleTime++;
+    ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
+    EXPECT_EQ(nanoSec, 0);
+
+    ptrBufferInfo->handlePos++;
+    ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
+    EXPECT_EQ(nanoSec, 1);
+
+    delete ptrBufferInfo;
 }
 } // namespace AudioStandard
 } // namespace OHOS
