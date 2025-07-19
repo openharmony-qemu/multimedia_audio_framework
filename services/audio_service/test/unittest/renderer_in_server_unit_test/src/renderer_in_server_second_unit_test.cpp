@@ -49,6 +49,7 @@ const uint32_t TEST_STREAMINDEX = 64;
 
 static AudioProcessConfig processConfig;
 static BufferDesc bufferDesc;
+static int32_t length = 10000;
 
 static AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
     AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -164,9 +165,21 @@ HWTEST_F(RendererInServerExtUnitTest, InnerCaptureOtherStream_001, TestSize.Leve
     captureInfo.isInnerCapEnabled = true;
     captureInfo.dupStream = nullptr;
     int32_t innerCapId = 1;
+    uint32_t streamIndex_ = 0;
+    auto streamCallbacks = std::make_shared<StreamCallbacks>(streamIndex_);
+    server->innerCapIdToDupStreamCallbackMap_.insert({innerCapId, streamCallbacks});
+    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() = AudioRingCache::Create(length);
+    
+    auto buffer = std::make_unique<uint8_t []>(length);
+    BufferDesc emptyBufferDesc = {buffer.get(), length, length};
+    memset_s(emptyBufferDesc.buffer, emptyBufferDesc.bufLength, 0, emptyBufferDesc.bufLength);
+    server->WriteDupBufferInner(emptyBufferDesc, innerCapId);
+    int8_t inputData[length + 1];
+    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->OnWriteData(inputData, length + 1);
+    server->innerCapIdToDupStreamCallbackMap_[innerCapId]->OnWriteData(inputData, length - 1);
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
-    captureInfo.dupStream = std::make_shared<ProRendererStreamImpl>(processConfig, true);
+    IStreamManager::GetDupPlaybackManager().CreateRender(processConfig, captureInfo.dupStream);
     server->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
 
     server->renderEmptyCountForInnerCap_ = 1;

@@ -61,8 +61,9 @@ namespace {
     constexpr int32_t DEFAULT_SPAN_SIZE = 2;
     constexpr size_t MSEC_PER_SEC = 1000;
     const int32_t DUP_OFFLOAD_LEN = 7000; // 7000 -> 7000ms
-    const int32_t DUP_COMMON_LEN = 400; // 400 -> 400ms
+    const int32_t DUP_COMMON_LEN = 440; // 400 -> 440ms
     const int32_t DUP_DEFAULT_LEN = 20; // 20 -> 20ms
+    const int32_t DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT = 2; // 2 -> 2 frames -> 40ms
 }
 
 RendererInServer::RendererInServer(AudioProcessConfig processConfig, std::weak_ptr<IStreamListener> streamListener)
@@ -1651,9 +1652,18 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         OptResult result = dupBuffer->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
-        CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
-            "Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
-            result.size, requestDataLen);
+        if (result.size == 0 || result.size < requestDataLen) {
+            recoveryAntiShakeBufferCount_ = DUP_RECOVERY_AUTISHAKE_BUFFER_COUNT;
+            AUDIO_INFO_LOG("Readable size is invaild, result.size:%{public}zu, requstDataLen:%{public}zu",
+                result.size, requestDataLen);
+            return ERROR;
+        }
+        if (recoveryAntiShakeBufferCount_ > 0) {
+            recoveryAntiShakeBufferCount_--;
+            AUDIO_INFO_LOG("need recovery data anti-shake, no onWriteData, recoveryAntiShakeBufferCount_: %{public}d",
+                recoveryAntiShakeBufferCount_);
+            return ERROR;
+        }
         AUDIO_DEBUG_LOG("requstDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
         result = dupBuffer->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "dupBuffer dequeue failed");

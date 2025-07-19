@@ -600,7 +600,6 @@ void AudioEffectChain::updateDumpName()
 int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
 {
     if (updatePrimaryChannel() == SUCCESS) {
-        AUDIO_INFO_LOG("finish UpdateMultichannelIoBufferConfigInner in updatePrimaryChannel, no need continue");
         return SUCCESS;
     }
     int32_t replyData = 0;
