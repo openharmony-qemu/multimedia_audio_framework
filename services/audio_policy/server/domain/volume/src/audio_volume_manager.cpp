@@ -391,11 +391,11 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
     if (result == SUCCESS) {
         auto volumeValue = SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(streamType,
             audioActiveDevice_.GetCurrentOutputDevice());
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, volumeValue, streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType, volumeValue);
     } else if (result == ERR_UNKNOWN) {
         AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice,
-            audioPolicyManager_.GetSafeVolumeLevel(), streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType,
+            audioPolicyManager_.GetSafeVolumeLevel());
     }
     return result;
 }
@@ -548,7 +548,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
         if (!isNearlinkDevice) {
             Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
         } else {
-            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
         }
     } else {
         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
@@ -556,7 +556,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
             if (!isNearlinkDevice) {
                 Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
             } else {
-                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
             }
         }
     }

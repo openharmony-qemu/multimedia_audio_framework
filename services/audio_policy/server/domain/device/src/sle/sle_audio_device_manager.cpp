@@ -20,16 +20,17 @@
 
 #include "audio_errors.h"
 #include "audio_policy_log.h"
+#include "audio_policy_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace {
 const std::map<uint32_t, std::set<StreamUsage>> STREAM_USAGE_TO_SLE_STREAM_TYPE = {
-    {SLE_AUDIO_STREAM_NONE, {STREAM_USAGE_UNKNOWN}},
+    {SLE_AUDIO_STREAM_NONE, {}},
     {SLE_AUDIO_STREAM_UNDEFINED, {STREAM_USAGE_ULTRASONIC, STREAM_USAGE_ENFORCED_TONE, STREAM_USAGE_DTMF,
         STREAM_USAGE_ALARM, STREAM_USAGE_NOTIFICATION, STREAM_USAGE_SYSTEM,
         STREAM_USAGE_ACCESSIBILITY, STREAM_USAGE_VOICE_MESSAGE}},
-    {SLE_AUDIO_STREAM_MUSIC, {STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK}},
+    {SLE_AUDIO_STREAM_MUSIC, {STREAM_USAGE_UNKNOWN, STREAM_USAGE_MEDIA, STREAM_USAGE_MUSIC, STREAM_USAGE_AUDIOBOOK}},
     {SLE_AUDIO_STREAM_VOICE_CALL, {STREAM_USAGE_VOICE_MODEM_COMMUNICATION}},
     {SLE_AUDIO_STREAM_VOICE_ASSISTANT, {STREAM_USAGE_VOICE_ASSISTANT}},
     {SLE_AUDIO_STREAM_RING, {STREAM_USAGE_NOTIFICATION_RINGTONE, STREAM_USAGE_RINGTONE, STREAM_USAGE_RANGING,
@@ -363,6 +364,42 @@ void SleAudioDeviceManager::UpdateSleStreamTypeCount(const std::shared_ptr<Audio
             }
         }
     }
+}
+
+void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+
+    std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
+    auto it = startedSleStreamType_.find(deviceDesc->macAddress_);
+    CHECK_AND_RETURN_LOG(it != startedSleStreamType_.end(), "device %{public}s not found",
+        AudioPolicyUtils::GetInstance().GetEncryptAddr(deviceDesc->macAddress_).c_str());
+
+    for (const auto &pair : it->second) {
+        uint32_t streamType = pair.first;
+        CHECK_AND_CONTINUE_LOG(!pair.second.empty(), "streamType %{public}u has no session", streamType);
+        StopPlaying(deviceDesc->macAddress_, streamType);
+    }
+
+    startedSleStreamType_.erase(it);
+}
+
+std::unordered_map<uint32_t, std::unordered_set<uint32_t>> SleAudioDeviceManager::GetNearlinkStreamTypeMapByDevice(
+    const std::string &deviceAddr)
+{
+    std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
+    auto it = startedSleStreamType_.find(deviceAddr);
+    auto ret = std::unordered_map<uint32_t, std::unordered_set<uint32_t>>();
+    if (it != startedSleStreamType_.end()) {
+        for (const auto &pair : it->second) {
+            uint32_t streamType = pair.first;
+            std::unordered_set<uint32_t> sessionSet = pair.second;
+            if (!sessionSet.empty()) {
+                ret[streamType] = sessionSet;
+            }
+        }
+    }
+    return ret;
 }
 
 int32_t SleAudioDeviceManager::SetNearlinkDeviceMute(const std::string &device, AudioStreamType streamType, bool isMute)
