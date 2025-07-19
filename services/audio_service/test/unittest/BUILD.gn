@@ -87,6 +87,8 @@ ohos_unittest("audio_balance_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
