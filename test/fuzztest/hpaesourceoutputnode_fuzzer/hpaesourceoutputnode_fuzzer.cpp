@@ -51,7 +51,7 @@ static vector<HpaeSessionState> sessionStateMap = {
     HPAE_SESSION_STOPPED,
     HPAE_SESSION_RELEASED,
 };
-typedef void (*TestPtr)(const uint8_t *,size_t);
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
 T GetData()
@@ -130,8 +130,8 @@ void ConnectWithInfoFuzzTest()
     GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    hpaeSourceOutputNode->ConnectWithInfo(hpaeSourceInputNode,nodeInfo);
-    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode,nodeInfo);
+    hpaeSourceOutputNode->ConnectWithInfo(hpaeSourceInputNode, nodeInfo);
+    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode, nodeInfo);
 }
 
 void DisConnectFuzzTest()
@@ -149,7 +149,7 @@ void DisConnectWithInfoFuzzTest()
     GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode,nodeInfo);
+    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode, nodeInfo);
 }
 
 void SetStateFuzzTest()
