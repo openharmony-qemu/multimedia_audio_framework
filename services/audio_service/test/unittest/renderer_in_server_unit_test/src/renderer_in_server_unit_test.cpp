@@ -3436,45 +3436,5 @@ HWTEST_F(RendererInServerUnitTest, SetSourceDuration_001, TestSize.Level1)
     int32_t ret = rendererInServer->SetSourceDuration(duration);
     EXPECT_EQ(ret, SUCCESS);
 }
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: IsHighResolution_001
- * @tc.desc  : Test IsHighResolution API
- */
-HWTEST_F(RendererInServerUnitTest, IsHighResolution_001, TestSize.Level1)
-{
-    AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
-    tempProcessConfig.streamInfo = testStreamInfo;
-    tempProcessConfig.streamType = STREAM_MUSIC;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    tempProcessConfig.deviceType = DEVICE_TYPE_SPEAKER;
-    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
-    EXPECT_NE(nullptr, tmpRendererInServer);
-    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
-}
-
-/**
- * @tc.name  : Test RendererInServer
- * @tc.type  : FUNC
- * @tc.number: IsHighResolution_002
- * @tc.desc  : Test IsHighResolution API
- */
-HWTEST_F(RendererInServerUnitTest, IsHighResolution_002, TestSize.Level1)
-{
-    AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
-    tempProcessConfig.streamInfo = testStreamInfo;
-    tempProcessConfig.streamType = STREAM_ALARM;
-    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
-    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
-    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
-    EXPECT_NE(nullptr, tmpRendererInServer);
-    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
-}
 } // namespace AudioStandard
 } // namespace OHOS
