@@ -2473,22 +2473,32 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 {
     Trace trace("AudioPolicyServer::ActivateAudioInterrupt");
     AudioInterrupt audioInterrupt = audioInterruptIn;
-    if (interruptService_ != nullptr) {
-        auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
-            audioInterrupt.audioFocusType.streamType);
-        if (it != CAN_MIX_MUTED_STREAM.end()) {
-            AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
-                audioInterrupt.audioFocusType.streamType);
-            int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
-            if (volumeLevel == 0) {
-                audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
-            }
-        }
-        int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
-            audioInterrupt.streamUsage);
-        return AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt, isUpdatedAudioStrategy);
+    if (interruptService_ == nullptr) {
+        AUDIO_ERR_LOG("The interruptService_ is nullptr");
+        return ERR_UNKNOWN;
     }
-    return ERR_UNKNOWN;
+
+    auto it = std::find(CAN_MIX_MUTED_STREAM.begin(), CAN_MIX_MUTED_STREAM.end(),
+        audioInterrupt.audioFocusType.streamType);
+    if (it != CAN_MIX_MUTED_STREAM.end()) {
+        AudioStreamType streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(
+            audioInterrupt.audioFocusType.streamType);
+        int32_t volumeLevel = GetSystemVolumeLevelInternal(streamInFocus);
+        if (volumeLevel == 0) {
+            audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+        }
+    }
+
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
+        audioInterrupt.streamUsage);
+    int32_t ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
+        isUpdatedAudioStrategy);
+    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
+        eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
+            AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
+    }
+
+    return ret;
 }
 
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
@@ -4486,24 +4496,27 @@ bool AudioPolicyServer::CheckAudioSessionStrategy(const AudioSessionStrategy &se
 
 int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
 {
-    int32_t ret = SUCCESS;
     AudioConcurrencyMode mode = static_cast<AudioConcurrencyMode>(strategyIn);
     AudioSessionStrategy strategy{mode};
     if (interruptService_ == nullptr) {
         AUDIO_ERR_LOG("interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
+
     if (!CheckAudioSessionStrategy(strategy)) {
         AUDIO_ERR_LOG("The audio session strategy is invalid!");
         return ERR_INVALID_PARAM;
     }
+
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
-    ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy);
-    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
-        coreService_->FetchOutputDeviceAndRoute("ActivateAudioSession",
+
+    int32_t ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy);
+    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid)) &&
+        (eventEntry_ != nullptr)) {
+        eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
     }
 
@@ -4566,17 +4579,16 @@ int32_t AudioPolicyServer::GetDefaultOutputDevice(int32_t &deviceType)
 
 int32_t AudioPolicyServer::SetDefaultOutputDevice(int32_t deviceType)
 {
-    if (eventEntry_ == nullptr) {
-        AUDIO_ERR_LOG("eventEntry_ is nullptr!");
+    if ((eventEntry_ == nullptr) || (interruptService_ == nullptr)) {
+        AUDIO_ERR_LOG("eventEntry_ or interruptService_ is nullptr!");
         return ERR_UNKNOWN;
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     int32_t ret = eventEntry_->SetSessionDefaultOutputDevice(callerPid, static_cast<DeviceType>(deviceType));
-    if (ret == NEED_TO_FETCH) {
-        coreService_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
+    if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid))) {
+        eventEntry_->FetchOutputDeviceAndRoute("SetDefaultOutputDevice",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
-        return SUCCESS;
     }
 
     return ret;
