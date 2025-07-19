@@ -342,8 +342,9 @@ float BluetoothAudioCaptureSource::GetMaxAmplitude(void)
 
 int32_t BluetoothAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
 {
-    AUDIO_INFO_LOG("not support");
-    return ERR_NOT_SUPPORTED;
+    AUDIO_INFO_LOG("in");
+    validState_ = (audioScene == AUDIO_SCENE_DEFAULT);
+    return SUCCESS;
 }
 
 int32_t BluetoothAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
