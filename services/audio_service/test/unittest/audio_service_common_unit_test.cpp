@@ -419,8 +419,8 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
     parcel.WriteUnit32(2);
     int dataFd = 1;
     int infoFd =2;
-    parcel.WriteFileDescription(dataFd);
-    parcel.WriteFileDescription(infoFd);
+    parcel.WriteFileDescriptor(dataFd);
+    parcel.WriteFileDescriptor(infoFd);
 
     std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
     EXPECT_EQ(buffer, nullptr);
