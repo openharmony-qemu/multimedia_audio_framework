@@ -407,6 +407,28 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
 /**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
+* @tc.number: OHAudioBuffer_011
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUnit32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + 1);
+    parcel.WriteUnit32(100);
+    parcel.WriteUnit32(10);
+    parcel.WriteUnit32(2);
+    int dataFd = 1;
+    int infoFd =2;
+    parcel.WriteFileDescription(dataFd);
+    parcel.WriteFileDescription(infoFd);
+
+    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
+    EXPECT_EQ(buffer, nullptr);
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
 * @tc.number: OHAudioBufferBase_001
 * @tc.desc  : Test OHAudioBuffer interface.
 */
