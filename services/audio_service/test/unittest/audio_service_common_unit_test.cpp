@@ -418,7 +418,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
     parcel.WriteUint32(10);
     parcel.WriteUint32(2);
     int dataFd = 1;
-    int infoFd =2;
+    int infoFd = 2;
     parcel.WriteFileDescriptor(dataFd);
     parcel.WriteFileDescriptor(infoFd);
 
