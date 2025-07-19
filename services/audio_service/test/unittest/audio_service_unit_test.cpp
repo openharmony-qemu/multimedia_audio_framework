@@ -2319,12 +2319,12 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
  * @tc.number: ConfigCoreServiceProvider_001
  * @tc.desc  : Test ConfigCoreServiceProvider interface.
  */
-HWTEST_F(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
+HWTEST(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
 {
     auto coreServiceHandler = CoreServiceHandler::GetInstance();
     sptr<ICoreServiceProviderIpc> provider = nullptr;
     auto result = coreServiceHandler.ConfigCoreServiceProvider(provider);
-    EXPECT_EQ(result, ERR_INVALIE_PARAM);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
 }
 
 /**
@@ -2333,7 +2333,7 @@ HWTEST_F(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Lev
  * @tc.number: AddThread_001
  * @tc.desc  : Test AddThread interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = 10;
@@ -2349,7 +2349,7 @@ HWTEST_F(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
  * @tc.number: AddThread_002
  * @tc.desc  : Test AddThread interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = 10;
@@ -2365,7 +2365,7 @@ HWTEST_F(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
  * @tc.number: RemoveThread_001
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = -1;
@@ -2381,7 +2381,7 @@ HWTEST_F(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
  * @tc.number: RemoveThread_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = -1;
@@ -2397,7 +2397,7 @@ HWTEST_F(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
  * @tc.number: Start_001
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(100, 100);
@@ -2410,7 +2410,7 @@ HWTEST_F(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
  * @tc.number: Start_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(100, 200);
@@ -2423,7 +2423,7 @@ HWTEST_F(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
  * @tc.number: Start_003
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(200, 100);
@@ -2436,7 +2436,7 @@ HWTEST_F(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
  * @tc.number: Stop_003
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int result = workgroup.Stop();
@@ -2451,7 +2451,7 @@ HWTEST_F(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
  * @tc.number: Stop_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST_F(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
+HWTEST(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int result = workgroup.Stop();
