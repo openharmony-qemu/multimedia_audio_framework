@@ -1601,8 +1601,6 @@ void RendererInClientInner::SendRenderPeriodReachedEvent(int64_t rendererPeriodS
 void RendererInClientInner::HandleRendererPositionChanges(size_t bytesWritten)
 {
     totalBytesWritten_ += static_cast<int64_t>(bytesWritten);
-    totalBytesWrittenAfterFlush_.fetch_add(bytesWritten);
-    ringCacheLatencyBytes_.fetch_sub(static_cast<int64_t>(bytesWritten));
     if (sizePerFrameInByte_ == 0) {
         AUDIO_ERR_LOG("HandleRendererPositionChanges: sizePerFrameInByte_ is 0");
         return;
@@ -1812,9 +1810,6 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
     // cal latency between readIdx and framesWritten
     uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
-    // ringcachelatency represent how many buffer didn't write into ringcache(after speed) 
-    int64_t ringcacheLatency = ringCacheLatencyBytes_.load();
-    samplesWritten += ringcacheLatency > 0 ? static_cast<uint64_t>(ringcacheLatency) / sizePerFrameInByte_ : 0;
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
