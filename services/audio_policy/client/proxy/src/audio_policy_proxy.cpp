@@ -1572,6 +1572,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioPolicyProxy::GetAvailab
     for (int32_t i = 0; i < size; i++) {
         std::shared_ptr<AudioDeviceDescriptor> desc =
             std::make_shared<AudioDeviceDescriptor>(AudioDeviceDescriptor::UnmarshallingPtr(reply));
+            AUDIO_ERR_LOG("proxy displayname %{public}s", desc->displayName_.c_str());
         audioDeviceDescriptors.push_back(move(desc));
     }
     return audioDeviceDescriptors;
