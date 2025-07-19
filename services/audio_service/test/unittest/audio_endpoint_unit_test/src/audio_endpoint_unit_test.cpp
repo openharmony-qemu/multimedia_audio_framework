@@ -1012,7 +1012,7 @@ HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeStopEvent_001, TestSize.Level1)
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->isStarted_ = false;
     audioEndpointInner->HandleZeroVolumeStopEvent();
-    EXPECT_FALSE(audioEndpointInner->isStarted_); 
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
 }
 
 /*

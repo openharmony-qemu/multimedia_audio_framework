@@ -3682,20 +3682,5 @@ HWTEST_F(RendererInServerUnitTest, GetPlaybackManager_003, TestSize.Level1)
     IStreamManager &manager = IStreamManager::GetPlaybackManager(VOIP_PLAYBACK);
     EXPECT_NE(&manager, nullptr);
 }
-
-/**
- * @tc.name  : Test GetPlaybackManager
- * @tc.type  : FUNC
- * @tc.number: GetPlaybackManager_004
- * @tc.desc  : Test GetPlaybackManager API
- */
-HWTEST_F(RendererInServerUnitTest, GetPlaybackManager_004, TestSize.Level1)
-{
-    int32_t enginFlag = GetEngineFlag();
-    IStreamManager &manager = IStreamManager::GetPlaybackManager(PLAYBACK);
-    if (GetEngineFlag == 1) {
-        EXPECT_NE(&manager, nullptr);
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS
