@@ -136,12 +136,31 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
 
 void AudioService::ReleaseProcess(const std::string endpointName, const int32_t delayTime)
 {
-    AUDIO_INFO_LOG("find endpoint unlink, call delay release.");
-    std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
-    releasingEndpointSet_.insert(endpointName);
+    AUDIO_INFO_LOG("Release endpoint [%{public}s] after %{public}d ms", endpointName.c_str(), delayTime);
+    {
+        std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
+        releasingEndpointSet_.insert(endpointName);
+    }
     auto releaseMidpointThread = [this, endpointName, delayTime] () {
-        std::lock_guard<std::mutex> processListLock(processListMutex_);
-        this->DelayCallReleaseEndpoint(endpointName, delayTime);
+        std::unique_lock<std::mutex> processListLock(processListMutex_);
+        CHECK_AND_RETURN_LOG(endpointList_.count(endpointName), "Can't find endpoint %{public}s", endpointName.c_str());
+        if (delayTime != 0) {
+            bool ret = releaseEndpointCV_.wait_for(processListLock, std::chrono::milliseconds(delayTime),
+                [this, endpointName] {
+                std::lock_guard<std::mutex> lock(releaseEndpointMutex_);
+                if (releasingEndpointSet_.count(endpointName)) {
+                    AUDIO_INFO_LOG("Release endpoint %{public}s", endpointName.c_str());
+                    return false;
+                }
+                AUDIO_INFO_LOG("No need release endpoint: %{public}s", endpointName.c_str());
+                return true;
+            });
+
+            if (ret) {
+                return;
+            }
+        }
+        this->DelayCallReleaseEndpoint(endpointName);
     };
     std::thread releaseEndpointThread(releaseMidpointThread);
     releaseEndpointThread.detach();
@@ -934,34 +953,18 @@ int32_t AudioService::UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process
     return SUCCESS;
 }
 
-void AudioService::DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs)
+void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
 {
-    AUDIO_INFO_LOG("Delay release endpoint [%{public}s] start, delayInMs %{public}d.", endpointName.c_str(), delayInMs);
-    CHECK_AND_RETURN_LOG(endpointList_.count(endpointName),
-        "Find no such endpoint: %{public}s", endpointName.c_str());
-    std::unique_lock<std::mutex> lock(releaseEndpointMutex_);
-    if (delayInMs != 0) {
-        releaseEndpointCV_.wait_for(lock, std::chrono::milliseconds(delayInMs), [this, endpointName] {
-            if (releasingEndpointSet_.count(endpointName)) {
-                AUDIO_DEBUG_LOG("Wake up but keep release endpoint %{public}s in delay", endpointName.c_str());
-                return false;
-            }
-            AUDIO_DEBUG_LOG("Delay release endpoint break when reuse: %{public}s", endpointName.c_str());
-            return true;
-        });
-    }
-
+    std::lock_guard<std::mutex> lock(releaseEndpointMutex_);
     if (!releasingEndpointSet_.count(endpointName)) {
         AUDIO_DEBUG_LOG("Timeout or not need to release: %{public}s", endpointName.c_str());
         return;
     }
     releasingEndpointSet_.erase(endpointName);
-
-    std::shared_ptr<AudioEndpoint> temp = nullptr;
     CHECK_AND_RETURN_LOG(endpointList_.find(endpointName) != endpointList_.end() &&
         endpointList_[endpointName] != nullptr, "Endpoint %{public}s not available, stop call release",
         endpointName.c_str());
-    temp = endpointList_[endpointName];
+    std::shared_ptr<AudioEndpoint> temp = endpointList_[endpointName];
     if (temp->GetStatus() == AudioEndpoint::EndpointStatus::UNLINKED) {
         AUDIO_INFO_LOG("%{public}s not in use anymore, call release!", endpointName.c_str());
         temp->Release();
@@ -1025,7 +1028,7 @@ void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
         for (auto &item : endpointList_) {
             if (item.second->GetAudioMode() == AudioMode::AUDIO_MODE_RECORD) {
                 std::string endpointName = item.second->GetEndpointName();
-                DelayCallReleaseEndpoint(endpointName, 0);
+                DelayCallReleaseEndpoint(endpointName);
                 AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
                 break;
             }
@@ -1061,7 +1064,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
         case ReuseEndpointType::RECREATE_ENDPOINT: {
             std::string endpointName = endpointList_[deviceKey]->GetEndpointName();
             AUDIO_INFO_LOG("Release endpoint %{public}s change to now", endpointName.c_str());
-            DelayCallReleaseEndpoint(endpointName, 0);
+            DelayCallReleaseEndpoint(endpointName);
             [[fallthrough]];
         }
         case ReuseEndpointType::CREATE_ENDPOINT: {

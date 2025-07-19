@@ -141,7 +141,7 @@ public:
 
 private:
     AudioService();
-    void DelayCallReleaseEndpoint(std::string endpointName, int32_t delayInMs);
+    void DelayCallReleaseEndpoint(std::string endpointName);
     ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
