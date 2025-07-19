@@ -25,6 +25,8 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_info.h"
 #include "i_capturer_stream.h"
+#include "hpae_source_input_node.h"
+#include "hpae_source_output_node.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -36,6 +38,19 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const uint32_t DEFAULT_FRAME_LENGTH = 960;
+const uint32_t DEFAULT_NODE_ID = 1243;
+static vector<HpaeSessionState> sessionStateMap = {
+    HPAE_SESSION_INVALID,
+    HPAE_SESSION_NEW,
+    HPAE_SESSION_PREPARED,
+    HPAE_SESSION_RUNNING,
+    HPAE_SESSION_PAUSING,
+    HPAE_SESSION_PAUSED,
+    HPAE_SESSION_STOPPING,
+    HPAE_SESSION_STOPPED,
+    HPAE_SESSION_RELEASED,
+};
 typedef void (*TestPtr)(const uint8_t *,size_t);
 
 template<class T>
@@ -64,10 +79,21 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sceneType = HPAE_SCENE_RECORD;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+}
 
 void DoProcessFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     hpaeSourceOutputNode->DoProcess();
 }
@@ -75,6 +101,7 @@ void DoProcessFuzzTest()
 void ResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     hpaeSourceOutputNode->Reset();
 }
@@ -82,6 +109,7 @@ void ResetFuzzTest()
 void ResetAllFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     hpaeSourceOutputNode->ResetAll();
 }
@@ -89,60 +117,55 @@ void ResetAllFuzzTest()
 void ConnectFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    hpaeSourceOutputNode->Connect(preNode);
+    auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    hpaeSourceOutputNode->Connect(hpaeSourceInputNode);
+    hpaeSourceOutputNode->DisConnect(hpaeSourceInputNode);
 }
 
 void ConnectWithInfoFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    HpaeNodeInfo nodeInfo;
-    hpaeSourceOutputNode->ConnectWithInfo(preNode,nodeInfo);
+    auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    hpaeSourceOutputNode->ConnectWithInfo(hpaeSourceInputNode,nodeInfo);
+    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode,nodeInfo);
 }
 
 void DisConnectFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    hpaeSourceOutputNode->DisConnect(preNode);
+    auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    hpaeSourceOutputNode->DisConnect(hpaeSourceInputNode);
 }
 
 void DisConnectWithInfoFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    HpaeNodeInfo nodeInfo;
-    hpaeSourceOutputNode->DisConnectWithInfo(preNode,nodeInfo);
-}
-
-void RegisterReadCallbackFuzzTest()
-{
-    HpaeNodeInfo nodeInfo;
-    auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    const std::weak_ptr<ICapturerStreamCallback> &callback = std::weak_ptr<ICapturerStreamCallback>();
-    hpaeSourceOutputNode->RegisterReadCallback(callback);
+    auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
+    hpaeSourceOutputNode->DisConnectWithInfo(hpaeSourceInputNode,nodeInfo);
 }
 
 void SetStateFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
-    HpaeSessionState captureState;
+    uint32_t index = GetData<uint32_t>() % sessionStateMap.size();
+    HpaeSessionState captureState = sessionStateMap[index];
     hpaeSourceOutputNode->SetState(captureState);
 }
 
 void GetStateFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     hpaeSourceOutputNode->GetState();
 }
@@ -150,6 +173,7 @@ void GetStateFuzzTest()
 void SetAppUidFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     int32_t appUid = GetData<int32_t>();
     hpaeSourceOutputNode->SetAppUid(appUid);
@@ -158,11 +182,12 @@ void SetAppUidFuzzTest()
 void GetAppUidFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     hpaeSourceOutputNode->GetAppUid();
 }
 
-typedef void (*TestFuncs[12])();
+typedef void (*TestFuncs[11])();
 
 TestFuncs g_testFuncs = {
     DoProcessFuzzTest,
@@ -172,7 +197,6 @@ TestFuncs g_testFuncs = {
     ConnectWithInfoFuzzTest,
     DisConnectFuzzTest,
     DisConnectWithInfoFuzzTest,
-    RegisterReadCallbackFuzzTest,
     SetStateFuzzTest,
     GetStateFuzzTest,
     SetAppUidFuzzTest,

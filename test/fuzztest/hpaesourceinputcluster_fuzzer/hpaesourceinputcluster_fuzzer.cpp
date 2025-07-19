@@ -22,7 +22,6 @@
 #include <string>
 #undef private
 #include "hpae_source_input_cluster.h"
-#include "audio_errors.h"
 #include "hpae_source_input_node.h"
 #include "hpae_source_output_node.h"
 #include "hpae_format_convert.h"
@@ -37,7 +36,9 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t);
+const uint32_t DEFAULT_FRAME_LENGTH = 960;
+const uint32_t DEFAULT_NODE_ID = 1243;
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
 T GetData()
@@ -65,10 +66,21 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sceneType = HPAE_SCENE_RECORD;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+}
 
 void DoProcessFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->DoProcess();
 }
@@ -76,6 +88,7 @@ void DoProcessFuzzTest()
 void ResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->Reset();
 }
@@ -83,6 +96,7 @@ void ResetFuzzTest()
 void ResetAllFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->ResetAll();
 }
@@ -90,6 +104,7 @@ void ResetAllFuzzTest()
 void GetSharedInstanceFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetSharedInstance();
 }
@@ -97,6 +112,7 @@ void GetSharedInstanceFuzzTest1()
 void GetSharedInstanceFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetSharedInstance(nodeInfo);
 }
@@ -104,6 +120,7 @@ void GetSharedInstanceFuzzTest2()
 void GetOutputPortFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetOutputPort();
 }
@@ -111,6 +128,7 @@ void GetOutputPortFuzzTest1()
 void GetOutputPortFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetOutputPort(nodeInfo);
 }
@@ -118,25 +136,27 @@ void GetOutputPortFuzzTest2()
 void GetCapturerSourceInstanceFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
-    const std::string deviceClass = nodeInfo.deviceClass;
-    const std::string deviceNetId = nodeInfo.deviceNetId;
-    const SourceType sourceType;
-    const std::string sourceName = nodeInfo.sourceName;
-    hpaeSourceInputCluster->GetCapturerSourceInstance(deviceClass,deviceNetId,sourceType,sourceName);
+    std::string deviceClass = "file_io";
+    std::string deviceNetId = "LocalDevice";
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    std::string sourceName = "mic";
+    hpaeSourceInputCluster->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName);
 }
 
 void GetOutputPortFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
-    IAudioSourceAttr attr;
-    hpaeSourceInputCluster->GetOutputPort(attr);
+    hpaeSourceInputCluster->GetOutputPort();
 }
 
 void CapturerSourceDeInitFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceDeInit();
 }
@@ -144,6 +164,7 @@ void CapturerSourceDeInitFuzzTest()
 void CapturerSourceFlushFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceFlush();
 }
@@ -151,6 +172,7 @@ void CapturerSourceFlushFuzzTest()
 void CapturerSourcePauseFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourcePause();
 }
@@ -158,6 +180,7 @@ void CapturerSourcePauseFuzzTest()
 void CapturerSourceResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceReset();
 }
@@ -165,6 +188,7 @@ void CapturerSourceResetFuzzTest()
 void CapturerSourceResumeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceResume();
 }
@@ -172,6 +196,7 @@ void CapturerSourceResumeFuzzTest()
 void CapturerSourceStartFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceStart();
 }
@@ -179,6 +204,7 @@ void CapturerSourceStartFuzzTest()
 void CapturerSourceStopFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->CapturerSourceStop();
 }
@@ -186,6 +212,7 @@ void CapturerSourceStopFuzzTest()
 void GetSourceStateFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetSourceState();
 }
@@ -193,6 +220,7 @@ void GetSourceStateFuzzTest()
 void GetOutputPortNumFuzzTest1()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetOutputPortNum();
 }
@@ -200,6 +228,7 @@ void GetOutputPortNumFuzzTest1()
 void GetOutputPortNumFuzzTest2()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetOutputPortNum(nodeInfo);
 }
@@ -207,6 +236,7 @@ void GetOutputPortNumFuzzTest2()
 void GetSourceInputNodeTypeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetSourceInputNodeType();
 }
@@ -214,6 +244,7 @@ void GetSourceInputNodeTypeFuzzTest()
 void GSetSourceInputNodeTypeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     HpaeSourceInputNodeType type = HpaeSourceInputNodeType::HPAE_SOURCE_DEFAULT;
     hpaeSourceInputCluster->SetSourceInputNodeType(type);
@@ -222,15 +253,17 @@ void GSetSourceInputNodeTypeFuzzTest()
 void UpdateAppsUidAndSessionIdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     std::vector<int32_t> appsUid = {GetData<int32_t>()};
     std::vector<int32_t> sessionsId = {GetData<int32_t>()};
-    hpaeSourceInputCluster->UpdateAppsUidAndSessionId(appsUid,sessionsId);
+    hpaeSourceInputCluster->UpdateAppsUidAndSessionId(appsUid, sessionsId);
 }
 
 void GetCaptureIdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     hpaeSourceInputCluster->GetCaptureId();
 }

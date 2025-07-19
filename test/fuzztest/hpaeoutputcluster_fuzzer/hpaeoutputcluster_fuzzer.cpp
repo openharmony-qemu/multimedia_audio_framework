@@ -21,9 +21,9 @@
 #include <queue>
 #include <string>
 #undef private
-#include "hpae_mixer_node.h"
-#include "hpae_sink_output_node.h"
-#include "hpae_audio_format_converter_node.h"
+#include "hpae_process_cluster.h"
+#include "hpae_sink_input_node.h"
+#include "hpae_output_cluster.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
@@ -36,7 +36,31 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-typedef void (*TestPtr)(const uint8_t *,size_t);
+const uint32_t DEFAULT_FRAME_LENGTH = 960;
+const uint32_t DEFAULT_NODE_ID = 1243;
+static vector<HpaeProcessorType> hpaeProcessorTypeMap = {
+    HPAE_SCENE_DEFAULT,
+    HPAE_SCENE_MUSIC,
+    HPAE_SCENE_GAME,
+    HPAE_SCENE_MOVIE,
+    HPAE_SCENE_SPEECH,
+    HPAE_SCENE_RING,
+    HPAE_SCENE_VOIP_DOWN,
+    HPAE_SCENE_OTHERS,
+    HPAE_SCENE_EFFECT_NONE,
+    HPAE_SCENE_EFFECT_OUT,
+    HPAE_SCENE_SPLIT_MEDIA,
+    HPAE_SCENE_SPLIT_NAVIGATION,
+    HPAE_SCENE_SPLIT_COMMUNICATION,
+    HPAE_SCENE_VOIP_UP,
+    HPAE_SCENE_RECORD,
+    HPAE_SCENE_PRE_ENHANCE,
+    HPAE_SCENE_ASR,
+    HPAE_SCENE_VOICE_MESSAGE,
+    HPAE_SCENE_COLLABORATIVE,
+};
+
+typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
 T GetData()
@@ -64,10 +88,30 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
+static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
+{
+    nodeInfo.nodeId = DEFAULT_NODE_ID;
+    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+}
+
+static void CreateHpaeInfo(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &dummySinkInfo)
+{
+    GetTestNodeInfo(nodeInfo);
+    dummySinkInfo.channels = STEREO;
+    dummySinkInfo.frameLen = DEFAULT_FRAME_LENGTH;
+    dummySinkInfo.format = SAMPLE_F32LE;
+    dummySinkInfo.samplingRate = SAMPLE_RATE_48000;
+}
 
 void DoProcessFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->DoProcess();
 }
@@ -75,6 +119,7 @@ void DoProcessFuzzTest()
 void ResetFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Reset();
 }
@@ -82,6 +127,7 @@ void ResetFuzzTest()
 void ResetAllFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->ResetAll();
 }
@@ -89,24 +135,30 @@ void ResetAllFuzzTest()
 void ConnectFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo dummySinkInfo;
+    CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    hpaeOutputCluster->Connect(preNode);
+    std::shared_ptr<HpaeProcessCluster> ProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    hpaeOutputCluster->Connect(ProcessCluster);
+    hpaeOutputCluster->DisConnect(ProcessCluster);
 }
 
 void DisConnectFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    HpaeSinkInfo dummySinkInfo;
+    CreateHpaeInfo(nodeInfo, dummySinkInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    std::shared_ptr<OutputNode<HpaePcmBuffer *>> inputs;
-    const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode = inputs;
-    hpaeOutputCluster->DisConnect(preNode);
+    std::shared_ptr<HpaeProcessCluster> ProcessCluster =
+        std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
+    hpaeOutputCluster->DisConnect(ProcessCluster);
 }
 
 void GetConverterNodeCountFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->GetConverterNodeCount();
 }
@@ -114,6 +166,7 @@ void GetConverterNodeCountFuzzTest()
 void GetPreOutNumFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->GetPreOutNum();
 }
@@ -121,15 +174,17 @@ void GetPreOutNumFuzzTest()
 void GetInstanceFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     std::string deviceClass = "";
     std::string deviceNetId = "";
-    hpaeOutputCluster->GetInstance(deviceClass,deviceNetId);
+    hpaeOutputCluster->GetInstance(deviceClass, deviceNetId);
 }
 
 void InitFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     IAudioSinkAttr attr;
     hpaeOutputCluster->Init(attr);
@@ -138,6 +193,7 @@ void InitFuzzTest()
 void DeInitFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->DeInit();
 }
@@ -145,6 +201,7 @@ void DeInitFuzzTest()
 void FlushFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Flush();
 }
@@ -152,6 +209,7 @@ void FlushFuzzTest()
 void PauseFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Pause();
 }
@@ -159,6 +217,7 @@ void PauseFuzzTest()
 void ResetRenderFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->ResetRender();
 }
@@ -166,6 +225,7 @@ void ResetRenderFuzzTest()
 void ResumeFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Resume();
 }
@@ -173,6 +233,7 @@ void ResumeFuzzTest()
 void StartFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Start();
 }
@@ -180,6 +241,7 @@ void StartFuzzTest()
 void StopFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->Stop();
 }
@@ -187,14 +249,16 @@ void StopFuzzTest()
 void SetTimeoutStopThdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     uint32_t timeoutThdMs = GetData<uint32_t>();
-    hpaeOutputCluster->SetTimeoutStopThd();
+    hpaeOutputCluster->SetTimeoutStopThd(timeoutThdMs);
 }
 
 void GetStateFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->GetState();
 }
@@ -202,22 +266,26 @@ void GetStateFuzzTest()
 void IsProcessClusterConnectedFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    HpaeProcessorType sceneType;
+    uint32_t index = GetData<uint32_t>() % hpaeProcessorTypeMap.size();
+    HpaeProcessorType sceneType = hpaeProcessorTypeMap[index];
     hpaeOutputCluster->IsProcessClusterConnected(sceneType);
 }
 
 void UpdateAppsUidFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
-    const std::vector<int32_t> &appsUid = GetData<uint32_t>();
+    std::vector<int32_t> appsUid = {GetData<uint32_t>()};
     hpaeOutputCluster->UpdateAppsUid(appsUid);
 }
 
 void SetPriPaPowerFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->SetPriPaPower();
 }
@@ -225,6 +293,7 @@ void SetPriPaPowerFuzzTest()
 void SetSyncIdFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     int32_t syncId = GetData<int32_t>();
     hpaeOutputCluster->SetSyncId(syncId);
@@ -233,6 +302,7 @@ void SetSyncIdFuzzTest()
 void GetLatencyFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
+    GetTestNodeInfo(nodeInfo);
     auto hpaeOutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     hpaeOutputCluster->GetLatency();
 }

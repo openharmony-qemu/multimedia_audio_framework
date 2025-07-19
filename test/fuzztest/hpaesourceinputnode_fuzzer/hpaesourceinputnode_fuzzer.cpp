@@ -87,7 +87,7 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
+static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     nodeInfo.nodeId = DEFAULT_NODE_ID;
     nodeInfo.frameLen = DEFAULT_FRAME_LENGTH;
@@ -238,7 +238,7 @@ void WriteCapturerDataFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     auto hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
-    int32_t dataSize = GetData<int32_t>();
+    uint32_t dataSize = static_cast<uint32_t>(GetData<uint16_t>()) + 1;
     std::vector<char> testData(dataSize);
     hpaeSourceInputNode->WriteCapturerData(testData.data(), dataSize);
 }
