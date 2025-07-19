@@ -15,6 +15,7 @@
 
 #ifndef AUDIO_ENDPOINT_PLUS_UNIT_TEST_H
 #define AUDIO_ENDPOINT_PLUS_UNIT_TEST_H
+#include <limits>
 
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
