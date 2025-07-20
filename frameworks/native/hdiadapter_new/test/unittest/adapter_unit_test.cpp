@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_adapter_factory.h"
 
 using namespace testing::ext;
 
@@ -138,6 +139,24 @@ HWTEST_F(AdapterUnitTest, AdapterUnitTest_005, TestSize.Level1)
 HWTEST_F(AdapterUnitTest, AdapterUnitTest_006, TestSize.Level1)
 {
     TestSetAndGet(HDI_DEVICE_MANAGER_TYPE_REMOTE);
+}
+
+/**
+ * @tc.name   : Test Adapter API
+ * @tc.number : AdapterUnitTest_007
+ * @tc.desc   : Test CreateBluetoothRenderSink
+ */
+HWTEST_F(AdapterUnitTest, AdapterUnitTest_007, TestSize.Level1)
+{
+    HdiAdapterFactory &fac = HdiAdapterFactory::GetInstance();
+    auto sink = fac.CreateBluetoothRenderSink(HDI_ID_INFO_HEARING_AID);
+    ASSERT_TRUE(sink != nullptr);
+
+    sink = fac.CreateBluetoothRenderSink(HDI_ID_INFO_MMAP);
+    ASSERT_TRUE(sink != nullptr);
+
+    sink = fac.CreateBluetoothRenderSink(HDI_ID_INFO_DEFAULT);
+    ASSERT_TRUE(sink != nullptr);
 }
 
 } // namespace AudioStandard

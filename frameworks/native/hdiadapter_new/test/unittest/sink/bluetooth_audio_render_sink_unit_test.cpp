@@ -35,20 +35,27 @@ protected:
     static uint32_t id_;
     static std::shared_ptr<IAudioRenderSink> sink_;
     static IAudioSinkAttr attr_;
+    static uint32_t hearingAidId_;
+    static std::shared_ptr<IAudioRenderSink> hearingAidSink_;
 };
 
 uint32_t BluetoothAudioRenderSinkUnitTest::id_ = HDI_INVALID_ID;
 std::shared_ptr<IAudioRenderSink> BluetoothAudioRenderSinkUnitTest::sink_ = nullptr;
 IAudioSinkAttr BluetoothAudioRenderSinkUnitTest::attr_ = {};
+uint32_t BluetoothAudioRenderSinkUnitTest::hearingAidId_ = HDI_INVALID_ID;
+std::shared_ptr<IAudioRenderSink> BluetoothAudioRenderSinkUnitTest::hearingAidSink_ = nullptr;
 
 void BluetoothAudioRenderSinkUnitTest::SetUpTestCase()
 {
     id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
+    hearingAidId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
+        HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
 }
 
 void BluetoothAudioRenderSinkUnitTest::TearDownTestCase()
 {
     HdiAdapterManager::GetInstance().ReleaseId(id_);
+    HdiAdapterManager::GetInstance().ReleaseId(hearingAidId_);
 }
 
 void BluetoothAudioRenderSinkUnitTest::SetUp()
@@ -179,6 +186,30 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_007, TestSize.L
     (void)sink_->Init(attr_);
     sink_->DeInit();
     EXPECT_FALSE(sink_->IsInited());
+}
+
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : BluetoothSinkUnitTest_008
+ * @tc.desc   : Test bluetooth sink set invalid state
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_008, TestSize.Level1)
+{
+    hearingAidSink_ = HdiAdapterManager::GetInstance().GetRenderSink(hearingAidId_, true);
+    EXPECT_TRUE(hearingAidSink_);
+    
+    attr_.adapterName = "hearing_aid";
+    attr_.channel = 2;
+    attr_.sampleRate = 16000;
+    attr_.format = SAMPLE_S16LE;
+    attr_.deviceType = DEVICE_TYPE_HEARING_AID;
+    hearingAidSink_->Init(attr_);
+    
+    hearingAidSink_->SetInvalidState();
+    (void)hearingAidSink_->Init(attr_);
+    hearingAidSink_->DeInit();
+    EXPECT_FALSE(hearingAidSink_->IsInited());
+    hearingAidSink_ = nullptr;
 }
 
 } // namespace AudioStandard

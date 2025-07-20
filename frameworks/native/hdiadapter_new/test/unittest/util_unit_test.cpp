@@ -72,6 +72,21 @@ HWTEST_F(UtilUnitTest, IdHandlerUnitTest_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test IdHandler API
+ * @tc.number : IdHandlerUnitTest_002
+ * @tc.desc   : Test IdHandler action
+ */
+HWTEST_F(UtilUnitTest, IdHandlerUnitTest_002, TestSize.Level1)
+{
+    IdHandler &idHandler = IdHandler::GetInstance();
+    uint32_t id = idHandler.GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_HEARING_AID);
+    EXPECT_NE(id, HDI_INVALID_ID);
+
+    uint32_t hearingAidId = idHandler.GetRenderIdByDeviceClass("hearing_aid");
+    EXPECT_EQ(hearingAidId, id);
+}
+
+/**
  * @tc.name   : Test AudioRunningLock API
  * @tc.number : AudioRunningLockUnitTest_001
  * @tc.desc   : Test AudioRunningLock action

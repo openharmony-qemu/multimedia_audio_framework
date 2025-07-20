@@ -1230,5 +1230,21 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
     settingProvider.SetDataShareReady(isDataShareReady);
 }
 
+/**
+* @tc.name  : Test GetsinkPortName.
+* @tc.number: GetSinkPortName_004
+* @tc.desc  : Test RegisterDataObserver interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
+{
+    InternalDeviceType deviceType = DEVICE_TYPE_NONE;
+    std::string retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+    EXPECT_EQ(PORT_NONE, retPortName);
+
+    deviceType = DEVICE_TYPE_HEARING_AID;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+    EXPECT_EQ(HEARING_AID_SPEAKER, retPortName);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
