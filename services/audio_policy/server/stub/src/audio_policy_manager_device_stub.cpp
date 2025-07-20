@@ -229,10 +229,9 @@ void AudioPolicyManagerStub::GetAvailableDevicesInternal(MessageParcel &data, Me
     AudioDeviceUsage usage  = static_cast<AudioDeviceUsage>(data.ReadInt32());
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs = GetAvailableDevices(usage);
     int32_t size = static_cast<int32_t>(descs.size());
-    int32_t apiVersion = HasUsbDevice(descs) ? GetApiTargetVersion() : 0;
     reply.WriteInt32(size);
     for (int32_t i = 0; i < size; i++) {
-        descs[i]->Marshalling(reply, apiVersion);
+        descs[i]->MarshallingToDeviceInfo(reply);
     }
 }
 
