@@ -491,14 +491,13 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::GetPipeByModuleAndFlag(const st
     return nullptr;
 }
 
-std::vector<uint32_t> AudioPipeManager::GetFastStreamIdsByUid(uint32_t uid)
+std::vector<uint32_t> AudioPipeManager::GetStreamIdsByUid(uint32_t uid, uint32_t routeFlagMask)
 {
     std::vector<uint32_t> sessionIds = {};
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
     for (auto &pipe : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
-        CHECK_AND_CONTINUE_LOG((pipe->routeFlag_ & AUDIO_OUTPUT_FLAG_FAST) ||
-            (pipe->routeFlag_ & AUDIO_INPUT_FLAG_FAST), "Non-fast pipe: %{public}u", pipe->routeFlag_);
+        CHECK_AND_CONTINUE_LOG(pipe->routeFlag_ & routeFlagMask, "not match flag: %{public}u", pipe->routeFlag_);
         for (auto &streamDesc : pipe->streamDescriptors_) {
             CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "streamDesc is nullptr");
             if (streamDesc->callerUid_ == static_cast<int32_t>(uid)) {
