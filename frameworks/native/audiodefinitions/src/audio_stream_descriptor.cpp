@@ -212,5 +212,23 @@ std::string AudioStreamDescriptor::GetNewDevicesTypeString()
     return out;
 }
 
+std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, "", "desc is nullptr");
+    std::string out = "[";
+    out.append(std::to_string(static_cast<uint32_t>(desc->deviceType_)));
+    out.append(":" + std::to_string(static_cast<uint32_t>(desc->deviceId_)));
+    return out + "]";
+}
+
+std::string AudioStreamDescriptor::GetNewDevicesInfo()
+{
+    std::string out = "";
+    for (auto &desc : newDeviceDescs_) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        out += GetDeviceInfo(desc);
+    }
+    return out;
+}
 } // AudioStandard
 } // namespace OHOS
