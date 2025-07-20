@@ -64,6 +64,8 @@ public:
     // log and dump
     void Dump(std::string &dumpString);
     std::string GetNewDevicesTypeString();
+    std::string GetNewDevicesInfo();
+    std::string GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:
     bool IsRenderer()

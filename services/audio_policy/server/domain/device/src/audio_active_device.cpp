@@ -438,9 +438,10 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     activeOutputDevices_.clear();
     for (auto &desc :descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
-        AUDIO_INFO_LOG("session: %{public}d, uid %{public}d, usage:%{public}d devices:%{public}s",
-            desc->sessionId_, desc->callerUid_, desc->rendererInfo_.streamUsage,
-            desc->GetNewDevicesTypeString().c_str());
+        AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
+            "usage:%{public}d devices:%{public}s",
+            desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
+            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
         AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
         streamTypeDeviceMap_[streamType] = desc->newDeviceDescs_.back();
         streamUsageDeviceMap_[desc->rendererInfo_.streamUsage] = desc->newDeviceDescs_.front();
