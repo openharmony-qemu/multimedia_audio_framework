@@ -166,6 +166,7 @@ private:
     // for dfx log
     int32_t logMode_ = 0;
     std::string logUtilsTag_ = "";
+    std::string logTypeTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;

@@ -383,6 +383,8 @@ void BluetoothAudioCaptureSource::SetInvalidState(void)
 {
     AUDIO_INFO_LOG("in");
     validState_ = false;
+    sourceInited_ = false;
+    started_ = false;
 }
 
 void BluetoothAudioCaptureSource::DumpInfo(std::string &dumpString)
