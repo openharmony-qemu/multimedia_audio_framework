@@ -117,6 +117,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            inputAudioBuffer_.SetBufferValid(true); // historyBuffer always valid
             return false; // do not continue in DoProcess!
         }
         CheckAndDestroyHistoryBuffer();
@@ -218,7 +219,7 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    AUDIO_INFO_LOG(" Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    AUDIO_INFO_LOG("Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;
