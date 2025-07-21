@@ -153,7 +153,7 @@ bool AsrProcessingControllerImpl::SetAsrNoiseSuppressionMode(::ohos::multimedia:
     }
 
     int32_t asrNoiseSuppressionMode = mode.get_value();
-    int32_t asrVoiceControlModeMax = static_cast<int32_t>(::AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD);
+    int32_t asrVoiceControlModeMax = static_cast<int32_t>(::AsrNoiseSuppressionMode::ASR_WHISPER_MODE);
     if (!(asrNoiseSuppressionMode >= 0 && asrNoiseSuppressionMode <= asrVoiceControlModeMax)) {
         AUDIO_ERR_LOG("Input parameter value error. ");
         TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_INVALID_PARAM,
