@@ -90,6 +90,7 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
     audioModuleInfo.networkId = "LocalDevice";
     audioModuleInfo.fileName = g_rootPath + audioModuleInfo.adapterName + "_" + audioModuleInfo.rate + "_" +
                                audioModuleInfo.channels + "_" + audioModuleInfo.format + ".pcm";
+    audioModuleInfo.needEmptyChunk = true;
     std::stringstream typeValue;
     typeValue << static_cast<int32_t>(DEVICE_TYPE_SPEAKER);
     audioModuleInfo.deviceType = typeValue.str();

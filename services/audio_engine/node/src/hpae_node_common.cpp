@@ -321,6 +321,9 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.fixedLatency.c_str()));
     sinkInfo.deviceName = audioModuleInfo.name;
     AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
+    if (audioModuleInfo.needEmptyChunk) {
+        sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
+    }
     return SUCCESS;
 }
 

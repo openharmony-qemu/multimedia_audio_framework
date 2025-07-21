@@ -62,7 +62,8 @@ private:
     void HdiAdapterDump(std::string &dumpString);
     void PlaybackSinkInputDump(std::string &dumpString);
     void RecordSourceOutputDump(std::string &dumpString);
-    
+    bool GetDevicesInfo();
+
     using DumpFunc = void(AudioServerHpaeDump::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     std::string dumpHpaeSinkInfo_;

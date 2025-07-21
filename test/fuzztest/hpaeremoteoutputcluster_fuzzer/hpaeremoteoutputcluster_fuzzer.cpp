@@ -102,33 +102,37 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void DoProcessFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->DoProcess();
 }
 
 void ResetFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Reset();
 }
 
 void ResetAllFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->ResetAll();
 }
 
 void ConnectFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     hpaeRemoteOutputCluster->Connect(hpaeMixerNode);
     hpaeRemoteOutputCluster->DisConnect(hpaeMixerNode);
@@ -136,34 +140,38 @@ void ConnectFuzzTest()
 
 void DisConnectFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     hpaeRemoteOutputCluster->DisConnect(hpaeMixerNode);
 }
 
 void GetConverterNodeCountFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->GetConverterNodeCount();
 }
 
 void GetPreOutNumFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->GetPreOutNum();
 }
 
 void GetInstanceFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     std::string deviceClass = "123";
     std::string deviceNetId = "456";
     hpaeRemoteOutputCluster->GetInstance(deviceClass, deviceNetId);
@@ -171,99 +179,111 @@ void GetInstanceFuzzTest()
 
 void InitFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     IAudioSinkAttr attr;
     hpaeRemoteOutputCluster->Init(attr);
 }
 
 void DeInitFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->DeInit();
 }
 
 void FlushFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Flush();
 }
 
 void PauseFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Pause();
 }
 
 void ResetRenderFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->ResetRender();
 }
 
 void ResumeFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Resume();
 }
 
 void StartFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Start();
 }
 
 void StopFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->Stop();
 }
 
 void SetTimeoutStopThdFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     uint32_t timeoutThdMs = GetData<uint32_t>();
     hpaeRemoteOutputCluster->SetTimeoutStopThd(timeoutThdMs);
 }
 
 void GetFrameDataFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->GetFrameData();
 }
 
 void GetStateFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     hpaeRemoteOutputCluster->GetState();
 }
 
 void IsProcessClusterConnectedFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     uint32_t index = GetData<uint32_t>() % hpaeProcessorTypeMap.size();
     HpaeProcessorType sceneType = hpaeProcessorTypeMap[index];
     hpaeRemoteOutputCluster->IsProcessClusterConnected(sceneType);
@@ -271,9 +291,10 @@ void IsProcessClusterConnectedFuzzTest()
 
 void UpdateAppsUidFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo);
+    auto hpaeRemoteOutputCluster = std::make_shared<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo);
     std::vector<int32_t> appsUid = {GetData<int32_t>()};
     hpaeRemoteOutputCluster->UpdateAppsUid(appsUid);
 }

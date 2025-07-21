@@ -35,6 +35,12 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
       framesRead_(0), totalFrames_(0), isMute_(false)
 {
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSourceOutputNode");
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::DoProcess()
@@ -123,6 +129,11 @@ bool HpaeSourceOutputNode::RegisterReadCallback(const std::weak_ptr<ICapturerStr
 void HpaeSourceOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,
@@ -141,6 +152,11 @@ void HpaeSourceOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBu
 {
     CHECK_AND_RETURN_LOG(preNode != nullptr, "preNode is nullptr");
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceOutputNode::DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode,

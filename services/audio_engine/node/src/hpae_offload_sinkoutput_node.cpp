@@ -62,6 +62,13 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
         std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
     frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeOffloadSinkOutputNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
 }
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
@@ -144,11 +151,22 @@ bool HpaeOffloadSinkOutputNode::ResetAll()
 void HpaeOffloadSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
 int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,

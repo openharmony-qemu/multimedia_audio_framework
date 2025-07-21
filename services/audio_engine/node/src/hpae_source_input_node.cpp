@@ -36,6 +36,17 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+static std::string TransSourceBufferTypeToString(const HpaeSourceBufferType &type)
+{
+    if (type == HPAE_SOURCE_BUFFER_TYPE_MIC) {
+        return "MIC";
+    } else if (type == HPAE_SOURCE_BUFFER_TYPE_EC) {
+        return "EC";
+    } else if (type == HPAE_SOURCE_BUFFER_TYPE_MICREF) {
+        return "MICREF";
+    }
+    return "DEFAULT";
+}
 
 HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), sourceInputNodeType_(nodeInfo.sourceInputNodeType)
@@ -58,6 +69,13 @@ HpaeSourceInputNode::HpaeSourceInputNode(HpaeNodeInfo &nodeInfo)
             FrameDesc{capturerFrameDataMap_.at(sourceBufferType).data(), frameByteSizeMap_.at(sourceBufferType)});
         fdescMap_.emplace(HPAE_SOURCE_BUFFER_TYPE_DEFAULT, FrameDesc{nullptr, 0});
     }
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSourceInputNode[" + TransSourceBufferTypeToString(nodeInfo.sourceBufferType) + "]");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
 }
 
 HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
@@ -83,6 +101,13 @@ HpaeSourceInputNode::HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos)
             historyDataMap_.at(sourceBufferType).resize(0);
         }
     }
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSourceInputNode[MIC_EC]");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSourceInputNode::SetBufferValid(const HpaeSourceBufferType &bufferType, const uint64_t &replyBytes)

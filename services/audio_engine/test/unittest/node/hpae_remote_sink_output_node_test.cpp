@@ -45,6 +45,7 @@ void HpaeRemoteSinkOutputNodeTest::TearDown()
 
 HWTEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01, TestSize.Level0)
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo1;
     nodeInfo1.nodeId = 1001; // 1001: node id
     nodeInfo1.frameLen = 960; // 960: frameLen
@@ -53,7 +54,7 @@ HWTEST_F(HpaeRemoteSinkOutputNodeTest, constructNode_01, TestSize.Level0)
     nodeInfo1.channels = STEREO;
     nodeInfo1.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeRemoteSinkOutputNode =
-        std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo1);
+        std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo1, sinkInfo);
 
     HpaeNodeInfo nodeInfo2;
     nodeInfo2.nodeId = 1002; // 1002: nodeId
