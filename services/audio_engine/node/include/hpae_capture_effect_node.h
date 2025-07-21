@@ -60,7 +60,7 @@ private:
     std::vector<uint8_t> micCache_;
     std::vector<uint8_t> micRefCache_;
     std::vector<uint8_t> cacheDataOut_;
-    HpaePcmBuffer *outPcmBuffer_ { nullptr };
+    std::unique_ptr<HpaePcmBuffer> outPcmBuffer_ { nullptr };
     std::unordered_map<HpaeSourceBufferType, HpaeNodeInfo> capturerEffectConfigMap_;
 };
 }  // namespace HPAE
