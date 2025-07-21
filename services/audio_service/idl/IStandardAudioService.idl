@@ -135,7 +135,7 @@ interface IStandardAudioService {
     void SetBtHdiInvalidState();
     void SetKaraokeParameters([in] String parameters, [out] boolean ret);
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
-    void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
+    [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
