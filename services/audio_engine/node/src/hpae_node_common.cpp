@@ -249,8 +249,7 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
-    return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * static_cast<uint32_t>(GetSizeFromFormat(nodeInfo.format)));
+    return usTime * nodeInfo.samplingRate / TIME_US_PER_S / nodeInfo.frameLen;
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
