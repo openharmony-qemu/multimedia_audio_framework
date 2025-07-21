@@ -33,13 +33,14 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       sourceOutputData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels),
-      framesRead_(0), totalFrames_(0)
+      framesRead_(0), totalFrames_(0), isMute_(false)
 {
 }
 
 void HpaeSourceOutputNode::DoProcess()
 {
-    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo());
+    Trace trace("[" + std::to_string(GetSessionId()) + "]HpaeSourceOutputNode::DoProcess " + GetTraceInfo() +
+        (isMute_ ? "_[Mute]" : "_[unMute]"));
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     if (outputVec.empty()) {
         AUDIO_WARNING_LOG("sessionId %{public}u DoProcess(), data read is empty", GetSessionId());
@@ -51,8 +52,13 @@ void HpaeSourceOutputNode::DoProcess()
         GetNodeInfo().sourceType != SOURCE_TYPE_REMOTE_CAST) {
         return;
     }
-    ConvertFromFloat(
-        GetBitWidth(), GetChannelCount() * GetFrameLen(), outputData->GetPcmDataBuffer(), sourceOutputData_.data());
+    if (isMute_) {
+        int32_t ret = memset_s(sourceOutputData_.data(), sourceOutputData_.size(), 0, sourceOutputData_.size());
+        CHECK_AND_RETURN_LOG(ret == EOK, "memset_s failed with error:%{public}d", ret);
+    } else {
+        ConvertFromFloat(GetBitWidth(), GetChannelCount() * GetFrameLen(),
+            outputData->GetPcmDataBuffer(), sourceOutputData_.data());
+    }
     auto nodeCallback = GetNodeStatusCallback().lock();
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
@@ -172,6 +178,14 @@ void HpaeSourceOutputNode::SetAppUid(int32_t appUid)
 int32_t HpaeSourceOutputNode::GetAppUid()
 {
     return appUid_;
+}
+
+void HpaeSourceOutputNode::SetMute(bool isMute)
+{
+    if (isMute_ != isMute) {
+        isMute_ = isMute;
+        AUDIO_INFO_LOG("SetMute:%{public}d", isMute);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

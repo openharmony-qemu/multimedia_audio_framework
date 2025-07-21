@@ -36,6 +36,7 @@ static std::string g_rootPath = "/data/";
 const std::string ROOT_PATH = "/data/source_file_io_48000_2_s16le.pcm";
 constexpr int32_t FRAME_LENGTH = 882;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
+constexpr int32_t TEST_STREAM_UID = 111111;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t SESSION_ID_NOEXIST = 100000;
@@ -127,6 +128,7 @@ HpaeStreamInfo GetRenderStreamInfo()
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
+    streamInfo.uid = TEST_STREAM_UID;
     return streamInfo;
 }
 
@@ -140,6 +142,7 @@ HpaeStreamInfo GetCaptureStreamInfo()
     streamInfo.sessionId = TEST_STREAM_SESSION_ID;
     streamInfo.streamType = STREAM_MUSIC;
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_RECORD;
+    streamInfo.uid = TEST_STREAM_UID;
     return streamInfo;
 }
 
@@ -260,10 +263,10 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest, TestSize.Level1)
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
 
-    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(portId, true), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, true), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
-    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(portId, false), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, false), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
 
@@ -594,6 +597,9 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     hpaeManager_->CreateStream(streamInfo);
     WaitForMsgProcessing(hpaeManager_);
     int32_t fixedNum = 100;
+    std::shared_ptr<HpaeAudioServiceCallbackUnitTest> callback = std::make_shared<HpaeAudioServiceCallbackUnitTest>();
+    int32_t result = hpaeManager_->RegisterSerivceCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
     std::shared_ptr<WriteFixedValueCb> writeFixedValueCb = std::make_shared<WriteFixedValueCb>(SAMPLE_S16LE, fixedNum);
     hpaeManager_->RegisterWriteCallback(streamInfo.sessionId, writeFixedValueCb);
     std::shared_ptr<StatusChangeCb> statusChangeCb = std::make_shared<StatusChangeCb>();
@@ -611,6 +617,14 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeCaptureStreamManagerTest002, TestSize.Level1)
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     EXPECT_EQ(sessionInfo.state, HPAE_SESSION_RUNNING);
     EXPECT_EQ(statusChangeCb->GetStatus(), I_STATUS_STARTED);
+
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, true), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+    EXPECT_EQ(hpaeManager_->SetSourceOutputMute(TEST_STREAM_UID, false), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(callback->GetSetSourceOutputMuteResult(), SUCCESS);
+
     hpaeManager_->Pause(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo), SUCCESS);

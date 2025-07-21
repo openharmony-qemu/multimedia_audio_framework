@@ -436,6 +436,17 @@ int32_t HpaeCapturerManager::Release(uint32_t sessionId)
     return DestroyStream(sessionId);
 }
 
+int32_t HpaeCapturerManager::SetStreamMute(uint32_t sessionId, bool isMute)
+{
+    auto request = [this, sessionId, isMute]() {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Mute not find sessionId %{public}u", sessionId);
+        sourceOutputNodeMap_[sessionId]->SetMute(isMute);
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 int32_t HpaeCapturerManager::SetMute(bool isMute)
 {
     // to do check pulseaudio
