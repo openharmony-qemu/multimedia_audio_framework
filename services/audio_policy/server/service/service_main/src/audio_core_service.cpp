@@ -280,7 +280,6 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
 
 bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
-    CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
     const auto &rendererInfo = streamDesc->rendererInfo_;
     if (rendererInfo.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         rendererInfo.rendererFlags == AUDIO_FLAG_FORCED_NORMAL) {
