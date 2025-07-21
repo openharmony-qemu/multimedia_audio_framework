@@ -76,6 +76,7 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     sinkInited_ = true;
     ++sinkInitCount_;
+    started_ = false;
     return SUCCESS;
 }
 
