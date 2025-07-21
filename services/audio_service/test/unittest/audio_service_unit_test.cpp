@@ -877,20 +877,6 @@ HWTEST(AudioServiceUnitTest, AudioServiceOnProcessRelease_003, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_001
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_001, TestSize.Level1)
-{
-    std::string endpointName;
-    int32_t delayInMs = 1;
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->DelayCallReleaseEndpoint(endpointName, delayInMs);
-}
-
-/**
  * @tc.name  : Test GetAudioEndpointForDevice API
  * @tc.type  : FUNC
  * @tc.number: GetAudioEndpointForDevice_001
@@ -1217,30 +1203,6 @@ HWTEST(AudioServiceUnitTest, ShouldBeInnerCap_001, TestSize.Level1)
 }
 #endif
 
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_002
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_002, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    std::string endpointName = "endpoint";
-    std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
-    int32_t delayInMs = 1;
-    audioService->endpointList_[endpointName] = audioEndpoint;
-    audioService->DelayCallReleaseEndpoint(endpointName, delayInMs);
-    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
-    audioService->endpointList_.erase(endpointName);
-
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-
-    audioService->currentRendererStreamCnt_ = 0;
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 0);
-}
 
 /**
  * @tc.name  : Test CheckRenderSessionMuteState API
@@ -1438,41 +1400,7 @@ HWTEST(AudioServiceUnitTest, OnUpdateInnerCapList_001, TestSize.Level1)
     int32_t ret = audioService->OnUpdateInnerCapList(innerCapId);
     EXPECT_EQ(ret, SUCCESS);
 }
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_003
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_003, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->currentRendererStreamCnt_ = 0;
-    audioService->DelayCallReleaseEndpoint("endponit", 0);
 
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 1);
-}
-/**
- * @tc.name  : Test DelayCallReleaseEndpoint API
- * @tc.type  : FUNC
- * @tc.number: DelayCallReleaseEndpoint_004
- * @tc.desc  : Test DelayCallReleaseEndpoint interface.
- */
-HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_004, TestSize.Level1)
-{
-    AudioService *audioService = AudioService::GetInstance();
-    audioService->currentRendererStreamCnt_ = 0;
-    audioService->releasingEndpointSet_.insert("endponit");
-    audioService->DelayCallReleaseEndpoint("endponit", 1);
-
-    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
-    audioService->SetIncMaxRendererStreamCnt(audioMode);
-    int32_t res = audioService->GetCurrentRendererStreamCnt();
-    EXPECT_EQ(res, 1);
-}
 /**
  * @tc.name  : Test EnableDualToneList API
  * @tc.type  : FUNC
@@ -1622,6 +1550,32 @@ HWTEST(AudioServiceUnitTest, UnsetOffloadMode_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test DelayCallReleaseEndpoint API
+ * @tc.type  : FUNC
+ * @tc.number: DelayCallReleaseEndpoint_001
+ * @tc.desc  : Test DelayCallReleaseEndpoint interface.
+ */
+HWTEST(AudioServiceUnitTest, DelayCallReleaseEndpoint_001, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    AudioProcessConfig clientConfig = {};
+    std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_MMAP,
+        123, clientConfig);
+    EXPECT_NE(nullptr, endpoint);
+    string endpointName = endpoint->GetEndpointName();
+    audioService->endpointList_[endpointName] = endpoint;
+
+    audioService->releasingEndpointSet_.insert(endpointName);
+    audioService->DelayCallReleaseEndpoint(endpointName);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
+
+    audioService->releasingEndpointSet_.insert(endpointName);
+    endpoint->endpointStatus_ = AudioEndpoint::EndpointStatus::UNLINKED;
+    audioService->DelayCallReleaseEndpoint(endpointName);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 0);
+}
+
+/**
  * @tc.name  : Test ReleaseProcess API
  * @tc.type  : FUNC
  * @tc.number: ReleaseProcess_001
@@ -1633,8 +1587,69 @@ HWTEST(AudioServiceUnitTest, ReleaseProcess_001, TestSize.Level1)
     EXPECT_NE(audioService, nullptr);
 
     std::string endpointName = "invalid_endpoint";
-    int32_t delayTime = 0;
-    audioService->ReleaseProcess(endpointName, delayTime);
+    audioService->ReleaseProcess(endpointName, 0);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_002
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_002, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    std::string endpointName = "endpoint";
+    std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
+    int32_t delayInMs = 1;
+    audioService->endpointList_[endpointName] = audioEndpoint;
+    audioService->ReleaseProcess(endpointName, delayInMs);
+    EXPECT_EQ(audioService->endpointList_.count(endpointName), 1);
+    audioService->endpointList_.erase(endpointName);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+
+    audioService->currentRendererStreamCnt_ = 0;
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 0);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_003
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_003, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->ReleaseProcess("endponit", 0);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
+}
+
+/**
+ * @tc.name  : Test ReleaseProcess API
+ * @tc.type  : FUNC
+ * @tc.number: ReleaseProcess_004
+ * @tc.desc  : Test ReleaseProcess interface.
+ */
+HWTEST(AudioServiceUnitTest, ReleaseProcess_004, TestSize.Level1)
+{
+    AudioService *audioService = AudioService::GetInstance();
+    audioService->currentRendererStreamCnt_ = 0;
+    audioService->releasingEndpointSet_.insert("endponit");
+    audioService->ReleaseProcess("endponit", 1);
+
+    AudioMode audioMode = AUDIO_MODE_PLAYBACK;
+    audioService->SetIncMaxRendererStreamCnt(audioMode);
+    int32_t res = audioService->GetCurrentRendererStreamCnt();
+    EXPECT_EQ(res, 1);
 }
 
 /**
