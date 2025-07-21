@@ -631,11 +631,16 @@ HWTEST(AudioSystemManagerUnitTest, SetAppVolumeCallbackForUid_001, TestSize.Leve
 HWTEST(AudioSystemManagerUnitTest, StartGroup_001, TestSize.Level1)
 {
     AudioSystemManager manager;
+    bool needUpdatePrio = true;
     int32_t testWorkgroupid = 1;
     int32_t startTimeMs = 1000;
     int32_t endTimeMs = 500;
-    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
+    std::unordered_map<int32_t, bool> threads = {
+        {101, true},
+        {102, true}
+    };
+    int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
+    EXPECT_EQ(result, AUDIO_ERR);
 }
 
 /**
