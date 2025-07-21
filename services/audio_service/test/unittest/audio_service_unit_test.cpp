@@ -27,6 +27,10 @@
 #include "fast_audio_stream.h"
 #include "audio_endpoint_private.h"
 #include "pro_renderer_stream_impl.h"
+#include "core_service_handler.h"
+#include "audio_workgroup.h"
+#include "rtg_interface.h"
+#include "concurrent_task_client.h"
 
 using namespace testing::ext;
 
@@ -2586,5 +2590,152 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 #endif
+
+/**
+ * @tc.name  : Test ConfigCoreServiceProvider API
+ * @tc.type  : FUNC
+ * @tc.number: ConfigCoreServiceProvider_001
+ * @tc.desc  : Test ConfigCoreServiceProvider interface.
+ */
+HWTEST(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
+{
+    auto coreServiceHandler = CoreServiceHandler::GetInstance();
+    sptr<ICoreServiceProviderIpc> provider = nullptr;
+    auto result = coreServiceHandler.ConfigCoreServiceProvider(provider);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test AddThread API
+ * @tc.type  : FUNC
+ * @tc.number: AddThread_001
+ * @tc.desc  : Test AddThread interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = 10;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = 1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_EQ(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AddThread API
+ * @tc.type  : FUNC
+ * @tc.number: AddThread_002
+ * @tc.desc  : Test AddThread interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = 10;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = -1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThread_001
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = -1;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = -1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: RemoveThread_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t tid = -1;
+    ConcurrentTask::IntervalReply reply;
+    reply.paramA = 1;
+    int32_t result = workgroup.AddThread(tid);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_001
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(100, 100);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(100, 200);
+    EXPECT_NE(result, AUDIO_OK);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Start_003
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int32_t result = workgroup.Start(200, 100);
+    EXPECT_EQ(result, AUDIO_ERR);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Stop_003
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int result = workgroup.Stop();
+    if (RME::EndFrameFreq(0) != 0) {
+        EXPECT_EQ(result, AUDIO_ERR);
+    }
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroup API
+ * @tc.type  : FUNC
+ * @tc.number: Stop_002
+ * @tc.desc  : Test AudioWorkgroup interface.
+ */
+HWTEST(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
+{
+    AudioWorkgroup workgroup(1);
+    int result = workgroup.Stop();
+    if (RME::EndFrameFreq(0) == 0) {
+        EXPECT_EQ(result, AUDIO_OK);
+    }
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -430,6 +430,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, T
 }
 
 /**
+ * @tc.name  : Test Audio_Policy_SetAudioRouteCallback_001 via illegal state
+ * @tc.number: Audio_Policy_SetAudioRouteCallback_001
+ * @tc.desc  : Test SetAudioRouteCallback interface. Returns invalid.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioRouteCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioRouteCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioRouteCallback(0, callback, 0);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_RegisterTracker_001 via illegal state
  * @tc.number: Audio_Policy_RegisterTracker_001
  * @tc.desc  : Test RegisterTracker interface. Returns invalid.

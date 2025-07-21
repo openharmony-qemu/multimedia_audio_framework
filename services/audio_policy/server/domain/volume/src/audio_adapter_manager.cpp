@@ -1143,10 +1143,6 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && !isSameVolumeGroup && isDpReConnect_) {
-        RefreshVolumeWhenDpReConnect();
-    }
-
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
@@ -2258,8 +2254,10 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
 
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && streamType == STREAM_MUSIC) {
         AUDIO_INFO_LOG("first time switch dp, use default volume");
-        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, MAX_VOLUME_LEVEL);
-        SetSystemVolumeLevel(STREAM_MUSIC, MAX_VOLUME_LEVEL);
+        int32_t initialVolume = GetMaxVolumeLevel(streamType) > MAX_VOLUME_LEVEL ?
+            DP_DEFAULT_VOLUME_LEVEL : GetMaxVolumeLevel(streamType);
+        volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, initialVolume);
+        SetSystemVolumeLevel(STREAM_MUSIC, initialVolume);
     }
 }
 

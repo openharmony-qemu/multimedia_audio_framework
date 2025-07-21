@@ -84,6 +84,8 @@ interface IAudioPolicy {
     void IsMicrophoneMute([out] boolean retIsMute);
     void SetAudioInterruptCallback([in] unsigned int sessionID, [in] IRemoteObject object, [in] unsigned int clientUid, [in] int zoneId); /* zoneID default value: 0 -- local device */
     void UnsetAudioInterruptCallback([in] unsigned int sessionID, [in] int zoneID);
+    void SetAudioRouteCallback([in] unsigned int sessionID, [in] IRemoteObject object, [in] unsigned int clientUid);
+    void UnsetAudioRouteCallback([in] unsigned int sessionID);
     void SetQueryClientTypeCallback([in] IRemoteObject object);
     void SetAudioClientInfoMgrCallback([in] IRemoteObject object);
     void SetAudioVKBInfoMgrCallback([in] IRemoteObject object);

@@ -1357,5 +1357,33 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_063, TestSize.Level1)
     audioDeviceStatus.AddAudioDevice(info, DEVICE_TYPE_SPEAKER);
     EXPECT_NE(audioDeviceStatus.audioConnectedDevice_.connectedDevices_.size(), 0);
 }
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_068
+* @tc.desc  : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_068, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    int32_t result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_069
+* @tc.desc  : Test HandleLocalDeviceDisconnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_069, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    int32_t result = audioDeviceStatus.HandleLocalDeviceDisconnected(updatedDesc);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -373,6 +373,12 @@ int32_t HpaeManagerImpl::SetOffloadRenderCallbackType(uint32_t sessionId, int32_
     return manager_->SetOffloadRenderCallbackType(sessionId, type);
 }
 
+void HpaeManagerImpl::SetSpeed(uint32_t sessionId, float speed)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->SetSpeed(sessionId, speed);
+}
+
 // interfaces for render effect
 void HpaeManagerImpl::InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
     const EffectChainManagerParam &effectChainManagerParam,

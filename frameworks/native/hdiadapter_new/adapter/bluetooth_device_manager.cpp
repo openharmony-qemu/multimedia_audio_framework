@@ -42,7 +42,6 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 {
     CHECK_AND_RETURN_RET_LOG(adapters_.count(adapterName) == 0 || adapters_[adapterName] == nullptr, SUCCESS,
         "adapter %{public}s already loaded", adapterName.c_str());
-
     if (audioManager_ == nullptr || adapters_.size() == 0) {
         audioManager_ = nullptr;
         InitAudioManager();
@@ -59,6 +58,10 @@ int32_t BluetoothDeviceManager::LoadAdapter(const std::string &adapterName)
 
     struct AudioAdapter *adapter = nullptr;
     ret = audioManager_->LoadAdapter(audioManager_, &(descs[index]), &adapter);
+    if (ret != SUCCESS) {
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, (adapterName +
+            " load adapter fail, ret: " + std::to_string(ret)));
+    }
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS && adapter != nullptr, ERR_NOT_STARTED, "load adapter fail");
     ret = adapter->InitAllPorts(adapter);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "init all ports fail");

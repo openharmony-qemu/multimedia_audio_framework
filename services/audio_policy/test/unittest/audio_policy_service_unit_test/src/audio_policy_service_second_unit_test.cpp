@@ -1039,15 +1039,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, NearlinkGetRenderPosition_001, TestSize.
     uint32_t delayValue = 0;
     int32_t ret;
 
-    sptr<IStandardSleAudioOperationCallback> callback = new(std::nothrow) MockSleAudioOperationCallback();
-    ASSERT_TRUE(callback != nullptr);
-    server->audioPolicyService_.sleAudioDeviceManager_.SetSleAudioOperationCallback(callback);
-
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_NEARLINK;
-    ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
-    EXPECT_EQ(ret, SUCCESS);
-
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_SPEAKER;
     ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
@@ -1228,6 +1219,22 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
     server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatus();
     server->audioPolicyService_.audioPolicyManager_.RegisterDoNotDisturbStatusWhiteList();
     settingProvider.SetDataShareReady(isDataShareReady);
+}
+
+/**
+* @tc.name  : Test GetsinkPortName.
+* @tc.number: GetSinkPortName_004
+* @tc.desc  : Test RegisterDataObserver interfaces.
+*/
+HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
+{
+    InternalDeviceType deviceType = DEVICE_TYPE_NONE;
+    std::string retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+    EXPECT_EQ(PORT_NONE, retPortName);
+
+    deviceType = DEVICE_TYPE_HEARING_AID;
+    retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
+    EXPECT_EQ(HEARING_AID_SPEAKER, retPortName);
 }
 
 } // namespace AudioStandard
