@@ -536,7 +536,7 @@ int32_t HpaeCapturerManager::PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo)
 
 void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
 {
-    attr.adapterName = sourceInfo_.adapterName.c_str();
+    attr.adapterName = sourceInfo_.adapterName;
     attr.sampleRate = sourceInfo_.samplingRate;
     attr.channel = sourceInfo_.channels;
     attr.format = sourceInfo_.format;
@@ -567,7 +567,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
-        attrEc.adapterName = sourceInfo_.ecAdapterName.c_str();
+        attrEc.adapterName = sourceInfo_.ecAdapterName;
         attrEc.deviceType = DEVICE_TYPE_MIC;
         attrEc.sampleRate = sourceInfo_.ecSamplingRate;
         attrEc.channel = sourceInfo_.ecChannels;

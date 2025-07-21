@@ -422,19 +422,16 @@ ScenePriority AudioEnhanceChain::GetScenePriority(void) const
     return scenePriority_;
 }
 
-int32_t AudioEnhanceChain::DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t offset)
+int32_t AudioEnhanceChain::DeinterleaverData(uint8_t *src, uint32_t channel, uint8_t *dst, uint32_t dstLen)
 {
-    CHECK_AND_RETURN_RET_LOG(src != nullptr, ERROR, "src is nullptr");
-    CHECK_AND_RETURN_RET_LOG(dst != nullptr, ERROR, "dst is nullptr");
-    int32_t ret = 0;
-    uint32_t idx = 0;
-    for (uint32_t i = 0; i < algoAttr_.byteLenPerFrame / algoAttr_.bitDepth; ++i) {
+    uint32_t srcIdx = 0;
+    uint32_t frameCount = algoAttr_.byteLenPerFrame / algoAttr_.bitDepth;
+    for (uint32_t i = 0; i < frameCount; ++i) {
         for (uint32_t j = 0; j < channel; ++j) {
-            ret = memcpy_s(dst + j * algoAttr_.byteLenPerFrame + i * algoAttr_.bitDepth,
-                algoCache_.input.size() - (j * algoAttr_.byteLenPerFrame + i * algoAttr_.bitDepth + offset),
-                src + idx, algoAttr_.bitDepth);
-            CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "memcpy in deinterleaver error");
-            idx += algoAttr_.bitDepth;
+            uint32_t dstIdx = j * algoAttr_.byteLenPerFrame + i * algoAttr_.bitDepth;
+            auto memcpyRet = memcpy_s(dst + dstIdx, dstLen - srcIdx, &src[srcIdx], algoAttr_.bitDepth);
+            CHECK_AND_RETURN_RET_LOG(memcpyRet == EOK, ERROR, "memcpy in deinterleaver error");
+            srcIdx += algoAttr_.bitDepth;
         }
     }
     return SUCCESS;
@@ -531,13 +528,17 @@ int32_t AudioEnhanceChain::WriteChainOutputData(void *buf, size_t bufSize)
 
 int32_t AudioEnhanceChain::PrepareChainInputData(void)
 {
-    uint32_t offset = 0;
     int32_t ret = 0;
+    uint32_t ecIdx = 0;
+    uint32_t micIdx = algoAttr_.byteLenPerFrame * algoSupportedConfig_.ecNum;
+    uint32_t micRefIdx = micIdx + algoAttr_.byteLenPerFrame * algoSupportedConfig_.micNum;
+    auto enhanceBufLen = enhanceBuf_.ecBuffer.size() + enhanceBuf_.micBuffer.size() + enhanceBuf_.micRefBuffer.size();
+    CHECK_AND_RETURN_RET_LOG(enhanceBufLen <= algoCache_.input.size(), ERROR, "input cache insufficient");
 
-    if ((enhanceBuf_.ecBuffer.size() != 0) && needEcFlag_) {
-        ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels, &algoCache_.input[offset], offset);
+    if (enhanceBuf_.ecBuffer.size() != 0) {
+        ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels,
+            &algoCache_.input[ecIdx], enhanceBuf_.ecBuffer.size());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver ec data fail");
-        offset += algoAttr_.byteLenPerFrame * deviceAttr_.ecChannels;
     }
 
     if (enhanceBuf_.micBuffer.size() != 0) {
@@ -545,14 +546,13 @@ int32_t AudioEnhanceChain::PrepareChainInputData(void)
             enhanceBuf_.micBuffer.size() };
         VolumeTools::DfxOperation(bufferIn, dfxStreamInfo_, traceTagIn_, volumeDataCountIn_);
         ret = DeinterleaverData(enhanceBuf_.micBuffer.data(), deviceAttr_.micChannels,
-            &algoCache_.input[offset], offset);
+            &algoCache_.input[micIdx], enhanceBuf_.micBuffer.size());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver mic data fail");
-        offset += algoAttr_.byteLenPerFrame * deviceAttr_.micChannels;
     }
 
-    if ((enhanceBuf_.micRefBuffer.size() != 0) && needMicRefFlag_) {
+    if (enhanceBuf_.micRefBuffer.size() != 0) {
         ret = DeinterleaverData(enhanceBuf_.micRefBuffer.data(), deviceAttr_.micRefChannels,
-            &algoCache_.input[offset], offset);
+            &algoCache_.input[micRefIdx], enhanceBuf_.micRefBuffer.size());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver micRef data fail");
     }
 

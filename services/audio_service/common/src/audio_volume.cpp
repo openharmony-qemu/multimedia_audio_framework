@@ -571,13 +571,13 @@ void AudioVolume::Monitor(uint32_t sessionId, bool isOutput)
 
 void AudioVolume::SetFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
 {
-    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
     fadeoutState_.insert_or_assign(streamIndex, fadeoutState);
 }
 
 uint32_t AudioVolume::GetFadeoutState(uint32_t streamIndex)
 {
-    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::shared_lock<std::shared_mutex> lock(fadeoutMutex_);
     auto it = fadeoutState_.find(streamIndex);
     if (it != fadeoutState_.end()) { return it->second; }
     AUDIO_WARNING_LOG("No such streamIndex in map!");
@@ -586,19 +586,19 @@ uint32_t AudioVolume::GetFadeoutState(uint32_t streamIndex)
 
 void AudioVolume::RemoveFadeoutState(uint32_t streamIndex)
 {
-    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
     fadeoutState_.erase(streamIndex);
 }
 
 void AudioVolume::SetStopFadeoutState(uint32_t streamIndex, uint32_t fadeoutState)
 {
-    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
     stopFadeoutState_.insert_or_assign(streamIndex, fadeoutState);
 }
 
 uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex)
 {
-    std::shared_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::shared_lock<std::shared_mutex> lock(fadeoutMutex_);
     auto it = stopFadeoutState_.find(streamIndex);
     if (it != stopFadeoutState_.end()) {
         return it->second;
@@ -609,7 +609,7 @@ uint32_t AudioVolume::GetStopFadeoutState(uint32_t streamIndex)
 
 void AudioVolume::RemoveStopFadeoutState(uint32_t streamIndex)
 {
-    std::unique_lock<std::shared_mutex> lock(fadoutMutex_);
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
     stopFadeoutState_.erase(streamIndex);
 }
 
@@ -628,6 +628,21 @@ void AudioVolume::SetCurrentActiveDevice(DeviceType currentActiveDevice)
 {
     AUDIO_INFO_LOG("SetCurrentActiveDevice %{public}d", currentActiveDevice);
     currentActiveDevice_ = currentActiveDevice;
+}
+
+void AudioVolume::SetOffloadType(uint32_t streamIndex, int32_t offloadType)
+{
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
+    offloadType_.insert_or_assign(streamIndex, offloadType);
+}
+
+int32_t AudioVolume::GetOffloadType(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadeoutMutex_);
+    auto it = offloadType_.find(streamIndex);
+    if (it != offloadType_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return OFFLOAD_DEFAULT;
 }
 } // namespace AudioStandard
 } // namespace OHOS
@@ -718,6 +733,16 @@ FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs)
     }
 
     return FADE_STRATEGY_DEFAULT;
+}
+
+void SetOffloadType(uint32_t streamIndex, int32_t offloadType)
+{
+    AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
+}
+
+int32_t GetOffloadType(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetOffloadType(streamIndex);
 }
 #ifdef __cplusplus
 }
