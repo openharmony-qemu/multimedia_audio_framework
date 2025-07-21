@@ -443,7 +443,7 @@ bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, i
     }
 
     auto lastHandleInfo = lastHandleInfo_.load();
-    if (lastHandleInfo.serverHandlePos < framePos) {
+    if (lastHandleInfo.serverHandlePos < framePos || lastHandleInfo.serverHandleTime == 0) {
         lastHandleInfo_.compare_exchange_strong(lastHandleInfo, {framePos, serverHandleTime});
     } else {
         framePos = lastHandleInfo.serverHandlePos;
