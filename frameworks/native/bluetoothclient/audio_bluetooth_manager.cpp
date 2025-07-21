@@ -538,7 +538,7 @@ void AudioHfpManager::ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &d
     }
     AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
         GetEncryptAddr(device.GetDeviceAddr()).c_str());
-    DisconnectScoWrapper();
+    BluetoothScoManager::GetInstance().ResetScoState(activeHfpDevice_);
     activeHfpDevice_ = BluetoothRemoteDevice();
 }
 
