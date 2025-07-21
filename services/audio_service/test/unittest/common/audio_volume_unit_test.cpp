@@ -1476,5 +1476,34 @@ HWTEST_F(AudioVolumeUnitTest, GetFadeStrategy_003, TestSize.Level1)
     EXPECT_EQ(2, GetFadeStrategy(DURATION_TIME_DEFAULT - 1));
     EXPECT_EQ(2, GetFadeStrategy(DURATION_TIME_DEFAULT));
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadType_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadType_001, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    int32_t offloadType = OFFLOAD_ACTIVE_BACKGROUND;
+    AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
+    int32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    EXPECT_EQ(getFadeoutState, offloadType);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadType_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadType_002, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->offloadType_.clear();
+    uint32_t ret = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    EXPECT_EQ(ret, OFFLOAD_DEFAULT);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
