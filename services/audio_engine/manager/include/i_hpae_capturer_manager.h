@@ -38,6 +38,7 @@ public:
     virtual int32_t Drain(uint32_t sessionId) = 0;
     virtual int32_t Stop(uint32_t sessionId) = 0;
     virtual int32_t Release(uint32_t sessionId) = 0;
+    virtual int32_t SetStreamMute(uint32_t sessionId, bool isMute) = 0;
     virtual void Process() = 0;
     virtual void HandleMsg() = 0;
     virtual int32_t Init(bool isReload = false) = 0;

@@ -45,6 +45,7 @@ public:
     int32_t Drain(uint32_t sessionId) override;
     int32_t Stop(uint32_t sessionId) override;
     int32_t Release(uint32_t sessionId) override;
+    int32_t SetStreamMute(uint32_t sessionId, bool isMute) override;
     int32_t MoveStream(uint32_t sessionId, const std::string& sourceName) override;
     int32_t MoveAllStream(const std::string& sourceName, const std::vector<uint32_t>& sessionIds,
         MoveSessionType moveType = MOVE_ALL) override;
