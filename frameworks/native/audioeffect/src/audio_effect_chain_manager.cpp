@@ -123,14 +123,9 @@ int32_t AudioEffectChainManager::UpdateDeviceInfo(int32_t device, const std::str
         AUDIO_INFO_LOG("has not beed initialized");
         return ERROR;
     }
-
-    if (deviceSink_ == sinkName) {
-        AUDIO_PRERELEASE_LOGI("Same DeviceSinkName");
-    }
     deviceSink_ = sinkName;
 
     if (deviceType_ == (DeviceType)device) {
-        AUDIO_INFO_LOG("DeviceType do not need to be Updated");
         return ERROR;
     }
     // Delete effectChain in AP and store in backup map
