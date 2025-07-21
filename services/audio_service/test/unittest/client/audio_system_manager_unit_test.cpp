@@ -1265,7 +1265,7 @@ HWTEST(AudioSystemManagerUnitTest, GetRecorderByGrpId_001, TestSize.Level1)
     AudioSystemManager manager;
     int32_t grpId = 1;
     auto recorder = std::make_shared<AudioSystemManager::WorkgroupPrioRecorder>(1);
-    manager.workgroupPrioRecorderMap[grpId] = recorder;
+    manager.workgroupPrioRecorderMap_[grpId] = recorder;
     auto result = manager.GetRecorderByGrpId(grpId);
     EXPECT_EQ(result, recorder);
 }
