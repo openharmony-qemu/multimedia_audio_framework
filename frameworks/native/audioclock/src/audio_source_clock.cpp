@@ -78,6 +78,7 @@ uint64_t AudioSourceClock::GetTimestamp(uint32_t positionInc)
 void AudioSourceClock::Renew(uint32_t posIncSize)
 {
     CHECK_AND_RETURN_LOG(posIncSize != 0, "posIncSize is 0!");
+    CHECK_AND_RETURN_LOG(sizePerPos_ != 0, "sizePerPos_ is 0!");
 
     std::lock_guard<std::mutex> lock(clockMtx_);
 
