@@ -17,12 +17,12 @@
 #define LOG_TAG "HpaeSourceOutputNode"
 #endif
 
-#include <hpae_source_output_node.h>
-#include "audio_engine_log.h"
+#include "hpae_source_output_node.h"
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

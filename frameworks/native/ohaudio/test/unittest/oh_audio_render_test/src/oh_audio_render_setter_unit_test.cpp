@@ -131,10 +131,12 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_SetLoudnessGain_001, TestSize.Leve
     OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
     OH_AudioRenderer* audioRenderer;
     float loudnessGain = VALID_LOUDNESS_GAIN;
-    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_MUSIC;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     result = OH_AudioRenderer_SetLoudnessGain(audioRenderer, loudnessGain);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_GAME;
+    usage = AUDIOSTREAM_USAGE_GAME;
     result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
     result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);

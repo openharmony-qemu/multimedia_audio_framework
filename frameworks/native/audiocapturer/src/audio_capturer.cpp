@@ -1008,43 +1008,6 @@ void AudioCapturerInterruptCallbackImpl::NotifyEvent(const InterruptEvent &inter
     }
 }
 
-void AudioCapturerInterruptCallbackImpl::NotifyForcePausedToResume(const InterruptEventInternal &interruptEvent)
-{
-    // Change InterruptForceType to Share, Since app will take care of resuming
-    InterruptEvent interruptEventResume {interruptEvent.eventType, INTERRUPT_SHARE,
-                                         interruptEvent.hintType};
-    NotifyEvent(interruptEventResume);
-}
-
-void AudioCapturerInterruptCallbackImpl::HandleAndNotifyForcedEvent(const InterruptEventInternal &interruptEvent)
-{
-    State currentState = audioStream_->GetState();
-    switch (interruptEvent.hintType) {
-        case INTERRUPT_HINT_RESUME:
-            CHECK_AND_RETURN_LOG((currentState == PAUSED || currentState == PREPARED) && isForcePaused_ == true,
-                "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
-            AUDIO_INFO_LOG("set force pause false");
-            isForcePaused_ = false;
-            NotifyForcePausedToResume(interruptEvent);
-            return;
-        case INTERRUPT_HINT_PAUSE:
-            CHECK_AND_RETURN_LOG(currentState == RUNNING || currentState == PREPARED,
-                "OnInterrupt state %{public}d, no need to pause", currentState);
-            (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
-            AUDIO_INFO_LOG("set force pause true");
-            isForcePaused_ = true;
-            break;
-        case INTERRUPT_HINT_STOP:
-            (void)audioStream_->StopAudioStream();
-            break;
-        default:
-            break;
-    }
-    // Notify valid forced event callbacks to app
-    InterruptEvent interruptEventForced {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
-    NotifyEvent(interruptEventForced);
-}
-
 void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInternal &interruptEvent)
 {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -1061,19 +1024,44 @@ void AudioCapturerInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     cb_ = callback_.lock();
     InterruptForceType forceType = interruptEvent.forceType;
     AUDIO_INFO_LOG("InterruptForceType: %{public}d", forceType);
+    InterruptEvent event;
 
-    if (forceType != INTERRUPT_FORCE) { // INTERRUPT_SHARE
+    if (forceType == INTERRUPT_SHARE) { // INTERRUPT_SHARE
         AUDIO_DEBUG_LOG("AudioCapturerPrivate ForceType: INTERRUPT_SHARE. Let app handle the event");
-        InterruptEvent interruptEventShared {interruptEvent.eventType, interruptEvent.forceType,
-                                             interruptEvent.hintType};
-        NotifyEvent(interruptEventShared);
-        return;
+        event = InterruptEvent {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
+    } else {
+        CHECK_AND_RETURN_LOG(audioStream_ != nullptr, "Stream is not alive. No need to take forced action");
+        State currentState = audioStream_->GetState();
+
+        switch (interruptEvent.hintType) {
+            case INTERRUPT_HINT_RESUME:
+                CHECK_AND_RETURN_LOG((currentState == PAUSED || currentState == PREPARED) && isForcePaused_ == true,
+                    "OnInterrupt state %{public}d or not forced pause %{public}d before", currentState, isForcePaused_);
+                AUDIO_INFO_LOG("set force pause false");
+                isForcePaused_ = false;
+                event = InterruptEvent {interruptEvent.eventType, INTERRUPT_SHARE, interruptEvent.hintType};
+                lock.unlock();
+                NotifyEvent(event);
+                return;
+            case INTERRUPT_HINT_PAUSE:
+                CHECK_AND_RETURN_LOG(currentState == RUNNING || currentState == PREPARED,
+                    "OnInterrupt state %{public}d, no need to pause", currentState);
+                (void)audioStream_->PauseAudioStream(); // Just Pause, do not deactivate here
+                AUDIO_INFO_LOG("set force pause true");
+                isForcePaused_ = true;
+                break;
+            case INTERRUPT_HINT_STOP:
+                (void)audioStream_->StopAudioStream();
+                break;
+            default:
+                break;
+        }
+        // Notify valid forced event callbacks to app
+        event = InterruptEvent {interruptEvent.eventType, interruptEvent.forceType, interruptEvent.hintType};
     }
 
-    CHECK_AND_RETURN_LOG(audioStream_ != nullptr,
-        "Stream is not alive. No need to take forced action");
-
-    HandleAndNotifyForcedEvent(interruptEvent);
+    lock.unlock();
+    NotifyEvent(event);
 }
 
 AudioStreamCallbackCapturer::AudioStreamCallbackCapturer(std::weak_ptr<AudioCapturerPrivate> capturer)
@@ -1541,6 +1529,7 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             streamDesc->sessionId_ = switchInfo.params.originalSessionId;
         }
         streamDesc->capturerInfo_.capturerFlags = AUDIO_FLAG_FORCED_NORMAL;
+        streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
             streamDesc, flag, switchInfo.params.originalSessionId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");

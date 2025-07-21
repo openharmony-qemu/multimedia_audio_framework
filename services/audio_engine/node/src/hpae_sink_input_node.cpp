@@ -17,19 +17,22 @@
 #define LOG_TAG "HpaeSinkInputNode"
 #endif
 
-#include "hpae_sink_input_node.h"
 #include <iostream>
+#include <cinttypes>
+#include "hpae_sink_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "cinttypes"
 #include "audio_performance_monitor.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const std::string DEVICE_CLASS_OFFLOAD = "offload";
+const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
@@ -101,7 +104,8 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+    if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
+        !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {

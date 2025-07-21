@@ -1067,6 +1067,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_014, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_015
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return HEARING_AID
+*             when deviceType is DEVICE_TYPE_HEARING_AID
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_015, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_HEARING_AID;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "HEARING_AID");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -3405,6 +3419,30 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_007, TestSize.Level1)
 
     EXPECT_TRUE(StringConverter(str2, result8Signed));
     EXPECT_EQ(result8Signed, 10);
+}
+
+/**
+* @tc.name  : Test GetSupportedAudioVolumeTypes  API
+* @tc.type  : FUNC
+* @tc.number: GetSupportedAudioVolumeTypes_001
+* @tc.desc  : Test GetSupportedAudioVolumeTypes API
+*/
+HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetSupportedAudioVolumeTypes();
+    EXPECT_GE(ret.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetStreamUsagesByVolumeType  API
+* @tc.type  : FUNC
+* @tc.number: GetStreamUsagesByVolumeType_001
+* @tc.desc  : Test GetStreamUsagesByVolumeType API
+*/
+HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
+    EXPECT_GE(ret.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

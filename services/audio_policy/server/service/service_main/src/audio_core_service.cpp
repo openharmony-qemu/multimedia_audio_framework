@@ -447,7 +447,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
         CheckAndSetCurrentInputDevice(streamDesc->newDeviceDescs_.front());
         audioActiveDevice_.UpdateActiveDeviceRoute(
-            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG);
+            streamDesc->newDeviceDescs_[0]->deviceType_, DeviceFlag::INPUT_DEVICES_FLAG,
+            streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
@@ -812,7 +813,10 @@ int32_t AudioCoreService::GetCurrentCapturerChangeInfos(
         if ((desc->deviceType_ == activeDeviceType) && (desc->deviceRole_ == activeDeviceRole)) {
             size_t capturerInfosSize = audioCapturerChangeInfos.size();
             for (size_t i = 0; i < capturerInfosSize; i++) {
+                CHECK_AND_CONTINUE(audioCapturerChangeInfos[i] != nullptr);
                 UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos[i], hasSystemPermission);
+                CHECK_AND_CONTINUE(audioRouterCenter_.IsConfigRouterStrategy(
+                    audioCapturerChangeInfos[i]->capturerInfo.sourceType));
                 audioDeviceCommon_.UpdateDeviceInfo(audioCapturerChangeInfos[i]->inputDeviceInfo, desc,
                     hasBTPermission, hasSystemPermission);
             }
@@ -868,6 +872,22 @@ int32_t AudioCoreService::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo
     return streamCollector_.RegisterTracker(mode, streamChangeInfo, object);
 }
 
+void AudioCoreService::SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object)
+{
+    CHECK_AND_RETURN_LOG(object != nullptr, "object is nullptr");
+    sptr<IStandardAudioPolicyManagerListener> listener = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    CHECK_AND_RETURN_LOG(listener != nullptr, "listener is nullptr");
+    std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+    routeUpdateCallback_[sessionId] = listener;
+}
+
+void AudioCoreService::UnsetAudioRouteCallback(uint32_t sessionId)
+{
+    std::lock_guard<std::mutex> lock(routeUpdateCallbackMutex_);
+    CHECK_AND_RETURN_LOG(routeUpdateCallback_.count(sessionId) != 0, "sessionId not exists");
+    routeUpdateCallback_.erase(sessionId);
+}
+
 int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     int32_t ret = streamCollector_.UpdateTracker(mode, streamChangeInfo);
@@ -908,9 +928,15 @@ void AudioCoreService::RegisteredTrackerClientDied(pid_t uid, pid_t pid)
 
     audioMicrophoneDescriptor_.RemoveAudioCapturerMicrophoneDescriptor(static_cast<int32_t>(uid));
     streamCollector_.RegisteredTrackerClientDied(static_cast<int32_t>(uid), static_cast<int32_t>(pid));
-    std::vector<uint32_t> sessionIds = pipeManager_->GetFastStreamIdsByUid(uid);
+    CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager is nullptr");
+    std::vector<uint32_t> sessionIds = pipeManager_->GetStreamIdsByUid(uid,
+        (AUDIO_OUTPUT_FLAG_FAST | AUDIO_INPUT_FLAG_FAST));
     for (auto sessionId : sessionIds) {
         ReleaseClient(sessionId);
+    }
+    sessionIds = pipeManager_->GetStreamIdsByUid(uid);
+    for (auto sessionId : sessionIds) {
+        UnsetAudioRouteCallback(sessionId);
     }
     FetchOutputDeviceAndRoute("RegisteredTrackerClientDied");
 

@@ -304,9 +304,7 @@ OH_AudioStream_Result OH_AudioRenderer_SetLoudnessGain(OH_AudioRenderer *rendere
 {
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
-    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
-    audioRenderer->GetRendererInfo(rendererInfo);
-    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)audioRenderer->GetOriginalStreamUsage();
     CHECK_AND_RETURN_RET_LOG((usage == AUDIOSTREAM_USAGE_MUSIC || usage == AUDIOSTREAM_USAGE_MOVIE ||
         usage == AUDIOSTREAM_USAGE_AUDIOBOOK), AUDIOSTREAM_ERROR_INVALID_PARAM, "audio stream type not supported");
     CHECK_AND_RETURN_RET_LOG(((loudnessGain >= MIN_LOUDNESS_GAIN) && (loudnessGain <= MAX_LOUDNESS_GAIN)),
@@ -324,12 +322,8 @@ OH_AudioStream_Result OH_AudioRenderer_GetLoudnessGain(OH_AudioRenderer *rendere
     OHOS::AudioStandard::OHAudioRenderer *audioRenderer = convertRenderer(renderer);
     CHECK_AND_RETURN_RET_LOG(audioRenderer != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "convert renderer failed");
     CHECK_AND_RETURN_RET_LOG(loudnessGain != nullptr, AUDIOSTREAM_ERROR_INVALID_PARAM, "loudnessGain is nullptr");
-    OHOS::AudioStandard::AudioRendererInfo rendererInfo;
-    audioRenderer->GetRendererInfo(rendererInfo);
-    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)rendererInfo.streamUsage;
-    OH_AudioStream_LatencyMode latencyMode = (OH_AudioStream_LatencyMode)rendererInfo.rendererFlags;
-    if ((usage != AUDIOSTREAM_USAGE_MUSIC && usage != AUDIOSTREAM_USAGE_MOVIE &&
-        usage != AUDIOSTREAM_USAGE_AUDIOBOOK) || latencyMode != AUDIOSTREAM_LATENCY_MODE_NORMAL) {
+    OH_AudioStream_Usage usage = (OH_AudioStream_Usage)audioRenderer->GetOriginalStreamUsage();
+    if (usage == AUDIOSTREAM_USAGE_UNKNOWN) {
         *loudnessGain = 0.0f;
     } else {
         *loudnessGain = audioRenderer->GetLoudnessGain();
@@ -460,6 +454,9 @@ OHAudioRenderer::~OHAudioRenderer()
 
 bool OHAudioRenderer::Initialize(AudioRendererOptions &rendererOptions)
 {
+    // save the original stream usage for some functions based on stream usage
+    originalStreamUsage_ = rendererOptions.rendererInfo.streamUsage;
+
     // unknown stream use music policy as default and do not allow to use offload output
     if (rendererOptions.rendererInfo.streamUsage == STREAM_USAGE_UNKNOWN) {
         AUDIO_WARNING_LOG("stream usage is unknown, use music policy as default "
@@ -1032,6 +1029,11 @@ InterruptEventCallbackType OHAudioRenderer::GetRendererInterruptEventCallbackTyp
 void OHAudioRenderer::SetRendererErrorCallbackType(ErrorCallbackType errorCallbackType)
 {
     errorCallbackType_ = errorCallbackType;
+}
+
+StreamUsage OHAudioRenderer::GetOriginalStreamUsage()
+{
+    return originalStreamUsage_;
 }
 
 ErrorCallbackType OHAudioRenderer::GetRendererErrorCallbackType()

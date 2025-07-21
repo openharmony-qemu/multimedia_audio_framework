@@ -56,6 +56,8 @@ public:
     int32_t GetSplitInfo(std::string &splitInfo);
 
     int32_t NotifyDistributedOutputChange(bool isRemote);
+
+    bool IsConfigRouterStrategy(SourceType sourceType);
 private:
     AudioRouterCenter()
     {
@@ -130,7 +132,6 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
     RouterType GetBypassWithSco(AudioScene audioScene);
     bool IsMediaFollowCallStrategy(AudioScene audioScene);
-    bool IsConfigRouterStrategy(SourceType sourceType);
     shared_ptr<AudioDeviceDescriptor> FetchCapturerInputDevice(SourceType sourceType,
         int32_t clientUID, RouterType &routerType, const uint32_t sessionID);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> FetchOutputDevicesInner(FetchDeviceInfo info,

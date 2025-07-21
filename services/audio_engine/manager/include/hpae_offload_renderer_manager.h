@@ -74,6 +74,7 @@ public:
         bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
     HpaeSinkInfo GetSinkInfo() override;

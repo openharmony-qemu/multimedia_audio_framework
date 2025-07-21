@@ -15,18 +15,20 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeManager"
 #endif
+
 #include "hpae_manager.h"
 #include <string>
 #include <atomic>
 #include <unordered_map>
 #include "audio_errors.h"
 #include "audio_schedule.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "audio_setting_provider.h"
 #include "hpae_node_common.h"
 #include "system_ability_definition.h"
 #include "hpae_co_buffer_node.h"
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -121,7 +123,6 @@ int32_t HpaeManager::Init()
 
 int32_t HpaeManager::SuspendAudioDevice(std::string &audioPortName, bool isSuspend)
 {
-    AUDIO_INFO_LOG("suspend audio device: %{public}s, isSuspend: %{public}d", audioPortName.c_str(), isSuspend);
     auto request = [this, audioPortName, isSuspend]() {
         if (SafeGetMap(rendererManagerMap_, audioPortName)) {
             rendererManagerMap_[audioPortName]->SuspendStreamManager(isSuspend);
@@ -1107,11 +1108,14 @@ void HpaeManager::HandleMoveSessionFailed(HpaeStreamClassType streamClassType, u
 void HpaeManager::HandleUpdateStatus(
     HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionState status, IOperation operation)
 {
-    AUDIO_INFO_LOG("HpaeManager::HandleUpdateStatus sessionid:%{public}u "
-                   "status:%{public}d operation:%{public}d",
-        sessionId,
-        status,
-        operation);
+    // log limit
+    if (operation != OPERATION_UNDERFLOW) {
+        AUDIO_INFO_LOG("HpaeManager::HandleUpdateStatus sessionid:%{public}u "
+                       "status:%{public}d operation:%{public}d",
+            sessionId,
+            status,
+            operation);
+    }
     if (operation == OPERATION_INVALID) {
         // maybe dosomething while move sink inputs
         return;
@@ -1925,6 +1929,17 @@ int32_t HpaeManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t ty
     };
     SendRequest(request, __func__);
     return SUCCESS;
+}
+
+void HpaeManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    auto request = [this, sessionId, speed]() {
+        AUDIO_INFO_LOG("SetSpeed sessionId %{public}u %{public}f", sessionId, speed);
+        auto rendererManager = GetRendererManagerById(sessionId);
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr, "SetSpeed cannot find sessionId: %{public}u", sessionId);
+        rendererManager->SetSpeed(sessionId, speed);
+    };
+    SendRequest(request, __func__);
 }
 
 // only interface for unit test

@@ -297,5 +297,72 @@ HWTEST(AudioGroupManagerUnitTest, IsAlived_001, TestSize.Level1)
     bool ret = audioGroupManager.IsAlived();
     EXPECT_EQ(ret, true);
 }
+/**
+* @tc.name  : Test IsMicrophoneMuteLegacy API
+* @tc.type  : FUNC
+* @tc.number: IsMicrophoneMuteLegacy_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, IsMicrophoneMuteLegacy_001, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.netWorkId_ = "remote_network_id";
+    EXPECT_FALSE(audioGroupManager.IsMicrophoneMuteLegacy());
+}
+/**
+* @tc.name  : Test GetSystemVolumeInDb API
+* @tc.type  : FUNC
+* @tc.number: GetSystemVolumeInDb_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_INVALID;
+    float result = audioGroupManager.GetSystemVolumeInDb(STREAM_VOICE_CALL, 5, deviceType);
+    audioGroupManager.netWorkId_ = "RemoteDevice";
+    result = audioGroupManager.GetSystemVolumeInDb(STREAM_VOICE_CALL, 5, deviceType);
+
+    EXPECT_NE(result, 0.1);
+}
+/**
+* @tc.name  : Test SetRingerMode API
+* @tc.type  : FUNC
+* @tc.number: SetRingerMode_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, SetRingerMode_001, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
+    AudioRingerMode ringMode = RINGER_MODE_SILENT;
+    float result = audioGroupManager.SetRingerMode(ringMode);
+    EXPECT_NE(result, 0);
+    ringMode = RINGER_MODE_NORMAL;
+    result = audioGroupManager.SetRingerMode(ringMode);
+    EXPECT_NE(result, 0);
+    ringMode = RINGER_MODE_VIBRATE;
+    result = audioGroupManager.SetRingerMode(ringMode);
+    EXPECT_NE(result, 0);
+}
+
+/**
+* @tc.name  : Test AdjustVolumeByStep_001 API
+* @tc.type  : FUNC
+* @tc.number: AdjustVolumeByStep_001_001
+* @tc.desc  : Test cross ring cache.
+*/
+HWTEST(AudioGroupManagerUnitTest, AdjustVolumeByStep_001, TestSize.Level1)
+{
+    AudioGroupManager audioGroupManager(1);
+    audioGroupManager.netWorkId_ = LOCAL_NETWORK_ID;
+    VolumeAdjustType adjustType = VOLUME_UP;
+    float result = audioGroupManager.AdjustVolumeByStep(adjustType);
+    EXPECT_NE(result, 0);
+    adjustType = VOLUME_DOWN;
+    result = audioGroupManager.AdjustVolumeByStep(adjustType);
+    EXPECT_NE(result, 0);
+}
 } // namespace AudioStandard
 } //

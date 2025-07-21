@@ -204,19 +204,19 @@ bool AudioStreamManager::IsStreamActiveByStreamUsage(StreamUsage streamUsage) co
         case STREAM_USAGE_RINGTONE:
         case STREAM_USAGE_NOTIFICATION:
         case STREAM_USAGE_ACCESSIBILITY:
-        case STREAM_USAGE_SYSTEM:
         case STREAM_USAGE_MOVIE:
         case STREAM_USAGE_GAME:
         case STREAM_USAGE_AUDIOBOOK:
         case STREAM_USAGE_NAVIGATION:
-        case STREAM_USAGE_DTMF:
-        case STREAM_USAGE_ENFORCED_TONE:
         case STREAM_USAGE_VIDEO_COMMUNICATION:
         case STREAM_USAGE_RANGING:
         case STREAM_USAGE_VOICE_MODEM_COMMUNICATION:
         case STREAM_USAGE_VOICE_RINGTONE:
-        case STREAM_USAGE_VOICE_CALL_ASSISTANT:
             break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_VOICE_CALL_ASSISTANT:
         case STREAM_USAGE_ULTRASONIC:{
             bool ret = PermissionUtil::VerifySelfPermission();
             CHECK_AND_RETURN_RET_LOG(ret, false, "streamUsage=%{public}d. No system permission", streamUsage);

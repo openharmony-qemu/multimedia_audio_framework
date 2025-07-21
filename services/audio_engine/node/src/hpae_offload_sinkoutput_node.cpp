@@ -23,12 +23,13 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_volume.h"
 #include "audio_common_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -383,6 +384,12 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
     AUDIO_INFO_LOG("SetOffloadRenderCallbackType type:%{public}d", type);
     OffloadCallback(static_cast<RenderCallbackType>(type));
     return SUCCESS;
+}
+
+void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    audioRendererSink_->SetSpeed(speed);
 }
 
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)

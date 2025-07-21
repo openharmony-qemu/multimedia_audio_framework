@@ -129,6 +129,26 @@ class ConcreteAudioManagerAudioSceneChangedCallback : public AudioManagerAudioSc
 class ConcreteAudioFormatUnsupportedErrorCallback : public AudioFormatUnsupportedErrorCallback {
     void OnFormatUnsupportedError(const AudioErrors &errorCode) override {};
 };
+
+class ConcreteSystemVolumeChangeCallback : public SystemVolumeChangeCallback {
+    void OnSystemVolumeChange(VolumeEvent volumeEvent) override {};
+};
+
+class ConcreteAudioManagerActiveVolumeTypeChangeCallback : public AudioManagerActiveVolumeTypeChangeCallback {
+    void OnActiveVolumeTypeChanged(const AudioVolumeType &event) override {};
+};
+
+class ConcreteAudioSessionStateChangedCallback : public AudioSessionStateChangedCallback {
+    void OnAudioSessionStateChanged(const AudioSessionStateChangedEvent &stateChangedEvent) override {};
+};
+
+class ConcreteAudioSessionCurrentDeviceChangedCallback : public AudioSessionCurrentDeviceChangedCallback {
+    void OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) override {};
+};
+
+class ConcreteStreamVolumeChangeCallback : public StreamVolumeChangeCallback {
+    void OnStreamVolumeChange(StreamVolumeEvent streamVolumeEvent) override {};
+};
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_POLICY_CLIENT_STUB_IMPL_TEST_H

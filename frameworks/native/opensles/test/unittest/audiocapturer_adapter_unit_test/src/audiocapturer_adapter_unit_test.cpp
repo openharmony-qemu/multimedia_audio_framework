@@ -125,19 +125,14 @@ HWTEST(AudioCapturerAdapterUnitTest, GetCaptureStateAdapter_001, TestSize.Level0
 {
     SLuint32 id = 1;
     SLuint32 stateTest;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
 
     AppInfo appInfo = {};
     AudioStreamType audioStreamType = STREAM_MUSIC;
     AudioCapturerAdapter::GetInstance()->captureMap_.clear();
     auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
     ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-    fastAudioStream->state_ = State::RUNNING;
-    audioCapturer->audioStream_ = fastAudioStream;
+    audioCapturer->audioStream_ = std::make_shared<TestAudioStreamStub>();
+    ASSERT_TRUE(audioCapturer->audioStream_ != nullptr);
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(id, &stateTest);
     EXPECT_TRUE(stateTest == SL_RECORDSTATE_RECORDING);
@@ -152,19 +147,14 @@ HWTEST(AudioCapturerAdapterUnitTest, GetCaptureStateAdapter_002, TestSize.Level0
 {
     SLuint32 id = 1;
     SLuint32 stateTest;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
 
     AppInfo appInfo = {};
     AudioStreamType audioStreamType = STREAM_MUSIC;
     AudioCapturerAdapter::GetInstance()->captureMap_.clear();
     auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
     ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-    fastAudioStream->state_ = State::PAUSED;
-    audioCapturer->audioStream_ = fastAudioStream;
+    audioCapturer->audioStream_ = std::make_shared<TestAudioStreamStub1>();
+    ASSERT_TRUE(audioCapturer->audioStream_ != nullptr);
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(id, &stateTest);
     EXPECT_TRUE(stateTest == SL_RECORDSTATE_PAUSED);
@@ -179,19 +169,14 @@ HWTEST(AudioCapturerAdapterUnitTest, GetCaptureStateAdapter_003, TestSize.Level0
 {
     SLuint32 id = 1;
     SLuint32 stateTest;
-    AudioMode eMode = AUDIO_MODE_PLAYBACK;
-    AudioStreamType eStreamType = STREAM_MUSIC;
-    int32_t appUid = 0;
 
     AppInfo appInfo = {};
     AudioStreamType audioStreamType = STREAM_MUSIC;
     AudioCapturerAdapter::GetInstance()->captureMap_.clear();
     auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
     ASSERT_TRUE(audioCapturer != nullptr);
-    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
-    ASSERT_TRUE(fastAudioStream != nullptr);
-    fastAudioStream->state_ = State::STOPPED;
-    audioCapturer->audioStream_ = fastAudioStream;
+    audioCapturer->audioStream_ = std::make_shared<TestAudioStreamStub2>();
+    ASSERT_TRUE(audioCapturer->audioStream_ != nullptr);
     AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
     AudioCapturerAdapter::GetInstance()->GetCaptureStateAdapter(id, &stateTest);
     EXPECT_TRUE(stateTest == SL_RECORDSTATE_STOPPED);

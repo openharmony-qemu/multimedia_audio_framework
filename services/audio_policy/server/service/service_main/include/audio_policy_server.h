@@ -238,6 +238,10 @@ public:
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
+    int32_t SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object, uint32_t clientUid) override;
+
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId) override;
+
     int32_t ActivatePreemptMode(void) override;
 
     int32_t DeactivatePreemptMode(void) override;
@@ -656,7 +660,7 @@ public:
 
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
-
+    int32_t CallRingtoneLibrary();
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -735,6 +739,7 @@ private:
     int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
+    bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);
 
     // externel function call
 #ifdef FEATURE_MULTIMODALINPUT_INPUT

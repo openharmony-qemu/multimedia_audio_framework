@@ -15,14 +15,15 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeLoudnessGainNode"
 #endif
+
+#include <dlfcn.h>
+#include <cinttypes>
+#include <cmath>
 #include "hpae_loudness_gain_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include <dlfcn.h>
-#include <cinttypes>
-
-#include <cmath>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -190,7 +191,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
-        linearGain_ = LoudnessDbToLinearGain(loudnessGain_);
+        linearGain_ = LoudnessDbToLinearGain(loudnessGain);
         loudnessGain_ = loudnessGain;
         return SUCCESS;
     }

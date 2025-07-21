@@ -19,8 +19,8 @@
 #include "hpae_offload_renderer_manager.h"
 #include "audio_stream_info.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -629,6 +629,14 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
     };
     SendRequest(request);
     return SUCCESS;
+}
+
+void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+        "SetSpeed not find sessionId %{public}u", sessionId);
+    CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
+    sinkOutputNode_->SetSpeed(speed);
 }
 
 std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()

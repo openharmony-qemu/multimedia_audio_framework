@@ -1113,14 +1113,7 @@ napi_value NapiAudioRenderer::GetLoudnessGain(napi_env env, napi_callback_info i
     auto *napiAudioRenderer = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer != nullptr, result, "napiAudioRenderer is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiAudioRenderer->audioRenderer_ != nullptr, result, "audioRenderer_ is nullptr");
-    AudioRendererInfo rendererInfo = {};
-    napiAudioRenderer->audioRenderer_->GetRendererInfo(rendererInfo);
-    StreamUsage streamUsage = rendererInfo.streamUsage;
-    if (!(streamUsage == STREAM_USAGE_MUSIC || streamUsage == STREAM_USAGE_MOVIE ||
-        streamUsage == STREAM_USAGE_AUDIOBOOK)) {
-        NapiParamUtils::SetValueDouble(env, 0.0f, result);
-        return result;
-    }
+
     double loudnessGain = napiAudioRenderer->audioRenderer_->GetLoudnessGain();
     NapiParamUtils::SetValueDouble(env, loudnessGain, result);
     return result;

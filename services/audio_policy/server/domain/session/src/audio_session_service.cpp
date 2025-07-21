@@ -26,10 +26,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const uint32_t START_FAKE_STREAM_ID = 888;
-static const uint32_t MAX_SESSION_NUM = 1000;
-static bool g_streamIdHash[MAX_SESSION_NUM] = {0};
-
 static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session timeout duration : 60 seconds
 static constexpr time_t AUDIO_SESSION_SCENE_TIME_OUT_DURATION_S = 10; // Audio sessionV2 timeout duration : 10 seconds
 
@@ -84,11 +80,6 @@ int32_t AudioSessionService::ActivateAudioSession(const int32_t callerPid, const
         callerPid, static_cast<int32_t>(strategy.concurrencyMode));
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
 
-    if (sessionMap_.size() > MAX_SESSION_NUM) {
-        AUDIO_ERR_LOG("Exceeding the maximum number limit of audiosession. num %{public}u", sessionMap_.size());
-        return ERROR;
-    }
-
     if (sessionMap_.count(callerPid) != 0) {
         // The audio session of the callerPid is already created. The strategy will be updated.
         AUDIO_INFO_LOG("The audio seesion of pid %{public}d has already been created! Update strategy.", callerPid);
@@ -142,11 +133,6 @@ int32_t AudioSessionService::DeactivateAudioSessionInternal(const int32_t caller
     if (sessionMap_[callerPid] == nullptr) {
         AUDIO_ERR_LOG("The audio seesion obj of pid %{public}d is nullptr!", callerPid);
         return ERR_ILLEGAL_STATE;
-    }
-
-    uint32_t fakeStreamId = sessionMap_[callerPid]->GetFakeStreamId();
-    if (fakeStreamId >= START_FAKE_STREAM_ID && fakeStreamId < START_FAKE_STREAM_ID + MAX_SESSION_NUM) {
-        g_streamIdHash[fakeStreamId - START_FAKE_STREAM_ID] = false;
     }
 
     sessionMap_[callerPid]->Deactivate();
@@ -312,7 +298,6 @@ AudioInterrupt AudioSessionService::GenerateFakeAudioInterrupt(int32_t callerPid
     AudioInterrupt fakeAudioInterrupt;
     fakeAudioInterrupt.pid = callerPid;
     fakeAudioInterrupt.uid = IPCSkeleton::GetCallingUid();
-    fakeAudioInterrupt.streamId = START_FAKE_STREAM_ID;
     fakeAudioInterrupt.isAudioSessionInterrupt = true;
     auto session = sessionMap_.find(callerPid);
     if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
@@ -414,7 +399,7 @@ bool AudioSessionService::IsStreamAllowedToSetDevice(const uint32_t streamId)
     for (const auto& pair : sessionMap_) {
         if ((pair.second != nullptr) && (pair.second->IsStreamContainedInCurrentSession(streamId))) {
             // for inactivate session, its default device cannot be used, so set it to DEVICE_TYPE_INVALID
-            if (pair.second->GetSessionState() != AudioSessionState::SESSION_ACTIVE) {
+            if (!pair.second->IsActivated()) {
                 return true;
             } else {
                 DeviceType deviceType;
@@ -432,7 +417,7 @@ bool AudioSessionService::IsSessionNeedToFetchOutputDevice(const int32_t callerP
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);
     if ((sessionMap_.count(callerPid) != 0) && (sessionMap_[callerPid] != nullptr)) {
-        return sessionMap_[callerPid]->IsNeedToFetchDefaultDevice();
+        return sessionMap_[callerPid]->GetAndClearNeedToFetchFlag();
     }
 
     return false;

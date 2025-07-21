@@ -603,6 +603,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVirtual)
 {
     {
+        CHECK_AND_RETURN_RET(virtualCalls_[name] != isVirtual, SUCCESS);
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         virtualCalls_[name] = isVirtual;
     }

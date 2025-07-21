@@ -20,6 +20,7 @@
 
 #include "audio_system_manager.h"
 #include "audio_interrupt_callback.h"
+#include "audio_route_callback.h"
 #include "standard_audio_policy_manager_listener_stub.h"
 
 namespace OHOS {
@@ -31,6 +32,7 @@ public:
 
     // IStandardAudioManagerListener override
     int32_t OnInterrupt(const InterruptEventInternal &interruptEvent) override;
+    int32_t OnRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     int32_t OnAvailableDeviceChange(uint32_t usage, const DeviceChangeAction &deviceChangeAction) override;
     int32_t OnQueryClientType(const std::string &bundleName, uint32_t uid, bool &ret) override;
     int32_t OnCheckClientInfo(const std::string &bundleName, int32_t &uid, int32_t pid, bool &ret) override;
@@ -40,6 +42,7 @@ public:
     int32_t OnQueryBundleNameIsInList(const std::string &bundleName, const std::string &listType, bool &ret) override;
     // AudioManagerListenerStubImpl
     void SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback);
+    void SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback);
     void SetAvailableDeviceChangeCallback(const std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> &cb);
     void SetQueryClientTypeCallback(const std::weak_ptr<AudioQueryClientTypeCallback> &cb);
     void SetAudioClientInfoMgrCallback(const std::weak_ptr<AudioClientInfoMgrCallback> &cb);
@@ -50,6 +53,7 @@ public:
 private:
 
     std::weak_ptr<AudioInterruptCallback> callback_;
+    std::weak_ptr<AudioRouteCallback> audioRouteCallback_;
     std::weak_ptr<AudioManagerAvailableDeviceChangeCallback> audioAvailableDeviceChangeCallback_;
     std::weak_ptr<AudioQueryClientTypeCallback> audioQueryClientTypeCallback_;
     std::weak_ptr<AudioQueryAllowedPlaybackCallback> audioQueryAllowedPlaybackCallback_;

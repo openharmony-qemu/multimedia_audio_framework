@@ -133,6 +133,7 @@ void AudioDeviceManager::FillArrayWhenDeviceAttrMatch(const shared_ptr<AudioDevi
     AudioDevicePrivacyType privacyType, DeviceRole devRole, DeviceUsage devUsage, string logName,
     vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     bool result = DeviceAttrMatch(devDesc, privacyType, devRole, devUsage);
     if (result) {
         descArray.push_back(devDesc);
@@ -492,6 +493,7 @@ std::string AudioDeviceManager::GetConnDevicesStr()
 void AudioDeviceManager::RemoveMatchDeviceInArray(const AudioDeviceDescriptor &devDesc, string logName,
     vector<shared_ptr<AudioDeviceDescriptor>> &descArray)
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     auto isPresent = [&devDesc] (const shared_ptr<AudioDeviceDescriptor> &desc) {
         CHECK_AND_RETURN_RET_LOG(desc != nullptr, false, "Invalid device descriptor");
         return devDesc.deviceType_ == desc->deviceType_ && devDesc.macAddress_ == desc->macAddress_ &&
@@ -524,6 +526,7 @@ void AudioDeviceManager::RemoveNewDevice(const std::shared_ptr<AudioDeviceDescri
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : remoteRenderDevices_) {
         if (desc == nullptr) {
@@ -536,6 +539,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteRenderDev
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : remoteCaptureDevices_) {
         if (desc == nullptr) {
@@ -548,6 +552,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRemoteCaptureDe
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commRenderPrivacyDevices_) {
         if (desc == nullptr) {
@@ -560,6 +565,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPriva
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commRenderPublicDevices_) {
         if (desc == nullptr) {
@@ -572,6 +578,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderPubli
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderBTCarDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> carDescs;
     for (const auto &desc : commRenderPublicDevices_) {
         if (desc == nullptr || desc->deviceCategory_ != BT_CAR) {
@@ -584,6 +591,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommRenderBTCar
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commCapturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -596,6 +604,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePriv
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : commCapturePublicDevices_) {
         if (desc == nullptr) {
@@ -608,6 +617,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCommCapturePubl
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaRenderPrivacyDevices_) {
         if (desc == nullptr) {
@@ -620,6 +630,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPriv
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaRenderPublicDevices_) {
         if (desc == nullptr) {
@@ -632,6 +643,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaRenderPubl
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaCapturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -644,6 +656,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePri
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : mediaCapturePublicDevices_) {
         if (desc == nullptr) {
@@ -656,6 +669,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetMediaCapturePub
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : capturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -668,6 +682,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePrivacyD
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : capturePublicDevices_) {
         if (desc == nullptr) {
@@ -680,6 +695,7 @@ vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetCapturePublicDe
 
 vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetRecongnitionCapturePrivacyDevices()
 {
+    std::lock_guard<std::mutex> lock(descArrayMutex_);
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     for (const auto &desc : reconCapturePrivacyDevices_) {
         if (desc == nullptr) {
@@ -945,10 +961,11 @@ bool AudioDeviceManager::GetScoState()
     return false;
 }
 
-void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &devDesc,
-    const DeviceInfoUpdateCommand updateCommand)
+AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDevicesListInfo(
+    const std::shared_ptr<AudioDeviceDescriptor> &devDesc, const DeviceInfoUpdateCommand updateCommand)
 {
-    CHECK_AND_RETURN_LOG(devDesc != nullptr, "desc is nullptr");
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    CHECK_AND_RETURN_RET_LOG(devDesc != nullptr, reason, "desc is nullptr");
 
     bool ret = false;
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
@@ -965,15 +982,19 @@ void AudioDeviceManager::UpdateDevicesListInfo(const std::shared_ptr<AudioDevice
         case EXCEPTION_FLAG_UPDATE:
             ret = UpdateExceptionFlag(devDesc);
             break;
+        case USAGE_UPDATE:
+            reason = UpdateDeviceUsage(devDesc);
+            break;
         default:
             break;
     }
     if (!ret) {
         int32_t audioId = devDesc->deviceId_;
-        AUDIO_ERR_LOG("cant find type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
+        AUDIO_ERR_LOG("cant update type:id %{public}d:%{public}d mac:%{public}s networkid:%{public}s in connected list",
             devDesc->deviceType_, audioId, GetEncryptStr(devDesc->macAddress_).c_str(),
             GetEncryptStr(devDesc->networkId_).c_str());
     }
+    return reason;
 }
 
 bool AudioDeviceManager::UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &devDesc)
@@ -1064,6 +1085,29 @@ bool AudioDeviceManager::UpdateExceptionFlag(const shared_ptr<AudioDeviceDescrip
         }
     }
     return updateFlag;
+}
+
+AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDeviceUsage(
+    const shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    CHECK_AND_RETURN_RET_LOG(deviceDesc != nullptr, reason, "device is nullptr");
+    bool updateFlag = false;
+    for (const auto &desc : connectedDevices_) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        if (desc->deviceType_ == deviceDesc->deviceType_ &&
+            desc->macAddress_ == deviceDesc->macAddress_ &&
+            desc->networkId_ == deviceDesc->networkId_ &&
+            desc->deviceUsage_ != deviceDesc->deviceUsage_) {
+            reason = (desc->deviceUsage_ > deviceDesc->deviceUsage_) ?
+                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+            desc->deviceUsage_ = deviceDesc->deviceUsage_;
+            updateFlag = true;
+        }
+    }
+    CHECK_AND_RETURN_RET_LOG(updateFlag == true, reason, "Update usage fails");
+    return reason;
 }
 
 void AudioDeviceManager::UpdateEarpieceStatus(const bool hasEarPiece)

@@ -315,5 +315,24 @@ HWTEST(AudioApatialChannelCoverterUnitTest, AudioApatialChannelCoverter_014, Tes
     auto reslut = libLoader->AddAlgoHandle(library);
     EXPECT_EQ(reslut, false);
 }
+/**
+ * @tc.name  : Test process API
+ * @tc.type  : FUNC
+ * @tc.number: process_013
+ * @tc.desc  : Test process interface.
+ */
+HWTEST(AudioApatialChannelCoverterUnitTest, AudioApatialChannelCoverter_015, TestSize.Level1)
+{
+    auto audioSpatialChannelConverter = std::make_shared<AudioSpatialChannelConverter>();
+    ASSERT_TRUE(audioSpatialChannelConverter != nullptr);
+
+    BufferDesc bufDesc;
+    audioSpatialChannelConverter->loadSuccess_ = false;
+    audioSpatialChannelConverter->Process(bufDesc);
+
+    uint8_t buffer1 = 1;
+    bufDesc.buffer = &buffer1;
+    audioSpatialChannelConverter->Process(bufDesc);
+}
 } // namespace AudioStandard
 } // namespace OHOS

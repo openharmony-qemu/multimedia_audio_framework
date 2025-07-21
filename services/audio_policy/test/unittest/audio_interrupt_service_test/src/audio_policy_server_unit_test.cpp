@@ -3337,5 +3337,91 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_168, TestSize.Level1)
     int32_t result = server->ActivatePreemptMode();
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: IsStreamActiveByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::IsStreamActiveByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    bool isStreamActive = true;
+
+    int32_t ret = server->IsStreamActiveByStreamUsage(streamUsage, isStreamActive);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetVolumeInDbByStream_001
+ * @tc.desc  : AudioPolicyServer::GetVolumeInDbByStream
+ */
+HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    int32_t volLevel = 5;
+    int32_t deviceType = static_cast<int32_t>(DeviceType::DEVICE_TYPE_SPEAKER);
+    float volDb = 0;
+
+    int32_t ret = server->GetVolumeInDbByStream(streamUsage, volLevel, deviceType, volDb);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetSupportedAudioVolumeTypes_001
+ * @tc.desc  : AudioPolicyServer::GetSupportedAudioVolumeTypes
+ */
+HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::vector<int32_t> audioVolumeTypes = {};
+
+    int32_t ret = server->GetSupportedAudioVolumeTypes(audioVolumeTypes);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetAudioVolumeTypeByStreamUsage_001
+ * @tc.desc  : AudioPolicyServer::GetAudioVolumeTypeByStreamUsage
+ */
+HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t streamUsage = static_cast<int32_t>(StreamUsage::STREAM_USAGE_MUSIC);
+    int32_t audioVolumeType = static_cast<int32_t>(AudioVolumeType::STREAM_DEFAULT);
+
+    int32_t ret = server->GetAudioVolumeTypeByStreamUsage(streamUsage, audioVolumeType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: GetStreamUsagesByVolumeType_001
+ * @tc.desc  : AudioPolicyServer::GetStreamUsagesByVolumeType
+ */
+HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    int32_t volType = static_cast<int32_t>(AudioVolumeType::STREAM_MUSIC);
+    std::vector<int32_t> streamUsages = {};
+
+    int32_t ret = server->GetStreamUsagesByVolumeType(volType, streamUsages);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // AudioStandard
 } // OHOS

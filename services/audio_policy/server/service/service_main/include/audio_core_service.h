@@ -139,6 +139,8 @@ public:
         int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,
             bool hasBTPermission, bool hasSystemPermission);
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetExcludedDevices(AudioDeviceUsage audioDevUsage);
+        int32_t FetchOutputDeviceAndRoute(std::string caller,
+            const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
         int32_t GetPreferredOutputStreamType(AudioRendererInfo &rendererInfo, const std::string &bundleName);
         int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
@@ -161,6 +163,8 @@ private:
     bool IsStreamBelongToUid(const uid_t uid, const uint32_t sessionId);
     void DumpPipeManager(std::string &dumpString);
     void DumpSelectHistory(std::string &dumpString);
+    void SetAudioRouteCallback(uint32_t sessionId, const sptr<IRemoteObject> &object);
+    void UnsetAudioRouteCallback(uint32_t sessionId);
 
     // Called by EventEntry - with lock
     // Stream operations
@@ -435,6 +439,7 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
+    void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -500,6 +505,10 @@ private:
     std::condition_variable offloadCloseCondition_[OFFLOAD_TYPE_NUM];
     std::mutex offloadCloseMutex_;
     std::mutex offloadReOpenMutex_;
+
+    // route update callback
+    std::unordered_map<uint32_t, sptr<IStandardAudioPolicyManagerListener>> routeUpdateCallback_;
+    std::mutex routeUpdateCallbackMutex_;
 
     DistributedRoutingInfo distributedRoutingInfo_ = {
         .descriptor = nullptr,
