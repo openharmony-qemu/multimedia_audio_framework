@@ -43,8 +43,8 @@ public:
     void OnXmlParsingCompleted(const unordered_map<AudioDevicePrivacyType, list<DevicePrivacyInfo>> &xmlData);
     int32_t GetDeviceUsageFromType(const DeviceType devType) const;
     void ParseDeviceXml();
-    void UpdateDevicesListInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor,
-        const DeviceInfoUpdateCommand updateCommand);
+    AudioStreamDeviceChangeReasonExt UpdateDevicesListInfo(
+        const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor, const DeviceInfoUpdateCommand updateCommand);
 
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteRenderDevices();
     vector<shared_ptr<AudioDeviceDescriptor>> GetRemoteCaptureDevices();
@@ -158,6 +158,7 @@ private:
     bool UpdateDeviceCategory(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateEnableState(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
     bool UpdateExceptionFlag(const shared_ptr<AudioDeviceDescriptor> &deviceDescriptor);
+    AudioStreamDeviceChangeReasonExt UpdateDeviceUsage(const shared_ptr<AudioDeviceDescriptor> &deviceDesc);
 
     void RemoveVirtualConnectedDevice(const shared_ptr<AudioDeviceDescriptor> &devDesc);
 

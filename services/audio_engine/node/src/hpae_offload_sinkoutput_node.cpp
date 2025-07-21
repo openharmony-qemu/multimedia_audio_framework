@@ -404,6 +404,12 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
     return SUCCESS;
 }
 
+void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    audioRendererSink_->SetSpeed(speed);
+}
+
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
 {
     if (islock) {

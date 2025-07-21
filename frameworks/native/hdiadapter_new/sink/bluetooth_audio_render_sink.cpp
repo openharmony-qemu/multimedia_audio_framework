@@ -76,6 +76,7 @@ int32_t BluetoothAudioRenderSink::Init(const IAudioSinkAttr &attr)
     CHECK_AND_RETURN_RET(ret == SUCCESS, ret);
     sinkInited_ = true;
     ++sinkInitCount_;
+    started_ = false;
     return SUCCESS;
 }
 
@@ -814,6 +815,8 @@ int32_t BluetoothAudioRenderSink::DoRenderFrame(char &data, uint64_t len, uint64
             continue;
         }
         if (ret != SUCCESS) {
+            HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ret, "a2dp render frame "
+                "failed: " + std::to_string(ret));
             AUDIO_ERR_LOG("A2dp RenderFrame fail, ret: %{public}x", ret);
             ret = ERR_WRITE_FAILED;
         }

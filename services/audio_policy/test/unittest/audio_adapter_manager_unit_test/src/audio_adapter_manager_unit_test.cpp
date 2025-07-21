@@ -358,5 +358,22 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
     EXPECT_EQ(ret, " network_id=LocalDevice");
 }
 
+/**
+ * @tc.name: Test AudioAdapterManager
+ * @tc.desc: HandleHearingAidVolume_001
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, HandleHearingAidVolume_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int defaultVolume =
+        static_cast<int>(std::ceil(audioAdapterManager_->GetMaxVolumeLevel(STREAM_MUSIC) * 0.8));
+    audioAdapterManager_->HandleHearingAidVolume(streamType);
+    EXPECT_EQ(audioAdapterManager_->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), defaultVolume);
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS

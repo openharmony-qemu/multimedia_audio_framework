@@ -183,45 +183,38 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_MISCELLANEOUS_001, TestSize.Level1)
 
     capturer->audioStream_ = audioStream;
 
-    InterruptEvent interruptEventResume {InterruptType::INTERRUPT_TYPE_BEGIN,
-        InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_RESUME};
-    InterruptEventInternal interruptEventInternalResume {InterruptType::INTERRUPT_TYPE_BEGIN,
+    InterruptEventInternal interruptEventResume {InterruptType::INTERRUPT_TYPE_BEGIN,
         InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_RESUME, 0.0};
+    InterruptEventInternal interruptEventInternalResume {InterruptType::INTERRUPT_TYPE_BEGIN,
+        InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_RESUME, 0.0};
     InterruptEventInternal interruptEventInternalPause {InterruptType::INTERRUPT_TYPE_BEGIN,
-        InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_PAUSE, 0.0};
+        InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_PAUSE, 0.0};
     InterruptEventInternal interruptEventInternalStop {InterruptType::INTERRUPT_TYPE_BEGIN,
-        InterruptForceType::INTERRUPT_SHARE, InterruptHint::INTERRUPT_HINT_STOP, 0.0};
+        InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_STOP, 0.0};
     InterruptEventInternal interruptEventInternalNone {InterruptType::INTERRUPT_TYPE_BEGIN,
         InterruptForceType::INTERRUPT_FORCE, InterruptHint::INTERRUPT_HINT_NONE, 0.0};
 
-    interruptCallback->NotifyEvent(interruptEventResume);
-
     shared_ptr<AudioCapturerCallbackTestStub> cb = make_shared<AudioCapturerCallbackTestStub>();
     interruptCallback->SaveCallback(cb);
-    interruptCallback->OnInterrupt(interruptEventInternalResume);
-    interruptCallback->NotifyEvent(interruptEventResume);
-
+    interruptCallback->OnInterrupt(interruptEventResume);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_RESUME);
 
     auto testAudioStremStub = std::make_shared<TestAudioStremStub>();
     interruptCallback->audioStream_ = testAudioStremStub;
-    interruptCallback->NotifyForcePausedToResume(interruptEventInternalResume);
     testAudioStremStub->state_ = State::PAUSED;
     interruptCallback->isForcePaused_ = true;
-    interruptCallback->HandleAndNotifyForcedEvent(interruptEventInternalResume);
+    interruptCallback->OnInterrupt(interruptEventInternalResume);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_RESUME);
 
     testAudioStremStub->state_ = State::RUNNING;
-    interruptCallback->HandleAndNotifyForcedEvent(interruptEventInternalPause);
+    interruptCallback->OnInterrupt(interruptEventInternalPause);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_PAUSE);
 
-    interruptCallback->HandleAndNotifyForcedEvent(interruptEventInternalStop);
+    interruptCallback->OnInterrupt(interruptEventInternalStop);
     EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_STOP);
-    interruptCallback->HandleAndNotifyForcedEvent(interruptEventInternalNone);
-    EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_NONE);
-    interruptCallback->OnInterrupt(interruptEventInternalResume);
+
     interruptCallback->OnInterrupt(interruptEventInternalNone);
-    EXPECT_NE(cb, nullptr);
+    EXPECT_EQ(cb->state_, InterruptHint::INTERRUPT_HINT_NONE);
 }
 
 /**

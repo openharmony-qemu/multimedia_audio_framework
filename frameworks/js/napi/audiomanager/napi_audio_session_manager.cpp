@@ -728,7 +728,7 @@ napi_value NapiAudioSessionMgr::GetDefaultOutputDevice(napi_env env, napi_callba
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_ILLEGAL_STATE, "get deviceType state error");
         return result;
     }
-    AUDIO_INFO_LOG("GetDefaultOutputDevice sucessed, deviceType = %{public}d.", static_cast<int32_t>(deviceType));
+    AUDIO_INFO_LOG("GetDefaultOutputDevice successful, deviceType = %{public}d.", static_cast<int32_t>(deviceType));
 
     NapiParamUtils::SetValueInt32(env, deviceType, result);
     return result;

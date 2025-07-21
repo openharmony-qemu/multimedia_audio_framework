@@ -134,6 +134,51 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_001, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(5, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_002, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(11, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_003, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(10, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_001
@@ -402,6 +447,28 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
     });
     EXPECT_EQ(futexCode, FUTEX_SUCCESS);
     threadSetReadIndex.join();
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
+* @tc.number: OHAudioBuffer_011
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + 1);
+    parcel.WriteUint32(100);
+    parcel.WriteUint32(10);
+    parcel.WriteUint32(2);
+    int dataFd = 1;
+    int infoFd = 2;
+    parcel.WriteFileDescriptor(dataFd);
+    parcel.WriteFileDescriptor(infoFd);
+
+    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
+    EXPECT_EQ(buffer, nullptr);
 }
 
 /**

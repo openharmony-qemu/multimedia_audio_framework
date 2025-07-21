@@ -35,6 +35,8 @@ enum class AudioSessionState {
 };
 
 class AudioSessionStateMonitor;
+class AudioDeviceManager;
+class AudioPipeManager;
 
 class AudioSession {
 public:
@@ -61,7 +63,7 @@ public:
     int32_t SetSessionDefaultOutputDevice(const DeviceType &deviceType);
     void GetSessionDefaultOutputDevice(DeviceType &deviceType);
     bool IsStreamContainedInCurrentSession(const uint32_t &streamId);
-    bool IsNeedToFetchDefaultDevice();
+    bool GetAndClearNeedToFetchFlag();
     bool IsRecommendToStopAudio(const std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj);
     bool IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor);
     StreamUsage GetSessionStreamUsage();
@@ -73,7 +75,13 @@ private:
     bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
         const std::shared_ptr<AudioDeviceDescriptor> desc);
+    void UpdateVoipStreamsDefaultOutputDevice();
+    bool CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt);
+    int32_t EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
+    int32_t EnableVoipStreamsDefaultOutputDevice();
     int32_t EnableDefaultDevice();
+    void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
+    bool IsSessionDefaultDeviceEnabled();
     std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
@@ -86,6 +94,8 @@ private:
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;
     AudioDeviceDescriptor deviceDescriptor_;
+    std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+    AudioDeviceManager &deviceManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

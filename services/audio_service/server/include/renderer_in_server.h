@@ -50,6 +50,7 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
+    int32_t recoveryAntiShakeBufferCount_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;

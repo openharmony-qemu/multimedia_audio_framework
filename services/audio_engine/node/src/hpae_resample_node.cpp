@@ -49,12 +49,6 @@ HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &node
         "_rate_" + std::to_string(GetSampleRate()) + "_scene_" +
         std::to_string(HpaeNode::GetSceneType())+ "_" + GetTime() + ".pcm");
 #endif
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeResampleNode");
-    }
-#endif
 }
 
 HpaeResampleNode::HpaeResampleNode(HpaeNodeInfo &preNodeInfo, HpaeNodeInfo &nodeInfo)

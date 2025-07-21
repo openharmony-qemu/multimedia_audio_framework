@@ -38,7 +38,7 @@ private:
     AudioStreamIdAllocator() {};
     ~AudioStreamIdAllocator() {};
 
-    std::mutex sessionIdAllocatoeMutex_;
+    std::mutex sessionIdAllocatorMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

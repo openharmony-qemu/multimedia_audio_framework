@@ -127,8 +127,6 @@ private:
     void InitLatencyMeasurement(void);
     void DeInitLatencyMeasurement(void);
     void CheckLatencySignal(uint8_t *data, size_t len);
-    void AdjustStereoToMono(char *data, uint64_t len);
-    void AdjustAudioBalance(char *data, uint64_t len);
     void CheckUpdateState(char *data, uint64_t len);
     int32_t SetVolumeInner(float left, float right);
     void UpdateSinkState(bool started);
@@ -161,10 +159,6 @@ private:
     float rightVolume_ = DEFAULT_VOLUME_LEVEL;
     uint32_t hdiRenderId_ = 0;
     sptr<RemoteIAudioRender> audioRender_ = nullptr;
-    bool audioMonoState_ = false;
-    bool audioBalanceState_ = false;
-    float leftBalanceCoef_ = 1.0f;
-    float rightBalanceCoef_ = 1.0f;
     // for signal detect
     std::shared_ptr<SignalDetectAgent> signalDetectAgent_ = nullptr;
     bool signalDetected_ = false;
