@@ -105,4 +105,3 @@ declare_args() {
 }
 
 third_party_path = "//third_party"
-audio_framework_root = "//foundation/multimedia/audio_framework"

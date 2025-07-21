@@ -86,9 +86,9 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   sources = [ "src/audio_fast_renderer_unit_test.cpp" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audiorenderer:audio_renderer",
   ]
 

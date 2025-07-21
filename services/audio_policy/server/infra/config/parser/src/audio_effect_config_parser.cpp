@@ -292,7 +292,7 @@ static void LoadEffectChain(OriginalEffectConfig &result, std::shared_ptr<AudioX
             if (curNode->GetProp("name", peffectChainName) != SUCCESS) {
                 AUDIO_WARNING_LOG("missing information: effectChain has no name attribute");
             }
-             EffectChain tmp = {};
+            EffectChain tmp = {};
             tmp.name = peffectChainName;
             tmp.apply = apply;
             tmp.label = label;

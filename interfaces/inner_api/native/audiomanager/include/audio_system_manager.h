@@ -119,6 +119,7 @@ public:
 struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
     void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
     {
@@ -152,9 +153,15 @@ struct MicrophoneBlockedInfo : public Parcelable {
 
         info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
+            delete info;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; i++) {
-            info->devices.emplace_back(
-                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                info->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
         }
         return info;
     }

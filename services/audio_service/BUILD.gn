@@ -20,6 +20,8 @@ import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
 
+audio_framework_root = "../.."
+
 group("audio_service_packages") {
   deps = [
     ":audio_common",
