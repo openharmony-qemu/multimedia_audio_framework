@@ -297,6 +297,7 @@ HWTEST(AudioGroupManagerUnitTest, IsAlived_001, TestSize.Level1)
     bool ret = audioGroupManager.IsAlived();
     EXPECT_EQ(ret, true);
 }
+
 /**
 * @tc.name  : Test IsMicrophoneMuteLegacy API
 * @tc.type  : FUNC
@@ -309,6 +310,7 @@ HWTEST(AudioGroupManagerUnitTest, IsMicrophoneMuteLegacy_001, TestSize.Level1)
     audioGroupManager.netWorkId_ = "remote_network_id";
     EXPECT_FALSE(audioGroupManager.IsMicrophoneMuteLegacy());
 }
+
 /**
 * @tc.name  : Test GetSystemVolumeInDb API
 * @tc.type  : FUNC
@@ -326,6 +328,7 @@ HWTEST(AudioGroupManagerUnitTest, GetSystemVolumeInDb_001, TestSize.Level1)
 
     EXPECT_NE(result, 0.1);
 }
+
 /**
 * @tc.name  : Test SetRingerMode API
 * @tc.type  : FUNC

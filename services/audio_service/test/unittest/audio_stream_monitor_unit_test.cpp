@@ -160,5 +160,26 @@ HWTEST(AudioStreamMonitorTest, NotifyAppStateChange_001, TestSize.Level1)
     int32_t size = AudioStreamMonitor::GetInstance().audioStreamCheckers_.size();
     EXPECT_EQ(size, 0);
 }
+
+/**
+ * @tc.name  : Test NotifyAppStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: NotifyAppStateChange
+ */
+HWTEST(AudioStreamMonitorTest, UnregisterAudioRendedData_002, TestSize.Level1)
+{
+    int32_t pid = 123;
+    int32_t callbackId = 456;
+
+    int32_t result =
+        AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(pid, callbackId);
+    EXPECT_EQ(result, SUCCESS);
+
+    pid = -111;
+    callbackId = -111;
+    result =
+        AudioStreamMonitor::GetInstance().UnregisterAudioRendererDataTransferStateListener(pid, callbackId);
+    EXPECT_EQ(result, SUCCESS);
+}
 }
 }

@@ -597,6 +597,57 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetSyncWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWriteFrame
+* @tc.desc  : Test GetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_003, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    int32_t ret = ohAudioBuffer->GetSyncWriteFrame();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test GetSynSetSyncWriteFramecWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWrSetSyncWriteFrameiteFrame
+* @tc.desc  : Test SetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetSyncWriteFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    uint32_t writeFrame = 10;
+    int32_t ret = ohAudioBuffer->SetSyncWriteFrame(writeFrame);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test GetSyncWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWriteFrame
+* @tc.desc  : Test GetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetMuteFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    float invalidMuteFactor = 0.5f;
+
+    bool result = ohAudioBuffer->SetMuteFactor(invalidMuteFactor);
+    EXPECT_FALSE(result);
+}
+
+/**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
 * @tc.number: AudioRingCache_001
