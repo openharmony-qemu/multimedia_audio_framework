@@ -528,6 +528,7 @@ int32_t AudioEnhanceChain::WriteChainOutputData(void *buf, size_t bufSize)
 
 int32_t AudioEnhanceChain::PrepareChainInputData(void)
 {
+    int32_t ret = 0;
     uint32_t ecIdx = 0;
     uint32_t micIdx = algoAttr_.byteLenPerFrame * algoSupportedConfig_.ecNum;
     uint32_t micRefIdx = micIdx + algoAttr_.byteLenPerFrame * algoSupportedConfig_.micNum;
@@ -535,7 +536,7 @@ int32_t AudioEnhanceChain::PrepareChainInputData(void)
     CHECK_AND_RETURN_RET_LOG(enhanceBufLen <= algoCache_.input.size(), ERROR, "input cache insufficient");
 
     if (enhanceBuf_.ecBuffer.size() != 0) {
-        auto ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels,
+        ret = DeinterleaverData(enhanceBuf_.ecBuffer.data(), deviceAttr_.ecChannels,
             &algoCache_.input[ecIdx], enhanceBuf_.ecBuffer.size());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver ec data fail");
     }
@@ -544,7 +545,7 @@ int32_t AudioEnhanceChain::PrepareChainInputData(void)
         BufferDesc bufferIn = { enhanceBuf_.micBuffer.data(), enhanceBuf_.micBuffer.size(),
             enhanceBuf_.micBuffer.size() };
         VolumeTools::DfxOperation(bufferIn, dfxStreamInfo_, traceTagIn_, volumeDataCountIn_);
-        auto ret = DeinterleaverData(enhanceBuf_.micBuffer.data(), deviceAttr_.micChannels,
+        ret = DeinterleaverData(enhanceBuf_.micBuffer.data(), deviceAttr_.micChannels,
             &algoCache_.input[micIdx], enhanceBuf_.micBuffer.size());
         CHECK_AND_RETURN_RET_LOG(ret == 0, ERROR, "deinterleaver mic data fail");
     }
