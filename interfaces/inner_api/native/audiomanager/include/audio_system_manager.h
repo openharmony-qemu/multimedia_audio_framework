@@ -1550,7 +1550,7 @@ public:
     */
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
-        /**
+    /**
     * @brief RSS reboot reset all proxy Freeze state change.
     *
     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
