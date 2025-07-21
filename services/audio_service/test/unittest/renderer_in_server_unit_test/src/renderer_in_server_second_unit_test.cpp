@@ -1314,6 +1314,6 @@ HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_003, TestSize.Level1)
 {
     IStreamManager &manager = IStreamManager::GetPlaybackManager(VOIP_PLAYBACK);
     EXPECT_NE(&manager, nullptr);
-}
+}ghghj
 } // namespace AudioStandard
 } // namespace OHOS
