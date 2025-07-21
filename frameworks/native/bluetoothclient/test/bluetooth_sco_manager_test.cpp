@@ -582,7 +582,7 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
  * @tc.number: BluetoothScoManagerTest_025
  * @tc.desc  : Test reset sco.
  */
-HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_025, TestSize.Level1)
 {
     SetDefaultExpectCall();
 
