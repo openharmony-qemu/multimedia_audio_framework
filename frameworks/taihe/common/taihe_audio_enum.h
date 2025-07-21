@@ -39,7 +39,8 @@ public:
         TYPE_REMOTE_CAST = 11,
         TYPE_VOICE_TRANSCRIPTION = 12,
         TYPE_CAMCORDER = 13,
-        TYPE_UNPROCESSED = 14
+        TYPE_UNPROCESSED = 14,
+        TYPE_LIVE = 17
     };
 
     enum AudioJsVolumeType {
@@ -52,6 +53,8 @@ public:
         SYSTEM = 6,
         VOICE_ASSISTANT = 9,
         ULTRASONIC = 10,
+        NOTIFICATION = 11,
+        NAVIGATION = 12,
         VOLUMETYPE_MAX,
         ALL = 100
     };
@@ -126,6 +129,8 @@ public:
         OHOS::AudioStandard::AudioStreamDeviceChangeReason reason);
     static AudioChannelLayout ToTaiheAudioChannelLayout(OHOS::AudioStandard::AudioChannelLayout layout);
     static DeviceBlockStatus ToTaiheDeviceBlockStatus(OHOS::AudioStandard::DeviceBlockStatus status);
+
+    static const std::map<std::string, int32_t> deviceTypeMap;
 };
 } // namespace ANI::Audio
 

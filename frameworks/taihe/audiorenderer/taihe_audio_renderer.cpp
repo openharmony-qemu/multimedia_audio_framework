@@ -287,7 +287,13 @@ int64_t AudioRendererImpl::GetAudioStreamIdSync()
     }
     int32_t ret = audioRenderer_->GetAudioStreamId(audioStreamId);
     if (ret != OHOS::AudioStandard::SUCCESS) {
-        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetAudioStreamId failure!");
+        if (ret == OHOS::AudioStandard::ERR_INVALID_INDEX) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetAudioStreamId failure!");
+        } else if (ret == OHOS::AudioStandard::ERR_ILLEGAL_STATE) {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_ILLEGAL_STATE, "GetAudioStreamId failure!");
+        } else {
+            TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "GetAudioStreamId failure!");
+        }
         return audioStreamId;
     }
     return static_cast<int64_t>(audioStreamId);

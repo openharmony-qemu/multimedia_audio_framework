@@ -95,6 +95,7 @@ enum DeviceType: i32 {
   HDMI = 27,
   LINE_DIGITAL = 28,
   REMOTE_DAUDIO = 29,
+  NEARLINK = 31,
   DEFAULT = 1000,
 }
 
@@ -254,6 +255,8 @@ enum InterruptHint: i32 {
   INTERRUPT_HINT_STOP = 3,
   INTERRUPT_HINT_DUCK = 4,
   INTERRUPT_HINT_UNDUCK = 5,
+  INTERRUPT_HINT_MUTE = 6,
+  INTERRUPT_HINT_UNMUTE = 7,
 }
 
 enum InterruptForceType: i32 {
@@ -875,6 +878,7 @@ enum SourceType: i32 {
   SOURCE_TYPE_VOICE_TRANSCRIPTION = 12,
   SOURCE_TYPE_CAMCORDER = 13,
   SOURCE_TYPE_UNPROCESSED = 14,
+  SOURCE_TYPE_LIVE = 17,
 }
 
 struct AudioCapturerInfo {
