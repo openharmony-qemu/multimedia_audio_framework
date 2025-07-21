@@ -33,6 +33,9 @@ namespace AudioStandard {
 // audio effect manager info
 constexpr int32_t AUDIO_EFFECT_COUNT_UPPER_LIMIT = 20;
 constexpr uint32_t SEND_HDI_COMMAND_LEN = 20;
+constexpr int32_t AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT = 7;
+constexpr int32_t AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT = 64;
+constexpr int32_t AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT = 20;
 
 enum HdiSetParamCommandCode {
     HDI_INIT = 0,
@@ -134,6 +137,7 @@ struct Effect : public Parcelable {
     std::string name;
     std::string libraryName;
     std::vector<std::string> effectProperty;
+    static constexpr int32_t MAX_EFFECT_PROPERTY_SIZE = 1000;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -157,6 +161,10 @@ struct Effect : public Parcelable {
         effect->name = parcel.ReadString();
         effect->libraryName = parcel.ReadString();
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > MAX_EFFECT_PROPERTY_SIZE) {
+            delete effect;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; ++i) {
             effect->effectProperty.push_back(parcel.ReadString());
         }
@@ -303,16 +311,28 @@ struct EffectChainManagerParam : public Parcelable {
         param->maxExtraNum = parcel.ReadInt32();
         param->defaultSceneName = parcel.ReadString();
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT) {
+            delete param;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; ++i) {
             param->priorSceneList.push_back(parcel.ReadString());
         }
         size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_CHAIN_CONFIG_UPPER_LIMIT) {
+            delete param;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; ++i) {
             std::string scene = parcel.ReadString();
             std::string chain = parcel.ReadString();
             param->sceneTypeToChainNameMap[scene] = chain;
         }
         size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_COUNT_PROPERTY_UPPER_LIMIT) {
+            delete param;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; ++i) {
             std::string effect = parcel.ReadString();
             std::string property = parcel.ReadString();
@@ -348,16 +368,20 @@ struct SupportedEffectConfig : public Parcelable {
     ProcessNew preProcessNew;
     ProcessNew postProcessNew;
     std::vector<SceneMappingItem> postProcessSceneMap;
+    static constexpr uint32_t POST_PROCESS_SCENE_MAP_MAX_SIZE = 1000;
+    static constexpr uint32_t STREAM_MAX_SIZE = 1000;
+    static constexpr uint32_t STREAM_EFFECT_MODE_MAX_SIZE = 1000;
 
     bool MarshallingStream(Parcel &parcel, const Stream &stream) const
     {
+        parcel.WriteInt32(stream.priority);
         parcel.WriteString(stream.scene);
         uint32_t count = static_cast<uint32_t>(stream.streamEffectMode.size());
-        parcel.WriteInt32(count);
+        parcel.WriteUint32(count);
         for (const auto &item : stream.streamEffectMode) {
             parcel.WriteString(item.mode);
             uint32_t deviceCount = static_cast<uint32_t>(item.devicePort.size());
-            parcel.WriteInt32(deviceCount);
+            parcel.WriteUint32(deviceCount);
             for (const auto &device : item.devicePort) {
                 parcel.WriteString(device.type);
                 parcel.WriteString(device.chain);
@@ -369,19 +393,19 @@ struct SupportedEffectConfig : public Parcelable {
     bool Marshalling(Parcel &parcel) const override
     {
         uint32_t countPre = static_cast<uint32_t>(preProcessNew.stream.size());
-        parcel.WriteInt32(countPre);
+        parcel.WriteUint32(countPre);
         for (const auto &item : preProcessNew.stream) {
             MarshallingStream(parcel, item);
         }
 
         uint32_t countPost = static_cast<uint32_t>(postProcessNew.stream.size());
-        parcel.WriteInt32(countPost);
+        parcel.WriteUint32(countPost);
         for (const auto &item : postProcessNew.stream) {
             MarshallingStream(parcel, item);
         }
 
         uint32_t countPostMap = static_cast<uint32_t>(postProcessSceneMap.size());
-        parcel.WriteInt32(countPostMap);
+        parcel.WriteUint32(countPostMap);
         for (const auto &item : postProcessSceneMap) {
             parcel.WriteString(item.name);
             parcel.WriteString(item.sceneType);
@@ -389,15 +413,21 @@ struct SupportedEffectConfig : public Parcelable {
         return true;
     }
 
-    static Stream UnmarshallingStream(Parcel &parcel)
+    static bool UnmarshallingStream(Parcel &parcel, Stream &stream)
     {
-        Stream stream;
+        stream.priority = static_cast<ScenePriority>(parcel.ReadInt32());
         stream.scene = parcel.ReadString();
         uint32_t count = parcel.ReadUint32();
+        if (count > STREAM_MAX_SIZE) {
+            return false;
+        }
         for (uint32_t i = 0; i < count; ++i) {
             StreamEffectMode mode;
             mode.mode = parcel.ReadString();
             uint32_t deviceCount = parcel.ReadUint32();
+            if (deviceCount > STREAM_EFFECT_MODE_MAX_SIZE) {
+                return false;
+            }
             for (uint32_t j = 0; j < deviceCount; ++j) {
                 Device device;
                 device.type = parcel.ReadString();
@@ -406,7 +436,7 @@ struct SupportedEffectConfig : public Parcelable {
             }
             stream.streamEffectMode.push_back(mode);
         }
-        return stream;
+        return true;
     }
 
     static SupportedEffectConfig *Unmarshalling(Parcel &parcel)
@@ -416,16 +446,37 @@ struct SupportedEffectConfig : public Parcelable {
             return nullptr;
         }
         uint32_t countPre = parcel.ReadUint32();
+        if (countPre > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            delete config;
+            return nullptr;
+        }
         for (uint32_t i = 0; i < countPre; ++i) {
-            config->preProcessNew.stream.push_back(UnmarshallingStream(parcel));
+            Stream stream = {};
+            if (!UnmarshallingStream(parcel, stream)) {
+                delete config;
+                return nullptr;
+            }
+            config->preProcessNew.stream.push_back(stream);
         }
 
         uint32_t countPost = parcel.ReadUint32();
-        for (uint32_t i = 0; i < countPost; ++i) {
-            config->postProcessNew.stream.push_back(UnmarshallingStream(parcel));
+        if (countPost > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            delete config;
+            return nullptr;
         }
-
+        for (uint32_t i = 0; i < countPost; ++i) {
+            Stream stream = {};
+            if (!UnmarshallingStream(parcel, stream)) {
+                delete config;
+                return nullptr;
+            }
+            config->postProcessNew.stream.push_back(stream);
+        }
         uint32_t countPostMap = parcel.ReadUint32();
+        if (countPostMap > POST_PROCESS_SCENE_MAP_MAX_SIZE) {
+            delete config;
+            return nullptr;
+        }
         for (uint32_t i = 0; i < countPostMap; ++i) {
             SceneMappingItem item;
             item.name = parcel.ReadString();
@@ -534,6 +585,10 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
         }
 
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            delete propertyArray;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; i++) {
             AudioEffectPropertyV3 property;
             property.UnmarshallingSelf(parcel);
@@ -585,6 +640,10 @@ struct AudioEnhancePropertyArray : public Parcelable {
         }
 
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            delete propertyArray;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; i++) {
             AudioEnhanceProperty property;
             property.UnmarshallingSelf(parcel);
@@ -636,6 +695,10 @@ struct AudioEffectPropertyArray : public Parcelable {
         }
 
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size > AUDIO_EFFECT_COUNT_UPPER_LIMIT) {
+            delete propertyArray;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; i++) {
             AudioEffectProperty property;
             property.UnmarshallingSelf(parcel);

@@ -1931,6 +1931,17 @@ int32_t HpaeManager::SetOffloadRenderCallbackType(uint32_t sessionId, int32_t ty
     return SUCCESS;
 }
 
+void HpaeManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    auto request = [this, sessionId, speed]() {
+        AUDIO_INFO_LOG("SetSpeed sessionId %{public}u %{public}f", sessionId, speed);
+        auto rendererManager = GetRendererManagerById(sessionId);
+        CHECK_AND_RETURN_LOG(rendererManager != nullptr, "SetSpeed cannot find sessionId: %{public}u", sessionId);
+        rendererManager->SetSpeed(sessionId, speed);
+    };
+    SendRequest(request, __func__);
+}
+
 // only interface for unit test
 int32_t HpaeManager::GetSessionInfo(
     HpaeStreamClassType streamClassType, uint32_t sessionId, HpaeSessionInfo &sessionInfo)

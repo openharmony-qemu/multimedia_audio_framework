@@ -41,6 +41,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, PolicyAdapterInfo_001, TestSize.Level
     ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_A2DP);
     EXPECT_EQ(AudioAdapterType::TYPE_A2DP, ret);
 
+    ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_HEARING_AID);
+    EXPECT_EQ(AudioAdapterType::TYPE_HEARING_AID, ret);
+
     ret = policyAdapter->GetAdapterType(ADAPTER_TYPE_REMOTE);
     EXPECT_EQ(AudioAdapterType::TYPE_REMOTE_AUDIO, ret);
 

@@ -278,6 +278,13 @@ private:
 
     std::vector<uint8_t> tmpBuffer_ = {};
     std::mutex tmpBufferMutex_;
+
+    struct HandleInfo {
+        uint64_t serverHandlePos = 0;
+        int64_t serverHandleTime = 0;
+    };
+
+    std::atomic<HandleInfo> lastHandleInfo_;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -423,24 +430,28 @@ int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec)
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer is null, maybe not inited.");
-    uint64_t pos = 0;
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        pos = audioBuffer_->GetCurWriteFrame();
+
+    uint64_t serverHandlePos = 0;
+    int64_t serverHandleTime = 0;
+    bool ret = audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetHandleInfo failed");
+
+    if (serverHandlePos > UINT32_MAX) {
+        framePos = serverHandlePos % UINT32_MAX;
     } else {
-        pos = audioBuffer_->GetCurReadFrame();
+        framePos = static_cast<uint32_t>(serverHandlePos);
     }
 
-    if (pos > UINT32_MAX) {
-        framePos = pos % UINT32_MAX;
+    auto lastHandleInfo = lastHandleInfo_.load();
+    if (lastHandleInfo.serverHandlePos < framePos || lastHandleInfo.serverHandleTime == 0) {
+        lastHandleInfo_.compare_exchange_strong(lastHandleInfo, {framePos, serverHandleTime});
     } else {
-        framePos = static_cast<uint32_t>(pos);
+        framePos = lastHandleInfo.serverHandlePos;
+        serverHandleTime = lastHandleInfo.serverHandleTime;
     }
-    int64_t time = handleTimeModel_.GetTimeOfPos(pos);
-    int64_t deltaTime = 20000000; // note: 20ms
-    time += deltaTime;
 
-    sec = time / AUDIO_NS_PER_SECOND;
-    nanoSec = time % AUDIO_NS_PER_SECOND;
+    sec = serverHandleTime / AUDIO_NS_PER_SECOND;
+    nanoSec = serverHandleTime % AUDIO_NS_PER_SECOND;
     return true;
 }
 

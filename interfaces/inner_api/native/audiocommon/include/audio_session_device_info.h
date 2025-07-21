@@ -56,6 +56,7 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
      * @since 20
      */
     OutputDeviceChangeRecommendedAction recommendedAction;
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
     bool Marshalling(Parcel &parcel) const override
     {
@@ -64,25 +65,34 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
         int32_t size = static_cast<int32_t>(devices.size());
         parcel.WriteInt32(size);
         for (int i = 0; i < size; i++) {
-            devices[i]->Marshalling(parcel);
+            if (devices[i] != nullptr) {
+                devices[i]->Marshalling(parcel);
+            }
         }
         return true;
     }
 
     static CurrentOutputDeviceChangedEvent *Unmarshalling(Parcel &parcel)
     {
-        auto info = new CurrentOutputDeviceChangedEvent();
-        if (info == nullptr) {
+        auto event = new CurrentOutputDeviceChangedEvent();
+        if (event == nullptr) {
             return nullptr;
         }
 
-        info->changeReason = static_cast<AudioStreamDeviceChangeReason>(parcel.ReadInt32());
-        info->recommendedAction = static_cast<OutputDeviceChangeRecommendedAction>(parcel.ReadInt32());
+        event->changeReason = static_cast<AudioStreamDeviceChangeReason>(parcel.ReadInt32());
+        event->recommendedAction = static_cast<OutputDeviceChangeRecommendedAction>(parcel.ReadInt32());
         int32_t size = parcel.ReadInt32();
-        for (int32_t i = 0; i < size; i++) {
-            info->devices.emplace_back(AudioDeviceDescriptor::Unmarshalling(parcel));
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
+            delete event;
+            return nullptr;
         }
-        return info;
+        for (int32_t i = 0; i < size; i++) {
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                event->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
+        }
+        return event;
     }
 };
 } // namespace AudioStandard

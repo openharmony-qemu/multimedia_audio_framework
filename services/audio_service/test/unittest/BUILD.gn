@@ -87,6 +87,8 @@ ohos_unittest("audio_balance_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
@@ -768,7 +770,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    # "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -887,7 +888,7 @@ ohos_unittest("capturer_in_server_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -1103,7 +1104,7 @@ ohos_unittest("policy_handler_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../audio_service:audio_process_service_static",
   ]
 
@@ -1154,7 +1155,7 @@ ohos_unittest("offline_stream_in_server_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../audio_service:audio_process_service_static",
   ]
 
@@ -1212,7 +1213,7 @@ ohos_unittest("audio_resource_service_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
     ]

@@ -246,12 +246,7 @@ enum class AudioPolicyInterfaceCode {
     SET_AUDIO_SESSION_SCENE,
     GET_SESSION_DEFAULT_OUTPUT_DEVICE,
     SET_SESSION_DEFAULT_OUTPUT_DEVICE,
-    // New ipc code needs to be added before that
-    GET_AUDIO_LATENCY, // deprecated
-    GET_SINK_LATENCY,  // deprecated
-    IS_AUDIO_RENDER_LOW_LATENCY_SUPPORTED, // deprecated
-    SET_DEFAULT_OUTPUT_DEVICE, // deprecated
-    AUDIO_POLICY_MANAGER_CODE_MAX = SET_DEFAULT_OUTPUT_DEVICE,
+    AUDIO_POLICY_MANAGER_CODE_MAX = SET_SESSION_DEFAULT_OUTPUT_DEVICE,
 };
 } // namespace AudioStandard
 } // namespace OHOS

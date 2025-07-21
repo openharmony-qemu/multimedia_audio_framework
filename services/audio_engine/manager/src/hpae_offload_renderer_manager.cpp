@@ -631,6 +631,14 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
     return SUCCESS;
 }
 
+void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+        "SetSpeed not find sessionId %{public}u", sessionId);
+    CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
+    sinkOutputNode_->SetSpeed(speed);
+}
+
 std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()
 {
     std::vector<SinkInput> sinkInputs;

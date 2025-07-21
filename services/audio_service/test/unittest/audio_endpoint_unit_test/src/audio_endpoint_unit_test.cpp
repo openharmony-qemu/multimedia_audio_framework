@@ -768,5 +768,394 @@ HWTEST_F(AudioEndpointUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
     audioEndpointInner->CheckAudioHapticsSync();
     EXPECT_EQ(audioEndpointInner->audioHapticsSyncId_, zeroSyncId);
 }
+
+
+/*
+ * @tc.name  : Test SetVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolume_001
+ * @tc.desc  : Test SetVolume interface
+ */
+HWTEST_F(AudioEndpointUnitTest, SetVolume_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->endpointType = AudioEndpointInner::TYPE_VOIP_MMAP;
+    audioEndpointInner->fastRenderId_ = 1;
+    float volume = 0.5f;
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_CALL;
+    int32_t result = audioEndpointInner->SetVolume(streamType, volume);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test SetVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetVolume_002
+ * @tc.desc  : Test SetVolume interface
+ */
+HWTEST_F(AudioEndpointUnitTest, SetVolume_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->endpointType = AudioEndpointInner::TYPE_VOIP_MMAP;
+    audioEndpointInner->fastRenderId_ = 1;
+    float volume = 0.5f;
+    AudioStreamType streamType = AudioStreamType::STREAM_MEDIA;
+    int32_t result = audioEndpointInner->SetVolume(streamType, volume);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test CheckPlaySignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaySignal_001
+ * @tc.desc  : Test CheckPlaySignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = false;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckPlaySignal(buffer, 10);
+    EXPECT_EQ(audioEndpointInner->detectedTime_, 0);
+}
+
+/*
+ * @tc.name  : Test CheckPlaySignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaySignal_002
+ * @tc.desc  : Test CheckPlaySignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
+    audioEndpointInner->detectedTime_ = 1000;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckPlaySignal(buffer, 10);
+    EXPECT_EQ(audioEndpointInner->detectedTime_, 1000);
+}
+
+/*
+ * @tc.name  : Test CheckPlaySignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckPlaySignal_003
+ * @tc.desc  : Test CheckPlaySignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
+    audioEndpointInner->detectedTime_ = 0;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckPlaySignal(buffer, 10);
+    EXPECT_EQ(audioEndpointInner->detectedTime_, 0);
+}
+
+/*
+ * @tc.name  : Test CheckRecordSignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecordSignal_001
+ * @tc.desc  : Test CheckRecordSignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = false;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckRecordSignal(buffer, 10);
+}
+
+/*
+ * @tc.name  : Test CheckRecordSignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecordSignal_002
+ * @tc.desc  : Test CheckRecordSignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = nullptr;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckRecordSignal(buffer, 10);
+}
+
+/*
+ * @tc.name  : Test CheckRecordSignal API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRecordSignal_003
+ * @tc.desc  : Test CheckRecordSignal interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckRecordSignal_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->latencyMeasEnabled_ = true;
+    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    audioEndpointInner->fastCaptureId_ = 1;
+    uint8_t buffer[10] = {0};
+    audioEndpointInner->CheckRecordSignal(buffer, 10);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_001
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_BLUETOOTH;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::INACTIVE);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_002
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::IN_TIMING);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_003
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_003, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
+    audioEndpointInner->zeroVolumeStartTime_ = ClockTime::GetCurNano() - 4000000000 - 1;
+    audioEndpointInner->ZeroVolumeCheck(0);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::ACTIVE);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_004
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    audioEndpointInner->ZeroVolumeCheck(1);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, AudioEndpointInner::INACTIVE);
+}
+
+/*
+ * @tc.name  : Test ZeroVolumeCheck API
+ * @tc.type  : FUNC
+ * @tc.number: ZeroVolumeCheck_005
+ * @tc.desc  : Test ZeroVolumeCheck interface
+ */
+HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_005, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->fastSinkType_ = AudioEndpointInner::FAST_SINK_TYPE_REMOTE;
+    audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::ACTIVE;
+    audioEndpointInner->ZeroVolumeCheck(1);
+    EXPECT_EQ(audioEndpointInner->zeroVolumeState_, 0);
+}
+
+/*
+ * @tc.name  : Test HandleZeroVolumeStartEvent API
+ * @tc.type  : FUNC
+ * @tc.number: HandleZeroVolumeStartEvent_001
+ * @tc.desc  : Test HandleZeroVolumeStartEvent interface
+ */
+HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeStartEvent_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->HandleZeroVolumeStartEvent();
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+}
+
+/*
+ * @tc.name  : Test HandleZeroVolumeStartEvent API
+ * @tc.type  : FUNC
+ * @tc.number: HandleZeroVolumeStartEvent_002
+ * @tc.desc  : Test HandleZeroVolumeStartEvent interface
+ */
+HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeStartEvent_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = true;
+    audioEndpointInner->HandleZeroVolumeStartEvent();
+    EXPECT_TRUE(audioEndpointInner->isStarted_);
+}
+
+/*
+ * @tc.name  : Test HandleZeroVolumeStopEvent API
+ * @tc.type  : FUNC
+ * @tc.number: HandleZeroVolumeStopEvent_001
+ * @tc.desc  : Test HandleZeroVolumeStopEvent interface
+ */
+HWTEST_F(AudioEndpointUnitTest, HandleZeroVolumeStopEvent_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->isStarted_ = false;
+    audioEndpointInner->HandleZeroVolumeStopEvent();
+    EXPECT_FALSE(audioEndpointInner->isStarted_);
+}
+
+/*
+ * @tc.name  : Test CheckStandBy API
+ * @tc.type  : FUNC
+ * @tc.number: CheckStandBy_001
+ * @tc.desc  : Test CheckStandBy interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckStandBy_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->endpointStatus_ = AudioEndpointInner::RUNNING;
+    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->CheckStandBy();
+    EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::RUNNING);
+}
+
+/*
+ * @tc.name  : Test CheckStandBy API
+ * @tc.type  : FUNC
+ * @tc.number: CheckStandBy_002
+ * @tc.desc  : Test CheckStandBy interface
+ */
+HWTEST_F(AudioEndpointUnitTest, CheckStandBy_002, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->endpointStatus_ = AudioEndpointInner::IDEL;
+    audioEndpointInner->clientConfig_.audioMode = AUDIO_MODE_PLAYBACK;
+    audioEndpointInner->CheckStandBy();
+    EXPECT_EQ(audioEndpointInner->endpointStatus_, AudioEndpointInner::IDEL);
+}
+
+/*
+ * @tc.name  : Test InitLatencyMeasurement API
+ * @tc.type  : FUNC
+ * @tc.number: InitLatencyMeasurement_001
+ * @tc.desc  : Test InitLatencyMeasurement interface
+ */
+HWTEST_F(AudioEndpointUnitTest, InitLatencyMeasurement_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
+    audioEndpointInner->InitLatencyMeasurement();
+    EXPECT_FALSE(audioEndpointInner->latencyMeasEnabled_);
+}
+
+/*
+ * @tc.name  : Test streamIndex API
+ * @tc.type  : FUNC
+ * @tc.number: streamIndex_001
+ * @tc.desc  : Test streamIndex interface
+ */
+HWTEST_F(AudioEndpointUnitTest, streamIndex_001, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    EXPECT_EQ(mockCallbacks0.streamIndex_, 0);
+
+    MockCallbacks mockCallbacks1(1);
+    EXPECT_EQ(mockCallbacks0.streamIndex_, 1);
+
+    MockCallbacks mockCallbacks100(100);
+    EXPECT_EQ(mockCallbacks0.streamIndex_, 100);
+}
+
+/*
+ * @tc.name  : Test streamIndex API
+ * @tc.type  : FUNC
+ * @tc.number: streamIndex_002
+ * @tc.desc  : Test streamIndex interface
+ */
+HWTEST_F(AudioEndpointUnitTest, streamIndex_002, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    EXPECT_EQ(mockCallbacks0.streamIndex_, 0);
+    EXPECT_EQ(mockCallbacks0.dumpDupOutFileName_, "0_endpoint_dup_out_.pcm");
+    EXPECT_EQ(mockCallbacks0.dumpDupOut_, nullptr);
+
+    MockCallbacks mockCallbacks1(1);
+    EXPECT_EQ(mockCallbacks1.streamIndex_, 1);
+    EXPECT_EQ(mockCallbacks1.dumpDupOutFileName_, "1_endpoint_dup_out_.pcm");
+    EXPECT_EQ(mockCallbacks1.dumpDupOut_, nullptr);
+
+
+    MockCallbacks mockCallbacks100(100);
+    EXPECT_EQ(mockCallbacks100.streamIndex_, 100);
+    EXPECT_EQ(mockCallbacks100.dumpDupOutFileName_, "100_endpoint_dup_out_.pcm");
+    EXPECT_EQ(mockCallbacks100.dumpDupOut_, nullptr);
+}
+
+/*
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: OnWriteData_001
+ * @tc.desc  : Test OnWriteData interface
+ */
+HWTEST_F(AudioEndpointUnitTest, OnWriteData_001, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    size_t length = 10;
+    int32_t result = mockCallbacks0.OnWriteData(length);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: OnWriteData_002
+ * @tc.desc  : Test OnWriteData interface
+ */
+HWTEST_F(AudioEndpointUnitTest, OnWriteData_002, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    size_t length = 0;
+    int32_t result = mockCallbacks0.OnWriteData(length);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: OnWriteData_003
+ * @tc.desc  : Test OnWriteData interface
+ */
+HWTEST_F(AudioEndpointUnitTest, OnWriteData_003, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    size_t length = std::numeric_limits<size_t>::max();
+    int32_t result = mockCallbacks0.OnWriteData(length);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/*
+ * @tc.name  : Test OnWriteData API
+ * @tc.type  : FUNC
+ * @tc.number: OnWriteData_004
+ * @tc.desc  : Test OnWriteData interface
+ */
+HWTEST_F(AudioEndpointUnitTest, OnWriteData_004, TestSize.Level1)
+{
+    MockCallbacks mockCallbacks0(0);
+    int8_t inputData[10] = {0};
+    size_t requestDataLen = 10;
+    int32_t result = mockCallbacks0.OnWriteData(inputData, requestDataLen);
+    EXPECT_EQ(result, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

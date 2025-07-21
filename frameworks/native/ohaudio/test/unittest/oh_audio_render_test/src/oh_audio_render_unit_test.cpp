@@ -426,7 +426,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_001, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -450,7 +450,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_002, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -480,7 +480,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_003, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_TRUE(userData.writeDataCallbackType == UserData::WRITE_DATA_CALLBACK_WITH_RESULT);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -510,7 +510,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_004, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_TRUE(userData.writeDataCallbackType == UserData::WRITE_DATA_CALLBACK_WITH_RESULT);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -540,7 +540,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_005, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_TRUE(userData.writeDataCallbackType == UserData::WRITE_DATA_CALLBACK);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -569,7 +569,7 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallback_006, TestSize.Le
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 
     result = OH_AudioRenderer_Start(audioRenderer);
-    sleep(2);
+    sleep(1);
     EXPECT_TRUE(userData.writeDataCallbackType == UserData::WRITE_DATA_CALLBACK);
 
     CleanupAudioResources(builder, audioRenderer);
@@ -1583,6 +1583,60 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_001, Tes
     .WillRepeatedly(Return(0));
 
     OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(builder, AdvancedWriteDataProxy, &mockCallback);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    flagEndTest.wait(false);
+
+    CleanupAudioResources(builder, audioRenderer);
+}
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced API via legal state.
+ * @tc.number: OH_Audio_Render_WriteDataCallbackAdvanced_002
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced interface.
+ *             Returns true if result is successful.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_002, TestSize.Level0)
+{
+    std::atomic<bool> flagEndTest = false;
+    MockAudioRendererCallbackImpl mockCallback;
+    EXPECT_CALL(mockCallback, OnWriteData(
+        _,          // renderer
+        NotNull(),  // userData
+        NotNull(),  // audioData
+        Gt(0)       // audioDataSize > 0
+    ))
+    .Times(AtLeast(4))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return 0;
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return CHANNEL_COUNT * FORMAT_SIZE; // a sampling point
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        // Non-integer sampling points. Note that this is not a correct usage, it is only used to test robustness.
+        return CHANNEL_COUNT * FORMAT_SIZE + 1;
+    }))
+    .WillOnce(Invoke([&flagEndTest](OH_AudioRenderer*, void*, void* audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        flagEndTest = true;
+        flagEndTest.notify_all();
+        return audioDataSize;
+    }))
+    .WillRepeatedly(Return(0));
+
+    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder_SetLatencyMode(builder, AUDIOSTREAM_LATENCY_MODE_FAST);
     OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(builder, AdvancedWriteDataProxy, &mockCallback);
 
     OH_AudioRenderer* audioRenderer;

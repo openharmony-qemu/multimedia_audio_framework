@@ -52,13 +52,14 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_001, TestSize.Leve
 HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_002, TestSize.Level1)
 {
     shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    shared_ptr<AudioDeviceDescriptor> speaker = std::make_shared<AudioDeviceDescriptor>();
+    speaker->deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 0);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, -1);
     AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 1);
-    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, -1);
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 1);
-    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 789);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, -1);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 789);
     shared_ptr<AudioDeviceDescriptor> deviceDesc =
         AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
@@ -68,6 +69,10 @@ HWTEST_F(AudioStateManagerUnitTest, AudioStateManagerUnitTest_002, TestSize.Leve
     AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(790);
     deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
     EXPECT_NE(deviceDesc, nullptr);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(speaker, 1);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 790);
+    deviceDesc = AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+    EXPECT_NE(deviceDesc, speaker);
 }
 
 /**
