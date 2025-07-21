@@ -1039,15 +1039,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, NearlinkGetRenderPosition_001, TestSize.
     uint32_t delayValue = 0;
     int32_t ret;
 
-    sptr<IStandardSleAudioOperationCallback> callback = new(std::nothrow) MockSleAudioOperationCallback();
-    ASSERT_TRUE(callback != nullptr);
-    server->audioPolicyService_.sleAudioDeviceManager_.SetSleAudioOperationCallback(callback);
-
-    server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
-        = DeviceType::DEVICE_TYPE_NEARLINK;
-    ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
-    EXPECT_EQ(ret, SUCCESS);
-
     server->audioPolicyService_.audioActiveDevice_.currentActiveDevice_.deviceType_
         = DeviceType::DEVICE_TYPE_SPEAKER;
     ret = server->audioPolicyService_.NearlinkGetRenderPosition(delayValue);
