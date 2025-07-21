@@ -152,7 +152,7 @@ public:
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
-            && capturerInfo.Marshalling(parcel)
+            && capturerInfo.MarshallingToDeviceInfo(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
             && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteBool(muted)
