@@ -260,6 +260,7 @@ ohos_shared_library("audio_client") {
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:qos",
   ]
 
   public_external_deps = [

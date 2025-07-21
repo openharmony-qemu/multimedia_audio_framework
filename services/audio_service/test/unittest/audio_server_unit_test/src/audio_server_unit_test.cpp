@@ -2433,5 +2433,89 @@ HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
     audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
     audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
 }
+
+/**
+ * @tc.name  : Test ImproveAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: ImproveAudioWorkgroupPrio_001
+ * @tc.desc  : Test ImproveAudioWorkgroupPrio when valid pid and threads
+ */
+HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_001, TestSize.Level1)
+{
+    pid_t pid = 1234;
+    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
+ 
+/**
+ * @tc.name  : Test ImproveAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: ImproveAudioWorkgroupPrio_002
+ * @tc.desc  : Test ImproveAudioWorkgroupPrio when valid pid
+ */
+HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_002, TestSize.Level1)
+{
+    pid_t pid = -1;
+    std::unordered_map<int32_t, bool> threads = {{1, true}, {2, false}};
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
+ 
+/**
+ * @tc.name  : Test ImproveAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: ImproveAudioWorkgroupPrio_003
+ * @tc.desc  : Test ImproveAudioWorkgroupPrio when empty threads
+ */
+HWTEST_F(AudioServerUnitTest, ImproveAudioWorkgroupPrio_003, TestSize.Level1)
+{
+    pid_t pid = 1234;
+    std::unordered_map<int32_t, bool> threads = {};
+    int32_t result = audioServer->ImproveAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
+ 
+/**
+ * @tc.name  : Test RestoreAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioWorkgroupPrio_001
+ * @tc.desc  : Test RestoreAudioWorkgroupPrio when called
+ */
+HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_001, TestSize.Level1)
+{
+    pid_t pid = 1234;
+    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
+ 
+/**
+ * @tc.name  : Test RestoreAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioWorkgroupPrio_002
+ * @tc.desc  : Test RestoreAudioWorkgroupPrio when invalid pid
+ */
+HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Level1)
+{
+    pid_t pid = -1;
+    std::unordered_map<int32_t, int32_t> threads = {{1, 10}, {2, 20}, {3, 30}};
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
+ 
+/**
+ * @tc.name  : Test RestoreAudioWorkgroupPrio API
+ * @tc.type  : FUNC
+ * @tc.number: RestoreAudioWorkgroupPrio_003
+ * @tc.desc  : Test RestoreAudioWorkgroupPrio when empty threads
+ */
+HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
+{
+    pid_t pid = 1234;
+    std::unordered_map<int32_t, int32_t> threads = {};
+    int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
+    EXPECT_EQ(result, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
