@@ -162,12 +162,12 @@ bool HpaeManager::SetSinkMute(const std::string &sinkName, bool isMute, bool isS
 int32_t HpaeManager::SetSourceOutputMute(int32_t uid, bool isMute)
 {
     auto request = [this, uid, isMute]() {
-        AUDIO_INFO_LOG("HpaeManager::SetSourceOutputMute uid: %{public}d setMute: %{public}d", uid, isMute);
+        AUDIO_INFO_LOG("SetSourceOutputMute uid: %{public}d setMute: %{public}d", uid, isMute);
         for (const auto &sourceInfo : sourceOutputs_) {
             CHECK_AND_CONTINUE(sourceInfo.second.uid == uid);
             auto captureManager = GetCapturerManagerById(sourceInfo.first);
             CHECK_AND_CONTINUE_LOG(captureManager != nullptr,
-                "mute can not find sinkinput by id:%{public}u with uid:%{public}d", sourceInfo.first, uid);
+                "mute can not find CaptureManager by id:%{public}u with uid:%{public}d", sourceInfo.first, uid);
             captureManager->SetStreamMute(sourceInfo.first, isMute);
         }
         if (auto serviceCallback = serviceCallback_.lock()) {
