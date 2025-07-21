@@ -1079,12 +1079,12 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetAudioHapticsSyncId_001,
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_001, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     tempProcessConfig.deviceType = DEVICE_TYPE_SPEAKER;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
@@ -1099,12 +1099,12 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_001, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_002, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_ALARM;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
@@ -1119,13 +1119,13 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_002, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_003, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
@@ -1140,7 +1140,6 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_003, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
@@ -1148,6 +1147,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
     tempProcessConfig.streamInfo.format = SAMPLE_S16LE;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
@@ -1162,13 +1162,13 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_005, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
     tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_192000;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
@@ -1183,7 +1183,6 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_005, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
 {
     AudioProcessConfig tempProcessConfig;
-    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tempProcessConfig.streamInfo = testStreamInfo;
     tempProcessConfig.streamType = STREAM_MUSIC;
     tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
@@ -1191,6 +1190,7 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
     tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
     tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
     tempProcessConfig.streamInfo.format = SAMPLE_S24LE;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
     tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
     EXPECT_NE(nullptr, tmpRendererInServer);
     EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
@@ -1205,11 +1205,11 @@ HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
 HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
     uint64_t currentReadFrame = 10;
     uint64_t currentWriteFrame = 20;
     uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
     tempProcessConfig.streamType = STREAM_MUSIC;
     rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
 }
@@ -1223,11 +1223,11 @@ HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_001, TestSize.Level
 HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_002, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
     uint64_t currentReadFrame = 10;
     uint64_t currentWriteFrame = 20;
     uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
     tempProcessConfig.streamType = STREAM_ULTRASONIC;
     rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
 }
@@ -1241,11 +1241,11 @@ HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_002, TestSize.Level
 HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_003, TestSize.Level1)
 {
     EXPECT_NE(nullptr, rendererInServer);
-    AudioProcessConfig tempProcessConfig;
-    RingBufferWrapper ringBufferDesc;
     uint64_t currentReadFrame = 10;
     uint64_t currentWriteFrame = 30;
     uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
     tempProcessConfig.streamType = STREAM_MUSIC;
     rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
 }
