@@ -1070,7 +1070,7 @@ HWTEST(FastSystemStreamUnitTest, GetAudioTimestampInfo_001, TestSize.Level1)
     Timestamp timestamp;
     Timestamp::Timestampbase base = Timestamp::Timestampbase::MONOTONIC;
     auto result = fastAudioStream->GetAudioTimestampInfo(timestamp, base);
-    EXPECT_EQ(result, false);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
