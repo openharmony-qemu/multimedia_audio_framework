@@ -265,9 +265,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
     descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_MODEM_COMMUNICATION, -1, "CheckModemScene");
     CHECK_AND_RETURN_LOG(descs.size() != 0, "Fetch output device for voice modem communication failed");
     pipeManager_->UpdateModemStreamDevice(descs);
-    AUDIO_INFO_LOG("Update route %{public}d, reason %{public}d",
-        descs.front()->deviceType_, static_cast<int32_t>(reason));
-
+    AudioDeviceDescriptor curDesc = audioActiveDevice_.GetCurrentOutputDevice();
+    AUDIO_INFO_LOG("Current output device %{public}d, update route %{public}d, reason %{public}d",
+        curDesc.deviceType_, descs.front()->deviceType_, static_cast<int32_t>(reason));
     if (descs.front()->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO) {
         auto modemCommunicationMap = pipeManager_->GetModemCommunicationMap();
         auto modemMap = modemCommunicationMap.begin();
@@ -276,9 +276,10 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
             AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
         }
     }
-
     auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second);
-    if (isModemCallRunning && IsDeviceSwitching(reason)) {
+    // If the modem call is in progress, and the device is currently switching,
+    // and the current output device is different from the target device, then mute to avoid pop issue.
+    if (isModemCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
         SetVoiceCallMuteForSwitchDevice();
     }
 }
