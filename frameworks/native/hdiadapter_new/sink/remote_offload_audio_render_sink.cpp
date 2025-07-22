@@ -379,7 +379,10 @@ int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, 
     CHECK_AND_RETURN_RET_LOG(stamp.tvSec >= 0 && stamp.tvSec <= maxSec && stamp.tvNSec >= 0 &&
         stamp.tvNSec <= SECOND_TO_NANOSECOND, ERR_OPERATION_FAILED,
         "get invalid time, second: %{public}" PRId64 ", nanosecond: %{public}" PRId64, stamp.tvSec, stamp.tvNSec);
-    frames = tmpFrames;
+    CHECK_AND_RETURN_RET_LOG(tmpFrames <= UINT64_MAX / SECOND_TO_MICROSECOND, ERR_OPERATION_FAILED,
+        "frames overflow, tmpFrames: %{public}" PRIu64, tmpFrames);
+    CHECK_AND_RETURN_RET_LOG(attr_.sampleRate != 0, ERR_OPERATION_FAILED, "invalid sample rate");
+    frames = tmpFrames * SECOND_TO_MICROSECOND / attr_.sampleRate;
     timeSec = stamp.tvSec;
     timeNanoSec = stamp.tvNSec;
 
