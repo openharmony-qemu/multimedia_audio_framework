@@ -345,8 +345,38 @@ static pa_hook_result_t HandleSourceOutputPut(pa_source_output *so, struct Userd
     return PA_HOOK_OK;
 }
 
+static void HandleSourceOutputUnlinkForRemote(struct Userdata *u)
+{
+    CHECK_AND_RETURN_LOG(u != NULL, "Get Userdata failed! userdata is NULL");
+    CHECK_AND_RETURN_LOG(u->sourceAdapter != NULL, "sourceAdapter is null");
+    CHECK_AND_RETURN_LOG(u->sourceAdapter->deviceClass != NULL, "deviceClass is null");
+    CHECK_AND_RETURN_LOG(u->source != NULL, "source is null");
+
+    if (strcmp(u->sourceAdapter->deviceClass, "remote") != 0) {
+        AUDIO_INFO_LOG("HandleSourceOutputUnlinkForRemote: not remote source");
+    } else {
+        void *state = NULL;
+        pa_source_output *sourceOutput;
+        bool noStreamRunning = true;
+        while ((sourceOutput = pa_hashmap_iterate(u->source->thread_info.outputs, &state, NULL))) {
+            if (sourceOutput->thread_info.state == PA_SOURCE_OUTPUT_RUNNING) {
+                noStreamRunning = false;
+                break;
+            }
+        }
+        if (!noStreamRunning) {
+            AUDIO_INFO_LOG("HandleSourceOutputUnlinkForRemote: source has running stream");
+        } else {
+            u->sourceAdapter->SourceAdapterStop(u->sourceAdapter);
+        }
+    }
+}
+
 static pa_hook_result_t HandleSourceOutputUnlink(pa_source_output *so, struct Userdata *u)
 {
+    // If remote source has no running stream, stop source
+    HandleSourceOutputUnlinkForRemote(u);
+
     const char *sceneType = pa_proplist_gets(so->proplist, "scene.type");
     if (sceneType == NULL) {
         sceneType = "";
