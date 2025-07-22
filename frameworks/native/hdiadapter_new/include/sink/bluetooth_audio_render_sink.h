@@ -104,6 +104,7 @@ private:
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
     bool IsValidState(void);
+    bool IsSinkInited(void);
 
     // low latency
     int32_t PrepareMmapBuffer(void);

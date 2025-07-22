@@ -30,6 +30,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_monitor.h"
 #include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
 
@@ -888,6 +889,16 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 }
 // LCOV_EXCL_STOP
 
+bool AudioCaptureSource::IsCaptureInvalid(struct IAudioCapture *audioCapture_)
+{
+    if (audioCapture_ == nullptr) {
+        AUDIO_ERR_LOG("audioCapture_ is nullptr!");
+        std::string errorMsg = attr_.adapterName + " load adapter fail, ret: " + std::to_string(ERR_NOT_STARTED);
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ERR_NOT_STARTED, errorMsg);
+    }
+    return true;
+}
+
 int32_t AudioCaptureSource::CreateCapture(void)
 {
     Trace trace("AudioCaptureSource::CreateCapture");
@@ -910,7 +921,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     void *capture = deviceManager->CreateCapture(adapterNameCase_, &param, &deviceDesc, hdiCaptureId_);
     audioCapture_ = static_cast<struct IAudioCapture *>(capture);
-    CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED);
+    CHECK_AND_RETURN_RET(IsCaptureInvalid(audioCapture_), ERR_NOT_STARTED);
 
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId_,
         deviceDesc.desc);
