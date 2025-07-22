@@ -327,6 +327,11 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_010, TestSize.Level1)
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
     EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
 
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.deviceCategory_ = CATEGORY_DEFAULT;
+    audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
+    EXPECT_EQ(reason, AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE);
+
     desc.deviceType_ = DEVICE_TYPE_INVALID;
     desc.deviceCategory_ = CATEGORY_DEFAULT;
     audioDeviceStatus.OnPreferredStateUpdated(desc, updateCommand, reason);
@@ -681,6 +686,47 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_029, TestSize.Level1)
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name : Test AudioDeviceStatus.
+* @tc.number: HandleLocalDeviceConnected_001
+* @tc.desc : Test HandleLocalDeviceConnected interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, HandleLocalDeviceConnected_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor updatedDesc;
+    int32_t result;
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    updatedDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
+
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test DeactivateNearlinkDevice.
+* @tc.number: DeactivateNearlinkDevice_001
+* @tc.desc  : Test DeactivateNearlinkDevice.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, DeactivateNearlinkDevice_001, TestSize.Level1)
+{
+    AudioDeviceDescriptor desc;
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    desc.macAddress_ = "";
+
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioActiveDevice_.currentActiveDevice_.macAddress_ = "LOCALDEVICE";
+    std::string ret = "LOCALDEVICE";
+
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(desc.macAddress_, ret);
+
+    desc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
+    audioDeviceStatus.DeactivateNearlinkDevice(desc);
+    EXPECT_NE(desc.macAddress_, ret);
 }
 
 /**
