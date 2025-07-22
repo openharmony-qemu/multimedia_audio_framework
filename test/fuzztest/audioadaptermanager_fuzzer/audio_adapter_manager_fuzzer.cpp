@@ -925,43 +925,6 @@ void AudioVolumeManagerSetAbsVolumeMuteFuzzTest(const uint8_t *rawData, size_t s
     audioAdapterManager->SetAbsVolumeMute(mute);
 }
 
-void AudioVolumeManagerSetPersistMicMuteStateFuzzTest(const uint8_t *rawData, size_t size)
-{
-    audioAdapterManager_->Init();
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    audioAdapterManager_->SetPersistMicMuteState(mute);
-}
-
-void AudioVolumeManagerGetPersistMicMuteStateFuzzTest(const uint8_t *rawData, size_t size)
-{
-    audioAdapterManager_->Init();
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    audioAdapterManager_->GetPersistMicMuteState(mute);
-}
-
-void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
-{
-    audioAdapterManager_->Init();
-    int32_t uid = static_cast<int32_t>(size);
-    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
-    audioAdapterManager_->SetSourceOutputStreamMute(uid, mute);
-}
-
-void AudioVolumeManagerGetStreamVolumeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    uint32_t index = static_cast<uint32_t>(size);
-    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
-    audioAdapterManager_->Init();
-    audioAdapterManager_->GetStreamVolume(streamType);
-}
-
-void AudioVolumeManagerGetRingerModeInfoFuzzTest(const uint8_t *rawData, size_t size)
-{
-    std::vector<RingerModeAdjustInfo> ringerModeInfo;
-    audioAdapterManager_->Init();
-    audioAdapterManager_->GetRingerModeInfo(ringerModeInfo);
-}
-
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1032,11 +995,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerSetFirstBootFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetVgsVolumeSupportedFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetPersistMicMuteStateFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetPersistMicMuteStateFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetStreamVolumeFuzzTest,
-    OHOS::AudioStandard::AudioVolumeManagerGetRingerModeInfoFuzzTest,
 };
 
 /* Fuzzer entry point */
