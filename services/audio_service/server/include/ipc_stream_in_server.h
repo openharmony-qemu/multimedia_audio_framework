@@ -31,8 +31,8 @@ namespace AudioStandard {
 // in plan extends IStatusCallback
 class StreamListenerHolder : public IStreamListener {
 public:
-    StreamListenerHolder();
-    ~StreamListenerHolder();
+    StreamListenerHolder() = default;
+    ~StreamListenerHolder() = default;
     int32_t RegisterStreamListener(sptr<IIpcStreamListener> listener);
 
     // override IStreamListener

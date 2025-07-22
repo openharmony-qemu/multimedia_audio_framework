@@ -294,7 +294,6 @@ int32_t AudioOffloadStream::SwitchToNewPipe(const uint32_t sessionId, const Audi
 
 void AudioOffloadStream::ResetOffloadMode(int32_t sessionId)
 {
-    AUDIO_INFO_LOG("No need to reset offload mode! SKIPPED");
 }
 
 void AudioOffloadStream::OffloadStreamReleaseCheck(uint32_t sessionId)

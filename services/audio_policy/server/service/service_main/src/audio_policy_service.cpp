@@ -174,7 +174,6 @@ void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &
         AUDIO_ERR_LOG("eventReceiver_ is nullptr.");
         return;
     }
-    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success.");
     eventReceiver_(eventData);
 }
 
@@ -530,8 +529,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
 
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    AUDIO_WARNING_LOG("No bt permission");
-
     for (std::shared_ptr<AudioDeviceDescriptor> &desc : deviceDescs) {
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             std::shared_ptr<AudioDeviceDescriptor> copyDesc = std::make_shared<AudioDeviceDescriptor>(desc);

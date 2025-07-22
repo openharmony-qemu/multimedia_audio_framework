@@ -89,7 +89,6 @@ RendererInClientInner::RendererInClientInner(AudioStreamType eStreamType, int32_
 
 RendererInClientInner::~RendererInClientInner()
 {
-    AUDIO_INFO_LOG("~RendererInClientInner()");
     DumpFileUtil::CloseDumpFile(&dumpOutFd_);
     RendererInClientInner::ReleaseAudioStream(true);
     std::lock_guard<std::mutex> runnerlock(runnerMutex_);
@@ -201,7 +200,7 @@ void RendererInClientInner::SetRendererInfo(const AudioRendererInfo &rendererInf
         rendererInfo_.effectMode = EFFECT_NONE;
     }
 
-    AUDIO_PRERELEASE_LOGI("SetRendererInfo with flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
+    AUDIO_PRERELEASE_LOGI("flag %{public}d, sceneType %{public}s", rendererInfo_.rendererFlags,
         rendererInfo_.sceneType.c_str());
     AudioSpatializationState spatializationState =
         AudioPolicyManager::GetInstance().GetSpatializationState(rendererInfo_.streamUsage);
@@ -588,7 +587,7 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
 int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
-    AUDIO_INFO_LOG("SetRendererFirstFrameWritingCallback in.");
+    AUDIO_INFO_LOG("in.");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
     std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;
@@ -603,7 +602,7 @@ void RendererInClientInner::OnFirstFrameWriting()
     std::shared_ptr<AudioRendererFirstFrameWritingCallback> cb = nullptr;
     {
         std::lock_guard lock(firstFrameWritingMutex_);
-        CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+        CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
         cb = firstFrameWritingCb_;
     }
     AUDIO_DEBUG_LOG("OnFirstFrameWriting: latency %{public}" PRIu64 "", latency);
@@ -710,7 +709,7 @@ void RendererInClientInner::InitCallbackLoop()
 
 int32_t RendererInClientInner::SetRenderMode(AudioRenderMode renderMode)
 {
-    AUDIO_INFO_LOG("SetRenderMode to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
+    AUDIO_INFO_LOG("to %{public}s", renderMode == RENDER_MODE_NORMAL ? "RENDER_MODE_NORMAL" :
         "RENDER_MODE_CALLBACK");
     if (renderMode_ == renderMode) {
         return SUCCESS;
@@ -941,7 +940,7 @@ void RendererInClientInner::SetCapturerSource(int capturerSource)
 void RendererInClientInner::SetPrivacyType(AudioPrivacyType privacyType)
 {
     if (privacyType_ == privacyType) {
-        AUDIO_INFO_LOG("Set same privacy type");
+        AUDIO_INFO_LOG("same type");
         return;
     }
     privacyType_ = privacyType;
@@ -1140,7 +1139,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     MonitorMutePlay(true);
     std::unique_lock<std::mutex> statusLock(statusMutex_);
     if (state_ == RELEASED) {
-        AUDIO_WARNING_LOG("Already released, do nothing");
+        AUDIO_WARNING_LOG("Already released");
         return true;
     }
     state_ = RELEASED;
@@ -1169,7 +1168,7 @@ bool RendererInClientInner::ReleaseAudioStream(bool releaseRunner, bool isSwitch
     std::unique_lock<std::mutex> lock(streamCbMutex_);
     std::shared_ptr<AudioStreamCallback> streamCb = streamCallback_.lock();
     if (streamCb != nullptr) {
-        AUDIO_INFO_LOG("Notify client the state is released");
+        AUDIO_INFO_LOG("Notify client");
         streamCb->OnStateChange(RELEASED, CMD_FROM_CLIENT);
     }
     lock.unlock();
@@ -1399,7 +1398,7 @@ int32_t RendererInClientInner::SetBufferSizeInMsec(int32_t bufferSizeInMsec)
 {
     // bufferSizeInMsec is checked between 5ms and 20ms.
     bufferSizeInMsec_ = static_cast<uint32_t>(bufferSizeInMsec);
-    AUDIO_INFO_LOG("SetBufferSizeInMsec to %{public}d", bufferSizeInMsec_);
+    AUDIO_INFO_LOG("to %{public}d", bufferSizeInMsec_);
     if (renderMode_ == RENDER_MODE_CALLBACK) {
         uint64_t bufferDurationInUs = bufferSizeInMsec_ * AUDIO_US_PER_MS;
         InitCallbackBuffer(bufferDurationInUs);
@@ -1516,7 +1515,7 @@ void RendererInClientInner::InitCallbackHandler()
 void RendererInClientInner::SafeSendCallbackEvent(uint32_t eventCode, int64_t data)
 {
     std::lock_guard<std::mutex> lock(runnerMutex_);
-    AUDIO_INFO_LOG("Send callback event, code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
+    AUDIO_INFO_LOG("code: %{public}u, data: %{public}" PRId64 "", eventCode, data);
     CHECK_AND_RETURN_LOG(callbackHandler_ != nullptr && runnerReleased_ == false, "Runner is Released");
     callbackHandler_->SendCallbackEvent(eventCode, data);
 }
@@ -1706,7 +1705,7 @@ bool RendererInClientInner::GetHighResolutionEnabled()
 
 void RendererInClientInner::SetSilentModeAndMixWithOthers(bool on)
 {
-    AUDIO_PRERELEASE_LOGI("SetSilentModeAndMixWithOthers %{public}d", on);
+    AUDIO_PRERELEASE_LOGI("%{public}d", on);
     silentModeAndMixWithOthers_ = on;
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "Object ipcStream is nullptr");
     ipcStream_->SetSilentModeAndMixWithOthers(on);

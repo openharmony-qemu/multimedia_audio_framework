@@ -26,16 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-StreamListenerHolder::StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("StreamListenerHolder()");
-}
-
-StreamListenerHolder::~StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("~StreamListenerHolder()");
-}
-
 int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
@@ -160,7 +150,6 @@ int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& obj
 
 int32_t IpcStreamInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
-    AUDIO_INFO_LOG("Resolve buffer, mode: %{public}d", mode_);
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->ResolveBuffer(buffer);
     }
@@ -197,8 +186,6 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 
 int32_t IpcStreamInServer::Start()
 {
-    AUDIO_INFO_LOG("IpcStreamInServer::Start()");
-
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Start();
     }
