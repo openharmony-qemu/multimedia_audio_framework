@@ -361,12 +361,12 @@ napi_value NapiAudioStreamMgr::IsStreamActiveByStreamUsage(napi_env env, napi_ca
     napi_value args[ARGS_ONE] = {};
     auto *napiStreamMgr = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of volumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of volumeType must be number"),
         "invalid valueType");
 
     int32_t streamUsage;

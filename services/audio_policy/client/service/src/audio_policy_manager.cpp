@@ -2978,9 +2978,9 @@ float AudioPolicyManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
     float volume = -1;
-    gsp->GetVolumeInDbByStream(static_cast<int32_t>(streamUsage), volumeLevel,
+    int32_t ret = gsp->GetVolumeInDbByStream(static_cast<int32_t>(streamUsage), volumeLevel,
         static_cast<int32_t>(deviceType), volume);
-    return volume;
+    return ret == SUCCESS ? volume : ERROR;
 }
 
 std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
@@ -2992,7 +2992,13 @@ std::vector<AudioVolumeType> AudioPolicyManager::GetSupportedAudioVolumeTypes()
         return retList;
     }
     std::vector<int32_t> inList = {};
-    gsp->GetSupportedAudioVolumeTypes(inList);
+    int32_t ret = gsp->GetSupportedAudioVolumeTypes(inList);
+    if (ret != SUCCESS)
+    {
+        AUDIO_ERR_LOG("GetSupportedAudioVolumeTypes faild");
+        return retList;
+    }
+
     for (auto &item : inList) {
         retList.push_back(static_cast<AudioVolumeType>(item));
     }
@@ -3004,8 +3010,8 @@ AudioVolumeType AudioPolicyManager::GetAudioVolumeTypeByStreamUsage(StreamUsage 
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AudioVolumeType::STREAM_DEFAULT, "audio policy manager proxy is NULL.");
     int32_t volumeType = AudioVolumeType::STREAM_DEFAULT;
-    gsp->GetAudioVolumeTypeByStreamUsage(streamUsage, volumeType);
-    return static_cast<AudioVolumeType>(volumeType);
+    int32_t ret = gsp->GetAudioVolumeTypeByStreamUsage(streamUsage, volumeType);
+    return ret == SUCCESS ? static_cast<AudioVolumeType>(volumeType) : AudioVolumeType::STREAM_DEFAULT;
 }
 
 std::vector<StreamUsage> AudioPolicyManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
@@ -3017,7 +3023,13 @@ std::vector<StreamUsage> AudioPolicyManager::GetStreamUsagesByVolumeType(AudioVo
         return retList;
     }
     std::vector<int32_t> inList = {};
-    gsp->GetStreamUsagesByVolumeType(static_cast<int32_t>(audioVolumeType), inList);
+    int32_t ret = gsp->GetStreamUsagesByVolumeType(static_cast<int32_t>(audioVolumeType), inList);
+    if (ret != SUCCESS)
+    {
+        AUDIO_ERR_LOG("GetSupportedAudioVolumeTypes faild");
+        return retList;
+    }
+
     for (auto &item : inList) {
         retList.push_back(static_cast<StreamUsage>(item));
     }

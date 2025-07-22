@@ -57,7 +57,7 @@ public:
 
     enum AudioJsStreamUsage {
         USAGE_UNKNOW = 0,
-        USAGE_MEDIA = 1,
+        USAGE_MUSIC = 1,
         USAGE_VOICE_COMMUNICATION = 2,
         USAGE_VOICE_ASSISTANT = 3,
         USAGE_ALARM = 4,

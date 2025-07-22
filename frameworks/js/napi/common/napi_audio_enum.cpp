@@ -1392,8 +1392,8 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_UNKNOWN:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
-        case StreamUsage::STREAM_USAGE_MEDIA:
-            result = NapiAudioEnum::USAGE_MEDIA;
+        case StreamUsage::STREAM_USAGE_MUSIC:
+            result = NapiAudioEnum::USAGE_MUSIC;
             break;
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
@@ -1461,7 +1461,7 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
         default:
-            result = NapiAudioEnum::USAGE_MEDIA;
+            result = NapiAudioEnum::USAGE_UNKNOW;
             break;
     }
     return result;
@@ -1665,10 +1665,10 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::NOTIFICATION:
-            result = STREAM_NOTIFICATION;
+            result = STREAM_RING;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = STREAM_NAVIGATION;
+            result = STREAM_MUSIC;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
@@ -1690,8 +1690,8 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
         case NapiAudioEnum::USAGE_UNKNOW:
             result = STREAM_USAGE_UNKNOWN;
             break;
-        case NapiAudioEnum::USAGE_MEDIA:
-            result = STREAM_USAGE_MEDIA;
+        case NapiAudioEnum::USAGE_MUSIC:
+            result = STREAM_USAGE_MUSIC;
             break;
         case NapiAudioEnum::USAGE_VOICE_COMMUNICATION:
             result = STREAM_USAGE_VOICE_COMMUNICATION;
