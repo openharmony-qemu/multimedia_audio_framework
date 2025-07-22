@@ -1816,5 +1816,24 @@ HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
     testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
 }
+
+/**
+ * @tc.name  : Test GetFrameCount API
+ * @tc.type  : FUNC
+ * @tc.number: GetFrameCount_001
+ * @tc.desc  : Test GetFrameCount interface.
+ */
+HWTEST(CapturerInClientUnitTest, GetFrameCount_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    uint32_t frameCount = -111;
+
+    int32_t result = capturerInClientInner->GetFrameCount(frameCount);
+
+    frameCount = 10;
+    result = capturerInClientInner->GetFrameCount(frameCount);
+    EXPECT_EQ(result, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
