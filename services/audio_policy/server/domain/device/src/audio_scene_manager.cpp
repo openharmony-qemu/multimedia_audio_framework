@@ -121,7 +121,6 @@ void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene
             }
             break;
         default:
-            AUDIO_INFO_LOG("No ringing scene:%{public}d", audioScene);
             break;
     }
 

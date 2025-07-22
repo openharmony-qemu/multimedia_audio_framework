@@ -246,7 +246,6 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
 int32_t AudioVolumeManager::SetVoiceRingtoneMute(bool isMute)
 {
-    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
     isVoiceRingtoneMute_ = isMute ? true : false;
     SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     return SUCCESS;
@@ -1257,7 +1256,6 @@ bool AudioVolumeManager::IsRingerModeMute()
 
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
-    AUDIO_INFO_LOG("Set RingerModeMute_: %{public}d", flag);
     ringerModeMute_.store(flag);
 }
 

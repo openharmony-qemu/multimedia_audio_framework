@@ -51,8 +51,9 @@ void AudioStateManager::SetPreferredCallRenderDevice(const std::shared_ptr<Audio
     auto callerPid = IPCSkeleton::GetCallingPid();
     std::string bundleName = AudioBundleManager::GetBundleNameFromUid(callerUid);
     AUDIO_INFO_LOG(
-        "deviceType: %{public}d, uid: %{public}d, callerPid: %{public}d, bundle name: %{public}s, caller: %{public}s",
-        deviceDescriptor->deviceType_, callerUid, callerPid, bundleName.c_str(), caller.c_str());
+        "deviceType: %{public}d, callerUid: %{public}d, callerPid: %{public}d, ownerUid:%{public}d,\
+        bundle name: %{public}s, caller: %{public}s",
+        deviceDescriptor->deviceType_, callerUid, callerPid, ownerUid_, bundleName.c_str(), caller.c_str());
     if (audioClientInfoMgrCallback_ != nullptr) {
         audioClientInfoMgrCallback_->OnCheckClientInfo(bundleName, callerUid, callerPid, ret);
     }

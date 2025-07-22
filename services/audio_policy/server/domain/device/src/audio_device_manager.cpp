@@ -1375,7 +1375,6 @@ int32_t AudioDeviceManager::UpdateDefaultOutputDeviceWhenStopping(const uint32_t
 {
     std::lock_guard<std::mutex> lock(selectDefaultOutputDeviceMutex_);
     if (!selectedDefaultOutputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("no need to update default output device since current stream has not set");
         return SUCCESS;
     }
     StreamUsage streamUsage = selectedDefaultOutputDeviceInfo_[sessionID].second;

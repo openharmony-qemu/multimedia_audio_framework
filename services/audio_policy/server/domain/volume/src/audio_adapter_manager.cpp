@@ -3090,7 +3090,6 @@ void AudioAdapterManager::SetVgsVolumeSupported(bool isVgsSupported)
 bool AudioAdapterManager::IsVgsVolumeSupported() const
 {
     if (currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO) {
-        AUDIO_INFO_LOG("Current Active Device isn't SCO, return false");
         return false;
     }
     return isVgsVolumeSupported_;
