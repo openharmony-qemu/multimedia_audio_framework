@@ -123,7 +123,7 @@ private:
     static constexpr int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10000000us
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;
-    static constexpr int64_t STAMP_THRESHOLD_MS = 20;
+    static constexpr int64_t STAMP_THRESHOLD_MS = 40;
     static constexpr int32_t RENDER_FRAME_NUM = -4;
     static constexpr uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
 #ifdef FEATURE_POWER_MANAGER

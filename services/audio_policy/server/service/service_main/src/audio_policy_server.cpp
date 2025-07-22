@@ -793,7 +793,6 @@ void AudioCommonEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData 
         AUDIO_ERR_LOG("eventReceiver_ is nullptr");
         return;
     }
-    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success");
     eventReceiver_(eventData);
 }
 

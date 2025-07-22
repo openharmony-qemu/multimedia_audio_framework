@@ -293,7 +293,7 @@ int32_t RendererInClientInner::SetInnerVolume(float volume)
         AUDIO_ERR_LOG("Set Client Volume failed:%{public}u", ret);
         return ERROR;
     }
-    AUDIO_PRERELEASE_LOGI("SetClientVolume success, volume: %{public}f", volume);
+    AUDIO_PRERELEASE_LOGI("volume: %{public}f", volume);
     return SUCCESS;
 }
 
@@ -361,7 +361,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
         } else {
             if (sleepCount_++ == LOG_COUNT_LIMIT) {
                 sleepCount_ = 0;
-                AUDIO_WARNING_LOG("OnWriteData Process 1st or 200 times INVALID buffer");
+                AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
             }
             usleep(WAIT_FOR_NEXT_CB);
         }
@@ -890,7 +890,7 @@ void RendererInClientInner::RegisterThreadPriorityOnStart(StateChangeCmdType cmd
 
 void RendererInClientInner::ResetCallbackLoopTid()
 {
-    AUDIO_INFO_LOG("Reset callback loop tid to -1");
+    AUDIO_INFO_LOG("to -1");
     callbackLoopTid_ = -1;
 }
 

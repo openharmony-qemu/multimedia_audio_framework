@@ -88,7 +88,7 @@ int32_t AudioRunningLock::UpdateAppsUidToPowerMgr(void)
 
     Trace innerUpdateWorkSourceTrace("AudioRunningLock::runningLock_->UpdateWorkSource");
     int32_t ret = runningLock_->UpdateWorkSource(appsUid);
-    AUDIO_INFO_LOG("update end, uidInfo: %{public}s, size: %{public}zu, ret: %{public}d", appsUidInfo.c_str(),
+    AUDIO_INFO_LOG("uidInfo: %{public}s, size: %{public}zu, ret: %{public}d", appsUidInfo.c_str(),
         appsUid.size(), ret);
     return ret;
 }

@@ -246,7 +246,6 @@ bool AudioCoreService::IsStreamSupportMultiChannel(std::shared_ptr<AudioStreamDe
     if (streamDesc->streamInfo_.channels <= STEREO ||
         (streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_MOVIE &&
          streamDesc->rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD)) {
-        AUDIO_INFO_LOG("normal stream beacuse channels.");
         return false;
     }
     // The multi-channel algorithm needs to be supported in the dsp
@@ -261,8 +260,6 @@ bool AudioCoreService::IsStreamSupportDirect(std::shared_ptr<AudioStreamDescript
     if (streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_WIRED_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_USB_HEADSET &&
         streamDesc->newDeviceDescs_[0]->deviceType_ != DEVICE_TYPE_NEARLINK) {
-            AUDIO_INFO_LOG("normal stream, deviceType: %{public}d",
-                streamDesc->newDeviceDescs_[0]->deviceType_);
             return false;
         }
     if (streamDesc->rendererInfo_.streamUsage != STREAM_USAGE_MUSIC ||
@@ -356,7 +353,7 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     if (IsStreamSupportMultiChannel(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
-    AUDIO_INFO_LOG("StreamDesc flag use default - NORMAL");
+    AUDIO_INFO_LOG("default - NORMAL");
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
@@ -1210,7 +1207,6 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     int32_t ret = FetchRendererPipesAndExecute(outputStreamDescs, reason);
     UpdateModemRoute(modemDescs);
     if (IsNoRunningStream(outputStreamDescs)) {
-        AUDIO_INFO_LOG("no running stream");
         HandleFetchOutputWhenNoRunningStream(reason);
     }
     return ret;
