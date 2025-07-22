@@ -18,6 +18,7 @@
 
 #include <map>
 #include <list>
+#include <mutex>
 
 #include "dfx_stat.h"
 #include "dfx_utils.h"
