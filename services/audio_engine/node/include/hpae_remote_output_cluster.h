@@ -15,8 +15,10 @@
 
 #ifndef HPAE_REMOTE_OUTPUT_CLUSTER_H
 #define HPAE_REMOTE_OUTPUT_CLUSTER_H
-#include "hpae_output_cluster.h"
+#include "i_hpae_output_cluster.h"
 #include "hpae_remote_sink_output_node.h"
+#include "hpae_audio_format_converter_node.h"
+#include "hpae_mixer_node.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -24,18 +26,18 @@ namespace HPAE {
 
 HpaeProcessorType TransStreamUsageToSplitSceneType(StreamUsage streamUsage, const std::string &splitMode);
 
-class HpaeRemoteOutputCluster : public HpaeOutputCluster {
+class HpaeRemoteOutputCluster : public IHpaeOutputCluster {
 public:
-    HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo);
+    HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo);
     virtual ~HpaeRemoteOutputCluster();
-    virtual void DoProcess() override;
-    virtual bool Reset() override;
-    virtual bool ResetAll() override;
+    void DoProcess() override;
+    bool Reset() override;
+    bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     int32_t GetConverterNodeCount() override;
     int32_t GetPreOutNum() override;
-    int32_t GetInstance(std::string deviceClass, std::string deviceNetId) override;
+    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId) override;
     int32_t Init(IAudioSinkAttr &attr) override;
     int32_t DeInit() override;
     int32_t Flush(void) override;
@@ -52,8 +54,9 @@ public:
 private:
     std::shared_ptr<HpaeRemoteSinkOutputNode> hpaeSinkOutputNode_ = nullptr;
     std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeAudioFormatConverterNode>> sceneConverterMap_;
+    std::unordered_map<HpaeProcessorType, std::shared_ptr<HpaeMixerNode>> sceneMixerMap_;
+    std::unordered_map<HpaeProcessorType, uint32_t> sceneStopCountMap_;
     uint32_t timeoutThdFrames_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
-    uint32_t timeoutStopCount_ = 0;
     uint32_t frameLenMs_ = FRAME_LEN_MS_DEFAULT_MS;
     std::set<HpaeProcessorType> connectedProcessCluster_;
 };

@@ -313,6 +313,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetAbsVolumeMute_001
+ * @tc.desc: Test SetAbsVolumeMute
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAbsVolumeMute_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool mute = true;
+
+    audioAdapterManager_->SetAbsVolumeMute(mute);
+    int32_t ret = audioAdapterManager_->SetVolumeDb(STREAM_MUSIC);
+
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name: UpdateSinkArgs_001
  * @tc.desc: Test UpdateSinkArgs all args have value
  * @tc.type: FUNC

@@ -42,6 +42,12 @@ HpaeCaptureEffectNode::HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo)
     } else {
         AUDIO_ERR_LOG("scenetype: %{public}u not supported", nodeInfo.effectInfo.enhanceScene);
     }
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeCaptureEffectNode");
+    }
+#endif
 }
 
 bool HpaeCaptureEffectNode::Reset()
@@ -85,15 +91,15 @@ HpaePcmBuffer *HpaeCaptureEffectNode::SignalProcess(const std::vector<HpaePcmBuf
     }
 
     outPcmBuffer_->SetBufferValid(processLength != 0);
-    CHECK_AND_RETURN_RET(processLength != 0, outPcmBuffer_);
+    CHECK_AND_RETURN_RET(processLength != 0, outPcmBuffer_.get(), "error, main mic data is null");
 
     int32_t ret = audioEnhanceChainManager->ApplyEnhanceChainById(sceneKeyCode_, transBuf);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_, "effect apply failed, ret:%{public}d", ret);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, outPcmBuffer_.get(), "effect apply failed, ret:%{public}d", ret);
     audioEnhanceChainManager->GetChainOutputDataById(sceneKeyCode_, static_cast<void *>(cacheDataOut_.data()),
         static_cast<size_t>(processLength));
     ConvertToFloat(SAMPLE_S16LE, micBufferLength_ / GetSizeFromFormat(SAMPLE_S16LE),
         static_cast<void *>(cacheDataOut_.data()), outPcmBuffer_->GetPcmDataBuffer());
-    return outPcmBuffer_;
+    return outPcmBuffer_.get();
 }
 
 void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,
@@ -104,8 +110,7 @@ void HpaeCaptureEffectNode::ConnectWithInfo(const std::shared_ptr<OutputNode<Hpa
     inputStream_.Connect(realPreNode, preNode->GetOutputPort(nodeInfo));
 #ifdef ENABLE_HIDUMP_DFX
     if (auto callback = GetNodeStatusCallback().lock()) {
-        callback->OnNotifyDfxNodeInfo(
-            true, realPreNode->GetNodeId(), GetNodeInfo());
+        callback->OnNotifyDfxNodeInfo(true, realPreNode->GetNodeId(), GetNodeInfo());
     }
 #endif
 }
@@ -193,7 +198,7 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
     cacheDataOut_.resize(maxLength);
     PcmBufferInfo pcmBufferInfo(micConfig.channels, FRAME_LEN * (micConfig.samplingRate / MILLISECOND_PER_SECOND),
         micConfig.samplingRate);
-    outPcmBuffer_ = new (std::nothrow) HpaePcmBuffer(pcmBufferInfo);
+    outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     if (outPcmBuffer_ == nullptr) {
         AUDIO_ERR_LOG("create effect out pcm buffer fail");
         return ERROR;
@@ -204,10 +209,6 @@ int32_t HpaeCaptureEffectNode::CaptureEffectCreate(uint64_t sceneKeyCode, Captur
 
 int32_t HpaeCaptureEffectNode::CaptureEffectRelease(uint64_t sceneKeyCode)
 {
-    if (outPcmBuffer_ != nullptr) {
-        delete outPcmBuffer_;
-    }
-    outPcmBuffer_ = nullptr;
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager, ERR_ILLEGAL_STATE, "audioEnhanceChainManager is nullptr");
     return audioEnhanceChainManager->ReleaseAudioEnhanceChainDynamic(sceneKeyCode);

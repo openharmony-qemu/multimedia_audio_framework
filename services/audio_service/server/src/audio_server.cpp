@@ -2439,7 +2439,6 @@ void AudioServer::RegisterAudioRendererSinkCallback()
 
 int32_t AudioServer::NotifyStreamVolumeChanged(int32_t streamType, float volume)
 {
-    AUDIO_INFO_LOG("Enter the notifyStreamVolumeChanged interface");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     if (!PermissionUtil::VerifyIsAudio()) {
         AUDIO_ERR_LOG("NotifyStreamVolumeChanged refused for %{public}d", callingUid);
@@ -3057,6 +3056,16 @@ int32_t AudioServer::ForceStopAudioStream(int32_t audioType)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_SYSTEM_PERMISSION_DENIED, "not audio calling!");
     CHECK_AND_RETURN_RET_LOG(AudioService::GetInstance() != nullptr, ERR_INVALID_OPERATION, "AudioService is nullptr");
     return AudioService::GetInstance()->ForceStopAudioStream(static_cast<StopAudioType>(audioType));
+}
+
+int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads)
+{
+    return AudioResourceService::GetInstance()->ImproveAudioWorkgroupPrio(pid, threads);
+}
+ 
+int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
+{
+    return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
 } // namespace AudioStandard
 } // namespace OHOS

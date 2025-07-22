@@ -1211,6 +1211,7 @@ int32_t AudioInterruptService::GetSessionInfoInFocus(AudioInterrupt &audioInterr
     audioInterrupt = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, invalidStreamId};
 
+    std::unique_lock<std::mutex> lock(mutex_);
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
     if (itZone != zonesMap_.end() && itZone->second != nullptr) {

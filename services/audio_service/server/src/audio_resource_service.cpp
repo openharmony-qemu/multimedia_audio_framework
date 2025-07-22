@@ -24,6 +24,7 @@
 #include "audio_utils.h"
 #include "audio_workgroup_callback_proxy.h"
 #include "audio_workgroup_callback.h"
+#include "audio_schedule.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -368,6 +369,27 @@ std::vector<int32_t> AudioResourceService::GetProcessesOfAudioWorkgroup()
         keys.push_back(pair.first);
     }
     return keys;
+}
+
+int32_t AudioResourceService::ImproveAudioWorkgroupPrio(int32_t pid,
+    const std::unordered_map<int32_t, bool> &threads)
+{
+    for (const auto &tid : threads) {
+        AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos_level7", pid, tid.first);
+        ScheduleReportData(pid, tid.first, "audio_server");
+    }
+    return AUDIO_OK;
+}
+ 
+int32_t AudioResourceService::RestoreAudioWorkgroupPrio(int32_t pid,
+    const std::unordered_map<int32_t, int32_t> &threads)
+{
+    for (const auto &tid : threads) {
+        AUDIO_INFO_LOG("[WorkgroupInServer]set pid:%{public}d tid:%{public}d to qos%{public}d",
+            pid, tid.first, tid.second);
+        ScheduleReportDataWithQosLevel(pid, tid.first, "audio_server", tid.second);
+    }
+    return AUDIO_OK;
 }
 } // namespce AudioStandard
 } // namespace OHOS

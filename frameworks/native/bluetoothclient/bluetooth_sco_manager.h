@@ -35,6 +35,7 @@ public:
     int32_t HandleScoDisconnect(const BluetoothRemoteDevice &device);
     AudioScoState GetAudioScoState();
     ScoCategory GetAudioScoCategory();
+    void ResetScoState(const BluetoothRemoteDevice &device);
     BluetoothRemoteDevice GetAudioScoDevice();
     bool IsInScoCategory(ScoCategory scoCategory);
 

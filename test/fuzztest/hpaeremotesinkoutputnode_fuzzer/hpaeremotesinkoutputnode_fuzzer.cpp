@@ -89,33 +89,37 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void DoProcessFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->DoProcess();
 }
 
 void ResetFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->Reset();
 }
 
 void ResetAllFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->ResetAll();
 }
 
 void ConnectFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     hpaeRemoteSinkOutputNode->Connect(hpaeMixerNode);
     hpaeRemoteSinkOutputNode->DisConnect(hpaeMixerNode);
@@ -123,18 +127,20 @@ void ConnectFuzzTest()
 
 void DisConnectFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     hpaeRemoteSinkOutputNode->DisConnect(hpaeMixerNode);
 }
 
 void GetRenderSinkInstanceFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     std::string deviceClass = "123";
     std::string deviceNetId = "456";
     hpaeRemoteSinkOutputNode->GetRenderSinkInstance(deviceClass, deviceNetId);
@@ -142,98 +148,110 @@ void GetRenderSinkInstanceFuzzTest()
 
 void RenderSinkInitFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     IAudioSinkAttr attr;
     hpaeRemoteSinkOutputNode->RenderSinkInit(attr);
 }
 
 void RenderSinkDeInitFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkDeInit();
 }
 
 void RenderSinkFlushFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkFlush();
 }
 
 void RenderSinkPauseFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkPause();
 }
 
 void RenderSinkResetFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkReset();
 }
 
 void RenderSinkResumeFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkResume();
 }
 
 void RenderSinkStartFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkStart();
 }
 
 void RenderSinkStopFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->RenderSinkStop();
 }
 
 void GetPreOutNumFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->GetPreOutNum();
 }
 
 void GetRenderFrameDataFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->GetRenderFrameData();
 }
 
 void GetSinkStateFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     hpaeRemoteSinkOutputNode->GetSinkState();
 }
 
 void SetSinkStateFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     uint32_t index = GetData<uint32_t>() % streamManagerStateMap.size();
     StreamManagerState sinkState = streamManagerStateMap[index];
     hpaeRemoteSinkOutputNode->SetSinkState(sinkState);
@@ -241,9 +259,10 @@ void SetSinkStateFuzzTest()
 
 void UpdateAppsUidFuzzTest()
 {
+    HpaeSinkInfo sinkInfo;
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
-    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo);
+    auto hpaeRemoteSinkOutputNode = std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo);
     std::vector<int32_t> appsUid = {GetData<int32_t>()};
     hpaeRemoteSinkOutputNode->UpdateAppsUid(appsUid);
 }

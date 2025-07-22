@@ -89,6 +89,8 @@ public:
     void SetDoNotDisturbStatusWhiteListVolume(std::vector<std::map<std::string, std::string>>
         doNotDisturbStatusWhiteList);
     void SetDoNotDisturbStatus(bool isDoNotDisturb);
+    void SetOffloadType(uint32_t streamIndex, int32_t offloadType);
+    int32_t GetOffloadType(uint32_t streamIndex);
 private:
     AudioVolume();
     float GetAppVolumeInternal(int32_t appUid, AudioVolumeMode mode);
@@ -99,9 +101,10 @@ private:
     std::unordered_map<int32_t, AppVolume> appVolume_ {};
     std::shared_mutex volumeMutex_ {};
     bool isVgsVolumeSupported_ = false;
-    std::shared_mutex fadoutMutex_ {};
+    std::shared_mutex fadeoutMutex_ {};
     std::unordered_map<uint32_t, uint32_t> fadeoutState_{};
     std::unordered_map<uint32_t, uint32_t> stopFadeoutState_{};
+    std::unordered_map<uint32_t, int32_t> offloadType_{};
     int32_t defaultAppVolume_ = 0;
 
     std::shared_ptr<FixedSizeList<AdjustStreamVolumeInfo>> setStreamVolumeInfo_ =

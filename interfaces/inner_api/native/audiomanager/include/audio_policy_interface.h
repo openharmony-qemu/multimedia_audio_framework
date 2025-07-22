@@ -72,14 +72,16 @@ struct DeviceChangeAction : public Parcelable {
         info->type = static_cast<DeviceChangeType>(parcel.ReadUint32());
         info->flag = static_cast<DeviceFlag>(parcel.ReadUint32());
         int32_t size = parcel.ReadInt32();
-        if (size >= DEVICE_CHANGE_VALID_SIZE) {
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
             delete info;
             return nullptr;
         }
 
         for (int32_t i = 0; i < size; i++) {
-            info->deviceDescriptors.emplace_back(
-                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                info->deviceDescriptors.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
         }
         return info;
     }

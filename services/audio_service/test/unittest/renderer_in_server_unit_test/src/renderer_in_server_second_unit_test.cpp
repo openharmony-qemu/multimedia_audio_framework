@@ -30,6 +30,9 @@
 #include "audio_service_log.h"
 #include "ipc_stream_in_server.h"
 #include "pro_renderer_stream_impl.h"
+#include "audio_volume.h"
+#include "i_renderer_stream.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -1065,6 +1068,252 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerSetAudioHapticsSyncId_001,
     int32_t syncId = 100;
     server->SetAudioHapticsSyncId(syncId);
     EXPECT_EQ(server->audioHapticsSyncId_, syncId);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_001
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_001, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_SPEAKER;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_002
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_002, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_ALARM;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_003
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_003, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_44100;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_FALSE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_004
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_004, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    tempProcessConfig.streamInfo.format = SAMPLE_S16LE;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_005
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_005, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_192000;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: IsHighResolution_006
+ * @tc.desc  : Test IsHighResolution API
+ */
+HWTEST_F(RendererInServerExtUnitTest, IsHighResolution_006, TestSize.Level1)
+{
+    AudioProcessConfig tempProcessConfig;
+    tempProcessConfig.streamInfo = testStreamInfo;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    tempProcessConfig.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    tempProcessConfig.deviceType = DEVICE_TYPE_WIRED_HEADSET;
+    tempProcessConfig.rendererInfo.rendererFlags = AUDIO_FLAG_MMAP;
+    tempProcessConfig.streamInfo.samplingRate = SAMPLE_RATE_48000;
+    tempProcessConfig.streamInfo.format = SAMPLE_S24LE;
+    std::shared_ptr<RendererInServer> tmpRendererInServer;
+    tmpRendererInServer = std::make_shared<RendererInServer>(tempProcessConfig, streamListener);
+    EXPECT_NE(nullptr, tmpRendererInServer);
+    EXPECT_TRUE(tmpRendererInServer->IsHighResolution());
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: ProcessFadeOutIfNeeded_001
+ * @tc.desc  : Test RendererInServer API
+ */
+HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    uint64_t currentReadFrame = 10;
+    uint64_t currentWriteFrame = 20;
+    uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: ProcessFadeOutIfNeeded_002
+ * @tc.desc  : Test RendererInServer API
+ */
+HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    uint64_t currentReadFrame = 10;
+    uint64_t currentWriteFrame = 20;
+    uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
+    tempProcessConfig.streamType = STREAM_ULTRASONIC;
+    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+}
+
+/**
+ * @tc.name  : Test RendererInServer
+ * @tc.type  : FUNC
+ * @tc.number: ProcessFadeOutIfNeeded_003
+ * @tc.desc  : Test RendererInServer API
+ */
+HWTEST_F(RendererInServerExtUnitTest, ProcessFadeOutIfNeeded_003, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    uint64_t currentReadFrame = 10;
+    uint64_t currentWriteFrame = 30;
+    uint64_t requestDataInFrame = 10;
+    AudioProcessConfig tempProcessConfig;
+    RingBufferWrapper ringBufferDesc;
+    tempProcessConfig.streamType = STREAM_MUSIC;
+    rendererInServer->ProcessFadeOutIfNeeded(ringBufferDesc, currentReadFrame, currentWriteFrame, requestDataInFrame);
+}
+
+/**
+ * @tc.name  : Test GetEAC3ControlParam
+ * @tc.type  : FUNC
+ * @tc.number: GetEAC3ControlParam_001
+ * @tc.desc  : Test GetEAC3ControlParam API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetEAC3ControlParam_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t eac3TestFlag = 1;
+    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
+    rendererInServer->GetEAC3ControlParam();
+    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test GetEAC3ControlParam
+ * @tc.type  : FUNC
+ * @tc.number: GetEAC3ControlParam_002
+ * @tc.desc  : Test GetEAC3ControlParam API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetEAC3ControlParam_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, rendererInServer);
+    int32_t eac3TestFlag = 0;
+    GetSysPara("persist.multimedia.eac3test", eac3TestFlag);
+    rendererInServer->GetEAC3ControlParam();
+    EXPECT_NE(rendererInServer->managerType_, EAC3_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackManager
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackManager_001
+ * @tc.desc  : Test GetPlaybackManager API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_001, TestSize.Level1)
+{
+    IStreamManager &manager = IStreamManager::GetPlaybackManager(DIRECT_PLAYBACK);
+    EXPECT_NE(&manager, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackManager
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackManager_002
+ * @tc.desc  : Test GetPlaybackManager API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_002, TestSize.Level1)
+{
+    IStreamManager &manager = IStreamManager::GetPlaybackManager(EAC3_PLAYBACK);
+    EXPECT_NE(&manager, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetPlaybackManager
+ * @tc.type  : FUNC
+ * @tc.number: GetPlaybackManager_003
+ * @tc.desc  : Test GetPlaybackManager API
+ */
+HWTEST_F(RendererInServerExtUnitTest, GetPlaybackManager_003, TestSize.Level1)
+{
+    IStreamManager &manager = IStreamManager::GetPlaybackManager(VOIP_PLAYBACK);
+    EXPECT_NE(&manager, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

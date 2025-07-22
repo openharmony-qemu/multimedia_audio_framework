@@ -41,6 +41,7 @@ public:
     HpaeSessionState GetState();
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
+    void SetMute(bool isMute);
 private:
     uint64_t GetTimestamp();
 private:
@@ -53,6 +54,7 @@ private:
     HpaeSessionState state_ = HPAE_SESSION_NEW;
     uint64_t totalFrames_;
     int32_t appUid_ = -1;
+    bool isMute_;
 };
 
 }  // namespace HPAE

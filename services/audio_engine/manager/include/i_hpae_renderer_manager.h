@@ -112,7 +112,7 @@ public:
     virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
-    std::atomic<uint32_t> nodeIdCounter_ = 0;
+    static std::atomic<uint32_t> nodeIdCounter_;
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxTree dfxTree_;
 #endif

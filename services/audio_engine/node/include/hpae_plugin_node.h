@@ -38,6 +38,7 @@ public:
     virtual int32_t EnableProcess(bool enable);
     virtual bool IsEnableProcess();
     HpaePluginNode(const HpaePluginNode& others) = delete;
+    void SetSourceNode(bool isSourceNode);
 private:
     PcmBufferInfo pcmBufferInfo_;
 protected:
@@ -46,6 +47,7 @@ protected:
     InputPort<HpaePcmBuffer*> inputStream_;
     bool enableProcess_;
     HpaePcmBuffer silenceData_;
+    bool isSourceNode_ = false;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

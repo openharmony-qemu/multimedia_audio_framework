@@ -94,11 +94,30 @@ OutputPort<HpaePcmBuffer*>* HpaePluginNode::GetOutputPort()
 void HpaePluginNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        if (isSourceNode_) {
+            callback->OnNotifyDfxNodeInfo(true, preNode->GetSharedInstance()->GetNodeId(), GetNodeInfo());
+        } else {
+            callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+        }
+    }
+#endif
 }
 
 void HpaePluginNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        if (isSourceNode_) {
+            callback->OnNotifyDfxNodeInfo(false, GetNodeId(), GetNodeInfo());
+        } else {
+            auto preNodeReal = preNode->GetSharedInstance();
+            callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+        }
+    }
+#endif
 }
 
 size_t HpaePluginNode::GetPreOutNum()
@@ -109,6 +128,11 @@ size_t HpaePluginNode::GetPreOutNum()
 size_t HpaePluginNode::GetOutputPortNum()
 {
     return outputStream_.GetInputNum();
+}
+
+void HpaePluginNode::SetSourceNode(bool isSourceNode)
+{
+    isSourceNode_ = isSourceNode;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

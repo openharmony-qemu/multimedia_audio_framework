@@ -2920,6 +2920,32 @@ HWTEST(AudioUtilsUnitTest, ConvertNetworkId_003, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_001
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_001, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_002
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_002, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {3001, 3003};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+/**
 * @tc.name  : Test UpdateBGSet  API
 * @tc.type  : FUNC
 * @tc.number: UpdateBGSet_001

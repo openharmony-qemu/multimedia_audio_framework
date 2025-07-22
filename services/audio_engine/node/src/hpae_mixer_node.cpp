@@ -39,6 +39,12 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeMixerNode");
+    }
+#endif
 }
 
 bool HpaeMixerNode::Reset()

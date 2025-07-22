@@ -420,7 +420,8 @@ static ssize_t RenderWrite(struct SinkAdapter *sinkAdapter, pa_memchunk *pchunk)
 
 static enum AudioOffloadType GetInputPolicyState(pa_sink_input *i)
 {
-    return atoi(safeProplistGets(i->proplist, "stream.offload.statePolicy", "0"));
+    CHECK_AND_RETURN_RET_LOG(i != NULL, OFFLOAD_DEFAULT, "sink input is null");
+    return (enum AudioOffloadType)GetOffloadType(i->index);
 }
 
 static void OffloadSetHdiVolume(pa_sink_input *i)

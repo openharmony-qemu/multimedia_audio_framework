@@ -428,6 +428,21 @@ ScoCategory BluetoothScoManager::GetAudioScoCategory()
     return currentScoCategory_;
 }
 
+void BluetoothScoManager::ResetScoState(const BluetoothRemoteDevice &device)
+{
+    std::lock_guard<std::mutex> stateLock(scoLock_);
+    if (!IsSameHfpDevice(currentScoDevice_, device)) {
+        AUDIO_WARNING_LOG("reset device %{public}s but current is %{public}s",
+            GetEncryptAddr(device.GetDeviceAddr()).c_str(),
+            GetEncryptAddr(currentScoDevice_.GetDeviceAddr()).c_str());
+        return;
+    }
+
+    cacheReq_ = nullptr;
+    SetAudioScoState(AudioScoState::DISCONNECTED);
+    currentScoDevice_ = BluetoothRemoteDevice();
+}
+
 void BluetoothScoManager::SetAudioScoState(AudioScoState state)
 {
     if (currentScoState_ == state) {

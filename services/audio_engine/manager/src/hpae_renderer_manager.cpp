@@ -25,6 +25,8 @@
 #include "audio_utils.h"
 #include "audio_volume.h"
 #include "audio_engine_log.h"
+#include "hpae_output_cluster.h"
+#include "hpae_remote_output_cluster.h"
 
 constexpr int32_t DEFAULT_EFFECT_RATE = 48000;
 constexpr int32_t DEFAULT_EFFECT_FRAME_LEN = 960;
@@ -68,8 +70,6 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
-    nodeInfo.nodeName = "HpaeSinkInputNode";
-    nodeInfo.nodeId = OnGetNodeId();
     sinkInputNodeMap_[streamInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
     sinkInputNodeMap_[streamInfo.sessionId]->SetAppUid(streamInfo.uid);
     AUDIO_INFO_LOG("streamType %{public}u, sessionId = %{public}u, current sceneType is %{public}d",
@@ -104,7 +104,6 @@ void HpaeRendererManager::AddSingleNodeToSink(const std::shared_ptr<HpaeSinkInpu
     nodeInfo.deviceNetId = sinkInfo_.deviceNetId;
     // no need history buffer in not offload sink
     nodeInfo.historyFrameCount = 0;
-    nodeInfo.nodeId = OnGetNodeId();
     nodeInfo.statusCallback = weak_from_this();
     nodeInfo.sceneType = TransToProperSceneType(nodeInfo.effectInfo.streamUsage, nodeInfo.effectInfo.effectScene);
     // for collaboration
@@ -783,7 +782,7 @@ void HpaeRendererManager::InitManager(bool isReload)
     nodeInfo.deviceClass = sinkInfo_.deviceClass;
     nodeInfo.statusCallback = weak_from_this();
     if (sinkInfo_.lib == "libmodule-split-stream-sink.z.so") {
-        outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo);
+        outputCluster_ = std::make_unique<HpaeRemoteOutputCluster>(nodeInfo, sinkInfo_);
     } else {
         outputCluster_ = std::make_unique<HpaeOutputCluster>(nodeInfo);
     }

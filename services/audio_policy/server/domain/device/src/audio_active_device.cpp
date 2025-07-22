@@ -436,7 +436,7 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     activeOutputDevices_.clear();
-    for (auto &desc :descs) {
+    for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
         AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
             "usage:%{public}d devices:%{public}s",
