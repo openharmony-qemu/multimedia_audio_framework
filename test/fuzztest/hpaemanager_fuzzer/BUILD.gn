@@ -23,9 +23,9 @@ ohos_fuzztest("HpaeManagerFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
-    "../../../frameworks/native/audioutils/include",
     "../../../services/audio_service/common/include/limiter/",
     "../../../services/audio_engine/manager/include",
+    "../../../services/audio_engine/test/unittest/common",
     "../../../services/audio_service/server/include",
   ]
 
