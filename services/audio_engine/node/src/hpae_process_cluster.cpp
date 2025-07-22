@@ -205,7 +205,7 @@ void HpaeProcessCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuff
     }
     if (mixerNode_->GetPreOutNum() == 0) {
         mixerNode_->EnableProcess(false);
-        AUDIO_INFO_LOG("Set mixerNode EnableProcess false");
+        AUDIO_DEBUG_LOG("Set mixerNode EnableProcess false");
     }
 }
 

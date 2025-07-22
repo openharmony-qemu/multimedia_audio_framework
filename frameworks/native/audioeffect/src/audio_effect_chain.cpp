@@ -565,7 +565,6 @@ int32_t AudioEffectChain::updatePrimaryChannel()
     tmpIoBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     tmpIoBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {
-        AUDIO_ERR_LOG("The preHandle is nullptr!");
         return ERROR;
     }
     int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
@@ -623,7 +622,6 @@ int32_t AudioEffectChain::UpdateMultichannelIoBufferConfigInner()
     tmpIoBufferConfig.outputCfg.channels = DEFAULT_NUM_CHANNEL;
     tmpIoBufferConfig.outputCfg.channelLayout = DEFAULT_NUM_CHANNELLAYOUT;
     if (preHandle == nullptr) {
-        AUDIO_ERR_LOG("The preHandle is nullptr!");
         return ERROR;
     }
     int32_t ret = (*preHandle)->command(preHandle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
