@@ -146,7 +146,7 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
         info.fadeType = DEFAULT_FADE;
         info.effectInfo.effectMode = EFFECT_DEFAULT;
         info.effectInfo.effectScene = SCENE_VOIP_DOWN;
-        info.effectInfo.volumeType = STREAM_VOICE_CALL;
+        info.effectInfo.systemVolumeType = STREAM_VOICE_CALL;
         info.effectInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     } else {
         info.streamType = STREAM_SOURCE_VOICE_CALL;

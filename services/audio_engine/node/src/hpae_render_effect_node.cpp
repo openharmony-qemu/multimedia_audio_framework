@@ -306,7 +306,7 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channels = static_cast<uint32_t>(nodeInfo.channels);
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
-            info.systemVolumeType = nodeInfo.effectInfo.volumeType;
+            info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
             ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
             break;
         }
