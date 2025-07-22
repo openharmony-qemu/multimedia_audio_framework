@@ -576,5 +576,26 @@ HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_024, TestSize.Level1)
     EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTED);
     EXPECT_EQ(scoManager.IsInScoCategory(ScoCategory::SCO_CALLULAR), true);
 }
+
+/**
+ * @tc.name  : Test BluetoothScoManager.
+ * @tc.number: BluetoothScoManagerTest_025
+ * @tc.desc  : Test reset sco.
+ */
+HWTEST_F(BluetoothScoManagerTest, BluetoothScoManagerTest_025, TestSize.Level1)
+{
+    SetDefaultExpectCall();
+
+    BluetoothScoManager scoManager;
+    BluetoothRemoteDevice device(HFP_TEST_DEVICE_MAC);
+    scoManager.currentScoDevice_ = device;
+    scoManager.currentScoState_ = AudioScoState::CONNECTING;
+    scoManager.currentScoCategory_ = ScoCategory::SCO_DEFAULT;
+
+    scoManager.ResetScoState(BluetoothRemoteDevice("1234"));
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::CONNECTING);
+    scoManager.ResetScoState(device);
+    EXPECT_EQ(scoManager.GetAudioScoState(), AudioScoState::DISCONNECTED);
+}
 } // namespace Bluetooth
 } // namespace OHOS
