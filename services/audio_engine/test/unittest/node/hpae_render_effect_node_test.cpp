@@ -38,7 +38,7 @@ namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t TEST_ID = 1266;
 static constexpr uint32_t TEST_FRAMELEN1 = 960;
-static constexpr uint32_t NODEINFO_effectSceneValid = 100;
+static constexpr uint32_t NODEINFO_EFFECTSCENEVALID = 100;
 std::vector<EffectChain> DEFAULT_EFFECT_CHAINS = {
     {"EFFECTCHAIN_SPK_MUSIC", {"apply1", "apply2", "apply3"}, ""},
     {"EFFECTCHAIN_BT_MUSIC", {}, ""}
@@ -216,9 +216,9 @@ HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_001, TestSize.Level0
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode_2 = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode_2, nullptr);
 
-    //4, else branch 01 NODEINFO_effectSceneValid
+    //4, else branch 01 NODEINFO_EFFECTSCENEVALID
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
-    nodeInfo.effectInfo.effectScene = NODEINFO_effectSceneValid;
+    nodeInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(NODEINFO_EFFECTSCENEVALID);
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode_3 = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode_3, nullptr);
 }
