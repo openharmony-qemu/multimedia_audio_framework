@@ -35,6 +35,7 @@ public:
 
     void AddDfxMsg(uint32_t index, const T &info)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         if (dfxInfos_.count(index) == 0) {
             std::list<T> vec{info};
             dfxInfos_.insert(std::make_pair(index, vec));
@@ -46,11 +47,13 @@ public:
 
     bool IsExist(uint32_t index)
     {
+        std::lock_guard<std::mutex> lock(mutex_);
         return dfxInfos_.count(index) != 0;
     }
 
     uint32_t dfxIndex_{0};
     std::map<uint32_t, std::list<T>> dfxInfos_{};
+    std::mutex mutex_;
 };
 
 } // namespace AudioStandard
