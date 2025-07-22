@@ -512,6 +512,23 @@ HWTEST(AudioSystemManagerUnitTest, IsAppVolumeMuted_002, TestSize.Level1)
 #endif
 
 /**
+ * @tc.name   : Test SetNearlinkDeviceVolume API
+ * @tc.number : SetNearlinkDeviceVolume_001
+ * @tc.desc   : Test SetNearlinkDeviceVolume interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, SetNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    AudioSystemManager audioSystemManager;
+    std::string macAddress = "LocalDevice";
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volume = 0;
+    bool updateUi = true;
+
+    int32_t result = audioSystemManager.SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+    EXPECT_NE(result, -2);
+}
+
+/**
 * @tc.name   : Test SetSelfAppVolumeCallback API
 * @tc.number : SetSelfAppVolumeCallback_001
 * @tc.desc   : Test SetSelfAppVolumeCallback interface
