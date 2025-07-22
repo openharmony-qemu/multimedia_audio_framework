@@ -4126,12 +4126,12 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level1)
 
     audioInterruptService->sessionService_ = nullptr;
     audioInterruptService->DelayToDeactivateStreamsInAudioSession(
-        CALLER_PID, sessionService->GetStreams(CALLER_PID));
+        DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
     std::this_thread::sleep_for(std::chrono::seconds(2));
     audioInterruptService->sessionService_ = sessionService;
     sessionService->sessionMap_[CALLER_PID]->state_ = AudioSessionState::SESSION_ACTIVE;
     audioInterruptService->DelayToDeactivateStreamsInAudioSession(
-        CALLER_PID, sessionService->GetStreams(CALLER_PID));
+        DEFAULT_ZONE_ID, CALLER_PID, sessionService->GetStreams(CALLER_PID));
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
     ret = sessionService->SetAudioSessionScene(CALLER_PID, AudioSessionScene::MEDIA);

@@ -310,12 +310,13 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
 
     // audio session v2
     if (HasAudioSessionFakeInterrupt(zoneId, callerPid)) {
-        // If there is a fake interrupt, it needs to be deactivated.
-        DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
         std::vector<AudioInterrupt> streamsInSession = sessionService_->GetStreams(callerPid);
         if (streamsInSession.size() > 0) {
             // Wait for the streams managed by session to stop
-            DelayToDeactivateStreamsInAudioSession(callerPid, streamsInSession);
+            DelayToDeactivateStreamsInAudioSession(zoneId, callerPid, streamsInSession);
+        } else {
+            // If there is a fake interrupt, it needs to be deactivated.
+            DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
         }
     }
 
@@ -331,9 +332,9 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
 }
 
 void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
-    const int32_t callerPid, std::vector<AudioInterrupt> streamsInSession)
+    const int32_t zoneId, const int32_t callerPid, std::vector<AudioInterrupt> streamsInSession)
 {
-    auto deactivateTask = [this, callerPid, streamsInSession] {
+    auto deactivateTask = [this, zoneId, callerPid, streamsInSession] {
         std::this_thread::sleep_for(std::chrono::seconds(1));
         std::unique_lock<std::mutex> lock(mutex_);
         if (sessionService_ == nullptr) {
@@ -355,6 +356,9 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
                 handler_->SendInterruptEventWithStreamIdCallback(interruptEvent, it.streamId);
             }
         }
+
+        // Before deactivating the fake interrupt, all stream interrupts within the session must be stopped.
+        DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
     };
 
     std::thread(deactivateTask).detach();
