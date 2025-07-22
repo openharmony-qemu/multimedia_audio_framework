@@ -520,12 +520,12 @@ napi_value NapiAudioVolumeManager::GetSystemVolume(napi_env env, napi_callback_i
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -555,12 +555,12 @@ napi_value NapiAudioVolumeManager::GetMinSystemVolume(napi_env env, napi_callbac
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -590,12 +590,12 @@ napi_value NapiAudioVolumeManager::GetMaxSystemVolume(napi_env env, napi_callbac
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -625,12 +625,12 @@ napi_value NapiAudioVolumeManager::IsSystemMuted(napi_env env, napi_callback_inf
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of audioVolumeType must be number"),
         "invalid valueType");
 
     int32_t volType;
@@ -660,12 +660,12 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDb(napi_env env, napi_callba
     napi_value args[ARGS_THREE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
     for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-            NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
+            NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
             "invalid valueType");
     }
     int32_t volType;
@@ -703,12 +703,12 @@ napi_value NapiAudioVolumeManager::GetVolumeByStream(napi_env env, napi_callback
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -741,12 +741,12 @@ napi_value NapiAudioVolumeManager::GetMinVolumeByStream(napi_env env, napi_callb
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -779,12 +779,12 @@ napi_value NapiAudioVolumeManager::GetMaxVolumeByStream(napi_env env, napi_callb
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -817,12 +817,12 @@ napi_value NapiAudioVolumeManager::IsSystemMutedForStream(napi_env env, napi_cal
     napi_value args[ARGS_ONE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
 
     napi_valuetype valueType = napi_undefined;
     napi_typeof(env, args[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
+        NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of streamUsage must be number"),
         "invalid valueType");
 
     int32_t streamUsage;
@@ -856,12 +856,12 @@ napi_value NapiAudioVolumeManager::GetVolumeInUnitOfDbByStream(napi_env env, nap
     napi_value args[ARGS_THREE] = {};
     auto *napiAudioVolumeManager = GetParamWithSync(env, info, argc, args);
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_THREE, NapiAudioError::ThrowErrorAndReturn(env,
-        NAPI_ERROR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
+        NAPI_ERR_INVALID_PARAM, "mandatory parameters are left unspecified"), "invalid arguments");
     for (size_t i = 0; i < argc; i++) {
         napi_valuetype valueType = napi_undefined;
         napi_typeof(env, args[i], &valueType);
         CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
-            NAPI_ERROR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
+            NAPI_ERR_INVALID_PARAM, "incorrect parameter types: The type of parameter must be number"),
             "invalid valueType");
     }
     int32_t streamUsage;

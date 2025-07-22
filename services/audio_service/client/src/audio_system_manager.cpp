@@ -2002,7 +2002,7 @@ int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, cons
 
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeByUsage for stramUsage [%{public}d]", streamUsage);
+    AUDIO_INFO_LOG("GetMaxVolumeByUsage for streamUsage [%{public}d]", streamUsage);
     switch (streamUsage) {
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
@@ -2028,7 +2028,7 @@ int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
             break;
         }
         default:
-            AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
             return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevelByUsage(streamUsage);
@@ -2036,7 +2036,7 @@ int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 
 int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeByUsage for stramUsage [%{public}d]", streamUsage);
+    AUDIO_INFO_LOG("GetMinVolumeByUsage for streamUsage [%{public}d]", streamUsage);
     switch (streamUsage) {
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
@@ -2062,7 +2062,7 @@ int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
             break;
         }
         default:
-            AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
             return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMinVolumeLevelByUsage(streamUsage);
@@ -2070,7 +2070,7 @@ int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
 
 int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeByUsage for stramUsage [%{public}d]", streamUsage);
+    AUDIO_INFO_LOG("GetVolumeByUsage for streamUsage [%{public}d]", streamUsage);
     switch (streamUsage) {
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
@@ -2096,7 +2096,7 @@ int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
             break;
         }
         default:
-            AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
             return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetVolumeLevelByUsage(streamUsage);
@@ -2104,7 +2104,7 @@ int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
 
 int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeByUsage for stramUsage [%{public}d]", streamUsage);
+    AUDIO_INFO_LOG("IsStreamMuteByUsage for streamUsage [%{public}d]", streamUsage);
     switch (streamUsage) {
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
@@ -2130,7 +2130,7 @@ int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &i
             break;
         }
         default:
-            AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
             return ERR_NOT_SUPPORTED;
     }
     isMute = AudioPolicyManager::GetInstance().GetStreamMuteByUsage(streamUsage);
@@ -2139,7 +2139,7 @@ int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &i
 
 float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("GetMaxVolumeByUsage for stramUsage [%{public}d]", streamUsage);
+    AUDIO_INFO_LOG("GetVolumeInDbByStream for streamUsage [%{public}d]", streamUsage);
     switch (streamUsage) {
         case STREAM_USAGE_UNKNOWN:
         case STREAM_USAGE_MUSIC:
@@ -2165,7 +2165,7 @@ float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t
             break;
         }
         default:
-            AUDIO_ERR_LOG("streamUsage=%d{public}d not supported", streamUsage);
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
             return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
