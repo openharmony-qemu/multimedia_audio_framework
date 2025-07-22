@@ -1663,5 +1663,28 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level
     OH_AudioStream_Result result = OH_AudioRenderer_GetFastStatus(renderer, status);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
+
+/**
+* @tc.name  : Test SetwriteDataCallback API
+* @tc.number: SetwriteDataCallback_001
+* @tc.desc  : Test SetwriteDataCallback
+*/
+HWTEST(OHAudioRenderUnitTest, SetwriteDataCallback_001, TestSize.Level0)
+{
+    auto oHAudioRenderer = std::make_shared<OHAudioRenderer>();
+    EXPECT_NE(oHAudioRenderer, nullptr);
+
+    RendererCallback rendererCallbacks;
+    void* userData = nullptr;
+    void *metadataUserData = nullptr;
+    AudioEncodingType encodingType = AudioEncodingType::ENCODING_PCM;
+
+    oHAudioRenderer->writeDataCallbackType_ = WRITE_DATA_CALLBACK_ADVANCED;
+    rendererCallbacks.writeDataWithMetadataCallback =
+        [](OH_AudioRenderer* renderer, void* userData, void* audioData, int32_t audioDataSize,
+        void* metadata, int32_t metadataSize) -> int32_t { return 0; };
+
+    oHAudioRenderer->SetWriteDataCallback(rendererCallbacks, userData, metadataUserData, encodingType);
+}
 } // namespace AudioStandard
 } // namespace OHOS
