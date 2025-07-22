@@ -19,6 +19,7 @@
 #include "audiocapturer_adapter.h"
 #include "audio_capturer_private.h"
 #include "audiocapturer_adapter_unit_test.h"
+#include "common.h"
 
 using namespace std;
 using namespace testing::ext;
@@ -378,6 +379,53 @@ HWTEST(AudioCapturerAdapterUnitTest, SlToOhosChannel_001, TestSize.Level0)
     pcmFormat->numChannels = CHANNEL_3;
     ret = AudioCapturerAdapter::GetInstance()->SlToOhosChannel(pcmFormat);
     EXPECT_EQ(ret, MONO);
+}
+
+/**
+* @tc.name  : Test AudioRecorderDestroy
+* @tc.number: AudioRecorderDestroy_001
+* @tc.desc  : Test AudioRecorderDestroy interface.
+*/
+HWTEST(AudioCapturerAdapterUnitTest, AudioRecorderDestroy_001, TestSize.Level0)
+{
+    void *self = new CAudioRecorder();
+    SLresult result = AudioRecorderDestroy(nullptr);
+    EXPECT_TRUE(result == SL_RESULT_PARAMETER_INVALID);
+
+    result = AudioRecorderDestroy(self);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioCapturerAdapter API
+* @tc.type  : FUNC
+* @tc.number: SetCaptureStateAdapter_003
+* @tc.desc  : Test SetCaptureStateAdapter interface.
+*/
+HWTEST(AudioCapturerAdapterUnitTest, SetCaptureStateAdapter_003, TestSize.Level0)
+{
+    SLuint32 id = 10;
+    SLuint32 state = SL_RECORDSTATE_PAUSED;
+    AudioMode eMode = AUDIO_MODE_PLAYBACK;
+    AudioStreamType eStreamType = STREAM_MUSIC;
+    int32_t appUid = 0;
+
+    AppInfo appInfo = {};
+    AudioStreamType audioStreamType = STREAM_MUSIC;
+    AudioCapturerAdapter::GetInstance()->captureMap_.clear();
+    auto audioCapturer = std::make_shared<AudioCapturerPrivate>(audioStreamType, appInfo, false);
+    ASSERT_TRUE(audioCapturer != nullptr);
+    auto fastAudioStream = std::make_shared<FastAudioStream>(eStreamType, eMode, appUid);
+    ASSERT_TRUE(fastAudioStream != nullptr);
+
+    audioCapturer->audioStream_ = fastAudioStream;
+    AudioCapturerAdapter::GetInstance()->captureMap_[id] = audioCapturer;
+    auto ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
+    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
+
+    state = -1;
+    ret = AudioCapturerAdapter::GetInstance()->SetCaptureStateAdapter(id, state);
+    EXPECT_EQ(ret, SL_RESULT_RESOURCE_ERROR);
 }
 } // namespace AudioStandard
 } // namespace OHOS

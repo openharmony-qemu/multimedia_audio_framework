@@ -2401,5 +2401,89 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FastStatusChangeCallback_001, TestS
     FastStatus status = FASTSTATUS_NORMAL;
     audioRenderer->FastStatusChangeCallback(status);
 }
+
+/**
+* @tc.name  : Test SetRenderRate.
+* @tc.number: SetRenderRate_002.
+* @tc.desc  : Test SetRenderRate interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetRenderRate_002, TestSize.Level1)
+{
+    int32_t ret = -1;
+    AudioRendererOptions rendererOptions;
+    AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    AudioRendererRate renderRate = static_cast<AudioRendererRate>(100);
+    ret = audioRenderer->SetRenderRate(renderRate);
+    EXPECT_EQ(SUCCESS, ret);
+    audioRenderer->Release();
+}
+
+/**
+ * @tc.name  : Test SetInterruptMode API via legal input
+ * @tc.number: Audio_Renderer_SetInterruptMode_003
+ * @tc.desc  : Test SetInterruptMode interface. Returns 0 {SUCCESS}, if the setting is successful.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SetInterruptMode_003, TestSize.Level1)
+{
+    int32_t ret = -1;
+    unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(STREAM_MUSIC);
+    ASSERT_NE(nullptr, audioRenderer);
+
+    ret = AudioRendererUnitTest::InitializeRenderer(audioRenderer);
+    EXPECT_EQ(SUCCESS, ret);
+
+    audioRenderer->SetInterruptMode(static_cast<InterruptMode>(100));
+
+    bool isStarted = audioRenderer->Start();
+    EXPECT_EQ(true, isStarted);
+
+    bool isStopped = audioRenderer->Stop();
+    EXPECT_EQ(true, isStopped);
+    audioRenderer->Release();
+}
+
+/**
+* @tc.name  : Test GenerateNewStream.
+* @tc.number: Audio_Renderer_GenerateNewStream_002
+* @tc.desc  : Test GenerateNewStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_GenerateNewStream_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = SERVER_DIED;
+    RendererState previousState = RENDERER_NEW;
+    IAudioStream::SwitchInfo switchInfo;
+    switchInfo.eStreamType = STREAM_MUSIC;
+
+    auto ret = audioRenderer->GenerateNewStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo,
+        previousState, switchInfo);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+* @tc.name  : Test SwitchToTargetStream.
+* @tc.number: Audio_Renderer_SwitchToTargetStream_002
+* @tc.desc  : Test SwitchToTargetStream interface.
+*/
+HWTEST(AudioRendererUnitTest, Audio_Renderer_SwitchToTargetStream_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    shared_ptr<AudioRendererPrivate> audioRenderer =
+        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
+    EXPECT_NE(nullptr, audioRenderer);
+
+    RestoreInfo restoreInfo;
+    restoreInfo.restoreReason = SERVER_DIED;
+    auto ret = audioRenderer->SwitchToTargetStream(IAudioStream::StreamClass::FAST_STREAM, restoreInfo);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS
