@@ -140,7 +140,7 @@ public:
             && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && inputDeviceInfo.Marshalling(parcel)
+            && inputDeviceInfo.MarshallingToDeviceInfo(parcel)
             && parcel.WriteBool(muted)
             && parcel.WriteUint32(appTokenId);
     }

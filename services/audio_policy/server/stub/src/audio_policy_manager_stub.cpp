@@ -810,7 +810,6 @@ void AudioPolicyManagerStub::GetCapturerChangeInfosInternal(MessageParcel &data,
     for (const std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo: audioCapturerChangeInfos) {
         CHECK_AND_CONTINUE_LOG(capturerChangeInfo != nullptr,
             "AudioPolicyManagerStub:Capturer change info null, something wrong!!");
-        capturerChangeInfo->inputDeviceInfo.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
         capturerChangeInfo->Marshalling(reply);
     }
 }
