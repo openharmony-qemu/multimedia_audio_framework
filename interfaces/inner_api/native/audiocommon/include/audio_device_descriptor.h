@@ -105,6 +105,8 @@ public:
 
     std::string GetDeviceTypeString();
 
+    std::string GetKey();
+
     struct AudioDeviceDescriptorHash {
         size_t operator()(const std::shared_ptr<AudioDeviceDescriptor> &deviceDescriptor) const
         {

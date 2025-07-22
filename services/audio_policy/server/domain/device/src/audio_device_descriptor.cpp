@@ -493,6 +493,11 @@ std::string AudioDeviceDescriptor::GetDeviceTypeString()
     return std::string(DeviceTypeToString(deviceType_));
 }
 
+std::string AudioDeviceDescriptor::GetKey()
+{
+    return networkId_ + "_" + std::to_string(deviceType_);
+}
+
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const
 {
     switch (deviceType_) {

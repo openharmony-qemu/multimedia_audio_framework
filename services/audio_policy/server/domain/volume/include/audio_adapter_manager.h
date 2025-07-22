@@ -445,7 +445,7 @@ private:
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
     AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
-    std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
+    std::unordered_map<std::string, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
