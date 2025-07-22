@@ -587,7 +587,7 @@ int32_t RendererInClientInner::SetStreamCallback(const std::shared_ptr<AudioStre
 int32_t RendererInClientInner::SetRendererFirstFrameWritingCallback(
     const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback)
 {
-    AUDIO_INFO_LOG("in.");
+    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(callback, ERR_INVALID_PARAM, "callback is nullptr");
     std::lock_guard lock(firstFrameWritingMutex_);
     firstFrameWritingCb_ = callback;

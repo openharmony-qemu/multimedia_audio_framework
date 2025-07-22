@@ -262,7 +262,7 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("leave");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 

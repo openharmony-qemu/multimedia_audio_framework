@@ -155,12 +155,12 @@ void AudioStreamChecker::StopCheckStreamThread()
 
 void AudioStreamChecker::CheckStreamThread()
 {
-    AUDIO_INFO_LOG("start...");
+    AUDIO_INFO_LOG("In");
     while (isKeepCheck_.load()) {
         MonitorCheckFrame();
         ClockTime::RelativeSleep(STREAM_CHECK_INTERVAL_TIME);
     }
-    AUDIO_INFO_LOG("end...");
+    AUDIO_INFO_LOG("Out");
 }
 
 void AudioStreamChecker::MonitorCheckFrame()
