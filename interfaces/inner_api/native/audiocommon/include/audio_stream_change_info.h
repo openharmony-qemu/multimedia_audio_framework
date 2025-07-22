@@ -140,7 +140,7 @@ public:
             && parcel.WriteInt32(clientPid)
             && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(static_cast<int32_t>(capturerState))
-            && inputDeviceInfo.Marshalling(parcel)
+            && inputDeviceInfo.MarshallingToDeviceInfo(parcel)
             && parcel.WriteBool(muted)
             && parcel.WriteUint32(appTokenId);
     }
@@ -152,7 +152,7 @@ public:
             && parcel.WriteInt32(sessionId)
             && parcel.WriteInt32(callerPid)
             && parcel.WriteInt32(clientPid)
-            && capturerInfo.MarshallingToDeviceInfo(parcel)
+            && capturerInfo.Marshalling(parcel)
             && parcel.WriteInt32(hasSystemPermission ? static_cast<int32_t>(capturerState) : CAPTURER_INVALID)
             && inputDeviceInfo.Marshalling(parcel, hasBTPermission, hasSystemPermission, apiVersion)
             && parcel.WriteBool(muted)
