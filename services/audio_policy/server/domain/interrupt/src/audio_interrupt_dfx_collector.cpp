@@ -55,7 +55,6 @@ std::tuple<uint8_t, uint8_t> &AudioInterruptDfxCollector::GetDfxIndexes(uint32_t
 
 InterruptDfxBuilder &InterruptDfxBuilder::WriteActionMsg(uint8_t infoIndex, uint8_t effectIdx, InterruptStage stage)
 {
-    AUDIO_INFO_LOG("[WriteInfoMsg] infoIdx=%{public}d, effectIdx=%{public}d", infoIndex, effectIdx);
     dfxInfo_.interruptAction = {infoIndex, effectIdx, 0, stage};
     return *this;
 }
