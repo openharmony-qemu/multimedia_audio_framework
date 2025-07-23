@@ -271,7 +271,7 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
         auto modemCommunicationMap = pipeManager_->GetModemCommunicationMap();
         auto modemMap = modemCommunicationMap.begin();
         if (modemMap != modemCommunicationMap.end()) {
-            int32_t ret = HandleScoOutputDeviceFetched(modemCommunicationMap.begin()->second, reason);
+            int32_t ret = HandleScoOutputDeviceFetched(modemMap->second, reason);
             AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
         }
     }
@@ -1709,6 +1709,7 @@ int32_t AudioCoreService::HandleScoOutputDeviceFetched(
 
 int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, -1, "Stream desc is nullptr");
     if (streamDesc->callerUid_ == MEDIA_SERVICE_UID) {
         return streamDesc->appInfo_.appUid;
     }
