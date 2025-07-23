@@ -184,7 +184,7 @@ void AudioNoneMixEngineMoreFuzzTest()
     noneMixEngine->GetDirectVoipSampleRate(samplingRate);
 }
 
-typedef void (*TestFuncs[5])();
+typedef void (*TestFuncs[3])();
 
 TestFuncs g_testFuncs = {
     AudioServiceMoreFuzzTest,

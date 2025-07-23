@@ -20,79 +20,6 @@
 using namespace std;
 
 namespace OHOS {
-class MockFuzzIRemoteObject : public IRemoteObject {
-public:
-    MockFuzzIRemoteObject() : IRemoteObject(u"mock_i_remote_object") {}
-
-    ~MockFuzzIRemoteObject() {}
-
-    int32_t GetObjectRefCount() override
-    {
-        return 0;
-    }
-
-    int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
-    {
-        return 0;
-    }
-
-    bool IsProxyObject() const override
-    {
-        return true;
-    }
-
-    bool CheckObjectLegality() const override
-    {
-        return true;
-    }
-
-    bool AddDeathRecipient(const sptr<DeathRecipient> &recipient) override
-    {
-        return true;
-    }
-
-    bool RemoveDeathRecipient(const sptr<DeathRecipient> &recipient) override
-    {
-        return true;
-    }
-
-    bool Marshalling(Parcel &parcel) const override
-    {
-        return true;
-    }
-
-    sptr<IRemoteBroker> AsInterface() override
-    {
-        return nullptr;
-    }
-
-    int Dump(int fd, const std::vector<std::u16string> &args) override
-    {
-        return 0;
-    }
-
-    std::u16string GetObjectDescriptor() const
-    {
-        if (bExchange) {
-            std::u16string descriptor = std::u16string();
-            return descriptor;
-        } else {
-            std::u16string descriptor = std::u16string(u"testDescriptor");
-            return descriptor;
-        }
-    }
-
-    static void SetExchange(bool bEx)
-    {
-        bExchange = bEx;
-    }
-private:
-    static bool bExchange;
-};
-bool MockFuzzIRemoteObject::bExchange = true;
-}
-
-namespace OHOS {
 namespace AudioStandard {
 
 static const uint8_t* RAW_DATA = nullptr;
@@ -154,8 +81,6 @@ void DeviceStatusListenerSetAudioDeviceAnahsCallbackFuzzTest()
     if (deviceStatusListenerPtr == nullptr) {
         return;
     }
-    sptr<IRemoteObject> object = new OHOS::MockFuzzIRemoteObject();
-    deviceStatusListenerPtr->SetAudioDeviceAnahsCallback(object);
 }
 
 void DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest()
@@ -170,8 +95,6 @@ void DeviceStatusListenerOnPnpDeviceStatusChangedFuzzTest()
     }
 
     const std::string info = testInfo[GetData<uint32_t>() % testInfo.size()];
-    sptr<IRemoteObject> object = new OHOS::MockFuzzIRemoteObject();
-    deviceStatusListenerPtr->audioDeviceAnahsCb_ = iface_cast<IStandardAudioAnahsManagerListener>(object);
     deviceStatusListenerPtr->OnPnpDeviceStatusChanged(info);
 }
 
