@@ -3017,7 +3017,7 @@ std::vector<StreamUsage> AudioPolicyManager::GetStreamUsagesByVolumeType(AudioVo
         return retList;
     }
     std::vector<int32_t> inList = {};
-    ret = gsp->GetStreamUsagesByVolumeType(static_cast<int32_t>(audioVolumeType), inList);
+    gsp->GetStreamUsagesByVolumeType(static_cast<int32_t>(audioVolumeType), inList);
     for (auto &item : inList) {
         retList.push_back(static_cast<StreamUsage>(item));
     }
