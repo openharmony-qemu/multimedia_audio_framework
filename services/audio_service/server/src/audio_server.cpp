@@ -231,8 +231,6 @@ static void SetAudioSceneForAllSource(std::shared_ptr<IAudioCaptureSource> &sour
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
         fastSource->SetAudioScene(audioScene, activeInputDevice);
-    } else {
-        AUDIO_ERR_LOG("fastSource is not initialized.");
     }
     std::shared_ptr<IAudioCaptureSource> fastVoipSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_VOIP, true);
     if (fastVoipSource != nullptr && fastVoipSource->IsInited()) {
