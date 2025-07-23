@@ -827,5 +827,39 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_037, TestSize.Level1)
     auto ret = eventEntry->GetPreferredInputStreamType(capturerInfo);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_038
+ * @tc.desc  : Test AudioCoreService::EventEntry::SetSessionDefaultOutputDevice
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_038, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    DeviceType type = DEVICE_TYPE_DEFAULT;
+    auto ret = eventEntry->SetSessionDefaultOutputDevice(0, type);
+    EXPECT_TRUE((ret == 0) || (ret == ERR_NOT_SUPPORTED));
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_039
+ * @tc.desc  : Test AudioCoreService::EventEntry::GetSessionDefaultOutputDevice
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_039, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    DeviceType type = DEVICE_TYPE_INVALID;
+    auto ret = eventEntry->GetSessionDefaultOutputDevice(0, type);
+    EXPECT_EQ(ret, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
