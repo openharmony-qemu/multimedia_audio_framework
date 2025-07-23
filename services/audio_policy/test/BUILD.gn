@@ -30,6 +30,7 @@ group("audio_policy_unittest_packages") {
     ":audio_adapter_manager_unit_test",
     ":audio_affinity_manager_unit_test",
     ":audio_affinity_parser_test",
+    ":audio_background_manager_unit_test",
     ":audio_capturer_session_unit_test",
     ":audio_collaborative_service_unit_test",
     ":audio_concurrency_service_unit_test",
@@ -66,6 +67,7 @@ group("audio_policy_unittest_packages") {
     ":audio_policy_service_third_unit_test",
     ":audio_policy_service_thirdext_unit_test",
     ":audio_policy_state_monitor_test",
+    ":audio_policy_utils_unit_test",
     ":audio_recovery_device_unit_test",
     ":audio_router_center_unit_test",
     ":audio_server_definitions_unit_test",
@@ -78,6 +80,7 @@ group("audio_policy_unittest_packages") {
     ":audio_stream_collector_pro_unit_test",
     ":audio_stream_collector_unit_test",
     ":audio_strategy_router_parser_unit_test",
+    ":audio_setting_provider_unit_test",
     ":audio_tone_parser_unit_test",
     ":audio_usb_manager_unit_test",
     ":audio_volume_manager_unit_test",
@@ -599,6 +602,15 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "ability_base:session_info",
@@ -4619,6 +4631,205 @@ ohos_unittest("audio_session_service_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+}
+
+ohos_unittest("audio_policy_utils_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_policy_utils_unit_test/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../audio_policy/server/include"
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "eventhandler:libeventhandler",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_policy_utils_unit_test/src/audio_policy_utils_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "FEATURE_DTMF_TONE" ]
+}
+
+ohos_unittest("audio_background_manager_unit_test") {
+  module_out_path = module_output_path1
+  include_dirs = [
+    "./unittest/audio_background_manager_unit_test/include",
+    "../../audio_policy/server/include/service",
+    "../../audio_policy/server/include/service/service",
+    "../../audio_policy/server/domain/device/include",
+    "../../audio_policy/server/domain/device/src/a2dp",
+    "../../audio_policy/server/include",
+    "../../audio_policy/server/include/service/listener",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  public_external_deps = [ "ffrt:libffrt" ]
+
+  public_external_deps += [
+    "libxml2:libxml2",
+    "openssl:libcrypto_shared",
+  ]
+
+  sources = [
+    "./unittest/audio_background_manager_unit_test/src/audio_background_manager_unit_test.cpp",
+  ]
+
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../audio_policy:audio_policy_service_static",
+    "../../audio_service:audio_client",
+  ]
+
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  defines = []
+
+  if (avsession_part_enable == true) {
+    external_deps += [
+      "ability_base:want",
+      "ability_runtime:wantagent_innerkits",
+      "av_session:avsession_client",
+      "input:libmmi-client",
+    ]
+  }
+}
+
+ohos_unittest("audio_setting_provider_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./unittest/audio_setting_provider_unit_test/include",
+    "../../../interfaces/inner_api/native/audiomanager/include",
+    "../../audio_policy/server/include"
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  sources = [ "./unittest/audio_setting_provider_unit_test/src/audio_setting_provider_unit_test.cpp" ]
+
+  deps = [ "../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "FEATURE_DTMF_TONE" ]
 }
 
 ohos_unittest("audio_strategy_router_parser_unit_test") {
