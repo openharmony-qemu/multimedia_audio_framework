@@ -1138,7 +1138,7 @@ DeviceType FastAudioStream::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    return GetAudioTime(timestamp, base) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
 void FastAudioStream::SetSwitchingStatus(bool isSwitching)
