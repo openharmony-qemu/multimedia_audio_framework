@@ -1210,5 +1210,10 @@ int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
 }
+
+int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
+{
+    return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

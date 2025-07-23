@@ -54,6 +54,22 @@ enum OffloadType {
     OFFLOAD_TYPE_NUM,
 };
 
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_THRESHOLD = 2;
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX = 5;
+static constexpr uint32_t CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS = 2;
+struct ConcurrentCaptureDfxResult {
+    std::vector<std::string> existingAppName{};
+    std::vector<uint8_t> existingAppState{};
+    std::vector<uint8_t> existingSourceType{};
+    std::vector<uint8_t> existingCaptureState{};
+    std::vector<uint32_t> existingCreateDuration{};
+    std::vector<uint32_t> existingStartDuration{};
+    std::vector<bool> existingFastFlag{};
+    uint8_t hdiSourceType{};
+    std::string hdiSourceAlg{};
+    uint8_t deviceType{};
+};
+
 class AudioA2dpOffloadManager;
 class AudioCoreService : public enable_shared_from_this<AudioCoreService> {
 public:
@@ -268,6 +284,7 @@ private:
         const std::list<DeviceStreamInfo> &deviceStreamInfo, const std::list<std::string> &supportDevices);
     void ClearStreamPropInfo(const std::string &adapterName, const std::string &pipeName);
     uint32_t GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName);
+    int32_t CaptureConcurrentCheck(uint32_t sessionId);
 
 private:
     static std::string GetEncryptAddr(const std::string &addr);
@@ -441,6 +458,10 @@ private:
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
+    void WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
+    void LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
+    void WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;

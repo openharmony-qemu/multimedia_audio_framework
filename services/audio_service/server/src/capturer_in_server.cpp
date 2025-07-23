@@ -440,8 +440,12 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     audioServerBuffer_->SetHandleInfo(currentWriteFrame, ClockTime::GetCurNano());
 
     UpdateBufferTimeStamp(dstBuffer.bufLength);
-
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+    if (!captureConcurretChecked_) {
+        captureConcurretChecked_ = 1;
+        AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d",
+            PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex_));
+    }
     return SUCCESS;
 }
 

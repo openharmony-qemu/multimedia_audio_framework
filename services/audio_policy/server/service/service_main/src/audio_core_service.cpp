@@ -458,6 +458,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
             streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     return SUCCESS;
 }
@@ -1322,6 +1323,24 @@ void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const
 uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
 {
     return policyConfigMananger_.GetStreamPropInfoSize(adapterName, pipeName);
+}
+
+int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "streamDesc is null");
+    if (streamDesc->audioMode_ != AUDIO_MODE_RECORD) {
+        return ERR_NOT_SUPPORTED;
+    }
+ 
+    auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
+    WriteCapturerConcurrentMsg(streamDesc, dfxResult);
+    if (dfxResult->existingAppName.size() < CONCURRENT_CAPTURE_DFX_THRESHOLD) {
+        return ERR_INVALID_HANDLE;
+    }
+    LogCapturerConcurrentResult(dfxResult);
+    WriteCapturerConcurrentEvent(dfxResult);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

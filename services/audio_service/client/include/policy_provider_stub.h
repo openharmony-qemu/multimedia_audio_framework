@@ -45,6 +45,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 // #endif
     int32_t ClearAudioFocusBySessionID(int32_t sessionID) override;
+    int32_t CaptureConcurrentCheck(uint32_t sessionID) override;
+    
 private:
     IPolicyProvider *policyWorker_;
 };
