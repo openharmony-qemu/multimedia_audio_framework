@@ -1530,7 +1530,7 @@ void NapiAudioVolumeManager::UnregisterSystemVolumeChangeCallback(napi_env env, 
     size_t argc, NapiAudioVolumeManager *napiAudioVolumeManager)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySelfPermission(),
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
+        NapiAudioError::ThrowError(env, NAPI_ERR_PERMISSION_DENIED, "No system permission"),
         "No system permission");
     napi_value callback = nullptr;
     if (argc == ARGS_TWO) {
