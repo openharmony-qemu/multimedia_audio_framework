@@ -438,7 +438,7 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
     float volumeBeg = volumes.volumeHistory;
-    if (volumeBeg != volumeEnd) {
+    if (fabs(volumeBeg - volumeEnd) > Epsilon) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             sessionID, volumeBeg, volumeEnd);
         SetPreVolume(sessionID, volumeEnd);

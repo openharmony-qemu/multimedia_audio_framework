@@ -82,10 +82,12 @@ int main(int argc, char *argv[])
         inputPath = argv[2];
         if ((strlen(inputPath) > PATH_MAX) || (realpath(inputPath, path) == nullptr)) {
             AUDIO_ERR_LOG("Invalid path");
+            fclose(wavFile1_);
             return -1;
         }
         wavFile2_ = fopen(path, "rb");
         if (wavFile2_ == nullptr) {
+            fclose(wavFile1_);
             AUDIO_INFO_LOG("AudioRendererTest: Unable to open wave file");
             return -1;
         }
@@ -103,6 +105,8 @@ int main(int argc, char *argv[])
         (*pcmPlayerObject2)->Destroy(pcmPlayerObject2);
         (*engineObject)->Destroy(engineObject);
         (*outputMixObject)->Destroy(outputMixObject);
+        fclose(wavFile1_);
+        fclose(wavFile2_);
         return 0;
     } else {
         if (argc < 2) {
@@ -129,6 +133,7 @@ int main(int argc, char *argv[])
         }
         PlayerStop(playItf, bufferQueueItf);
         (*pcmPlayerObject)->Destroy(pcmPlayerObject);
+        fclose(wavFile_);
 
         if (argc < 3) {
             return 0;
@@ -153,6 +158,7 @@ int main(int argc, char *argv[])
         }
         PlayerStop(playItf, bufferQueueItf);
         (*pcmPlayerObject)->Destroy(pcmPlayerObject);
+        fclose(wavFile_);
         return 0;
     }
 }

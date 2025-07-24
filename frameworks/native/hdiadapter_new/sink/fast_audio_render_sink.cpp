@@ -38,7 +38,7 @@ FastAudioRenderSink::~FastAudioRenderSink()
 
 int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("init with format:%{publci}d", attr.format);
+    AUDIO_INFO_LOG("init with format:%{public}d", attr.format);
     attr_ = attr;
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
     int32_t ret = CreateRender();
