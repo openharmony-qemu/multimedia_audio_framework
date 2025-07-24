@@ -2426,7 +2426,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_125, TestSize.Level1
 
     auto audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(audioStreamDescriptor, nullptr);
-    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_REMOTE_CAST;
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
     audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
     pipeInfo->streamDescriptors_[0]->newDeviceDescs_.push_back(audioDeviceDescriptor);
 
