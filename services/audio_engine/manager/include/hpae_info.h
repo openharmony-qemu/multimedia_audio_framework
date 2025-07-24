@@ -36,7 +36,7 @@ enum HpaeNodeType {
 
 struct HpaeEffectInfo {
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
-    AudioVolumeType volumeType = STREAM_DEFAULT;
+    AudioVolumeType systemVolumeType = STREAM_MUSIC;
     AudioEffectScene effectScene = SCENE_OTHERS;
     AudioEffectMode effectMode = EFFECT_NONE;
     AudioEnhanceScene enhanceScene = SCENE_NONE;
