@@ -402,5 +402,9 @@ int main()
                 std::cout << "Input Valid, RE Input";
         }
     }
+    if (g_file != nullptr) {
+        fclose(g_file);
+        g_file = nullptr;
+    }
     std::cout << "End Test" << std::endl;
 }
