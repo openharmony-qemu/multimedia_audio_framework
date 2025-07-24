@@ -67,6 +67,7 @@
 #define SCENE_TYPE_NUM 7
 #define PA_ERR (-1)
 #define MAX_PARTS 10
+#define EPSILON (1e-6f)
 
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
