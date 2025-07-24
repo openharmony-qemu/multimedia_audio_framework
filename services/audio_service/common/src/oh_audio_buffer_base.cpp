@@ -1084,16 +1084,16 @@ void OHAudioBufferBase::InitBasicBufferInfo()
     basicBufferInfo_->muteFactor.store(MAX_FLOAT_VOLUME);
 }
 
-void OHAudioBufferBase::WakeFutexIfNeed()
+void OHAudioBufferBase::WakeFutexIfNeed(uint32_t wakeVal)
 {
     if (basicBufferInfo_) {
-        FutexTool::FutexWake(&(basicBufferInfo_->futexObj));
+        FutexTool::FutexWake(&(basicBufferInfo_->futexObj), wakeVal);
     }
 }
 
-void OHAudioBufferBase::WakeFutex()
+void OHAudioBufferBase::WakeFutex(uint32_t wakeVal)
 {
-    WakeFutexIfNeed();
+    WakeFutexIfNeed(wakeVal);
 }
 } // namespace AudioStandard
 } // namespace OHOS

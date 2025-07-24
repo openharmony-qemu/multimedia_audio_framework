@@ -3155,5 +3155,40 @@ HWTEST(AudioProcessInClientUnitTest, CallClientHandleCurrent_001, TestSize.Level
     EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
     ptrAudioProcessInClientInner->CallClientHandleCurrent();
 }
+
+/**
+ * @tc.name  : Test IsRestoreNeeded API
+ * @tc.type  : FUNC
+ * @tc.number: IsRestoreNeeded_001
+ * @tc.desc  : Test IsRestoreNeeded
+ */
+HWTEST(AudioProcessInClientUnitTest, IsRestoreNeeded_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, true, info);
+    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
+
+    std::atomic<StreamStatus> streamStatus;
+    streamStatus.store(StreamStatus::STREAM_RUNNING);
+    ptrAudioProcessInClientInner->streamStatus_ = &streamStatus;
+
+    // totalsize is 100, byteSizePerFrame is 1
+    ptrAudioProcessInClientInner->audioBuffer_ = OHAudioBufferBase::CreateFromLocal(100, 1);
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NO_NEED_FOR_RESTORE);
+    EXPECT_EQ(ptrAudioProcessInClientInner->IsRestoreNeeded(), false);
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE);
+    EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForRecord(), true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForPlayback(), true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->IsRestoreNeeded(), true);
+
+    ptrAudioProcessInClientInner->audioBuffer_->basicBufferInfo_->restoreStatus.store(NEED_RESTORE_TO_NORMAL);
+    EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForRecord(), true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->CheckAndWaitBufferReadyForPlayback(), true);
+    EXPECT_EQ(ptrAudioProcessInClientInner->IsRestoreNeeded(), true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
