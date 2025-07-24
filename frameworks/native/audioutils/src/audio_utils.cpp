@@ -79,6 +79,7 @@ constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
+constexpr size_t VISIBLE_LEN = 3;
 
 const int32_t DATA_INDEX_0 = 0;
 const int32_t DATA_INDEX_1 = 1;
@@ -2028,6 +2029,12 @@ std::string GetEncryptStr(const std::string &src)
     }
 
     return dst;
+}
+
+std::string Hide(const std::string &str)
+{
+    CHECK_AND_RETURN_RET(str.length() >= VISIBLE_LEN + VISIBLE_LEN, "*");
+    return str.substr(0, VISIBLE_LEN) + "*" + str.substr(str.length() - VISIBLE_LEN);
 }
 
 std::string ConvertNetworkId(const std::string &networkId)
