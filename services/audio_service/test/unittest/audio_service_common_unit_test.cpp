@@ -648,6 +648,132 @@ HWTEST(AudioServiceCommonUnitTest, SetMuteFactor_001, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetDuckFactor API
+* @tc.type  : FUNC
+* @tc.number: GetDuckFactor
+* @tc.desc  : Test GetDuckFactor interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetDuckFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float result = ohAudioBuffer->GetDuckFactor();
+    EXPECT_FLOAT_EQ(result, MAX_FLOAT_VOLUME);
+}
+
+/**
+* @tc.name  : Test SetDuckFactor API
+* @tc.type  : FUNC
+* @tc.number: SetDuckFactor
+* @tc.desc  : Test SetDuckFactor interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetDuckFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float invalidDuckFactor = -0.1f;
+    bool result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    EXPECT_FALSE(result);
+
+    invalidDuckFactor = 1.1f;
+    result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    EXPECT_FALSE(result);
+
+    float validDuckFactor = 0.5f;
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    EXPECT_TRUE(result);
+
+    validDuckFactor = 0.0f;
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    EXPECT_TRUE(result);
+
+    float maxDuckFactor = 1.0f;
+    result = ohAudioBuffer->SetDuckFactor(maxDuckFactor);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test GetStreamVolume API
+* @tc.type  : FUNC
+* @tc.number: GetStreamVolume
+* @tc.desc  : Test GetStreamVolume interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float result = ohAudioBuffer->GetStreamVolume();
+    EXPECT_FLOAT_EQ(result, MAX_FLOAT_VOLUME);
+}
+
+/**
+* @tc.name  : Test SetStreamVolume API
+* @tc.type  : FUNC
+* @tc.number: SetStreamVolume
+* @tc.desc  : Test SetStreamVolume interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetStreamVolume_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    bool result = ohAudioBuffer->SetStreamVolume(0.5f);
+    EXPECT_TRUE(result);
+
+    float invalidVolume = 1.1f;
+    result = ohAudioBuffer->SetStreamVolume(invalidVolume);
+    EXPECT_FALSE(result);
+
+    invalidVolume = -0.1f;
+    result = ohAudioBuffer->SetStreamVolume(invalidVolume);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test GetSyncReadFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncReadFrame
+* @tc.desc  : Test GetSyncReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetSyncReadFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    bool result = ohAudioBuffer->GetSyncReadFrame();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test SetSyncReadFrame API
+* @tc.type  : FUNC
+* @tc.number: SetSyncReadFrame
+* @tc.desc  : Test SetSyncReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    uint32_t testValue = 123;
+    EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
+}
+/**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
 * @tc.number: AudioRingCache_001
