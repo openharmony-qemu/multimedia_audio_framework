@@ -40,7 +40,6 @@ AudioStreamChecker::~AudioStreamChecker()
     AUDIO_INFO_LOG("~AudioStreamChecker(), sessionId = %{public}u, uid = %{public}d",
         streamConfig_.originalSessionId, streamConfig_.appInfo.appUid);
     monitorSwitch_ = false;
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(streamConfig_.originalSessionId);
     isKeepCheck_.store(false);
 }
 
