@@ -55,7 +55,7 @@ TEST_F(HpaeAudioServerHpaeDumpTest, HpaeAudioServerHpaeDumpTest_001)
     EXPECT_EQ(tempString, "Record Streams\n- 0 Record stream (s) available:\n\n");
 
     std::vector<HpaeInputOutputInfo> inputOutputInfo;
-    inputOutputInfo.push_back({0, 0, 0, 0, PRIVACY_TYPE_PUBLIC, "", HPAE_SESSION_NEW, 0});
+    inputOutputInfo.push_back({0, "", 0, 0, 0, false, PRIVACY_TYPE_PUBLIC, "", HPAE_SESSION_NEW, 0});
 
     audioServerHpaeDump_->dumpSinkInputsInfo_.clear();
     audioServerHpaeDump_->OnDumpSinkInputsInfoCb(inputOutputInfo, 1);
