@@ -27,9 +27,11 @@ typedef struct {
 
 typedef struct {
     uint32_t sessionId;
-    uint32_t uid;
-    uint32_t pid;
+    std::string deviceName;
+    int32_t uid;
+    int32_t pid;
     uint32_t tokenId;
+    bool offloadEnable;
     AudioPrivacyType privacyType;
     std::string config;
     HPAE::HpaeSessionState state;

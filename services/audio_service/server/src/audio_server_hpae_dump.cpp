@@ -356,9 +356,11 @@ static void TransHpaeInputOutputInfoToStr(const HpaeInputOutputInfo &info, const
     std::ostringstream oss;
     oss << "  Stream " << idx << "\n"
         << "  - Stream Id: " << info.sessionId << "\n"
+        << "  - Device Name: " << info.deviceName << "\n"
         << "  - Application Name: " << GetBundleNameByToken(info.tokenId) << "\n"
         << "  - Process Id: " << info.pid << "\n"
         << "  - User Id: " << info.uid << "\n"
+        << "  - Offload Enable: " << (info.offloadEnable ? "true" : "false") << "\n"
         << "  - stream can be captured: " << (info.privacyType == 0 ? "true" : "false") << "\n"
         << "  - Stream Configuration: " << info.config << "\n"
         << "  - Status: " << (info.state == HPAE_SESSION_RUNNING ? "RUNNING" : "STOPPED/PAUSED") << "\n"
