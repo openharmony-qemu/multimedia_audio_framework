@@ -14,6 +14,7 @@
  */
 
 @!namespace("@ohos.multimedia.audio", "audio")
+@!sts_export_default
 
 @!sts_inject("""
 static { loadLibrary("audio_taihe.z"); }
