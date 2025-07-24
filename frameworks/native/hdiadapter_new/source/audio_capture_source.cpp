@@ -895,6 +895,7 @@ bool AudioCaptureSource::IsCaptureInvalid(struct IAudioCapture *audioCapture_)
         AUDIO_ERR_LOG("audioCapture_ is nullptr!");
         std::string errorMsg = attr_.adapterName + " load adapter fail, ret: " + std::to_string(ERR_NOT_STARTED);
         HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ERR_NOT_STARTED, errorMsg);
+        return false;
     }
     return true;
 }
