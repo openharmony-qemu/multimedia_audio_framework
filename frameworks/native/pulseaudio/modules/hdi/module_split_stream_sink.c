@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include "securec.h"
 
 #include <pulse/rtclock.h>
