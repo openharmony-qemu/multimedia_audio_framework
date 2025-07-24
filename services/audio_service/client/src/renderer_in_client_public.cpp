@@ -1233,7 +1233,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED) {
+    if (PermissionUtil::VerifyIsMediaService() && state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     

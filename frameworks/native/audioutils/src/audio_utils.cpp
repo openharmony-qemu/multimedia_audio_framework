@@ -70,6 +70,7 @@ constexpr int32_t UID_DISTRIBUTED_AUDIO_SA = 3055;
 constexpr int32_t UID_TELEPHONY_SA = 1001;
 constexpr int32_t UID_THPEXTRA_SA = 5000;
 constexpr int32_t UID_DMSDP_SA = 7071;
+constexpr int32_t MEDIA_SERVICE_UID = 1013;
 constexpr int32_t TIME_OUT_SECONDS = 10;
 constexpr int32_t BOOTUP_MUSIC_UID = 1003;
 
@@ -877,6 +878,21 @@ bool PermissionUtil::NotifyPrivacyStop(uint32_t targetTokenId, uint32_t sessionI
             "The PrivacyKit error code:%{public}d", targetTokenId, res);
     }
     return true;
+}
+
+bool PermissionUtil::VerifyIsMediaService()
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    if (MEDIA_SERVICE_UID == callingUid) {
+        return true;
+    }
+#ifdef AUDIO_BUILD_VARIANT_ROOT
+    if (callingUid == 0) {
+        AUDIO_WARNING_LOG("Root calling!");
+        return true;
+    }
+#endif
+    return false;
 }
 
 void AdjustStereoToMonoForPCM8Bit(int8_t *data, uint64_t len)
