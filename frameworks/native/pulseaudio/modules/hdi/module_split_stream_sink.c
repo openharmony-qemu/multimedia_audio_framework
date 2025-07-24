@@ -481,7 +481,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         }
         pa_memblock_release(pchunk->memblock);
     }
-    if (fabs(volumeBeg - volumeEnd) > Epsilon) {
+    if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             sessionID, volumeBeg, volumeEnd);
         SetPreVolume(sessionID, volumeEnd);
