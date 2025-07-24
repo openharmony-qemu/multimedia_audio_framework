@@ -1189,6 +1189,7 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     CheckModemScene(modemDescs, reason);
 
     for (auto &streamDesc : outputStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc),
