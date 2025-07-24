@@ -1062,7 +1062,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
-    if (policyConfigMananger_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
+    if (policyConfigMananger_.GetUpdateRouteSupport()) {
         UpdateOutputRoute(streamDesc);
     }
 

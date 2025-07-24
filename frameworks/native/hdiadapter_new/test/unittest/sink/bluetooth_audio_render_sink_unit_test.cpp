@@ -156,8 +156,7 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_004, TestSize.L
 HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_005, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
+    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
