@@ -575,7 +575,7 @@ int32_t HpaeRendererManager::DisConnectInputSession(uint32_t sessionId)
 void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType)
 {
     auto request = [this, sceneType]() {
-        AUDIO_INFO_LOG("mixerNode trigger callback");
+        AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             sceneClusterMap_[sceneType]->DisConnectMixerNode();
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);

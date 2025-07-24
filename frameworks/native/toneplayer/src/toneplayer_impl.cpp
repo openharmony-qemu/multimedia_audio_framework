@@ -40,7 +40,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace {
 constexpr int32_t C20MS = 20;
-constexpr int32_t C60MS = 60;
 constexpr int32_t C1000MS = 1000;
 constexpr int32_t CDOUBLE = 2;
 constexpr int32_t DIGITAMPLITUDE = 800;
@@ -81,6 +80,7 @@ TonePlayerImpl::TonePlayerImpl(const std::string cachePath, const AudioRendererI
     // streamUsage::STREAM_USAGE_MEDIA;
     rendererOptions_.rendererInfo.streamUsage = rendereInfo.streamUsage;
     rendererOptions_.rendererInfo.rendererFlags = AUDIO_FLAG_FORCED_NORMAL; // use AUDIO_FLAG_FORCED_NORMAL
+    rendererOptions_.rendererInfo.playerType = PLAYER_TYPE_TONE_PLAYER;
 
     rendererOptions_.strategy = { AudioConcurrencyMode::MIX_WITH_OTHERS };
     supportedTones_ = AudioPolicyManager::GetInstance().GetSupportedTones(GetCountryCode());
@@ -510,7 +510,7 @@ bool TonePlayerImpl::InitAudioRenderer()
     AUDIO_DEBUG_LOG("SetRenderMode Sucessful");
 
     if (ret == 0 && targetSize != 0) {
-        size_t bufferDuration = GetEngineFlag() == 1 ? C60MS : C20MS; // 20 -> 20ms
+        size_t bufferDuration = C20MS; // 20 -> 20ms
         audioRenderer_->SetBufferDuration(bufferDuration);
         AUDIO_INFO_LOG("Init renderer with buffer %{public}zu, duration %{public}zu", targetSize, bufferDuration);
     }
