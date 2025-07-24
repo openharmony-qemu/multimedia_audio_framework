@@ -165,6 +165,7 @@ AudioPolicyServer::AudioPolicyServer(int32_t systemAbilityId, bool runOnCreate)
     powerStateCallbackRegister_ = false;
     supportVibrator_ = system::GetBoolParameter("const.vibrator.support_vibrator", true);
     volumeApplyToAll_ = system::GetBoolParameter("const.audio.volume_apply_to_all", false);
+    screenOffAdjustVolumeEnable_ = system::GetBoolParameter("const.audio.screenoff_adjust_volume_enable", false);
     if (volumeApplyToAll_) {
         audioPolicyConfigManager_.SetNormalVoipFlag(true);
     }
@@ -548,7 +549,6 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
         std::thread([this]() { TriggerMuteCheck(); }).detach();
     }
     int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
-    AUDIO_INFO_LOG("zoneId is %{public}d", zoneId);
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
@@ -561,8 +561,9 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     bool active = false;
     IsStreamActive(streamInFocus, active);
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
-    if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable()) {
-        AUDIO_INFO_LOG("screen off or screen lock, this stream is not active, not change volume.");
+    if (isScreenOffOrLock_ && !active && !VolumeUtils::IsPCVolumeEnable() && !screenOffAdjustVolumeEnable_) {
+        AUDIO_INFO_LOG("isScreenOffOrLock: %{public}d, active: %{public}d, screenOffAdjustVolumeEnable: %{public}d",
+            isScreenOffOrLock_.load(), active, screenOffAdjustVolumeEnable_);
         return AUDIO_OK;
     }
     if (!VolumeUtils::IsPCVolumeEnable()) {
