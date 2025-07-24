@@ -212,5 +212,19 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_008, TestSize.L
     hearingAidSink_ = nullptr;
 }
 
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : BluetoothSinkUnitTest_009
+ * @tc.desc   : Test bluetooth sink IsSinkInited
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_009, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    sink_.sinkInited_ = true;
+    EXPECT_TRUE(sink_.IsSinkInited());
+    sink_.sinkInited_ = false;
+    EXPECT_TRUE(sink_.IsSinkInited());
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

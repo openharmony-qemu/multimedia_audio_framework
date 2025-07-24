@@ -294,6 +294,20 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_012, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : PrimarySourceUnitTest_013
+ * @tc.desc   : Test primary source IsCaptureNull
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_013, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    EXPECT_TRUE(primarySource_.IsCaptureInvalid());
+    EXPECT_TRUE(primarySource_.IsCaptureInvalid(nullptr));
+    DeInitPrimarySource();
+}
+
+/**
  * @tc.name   : Test SetDmDeviceType API
  * @tc.number : SetDmDeviceType_001
  * @tc.desc   : Test SetDmDeviceType
