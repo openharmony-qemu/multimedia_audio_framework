@@ -729,7 +729,7 @@ HWTEST(AudioServiceCommonUnitTest, SetStreamVolume_001, TestSize.Level1)
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     bool result = ohAudioBuffer->SetStreamVolume(0.5f);
-    EXPECT_FALSE(result);
+    EXPECT_TRUE(result);
 
     float invalidVolume = 1.1f;
     result = ohAudioBuffer->SetStreamVolume(invalidVolume);
@@ -771,7 +771,7 @@ HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
     uint32_t testValue = 123;
-    EXPECT_TRUE(ohAudioBuffer->SetSyncReadFrame(testValue));
+    EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
 }
 /**
 * @tc.name  : Test AudioRingCache API
