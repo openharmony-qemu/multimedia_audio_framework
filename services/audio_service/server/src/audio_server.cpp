@@ -259,7 +259,6 @@ static void SetAudioSceneForAllSink(AudioScene audioScene, bool scoExcludeFlag)
     if (primarySink != nullptr && primarySink->IsInited()) {
         primarySink->SetAudioScene(audioScene, scoExcludeFlag);
     }
-
 }
 
 static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &source, DeviceType type)
