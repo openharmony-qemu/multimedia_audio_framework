@@ -97,7 +97,8 @@ int32_t RendererInServer::ConfigServerBuffer()
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     int32_t engineFlag = GetEngineFlag();
     if (engineFlag == 1) {
-        engineTotalSizeInFrame_ = spanSizeInFrame_ * 2; // 2 * 2 = 4 frames
+        engineTotalSizeInFrame_ = processConfig_.rendererInfo.playerType == PLAYER_TYPE_TONE_PLAYER ?
+            spanSizeInFrame_ * 4 : spanSizeInFrame_ * 2; // default 2 frames, 4 frames for toneplayer
     } else {
         engineTotalSizeInFrame_ = spanSizeInFrame_ * DEFAULT_SPAN_SIZE;
     }
