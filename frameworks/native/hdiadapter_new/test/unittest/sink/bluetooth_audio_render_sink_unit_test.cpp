@@ -219,10 +219,10 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_008, TestSize.L
 HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_009, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
-    sink_.sinkInited_ = true;
-    EXPECT_TRUE(sink_.IsSinkInited());
-    sink_.sinkInited_ = false;
-    EXPECT_TRUE(sink_.IsSinkInited());
+    EXPECT_TRUE(sink_->IsSinkInited());
+    sink_->DeInit();
+    EXPECT_FALSE(sink_->IsInited());
+    EXPECT_FALSE(sink_->IsSinkInited());
 }
 
 } // namespace AudioStandard

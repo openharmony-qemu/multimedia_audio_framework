@@ -92,6 +92,7 @@ public:
     virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) = 0;
+    virtual bool IsSinkInited(void) NOT_SUPPORT_RET
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
