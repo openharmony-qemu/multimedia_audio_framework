@@ -1474,8 +1474,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("no need to update input device since current stream %{public}d has not set",
-            sessionID);
+        AUDIO_WARNING_LOG("sessionid %{public}d has selected device", sessionID);
         return devDesc;
     }
     for (const auto &desc : connectedDevices_) {
