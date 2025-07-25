@@ -235,8 +235,8 @@ private:
     void CheckAudioHapticsSync(uint64_t curWritePos);
     bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame);
     bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
-    void PrepareStreamDataBuffer(size_t i,
-        size_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
+    void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms
