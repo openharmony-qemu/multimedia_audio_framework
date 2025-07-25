@@ -1652,6 +1652,60 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_002, Tes
 }
 
 /**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced API via legal state.
+ * @tc.number: OH_Audio_Render_WriteDataCallbackAdvanced_003
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced interface.
+ *             Returns true if result is successful.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_003, TestSize.Level0)
+{
+    std::atomic<bool> flagEndTest = false;
+    MockAudioRendererCallbackImpl mockCallback;
+    EXPECT_CALL(mockCallback, OnWriteData(
+        _,          // renderer
+        NotNull(),  // userData
+        NotNull(),  // audioData
+        Gt(0)       // audioDataSize > 0
+    ))
+    .Times(AtLeast(4))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void *audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return 0;
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void *audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        return CHANNEL_COUNT * FORMAT_SIZE; // a sampling point
+    }))
+    .WillOnce(Invoke([](OH_AudioRenderer*, void*, void *audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        // Non-integer sampling points. Note that this is not a correct usage, it is only used to test robustness.
+        return CHANNEL_COUNT * FORMAT_SIZE + 1;
+    }))
+    .WillOnce(Invoke([&flagEndTest](OH_AudioRenderer*, void*, void *audioData, int32_t audioDataSize) {
+        memset_s(audioData, audioDataSize, 0, audioDataSize);
+        flagEndTest = true;
+        flagEndTest.notify_all();
+        return audioDataSize;
+    }))
+    .WillRepeatedly(Return(0));
+
+    OH_AudioStreamBuilder* builder = InitRenderBuilder();
+    OH_AudioStreamBuilder_SetRendererInfo(builder, AUDIOSTREAM_USAGE_VOICE_COMMUNICATION);
+    OH_AudioStreamBuilder_SetRendererWriteDataCallbackAdvanced(builder, AdvancedWriteDataProxy, &mockCallback);
+
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioRenderer_Start(audioRenderer);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    flagEndTest.wait(false);
+
+    CleanupAudioResources(builder, audioRenderer);
+}
+
+/**
 * @tc.name  : Test OH_AudioRenderer_GetFastStatus API
 * @tc.number: OH_AudioRenderer_GetFastStatus_001
 * @tc.desc  : Test OH_AudioRenderer_GetFastStatus
