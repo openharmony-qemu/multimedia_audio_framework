@@ -21,6 +21,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "futex_tool.h"
+#include "audio_log_utils.h"
 
 using namespace testing::ext;
 

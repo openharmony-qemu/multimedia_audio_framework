@@ -184,10 +184,76 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_001, TestSize.Level1)
     ret = FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, -1);
 
+    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+
+    ret = FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
     srcDesc.bufLength = 4;
 
     ret = FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, 0);
+
+    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+
+    ret = FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+
+    ret = FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, 0);
+
+    ret = FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
 }
 
 /**
@@ -212,10 +278,70 @@ HWTEST_F(FormatConverterUnitTest, S16MonoToS16Stereo_002, TestSize.Level1)
     ret = FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, -1);
 
+    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
     srcDesc.buffer = srcBuffer;
     dstDesc.buffer = nullptr;
 
     ret = FormatConverter::S16MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS16Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Stereo(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::S16StereoToF32Mono(srcDesc, dstDesc);
+    EXPECT_EQ(ret, -1);
+
+    ret = FormatConverter::F32MonoToS16Stereo(srcDesc, dstDesc);
     EXPECT_EQ(ret, -1);
 }
 
