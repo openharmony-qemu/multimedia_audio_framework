@@ -57,7 +57,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
-    
+
+    int32_t CaptureConcurrentCheck(const uint32_t &sessionID) override;
 
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
 };
@@ -130,6 +131,11 @@ int32_t MockPolicyProvider::UnloadModernInnerCapSink(int32_t innerCapId)
 }
 
 int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return SUCCESS;
 }
