@@ -51,6 +51,7 @@ BluetoothAudioRenderSink::BluetoothAudioRenderSink(bool isBluetoothLowLatency, c
 BluetoothAudioRenderSink::~BluetoothAudioRenderSink()
 {
     DeInit();
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AudioPerformanceMonitor::GetInstance().DeleteOvertimeMonitor(sinkType_);
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
 }
@@ -87,12 +88,15 @@ void BluetoothAudioRenderSink::DeInit(void)
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::DeInit");
-    if (!sinkInited_) {
-        AUDIO_WARNING_LOG("sink not inited");
+    if (sinkInitCount_ > 1) {
+        --sinkInitCount_;
+        AUDIO_WARNING_LOG("sink is still used, count: %{public}d", sinkInitCount_);
         return;
     }
-    if (--sinkInitCount_ > 0) {
-        AUDIO_WARNING_LOG("sink is still used, count: %{public}d", sinkInitCount_);
+    // sinkInitCount must be 1 or 0, if 0 sinkInited should be false
+    sinkInitCount_ = 0;
+    if (!sinkInited_) {
+        AUDIO_WARNING_LOG("sink not inited");
         return;
     }
 
@@ -113,7 +117,6 @@ void BluetoothAudioRenderSink::DeInit(void)
     }
     audioRender_ = nullptr;
     validState_ = true;
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 bool BluetoothAudioRenderSink::IsInited(void)
