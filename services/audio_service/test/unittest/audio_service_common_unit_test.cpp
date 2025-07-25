@@ -1203,7 +1203,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_001, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 0;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
-    g_oHAudioBuffer->spanBasicInfo_.spanCount_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -1219,7 +1219,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_002, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 0;
-    g_oHAudioBuffer->spanBasicInfo_.spanCount_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -1235,7 +1235,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_003, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
-    g_oHAudioBuffer->spanBasicInfo_.spanCount_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -1251,14 +1251,14 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_004, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
-    g_oHAudioBuffer->spanBasicInfo_.spanCount_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 50;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
 
     uint32_t totalSizeFrame1 = 50;
-    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame1);
-    EXPECT_EQ(result, ERR_INVALID_PARAM);
+    int32_t ret = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame1);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
 /**
@@ -1271,7 +1271,7 @@ HWTEST(AudioServiceCommonUnitTest, SizeCheck_005, TestSize.Level1)
 {
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
     g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
-    g_oHAudioBuffer->spanBasicInfo_.spanCount_ = 10;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
     uint32_t totalSizeFrame = 1000;
     int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
     EXPECT_EQ(result, SUCCESS);
