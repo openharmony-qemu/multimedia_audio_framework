@@ -2509,7 +2509,8 @@ int32_t AudioServer::GetMaxAmplitude(bool isOutputDevice, const std::string &dev
 
 int32_t AudioServer::GetVolumeDataCount(const std::string &sinkName, int64_t &volumeDataCount)
 {
-    // this is only called in audio_server, not need to check calling uid
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED, "refused for %{public}d",
+        IPCSkeleton::GetCallingUid());
     uint32_t renderId = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(sinkName);
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId, false);
     if (sink != nullptr) {

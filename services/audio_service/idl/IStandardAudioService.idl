@@ -139,8 +139,7 @@ interface IStandardAudioService {
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
-
-    // unsupported for ipc client calling
+    // undefined in AudioServerInterfaceCode
     [ipccode 1000] void SetForegroundList([in] List<String> list);
     void GetVolumeDataCount([in] String sinkName, [out] long ret);
 }
