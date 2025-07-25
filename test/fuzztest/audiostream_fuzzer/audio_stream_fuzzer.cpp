@@ -100,6 +100,8 @@ public:
 
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID) override;
 
+    int32_t CaptureConcurrentCheck(const uint32_t &sessionID) override;
+
 #ifdef HAS_FEATURE_INNERCAPTURER
     int32_t LoadModernInnerCapSink(int32_t innerCapId) override;
 
@@ -182,6 +184,11 @@ int32_t MockPolicyProvider::NotifyCapturerRemoved(uint64_t sessionId)
 }
 
 int32_t MockPolicyProvider::ClearAudioFocusBySessionID(const int32_t &sessionID)
+{
+    return SUCCESS;
+}
+
+int32_t MockPolicyProvider::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return SUCCESS;
 }

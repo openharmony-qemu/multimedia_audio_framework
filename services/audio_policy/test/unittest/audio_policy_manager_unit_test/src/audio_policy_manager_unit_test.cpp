@@ -616,7 +616,7 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
@@ -640,7 +640,7 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;

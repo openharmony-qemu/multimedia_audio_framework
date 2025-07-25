@@ -442,6 +442,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+
+    CaptureConcurrentCheck(streamIndex_);
+
     return SUCCESS;
 }
 
@@ -907,6 +910,16 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
 {
     return ERR_NOT_SUPPORTED;
+}
+
+inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
+{
+    if (captureConcurretChecked_) {
+        return;
+    }
+    captureConcurretChecked_ = 1;
+    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

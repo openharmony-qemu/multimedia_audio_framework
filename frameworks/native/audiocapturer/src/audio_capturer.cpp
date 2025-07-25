@@ -353,7 +353,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_ = capturerInfo_;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
@@ -1955,7 +1955,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioCapturerPrivate::GetStreamDescBySwit
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
 
     streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->capturerInfo_= switchInfo.capturerInfo;
     streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());

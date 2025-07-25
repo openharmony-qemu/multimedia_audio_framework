@@ -2481,5 +2481,71 @@ HWTEST(AudioCoreServicePrivateTest, SwitchActiveHearingAidDevice_001, TestSize.L
     EXPECT_EQ(ret, SUCCESS);
     audioCoreService->audioIOHandleMap_.DelIOHandleInfo(moduleName);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CaptureConcurrentCheck_001
+ * @tc.desc  : Test AudioCoreService::CaptureConcurrentCheck()
+ */
+HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_001 start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs = {
+        std::make_shared<AudioStreamDescriptor>(),
+        std::make_shared<AudioStreamDescriptor>()
+    };
+    uint32_t flag[2] = {AUDIO_INPUT_FLAG_NORMAL, AUDIO_INPUT_FLAG_FAST};
+    uint32_t originalSessionId[2] = {0};
+    for (int i = 0; i < 2; i++) {
+        streamDescs[i]->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+        streamDescs[i]->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+        streamDescs[i]->streamInfo_.channels = AudioChannel::STEREO;
+        streamDescs[i]->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+        streamDescs[i]->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
+        streamDescs[i]->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+ 
+        streamDescs[i]->audioMode_ = AUDIO_MODE_RECORD;
+        streamDescs[i]->createTimeStamp_ = ClockTime::GetCurNano();
+        streamDescs[i]->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
+        streamDescs[i]->callerUid_ = getuid();
+        auto result = audioCoreService->CreateCapturerClient(streamDescs[i], flag[i], originalSessionId[i]);
+        EXPECT_EQ(result, SUCCESS);
+    }
+    auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
+    audioCoreService->WriteCapturerConcurrentMsg(streamDescs[0], dfxResult);
+    audioCoreService->LogCapturerConcurrentResult(dfxResult);
+    audioCoreService->WriteCapturerConcurrentEvent(dfxResult);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_001 end");
+}
+ 
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CaptureConcurrentCheck_002
+ * @tc.desc  : Test AudioCoreService::CaptureConcurrentCheck()
+ */
+HWTEST(AudioCoreServicePrivateTest, CaptureConcurrentCheck_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_002 start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+    auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
+    for (int i = 0; i < 5; i++) {
+        dfxResult->existingAppName.push_back("www.test.com");
+        dfxResult->existingAppState.push_back(static_cast<uint8_t>(2));
+        dfxResult->existingSourceType.push_back(static_cast<uint8_t>(SourceType::SOURCE_TYPE_MIC));
+        dfxResult->existingCaptureState.push_back(static_cast<uint8_t>(2));
+        dfxResult->existingCreateDuration.push_back(static_cast<uint32_t>(0));
+        dfxResult->existingStartDuration.push_back(static_cast<uint32_t>(i));
+        dfxResult->existingFastFlag.push_back(static_cast<bool>(0));
+    }
+    dfxResult->hdiSourceType = 1;
+    dfxResult->hdiSourceAlg = "develope test";
+    dfxResult->deviceType = DEVICE_TYPE_MIC;
+    audioCoreService->LogCapturerConcurrentResult(dfxResult);
+    audioCoreService->WriteCapturerConcurrentEvent(dfxResult);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest CaptureConcurrentCheck_002 end");
+}
 } // namespace AudioStandard
 } // namespace OHOS
