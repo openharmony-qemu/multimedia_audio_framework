@@ -444,7 +444,7 @@ int32_t AudioZoneService::ActivateAudioInterrupt(int32_t zoneId,
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
-        AUDIO_INFO_LOG("active interrupt of zone %{public}d", zoneId);
+        JUDGE_AND_INFO_LOG(zoneId != 0, "active interrupt of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
             "zoneClientManager or interruptService is nullptr");
@@ -470,7 +470,7 @@ int32_t AudioZoneService::DeactivateAudioInterrupt(int32_t zoneId,
 {
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
-        AUDIO_INFO_LOG("deactive interrupt of zone %{public}d", zoneId);
+        JUDGE_AND_INFO_LOG(zoneId != 0, "deactive interrupt of zone %{public}d", zoneId);
         std::lock_guard<std::mutex> lock(zoneMutex_);
         CHECK_AND_RETURN_RET_LOG(zoneClientManager_ != nullptr && interruptService_ != nullptr, ERROR,
             "zoneClientManager or interruptService is nullptr");

@@ -102,6 +102,20 @@
         }                                              \
     } else void (0)
 
+#define JUDGE_AND_INFO_LOG(cond, fmt, ...)             \
+    if (1) {                                           \
+        if (cond) {                                    \
+            AUDIO_INFO_LOG(fmt, ##__VA_ARGS__);        \
+        }                                              \
+    } else void (0)
+
+#define JUDGE_AND_ERR_LOG(cond, fmt, ...)              \
+    if (1) {                                           \
+        if (cond) {                                    \
+            AUDIO_ERR_LOG(fmt, ##__VA_ARGS__);         \
+        }                                              \
+    } else void (0)
+
 #ifndef OHOS_DEBUG
 #define DECORATOR_PRERELEASE_HILOG(op, fmt, args...) \
     do {                                  \
