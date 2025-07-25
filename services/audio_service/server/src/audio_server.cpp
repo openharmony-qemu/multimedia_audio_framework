@@ -430,7 +430,7 @@ int32_t AudioServer::RegisterDataTransferCallback(const sptr<IRemoteObject> &obj
     bool result = PermissionUtil::VerifySystemPermission();
     CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
     CHECK_AND_RETURN_RET_LOG(object != nullptr, ERR_INVALID_PARAM, "AudioServer:set listener object is nullptr");
- 
+
     std::lock_guard<std::mutex> lock(audioDataTransferMutex_);
 
     sptr<IStandardAudioServerManagerListener> listener = iface_cast<IStandardAudioServerManagerListener>(object);
@@ -1295,8 +1295,8 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}d, flag: %{public}d,\
-        deviceName:%{public}s", type, deviceTypes.size(), flag, deviceName.c_str());
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}d, flag: %{public}d",
+        type, deviceTypes.size(), flag);
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
 }
@@ -2963,7 +2963,7 @@ int32_t AudioServer::SetDeviceConnectedFlag(bool flag)
     int32_t callingUid = IPCSkeleton::GetCallingUid();
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
         "refused for %{public}d", callingUid);
-        
+
     std::shared_ptr<IAudioRenderSink> primarySink = GetSinkByProp(HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT, true);
     CHECK_AND_RETURN_RET_LOG(primarySink, ERROR, "primarySink is nullptr");
     primarySink->SetDeviceConnectedFlag(flag);
@@ -3061,7 +3061,7 @@ int32_t AudioServer::ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered
 {
     return AudioResourceService::GetInstance()->ImproveAudioWorkgroupPrio(pid, threads);
 }
- 
+
 int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads)
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
