@@ -515,7 +515,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMuteStatusInternal_001, TestSize.Level1
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -536,7 +535,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetMuteAffectedToMuteStatusDataBase_001, Te
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -555,7 +553,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_002, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -576,7 +573,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_003, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -596,7 +592,6 @@ HWTEST(VolumeDataMaintainerUnitTest, SetRestoreVolumeLevel_004, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -616,7 +611,6 @@ HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_001, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -636,7 +630,6 @@ HWTEST(VolumeDataMaintainerUnitTest, GetRestoreVolumeLevel_002, TestSize.Level1)
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
