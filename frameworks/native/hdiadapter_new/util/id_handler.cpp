@@ -51,7 +51,6 @@ uint32_t IdHandler::GetId(HdiIdBase base, HdiIdType type, const std::string &inf
 uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, const std::string &info)
 {
     CHECK_AND_RETURN_RET_LOG(!deviceClass.empty(), HDI_INVALID_ID, "invalid device class");
-    AUDIO_INFO_LOG("deviceClass: %{public}s, info: %{public}s", deviceClass.c_str(), info.c_str());
 
     if (deviceClass == "primary") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);

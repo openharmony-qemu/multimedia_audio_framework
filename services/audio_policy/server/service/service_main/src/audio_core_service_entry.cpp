@@ -77,7 +77,6 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -86,7 +85,6 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
