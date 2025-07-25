@@ -24,7 +24,7 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;

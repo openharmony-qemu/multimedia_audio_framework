@@ -22,7 +22,7 @@
 #include "audio_utils.h"
 #include "cinttypes"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
