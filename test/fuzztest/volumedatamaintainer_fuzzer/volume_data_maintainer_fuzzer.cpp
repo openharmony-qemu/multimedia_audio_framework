@@ -259,7 +259,6 @@ void VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest(const uint8
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -272,7 +271,6 @@ void VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -287,7 +285,6 @@ void VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
