@@ -156,6 +156,8 @@ public:
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IRemoteObject> &object, bool hasBTPermission);
 
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
+
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
     int32_t GetCurrentCapturerChangeInfos(vector<shared_ptr<AudioCapturerChangeInfo>> &audioCapturerChangeInfos,

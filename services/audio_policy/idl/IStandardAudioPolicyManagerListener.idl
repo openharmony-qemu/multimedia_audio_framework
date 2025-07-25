@@ -15,8 +15,10 @@
 
 package OHOS.AudioStandard;
 
+sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 sequenceable audio_interrupt_info..OHOS.AudioStandard.InterruptEventInternal;
 sequenceable audio_policy_interface..OHOS.AudioStandard.DeviceChangeAction;
+
 interface IStandardAudioPolicyManagerListener {
     [ipccode 1, oneway] void OnInterrupt([in] InterruptEventInternal interruptEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
@@ -28,4 +30,5 @@ interface IStandardAudioPolicyManagerListener {
     void OnQueryAllowedPlayback([in] int uid, [in] int pid, [out] boolean ret);
     [oneway] void OnBackgroundMute([in] int uid);
     void OnQueryBundleNameIsInList([in] String bundleName, [in] String listType, [out] boolean ret);
+    void OnQueryDeviceVolumeBehavior([out] VolumeBehavior volumeBehavior);
 }

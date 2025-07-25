@@ -572,10 +572,7 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(streamInFocus, zoneId)) {
         AUDIO_INFO_LOG("VolumeKeyEvents: volumeKey: Up. volumeType %{public}d is mute. Unmute.", streamInFocus);
         SetStreamMuteInternal(streamInFocus, false, true, DEVICE_TYPE_NONE, zoneId);
-        if (!VolumeUtils::IsPCVolumeEnable()) {
-            AUDIO_DEBUG_LOG("phone need return");
-            return ERROR_UNSUPPORTED;
-        }
+        CHECK_AND_RETURN_RET_LOG(VolumeUtils::IsPCVolumeEnable(), ERROR_UNSUPPORTED, "phone need return");
     }
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && GetStreamMuteInternal(STREAM_SYSTEM) &&
         VolumeUtils::IsPCVolumeEnable()) {
@@ -589,7 +586,10 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     }
 
     volumeLevelInInt = (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP) ? ++volumeLevelInInt : --volumeLevelInInt;
-    SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true, zoneId);
+    int32_t ret = SetSystemVolumeLevelInternal(streamInFocus, volumeLevelInInt, true, zoneId);
+    if (ret == ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
+        SendVolumeKeyEventCbWithUpdateUiOrNot(streamInFocus, true);
+    }
     if (volumeLevelInInt <= 0 && VolumeUtils::IsPCVolumeEnable()) {
         SetStreamMuteInternal(STREAM_SYSTEM, true, true);
     }
@@ -1504,7 +1504,8 @@ int32_t AudioPolicyServer::SetSystemVolumeLevelInternal(AudioStreamType streamTy
             AUDIO_INFO_LOG("SetVolume of STREAM_ALL, SteamType = %{public}d, mute = %{public}d, level = %{public}d",
                 audioStreamType, mute, volumeLevel);
             int32_t setResult = SetSingleStreamVolume(audioStreamType, volumeLevel, isUpdateUi, mute, zoneId);
-            if (setResult != SUCCESS && setResult != ERR_SET_VOL_FAILED_BY_SAFE_VOL) {
+            if (setResult != SUCCESS && setResult != ERR_SET_VOL_FAILED_BY_SAFE_VOL &&
+                setResult != ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED) {
                 return setResult;
             }
         }
@@ -2418,6 +2419,20 @@ int32_t AudioPolicyServer::SetQueryClientTypeCallback(const sptr<IRemoteObject> 
         return ERR_OPERATION_FAILED;
     }
     return audioPolicyService_.SetQueryClientTypeCallback(object);
+}
+
+int32_t AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
+{
+    if (object == nullptr) {
+        AUDIO_ERR_LOG("callback is nullptr!");
+        return ERR_INVALID_PARAM;
+    }
+    if (!PermissionUtil::VerifyIsAudio()) {
+        AUDIO_ERR_LOG("not audio calling!");
+        return ERR_OPERATION_FAILED;
+    }
+    AUDIO_INFO_LOG("in!");
+    return audioPolicyService_.SetQueryDeviceVolumeBehaviorCallback(object);
 }
 
 int32_t AudioPolicyServer::SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object)
@@ -4286,29 +4301,39 @@ int32_t AudioPolicyServer::SetPreferredDevice(int32_t preferredTypeIn,
     return audioPolicyUtils_.SetPreferredDevice(preferredType, desc, uid, "SetPreferredDevice");
 }
 
-int32_t AudioPolicyServer::SaveRemoteInfo(const std::string &networkId, int32_t deviceType)
+int32_t AudioPolicyServer::SetDeviceVolumeBehavior(const std::string &networkId, int32_t deviceType,
+    const VolumeBehavior &volumeBehavior)
 {
+    AUDIO_INFO_LOG("networkId [%{public}s], deviceType [%{public}d], isReady [%{public}d], "\
+        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]", networkId.c_str(), deviceType,
+        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
     auto callerUid = IPCSkeleton::GetCallingUid();
     if (callerUid != UID_AUDIO) {
         AUDIO_ERR_LOG("No permission");
         return ERR_PERMISSION_DENIED;
     }
-    std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
-            "SaveRemoteInfo_1", ROUTER_TYPE_USER_SELECT).front();
-    std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor =
-        audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
-            "SaveRemoteInfo_2", ROUTER_TYPE_USER_SELECT).front();
-    CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr && newCallDescriptor != nullptr, ERROR,
-        "newMediaDescriptor or newCallDescriptor is nullptr");
-    if (networkId == newMediaDescriptor->networkId_ && deviceType == newMediaDescriptor->deviceType_) {
+
+    auto mediaDeviceList = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_MEDIA, -1,
+        "SetDeviceVolumeBehavior_1", ROUTER_TYPE_USER_SELECT);
+    CHECK_AND_RETURN_RET_LOG(!mediaDeviceList.empty(), ERROR, "mediaDeviceList is empty");
+    std::shared_ptr<AudioDeviceDescriptor> newMediaDescriptor = mediaDeviceList.front();
+    CHECK_AND_RETURN_RET_LOG(newMediaDescriptor != nullptr, ERROR, "newMediaDescriptor is nullptr");
+
+    auto callDeviceList = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_COMMUNICATION, -1,
+        "SetDeviceVolumeBehavior_2", ROUTER_TYPE_USER_SELECT);
+    CHECK_AND_RETURN_RET_LOG(!callDeviceList.empty(), ERROR, "callDeviceList is empty");
+    std::shared_ptr<AudioDeviceDescriptor> newCallDescriptor = callDeviceList.front();
+    CHECK_AND_RETURN_RET_LOG(newCallDescriptor != nullptr, ERROR, "newCallDescriptor is nullptr");
+
+    DeviceType deviceTypeEnum = static_cast<DeviceType>(deviceType);
+    if (networkId == newMediaDescriptor->networkId_ && deviceTypeEnum == newMediaDescriptor->deviceType_) {
         audioPolicyUtils_.SetPreferredDevice(AUDIO_MEDIA_RENDER, std::make_shared<AudioDeviceDescriptor>());
     }
-    if (networkId == newCallDescriptor->networkId_ && deviceType == newCallDescriptor->deviceType_) {
+    if (networkId == newCallDescriptor->networkId_ && deviceTypeEnum == newCallDescriptor->deviceType_) {
         audioPolicyUtils_.SetPreferredDevice(AUDIO_CALL_RENDER, std::make_shared<AudioDeviceDescriptor>(), SYSTEM_UID,
-            "SaveRemoteInfo");
+            "SetDeviceVolumeBehavior");
     }
-    audioDeviceManager_.SaveRemoteInfo(networkId, static_cast<DeviceType>(deviceType));
+    audioDeviceManager_.SetDeviceVolumeBehavior(networkId, deviceTypeEnum, volumeBehavior);
     return SUCCESS;
 }
 
