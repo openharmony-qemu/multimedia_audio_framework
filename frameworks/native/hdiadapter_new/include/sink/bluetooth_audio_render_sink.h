@@ -84,6 +84,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;

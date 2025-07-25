@@ -294,6 +294,27 @@ HWTEST_F(AudioRenderSinkUnitTest, PrimarySinkUnitTest_006, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test SetDmDeviceType API
+ * @tc.number : SetDmDeviceType_001
+ * @tc.desc   : Test SetDmDeviceType
+ */
+HWTEST_F(AudioRenderSinkUnitTest, SetDmDeviceType_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(DEVICE_TYPE_NEARLINK);
+    primarySink_->UpdateActiveDevice(outputDevices);
+    primarySink_->SetDmDeviceType(DM_DEVICE_TYPE_DEFAULT, DEVICE_TYPE_NEARLINK_IN);
+    primarySink_->SetDmDeviceType(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
+    primarySink_->SetDmDeviceType(DM_DEVICE_TYPE_DEFAULT, DEVICE_TYPE_NEARLINK_IN);
+    outputDevices.clear();
+    outputDevices.push_back(DEVICE_TYPE_SPEAKER);
+    primarySink_->UpdateActiveDevice(outputDevices);
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test UsbSink API
  * @tc.number : UsbSinkUnitTest_001
  * @tc.desc   : Test usb sink create

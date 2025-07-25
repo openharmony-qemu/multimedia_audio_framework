@@ -525,6 +525,11 @@ void OffloadAudioRenderSink::DumpInfo(std::string &dumpString)
     dumpString += "type: OffloadSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
 
+void OffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 uint32_t OffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);

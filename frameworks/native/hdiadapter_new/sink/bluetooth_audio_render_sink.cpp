@@ -562,6 +562,11 @@ void BluetoothAudioRenderSink::DumpInfo(std::string &dumpString)
         std::string(isBluetoothLowLatency_ ? "true" : "false") + "\n";
 }
 
+void BluetoothAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
     uint32_t &byteSizePerFrame, uint32_t &syncInfoSize)
 {

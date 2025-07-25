@@ -238,5 +238,10 @@ void FileAudioRenderSink::DumpInfo(std::string &dumpString)
     dumpString += "type: FileSink\tfilePath: " + filePath_ + "\n";
 }
 
+void FileAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
