@@ -885,7 +885,7 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 }
 // LCOV_EXCL_STOP
 
-bool AudioCaptureSource::IsCaptureInvalid(struct IAudioCapture *audioCapture_)
+bool AudioCaptureSource::IsCaptureInvalid(void)
 {
     if (audioCapture_ == nullptr) {
         AUDIO_ERR_LOG("audioCapture_ is nullptr!");
@@ -918,7 +918,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     void *capture = deviceManager->CreateCapture(adapterNameCase_, &param, &deviceDesc, hdiCaptureId_);
     audioCapture_ = static_cast<struct IAudioCapture *>(capture);
-    CHECK_AND_RETURN_RET(IsCaptureInvalid(audioCapture_), ERR_NOT_STARTED);
+    CHECK_AND_RETURN_RET(IsCaptureInvalid(), ERR_NOT_STARTED);
 
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId_,
         deviceDesc.desc);

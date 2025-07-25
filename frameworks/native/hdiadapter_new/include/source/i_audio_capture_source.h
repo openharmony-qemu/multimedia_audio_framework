@@ -82,6 +82,7 @@ public:
     virtual void DumpInfo(std::string &dumpString) {}
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
+    virtual bool IsCaptureInvalid(void) NOT_SUPPORT_RET
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
