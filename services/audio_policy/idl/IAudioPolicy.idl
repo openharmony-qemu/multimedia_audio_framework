@@ -42,6 +42,7 @@ sequenceable audio_effect..OHOS.AudioStandard.AudioEffectPropertyArray;
 sequenceable audio_effect..OHOS.AudioStandard.AudioEnhancePropertyArray;
 sequenceable audio_info..OHOS.AudioStandard.ToneInfo;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
+sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 
 interface IAudioPolicy {
     [ipccode 0] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel);
@@ -245,7 +246,7 @@ interface IAudioPolicy {
     void SetCallbackCapturerInfo([in] AudioCapturerInfo capturerInfo);
     void GetStreamInFocusByUid([in]  int uid, [in] int zoneId, [out] int retStreamType); /* zoneID default value: 0 -- local device */
     void SetPreferredDevice([in] int preferredType, [in] sharedptr<AudioDeviceDescriptor> desc, [in] int uid);
-    void SaveRemoteInfo([in] String networkId, [in] int deviceType);
+    void SetDeviceVolumeBehavior([in] String networkId, [in] int deviceType, [in] VolumeBehavior volumeBehavior);
     void SetVirtualCall([in] boolean isVirtual);
     void SetDeviceConnectionStatus([in] sharedptr<AudioDeviceDescriptor> desc, [in] boolean isConnected);
     void ExcludeOutputDevices([in] int audioDevUsage, [in] List<sharedptr<AudioDeviceDescriptor>> audioDeviceDescriptors);
@@ -287,6 +288,7 @@ interface IAudioPolicy {
     void GetDefaultOutputDevice([out] int deviceType /* deviceType */);
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
+    void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
 }

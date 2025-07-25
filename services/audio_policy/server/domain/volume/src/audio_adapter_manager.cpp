@@ -35,6 +35,14 @@ namespace OHOS {
 namespace AudioStandard {
 static const char* DO_NOT_DISTURB_STATUS = "focus_mode_enable";
 static const char* DO_NOT_DISTURB_STATUS_WHITE_LIST = "intelligent_scene_notification_white_list";
+mutex g_deviceVolumeBehaviorListenerMutex;
+
+static const std::vector<AudioStreamType> DISTRIBUTED_VOLUME_TYPE_LIST = {
+    // Distributed Volume Type.
+    STREAM_VOICE_CALL,
+    STREAM_VOICE_ASSISTANT,
+    STREAM_MUSIC
+};
 
 static const std::vector<AudioStreamType> VOLUME_TYPE_LIST = {
     // all volume types except STREAM_ALL
@@ -496,6 +504,10 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
         + std::to_string(streamType) + ", volumeLevel:" + std::to_string(volumeLevel));
     AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
+    if (currentActiveDevice_.volumeBehavior_.isVolumeControlDisabled) {
+        AUDIO_WARNING_LOG("currentActiveDevice_.volumeBehavior_.isVolumeControlDisabled is true!");
+        return ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED;
+    }
     if (GetSystemVolumeLevel(streamType) == volumeLevel &&
         currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO &&
         currentActiveDevice_.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP && !VolumeUtils::IsPCVolumeEnable()) {
@@ -520,7 +532,10 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     // Save the volume to volumeLevelMap_.
     volumeDataMaintainer_.SetStreamVolume(streamType, volumeLevel);
     // Save the volume to settingsdata.
-    if (handler_ != nullptr) {
+    if (currentActiveDevice_.volumeBehavior_.databaseVolumeName != "" && IsDistributedVolumeType(streamType)) {
+        volumeDataMaintainer_.SaveVolumeWithDatabaseVolumeName(
+            currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, volumeLevel);
+    } else if (handler_ != nullptr) {
         if (Util::IsDualToneStreamType(streamType) && currentActiveDevice_.deviceType_ != DEVICE_TYPE_REMOTE_CAST) {
             AUDIO_INFO_LOG("DualToneStreamType. Save volume for speaker.");
             handler_->SendSaveVolume(DEVICE_TYPE_SPEAKER, streamType, volumeLevel, "LocalDevice");
@@ -897,6 +912,10 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     StreamUsage streamUsage, const DeviceType &deviceType, std::string networkId)
 {
     AUDIO_INFO_LOG("stream type %{public}d, mute:%{public}d, streamUsage:%{public}d", streamType, mute, streamUsage);
+    if (currentActiveDevice_.volumeBehavior_.isVolumeControlDisabled) {
+        AUDIO_WARNING_LOG("currentActiveDevice_.volumeBehavior_.isVolumeControlDisabled is true!");
+        return ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED;
+    }
     int32_t isSetStreamMute = IsHandleStreamMute(streamType, mute, streamUsage);
     if (isSetStreamMute == SUCCESS) {
         return SUCCESS;
@@ -905,7 +924,10 @@ int32_t AudioAdapterManager::SetStreamMuteInternal(AudioStreamType streamType, b
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
 
-    if (handler_ != nullptr) {
+    if (currentActiveDevice_.volumeBehavior_.databaseVolumeName != "" && IsDistributedVolumeType(streamType)) {
+        volumeDataMaintainer_.SaveMuteStatusWithDatabaseVolumeName(
+            currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, mute);
+    } else if (handler_ != nullptr) {
         handler_->SendStreamMuteStatusUpdate(streamType, mute, streamUsage, deviceType, networkId);
     }
 
@@ -1121,6 +1143,64 @@ void AudioAdapterManager::AdjustBluetoothVoiceAssistantVolume(InternalDeviceType
     }
 }
 
+int32_t AudioAdapterManager::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
+{
+    std::lock_guard<std::mutex> lock(g_deviceVolumeBehaviorListenerMutex);
+    deviceVolumeBehaviorListener_ = iface_cast<IStandardAudioPolicyManagerListener>(object);
+    return SUCCESS;
+}
+
+void AudioAdapterManager::HandleDistributedDeviceVolume()
+{
+    if (!currentActiveDevice_.volumeBehavior_.isReady) {
+        VolumeBehavior volumeBehavior = AudioDeviceManager::GetAudioDeviceManager().GetDeviceVolumeBehavior(
+            currentActiveDevice_.networkId_, currentActiveDevice_.deviceType_);
+        currentActiveDevice_.volumeBehavior_ = volumeBehavior;
+        if (!currentActiveDevice_.volumeBehavior_.isReady) {
+            std::lock_guard<std::mutex> lock(g_deviceVolumeBehaviorListenerMutex);
+            CHECK_AND_RETURN_LOG(deviceVolumeBehaviorListener_ != nullptr, "deviceVolumeBehaviorListener_ is nullptr!");
+            (void)deviceVolumeBehaviorListener_->OnQueryDeviceVolumeBehavior(volumeBehavior);
+            currentActiveDevice_.volumeBehavior_.isVolumeControlDisabled = volumeBehavior.isVolumeControlDisabled;
+            currentActiveDevice_.volumeBehavior_.databaseVolumeName = volumeBehavior.databaseVolumeName;
+            currentActiveDevice_.volumeBehavior_.isReady = true;
+        }
+    }
+
+    for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
+        int32_t maxVolumeLevel = GetMaxVolumeLevel(streamType);
+        volumeDataMaintainer_.SetStreamVolume(streamType, maxVolumeLevel);
+        volumeDataMaintainer_.SetStreamMuteStatus(streamType, false);
+    }
+
+    if (currentActiveDevice_.volumeBehavior_.databaseVolumeName != "") {
+        for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
+            // if GetVolume failed, write the max volume as default value.
+            if (!volumeDataMaintainer_.GetVolumeWithDatabaseVolumeName(
+                currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType)) {
+                int32_t maxVolumeLevel = GetMaxVolumeLevel(streamType);
+                volumeDataMaintainer_.SaveVolumeWithDatabaseVolumeName(
+                    currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, maxVolumeLevel);
+            }
+            if (!volumeDataMaintainer_.GetMuteStatusWithDatabaseVolumeName(
+                currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType)) {
+                volumeDataMaintainer_.SaveMuteStatusWithDatabaseVolumeName(
+                    currentActiveDevice_.volumeBehavior_.databaseVolumeName, streamType, false);
+            }
+        }
+    }
+
+    for (auto streamType : DISTRIBUTED_VOLUME_TYPE_LIST) {
+        SetVolumeDb(streamType);
+    }
+}
+
+bool AudioAdapterManager::IsDistributedVolumeType(AudioStreamType streamType)
+{
+    AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    bool ret = std::count(DISTRIBUTED_VOLUME_TYPE_LIST.begin(), DISTRIBUTED_VOLUME_TYPE_LIST.end(), volumeType) != 0;
+    return ret;
+}
+
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)
 {
     std::lock_guard<std::mutex> lock(activeDeviceMutex_);
@@ -1147,6 +1227,12 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
     currentActiveDevice_ = deviceDescriptor;
     AudioVolume::GetInstance()->SetCurrentActiveDevice(currentActiveDevice_.deviceType_);
 
+    if (deviceDescriptor.deviceType_ == DEVICE_TYPE_SPEAKER && deviceDescriptor.networkId_ != LOCAL_NETWORK_ID) {
+        HandleDistributedDeviceVolume();
+        UpdateVolumeForLowLatency();
+        return;
+    }
+
     if (!isSameVolumeGroup) {
         // If there's no os account available when trying to get one, audio_server would sleep for 1 sec
         // and retry for 5 times, which could cause a sysfreeze. Check if any os account is ready. If not,
@@ -1160,7 +1246,7 @@ void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceD
             AUDIO_WARNING_LOG("Os account is not ready, skip visiting datashare.");
         }
     }
-    
+
     AdjustBluetoothVoiceAssistantVolume(deviceDescriptor.deviceType_, isSameVolumeGroup);
 
     auto iter = defaultVolumeTypeList_.begin();

@@ -867,10 +867,48 @@ void AudioDeviceManager::GetRemoteAvailableDevicesByUsage(AudioDeviceUsage usage
     }
 }
 
-void AudioDeviceManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+VolumeBehavior AudioDeviceManager::GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType)
 {
+    AUDIO_INFO_LOG("GetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
+        networkId.c_str(), deviceType);
+    VolumeBehavior volumeBehavior;
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ != deviceType || desc->networkId_ != networkId) {
+            continue;
+        }
+        // Find the target device.
+        if (desc->volumeBehavior_.isReady) {
+            volumeBehavior.isReady = true;
+            volumeBehavior.isVolumeControlDisabled = desc->volumeBehavior_.isVolumeControlDisabled;
+            volumeBehavior.databaseVolumeName = desc->volumeBehavior_.databaseVolumeName;
+            AUDIO_INFO_LOG("isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+                volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+        } else {
+            AUDIO_WARNING_LOG("The target device is found. But the isReady is false!");
+        }
+    }
+    return volumeBehavior;
+}
+
+int32_t AudioDeviceManager::SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType,
+    VolumeBehavior volumeBehavior)
+{
+    AUDIO_INFO_LOG("SetDeviceVolumeBehavior: networkId [%{public}s], deviceType [%{public}d]",
+        networkId.c_str(), deviceType);
     remoteInfoNetworkId_ = networkId;
     remoteInfoDeviceType_ = deviceType;
+    for (auto &desc : connectedDevices_) {
+        if (desc->deviceType_ != remoteInfoDeviceType_ || desc->networkId_ != remoteInfoNetworkId_) {
+            continue;
+        }
+        // Find the target device.
+        desc->volumeBehavior_.isReady = true;
+        desc->volumeBehavior_.isVolumeControlDisabled = volumeBehavior.isVolumeControlDisabled;
+        desc->volumeBehavior_.databaseVolumeName = volumeBehavior.databaseVolumeName;
+        AUDIO_INFO_LOG("isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+            volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+    }
+    return SUCCESS;
 }
 
 std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableDevicesByUsage(AudioDeviceUsage usage)
