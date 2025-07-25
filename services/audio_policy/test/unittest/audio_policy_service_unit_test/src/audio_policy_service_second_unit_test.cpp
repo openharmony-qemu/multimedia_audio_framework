@@ -1228,7 +1228,7 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, RegisterDataObserverTest, TestSize.Level
 */
 HWTEST_F(AudioPolicyServiceExtUnitTest, GetSinkPortName_004, TestSize.Level1)
 {
-    InternalDeviceType deviceType = DEVICE_TYPE_NONE;
+    DeviceType deviceType = DEVICE_TYPE_NONE;
     std::string retPortName = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceType);
     EXPECT_EQ(PORT_NONE, retPortName);
 
