@@ -492,7 +492,7 @@ HWTEST(AudioPolicyUnitTest, TriggerMuteCheck_002, TestSize.Level1)
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
     std::shared_ptr<AudioRendererChangeInfo> info = std::make_shared<AudioRendererChangeInfo>();
-    EXPECT_NE(info, nullptr)
+    EXPECT_NE(info, nullptr);
     info->rendererState = RENDERER_RUNNING;
     AudioStreamCollector::GetAudioStreamCollector().audioRendererChangeInfos_.push_back(info);
     ptrAudioPolicyServer->TriggerMuteCheck();
