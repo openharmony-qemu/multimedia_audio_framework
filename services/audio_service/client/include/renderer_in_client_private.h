@@ -284,6 +284,8 @@ private:
     void UpdatePauseReadIndex();
 
     void FlushSpeedBuffer();
+
+    bool CheckBufferNeedWrite();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

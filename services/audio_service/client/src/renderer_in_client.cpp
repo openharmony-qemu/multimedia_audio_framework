@@ -372,6 +372,34 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     return result;
 }
 
+bool RendererInClientInner::CheckBufferNeedWrite()
+{
+    uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
+    size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
+    int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
+    size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
+
+    if (writableInFrame <= 0) {
+        return false;
+    }
+
+    if (cbBufferSize_ > totalSizeInByte) {
+        return false;
+    }
+
+    // readable >= engineTotalSizeInFrame_
+    if (static_cast<uint64_t>(writableInFrame) <
+        (static_cast<uint64_t>(totalSizeInFrame) - engineTotalSizeInFrame_)) {
+        return false;
+    }
+
+    if (writableSizeInByte < cbBufferSize_) {
+        return false;
+    }
+
+    return true;
+}
+
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
@@ -381,17 +409,7 @@ void RendererInClientInner::WaitForBufferNeedWrite()
             if (state_ != RUNNING) {
                 return true;
             }
-            uint32_t totalSizeInFrame = clientBuffer_->GetTotalSizeInFrame();
-            size_t totalSizeInByte = totalSizeInFrame * sizePerFrameInByte_;
-            int32_t writableInFrame = clientBuffer_ -> GetWritableDataFrames();
-            size_t writableSizeInByte = writableInFrame * sizePerFrameInByte_;
-            if ((writableInFrame <= 0) || (cbBufferSize_ > totalSizeInByte) ||
-                // readable >= engineTotalSizeInFrame_
-                (writableInFrame < (totalSizeInFrame - engineTotalSizeInFrame_)) ||
-                (writableSizeInByte < cbBufferSize_)) {
-                return false;
-            }
-            return true;
+            return CheckBufferNeedWrite();
         });
     if (futexRes != SUCCESS) {
         AUDIO_ERR_LOG("futex err: %{public}d", futexRes);
