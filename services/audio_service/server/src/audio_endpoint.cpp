@@ -1461,8 +1461,8 @@ bool AudioEndpointInner::NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, 
     return false;
 }
 
-void AudioEndpointInner::PrepareStreamDataBuffer(size_t i,
-    size_t spanSizeInByte, RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
+void AudioEndpointInner::PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
+    RingBufferWrapper &ringBuffer, AudioStreamData &streamData)
 {
     if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
         processTmpBufferList_[i].resize(0);
@@ -1514,22 +1514,6 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
         ringBuffer.SetBuffersValueWithSpecifyDataLen(0);
     }
     size_t spanSizeInByte = processList_[i]->GetSpanSizeInFrame() * processList_[i]->GetByteSizePerFrame();
-    if (NeedUseTempBuffer(ringBuffer, spanSizeInByte)) {
-        processTmpBufferList_[i].resize(0);
-        processTmpBufferList_[i].resize(spanSizeInByte);
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = processTmpBufferList_[i].data();
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = ringBuffer.dataLength;
-        ringBufferDescForCotinueData.CopyInputBufferValueToCurBuffer(ringBuffer);
-        streamData.bufferDesc.buffer = processTmpBufferList_[i].data();
-        streamData.bufferDesc.bufLength = spanSizeInByte;
-        streamData.bufferDesc.dataLength = spanSizeInByte;
-    } else {
-        streamData.bufferDesc.buffer = ringBuffer.basicBufferDescs[0].buffer;
-        streamData.bufferDesc.bufLength = ringBuffer.dataLength;
-        streamData.bufferDesc.dataLength = ringBuffer.dataLength;
-    }
     PrepareStreamDataBuffer(i, spanSizeInByte, ringBuffer, streamData);
     CheckPlaySignal(streamData.bufferDesc.buffer, streamData.bufferDesc.bufLength);
     audioDataList.push_back(streamData);
