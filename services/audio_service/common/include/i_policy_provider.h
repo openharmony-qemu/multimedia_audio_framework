@@ -81,8 +81,6 @@ public:
 
     virtual int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) = 0;
 
-    virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
-
     virtual int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
         uint32_t sessionId) = 0;
 

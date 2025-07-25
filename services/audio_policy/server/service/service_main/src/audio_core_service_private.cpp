@@ -2766,5 +2766,10 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
         AUDIO_ERR_LOG("Write event fail: CONCURRENT_CAPTURE, ret = %{public}d", ret);
     }
 }
+
+int32_t AudioCoreService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
+}
 } // namespace AudioStandard
 } // namespace OHOS

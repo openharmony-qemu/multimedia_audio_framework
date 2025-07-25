@@ -248,11 +248,6 @@ DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
     return distributedRoutingInfo_;
 }
 
-int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
-}
-
 int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {

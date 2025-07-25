@@ -49,8 +49,6 @@ public:
 
     DeviceType GetActiveOutPutDevice();
 
-    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
-
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
     int32_t NotifyWakeUpCapturerRemoved();

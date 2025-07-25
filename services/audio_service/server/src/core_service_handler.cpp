@@ -97,5 +97,13 @@ uint32_t CoreServiceHandler::GenerateSessionId()
     iCoreServiceProvider_->GenerateSessionId(ret);
     return ret;
 }
+
+int32_t CoreServiceHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
+    int32_t ret = ERROR;
+    iCoreServiceProvider_->SetWakeUpAudioCapturerFromAudioServer(config, ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS

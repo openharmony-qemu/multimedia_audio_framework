@@ -35,6 +35,7 @@ public:
          bool isReloadProcess) override;
     int32_t GenerateSessionId(uint32_t &sessionId) override;
 
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };
