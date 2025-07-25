@@ -1474,11 +1474,11 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetSelectedCaptureDevice(c
 {
     shared_ptr<AudioDeviceDescriptor> devDesc = nullptr;
     if (sessionID == 0 || !selectedInputDeviceInfo_.count(sessionID)) {
-        AUDIO_WARNING_LOG("sessionid %{public}d has selected device", sessionID);
         return devDesc;
     }
     for (const auto &desc : connectedDevices_) {
         if (desc->deviceType_ == selectedInputDeviceInfo_[sessionID].first) {
+            AUDIO_WARNING_LOG("sessionid %{public}d has selected device", sessionID);
             return make_shared<AudioDeviceDescriptor>(*desc);
         }
     }
