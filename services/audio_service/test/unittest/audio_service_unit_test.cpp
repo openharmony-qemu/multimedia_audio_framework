@@ -2752,5 +2752,38 @@ HWTEST(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
         EXPECT_EQ(result, AUDIO_OK);
     }
 }
+
+/**
+ * @tc.name  : Test InRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: InRenderWhitelist_001,
+ * @tc.desc  : Test InRenderWhitelist interface.
+ */
+HWTEST(AudioServiceUnitTest, InRenderWhitelist_001, TestSize.Level1)
+{
+    std::string bundleName = "com.test";
+    AudioService::GetInstance()->renderWhitelist_.clear();
+    bool ret = AudioService::GetInstance()->InRenderWhitelist(bundleName);
+    EXPECT_FALSE(ret);
+
+    AudioService::GetInstance()->renderWhitelist_.insert(bundleName);
+    ret = AudioService::GetInstance()->InRenderWhitelist(bundleName);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test SaveRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: SaveRenderWhitelist_001,
+ * @tc.desc  : Test SaveRenderWhitelist interface.
+ */
+HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
+{
+    std::vector<std::string> list;
+    list.resize(5);
+    EXPECT_EQ(list.size(), 5);
+    AudioService::GetInstance()->SaveRenderWhitelist(list);
+    EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
+}
 } // namespace AudioStandard
 } // namespace OHOS

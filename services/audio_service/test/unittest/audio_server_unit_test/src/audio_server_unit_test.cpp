@@ -2517,5 +2517,21 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
     EXPECT_EQ(result, 0);
 }
+
+/**
+ * @tc.name  : Test SetRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetRenderWhitelist_001
+ * @tc.desc  : Test SetRenderWhitelist interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::string> list;
+    list.push_back("com.test");
+    int32_t ret = audioServer->SetRenderWhitelist(list);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
