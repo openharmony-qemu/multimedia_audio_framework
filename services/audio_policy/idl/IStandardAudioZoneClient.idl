@@ -18,16 +18,16 @@ package OHOS.AudioStandard;
 sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneDescriptor;
 sequenceable audio_interrupt_info..OHOS.AudioStandard.AudioInterrupt;
 interface IStandardAudioZoneClient {
-    [ipccode 0] void OnAudioZoneAdd([in] AudioZoneDescriptor zoneDescriptor);
-    void OnAudioZoneRemove([in] int zoneId);
-    void OnAudioZoneChange([in] int zoneId, [in] AudioZoneDescriptor zoneDescriptor,
+    [ipccode 0, oneway] void OnAudioZoneAdd([in] AudioZoneDescriptor zoneDescriptor);
+    [oneway] void OnAudioZoneRemove([in] int zoneId);
+    [oneway] void OnAudioZoneChange([in] int zoneId, [in] AudioZoneDescriptor zoneDescriptor,
         [in] int reason); // AudioZoneChangeReason reason
 
-    void OnInterruptEvent([in] int zoneId,
+    [oneway] void OnInterruptEvent([in] int zoneId,
         [in] List<OrderedMap<AudioInterrupt, int>> ipcInterrupts, // std::list<std::pair<AudioInterrupt, AudioFocuState>> ==> List<Map<AudioInterrupt, AudioFocuState>>
         [in] int reason); // AudioZoneInterruptReason reason
 
-    void OnInterruptEvent([in] int zoneId, [in] String deviceTag,
+    [oneway] void OnInterruptEvent([in] int zoneId, [in] String deviceTag,
         [in] List<OrderedMap<AudioInterrupt, int>> ipcInterrupts, // std::list<std::pair<AudioInterrupt, AudioFocuState>> ==> List<Map<AudioInterrupt, AudioFocuState>>
         [in] int reason); // AudioZoneInterruptReason reason
 
