@@ -476,12 +476,12 @@ float AudioCaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, currentAudioScene_, activeDevice, scoExcludeFlag);
+    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, currentAudioScene_, scoExcludeFlag);
 
     if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
         struct AudioSceneDescriptor sceneDesc;
@@ -493,10 +493,6 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType acti
     }
     if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
-    }
-    int32_t ret = UpdateActiveDeviceWithoutLock(activeDevice);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     return SUCCESS;
 }

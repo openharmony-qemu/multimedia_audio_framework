@@ -297,8 +297,7 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;

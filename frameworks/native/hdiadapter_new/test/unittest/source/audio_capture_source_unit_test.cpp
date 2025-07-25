@@ -259,7 +259,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_010, TestSize.Level1)
 {
     InitPrimarySource();
     EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySource();
 }

@@ -73,8 +73,7 @@ public:
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
     virtual void SetSpeed(float speed) {}
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
     virtual int32_t GetAudioScene(void) = 0;
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;

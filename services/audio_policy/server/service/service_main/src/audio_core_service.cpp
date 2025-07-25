@@ -501,10 +501,10 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
-    FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
-
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
     if (!isSameScene) {
         OnAudioSceneChange(audioScene);
     }
