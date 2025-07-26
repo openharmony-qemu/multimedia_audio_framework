@@ -1907,7 +1907,7 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
 {
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
         std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    capturerInClientInner->cbBuffer_ = std::unique_ptr<uint8_t[]>(new uint8_t[10]);
+    capturerInClientInner->cbBuffer_ = std::make_unique<uint8_t[]>(10);
     capturerInClientInner->cbBufferSize_ = 10;
     auto ret = capturerInClientInner->FlushCbBuffer();
     EXPECT_EQ(ret, SUCCESS);
