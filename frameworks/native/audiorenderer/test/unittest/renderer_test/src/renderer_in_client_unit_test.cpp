@@ -1980,7 +1980,7 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_078, TestSize.Level1
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
     ptrRendererInClientInner->state_ = STOPPED;
-    ptrRendererInClientInner->appUid_ = 1013; // media_service uid
+    ptrRendererInClientInner->uidGetter_ = []() -> uid_t { return 1013; }; // 1013 media_service uid
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
     ptrRendererInClientInner->notifiedOperation_ = MAX_OPERATION_CODE;

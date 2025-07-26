@@ -1235,8 +1235,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED &&
-        std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), appUid_) != STOP_FLUSH_UIDS.end()) {
+    if (CheckStopFlushUid() && state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     
@@ -1944,6 +1943,11 @@ void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyn
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
+}
+
+bool RendererInClientInner::CheckStopFlushUid()
+{
+    return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
 }
 } // namespace AudioStandard
 } // namespace OHOS
