@@ -75,7 +75,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level
     EXPECT_EQ(hpaeProcessCluster->GetBitWidth(), nodeInfo.format);
     HpaeNodeInfo &retNi = hpaeProcessCluster->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);

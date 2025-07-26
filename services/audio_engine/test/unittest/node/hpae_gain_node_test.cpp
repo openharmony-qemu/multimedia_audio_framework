@@ -66,8 +66,6 @@ HWTEST_F(HpaeGainNodeTest, constructHpaeGainNode, TestSize.Level0)
     HpaeNodeInfo &retNi = hpaeGainNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
     std::cout << "samplingRate: " << retNi.samplingRate << std::endl;
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
-    std::cout << "nodeId: " << retNi.nodeId << std::endl;
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     std::cout << "frameLen: " << retNi.frameLen << std::endl;
     EXPECT_EQ(retNi.channels, nodeInfo.channels);

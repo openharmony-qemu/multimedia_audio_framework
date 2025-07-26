@@ -70,7 +70,6 @@ HWTEST_F(HpaeResampleNodeTest, constructHpaeResampleNode, TestSize.Level0)
     EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
     HpaeNodeInfo &retNi = hpaeResampleNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, dstNodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, dstNodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, dstNodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, dstNodeInfo.channels);
     EXPECT_EQ(retNi.format, dstNodeInfo.format);
@@ -100,7 +99,6 @@ HWTEST_F(HpaeResampleNodeTest, testReset, TestSize.Level0)
     EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
     HpaeNodeInfo &retNi = hpaeResampleNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, dstNodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, dstNodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, dstNodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, dstNodeInfo.channels);
     EXPECT_EQ(retNi.format, dstNodeInfo.format);

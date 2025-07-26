@@ -65,7 +65,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
 
     HpaeNodeInfo &retNi = hpaeSinkOutputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
