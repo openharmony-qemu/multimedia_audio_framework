@@ -260,7 +260,6 @@ AudioServer *GetServerPtr()
         AudioInnerCall::GetInstance()->RegisterAudioServer(&server);
 
         server.GetHapBuildApiVersion(0);
-        server.GetBundleNameFromUid(0);
     }
     return &server;
 }

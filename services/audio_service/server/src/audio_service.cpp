@@ -343,6 +343,27 @@ bool AudioService::InForegroundList(uint32_t uid)
     return false;
 }
 
+void AudioService::SaveRenderWhitelist(std::vector<std::string> list)
+{
+    std::lock_guard<std::mutex> lock(renderWhitelistMutex_);
+
+    renderWhitelist_.clear();
+    for (auto &item : list) {
+        AUDIO_INFO_LOG("Add for hap: %{public}s", item.c_str());
+        renderWhitelist_.insert(item);
+    }
+}
+
+bool AudioService::InRenderWhitelist(const std::string bundleName)
+{
+    std::lock_guard<std::mutex> lock(renderWhitelistMutex_);
+    if (renderWhitelist_.find(bundleName) != renderWhitelist_.end()) {
+        AUDIO_INFO_LOG("find hap %{public}s in list!", bundleName.c_str());
+        return true;
+    }
+    return false;
+}
+
 bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
 {
     // UpdateForegroundState 200001000 to active

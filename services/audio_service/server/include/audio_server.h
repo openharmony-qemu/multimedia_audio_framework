@@ -216,6 +216,8 @@ public:
 
     int32_t SetForegroundList(const std::vector<std::string>& list) override;
 
+    int32_t SetRenderWhitelist(const std::vector<std::string>& list) override;
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
@@ -315,7 +317,6 @@ private:
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
-    const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);

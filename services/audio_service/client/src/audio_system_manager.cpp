@@ -2308,6 +2308,17 @@ int32_t AudioSystemManager::ForceVolumeKeyControlType(AudioVolumeType volumeType
     return AudioPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
 }
 
+int32_t AudioSystemManager::SetRenderWhitelist(std::vector<std::string> list)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gasp->SetRenderWhitelist(list);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
+}
+
 AudioSystemManager::WorkgroupPrioRecorder::WorkgroupPrioRecorder(int32_t grpId)
 {
     grpId_ = grpId;

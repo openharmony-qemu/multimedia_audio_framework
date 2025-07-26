@@ -137,6 +137,7 @@ interface IStandardAudioService {
     void IsAudioLoopbackSupported([in] int mode ,[out] boolean ret);
     [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
+    void SetRenderWhitelist([in] List<String> list);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

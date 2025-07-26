@@ -83,6 +83,7 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/app_bundle_manager.cpp",
   ]
 
   cflags = [
@@ -110,6 +111,8 @@ ohos_shared_library("audio_common") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
   ]
 
   if (sonic_enable == true) {
