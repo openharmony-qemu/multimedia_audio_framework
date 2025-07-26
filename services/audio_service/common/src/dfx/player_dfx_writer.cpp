@@ -31,7 +31,6 @@ PlayerDfxWriter::PlayerDfxWriter(const AppInfo &appInfo, uint32_t index)
 
 PlayerDfxWriter::~PlayerDfxWriter()
 {
-    AUDIO_INFO_LOG("enter deconstruct");
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "nullptr");
     dfxCollector_->FlushDfxMsg(index_, appInfo_.appUid);
 }

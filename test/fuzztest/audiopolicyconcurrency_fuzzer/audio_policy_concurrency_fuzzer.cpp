@@ -43,22 +43,22 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 
-AudioPolicyServer* GetServerPtr()
+sptr<AudioPolicyServer> GetServerPtr()
 {
-    static AudioPolicyServer server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    if (!g_hasServerInit) {
-        server.OnStart();
-        server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (!g_hasServerInit && server != nullptr) {
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
-        server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
 #endif
-        server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
         g_hasServerInit = true;
     }
-    return &server;
+    return server;
 }
 
 void AudioFuzzTestGetPermission()
@@ -126,27 +126,6 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void AudioConcurrencyServiceFuzzTest()
-{
-    std::shared_ptr<AudioConcurrencyService> service = std::make_shared<AudioConcurrencyService>();
-    uint32_t sessionID = GetData<uint32_t>();
-    std::shared_ptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> concurrency =
-        std::make_shared<AudioConcurrencyService::AudioConcurrencyDeathRecipient>(service, sessionID);
-
-    wptr<IRemoteObject> remote;
-    concurrency->OnRemoteDied(remote);
-
-    std::shared_ptr<AudioConcurrencyCallback> callback;
-    auto samgr = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    sptr<IRemoteObject> object = samgr->GetSystemAbility(AUDIO_POLICY_SERVICE_ID);
-    sptr<AudioConcurrencyService::AudioConcurrencyDeathRecipient> deathRecipient;
-    std::shared_ptr<AudioConcurrencyService::AudioConcurrencyClient> audioConcurrencyClient =
-        std::make_shared<AudioConcurrencyService::AudioConcurrencyClient>(callback, object, deathRecipient, sessionID);
-
-    service->SetAudioConcurrencyCallback(sessionID, object);
-    audioConcurrencyClient->OnConcedeStream();
-}
-
 void AudioPowerStateListenerFuzzTest()
 {
     sptr<AudioPolicyServer> audioPolicyServer;
@@ -178,7 +157,6 @@ void AudioPowerStateListenerFuzzTest()
 typedef void (*TestFuncs[2])();
 
 TestFuncs g_testFuncs = {
-    AudioConcurrencyServiceFuzzTest,
     AudioPowerStateListenerFuzzTest,
 };
 

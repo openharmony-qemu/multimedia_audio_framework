@@ -50,6 +50,7 @@ public:
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 private:
     uint32_t streamIndex_ = 0;
+    int32_t recoveryAntiShakeBufferCount_ = 0;
     FILE *dumpDupOut_ = nullptr;
     std::string dumpDupOutFileName_ = "";
     std::unique_ptr<AudioRingCache> dupRingBuffer_ = nullptr;
@@ -90,6 +91,7 @@ public:
 
     int32_t SetOffloadMode(int32_t state, bool isAppBack);
     int32_t UnsetOffloadMode();
+    int32_t SetSpeed(float speed);
     int32_t SetOffloadDataCallbackState(int32_t state);
     int32_t GetOffloadApproximatelyCacheTime(uint64_t &timestamp, uint64_t &paWriteIndex,
         uint64_t &cacheTimeDsp, uint64_t &cacheTimePa);
@@ -112,6 +114,7 @@ public:
     int32_t EnableInnerCap(int32_t innerCapId);
     int32_t DisableInnerCap(int32_t innerCapId);
     int32_t InitDupStream(int32_t innerCapId);
+    int32_t DisableAllInnerCap();
     std::unique_ptr<AudioRingCache>& GetDupRingBuffer();
 
     // for dual tone
@@ -177,6 +180,8 @@ private:
     void ProcessFadeOutIfNeeded(RingBufferWrapper& ringBufferDesc, uint64_t currentReadFrame,
         uint64_t currentWriteFrame, size_t requestDataInFrame);
     void UpdateLatestForWorkgroup(float systemVolume);
+    int32_t DisableInnerCapHandle(int32_t innerCapId);
+    int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

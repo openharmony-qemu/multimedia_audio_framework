@@ -19,12 +19,12 @@
 
 #include "hpae_capturer_manager.h"
 #include "audio_info.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #include "audio_effect_map.h"
 #include "hpae_policy_manager.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -76,8 +76,6 @@ int32_t HpaeCapturerManager::CreateOutputSession(const HpaeStreamInfo &streamInf
 {
     AUDIO_INFO_LOG("Create output node:%{public}d", streamInfo.sessionId);
     HpaeNodeInfo nodeInfo;
-    nodeInfo.nodeId = OnGetNodeId();
-    nodeInfo.nodeName = "HpaeSourceOutputNode";
     nodeInfo.channels = streamInfo.channels;
     nodeInfo.format = streamInfo.format;
     nodeInfo.frameLen = streamInfo.frameLen;
@@ -436,6 +434,17 @@ int32_t HpaeCapturerManager::Release(uint32_t sessionId)
     return DestroyStream(sessionId);
 }
 
+int32_t HpaeCapturerManager::SetStreamMute(uint32_t sessionId, bool isMute)
+{
+    auto request = [this, sessionId, isMute]() {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
+            "Mute not find sessionId %{public}u", sessionId);
+        sourceOutputNodeMap_[sessionId]->SetMute(isMute);
+    };
+    SendRequest(request);
+    return SUCCESS;
+}
+
 int32_t HpaeCapturerManager::SetMute(bool isMute)
 {
     // to do check pulseaudio
@@ -525,7 +534,7 @@ int32_t HpaeCapturerManager::PrepareCapturerMicRef(HpaeNodeInfo &micRefNodeInfo)
 
 void HpaeCapturerManager::CreateSourceAttr(IAudioSourceAttr &attr)
 {
-    attr.adapterName = sourceInfo_.adapterName.c_str();
+    attr.adapterName = sourceInfo_.adapterName;
     attr.sampleRate = sourceInfo_.samplingRate;
     attr.channel = sourceInfo_.channels;
     attr.format = sourceInfo_.format;
@@ -556,7 +565,7 @@ int32_t HpaeCapturerManager::InitCapturer()
     if (sourceInfo_.ecType == HPAE_EC_TYPE_DIFF_ADAPTER && SafeGetMap(sourceInputClusterMap_, HPAE_SOURCE_EC)) {
         IAudioSourceAttr attrEc;
         attrEc.sourceType = SOURCE_TYPE_EC;
-        attrEc.adapterName = sourceInfo_.ecAdapterName.c_str();
+        attrEc.adapterName = sourceInfo_.ecAdapterName;
         attrEc.deviceType = DEVICE_TYPE_MIC;
         attrEc.sampleRate = sourceInfo_.ecSamplingRate;
         attrEc.channel = sourceInfo_.ecChannels;
@@ -829,8 +838,6 @@ void HpaeCapturerManager::AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveI
         sessionId, sourceInfo_.sourceName.c_str());
     CHECK_AND_RETURN_LOG(moveInfo.sourceOutputNode != nullptr, "move fail, sourceoutputnode is null");
     HpaeNodeInfo nodeInfo = moveInfo.sourceOutputNode->GetNodeInfo();
-    nodeInfo.nodeId = OnGetNodeId(); // new node id for dfx
-    moveInfo.sourceOutputNode->SetNodeInfo(nodeInfo);
     sourceOutputNodeMap_[sessionId] = moveInfo.sourceOutputNode;
     sessionNodeMap_[sessionId] = moveInfo.sessionInfo;
     HpaeProcessorType sceneType = sessionNodeMap_[sessionId].sceneType;
@@ -933,6 +940,7 @@ int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& s
 
 void HpaeCapturerManager::OnNotifyQueue()
 {
+    CHECK_AND_RETURN_LOG(hpaeSignalProcessThread_, "hpaeSignalProcessThread_ is nullptr");
     hpaeSignalProcessThread_->Notify();
 }
 
@@ -948,12 +956,14 @@ std::string HpaeCapturerManager::GetThreadName()
     return sourceInfo_.deviceName;
 }
 
-void HpaeCapturerManager::DumpSourceInfo()
+int32_t HpaeCapturerManager::DumpSourceInfo()
 {
+    CHECK_AND_RETURN_RET_LOG(IsInit(), ERR_ILLEGAL_STATE, "HpaeCapturerManager not init");
     SendRequest([this]() {
         AUDIO_INFO_LOG("DumpSourceInfo deviceName %{public}s", sourceInfo_.deviceName.c_str());
         UploadDumpSourceInfo(sourceInfo_.deviceName);
     });
+    return SUCCESS;
 }
 
 void HpaeCapturerManager::CheckIfAnyStreamRunning()

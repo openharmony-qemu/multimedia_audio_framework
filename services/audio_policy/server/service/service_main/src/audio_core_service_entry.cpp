@@ -149,6 +149,12 @@ int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType de
     return ret;
 }
 
+int32_t AudioCoreService::EventEntry::LoadSplitModule(const std::string &splitArgs, const std::string &networkId)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->LoadSplitModule(splitArgs, networkId);
+}
+
 // device status listener
 void AudioCoreService::EventEntry::OnDeviceStatusUpdated(
     DeviceType devType, bool isConnected, const std::string& macAddress,
@@ -237,7 +243,6 @@ void AudioCoreService::EventEntry::OnForcedDeviceSelected(DeviceType devType, co
 int32_t AudioCoreService::EventEntry::SetAudioScene(AudioScene audioScene, const int32_t uid, const int32_t pid)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock");
     coreService_->SetAudioScene(audioScene, uid, pid);
     return SUCCESS;
 }
@@ -273,6 +278,17 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputDeviceDescInner(captureInfo, networkId);
+}
+
+int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string caller,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    if (coreService_ == nullptr) {
+        return ERR_UNKNOWN;
+    }
+
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
@@ -311,14 +327,12 @@ int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStre
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
 }
 
 int32_t AudioCoreService::EventEntry::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock mode %{public}d", mode);
     return coreService_->UpdateTracker(mode, streamChangeInfo);
 }
 
@@ -440,12 +454,10 @@ std::vector<sptr<VolumeGroupInfo>> AudioCoreService::EventEntry::GetVolumeGroupI
 void AudioCoreService::EventEntry::FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 void AudioCoreService::EventEntry::FetchInputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo)
 {
-    AUDIO_INFO_LOG("Not support");
 }
 
 int32_t AudioCoreService::EventEntry::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage,
@@ -475,6 +487,19 @@ int32_t AudioCoreService::EventEntry::GetPreferredOutputStreamType(AudioRenderer
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredOutputStreamType(rendererInfo, bundleName);
+}
+
+int32_t AudioCoreService::EventEntry::SetSessionDefaultOutputDevice(
+    const int32_t callerPid, const DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+int32_t AudioCoreService::EventEntry::GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->GetSessionDefaultOutputDevice(callerPid, deviceType);
 }
 
 int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo)

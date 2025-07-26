@@ -475,6 +475,23 @@ HWTEST(AudioServerUnitTest, ParseAudioParameter_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test ParseAudioParameter API
+ * @tc.type  : FUNC
+ * @tc.number: ParseAudioParameter_002
+ * @tc.desc  : Test ParseAudioParameter interface.
+ */
+HWTEST(AudioServerUnitTest, ParseAudioParameter_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioServerUnitTest ParseAudioParameter_002 start");
+    int32_t systemAbilityId = 3001;
+    std::shared_ptr<AudioServer> audioServer = std::make_shared<AudioServer>(systemAbilityId, true);
+    ASSERT_TRUE(audioServer != nullptr);
+    EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
+    audioServer->ParseAudioParameter();
+    EXPECT_TRUE(audioServer->isAudioParameterParsed_.load());
+}
+
+/**
  * @tc.name  : Test CacheExtraParameters API
  * @tc.type  : FUNC
  * @tc.number: CacheExtraParameters_001

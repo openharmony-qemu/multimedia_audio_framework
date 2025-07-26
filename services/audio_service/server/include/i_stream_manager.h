@@ -43,6 +43,10 @@ public:
     virtual int32_t CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream) = 0;
     virtual int32_t ReleaseRender(uint32_t streamIndex_) = 0;
     virtual int32_t StartRender(uint32_t streamIndex) = 0;
+    virtual int32_t StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)
+    {
+        return StartRender(streamIndex);
+    }
     virtual int32_t StopRender(uint32_t streamIndex) = 0;
     virtual int32_t PauseRender(uint32_t streamIndex) = 0;
     virtual int32_t TriggerStartIfNecessary() = 0;

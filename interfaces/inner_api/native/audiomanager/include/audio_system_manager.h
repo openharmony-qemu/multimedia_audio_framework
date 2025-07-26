@@ -119,6 +119,7 @@ public:
 struct MicrophoneBlockedInfo : public Parcelable {
     DeviceBlockStatus blockStatus;
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
     void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
     {
@@ -152,9 +153,15 @@ struct MicrophoneBlockedInfo : public Parcelable {
 
         info->blockStatus = static_cast<DeviceBlockStatus>(parcel.ReadInt32());
         int32_t size = parcel.ReadInt32();
+        if (size < 0 || size >= DEVICE_CHANGE_VALID_SIZE) {
+            delete info;
+            return nullptr;
+        }
         for (int32_t i = 0; i < size; i++) {
-            info->devices.emplace_back(
-                std::shared_ptr<AudioDeviceDescriptor>(AudioDeviceDescriptor::Unmarshalling(parcel)));
+            auto device = AudioDeviceDescriptor::Unmarshalling(parcel);
+            if (device != nullptr) {
+                info->devices.emplace_back(std::shared_ptr<AudioDeviceDescriptor>(device));
+            }
         }
         return info;
     }
@@ -1222,17 +1229,6 @@ public:
     int32_t AbandonAudioFocus(const AudioInterrupt &audioInterrupt);
 
     /**
-     * @brief Reconfigure audio channel
-     *
-     * @param count count
-     * @param deviceType device type
-     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
-     * defined in {@link audio_errors.h} otherwise.
-     * @since 8
-     */
-    int32_t ReconfigureAudioChannel(const uint32_t &count, DeviceType deviceType);
-
-    /**
      * @brief Request independent interrupt
      *
      * @param focusType focus type
@@ -1561,7 +1557,7 @@ public:
     */
     int32_t NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze);
 
-        /**
+    /**
     * @brief RSS reboot reset all proxy Freeze state change.
     *
     * @return Returns {@link SUCCESS} if the settings is successfully; otherwise, returns an error code defined
@@ -1751,7 +1747,8 @@ public:
     * @return Returns {@link AUDIO_OK} if the operation is successfully.
     * @test
     */
-    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime);
+    int32_t StartGroup(int32_t workgroupId, uint64_t startTime, uint64_t deadlineTime,
+        std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
     /**
     * @brief stop the deadline workgroup.
@@ -1761,6 +1758,36 @@ public:
     * @test
     */
     int32_t StopGroup(int32_t workgroupId);
+
+    /**
+    * @brief set focus stream type when process volume key event.
+    *
+    * @param volumeType Audio stream type.
+    * @param duration duration time to last or cancel force type.
+    * @return Returns {@link AUDIO_OK} if the operation is successfully.
+    * @test
+    */
+    int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
+
+    class WorkgroupPrioRecorder {
+    public:
+        WorkgroupPrioRecorder(int32_t grpId);
+        ~WorkgroupPrioRecorder() = default;
+        void SetRestoreByPermission(bool isByPermission);
+        bool GetRestoreByPermission();
+        int32_t GetGrpId();
+        void RecordThreadPrio(int32_t tokenId);
+        int32_t RestoreGroupPrio(bool isByPermission);
+        int32_t RestoreThreadPrio(int32_t tokenId);
+    private:
+        int32_t grpId_;
+        std::unordered_map<int32_t, int32_t> threads_;
+        bool restoreByPermission_;
+        std::mutex workgroupThreadsMutex_;
+    };
+    std::shared_ptr<WorkgroupPrioRecorder> GetRecorderByGrpId(int32_t grpId);
+    int32_t ExcuteAudioWorkgroupPrioImprove(int32_t workgroupId,
+        const std::unordered_map<int32_t, bool> threads, bool &needUpdatePrio);
 
 private:
     class WakeUpCallbackImpl : public WakeUpSourceCallback {
@@ -1834,6 +1861,8 @@ private:
     void OnWorkgroupChange(const AudioWorkgroupChangeInfo &info);
     bool IsValidToStartGroup(int32_t workgroupId);
     bool hasSystemPermission_ = false;
+    std::unordered_map<int32_t, std::shared_ptr<WorkgroupPrioRecorder>> workgroupPrioRecorderMap_;
+    std::mutex workgroupPrioRecorderMutex_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

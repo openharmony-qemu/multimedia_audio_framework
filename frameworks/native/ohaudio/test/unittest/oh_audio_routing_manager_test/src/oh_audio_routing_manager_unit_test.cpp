@@ -528,5 +528,18 @@ HWTEST(OHAudioRoutingManagerUnitTest, OnMicrophoneBlocked_001, TestSize.Level0)
     microphoneBlock->OnMicrophoneBlocked(info);
     EXPECT_EQ(callbackRet, AUDIOCOMMON_RESULT_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioRoutingManager_IsMicBlockDetectionSupported.
+ * @tc.number: OH_AudioRoutingManager_IsMicBlockDetectionSupported_005
+ * @tc.desc  : Test OH_AudioRoutingManager_IsMicBlockDetectionSupported.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_IsMicBlockDetectionSupported_005, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = {};
+    bool supported = false;
+    auto result = OH_AudioRoutingManager_IsMicBlockDetectionSupported(audioRoutingManager, &supported);
+    EXPECT_NE(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

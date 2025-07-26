@@ -258,7 +258,7 @@ void GetPreferredInputDeviceDescInnerFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     if (DeviceTypeVec.size() == 0 || StreamUsageVec.size() == 0 || SourceTypeVec.size() == 0) {
         return;
     }
@@ -332,14 +332,6 @@ void UpdateDualToneStateFuzzTest()
     audioDeviceCommon.UpdateDualToneState(enable, sessionId);
 }
 
-void FetchDeviceFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    bool isOutputDevice = GetData<uint32_t>() % NUM_2;
-    AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
-    audioDeviceCommon.FetchDevice(isOutputDevice, reason);
-}
-
 void IsFastFromA2dpToA2dpFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -396,13 +388,13 @@ void FetchOutputEndFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = GetData<uint32_t>() % NUM_2;
     int32_t runningStreamCount = GetData<int32_t>();
-    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void FetchOutputDeviceWhenNoRunningStreamFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream();
+    audioDeviceCommon.FetchOutputDeviceWhenNoRunningStream(AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
@@ -415,7 +407,8 @@ void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
     }
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
 void MuteSinkForSwitchGeneralDeviceFuzzTest()
@@ -594,7 +587,8 @@ void MuteSinkPortFuzzTest()
     AudioStreamDeviceChangeReasonExt reason =
         static_cast<AudioStreamDeviceChangeReason>(GetData<uint8_t>() % reasonCount);
     audioDeviceCommon.MuteSinkPort(oldSinkname, newSinkName, reason);
-    audioDeviceCommon.audioDeviceManager_.NoDp();
+    audioDeviceCommon.audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP);
+    audioDeviceCommon.audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP, "card=0;port=0");
 }
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
@@ -851,7 +845,7 @@ void GetSpatialDeviceTypeFuzzTest()
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     audioDeviceCommon.GetSpatialDeviceType(macAddress);
 }
 
@@ -1095,7 +1089,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     UpdateDeviceInfoFuzzTest,
     UpdateConnectedDevicesWhenDisconnectingFuzzTest,
     UpdateDualToneStateFuzzTest,
-    FetchDeviceFuzzTest,
     IsFastFromA2dpToA2dpFuzzTest,
     SetDeviceConnectedFlagWhenFetchOutputDeviceFuzzTest,
     FetchOutputDeviceFuzzTest,

@@ -53,7 +53,6 @@ public:
     enum EndpointType : uint32_t {
         TYPE_MMAP = 0,
         TYPE_INVALID,
-        TYPE_INDEPENDENT,
         TYPE_VOIP_MMAP
     };
 
@@ -104,109 +103,6 @@ public:
     virtual ~AudioEndpoint() = default;
 private:
     virtual bool Config(const AudioDeviceDescriptor &deviceInfo) = 0;
-};
-
-class AudioEndpointSeparate : public AudioEndpoint {
-public:
-    explicit AudioEndpointSeparate(EndpointType type, uint64_t id, AudioStreamType streamType);
-    ~AudioEndpointSeparate();
-
-    bool Config(const AudioDeviceDescriptor &deviceInfo) override;
-    bool StartDevice();
-    bool StopDevice();
-
-    // when audio process start.
-    int32_t OnStart(IAudioProcessStream *processStream) override;
-    // when audio process pause.
-    int32_t OnPause(IAudioProcessStream *processStream) override;
-    // when audio process request update handle info.
-    int32_t OnUpdateHandleInfo(IAudioProcessStream *processStream) override;
-    int32_t LinkProcessStream(IAudioProcessStream *processStream, bool startWhenLinking = true) override;
-    int32_t UnlinkProcessStream(IAudioProcessStream *processStream) override;
-    int32_t GetPreferBufferInfo(uint32_t &totalSizeInframe, uint32_t &spanSizeInframe) override;
-
-    void Dump(std::string &dumpString) override;
-
-    std::string GetEndpointName() override;
-
-    inline EndpointType GetEndpointType() override
-    {
-        return endpointType_;
-    }
-
-    // for inner-cap
-    bool ShouldInnerCap(int32_t innerCapId) override;
-    int32_t EnableFastInnerCap(int32_t innerCapId) override;
-    int32_t DisableFastInnerCap() override;
-    int32_t DisableFastInnerCap(int32_t innerCapId) override;
-
-    int32_t SetVolume(AudioStreamType streamType, float volume) override;
-
-    std::shared_ptr<OHAudioBufferBase> GetBuffer() override;
-
-    EndpointStatus GetStatus() override;
-
-    void Release() override;
-
-    AudioDeviceDescriptor &GetDeviceInfo() override
-    {
-        return deviceInfo_;
-    }
-
-    DeviceRole GetDeviceRole() override
-    {
-        return deviceInfo_.deviceRole_;
-    }
-
-    float GetMaxAmplitude() override;
-
-    uint32_t GetLinkedProcessCount() override;
-
-    AudioMode GetAudioMode() const final;
-private:
-    int32_t PrepareDeviceBuffer(const AudioDeviceDescriptor &deviceInfo);
-    int32_t GetAdapterBufferInfo(const AudioDeviceDescriptor &deviceInfo);
-    void ResyncPosition();
-    void InitAudiobuffer(bool resetReadWritePos);
-    void ProcessData(const std::vector<AudioStreamData> &srcDataList, const AudioStreamData &dstData);
-
-    bool GetDeviceHandleInfo(uint64_t &frames, int64_t &nanoTime);
-
-    bool IsAnyProcessRunning();
-
-    std::string GetStatusStr(EndpointStatus status);
-
-    void InitSinkAttr(IAudioSinkAttr &attr, const AudioDeviceDescriptor &deviceInfo);
-
-private:
-    static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
-    // SamplingRate EncodingType SampleFormat Channel
-    AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
-    AudioStreamInfo dstStreamInfo_;
-    EndpointType endpointType_;
-    uint64_t id_ = 0;
-    AudioStreamType streamType_ = STREAM_DEFAULT;
-    std::mutex listLock_;
-    std::vector<IAudioProcessStream *> processList_;
-    std::vector<std::shared_ptr<OHAudioBufferBase>> processBufferList_;
-
-    std::atomic<bool> isInited_ = false;
-    uint32_t fastRenderId_ = HDI_INVALID_ID;
-    int64_t spanDuration_ = 0; // nano second
-    int64_t serverAheadReadTime_ = 0;
-    int dstBufferFd_ = -1; // -1: invalid fd.
-    uint32_t dstTotalSizeInframe_ = 0;
-    uint32_t dstSpanSizeInframe_ = 0;
-    uint32_t dstByteSizePerFrame_ = 0;
-    uint32_t syncInfoSize_ = 0;
-    std::shared_ptr<OHAudioBufferBase> dstAudioBuffer_ = nullptr;
-    std::atomic<EndpointStatus> endpointStatus_ = INVALID;
-
-    std::mutex loopThreadLock_;
-    std::condition_variable workThreadCV_;
-
-    bool isDeviceRunningInIdel_ = true; // will call start sink when linked.
-    bool needResyncPosition_ = true;
 };
 } // namespace AudioStandard
 } // namespace OHOS

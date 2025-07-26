@@ -89,9 +89,8 @@ public:
     int32_t SetActiveOutputDevice(int32_t deviceType) override;
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
-    int32_t OffloadSetVolume(float volume) override;
-    int32_t SetAudioScene(int32_t audioScene, const std::vector<int32_t> &activeOutputDevices,
-        int32_t activeInputDevice, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
+    int32_t OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId) override;
+    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<StringPair>& kvpairs) override;
@@ -107,7 +106,7 @@ public:
     int32_t UpdateActiveDeviceRoute(int32_t type, int32_t flag, int32_t a2dpOffloadFlag) override;
     int32_t UpdateActiveDevicesRoute(const std::vector<IntPair> &activeDevices,
         int32_t a2dpOffloadFlag, const std::string &deviceName) override;
-    int32_t SetDmDeviceType(uint16_t dmDeviceType) override;
+    int32_t SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType) override;
     int32_t UpdateDualToneState(bool enable, int32_t sessionId) override;
     int32_t SetAudioMonoState(bool audioMono) override;
     int32_t SetAudioBalanceValue(float audioBalance) override;
@@ -321,9 +320,8 @@ private:
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
     void InitMaxRendererStreamCntPerUid();
-    int32_t CheckParam(const AudioProcessConfig &config);
-    void SendRendererCreateErrorInfo(const StreamUsage &sreamUsage,
-        const int32_t &errorCode);
+    bool IsSatellite(const AudioProcessConfig &config, int32_t callingUid);
+    void SendCreateErrorInfo(const AudioProcessConfig &config, int32_t errorCode);
     int32_t CheckMaxRendererInstances();
     int32_t CheckMaxLoopbackInstances(AudioMode audioMode);
     bool SetPcmDumpParameter(const std::vector<std::pair<std::string, std::string>> &params);
@@ -350,12 +348,13 @@ private:
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
-    int32_t SetAudioSceneInner(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
+    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,
         const std::vector<std::string> &subKeys, std::vector<std::pair<std::string, std::string>> &result);
+    int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads) override;
+    int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads) override;
 private:
     static constexpr int32_t MEDIA_SERVICE_UID = 1013;
     static constexpr int32_t VASSISTANT_UID = 3001;

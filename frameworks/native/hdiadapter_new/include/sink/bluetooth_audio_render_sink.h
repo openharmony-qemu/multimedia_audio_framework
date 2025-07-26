@@ -22,6 +22,7 @@
 #include "audio_proxy_manager.h"
 #include "util/audio_running_lock.h"
 #include "util/callback_wrapper.h"
+#include "audio_performance_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -32,7 +33,7 @@ typedef struct OHOS::HDI::Audio_Bluetooth::AudioRender BtAudioRender;
 
 class BluetoothAudioRenderSink : public IAudioRenderSink {
 public:
-    explicit BluetoothAudioRenderSink(bool isBluetoothLowLatency = false);
+    BluetoothAudioRenderSink(bool isBluetoothLowLatency = false, const std::string &halName = "");
     ~BluetoothAudioRenderSink();
 
     int32_t Init(const IAudioSinkAttr &attr) override;
@@ -65,8 +66,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -103,6 +103,7 @@ private:
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
     bool IsValidState(void);
+    bool IsSinkInited(void) override;
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -122,7 +123,7 @@ private:
     static constexpr int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10000000us
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;
-    static constexpr int64_t STAMP_THRESHOLD_MS = 20;
+    static constexpr int64_t STAMP_THRESHOLD_MS = 40;
     static constexpr int32_t RENDER_FRAME_NUM = -4;
     static constexpr uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
 #ifdef FEATURE_POWER_MANAGER
@@ -131,6 +132,8 @@ private:
 #endif
 
     bool isBluetoothLowLatency_ = false;
+    const std::string halName_ = "";
+    AdapterType sinkType_ = ADAPTER_TYPE_BLUETOOTH;
     IAudioSinkAttr attr_ = {};
     SinkCallbackWrapper callback_ = {};
     bool sinkInited_ = false;
@@ -163,6 +166,7 @@ private:
     // for dfx log
     int32_t logMode_ = 0;
     std::string logUtilsTag_ = "";
+    std::string logTypeTag_ = "";
     mutable int64_t volumeDataCount_ = 0;
 #ifdef FEATURE_POWER_MANAGER
     std::shared_ptr<AudioRunningLock> runningLock_;

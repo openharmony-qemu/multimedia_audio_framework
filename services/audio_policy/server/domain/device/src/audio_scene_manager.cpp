@@ -78,78 +78,7 @@ bool AudioSceneManager::CheckVoiceCallActive(int32_t sessionId) const
 
 int32_t AudioSceneManager::SetAudioSceneAfter(AudioScene audioScene, BluetoothOffloadState state)
 {
-    std::vector<DeviceType> activeOutputDevices;
-    bool haveArmUsbDevice = false;
-    DealAudioSceneOutputDevices(audioScene, activeOutputDevices, haveArmUsbDevice);
-    // mute primary when play media and ring
-    if (activeOutputDevices.size() > 1 && streamCollector_.IsMediaPlaying()) {
-        audioIOHandleMap_.MuteSinkPort(PRIMARY_SPEAKER, MEDIA_TO_RING_MUTE_DURATION_TIME_US, true);
-        // Wait for the audio data in the cache to be drained before moving the stream
-        // Increase the delay time for the headset device
-        DeviceType mainDeviceType = activeOutputDevices.front();
-        if (mainDeviceType == DEVICE_TYPE_USB_HEADSET || mainDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            usleep(HEADSET_SWITCH_DELAY_US); // sleep fix data cache pop.
-        }
-    }
-    int32_t result = SUCCESS;
-    if (haveArmUsbDevice) {
-        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
-            DEVICE_TYPE_USB_ARM_HEADSET, state);
-    } else {
-        result = AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, activeOutputDevices,
-            audioActiveDevice_.GetCurrentInputDeviceType(), state);
-    }
-    return result;
-}
-
-void AudioSceneManager::DealAudioSceneOutputDevices(const AudioScene &audioScene,
-    std::vector<DeviceType> &activeOutputDevices, bool &haveArmUsbDevice)
-{
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
-    switch (audioScene) {
-        case AUDIO_SCENE_RINGING:
-            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_RINGTONE, -1, "DealAudioSceneOutputDevices_1");
-            if (!descs.empty()) {
-                audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
-            }
-            break;
-        case AUDIO_SCENE_VOICE_RINGING:
-            descs = audioRouterCenter_.FetchOutputDevices(STREAM_USAGE_VOICE_RINGTONE, -1,
-                "DealAudioSceneOutputDevices_2");
-            if (!descs.empty()) {
-                audioActiveDevice_.SetCurrentOutputDevice(*descs.front());
-            }
-            break;
-        default:
-            AUDIO_INFO_LOG("No ringing scene:%{public}d", audioScene);
-            break;
-    }
-
-    if (!descs.empty()) {
-        for (size_t i = 0; i < descs.size(); i++) {
-            if (descs[i]->getType() == DEVICE_TYPE_USB_ARM_HEADSET) {
-                AUDIO_INFO_LOG("usb headset is arm device.");
-                activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-                haveArmUsbDevice = true;
-            } else {
-                activeOutputDevices.push_back(descs[i]->getType());
-            }
-        }
-    } else {
-        DeviceType activeDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-        if (activeDeviceType == DEVICE_TYPE_USB_ARM_HEADSET) {
-            activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-            haveArmUsbDevice = true;
-        } else {
-            DeviceType currentOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
-            if (!VolumeUtils::IsPCVolumeEnable() &&
-                streamCollector_.IsStreamActive(AudioVolumeType::STREAM_ALARM) &&
-                currentOutputDeviceType == DEVICE_TYPE_USB_HEADSET) {
-                activeOutputDevices.push_back(DEVICE_TYPE_SPEAKER);
-            }
-            activeOutputDevices.push_back(audioActiveDevice_.GetCurrentOutputDeviceType());
-        }
-    }
+    return AudioServerProxy::GetInstance().SetAudioSceneProxy(audioScene, state);
 }
 
 AudioScene AudioSceneManager::GetAudioScene(bool hasSystemPermission) const

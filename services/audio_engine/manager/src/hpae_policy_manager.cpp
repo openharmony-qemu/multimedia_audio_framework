@@ -20,10 +20,11 @@
 #include "hpae_policy_manager.h"
 #include <string>
 #include "audio_errors.h"
-#include "audio_engine_log.h"
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain_manager.h"
 #include "manager/hdi_adapter_manager.h"
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -80,6 +81,11 @@ int32_t HpaePolicyManager::EffectRotationUpdate(const uint32_t rotationState)
 int32_t HpaePolicyManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
 {
     return AudioEffectChainManager::GetInstance()->SetEffectSystemVolume(systemVolumeType, systemVolume);
+}
+
+int32_t HpaePolicyManager::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    return AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
 }
 
 int32_t HpaePolicyManager::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray)

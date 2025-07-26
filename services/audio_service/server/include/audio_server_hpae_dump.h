@@ -43,6 +43,8 @@ public:
     void OnDumpSinkInfoCb(std::string &dumpStr, int32_t result) override;
     void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) override;
     void OnDumpAllAvailableDeviceCb(int32_t result) override;
+    void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) override;
+    void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result) override;
 private:
     void InitDumpFuncMap();
     void HelpInfoDump(std::string &dumpString);
@@ -58,12 +60,17 @@ private:
     void AudioCacheMemoryDump(std::string &dumpString);
     void AudioPerformMonitorDump(std::string &dumpString);
     void HdiAdapterDump(std::string &dumpString);
-    
+    void PlaybackSinkInputDump(std::string &dumpString);
+    void RecordSourceOutputDump(std::string &dumpString);
+    bool GetDevicesInfo();
+
     using DumpFunc = void(AudioServerHpaeDump::*)(std::string &dumpString);
     std::map<std::u16string, DumpFunc> dumpFuncMap;
     std::string dumpHpaeSinkInfo_;
     std::string dumpHpaeSourceInfo_;
     std::string dumpHdfModulesInfo_;
+    std::string dumpSinkInputsInfo_;
+    std::string dumpSourceOutputsInfo_;
     std::mutex lock_;
     // for status operation wait and notify
     std::mutex callbackMutex_;
@@ -71,6 +78,7 @@ private:
     bool isFinishGetSinkInfo_ = false;
     bool isFinishGetSourceInfo_ = false;
     bool isFinishGetHdfModulesInfo_ = false;
+    bool isFinishGetStreamInfo_ = false;
     HpaeDeviceInfo devicesInfo_;
 };
 } // namespace AudioStandard

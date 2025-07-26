@@ -193,12 +193,6 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
     NotifyUserDisSelectionEventToBt(
         std::make_shared<AudioDeviceDescriptor>(GetCurrentOutputDevice()));
 
-    DeviceType curOutputDeviceType = GetCurrentOutputDeviceType();
-    if (curOutputDeviceType == DEVICE_TYPE_NEARLINK) {
-        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
-            STREAM_USAGE_INVALID);
-    }
-
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO ||
         audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
         Bluetooth::SendUserSelectionEvent(audioDeviceDescriptor->deviceType_,
@@ -225,6 +219,10 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
         Bluetooth::AudioHfpManager::DisconnectSco();
     }
 #endif
+    if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
+            STREAM_USAGE_INVALID);
+    }
 }
 
 void AudioActiveDevice::NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
@@ -394,11 +392,11 @@ int32_t AudioActiveDevice::SetCallDeviceActive(DeviceType deviceType, bool activ
 }
 
 void AudioActiveDevice::UpdateActiveDeviceRoute(DeviceType deviceType, DeviceFlag deviceFlag,
-    const std::string &deviceName)
+    const std::string &deviceName, std::string networkId)
 {
     Trace trace("KeyAction AudioActiveDevice::UpdateActiveDeviceRoute DeviceType:" + std::to_string(deviceType));
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with type[%{public}d] name[%{public}s]",
-        deviceType, deviceName.c_str());
+    CHECK_AND_RETURN_LOG(networkId == LOCAL_NETWORK_ID, "distributed device, do not update route");
+    AUDIO_INFO_LOG("[PipeExecInfo] Active route with type[%{public}d]", deviceType);
     std::vector<std::pair<DeviceType, DeviceFlag>> activeDevices;
     activeDevices.push_back(make_pair(deviceType, deviceFlag));
     UpdateActiveDevicesRoute(activeDevices, deviceName);
@@ -413,8 +411,7 @@ void AudioActiveDevice::UpdateActiveDevicesRoute(std::vector<std::pair<DeviceTyp
     for (size_t i = 0; i < activeDevices.size(); i++) {
         deviceTypesInfo = deviceTypesInfo + " " + std::to_string(activeDevices[i].first);
     }
-    AUDIO_INFO_LOG("[PipeExecInfo] Active route with types[%{public}s] name[%{public}s]",
-        deviceTypesInfo.c_str(), deviceName.c_str());
+    AUDIO_INFO_LOG("[PipeExecInfo] Active route with types[%{public}s]", deviceTypesInfo.c_str());
 
     Trace trace("AudioActiveDevice::UpdateActiveDevicesRoute DeviceTypes:" + deviceTypesInfo);
     auto ret = AudioServerProxy::GetInstance().UpdateActiveDevicesRouteProxy(activeDevices,
@@ -437,11 +434,12 @@ void AudioActiveDevice::UpdateStreamDeviceMap(std::string source)
     std::vector<std::shared_ptr<AudioStreamDescriptor>> descs =
         AudioPipeManager::GetPipeManager()->GetAllOutputStreamDescs();
     activeOutputDevices_.clear();
-    for (auto &desc :descs) {
+    for (auto &desc : descs) {
         CHECK_AND_CONTINUE(desc != nullptr);
-        AUDIO_INFO_LOG("session: %{public}d, uid %{public}d, usage:%{public}d devices:%{public}s",
-            desc->sessionId_, desc->callerUid_, desc->rendererInfo_.streamUsage,
-            desc->GetNewDevicesTypeString().c_str());
+        AUDIO_INFO_LOG("session: %{public}d, calleruid: %{public}d, appuid: %{public}d " \
+            "usage:%{public}d devices:%{public}s",
+            desc->sessionId_, desc->callerUid_, desc->appInfo_.appUid,
+            desc->rendererInfo_.streamUsage, desc->GetNewDevicesInfo().c_str());
         AudioStreamType streamType = VolumeUtils::GetVolumeTypeFromStreamUsage(desc->rendererInfo_.streamUsage);
         streamTypeDeviceMap_[streamType] = desc->newDeviceDescs_.back();
         streamUsageDeviceMap_[desc->rendererInfo_.streamUsage] = desc->newDeviceDescs_.front();

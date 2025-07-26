@@ -181,6 +181,9 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateBluetoothRenderSink(c
     if (info == HDI_ID_INFO_MMAP) {
         return std::make_shared<BluetoothAudioRenderSink>(true);
     }
+    if (info == HDI_ID_INFO_HEARING_AID) {
+        return std::make_shared<BluetoothAudioRenderSink>(false, info);
+    }
     return std::make_shared<BluetoothAudioRenderSink>();
 }
 

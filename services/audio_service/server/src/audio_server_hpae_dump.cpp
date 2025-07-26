@@ -17,6 +17,7 @@
 #endif
 
 #include "audio_server_hpae_dump.h"
+#include <sstream>
 #include "audio_utils.h"
 #include "audio_errors.h"
 #include "audio_service.h"
@@ -30,15 +31,6 @@ using namespace OHOS::AudioStandard::HPAE;
 namespace OHOS {
 namespace AudioStandard {
 static const int32_t OPERATION_TIMEOUT_IN_MS = 1000;  // 1000ms
-static const std::string BT_SINK_NAME = "Bt_Speaker";
-static const std::string MCH_SINK_NAME = "MCH_Speaker";
-static const std::string OFFLOAD_SINK_NAME = "Offload_Speaker";
-static const std::string DP_SINK_NAME = "DP_speaker";
-static const std::string DEFAULT_SINK_NAME = "Speaker";
-static const std::string PRIMARY_SOURCE_NAME = "Built_in_mic";
-static const std::string BT_SOURCE_NAME = "Bt_Mic";
-static const std::string USB_SOURCE_NAME = "Usb_arm_mic";
-static const std::string PRIMARY_WAKEUP_SOURCE_NAME = "Built_in_wakeup";
 
 AudioServerHpaeDump::AudioServerHpaeDump()
 {
@@ -78,7 +70,7 @@ void AudioServerHpaeDump::ServerDataDump(string &dumpString)
 void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string deviceName)
 {
     lock_guard<mutex> lock(lock_);
-    AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s start", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s start.", deviceName.c_str());
     isFinishGetSinkInfo_ = false;
     IHpaeManager::GetHpaeManager().DumpSinkInfo(deviceName);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -87,27 +79,23 @@ void AudioServerHpaeDump::GetDeviceSinkInfo(std::string &dumpString, std::string
         return isFinishGetSinkInfo_;  // will be true when got notified.
     });
     if (!stopWaiting) {
-        AUDIO_ERR_LOG("GetDeviceSinkInfo timeout");
+        AUDIO_ERR_LOG("GetDeviceSinkInfo timeout!");
         return;
     }
-    AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s end", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceSinkInfo %{public}s end.", deviceName.c_str());
     dumpString += dumpHpaeSinkInfo_;
 }
 
 void AudioServerHpaeDump::PlaybackSinkDump(std::string &dumpString)
 {
     dumpString += "Hpae AudioServer Playback sink Dump:\n\n";
-    dumpString += DEFAULT_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, DEFAULT_SINK_NAME);
-    dumpString += OFFLOAD_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, OFFLOAD_SINK_NAME);
-    dumpString += MCH_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, MCH_SINK_NAME);
-    dumpString += BT_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, BT_SINK_NAME);
-    dumpString += DP_SINK_NAME + ":\n";
-    GetDeviceSinkInfo(dumpString, DP_SINK_NAME);
+    for (auto it = devicesInfo_.sinkInfos.begin(); it != devicesInfo_.sinkInfos.end(); it++) {
+        dumpString += it->deviceName + ":\n";
+        GetDeviceSinkInfo(dumpString, it->deviceName);
+        dumpString += "\n";
+    }
     dumpString += "\n";
+    PlaybackSinkInputDump(dumpString);
 }
 
 void AudioServerHpaeDump::OnDumpSinkInfoCb(std::string &dumpStr, int32_t result)
@@ -123,7 +111,7 @@ void AudioServerHpaeDump::OnDumpSinkInfoCb(std::string &dumpStr, int32_t result)
 void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::string deviceName)
 {
     lock_guard<mutex> lock(lock_);
-    AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s start", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s start.", deviceName.c_str());
     isFinishGetSourceInfo_ = false;
     IHpaeManager::GetHpaeManager().DumpSourceInfo(deviceName);
     std::unique_lock<std::mutex> waitLock(callbackMutex_);
@@ -132,25 +120,23 @@ void AudioServerHpaeDump::GetDeviceSourceInfo(std::string &dumpString, std::stri
         return isFinishGetSourceInfo_;  // will be true when got notified.
     });
     if (!stopWaiting) {
-        AUDIO_ERR_LOG("GetDeviceSourceInfo timeout");
+        AUDIO_ERR_LOG("GetDeviceSourceInfo timeout!");
         return;
     }
-    AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s end", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceSourceInfo %{public}s end.", deviceName.c_str());
     dumpString += dumpHpaeSourceInfo_;
 }
 
 void AudioServerHpaeDump::RecordSourceDump(std::string &dumpString)
 {
     dumpString += "Hpae AudioServer Record source Dump:\n\n";
-    dumpString += PRIMARY_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, PRIMARY_SOURCE_NAME);
-    dumpString += BT_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, BT_SOURCE_NAME);
-    dumpString += USB_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, USB_SOURCE_NAME);
-    dumpString += PRIMARY_WAKEUP_SOURCE_NAME + ":\n";
-    GetDeviceSourceInfo(dumpString, PRIMARY_WAKEUP_SOURCE_NAME);
+    for (auto it = devicesInfo_.sourceInfos.begin(); it != devicesInfo_.sourceInfos.end(); it++) {
+        dumpString += it->deviceName + ":\n";
+        GetDeviceSourceInfo(dumpString, it->deviceName);
+        dumpString += "\n";
+    }
     dumpString += "\n";
+    RecordSourceOutputDump(dumpString);
 }
 
 void AudioServerHpaeDump::OnDumpSourceInfoCb(std::string &dumpStr, int32_t result)
@@ -165,6 +151,9 @@ void AudioServerHpaeDump::OnDumpSourceInfoCb(std::string &dumpStr, int32_t resul
 
 void AudioServerHpaeDump::ArgDataDump(std::string &dumpString, std::queue<std::u16string> &argQue)
 {
+    if (!GetDevicesInfo()) {
+        return;
+    }
     dumpString += "Hpae AudioServer Data Dump:\n\n";
     if (argQue.empty()) {
         ServerDataDump(dumpString);
@@ -209,18 +198,7 @@ int32_t AudioServerHpaeDump::Initialize()
 
 void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 {
-    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
-    std::unique_lock<std::mutex> waitLock(callbackMutex_);
-    isFinishGetHdfModulesInfo_ = false;
-    dumpHdfModulesInfo_.clear();
-    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isFinishGetHdfModulesInfo_;  // will be true when got notified.
-    });
-    if (!stopWaiting) {
-        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout");
-        return;
-    }
-    
+    lock_guard<mutex> lock(lock_);
     dumpHdfModulesInfo_ += "\nHDF Input Modules\n";
     AppendFormat(dumpHdfModulesInfo_, "- %zu HDF Input Modules (s) available:\n", devicesInfo_.sourceInfos.size());
 
@@ -243,6 +221,23 @@ void AudioServerHpaeDump::HDFModulesDump(std::string &dumpString)
 
     AUDIO_INFO_LOG("HDFModulesDump : \n%{public}s end", dumpHdfModulesInfo_.c_str());
     dumpString += dumpHdfModulesInfo_;
+}
+
+bool AudioServerHpaeDump::GetDevicesInfo()
+{
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().DumpAllAvailableDevice(devicesInfo_);
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    isFinishGetHdfModulesInfo_ = false;
+    dumpHdfModulesInfo_.clear();
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishGetHdfModulesInfo_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("DumpAllAvailableDevice timeout!");
+        return false;
+    }
+    return true;
 }
 
 void AudioServerHpaeDump::OnDumpAllAvailableDeviceCb(int32_t result)
@@ -300,6 +295,111 @@ void AudioServerHpaeDump::HdiAdapterDump(std::string &dumpString)
     AUDIO_INFO_LOG("HdiAdapterDump");
     dumpString += "\nHdiAdapter Info\n";
     HdiAdapterManager::GetInstance().DumpInfo(dumpString);
+}
+
+void AudioServerHpaeDump::PlaybackSinkInputDump(std::string &dumpString)
+{
+    lock_guard<mutex> lock(lock_);
+    AUDIO_INFO_LOG("get sinkinputs dump info");
+    isFinishGetStreamInfo_ = false;
+    dumpSinkInputsInfo_.clear();
+    IHpaeManager::GetHpaeManager().DumpSinkInputsInfo();
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishGetStreamInfo_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("PlaybackSinkInputDump timeout!");
+        return;
+    }
+    AUDIO_INFO_LOG("PlaybackSinkInputDump SUCCESS, info : \n%{public}s", dumpSinkInputsInfo_.c_str());
+    dumpString += dumpSinkInputsInfo_;
+}
+
+void AudioServerHpaeDump::RecordSourceOutputDump(std::string &dumpString)
+{
+    lock_guard<mutex> lock(lock_);
+    AUDIO_INFO_LOG("get sourceoutputs dump info");
+    isFinishGetStreamInfo_ = false;
+    dumpSourceOutputsInfo_.clear();
+    IHpaeManager::GetHpaeManager().DumpSourceOutputsInfo();
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+
+    bool stopWaiting = callbackCV_.wait_for(waitLock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return isFinishGetStreamInfo_;  // will be true when got notified.
+    });
+    if (!stopWaiting) {
+        AUDIO_ERR_LOG("RecordSourceOutputDump timeout!");
+        return;
+    }
+    AUDIO_INFO_LOG("RecordSourceOutputDump SUCCESS, info : \n%{public}s", dumpSourceOutputsInfo_.c_str());
+    dumpString += dumpSourceOutputsInfo_;
+}
+
+static std::string TransTimeToString(uint64_t timetamp)
+{
+    auto tp = std::chrono::system_clock::time_point(std::chrono::milliseconds(timetamp));
+    time_t time = std::chrono::system_clock::to_time_t(tp);
+    struct tm *timeinfo = localtime(&time);
+    if (!timeinfo) {
+        return "Invalid time";
+    }
+    char buffer[80];
+    CHECK_AND_RETURN_RET_LOG(strftime(buffer, sizeof(buffer), "%a %b %d %H:%M:%S %Y", timeinfo) != 0, "error time",
+        "strftime failed");
+    return buffer;
+}
+
+static void TransHpaeInputOutputInfoToStr(const HpaeInputOutputInfo &info, const size_t &idx, std::string &tempDumpStr)
+{
+    std::ostringstream oss;
+    oss << "  Stream " << idx << "\n"
+        << "  - Stream Id: " << info.sessionId << "\n"
+        << "  - Device Name: " << info.deviceName << "\n"
+        << "  - Application Name: " << GetBundleNameByToken(info.tokenId) << "\n"
+        << "  - Process Id: " << info.pid << "\n"
+        << "  - User Id: " << info.uid << "\n"
+        << "  - Offload Enable: " << (info.offloadEnable ? "true" : "false") << "\n"
+        << "  - stream can be captured: " << (info.privacyType == 0 ? "true" : "false") << "\n"
+        << "  - Stream Configuration: " << info.config << "\n"
+        << "  - Status: " << (info.state == HPAE_SESSION_RUNNING ? "RUNNING" : "STOPPED/PAUSED") << "\n"
+        << "  - Stream Start Time: " << TransTimeToString(info.startTime) << "\n\n";
+    tempDumpStr += oss.str();
+}
+
+void AudioServerHpaeDump::OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    if (result == SUCCESS) {
+        dumpSinkInputsInfo_ += "Playback Streams\n";
+        AppendFormat(dumpSinkInputsInfo_, "- %zu Playback stream (s) available:\n", sinkInputs.size());
+        for (auto it = sinkInputs.begin(); it != sinkInputs.end(); it++) {
+            HpaeInputOutputInfo info = *it;
+            TransHpaeInputOutputInfoToStr(info, it - sinkInputs.begin() + 1, dumpSinkInputsInfo_);
+        }
+        dumpSinkInputsInfo_ += "\n";
+    }
+    isFinishGetStreamInfo_ = true;
+    AUDIO_INFO_LOG("AudioServerHpaeDump OnDumpSinkInputsInfoCb result %{public}d", result);
+    callbackCV_.notify_all();
+}
+
+void AudioServerHpaeDump::OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result)
+{
+    std::unique_lock<std::mutex> waitLock(callbackMutex_);
+    if (result == SUCCESS) {
+        dumpSourceOutputsInfo_ += "Record Streams\n";
+        AppendFormat(dumpSourceOutputsInfo_, "- %zu Record stream (s) available:\n", sourceOutputs.size());
+        for (auto it = sourceOutputs.begin(); it != sourceOutputs.end(); it++) {
+            HpaeInputOutputInfo info = *it;
+            TransHpaeInputOutputInfoToStr(info, it - sourceOutputs.begin() + 1, dumpSourceOutputsInfo_);
+        }
+        dumpSourceOutputsInfo_ += "\n";
+    }
+    isFinishGetStreamInfo_ = true;
+    AUDIO_INFO_LOG("AudioServerHpaeDump OnDumpSourceOutputsInfoCb result %{public}d", result);
+    callbackCV_.notify_all();
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

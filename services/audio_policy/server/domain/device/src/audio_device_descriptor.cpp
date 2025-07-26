@@ -32,6 +32,7 @@ const std::map<DeviceType, std::string> deviceTypeStringMap = {
     {DEVICE_TYPE_BLUETOOTH_SCO, "BLUETOOTH_SCO"},
     {DEVICE_TYPE_BLUETOOTH_A2DP, "BLUETOOTH_A2DP"},
     {DEVICE_TYPE_BLUETOOTH_A2DP_IN, "BLUETOOTH_A2DP_IN"},
+    {DEVICE_TYPE_HEARING_AID, "HEARING_AID"},
     {DEVICE_TYPE_NEARLINK, "NEARLINK"},
     {DEVICE_TYPE_NEARLINK_IN, "NEARLINK_IN"},
     {DEVICE_TYPE_MIC, "MIC"},
@@ -201,6 +202,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const AudioDeviceDescriptor &device
     isScoRealConnected_ = deviceDescriptor.isScoRealConnected_;
     isEnable_ = deviceDescriptor.isEnable_;
     exceptionFlag_ = deviceDescriptor.exceptionFlag_;
+    deviceUsage_ = deviceDescriptor.deviceUsage_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor.isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor.a2dpOffloadFlag_;
@@ -234,6 +236,7 @@ AudioDeviceDescriptor::AudioDeviceDescriptor(const std::shared_ptr<AudioDeviceDe
     isScoRealConnected_ = deviceDescriptor->isScoRealConnected_;
     isEnable_ = deviceDescriptor->isEnable_;
     exceptionFlag_ = deviceDescriptor->exceptionFlag_;
+    deviceUsage_ = deviceDescriptor->deviceUsage_;
     // DeviceInfo
     isLowLatencyDevice_ = deviceDescriptor->isLowLatencyDevice_;
     a2dpOffloadFlag_ = deviceDescriptor->a2dpOffloadFlag_;
@@ -317,7 +320,8 @@ bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_);
+        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
 }
 
 void AudioDeviceDescriptor::FixApiCompatibility(int apiVersion, DeviceRole deviceRole,
@@ -376,7 +380,8 @@ bool AudioDeviceDescriptor::MarshallingToDeviceInfo(Parcel &parcel, bool hasBTPe
         parcel.WriteBool(spatializationSupported_) &&
         parcel.WriteBool(hasPair_) &&
         parcel.WriteInt32(routerType_) &&
-        parcel.WriteInt32(isVrSupported_);
+        parcel.WriteInt32(isVrSupported_) &&
+        parcel.WriteInt32(static_cast<int32_t>(deviceUsage_));
 }
 
 void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
@@ -409,6 +414,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
     hasPair_ = parcel.ReadBool();
     routerType_ = static_cast<RouterType>(parcel.ReadInt32());
     isVrSupported_ = parcel.ReadInt32();
+    deviceUsage_ = static_cast<DeviceUsage>(parcel.ReadInt32());
 }
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
@@ -446,6 +452,7 @@ bool AudioDeviceDescriptor::IsSameDeviceDesc(const AudioDeviceDescriptor &device
 
 bool AudioDeviceDescriptor::IsSameDeviceDescPtr(std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor) const
 {
+    CHECK_AND_RETURN_RET_LOG(deviceDescriptor != nullptr, false, "input deviceDescriptor is null");
     return deviceDescriptor->deviceType_ == deviceType_ &&
         deviceDescriptor->macAddress_ == macAddress_ &&
         deviceDescriptor->networkId_ == networkId_ &&
@@ -484,6 +491,11 @@ void AudioDeviceDescriptor::Dump(std::string &dumpString)
 std::string AudioDeviceDescriptor::GetDeviceTypeString()
 {
     return std::string(DeviceTypeToString(deviceType_));
+}
+
+std::string AudioDeviceDescriptor::GetKey()
+{
+    return networkId_ + "_" + std::to_string(deviceType_);
 }
 
 DeviceType AudioDeviceDescriptor::MapInternalToExternalDeviceType(int32_t apiVersion) const

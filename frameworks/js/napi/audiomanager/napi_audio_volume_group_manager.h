@@ -67,10 +67,10 @@ private:
     static napi_value GetActiveVolumeTypeSync(napi_env env, napi_callback_info info);
     static napi_value GetVolume(napi_env env, napi_callback_info info);
     static napi_value GetVolumeSync(napi_env env, napi_callback_info info);
-    static napi_value GetSystemVolumeFromUid(napi_env env, napi_callback_info info);
+    static napi_value GetSystemVolumeByUid(napi_env env, napi_callback_info info);
     static napi_value SetVolume(napi_env env, napi_callback_info info);
     static napi_value SetVolumeWithFlag(napi_env env, napi_callback_info info);
-    static napi_value SetSystemVolumeFromUid(napi_env env, napi_callback_info info);
+    static napi_value SetSystemVolumeByUid(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolume(napi_env env, napi_callback_info info);
     static napi_value GetMaxVolumeSync(napi_env env, napi_callback_info info);
     static napi_value GetMinVolume(napi_env env, napi_callback_info info);

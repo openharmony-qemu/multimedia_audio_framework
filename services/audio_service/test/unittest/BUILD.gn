@@ -31,51 +31,6 @@ config("module_private_config") {
   ]
 }
 
-ohos_unittest("audio_endpoint_separate_unit_test") {
-  testonly = true
-  module_out_path = module_output_path
-  sources = [ "audio_endpoint_separate_unit_test.cpp" ]
-
-  cflags = [ "-fno-access-control" ]
-
-  include_dirs = [
-    "../../server/include",
-    "../../../../frameworks/native/hdiadapter_new/include",
-    "../../../../services/audio_service/server/include",
-    "../../../../services/audio_service/common/include/dfx",
-    "../../../../services/audio_service/server/src",
-    "../../../../frameworks/native/audioschedule/include",
-    "../../../../frameworks/native/playbackcapturer/include",
-    "../../../../frameworks/native/audioclock/include",
-  ]
-
-  deps = [
-    "../../../../frameworks/native/audioclock:audio_clock",
-    "../../../../frameworks/native/audioutils:audio_utils",
-    "../../../../frameworks/native/hdiadapter_new:hdiadapter_new",
-    "../../../audio_service:audio_client",
-    "../../../audio_service:audio_common",
-    "../../../audio_service:audio_process_service_static",
-  ]
-
-  external_deps = [
-    "c_utils:utils",
-    "drivers_interface_audio:libaudio_proxy_5.0",
-    "googletest:gtest",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "ipc:ipc_single",
-    "pulseaudio:pulse",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  defines = []
-  if (audio_framework_feature_low_latency) {
-    defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
-}
-
 ohos_unittest("audio_balance_unit_test") {
   testonly = true
   module_out_path = module_output_path
@@ -132,6 +87,8 @@ ohos_unittest("audio_balance_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
+    "frame_aware_sched:rtg_interface",
+    "qos_manager:concurrent_task_client",
   ]
 
   defines = []
@@ -335,6 +292,7 @@ ohos_unittest("audio_service_unit_test") {
   sources = [
     "./client/audio_stream_manager_unit_test.cpp",
     "./client/audio_system_manager_unit_test.cpp",
+    "./client/audio_session_manager_unit_test.cpp",
     "./common/audio_common_converter_unit_test.cpp",
     "./common/audio_down_mix_stereo_unit_test.cpp",
     "./common/audio_volume_unit_test.cpp",
@@ -510,6 +468,7 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
   install_enable = false
 
   include_dirs = [
+    "../../../../frameworks/native/audiodefinitions/include",
     "../../../../frameworks/native/audioschedule/include",
     "../../../../frameworks/native/audioutils/include",
     "../../../../frameworks/native/audioclock/include",
@@ -812,7 +771,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    # "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -864,7 +822,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
-      "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
   }
   if (audio_framework_feature_inner_capturer) {
@@ -932,7 +889,7 @@ ohos_unittest("capturer_in_server_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audiocapturer:audio_capturer",
     "../../../../frameworks/native/audioclock:audio_clock",
     "../../../../frameworks/native/audioeffect:audio_effect",
@@ -984,7 +941,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     sources += [
       "../../../../services/audio_service/server/src/audio_endpoint.cpp",
       "../../../../services/audio_service/server/src/audio_endpoint_performance.cpp",
-      "../../../../services/audio_service/server/src/audio_endpoint_separate.cpp",
     ]
   }
   if (audio_framework_feature_inner_capturer) {
@@ -1067,6 +1023,27 @@ ohos_unittest("futex_tool_unit_test") {
   ]
 }
 
+ohos_unittest("ring_buffer_wrapper_unit_test") {
+  testonly = true
+  module_out_path = module_output_path
+  include_dirs = [ "../../interfaces/inner_api/native/audiocommon/include" ]
+  sources = [ "./common/ring_buffer_wrapper_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../audio_service:audio_common",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+}
+
 ohos_unittest("resource_manager_adapter_unit_test") {
   testonly = true
   module_out_path = module_output_path
@@ -1128,7 +1105,7 @@ ohos_unittest("policy_handler_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../audio_service:audio_process_service_static",
   ]
 
@@ -1179,7 +1156,7 @@ ohos_unittest("offline_stream_in_server_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../audio_service:audio_process_service_static",
   ]
 
@@ -1228,7 +1205,7 @@ ohos_unittest("audio_resource_service_unit_test") {
   sources = [
     "../../server/src/audio_resource_service.cpp",
     "../../server/src/audio_workgroup.cpp",
-    "../../server/src/audio_workgroup_callback_proxy.cpp",
+    "../../server/src/audio_workgroup_callback.cpp",
     "audio_resource_service_unit_test.cpp",
   ]
 
@@ -1237,8 +1214,10 @@ ohos_unittest("audio_resource_service_unit_test") {
   cflags = [ "-fno-access-control" ]
 
   deps = [
+    "../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../frameworks/native/audioutils:audio_utils",
     "../../../audio_service:audio_client",
+    "../../../../frameworks/native/audioschedule:audio_schedule",
     ]
   external_deps = [
     "c_utils:utils",

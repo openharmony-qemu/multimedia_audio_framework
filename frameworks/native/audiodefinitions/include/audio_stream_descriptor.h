@@ -37,6 +37,7 @@ public:
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
+    int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
     AudioCapturerInfo capturerInfo_ = {};
@@ -64,6 +65,8 @@ public:
     // log and dump
     void Dump(std::string &dumpString);
     std::string GetNewDevicesTypeString();
+    std::string GetNewDevicesInfo();
+    std::string GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc);
 
 private:
     bool IsRenderer()

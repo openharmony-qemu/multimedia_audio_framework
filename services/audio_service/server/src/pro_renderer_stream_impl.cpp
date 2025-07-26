@@ -140,7 +140,7 @@ int32_t ProRendererStreamImpl::InitParams()
         resample_ = std::make_shared<AudioResample>(desChannels, streamInfo.samplingRate, desSamplingRate_,
             DEFAULT_RESAMPLE_QUANTITY);
         if (!resample_->IsResampleInit()) {
-            AUDIO_ERR_LOG("resample not supported.");
+            AUDIO_ERR_LOG("resample not supported!");
             return ERR_INVALID_PARAM;
         }
         resampleSrcBuffer.resize(frameSize, 0.f);
@@ -157,7 +157,7 @@ int32_t ProRendererStreamImpl::InitParams()
         downMixer_ = std::make_unique<AudioDownMixStereo>();
         int32_t ret = downMixer_->InitMixer(streamInfo.channelLayout, streamInfo.channels);
         if (ret != SUCCESS) {
-            AUDIO_ERR_LOG("down mixer not supported.");
+            AUDIO_ERR_LOG("down mixer not supported!");
             return ret;
         }
     }
@@ -365,6 +365,12 @@ int32_t ProRendererStreamImpl::GetPrivacyType(int32_t &privacyType)
     return SUCCESS;
 }
 
+int32_t ProRendererStreamImpl::SetSpeed(float speed)
+{
+    AUDIO_WARNING_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
 void ProRendererStreamImpl::RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback)
 {
     AUDIO_DEBUG_LOG("enter in");
@@ -400,7 +406,7 @@ int32_t ProRendererStreamImpl::EnqueueBuffer(const BufferDesc &bufferDesc)
         auto error = memcpy_s(sinkBuffer_[writeIndex].data(), sinkBuffer_[writeIndex].size(), bufferDesc.buffer,
             bufferDesc.bufLength);
         if (error != EOK) {
-            AUDIO_ERR_LOG("copy failed");
+            AUDIO_ERR_LOG("copy failed!");
         }
     } else {
         if (isNeedMcr_ && !isNeedResample_) {
@@ -562,7 +568,7 @@ int32_t ProRendererStreamImpl::Peek(std::vector<char> *audioBuffer, int32_t &ind
             }
         }
     } else {
-        AUDIO_ERR_LOG("Write callback is nullptr");
+        AUDIO_ERR_LOG("Write callback is nullptr!");
         result = ERR_WRITE_BUFFER;
     }
     return result;

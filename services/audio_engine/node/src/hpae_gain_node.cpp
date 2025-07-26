@@ -17,18 +17,17 @@
 #define LOG_TAG "HpaeGainNode"
 #endif
 
+#include <algorithm>
+#include <cmath>
 #include "hpae_gain_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_volume.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "securec.h"
 #include "volume_tools_c.h"
 #include "audio_stream_info.h"
 #include "hpae_info.h"
-
-#include <algorithm>
-#include <cmath>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -56,12 +55,15 @@ HpaeGainNode::HpaeGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(nodeInfo), HpaePlu
     AUDIO_INFO_LOG(
         "HpaeGainNode SessionId:%{public}u deviceClass :%{public}s", GetSessionId(), GetDeviceClass().c_str());
 #ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeGainNodeInput_id_" + std::to_string(GetSessionId()) +
-                                                      "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                      std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeGainNodeOut_id_" + std::to_string(GetSessionId()) + "_ch_" +
                                                        std::to_string(GetChannelCount()) + "_rate_" +
                                                        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+#endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeGainNode");
+    }
 #endif
 }
 
@@ -82,12 +84,6 @@ HpaePcmBuffer *HpaeGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &i
     float *inputData = (float *)inputs[0]->GetPcmDataBuffer();
     uint32_t frameLen = inputs[0]->GetFrameLen();
     uint32_t channelCount = inputs[0]->GetChannelCount();
-
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->Dump((int8_t *)(inputData), (frameLen * sizeof(float) * channelCount));
-    }
-#endif
     
     if (needGainState_) {
         DoGain(inputs[0], frameLen, channelCount);
@@ -122,7 +118,6 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     if (operation_ == OPERATION_STARTED) {
         if (fadeInState_ == false) { // todo: add operation for softstart
             fadeInState_ = true;
-            AUDIO_INFO_LOG("need to fade in");
         } else {
             AUDIO_WARNING_LOG("fadeInState already set");
         }
@@ -133,7 +128,6 @@ void HpaeGainNode::SetFadeState(IOperation operation)
     if (operation_ == OPERATION_PAUSED || operation_ == OPERATION_STOPPED) {
         if (fadeOutState_ == FadeOutState::NO_FADEOUT) {
             fadeOutState_ = FadeOutState::DO_FADEOUT;
-            AUDIO_INFO_LOG("need to fade out");
         } else {
             AUDIO_WARNING_LOG("current fadeout state %{public}d, cannot prepare fadeout", fadeOutState_);
         }
@@ -158,27 +152,27 @@ void HpaeGainNode::DoFading(HpaePcmBuffer *input)
     uint32_t byteLength = 0;
     uint8_t *data = (uint8_t *)input->GetPcmDataBuffer();
     GetFadeLength(byteLength, input);
-    if (fadeInState_) {
-        if (!input->IsValid()) {
-            AUDIO_WARNING_LOG("GainNode: invalid data no need to do fade in");
-            return;
-        }
-        if (IsSilentData(input)) {
-            AUDIO_DEBUG_LOG("GainNode: silent data no need to do fade in");
-            return;
-        }
-        AUDIO_INFO_LOG("GainNode: fade in started!");
-        ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
-        fadeInState_ = false;
-    }
+    int32_t bufferAvg = GetSimpleBufferAvg(data, byteLength);
+    // do fade out
     if (fadeOutState_ == FadeOutState::DO_FADEOUT) {
-        AUDIO_INFO_LOG("GainNode: fade out started!");
+        AUDIO_INFO_LOG("[%{public}d]: fade out started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
         ProcessVol(data, byteLength, rawFormat, FADE_HIGH, FADE_LOW);
         fadeOutState_ = FadeOutState::DONE_FADEOUT;
         AUDIO_INFO_LOG("fade out done, session %{public}d callback to update status", GetSessionId());
         auto statusCallback = GetNodeStatusCallback().lock();
         CHECK_AND_RETURN_LOG(statusCallback != nullptr, "statusCallback is null, cannot callback");
         statusCallback->OnFadeDone(GetSessionId(), operation_); // if operation is stop or pause, callback
+        return;
+    }
+    // do fade in
+    if (fadeInState_) {
+        if (!input->IsValid() || IsSilentData(input)) {
+            AUDIO_DEBUG_LOG("[%{public}d]: silent or invalid data no need to do fade in", GetSessionId());
+            return;
+        }
+        AUDIO_INFO_LOG("[%{public}d]: fade in started! buffer avg: %{public}d", GetSessionId(), bufferAvg);
+        ProcessVol(data, byteLength, rawFormat, FADE_LOW, FADE_HIGH);
+        fadeInState_ = false;
     }
 }
 

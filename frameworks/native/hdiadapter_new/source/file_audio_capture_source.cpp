@@ -163,7 +163,7 @@ float FileAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t FileAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t FileAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     return SUCCESS;
 }
@@ -190,7 +190,7 @@ void FileAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: FileSource\n";
 }
 
-void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void FileAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

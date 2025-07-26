@@ -54,12 +54,12 @@ ohos_unittest("audio_renderer_unit_test") {
 
   external_deps = [
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
-    "eventhandler:libeventhandler",
   ]
 
   resource_config_file =
@@ -86,20 +86,20 @@ ohos_unittest("audio_fast_renderer_unit_test") {
   sources = [ "src/audio_fast_renderer_unit_test.cpp" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../../../../../services/audio_policy:audio_policy_client",
     "../../../../../../services/audio_service:audio_client",
+    "../../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../audiorenderer:audio_renderer",
   ]
 
   external_deps = [
-    "ipc:ipc_core",
     "c_utils:utils",
+    "eventhandler:libeventhandler",
     "googletest:gmock",
     "googletest:gtest",
     "hilog:libhilog",
+    "ipc:ipc_core",
     "pulseaudio:pulse",
-    "eventhandler:libeventhandler",
   ]
 
   defines = []
@@ -268,6 +268,7 @@ ohos_unittest("renderer_in_client_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
+    "media_foundation:media_foundation",
     "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]

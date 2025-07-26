@@ -265,9 +265,9 @@ float WakeupAudioCaptureSource::GetMaxAmplitude(void)
     return audioCaptureSource_.GetMaxAmplitude();
 }
 
-int32_t WakeupAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t WakeupAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
-    return audioCaptureSource_.SetAudioScene(audioScene, activeDevice);
+    return audioCaptureSource_.SetAudioScene(audioScene);
 }
 
 int32_t WakeupAudioCaptureSource::UpdateActiveDevice(DeviceType inputDevice)
@@ -300,7 +300,7 @@ void WakeupAudioCaptureSource::DumpInfo(std::string &dumpString)
     dumpString += "type: WakeupSource\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
 
-void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void WakeupAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

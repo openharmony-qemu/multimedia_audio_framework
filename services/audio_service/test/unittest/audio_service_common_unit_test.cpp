@@ -134,6 +134,51 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_002, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_001, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(5, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonable_002, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(11, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test CheckPosTimeReasonable API
+* @tc.type  : FUNC
+* @tc.number: CheckPosTimeReasonable
+* @tc.desc  : Test CheckPosTimeReasonable interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckPosTimeReasonablel_003, TestSize.Level1)
+{
+    std::pair<uint64_t, int64_t> pre = std::make_pair(10, 100);
+    std::pair<uint64_t, int64_t> next = std::make_pair(10, 50);
+    bool ret = g_linearPosTimeModel->CheckPosTimeReasonable(pre, next);
+
+    EXPECT_EQ(false, ret);
+}
+
+/**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
 * @tc.number: OHAudioBuffer_001
@@ -283,6 +328,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_006, TestSize.Level1)
     RingBufferWrapper ringbufferWrapper;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
     EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(true, ringbufferWrapper.IsLegal());
 
     posInFrame = 3000 + 1;
     ret = g_oHAudioBuffer->ohAudioBufferBase_.GetBufferByFrame(posInFrame, spanSizeInFrame, ringbufferWrapper);
@@ -406,6 +452,28 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_010, TestSize.Level1)
 /**
 * @tc.name  : Test OHAudioBuffer API
 * @tc.type  : FUNC
+* @tc.number: OHAudioBuffer_011
+* @tc.desc  : Test OHAudioBuffer interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, OHAudioBuffer_011, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT) + 1);
+    parcel.WriteUint32(100);
+    parcel.WriteUint32(10);
+    parcel.WriteUint32(2);
+    int dataFd = 1;
+    int infoFd = 2;
+    parcel.WriteFileDescriptor(dataFd);
+    parcel.WriteFileDescriptor(infoFd);
+
+    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
+    EXPECT_EQ(buffer, nullptr);
+}
+
+/**
+* @tc.name  : Test OHAudioBuffer API
+* @tc.type  : FUNC
 * @tc.number: OHAudioBufferBase_001
 * @tc.desc  : Test OHAudioBuffer interface.
 */
@@ -485,6 +553,7 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
     RingBufferWrapper buffer;
     ret = ohAudioBufferBase->GetAllReadableBuffer(buffer);
     EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(true, buffer.IsLegal());
     EXPECT_EQ(buffer.dataLength, totalSizeInBytes - byteSizePerFrame);
     EXPECT_NE(buffer.basicBufferDescs[0].buffer, nullptr);
     EXPECT_EQ(buffer.basicBufferDescs[0].bufLength, totalSizeInBytes - byteSizePerFrame);
@@ -527,6 +596,183 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_002, TestSize.Level1)
     EXPECT_EQ(buffer.basicBufferDescs[1].bufLength, totalSizeInBytes - byteSizePerFrame);
 }
 
+/**
+* @tc.name  : Test GetSyncWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWriteFrame
+* @tc.desc  : Test GetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_003, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    int32_t ret = ohAudioBuffer->GetSyncWriteFrame();
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test GetSynSetSyncWriteFramecWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWrSetSyncWriteFrameiteFrame
+* @tc.desc  : Test SetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetSyncWriteFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    uint32_t writeFrame = 10;
+    int32_t ret = ohAudioBuffer->SetSyncWriteFrame(writeFrame);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test GetSyncWriteFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncWriteFrame
+* @tc.desc  : Test GetSyncWriteFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetMuteFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    float invalidMuteFactor = 0.5f;
+
+    bool result = ohAudioBuffer->SetMuteFactor(invalidMuteFactor);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test GetDuckFactor API
+* @tc.type  : FUNC
+* @tc.number: GetDuckFactor
+* @tc.desc  : Test GetDuckFactor interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetDuckFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float result = ohAudioBuffer->GetDuckFactor();
+    EXPECT_FLOAT_EQ(result, MAX_FLOAT_VOLUME);
+}
+
+/**
+* @tc.name  : Test SetDuckFactor API
+* @tc.type  : FUNC
+* @tc.number: SetDuckFactor
+* @tc.desc  : Test SetDuckFactor interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetDuckFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float invalidDuckFactor = -0.1f;
+    bool result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    EXPECT_FALSE(result);
+
+    invalidDuckFactor = 1.1f;
+    result = ohAudioBuffer->SetDuckFactor(invalidDuckFactor);
+    EXPECT_FALSE(result);
+
+    float validDuckFactor = 0.5f;
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    EXPECT_TRUE(result);
+
+    validDuckFactor = 0.0f;
+    result = ohAudioBuffer->SetDuckFactor(validDuckFactor);
+    EXPECT_TRUE(result);
+
+    float maxDuckFactor = 1.0f;
+    result = ohAudioBuffer->SetDuckFactor(maxDuckFactor);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test GetStreamVolume API
+* @tc.type  : FUNC
+* @tc.number: GetStreamVolume
+* @tc.desc  : Test GetStreamVolume interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    float result = ohAudioBuffer->GetStreamVolume();
+    EXPECT_FLOAT_EQ(result, MAX_FLOAT_VOLUME);
+}
+
+/**
+* @tc.name  : Test SetStreamVolume API
+* @tc.type  : FUNC
+* @tc.number: SetStreamVolume
+* @tc.desc  : Test SetStreamVolume interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetStreamVolume_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    bool result = ohAudioBuffer->SetStreamVolume(0.5f);
+    EXPECT_TRUE(result);
+
+    float invalidVolume = 1.1f;
+    result = ohAudioBuffer->SetStreamVolume(invalidVolume);
+    EXPECT_FALSE(result);
+
+    invalidVolume = -0.1f;
+    result = ohAudioBuffer->SetStreamVolume(invalidVolume);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test GetSyncReadFrame API
+* @tc.type  : FUNC
+* @tc.number: GetSyncReadFrame
+* @tc.desc  : Test GetSyncReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetSyncReadFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    bool result = ohAudioBuffer->GetSyncReadFrame();
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test SetSyncReadFrame API
+* @tc.type  : FUNC
+* @tc.number: SetSyncReadFrame
+* @tc.desc  : Test SetSyncReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    uint32_t testValue = 123;
+    EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
+}
 /**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
@@ -1035,6 +1281,159 @@ HWTEST(AudioServiceCommonUnitTest, LinearPosTimeModel_005, TestSize.Level1)
     linearPos->sampleRate_ = 1;
     auto ret = linearPos->GetTimeOfPos(posInFrame);
     EXPECT_NE(ret, -1);
+}
+
+/**
+* @tc.name  : Test CheckWriteOrReadFrame API
+* @tc.type  : FUNC
+* @tc.number: CheckWriteOrReadFrame_001
+* @tc.desc  : Test CheckWriteOrReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_001, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 0;
+    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(100));
+}
+
+/**
+* @tc.name  : Test CheckWriteOrReadFrame API
+* @tc.type  : FUNC
+* @tc.number: CheckWriteOrReadFrame_002
+* @tc.desc  : Test CheckWriteOrReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_002, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 10;
+    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(15));
+}
+
+/**
+* @tc.name  : Test CheckWriteOrReadFrame API
+* @tc.type  : FUNC
+* @tc.number: CheckWriteOrReadFrame_003
+* @tc.desc  : Test CheckWriteOrReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, CheckWriteOrReadFrame_003, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 10;
+    EXPECT_FALSE(g_oHAudioBuffer->CheckWriteOrReadFrame(20));
+}
+
+/**
+* @tc.name  : Test SizeCheck API
+* @tc.type  : FUNC
+* @tc.number: SizeCheck_001
+* @tc.desc  : Test SizeCheck interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SizeCheck_001, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 0;
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    uint32_t totalSizeFrame = 1000;
+    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SizeCheck API
+* @tc.type  : FUNC
+* @tc.number: SizeCheck_002
+* @tc.desc  : Test SizeCheck interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SizeCheck_002, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 0;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    uint32_t totalSizeFrame = 1000;
+    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SizeCheck API
+* @tc.type  : FUNC
+* @tc.number: SizeCheck_003
+* @tc.desc  : Test SizeCheck interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SizeCheck_003, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    uint32_t totalSizeFrame = 1000;
+    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SizeCheck API
+* @tc.type  : FUNC
+* @tc.number: SizeCheck_004
+* @tc.desc  : Test SizeCheck interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SizeCheck_004, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    uint32_t totalSizeFrame = 50;
+    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+
+    uint32_t totalSizeFrame1 = 50;
+    int32_t ret = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame1);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test SizeCheck API
+* @tc.type  : FUNC
+* @tc.number: SizeCheck_005
+* @tc.desc  : Test SizeCheck interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SizeCheck_005, TestSize.Level1)
+{
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInFrame_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanSizeInByte_ = 100;
+    g_oHAudioBuffer->spanBasicInfo_.spanConut_ = 10;
+    uint32_t totalSizeFrame = 1000;
+    int32_t result = g_oHAudioBuffer->spanBasicInfo_.SizeCheck(totalSizeFrame);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test ReadFromParcel API
+* @tc.type  : FUNC
+* @tc.number: ReadFromParcel_001
+* @tc.desc  : Test ReadFromParcel interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_001, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
+    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
+    EXPECT_EQ(buffer, nullptr);
+}
+
+/**
+* @tc.name  : Test ReadFromParcel API
+* @tc.type  : FUNC
+* @tc.number: ReadFromParcel_002
+* @tc.desc  : Test ReadFromParcel interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_002, TestSize.Level1)
+{
+    MessageParcel parcel;
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
+    parcel.WriteUint32(0);
+    int dataFd = 1;
+    int infoFd = 2;
+    parcel.WriteFileDescriptor(dataFd);
+    parcel.WriteFileDescriptor(infoFd);
+    std::shared_ptr<OHAudioBuffer> buffer = OHAudioBuffer::ReadFromParcel(parcel);
+    EXPECT_EQ(buffer, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -19,7 +19,6 @@
 #include "hpae_adapter_manager.h"
 #include <sstream>
 #include <atomic>
-#include "audio_common_log.h"
 #include "audio_errors.h"
 #include "hpae_renderer_stream_impl.h"
 #include "hpae_capturer_stream_impl.h"
@@ -27,6 +26,7 @@
 #include "audio_info.h"
 #include "core_service_handler.h"
 #include "policy_handler.h"
+#include "audio_engine_log.h"
 namespace OHOS {
 namespace AudioStandard {
 
@@ -62,7 +62,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
     }
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
-    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream");
+    CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");
     SetHighResolution(processConfig, sessionId);
     rendererStream->SetStreamIndex(sessionId);
     std::lock_guard<std::mutex> lock(streamMapMutex_);
@@ -137,6 +137,19 @@ int32_t HpaeAdapterManager::StartRender(uint32_t streamIndex)
         return SUCCESS;
     }
     return rendererStreamMap_[streamIndex]->Start();
+}
+
+int32_t HpaeAdapterManager::StartRenderWithSyncId(uint32_t streamIndex, const int32_t &syncId)
+{
+    AUDIO_DEBUG_LOG("Enter StartRender");
+    std::lock_guard<std::mutex> lock(streamMapMutex_);
+    auto it = rendererStreamMap_.find(streamIndex);
+    if (it == rendererStreamMap_.end()) {
+        AUDIO_WARNING_LOG("No matching stream");
+        return SUCCESS;
+    }
+    return syncId > 0 ? rendererStreamMap_[streamIndex]->StartWithSyncId(syncId) :
+        rendererStreamMap_[streamIndex]->Start();
 }
 
 int32_t HpaeAdapterManager::StopRender(uint32_t streamIndex)
@@ -290,7 +303,7 @@ std::shared_ptr<IRendererStream> HpaeAdapterManager::CreateRendererStream(AudioP
     std::shared_ptr<HpaeRendererStreamImpl> rendererStream =
         std::make_shared<HpaeRendererStreamImpl>(processConfig, isMoveAble, isCallbackMode);
     if (rendererStream->InitParams(deviceName) != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        AUDIO_ERR_LOG("Create rendererStream failed!");
         return nullptr;
     }
     return rendererStream;

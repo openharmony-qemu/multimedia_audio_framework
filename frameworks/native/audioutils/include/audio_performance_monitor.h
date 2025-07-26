@@ -54,13 +54,16 @@ enum AdapterType : uint8_t {
     ADAPTER_TYPE_REMOTE = 5,
     ADAPTER_TYPE_BLUETOOTH = 6,
     ADAPTER_TYPE_VOIP_FAST = 7,
-    ADAPTER_TYPE_MAX = 8,
+    ADAPTER_TYPE_HEARING_AID = 8,
+    ADAPTER_TYPE_MAX = 9,
 };
 
 struct FrameRecordInfo {
     uint64_t silenceStateCount = MAX_SILENCE_FRAME_COUNT + 1;
     std::deque<bool> historyStateDeque{};
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    uint32_t tokenId = 0;
+    bool isRunning = false;
 };
 
 class AudioPerformanceMonitor {
@@ -69,7 +72,8 @@ public:
 
     // silence Monitor records if server gets valid data from client
     void RecordSilenceState(uint32_t sessionId, bool isSilence, AudioPipeType pipeType, uint32_t uid);
-    void ClearSilenceMonitor(uint32_t sessionId);
+    void StartSilenceMonitor(uint32_t sessionId, uint32_t tokenId);
+    void PauseSilenceMonitor(uint32_t sessionId);
     void DeleteSilenceMonitor(uint32_t sessionId);
 
     void ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs);
@@ -86,7 +90,7 @@ private:
     void JudgeNoise(uint32_t index, bool curState, uint32_t uid);
     void ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType, AdapterType adapterType,
         uint32_t uid = 0);
-
+    std::string GetRunningHapNames(AdapterType adapterType);
     int64_t silenceLastReportTime_ = -1;
     int64_t overTimeLastReportTime_ = -1;
 

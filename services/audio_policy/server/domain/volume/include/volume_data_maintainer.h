@@ -87,8 +87,8 @@ public:
 
     void SetDataShareReady(std::atomic<bool> isDataShareReady);
     bool SaveVolume(DeviceType type, AudioStreamType streamType, int32_t volumeLevel,
-        std::string networkId = "LocalDevice");
-    bool GetVolume(DeviceType deviceType, AudioStreamType streamType, std::string networkId = "LocalDevice");
+        std::string networkId = LOCAL_NETWORK_ID);
+    bool GetVolume(DeviceType deviceType, AudioStreamType streamType, std::string networkId = LOCAL_NETWORK_ID);
     void SetStreamVolume(AudioStreamType streamType, int32_t volumeLevel);
     void SetAppVolume(int32_t appUid, int32_t volumeLevel);
     void GetAppMute(int32_t appUid, bool &isMute);
@@ -100,6 +100,12 @@ public:
     bool IsSetAppVolume(int32_t appUid);
     std::unordered_map<AudioStreamType, int32_t> GetVolumeMap();
 
+    bool GetMuteStatusWithDatabaseVolumeName(const std::string &databaseVolumeName, AudioStreamType streamType);
+    bool SaveMuteStatusWithDatabaseVolumeName(const std::string &databaseVolumeName, AudioStreamType streamType,
+        bool muteStatus);
+    bool GetVolumeWithDatabaseVolumeName(const std::string &databaseVolumeName, AudioStreamType streamType);
+    bool SaveVolumeWithDatabaseVolumeName(const std::string &databaseVolumeName, AudioStreamType streamType,
+        int32_t volumeLevel);
     bool SaveMuteStatus(DeviceType deviceType, AudioStreamType streamType, bool muteStatus,
         std::string networkId = LOCAL_NETWORK_ID);
     bool GetMuteStatus(DeviceType deviceType, AudioStreamType streamType, std::string networkId = LOCAL_NETWORK_ID);
@@ -126,14 +132,13 @@ public:
     bool GetMicMuteState(bool &isMute);
     bool CheckOsAccountReady();
 
-    void StoreRemoteVolumeLevelMap(void);
-    void LoadRemoteVolumeLevelMap(void);
-
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
-        std::string networkId = "LocalDevice");
+        std::string networkId = LOCAL_NETWORK_ID);
     static std::string GetMuteKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
         std::string networkId = LOCAL_NETWORK_ID);
+    static std::string GetVolumeKeyForDatabaseVolumeName(std::string databaseVolumeName, AudioStreamType streamType);
+    static std::string GetMuteKeyForDatabaseVolumeName(std::string databaseVolumeName, AudioStreamType streamType);
     static std::string GetDeviceTypeName(DeviceType deviceType);
     bool SaveVolumeInternal(DeviceType type, AudioStreamType streamType, int32_t volumeLevel, std::string networkId);
     int32_t GetDeviceVolumeInternal(DeviceType deviceType, AudioStreamType streamType);
@@ -151,7 +156,6 @@ private:
     ffrt::mutex volumeForDbMutex_;
     std::unordered_map<AudioStreamType, bool> muteStatusMap_; // save System volume Mutestatus map
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
-    std::unordered_map<AudioStreamType, int32_t> remoteVolumeLevelMap_; // save system remote volume map
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
     bool isSettingsCloneHaveStarted_ = false;

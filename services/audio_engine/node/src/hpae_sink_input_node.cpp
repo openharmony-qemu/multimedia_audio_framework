@@ -17,19 +17,22 @@
 #define LOG_TAG "HpaeSinkInputNode"
 #endif
 
-#include "hpae_sink_input_node.h"
 #include <iostream>
+#include <cinttypes>
+#include "hpae_sink_input_node.h"
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include "cinttypes"
 #include "audio_performance_monitor.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
+const std::string DEVICE_CLASS_OFFLOAD = "offload";
+const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
+
 HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
       pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, (uint64_t)nodeInfo.channelLayout),
@@ -42,11 +45,6 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
         "frameLen %{public}d", nodeInfo.sessionId, inputAudioBuffer_.GetChannelCount(),
         inputAudioBuffer_.GetChannelLayout(), inputAudioBuffer_.GetFrameLen());
 
-#ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSinkInputNode_id_" + std::to_string(GetSessionId()) + "_ch_" + std::to_string(GetChannelCount()) +
-        "_rate_" + std::to_string(GetSampleRate()) + "_bit_" + std::to_string(GetBitWidth()) + ".pcm");
-#endif
     if (nodeInfo.historyFrameCount > 0) {
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
@@ -59,10 +57,13 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.samplingRate == SAMPLE_RATE_11025) {
         pullDataFlag_ = true;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSinkInputNode");
+    }
+#endif
 }
-
-HpaeSinkInputNode::~HpaeSinkInputNode()
-{}
 
 void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 {
@@ -106,7 +107,8 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
     if (nodeCallback) {
         nodeCallback->OnRequestLatency(GetSessionId(), streamInfo_.latency);
     }
-    if (GetDeviceClass() == "offload" && !offloadEnable_) {
+    if ((GetDeviceClass() == DEVICE_CLASS_OFFLOAD || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) &&
+        !offloadEnable_) {
         ret = ERR_OPERATION_FAILED;
         AUDIO_WARNING_LOG("The session %{public}u offloadEnable is false, not request data", GetSessionId());
     } else {
@@ -118,6 +120,7 @@ bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
         if (!streamInfo_.needData && historyBuffer_) {
             historyBuffer_->GetFrameData(inputAudioBuffer_);
             outputStream_.WriteDataToOutput(&inputAudioBuffer_);
+            inputAudioBuffer_.SetBufferValid(true); // historyBuffer always valid
             return false; // do not continue in DoProcess!
         }
         CheckAndDestroyHistoryBuffer();
@@ -149,15 +152,7 @@ void HpaeSinkInputNode::DoProcess()
     if (!ReadToAudioBuffer(ret)) {
         return;
     }
-
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr && inputAudioBuffer_.IsValid()) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump(static_cast<int8_t *>(interleveData_.data()),
-            GetChannelCount() * GetFrameLen() * GetSizeFromFormat(GetBitWidth()));
-    }
-#endif
-    
+ 
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
@@ -227,7 +222,7 @@ bool HpaeSinkInputNode::Drain()
 
 int32_t HpaeSinkInputNode::SetState(HpaeSessionState renderState)
 {
-    AUDIO_INFO_LOG(" Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
+    AUDIO_INFO_LOG("Sink[%{public}s]->Session[%{public}u - %{public}d] state change:[%{public}s]-->[%{public}s]",
         GetDeviceClass().c_str(), GetSessionId(), GetStreamType(), ConvertSessionState2Str(state_).c_str(),
         ConvertSessionState2Str(renderState).c_str());
     state_ = renderState;

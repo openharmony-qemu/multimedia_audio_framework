@@ -15,12 +15,14 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeMixerNode"
 #endif
+
 #include <iostream>
 #include "hpae_mixer_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "cinttypes"
 #include "audio_errors.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,13 +38,13 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     pcmBufferInfo_(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout),
     mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ =  std::make_unique<HpaePcmDumper>("HpaeMixerNodeOut_ch_" +
-        std::to_string(nodeInfo.channels) + "_scenType_" +
-        std::to_string(GetSceneType()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
-    AUDIO_INFO_LOG("HpaeMixerNode scene type is %{public}d", GetSceneType());
-#endif
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeMixerNode");
+    }
+#endif
 }
 
 bool HpaeMixerNode::Reset()
@@ -102,11 +104,6 @@ HpaePcmBuffer *HpaeMixerNode::SignalProcess(const std::vector<HpaePcmBuffer *> &
         limiter_->Process(GetFrameLen() * GetChannelCount(),
             tmpOutput_.GetPcmDataBuffer(), mixedOutput_.GetPcmDataBuffer());
     }
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_->CheckAndReopenHandle();
-    outputPcmDumper_->Dump((int8_t *)(mixedOutput_.GetPcmDataBuffer()),
-        mixedOutput_.GetChannelCount() * sizeof(float) * mixedOutput_.GetFrameLen());
-#endif
     mixedOutput_.SetBufferState(bufferState);
     return &mixedOutput_;
 }

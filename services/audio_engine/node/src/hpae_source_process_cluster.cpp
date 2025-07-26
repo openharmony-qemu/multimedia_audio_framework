@@ -19,8 +19,8 @@
 
 #include "hpae_source_process_cluster.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -29,14 +29,6 @@ HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
     : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo))
 {
     AUDIO_INFO_LOG("Create scene ProcessCluster, sceneType = %{public}u", nodeInfo.sceneType);
-#ifdef ENABLE_HIDUMP_DFX
-    if (nodeInfo.statusCallback.lock()) {
-        HpaeNodeInfo &effectNodeInfo = captureEffectNode_->GetNodeInfo();
-        effectNodeInfo.nodeName = "HpaeCaptureEffectNode";
-        effectNodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        captureEffectNode_->SetNodeInfo(effectNodeInfo);
-    }
-#endif
 }
 
 HpaeSourceProcessCluster::~HpaeSourceProcessCluster()
@@ -87,16 +79,7 @@ std::shared_ptr<HpaeNode> HpaeSourceProcessCluster::GetSharedInstance(HpaeNodeIn
     if (!SafeGetMap(fmtConverterNodeMap_, sourceOutputNodeKey)) {
         fmtConverterNodeMap_[sourceOutputNodeKey] =
             std::make_shared<HpaeAudioFormatConverterNode>(effectNodeInfo, nodeInfo);
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callback = captureEffectNode_->GetNodeStatusCallback().lock()) {
-            HpaeNodeInfo &fmtConverterNodeInfo = fmtConverterNodeMap_[sourceOutputNodeKey]->GetNodeInfo();
-            fmtConverterNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-            fmtConverterNodeInfo.nodeId = callback->OnGetNodeId();
-            fmtConverterNodeMap_[sourceOutputNodeKey]->SetNodeInfo(fmtConverterNodeInfo);
-            callback->OnNotifyDfxNodeInfo(
-                true, captureEffectNode_->GetNodeId(), fmtConverterNodeMap_[sourceOutputNodeKey]->GetNodeInfo());
-        }
-#endif
+        fmtConverterNodeMap_[sourceOutputNodeKey]->SetSourceNode(true);
     }
     fmtConverterNodeMap_[sourceOutputNodeKey]->Connect(captureEffectNode_);
     return fmtConverterNodeMap_[sourceOutputNodeKey];
@@ -121,13 +104,6 @@ OutputPort<HpaePcmBuffer *> *HpaeSourceProcessCluster::GetOutputPort(HpaeNodeInf
         // disconnect fmtConverterNode->upEffectNode
         AUDIO_INFO_LOG("disconnect fmtConverterNode between effectnode[[%{public}s] and sourceoutputnode[%{public}s]",
             effectNodeKey.c_str(), sourceOutputNodeKey.c_str());
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callback = captureEffectNode_->GetNodeStatusCallback().lock()) {
-            callback->OnNotifyDfxNodeInfo(false,
-                fmtConverterNodeMap_[sourceOutputNodeKey]->GetNodeId(),
-                fmtConverterNodeMap_[sourceOutputNodeKey]->GetNodeInfo());
-        }
-#endif
         fmtConverterNodeMap_[sourceOutputNodeKey]->DisConnect(captureEffectNode_);
     }
     return fmtConverterNodeMap_[sourceOutputNodeKey]->GetOutputPort();

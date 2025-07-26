@@ -241,7 +241,7 @@ int32_t ProAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
     uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    AUDIO_INFO_LOG("MoveSinkInputByIndexOrName sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
+    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
         sinkInputId,
         sinkIndex,
         sinkName.c_str());
@@ -262,7 +262,7 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("MoveSinkInputByIndexOrName leave");
+    AUDIO_INFO_LOG("out");
     return SUCCESS;
 }
 
@@ -557,6 +557,14 @@ int32_t ProAudioServiceAdapterImpl::UpdateCollaborativeState(bool isCollaboratio
     AUDIO_INFO_LOG("UpdateCollaborativeState, state %{public}d", isCollaborationEnabled);
     lock_guard<mutex> lock(lock_);
     IHpaeManager::GetHpaeManager().UpdateCollaborativeState(isCollaborationEnabled);
+    return SUCCESS;
+}
+
+int32_t ProAudioServiceAdapterImpl::SetAbsVolumeStateToEffect(const bool absVolumeState)
+{
+    AUDIO_INFO_LOG("SetAbsVolumeStateToEffect, state %{public}d", absVolumeState);
+    lock_guard<mutex> lock(lock_);
+    IHpaeManager::GetHpaeManager().SetAbsVolumeStateToEffect(absVolumeState);
     return SUCCESS;
 }
 }  // namespace AudioStandard

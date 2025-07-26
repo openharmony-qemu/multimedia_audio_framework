@@ -19,6 +19,9 @@
 
 namespace OHOS {
 namespace AudioStandard {
+namespace HPAE {
+class ProResampler;
+}
 class AudioResample {
 public:
     AudioResample(uint32_t channels, uint32_t inRate, uint32_t outRate, int32_t quantity);
@@ -27,8 +30,7 @@ public:
     int32_t ProcessFloatResample(const std::vector<float> &input, std::vector<float> &output);
 
 private:
-    struct SpeexResample;
-    std::unique_ptr<SpeexResample> speex_;
+    std::unique_ptr<HPAE::ProResampler> resampler_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

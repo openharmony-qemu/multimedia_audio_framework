@@ -296,9 +296,8 @@ float RemoteFastAudioCaptureSource::GetMaxAmplitude(void)
     return 0;
 }
 
-int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t RemoteFastAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
-    (void)activeDevice;
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
     AUDIO_INFO_LOG("scene: %{public}d", audioScene);
@@ -559,7 +558,7 @@ int32_t RemoteFastAudioCaptureSource::CheckPositionTime(void)
     return ERR_OPERATION_FAILED;
 }
 
-void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void RemoteFastAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

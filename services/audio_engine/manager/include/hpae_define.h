@@ -26,9 +26,10 @@ constexpr uint32_t MILLISECOND_PER_SECOND = 1000;
 struct HpaeSessionInfo {
     HpaeStreamInfo streamInfo;
     HpaeSessionState state = HPAE_SESSION_NEW;
-    std::weak_ptr<IStatusCallback> statusCallback;
+    std::weak_ptr<IStreamStatusCallback> statusCallback;
     int32_t offloadType = OFFLOAD_DEFAULT;
     bool offloadEnable = false;
+    uint64_t startTime; // create time
 };
 
 
@@ -46,31 +47,6 @@ struct HpaeSinkInputInfo {
     HpaeNodeInfo nodeInfo;
 };
 
-struct HpaeSinkInfo {
-    uint32_t sinkId;
-    std::string deviceNetId;
-    std::string deviceClass;
-    std::string adapterName;
-    std::string lib;
-    std::string filePath;
-    std::string deviceName;
-    size_t frameLen;
-    AudioSamplingRate samplingRate;
-    AudioSampleFormat format;
-    AudioChannel channels;
-    uint32_t suspendTime = 0; // in ms
-    uint64_t channelLayout = 0ULL;
-    int32_t deviceType = 0;
-    float volume = 0.0f;
-    uint32_t openMicSpeaker = 0;
-    uint32_t renderInIdleState = 0;
-    uint32_t sourceType = 0;
-    uint32_t offloadEnable = 0;
-    uint32_t fixedLatency = 0;
-    uint32_t sinkLatency = 0;
-    std::string splitMode;
-};
-
 struct HpaeCapturerSessionInfo {
     HpaeProcessorType sceneType = HPAE_SCENE_DEFAULT;
     HpaeSessionState state = HPAE_SESSION_NEW;
@@ -80,47 +56,6 @@ struct HpaeCapturerSessionInfo {
 struct HpaeSourceOutputInfo {
     HpaeCapturerSessionInfo capturerSessionInfo;
     HpaeNodeInfo nodeInfo;
-};
-
-enum HpaeEcType {
-    HPAE_EC_TYPE_NONE,
-    HPAE_EC_TYPE_SAME_ADAPTER,
-    HPAE_EC_TYPE_DIFF_ADAPTER
-};
-
-enum HpaeMicRefSwitch {
-    HPAE_REF_OFF = 0,
-    HPAE_REF_ON
-};
-
-struct HpaeSourceInfo {
-    uint32_t sourceId;
-    std::string deviceNetId;
-    std::string deviceClass;
-    std::string adapterName;
-    std::string sourceName;
-    SourceType sourceType;
-    std::string filePath;
-    std::string deviceName;
-    size_t frameLen;
-    AudioSamplingRate samplingRate;
-    AudioSampleFormat format;
-    AudioChannel channels;
-    uint64_t channelLayout = 0ULL;
-    int32_t deviceType = 0;
-    float volume = 0.0f;
-    HpaeEcType ecType;
-    size_t ecFrameLen;
-    std::string ecAdapterName;
-    AudioSamplingRate ecSamplingRate;
-    AudioSampleFormat ecFormat;
-    AudioChannel ecChannels;
-    HpaeMicRefSwitch micRef;
-    size_t micRefFrameLen;
-    AudioSamplingRate micRefSamplingRate;
-    AudioSampleFormat micRefFormat;
-    AudioChannel micRefChannels;
-    uint32_t openMicSpeaker;
 };
 
 enum HpaeBufferType {

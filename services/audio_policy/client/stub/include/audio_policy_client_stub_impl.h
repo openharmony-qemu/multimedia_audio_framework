@@ -127,6 +127,10 @@ public:
     int32_t RemoveAudioSessionStateCallback();
     int32_t RemoveAudioSessionStateCallback(const std::shared_ptr<AudioSessionStateChangedCallback> &cb);
     size_t GetAudioSessionStateCallbackSize() const;
+    int32_t AddAudioSessionDeviceCallback(const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb);
+    int32_t RemoveAudioSessionDeviceCallback();
+    int32_t RemoveAudioSessionDeviceCallback(const std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> &cb);
+    size_t GetAudioSessionDeviceCallbackSize() const;
     int32_t AddAudioSceneChangedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &cb);
     int32_t RemoveAudioSceneChangedCallback(
@@ -172,6 +176,7 @@ public:
     int32_t OnAudioSessionDeactive(int32_t deactiveEvent) override;
     int32_t OnAudioSceneChange(int32_t audioScene) override;
     int32_t OnAudioSessionStateChanged(int32_t stateChangeHint) override;
+    int32_t OnAudioSessionCurrentDeviceChanged(const CurrentOutputDeviceChangedEvent &deviceChangedEvent) override;
     int32_t OnFormatUnsupportedError(int32_t errorCode) override;
     int32_t OnStreamVolumeChange(const StreamVolumeEvent &streamVolumeEvent) override;
     int32_t OnSystemVolumeChange(const VolumeEvent &volumeEvent) override;
@@ -186,7 +191,7 @@ private:
     std::vector<std::shared_ptr<AudioFocusInfoChangeCallback>> focusInfoChangeCallbackList_;
     std::vector<std::pair<DeviceFlag, std::shared_ptr<AudioManagerDeviceChangeCallback>>> deviceChangeCallbackList_;
     std::vector<std::shared_ptr<AudioRingerModeCallback>> ringerModeCallbackList_;
-    std::vector<std::shared_ptr<AudioManagerActiveVolumeTypeChangeCallback>> activeVolumeTypeChangeCallbackList_;
+    std::vector<std::weak_ptr<AudioManagerActiveVolumeTypeChangeCallback>> activeVolumeTypeChangeCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<
         AudioManagerAppVolumeChangeCallback>>> appVolumeChangeForUidCallback_;
     std::map<int32_t, int32_t> appVolumeChangeForUidCallbackNum;
@@ -202,6 +207,7 @@ private:
     std::vector<std::shared_ptr<AudioNnStateChangeCallback>> nnStateChangeCallbackList_;
     std::vector<std::shared_ptr<AudioSessionCallback>> audioSessionCallbackList_;
     std::vector<std::weak_ptr<AudioSessionStateChangedCallback>> audioSessionStateCallbackList_;
+    std::vector<std::weak_ptr<AudioSessionCurrentDeviceChangedCallback>> audioSessionDeviceCallbackList_;
     std::vector<std::pair<int32_t, std::shared_ptr<AudioManagerMicrophoneBlockedCallback>>>
         microphoneBlockedCallbackList_;
     std::vector<std::shared_ptr<AudioManagerAudioSceneChangedCallback>> audioSceneChangedCallbackList_;
@@ -238,6 +244,7 @@ private:
     mutable std::mutex nnStateChangeMutex_;
     mutable std::mutex audioSessionMutex_;
     mutable std::mutex audioSessionStateMutex_;
+    mutable std::mutex audioSessionDeviceMutex_;
     mutable std::mutex microphoneBlockedMutex_;
     mutable std::mutex audioSceneChangedMutex_;
     mutable std::mutex formatUnsupportedErrorMutex_;

@@ -66,8 +66,8 @@ static void GetTestAudioSourceAttr(IAudioSourceAttr &attr)
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = g_rootCapturerPath.c_str();
-    attr.deviceNetworkId = NULL;
+    attr.filePath = g_rootCapturerPath;
+    attr.deviceNetworkId = "";
     attr.deviceType = 0;
     attr.sourceType = 0;
     attr.channelLayout = 0;

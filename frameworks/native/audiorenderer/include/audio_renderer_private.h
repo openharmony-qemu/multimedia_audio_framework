@@ -22,7 +22,7 @@
 #include "securec.h"
 
 #include "audio_interrupt_callback.h"
-#include "audio_concurrency_callback.h"
+#include "audio_route_callback.h"
 #include "audio_renderer.h"
 #include "audio_renderer_proxy_obj.h"
 #include "audio_utils.h"
@@ -36,8 +36,10 @@ constexpr uint32_t INVALID_SESSION_ID = static_cast<uint32_t>(-1);
 class RendererPolicyServiceDiedCallback;
 class OutputDeviceChangeWithInfoCallbackImpl;
 class FormatUnsupportedErrorCallbackImpl;
+class AudioRouteCallbackImpl;
 
 class AudioRendererPrivate : public AudioRenderer, public std::enable_shared_from_this<AudioRendererPrivate> {
+    friend class AudioRouteCallbackImpl;
 public:
     int32_t GetFrameCount(uint32_t &frameCount) const override;
     int32_t GetLatency(uint64_t &latency) const override;
@@ -133,7 +135,6 @@ public:
     int32_t SetSpeed(float speed) override;
     float GetSpeed() override;
     bool IsFastRenderer() override;
-    void ConcedeStream();
 
     void SetSilentModeAndMixWithOthers(bool on) override;
     bool GetSilentModeAndMixWithOthers() override;
@@ -203,6 +204,7 @@ private:
     void SetClientInfo(uint32_t flag, IAudioStream::StreamClass &streamClass);
     int32_t InitAudioInterruptCallback(bool isRestoreAudio = false);
     int32_t InitOutputDeviceChangeCallback();
+    void InitAudioRouteCallback();
     int32_t InitAudioStream(AudioStreamParams audioStreamParams);
     bool SetSwitchInfo(IAudioStream::SwitchInfo info, std::shared_ptr<IAudioStream> audioStream);
     void UpdateRendererAudioStream(const std::shared_ptr<IAudioStream> &newAudioStream);
@@ -219,8 +221,6 @@ private:
     void WriteSwitchStreamLogMsg();
     void InitLatencyMeasurement(const AudioStreamParams &audioStreamParams);
     void MockPcmData(uint8_t *buffer, size_t bufferSize) const;
-    void ActivateAudioConcurrency(const AudioStreamParams &audioStreamParams,
-        const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass);
     void WriteUnderrunEvent() const;
     IAudioStream::StreamClass GetPreferredStreamClass(AudioStreamParams audioStreamParams);
     bool IsDirectVoipParams(const AudioStreamParams &audioStreamParams);
@@ -237,6 +237,7 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
+    void NotifyRouteInit(uint32_t routeFlag);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
@@ -245,6 +246,7 @@ private:
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
+    std::shared_ptr<AudioRouteCallback> audioRouteCallback_ = nullptr;
     AppInfo appInfo_ = {};
     AudioInterrupt audioInterrupt_ = {STREAM_USAGE_UNKNOWN, CONTENT_TYPE_UNKNOWN,
         {AudioStreamType::STREAM_DEFAULT, SourceType::SOURCE_TYPE_INVALID, true}, 0};
@@ -403,6 +405,18 @@ public:
 private:
     std::weak_ptr<AudioRendererErrorCallback> callback_;
 };
+
+class AudioRouteCallbackImpl : public AudioRouteCallback {
+public:
+    AudioRouteCallbackImpl(std::weak_ptr<AudioRendererPrivate> renderer)
+        : renderer_(renderer) {}
+    virtual ~AudioRouteCallbackImpl() = default;
+    void OnRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
+
+private:
+    std::weak_ptr<AudioRendererPrivate> renderer_;
+};
+
 }  // namespace AudioStandard
 }  // namespace OHOS
 #endif // AUDIO_RENDERER_PRIVATE_H

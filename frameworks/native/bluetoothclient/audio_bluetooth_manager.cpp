@@ -538,7 +538,7 @@ void AudioHfpManager::ClearCurrentActiveHfpDevice(const BluetoothRemoteDevice &d
     }
     AUDIO_INFO_LOG("clear current active hfp device:%{public}s",
         GetEncryptAddr(device.GetDeviceAddr()).c_str());
-    DisconnectScoWrapper();
+    BluetoothScoManager::GetInstance().ResetScoState(activeHfpDevice_);
     activeHfpDevice_ = BluetoothRemoteDevice();
 }
 
@@ -603,6 +603,7 @@ bool AudioHfpManager::IsRecognitionStatus()
 int32_t AudioHfpManager::SetVirtualCall(const std::string &name, const bool isVirtual)
 {
     {
+        CHECK_AND_RETURN_RET(virtualCalls_[name] != isVirtual, SUCCESS);
         std::lock_guard<std::mutex> hfpDeviceLock(virtualCallMutex_);
         virtualCalls_[name] = isVirtual;
     }

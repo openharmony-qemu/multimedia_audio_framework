@@ -292,14 +292,19 @@ public:
     int32_t SaveSpecifiedDeviceVolume(AudioStreamType streamType, int32_t volumeLevel, DeviceType deviceType);
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled);
     void HandleDistributedVolume(AudioStreamType streamType);
+    void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
+    void HandleDistributedDeviceVolume();
+
 private:
     friend class PolicyCallbackImpl;
 
     static constexpr int32_t MAX_VOLUME_LEVEL = 15;
     static constexpr int32_t MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t DEFAULT_VOLUME_LEVEL = 7;
+    static constexpr int32_t DP_DEFAULT_VOLUME_LEVEL = 25;
     static constexpr int32_t APP_MAX_VOLUME_LEVEL = 100;
     static constexpr int32_t APP_MIN_VOLUME_LEVEL = 0;
     static constexpr int32_t APP_DEFAULT_VOLUME_LEVEL = 25;
@@ -356,7 +361,8 @@ private:
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
-    void SetOffloadVolume(AudioStreamType streamType, float volumeDb);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -394,6 +400,7 @@ private:
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
+    bool IsDistributedVolumeType(AudioStreamType streamType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -443,7 +450,7 @@ private:
     AudioStreamRemovedCallback *sessionCallback_ = nullptr;
     AudioDeviceManager &audioDeviceManager_;
     VolumeDataMaintainer volumeDataMaintainer_;
-    std::unordered_map<int32_t, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
+    std::unordered_map<std::string, std::shared_ptr<VolumeDataMaintainer>> volumeDataExtMaintainer_;
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
@@ -466,6 +473,7 @@ private:
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
     bool isDpReConnect_ = false;
+    sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

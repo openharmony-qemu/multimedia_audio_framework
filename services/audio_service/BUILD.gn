@@ -20,6 +20,8 @@ import("../../ressche_part.gni")
 import("../../sensor.gni")
 import("../../window_manager.gni")
 
+audio_framework_root = "../.."
+
 group("audio_service_packages") {
   deps = [
     ":audio_common",
@@ -50,6 +52,7 @@ ohos_shared_library("audio_common") {
     "../audio_policy/services/pipe/include",
     "../../frameworks/native/audioschedule/include",
     "../../interfaces/inner_api/native/audiocommon/include",
+    "../audio_engine/plugin/resample/include",
   ]
 
   sources = [
@@ -95,6 +98,7 @@ ohos_shared_library("audio_common") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
+    "../audio_engine:audio_engine_plugins",
   ]
 
   external_deps = [
@@ -110,12 +114,6 @@ ohos_shared_library("audio_common") {
 
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
-  }
-
-  if (speex_enable == true) {
-    cflags += [ "-DSPEEX_ENABLE" ]
-    include_dirs += [ "//third_party/pulseaudio/speex/include" ]
-    external_deps += [ "pulseaudio:speexresampler" ]
   }
 
   cflags_cc = cflags
@@ -262,6 +260,7 @@ ohos_shared_library("audio_client") {
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "qos_manager:qos",
   ]
 
   public_external_deps = [
@@ -390,9 +389,6 @@ audio_ohos_library("audio_process_service") {
     "server/src/ipc_stream_in_server.cpp",
     "server/src/none_mix_engine.cpp",
     "server/src/offline_stream_in_server.cpp",
-    "server/src/pa_adapter_manager.cpp",
-    "server/src/pa_capturer_stream_impl.cpp",
-    "server/src/pa_renderer_stream_impl.cpp",
     "server/src/policy_handler.cpp",
     "server/src/pro_audio_stream_manager.cpp",
     "server/src/pro_renderer_stream_impl.cpp",
@@ -402,11 +398,18 @@ audio_ohos_library("audio_process_service") {
     "server/src/audio_resource_service.cpp",
   ]
 
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "server/src/pa_adapter_manager.cpp",
+      "server/src/pa_capturer_stream_impl.cpp",
+      "server/src/pa_renderer_stream_impl.cpp",
+    ]
+  }
+
   if (audio_framework_feature_low_latency) {
     sources += [
       "server/src/audio_endpoint.cpp",
       "server/src/audio_endpoint_performance.cpp",
-      "server/src/audio_endpoint_separate.cpp",
       "server/src/audio_process_in_server.cpp",
     ]
   }
@@ -443,11 +446,16 @@ audio_ohos_library("audio_process_service") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
   ]
+
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
 
   public_external_deps = [ "bounds_checking_function:libsec_static" ]
 
@@ -476,6 +484,10 @@ audio_ohos_library("audio_process_service") {
 
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (!audio_framework_feature_new_engine_flag) {
+    defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 
   cflags = [ "-Os" ]

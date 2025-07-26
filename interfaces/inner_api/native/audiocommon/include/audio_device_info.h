@@ -167,6 +167,10 @@ enum DeviceType {
      */
     DEVICE_TYPE_REMOTE_DAUDIO = 29,
     /**
+     * Indicates a Bluetooth HearingAid device.
+     */
+    DEVICE_TYPE_HEARING_AID = 30,
+    /**
      * Indicates a hdmi device
      */
     DEVICE_TYPE_HDMI = 27,
@@ -235,6 +239,7 @@ enum DmDeviceType {
     DM_DEVICE_TYPE_DEFAULT = 0,
     DM_DEVICE_TYPE_PENCIL = 0xA07,
     DM_DEVICE_TYPE_UWB = 0x06C,
+    DM_DEVICE_TYPE_NEARLINK_SCO = 0x032,
 };
 
 inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
@@ -253,6 +258,7 @@ inline const std::unordered_set<DeviceType> OUTPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_LINE_DIGITAL,
     DeviceType::DEVICE_TYPE_REMOTE_DAUDIO,
     DeviceType::DEVICE_TYPE_NEARLINK,
+    DeviceType::DEVICE_TYPE_HEARING_AID,
 };
 
 inline bool IsOutputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)
@@ -338,6 +344,7 @@ enum DeviceInfoUpdateCommand {
     CATEGORY_UPDATE = 1,
     CONNECTSTATE_UPDATE,
     ENABLE_UPDATE,
+    USAGE_UPDATE,
     EXCEPTION_FLAG_UPDATE,
 };
 
@@ -363,10 +370,42 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
-struct VolumeBehavior {
+struct VolumeBehavior : public Parcelable {
     bool isReady = false;
     bool isVolumeControlDisabled = false;
     std::string databaseVolumeName = "";
+
+    VolumeBehavior(bool isReady_, bool isVolumeControlDisabled_, std::string databaseVolumeName_)
+        : isReady(isReady_), isVolumeControlDisabled(isVolumeControlDisabled_), databaseVolumeName(databaseVolumeName_)
+    {}
+    VolumeBehavior() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(isReady) &&
+            parcel.WriteBool(isVolumeControlDisabled) &&
+            parcel.WriteString(databaseVolumeName);
+    }
+
+    static VolumeBehavior *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new VolumeBehavior();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->isReady = parcel.ReadBool();
+        info->isVolumeControlDisabled = parcel.ReadBool();
+        info->databaseVolumeName = parcel.ReadString();
+        return info;
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        isReady = parcel.ReadBool();
+        isVolumeControlDisabled = parcel.ReadBool();
+        databaseVolumeName = parcel.ReadString();
+    }
 };
 
 struct DevicePrivacyInfo {
@@ -391,7 +430,9 @@ enum class AudioStreamDeviceChangeReason {
     UNKNOWN = 0,
     NEW_DEVICE_AVAILABLE = 1,
     OLD_DEVICE_UNAVALIABLE = 2,
-    OVERRODE = 3
+    OVERRODE = 3,
+    AUDIO_SESSION_ACTIVATE = 4,
+    STREAM_PRIORITY_CHANGED = 5,
 };
 
 class AudioStreamDeviceChangeReasonExt : public Parcelable {
@@ -401,6 +442,8 @@ public:
         NEW_DEVICE_AVAILABLE = 1,
         OLD_DEVICE_UNAVALIABLE = 2,
         OVERRODE = 3,
+        AUDIO_SESSION_ACTIVATE = 4,
+        STREAM_PRIORITY_CHANGED = 5,
         MIN = 1000,
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,

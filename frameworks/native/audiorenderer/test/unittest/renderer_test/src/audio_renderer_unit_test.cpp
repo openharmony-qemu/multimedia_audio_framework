@@ -3325,61 +3325,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_001
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_001, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_LOWLATENCY_OUT;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_002
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_002, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_DIRECT_MUSIC;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
- * @tc.name  : Test ConcedeStream
- * @tc.number: Audio_Renderer_ConcedeStream_003
- * @tc.desc  : Test ConcedeStream interface
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ConcedeStream_003, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    audioRendererPrivate->rendererInfo_.originalFlag = AUDIO_FLAG_MMAP;
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    audioRendererPrivate->WriteUnderrunEvent();
-    audioStream->rendererInfo_.pipeType = PIPE_TYPE_UNKNOWN;
-    audioRendererPrivate->ConcedeStream();
-    ASSERT_NE(nullptr, audioRendererPrivate);
-}
-
-/**
  * @tc.name  : Test direct VoIP Audio Render
  * @tc.number: Audio_Renderer_Direct_VoIP_001
  * @tc.desc  : Test the direct VoIP stream type with STREAM_USAGE_VOICE_COMMUNICATION
@@ -4572,6 +4517,43 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_CheckAndRestoreAudioRenderer_001, T
 
     EXPECT_EQ(SUCCESS, res);
     audioRenderer.reset();
+}
+
+/**
+ * @tc.name  : Test OnInterrupt API.
+ * @tc.number: Audio_Renderer_OnInterrupt_003
+ * @tc.desc  : Test OnInterrupt interface.
+ */
+HWTEST(AudioRendererUnitTest, Audio_Renderer_OnInterrupt_003, TestSize.Level2)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    ASSERT_TRUE(audioInterruptCallback != nullptr);
+
+    audioInterruptCallback->switching_ = true;
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_SHARE, INTERRUPT_HINT_RESUME, 20.0f};
+    audioInterruptCallback->OnInterrupt(interruptEvent);
+}
+
+/**
+ * @tc.name  : Test InitSwitchInfo
+ * @tc.number: InitSwitchInfo
+ * @tc.desc  : Test InitSwitchInfo
+ */
+HWTEST(AudioRendererUnitTest, InitSwitchInfo_002, TestSize.Level1)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    IAudioStream::StreamClass targetClass = IAudioStream::VOIP_STREAM;
+    IAudioStream::SwitchInfo info;
+    audioRendererPrivate->rendererInfo_.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+
+    audioRendererPrivate->InitSwitchInfo(targetClass, info);
+    EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

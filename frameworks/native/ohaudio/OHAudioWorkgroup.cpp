@@ -33,6 +33,8 @@ OHAudioWorkgroup::~OHAudioWorkgroup()
 bool OHAudioWorkgroup::AddThread(int32_t tokenId)
 {
     if (AudioSystemManager::GetInstance()->AddThreadToGroup(workgroupId, tokenId) == AUDIO_OK) {
+        threads_[tokenId] = true;
+        SetNeedUpdatePrioFlag(true);
         return true;
     }
     return false;
@@ -41,6 +43,7 @@ bool OHAudioWorkgroup::AddThread(int32_t tokenId)
 bool OHAudioWorkgroup::RemoveThread(int32_t tokenId)
 {
     if (AudioSystemManager::GetInstance()->RemoveThreadFromGroup(workgroupId, tokenId) == AUDIO_OK) {
+        threads_.erase(tokenId);
         return true;
     }
     return false;
@@ -48,7 +51,10 @@ bool OHAudioWorkgroup::RemoveThread(int32_t tokenId)
 
 bool OHAudioWorkgroup::Start(uint64_t startTime, uint64_t deadlineTime)
 {
-    if (AudioSystemManager::GetInstance()->StartGroup(workgroupId, startTime, deadlineTime) == AUDIO_OK) {
+    bool isUpdatePrio = GetNeedUpdatePrioFlag();
+    if (AudioSystemManager::GetInstance()->StartGroup(workgroupId, startTime, deadlineTime,
+        threads_, isUpdatePrio) == AUDIO_OK) {
+        SetNeedUpdatePrioFlag(isUpdatePrio);
         return true;
     }
     return false;
@@ -62,5 +68,15 @@ bool OHAudioWorkgroup::Stop()
     return false;
 }
 
-} // namespace AudioStandard
-} // namespace OHOS
+bool OHAudioWorkgroup::GetNeedUpdatePrioFlag()
+{
+    return isNeedUpdatePrio_;
+}
+
+void OHAudioWorkgroup::SetNeedUpdatePrioFlag(bool flag)
+{
+    isNeedUpdatePrio_ = flag;
+}
+
+}  // namespace AudioStandard
+}  // namespace OHOS

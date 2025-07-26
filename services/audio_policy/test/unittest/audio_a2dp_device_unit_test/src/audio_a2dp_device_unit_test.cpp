@@ -350,5 +350,25 @@ HWTEST_F(AudioA2dpDeviceUnitTest, SetA2dpDeviceVolumeLevel_003, TestSize.Level1)
     EXPECT_EQ(info.volumeLevel, volumeLevel);
     AudioA2dpDevice::GetInstance().DelA2dpDevice(device);
 }
+
+/**
+ * @tc.name: CheckHearingAidDeviceExist_001
+ * @tc.desc: Test CheckHearingAidDeviceExist_001 when the device exists and supports absolute volume control.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioA2dpDeviceUnitTest, CheckHearingAidDeviceExist_001, TestSize.Level1)
+{
+    A2dpDeviceConfigInfo configInfo;
+    std::string device = "test_device";
+    AudioA2dpDevice::GetInstance().AddHearingAidDevice(device, configInfo);
+
+    bool result = AudioA2dpDevice::GetInstance().CheckHearingAidDeviceExist(device);
+    EXPECT_TRUE(result);
+    AudioA2dpDevice::GetInstance().DelHearingAidDevice(device);
+
+    result = AudioA2dpDevice::GetInstance().CheckHearingAidDeviceExist(device);
+    EXPECT_FALSE(result);
+}
 } // namespace AudioStandard
 } // namespace OHOS

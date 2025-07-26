@@ -1212,20 +1212,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_040, TestSize.Level1
 
 /**
 * @tc.name  : Test AudioStreamCollector.
-* @tc.number: AudioStreamCollector_041
-* @tc.desc  : Test ActivateAudioConcurrency.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_041, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-
-    int32_t ret = collector.ActivateAudioConcurrency(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
 * @tc.number: AudioStreamCollector_042
 * @tc.desc  : Test GetAllRendererSessionIDForUID.
 */
@@ -1749,6 +1735,86 @@ HWTEST_F(AudioStreamCollectorUnitTest, ResumeStreamState_001, TestSize.Level1)
 
     int32_t ret = collector.ResumeStreamState();
     EXPECT_EQ(ret, 0);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RunningCapturerStreamTest_001
+* @tc.desc  : Test RunningCapturerStream.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    EXPECT_EQ(collector.HasRunningRecognitionCapturerStream(), false);
+    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_NONE), false);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RunningCapturerStreamTest_002
+* @tc.desc  : Test RunningCapturerStream.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->capturerState = CAPTURER_RUNNING;
+    info->capturerInfo.sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
+    collector.audioCapturerChangeInfos_.push_back(move(info));
+
+    EXPECT_EQ(collector.HasRunningRecognitionCapturerStream(), true);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RunningCapturerStreamTest_003
+* @tc.desc  : Test RunningCapturerStream.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_003, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->capturerState = CAPTURER_RUNNING;
+    info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
+    collector.audioCapturerChangeInfos_.push_back(move(info));
+
+    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_NONE), true);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RunningCapturerStreamTest_004
+* @tc.desc  : Test RunningCapturerStream.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_004, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->capturerState = CAPTURER_RUNNING;
+    info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
+    collector.audioCapturerChangeInfos_.push_back(move(info));
+
+    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_WIRED_HEADSET), false);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: RunningCapturerStreamTest_005
+* @tc.desc  : Test RunningCapturerStream.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, RunningCapturerStreamTest_005, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    auto info = std::make_shared<AudioCapturerChangeInfo>();
+    info->capturerState = CAPTURER_RUNNING;
+    info->capturerInfo.sourceType = SOURCE_TYPE_MIC;
+    info->inputDeviceInfo.deviceType_ = DeviceType::DEVICE_TYPE_BLUETOOTH_SCO;
+    collector.audioCapturerChangeInfos_.push_back(move(info));
+
+    EXPECT_EQ(collector.HasRunningNormalCapturerStream(DEVICE_TYPE_BLUETOOTH_SCO), true);
 }
 
 /**

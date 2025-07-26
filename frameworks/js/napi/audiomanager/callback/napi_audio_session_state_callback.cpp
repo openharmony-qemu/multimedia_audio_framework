@@ -68,7 +68,7 @@ void NapiAudioSessionStateCallback::SaveCallbackReference(napi_value args)
 void NapiAudioSessionStateCallback::CreateAudioSessionStateTsfn(napi_env env)
 {
     regAmSessionStateChgTsfn_ = true;
-    std::string callbackName = "AudioSessionState";
+    std::string callbackName = "audioSessionStateChanged";
     napi_value cbName;
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, nullptr, AudioSessionStateTsfnFinalize,

@@ -60,7 +60,7 @@ private:
     uint64_t latency_;
     std::shared_ptr<IRendererStream> stream_;
     uint32_t uChannel_;
-    int32_t uFormat_;
+    int32_t format_;
     uint32_t uSampleRate_;
 };
 } // namespace AudioStandard

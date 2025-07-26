@@ -37,11 +37,14 @@ ohos_fuzztest("AudioSessionServiceFuzzTest") {
   cflags_cc = [ "-std=c++20" ]
 
   deps = [
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../services/audio_policy:audio_policy_service_static",
   ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "eventhandler:libeventhandler",
+    "ipc:ipc_single",
   ]
 
   defines = []

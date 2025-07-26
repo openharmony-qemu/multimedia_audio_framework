@@ -145,6 +145,8 @@ private:
 
 class PermissionUtil {
 public:
+    static bool IsFoldAble(const char ch);
+    static void UpdateBGSet();
     static bool VerifyIsAudio();
     static bool VerifyIsShell();
     static bool VerifyIsSystemApp();
@@ -190,6 +192,7 @@ void ConvertFromFloatTo32Bit(unsigned n, const float *a, int32_t *b);
 
 std::string GetEncryptStr(const std::string &str);
 std::string ConvertNetworkId(const std::string &networkId);
+std::string Hide(const std::string &str);
 
 enum ConvertHdiFormat {
     SAMPLE_U8_C = 0,
@@ -569,6 +572,7 @@ enum HdiRenderOffset : uint32_t {
     HDI_RENDER_OFFSET_VOIP_FAST = 12,
     HDI_RENDER_OFFSET_EAC3 = 13,
     HDI_RENDER_OFFSET_REMOTE_OFFLOAD = 14,
+    HDI_RENDER_OFFSET_HEARING_AID = 15,
 };
 
 uint32_t GenerateUniqueID(AudioHdiUniqueIDBase base, uint32_t offset);
@@ -582,6 +586,8 @@ std::vector<std::map<AudioInterrupt, int32_t>> ToIpcInterrupts(
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> FromIpcInterrupts(
     const std::vector<std::map<AudioInterrupt, int32_t>> &from);
+
+std::string GetBundleNameByToken(const uint32_t &tokenIdNum);
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_UTILS_H

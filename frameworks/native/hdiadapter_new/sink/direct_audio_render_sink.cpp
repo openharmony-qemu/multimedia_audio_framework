@@ -297,8 +297,7 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -358,21 +357,22 @@ int32_t DirectAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid
     return SUCCESS;
 }
 
-void DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
+int32_t DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
 {
     AUDIO_INFO_LOG("in");
-
+    int32_t ret = SUCCESS;
     hdiCallback_ = {
         .callback_.RenderCallback = &DirectAudioRenderSink::DirectRenderCallback,
         .serviceCallback_ = callback,
         .sink_ = this,
     };
     if (!testFlag_) {
-        int32_t ret = audioRender_->RegCallback(audioRender_, &hdiCallback_.callback_, (int8_t)0);
+        ret = audioRender_->RegCallback(audioRender_, &hdiCallback_.callback_, (int8_t)0);
         if (ret != SUCCESS) {
-            AUDIO_WARNING_LOG("fail, error code: %{public}d", ret);
+            AUDIO_ERR_LOG("fail, error code: %{public}d", ret);
         }
     }
+    return ret;
 }
 
 void DirectAudioRenderSink::DumpInfo(std::string &dumpString)

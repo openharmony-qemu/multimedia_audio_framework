@@ -31,8 +31,8 @@ namespace AudioStandard {
 // in plan extends IStatusCallback
 class StreamListenerHolder : public IStreamListener {
 public:
-    StreamListenerHolder();
-    ~StreamListenerHolder();
+    StreamListenerHolder() = default;
+    ~StreamListenerHolder() = default;
     int32_t RegisterStreamListener(sptr<IIpcStreamListener> listener);
 
     // override IStreamListener
@@ -122,6 +122,8 @@ public:
     int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
 
     int32_t SetSourceDuration(int64_t duration) override;
+
+    int32_t SetSpeed(float speed) override;
 
     int32_t SetOffloadDataCallbackState(int32_t state) override;
 

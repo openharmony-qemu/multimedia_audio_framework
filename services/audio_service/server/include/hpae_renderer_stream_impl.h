@@ -25,7 +25,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 class HpaeRendererStreamImpl : public std::enable_shared_from_this<HpaeRendererStreamImpl>,
-                               public IStatusCallback,
+                               public IStreamStatusCallback,
                                public IStreamCallback,
                                public IRendererStream {
 public:
@@ -33,6 +33,7 @@ public:
     ~HpaeRendererStreamImpl();
     int32_t InitParams(const std::string &deviceName = "");
     int32_t Start() override;
+    int32_t StartWithSyncId(const int32_t &syncId) override;
     int32_t Pause(bool isStandby = false) override;
     int32_t Flush() override;
     int32_t Drain(bool stopFlag = false) override;
@@ -47,6 +48,7 @@ public:
     int32_t GetAudioEffectMode(int32_t &effectMode) override;
     int32_t SetPrivacyType(int32_t privacyType) override;
     int32_t GetPrivacyType(int32_t &privacyType) override;
+    int32_t SetSpeed(float speed) override;
 
     void RegisterStatusCallback(const std::weak_ptr<IStatusCallback> &callback) override;
     void RegisterWriteCallback(const std::weak_ptr<IWriteCallback> &callback) override;
@@ -77,13 +79,15 @@ public:
     int32_t SetLoudnessGain(float loudnessGain) override;
     void BlockStream() noexcept override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
-    void OnStatusUpdate(IOperation operation) override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
     int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
+    int32_t GetRemoteOffloadLatency(uint64_t &latency);
+    int32_t GetRemoteOffloadCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index

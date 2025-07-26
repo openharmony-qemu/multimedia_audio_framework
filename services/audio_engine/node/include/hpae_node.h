@@ -23,6 +23,7 @@
 #include <sstream>
 #include "hpae_pcm_buffer.h"
 #include "hpae_define.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -31,7 +32,11 @@ namespace HPAE {
 class HpaeNode : public std::enable_shared_from_this<HpaeNode> {
 public:
     HpaeNode(){};
-    virtual ~HpaeNode(){};
+    virtual ~HpaeNode()
+    {
+        AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+            nodeInfo_.nodeId, nodeInfo_.nodeName.c_str());
+    };
     HpaeNode(HpaeNodeInfo& nodeInfo) : nodeInfo_(nodeInfo)
     {}
     virtual void DoProcess() = 0;
@@ -48,6 +53,16 @@ public:
     virtual void SetNodeInfo(HpaeNodeInfo& nodeInfo)
     {
         nodeInfo_ = nodeInfo;
+    }
+
+    virtual void SetNodeId(uint32_t nodeId)
+    {
+        nodeInfo_.nodeId = nodeId;
+    }
+
+    virtual void SetNodeName(std::string nodeName)
+    {
+        nodeInfo_.nodeName = nodeName;
     }
 
     virtual AudioSamplingRate GetSampleRate()

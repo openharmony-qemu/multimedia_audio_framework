@@ -24,6 +24,8 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
+static constexpr time_t AUDIO_SESSION_TIME_OUT_DURATION_S = 60; // Audio session timeout duration : 60 seconds
+
 class AudioSessionStateMonitorTest : public testing::Test {};
 
 /**
@@ -36,7 +38,7 @@ HWTEST(AudioSessionStateMonitorTest, NormalStartStopMonitorTest, TestSize.Level1
     EXPECT_NE(audioSessionService, nullptr);
     auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
     int32_t callerPid = 1;
-    audioSessionMonitor->StartMonitor(callerPid);
+    audioSessionMonitor->StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
     int32_t moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(callerPid);
     EXPECT_EQ(moniteredPidNum, 1);
     audioSessionMonitor->StopMonitor(callerPid);
@@ -55,10 +57,10 @@ HWTEST(AudioSessionStateMonitorTest, StartMonitorWithSamePidFailTest, TestSize.L
     EXPECT_NE(audioSessionService, nullptr);
     auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
     int32_t callerPid = 1;
-    audioSessionMonitor->StartMonitor(callerPid);
+    audioSessionMonitor->StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
     int32_t moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(callerPid);
     EXPECT_EQ(moniteredPidNum, 1);
-    audioSessionMonitor->StartMonitor(callerPid);
+    audioSessionMonitor->StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
     moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(callerPid);
     EXPECT_EQ(moniteredPidNum, 1);
     EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.size(), 1);
@@ -78,11 +80,11 @@ HWTEST(AudioSessionStateMonitorTest, StopMonitorWithSamePidFailedTest, TestSize.
     EXPECT_NE(audioSessionService, nullptr);
     auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
     int32_t callerPid = 1;
-    audioSessionMonitor->StartMonitor(callerPid);
+    audioSessionMonitor->StartMonitor(callerPid, AUDIO_SESSION_TIME_OUT_DURATION_S);
     int32_t moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(callerPid);
     EXPECT_EQ(moniteredPidNum, 1);
     int32_t callerPid2 = 2;
-    audioSessionMonitor->StartMonitor(callerPid2);
+    audioSessionMonitor->StartMonitor(callerPid2, AUDIO_SESSION_TIME_OUT_DURATION_S);
     moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(callerPid2);
     EXPECT_EQ(moniteredPidNum, 1);
     EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.size(), 2);
@@ -109,7 +111,7 @@ HWTEST(AudioSessionStateMonitorTest, StartMonitorWithMaxPidNumTest, TestSize.Lev
     auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
 
     for (int32_t i = 0; i < MAX_CB_ID_NUM; i++) {
-        audioSessionMonitor->StartMonitor(i);
+        audioSessionMonitor->StartMonitor(i, AUDIO_SESSION_TIME_OUT_DURATION_S);
         int32_t moniteredPidNum = audioSessionMonitor->pidCbIdMap_.count(i);
         EXPECT_EQ(moniteredPidNum, 1);
         EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.size(), i + 1);
@@ -134,7 +136,7 @@ HWTEST(AudioSessionStateMonitorTest, StartMonitorOutOfMaxPidNumTest, TestSize.Le
     auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
 
     for (int32_t i = 0; i < MAX_CB_ID_NUM; i++) {
-        audioSessionMonitor->StartMonitor(i);
+        audioSessionMonitor->StartMonitor(i, AUDIO_SESSION_TIME_OUT_DURATION_S);
     }
 
     EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.size(), MAX_CB_ID_NUM);
@@ -142,6 +144,25 @@ HWTEST(AudioSessionStateMonitorTest, StartMonitorOutOfMaxPidNumTest, TestSize.Le
     for (int32_t i = 0; i < MAX_CB_ID_NUM; i++) {
         audioSessionMonitor->StopMonitor(i);
     }
+}
+
+/**
+ * @tc.name  : RemoveFromMonitorMapTest
+ * @tc.desc  : Test for monitor RemoveFromMonitorMap
+ */
+HWTEST(AudioSessionStateMonitorTest, RemoveFromMonitorMapTest, TestSize.Level1)
+{
+    auto audioSessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(audioSessionService, nullptr);
+    auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
+
+    audioSessionMonitor->StartMonitor(0, AUDIO_SESSION_TIME_OUT_DURATION_S);
+    EXPECT_NE(audioSessionMonitor->pidCbIdMap_.count(0), 0);
+
+    audioSessionMonitor->RemoveFromMonitorMap(0);
+    EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.count(0), 0);
+    audioSessionMonitor->RemoveFromMonitorMap(0);
+    EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.count(0), 0);
 }
 
 } // AudioStandardnamespace

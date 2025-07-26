@@ -48,7 +48,7 @@ private:
     static void SafeJsCallbackAudioSessionStateWork(napi_env env, napi_value js_cb, void *context, void *data);
 
     std::shared_ptr<AutoRef> audioSessionStateJsCallback_ = nullptr;
-    napi_ref callback_;
+    napi_ref callback_ = nullptr;
     std::mutex mutex_;
     napi_env env_;
     bool regAmSessionStateChgTsfn_ = false;

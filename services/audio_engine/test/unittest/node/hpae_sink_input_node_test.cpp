@@ -170,4 +170,35 @@ HWTEST_F(HpaeSinkInputNodeTest, testLoudnessGain, TestSize.Level0)
 
     EXPECT_FLOAT_EQ(sinkInputNode->GetLoudnessGain(), LOUDNESS_GAIN);
 }
+
+HWTEST_F(HpaeSinkInputNodeTest, testReadToAudioBuffer, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = NORMAL_ID;
+    nodeInfo.frameLen = NORMAL_FRAME_LEN;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
+
+    nodeInfo.deviceClass = "offload";
+    auto sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->offloadEnable_ = true;
+    int32_t ret = 0;
+    bool funcRet = sinkInputNode->ReadToAudioBuffer(ret);
+    EXPECT_EQ(funcRet, true);
+
+    sinkInputNode->offloadEnable_ = false;
+    funcRet = sinkInputNode->ReadToAudioBuffer(ret);
+    EXPECT_EQ(funcRet, true);
+
+    nodeInfo.deviceClass = "remote_offload";
+    sinkInputNode = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    sinkInputNode->offloadEnable_ = true;
+    funcRet = sinkInputNode->ReadToAudioBuffer(ret);
+    EXPECT_EQ(funcRet, true);
+
+    sinkInputNode->offloadEnable_ = false;
+    funcRet = sinkInputNode->ReadToAudioBuffer(ret);
+    EXPECT_EQ(funcRet, true);
+}
 }

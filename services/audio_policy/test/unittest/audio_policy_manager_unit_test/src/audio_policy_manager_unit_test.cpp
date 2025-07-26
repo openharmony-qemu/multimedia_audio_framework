@@ -616,7 +616,7 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
@@ -640,7 +640,7 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
     streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
@@ -682,6 +682,42 @@ HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_002, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     auto result = audioPolicyManager_->GetDirectPlaybackSupport(streamInfo, streamUsage);
     EXPECT_EQ(result,  DIRECT_PLAYBACK_NOT_SUPPORTED);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: SetNearlinkDeviceVolume_001.
+* @tc.desc  : Test SetNearlinkDeviceVolume.
+*/
+HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+
+    std::string macAddress = "";
+    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    int32_t volume = 4;
+    bool updateUi = false;
+
+    auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+    EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: SetNearlinkDeviceVolume_002.
+* @tc.desc  : Test SetNearlinkDeviceVolume.
+*/
+HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+
+    std::string macAddress = "A1:B2:C3:D4:E5:F6";
+    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    int32_t volume = 4;
+    bool updateUi = true;
+
+    auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+    EXPECT_EQ(result, ERROR);
 }
 } // namespace AudioStandard
 } // namespace OHOS

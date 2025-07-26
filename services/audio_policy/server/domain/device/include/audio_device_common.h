@@ -61,7 +61,8 @@ public:
     }
     void Init(std::shared_ptr<AudioPolicyServerHandler> handler);
     void DeInit();
-    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor);
+    void OnPreferredOutputDeviceUpdated(const AudioDeviceDescriptor& deviceDescriptor,
+        const AudioStreamDeviceChangeReason reason);
     void OnPreferredInputDeviceUpdated(DeviceType deviceType, std::string networkId);
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetPreferredOutputDeviceDescInner(
         AudioRendererInfo &rendererInfo, std::string networkId = LOCAL_NETWORK_ID);
@@ -81,8 +82,6 @@ public:
     void UpdateConnectedDevicesWhenDisconnecting(const AudioDeviceDescriptor& updatedDesc,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descForCb);
     void UpdateDualToneState(const bool &enable, const int32_t &sessionId);
-    void FetchDevice(bool isOutputDevice = true,
-        const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void FetchOutputDevice(std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     void FetchInputDevice(std::vector<std::shared_ptr<AudioCapturerChangeInfo>> &capturerChangeInfos,
@@ -192,11 +191,12 @@ private:
     void ClearRingMuteWhenCallStart(bool pre, bool after);
 
     // fetchOutput
-    void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount);
-    void FetchOutputDeviceWhenNoRunningStream();
+    void FetchOutputEnd(const bool isUpdateActiveDevice, const int32_t runningStreamCount,
+        const AudioStreamDeviceChangeReason reason);
+    void FetchOutputDeviceWhenNoRunningStream(const AudioStreamDeviceChangeReason reason);
     void SetDeviceConnectedFlagWhenFetchOutputDevice();
     int32_t HandleDeviceChangeForFetchOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
-        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
+        std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo, const AudioStreamDeviceChangeReason reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioRendererChangeInfo>& rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>>& outputDevices,
         const AudioStreamDeviceChangeReasonExt reason);

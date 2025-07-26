@@ -110,8 +110,21 @@ int32_t AudioPolicyManagerListenerStubImpl::OnBackgroundMute(const int32_t uid)
     return SUCCESS;
 }
 
+int32_t AudioPolicyManagerListenerStubImpl::OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior)
+{
+    std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> audioQueryDeviceVolumeBehaviorCallback =
+        audioQueryDeviceVolumeBehaviorCallback_.lock();
+
+    CHECK_AND_RETURN_RET_LOG(audioQueryDeviceVolumeBehaviorCallback != nullptr, AUDIO_INVALID_PARAM,
+        "audioQueryDeviceVolumeBehaviorCallback is nullptr");
+    volumeBehavior = audioQueryDeviceVolumeBehaviorCallback->OnQueryDeviceVolumeBehavior();
+    AUDIO_INFO_LOG("isReady [%{public}d], isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]",
+        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+    return SUCCESS;
+}
+
 int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std::string &bundleName,
-    const std::string &listType, bool& ret)
+    const std::string &listType, bool &ret)
 {
     std::shared_ptr<AudioQueryBundleNameListCallback> audioQueryBundleNameListCallback =
         audioQueryBundleNameListCallback_.lock();
@@ -120,6 +133,19 @@ int32_t AudioPolicyManagerListenerStubImpl::OnQueryBundleNameIsInList(const std:
         "audioQueryBundleNameListCallback_ is nullptr");
     ret = audioQueryBundleNameListCallback->OnQueryBundleNameIsInList(bundleName, listType);
     return SUCCESS;
+}
+
+int32_t AudioPolicyManagerListenerStubImpl::OnRouteUpdate(uint32_t routeFlag, const std::string &networkId)
+{
+    std::shared_ptr<AudioRouteCallback> cb = audioRouteCallback_.lock();
+    CHECK_AND_RETURN_RET_LOG(cb != nullptr, AUDIO_INVALID_PARAM, "audioRouteCallback_ is nullptr");
+    cb->OnRouteUpdate(routeFlag, networkId);
+    return SUCCESS;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetAudioRouteCallback(const std::weak_ptr<AudioRouteCallback> &callback)
+{
+    audioRouteCallback_ = callback;
 }
 
 void AudioPolicyManagerListenerStubImpl::SetInterruptCallback(const std::weak_ptr<AudioInterruptCallback> &callback)
@@ -167,6 +193,12 @@ void AudioPolicyManagerListenerStubImpl::SetQueryBundleNameListCallback(
     const std::weak_ptr<AudioQueryBundleNameListCallback> &cb)
 {
     audioQueryBundleNameListCallback_ = cb;
+}
+
+void AudioPolicyManagerListenerStubImpl::SetQueryDeviceVolumeBehaviorCallback(
+    const std::weak_ptr<AudioQueryDeviceVolumeBehaviorCallback> &cb)
+{
+    audioQueryDeviceVolumeBehaviorCallback_ = cb;
 }
 } // namespace AudioStandard
 } // namespace OHOS

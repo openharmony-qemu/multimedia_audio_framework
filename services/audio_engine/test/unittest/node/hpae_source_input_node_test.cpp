@@ -132,8 +132,8 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     attr.volume = 0.0f;
     attr.bufferSize = 0;
     attr.isBigEndian = false;
-    attr.filePath = g_rootCapturerPath.c_str();
-    attr.deviceNetworkId = NULL;
+    attr.filePath = g_rootCapturerPath;
+    attr.deviceNetworkId = "";
     attr.deviceType = 0;
     attr.sourceType = 0;
     attr.channelLayout = 0;
@@ -224,7 +224,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testInterfaces_002, TestSize.Level0)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.filePath = g_rootCapturerPath.c_str();
+    attr.filePath = g_rootCapturerPath;
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourcePause(), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceFlush(), SUCCESS);
@@ -238,7 +238,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testInterfaces_002, TestSize.Level0)
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceReset(), SUCCESS);
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceDeInit(), SUCCESS);
 
-    attr.filePath = NULL;
+    attr.filePath = "";
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
     EXPECT_NE(hpaeSourceInputNode->CapturerSourceStop(), SUCCESS);
@@ -266,7 +266,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_001, TestSize.Level0)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.filePath = g_rootCapturerPath.c_str();
+    attr.filePath = g_rootCapturerPath;
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     hpaeSourceInputNode->DoProcess();
     EXPECT_NE(hpaeSourceInputNode, nullptr);
@@ -289,7 +289,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testDoprocess_002, TestSize.Level0)
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.filePath = g_rootCapturerPath.c_str();
+    attr.filePath = g_rootCapturerPath;
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     hpaeSourceInputNode->DoProcess();
     EXPECT_NE(hpaeSourceInputNode, nullptr);

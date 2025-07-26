@@ -26,16 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-StreamListenerHolder::StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("StreamListenerHolder()");
-}
-
-StreamListenerHolder::~StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("~StreamListenerHolder()");
-}
-
 int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
@@ -132,14 +122,14 @@ int32_t IpcStreamInServer::ConfigRenderer()
     rendererInServer_ = std::make_shared<RendererInServer>(config_, streamListenerHolder_);
     CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr, ERR_OPERATION_FAILED, "Create RendererInServer failed");
     int32_t ret = rendererInServer_->Init();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init RendererInServer failed!");
     return SUCCESS;
 }
 
 int32_t IpcStreamInServer::ConfigCapturer()
 {
     capturerInServer_ = std::make_shared<CapturerInServer>(config_, streamListenerHolder_);
-    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed");
+    CHECK_AND_RETURN_RET_LOG(capturerInServer_ != nullptr, ERR_OPERATION_FAILED, "create CapturerInServer failed!");
     int32_t ret = capturerInServer_->Init();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "Init CapturerInServer failed");
     return SUCCESS;
@@ -147,9 +137,9 @@ int32_t IpcStreamInServer::ConfigCapturer()
 
 int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& object)
 {
-    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed");
+    CHECK_AND_RETURN_RET_LOG(streamListenerHolder_ != nullptr, ERR_OPERATION_FAILED, "RegisterStreamListener failed!");
     sptr<IIpcStreamListener> listener = iface_cast<IIpcStreamListener>(object);
-    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed");
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERR_INVALID_PARAM, "RegisterStreamListener obj cast failed!");
     streamListenerHolder_->RegisterStreamListener(listener);
 
     // in plan: get session id, use it as key to find IpcStreamInServer
@@ -160,7 +150,6 @@ int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& obj
 
 int32_t IpcStreamInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
-    AUDIO_INFO_LOG("Resolve buffer, mode: %{public}d", mode_);
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->ResolveBuffer(buffer);
     }
@@ -197,8 +186,6 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 
 int32_t IpcStreamInServer::Start()
 {
-    AUDIO_INFO_LOG("IpcStreamInServer::Start()");
-
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Start();
     }
@@ -519,6 +506,13 @@ int32_t IpcStreamInServer::SetSourceDuration(int64_t duration)
         return ERR_OPERATION_FAILED;
     }
     return rendererInServer_->SetSourceDuration(duration);
+}
+
+int32_t IpcStreamInServer::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_RET_LOG(mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr, ERR_OPERATION_FAILED,
+        "mode is not playback or renderer is null");
+    return rendererInServer_->SetSpeed(speed);
 }
 
 int32_t IpcStreamInServer::SetOffloadDataCallbackState(int32_t state)

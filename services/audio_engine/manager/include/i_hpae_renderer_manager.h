@@ -36,6 +36,10 @@ public:
     virtual int32_t CreateStream(const HpaeStreamInfo &streamInfo) = 0;
     virtual int32_t DestroyStream(uint32_t sessionId) = 0;
     virtual int32_t Start(uint32_t sessionId) = 0;
+    virtual int32_t StartWithSyncId(uint32_t sessionId, int32_t syncId)
+    {
+        return Start(sessionId);
+    }
     virtual int32_t Pause(uint32_t sessionId) = 0;
     virtual int32_t Flush(uint32_t sessionId) = 0;
     virtual int32_t Drain(uint32_t sessionId) = 0;
@@ -69,6 +73,7 @@ public:
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) = 0;
     virtual int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) = 0;
     virtual int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) { return ERR_NOT_SUPPORTED; };
+    virtual void SetSpeed(uint32_t sessionId, float speed) {}
     virtual std::vector<SinkInput> GetAllSinkInputsInfo() = 0;
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
     virtual HpaeSinkInfo GetSinkInfo() = 0;
@@ -87,7 +92,7 @@ public:
     };
     virtual std::string GetThreadName() = 0;
 
-    virtual void DumpSinkInfo() {};
+    virtual int32_t DumpSinkInfo() { return 0; };
 
     virtual void UploadDumpSinkInfo(std::string& deviceName);
 
@@ -107,7 +112,7 @@ public:
     virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
-    std::atomic<uint32_t> nodeIdCounter_ = 0;
+    static std::atomic<uint32_t> nodeIdCounter_;
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxTree dfxTree_;
 #endif

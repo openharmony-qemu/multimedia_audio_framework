@@ -17,16 +17,17 @@
 #define LOG_TAG "HpaeInnerCapSinkNode"
 #endif
 
+#include <ctime>
 #include "hpae_inner_cap_sink_node.h"
 #include "hpae_format_convert.h"
 #include "audio_errors.h"
-#include "audio_policy_log.h"
 #include "hpae_node_common.h"
 #include "audio_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
-#include <ctime>
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -44,6 +45,13 @@ HpaeInnerCapSinkNode::HpaeInnerCapSinkNode(HpaeNodeInfo &nodeInfo)
     outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeInnerCapSinkNode_bit_" +
                        std::to_string(SAMPLE_F32LE) + "_ch_" + std::to_string(GetChannelCount()) +
                        "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
+#endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeInnerCapSinkNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
 #endif
 }
 
@@ -124,12 +132,23 @@ void HpaeInnerCapSinkNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffe
 {
     AUDIO_INFO_LOG("Connect");
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeInnerCapSinkNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer*>>& preNode)
 {
     AUDIO_INFO_LOG("DisConnect");
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
 int32_t HpaeInnerCapSinkNode::InnerCapturerSinkInit()

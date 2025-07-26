@@ -33,6 +33,7 @@ const vector<DeviceType> g_testDeviceTypes = {
     DEVICE_TYPE_BLUETOOTH_SCO,
     DEVICE_TYPE_BLUETOOTH_A2DP,
     DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_HEARING_AID,
     DEVICE_TYPE_MIC,
     DEVICE_TYPE_WAKEUP,
     DEVICE_TYPE_USB_HEADSET,
@@ -258,7 +259,6 @@ void VolumeDataMaintainerSetMuteAffectedToMuteStatusDataBaseFuzzTest(const uint8
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -271,7 +271,6 @@ void VolumeDataMaintainerSetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 
@@ -286,7 +285,6 @@ void VolumeDataMaintainerGetRestoreVolumeLevelFuzzTest(const uint8_t *rawData, s
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     std::lock_guard<ffrt::mutex> lock(volumeDataMaintainer->volumeMutex_);
     volumeDataMaintainer->volumeLevelMap_.clear();
-    volumeDataMaintainer->remoteVolumeLevelMap_.clear();
     volumeDataMaintainer->appVolumeLevelMap_.clear();
     volumeDataMaintainer->appMuteStatusMap_.clear();
 

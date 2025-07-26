@@ -104,7 +104,6 @@ uint32_t GetArrLength(T& arr)
 void AudioVolumeManagerInitSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
-    int32_t ret;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.InitSharedVolume(buffer);
@@ -379,6 +378,13 @@ void AudioVolumeManagerInitKVStoreFuzzTest(const uint8_t *rawData, size_t size)
     audioVolumeManager.InitKVStore();
 }
 
+void AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.ForceVolumeKeyControlType(static_cast<AudioVolumeType>(size), size);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -404,6 +410,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerGetAllDeviceVolumeInfoFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerInitKVStoreFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerForceVolumeKeyControlTypeFuzzTest,
 };
 
 /* Fuzzer entry point */

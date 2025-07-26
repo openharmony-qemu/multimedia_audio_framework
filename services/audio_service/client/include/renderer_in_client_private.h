@@ -21,7 +21,6 @@
 #include "bundle_mgr_proxy.h"
 
 #include "audio_manager_base.h"
-#include "audio_ring_cache.h"
 #include "audio_channel_blend.h"
 #include "audio_server_death_recipient.h"
 #include "audio_stream_tracker.h"
@@ -218,6 +217,7 @@ public:
     void SetCallbackLoopTid(int32_t tid) override;
     int32_t GetCallbackLoopTid() override;
     int32_t SetOffloadDataCallbackState(int32_t cbState) override;
+    void NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId) override;
     bool GetStopFlag() const override;
     void SetAudioHapticsSyncId(const int32_t &audioHapticsSyncId) override;
 
@@ -277,9 +277,15 @@ private:
 
     void ResetCallbackLoopTid();
 
+    bool DoHdiSetSpeed(float speed);
+
     void WaitForBufferNeedWrite();
 
     void UpdatePauseReadIndex();
+
+    void FlushSpeedBuffer();
+
+    bool CheckBufferNeedWrite();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -375,7 +381,6 @@ private:
     std::shared_ptr<OHAudioBufferBase> clientBuffer_ = nullptr;
 
     // buffer handle
-    std::unique_ptr<AudioRingCache> ringCache_ = nullptr;
     std::mutex writeMutex_; // used for prevent multi thread call write
 
     // Mark reach and period reach callback
@@ -404,6 +409,7 @@ private:
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;
     std::atomic<bool> speedEnable_ = false;
+    std::atomic<bool> isHdiSpeed_ = false;
     std::mutex speedMutex_;
 
     std::unique_ptr<AudioSpatialChannelConverter> converter_;
@@ -443,7 +449,6 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
-    uint64_t stopReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {

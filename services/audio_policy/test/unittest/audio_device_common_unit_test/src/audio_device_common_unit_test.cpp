@@ -37,7 +37,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_001, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_NE(0, audioDeviceCommon.spatialDeviceMap_.size());
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
@@ -125,7 +125,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_003, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -152,7 +152,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_004, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -179,7 +179,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_005, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -206,7 +206,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_006, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     audioDeviceCommon.audioPolicyServerHandler_ = nullptr;
     AudioDeviceDescriptor deviceDescriptor;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
 
     DeviceType deviceType = DEVICE_TYPE_NONE;
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
@@ -447,7 +447,9 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_029, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptorSptrVector;
     audioDeviceDescriptorSptrVector.push_back(audioDeviceDescriptorSptr);
     audioDeviceCommon.UpdateConnectedDevicesWhenDisconnecting(updatedDesc, audioDeviceDescriptorSptrVector);
-    EXPECT_EQ(true, audioDeviceCommon.audioDeviceManager_.NoDp());
+    EXPECT_EQ(false, audioDeviceCommon.audioDeviceManager_.ExistsByType(DEVICE_TYPE_DP));
+    EXPECT_EQ(false, audioDeviceCommon.audioDeviceManager_.ExistsByTypeAndAddress(DEVICE_TYPE_DP,
+        audioDeviceDescriptorSptr->macAddress_));
 }
 
 /**
@@ -1021,7 +1023,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_065, TestSize.Level1)
     AudioDeviceDescriptor deviceDescriptor;
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     deviceDescriptor.deviceType_ = DEVICE_TYPE_SPEAKER;
-    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor);
+    audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     deviceType = audioDeviceCommon.GetSpatialDeviceType(macAddress);
     EXPECT_EQ(DEVICE_TYPE_SPEAKER, deviceType);
 }
@@ -1058,7 +1060,7 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_067, TestSize.Level1)
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     bool isUpdateActiveDevice = true;
     int32_t runningStreamCount = 0;
-    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount);
+    audioDeviceCommon.FetchOutputEnd(isUpdateActiveDevice, runningStreamCount, AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_NE(0, audioDeviceCommon.spatialDeviceMap_.size());
 }
 
@@ -1073,12 +1075,14 @@ HWTEST_F(AudioDeviceCommonUnitTest, AudioDeviceCommon_068, TestSize.Level1)
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
     desc->deviceType_ = DEVICE_TYPE_NONE;
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(ERR_NEED_NOT_SWITCH_DEVICE, ret);
 
     desc->deviceType_ = DEVICE_TYPE_EARPIECE;
     rendererChangeInfo->outputDeviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
-    ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo);
+    ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+        AudioStreamDeviceChangeReason::UNKNOWN);
     EXPECT_EQ(SUCCESS, ret);
 }
 

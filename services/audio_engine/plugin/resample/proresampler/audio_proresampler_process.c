@@ -76,6 +76,16 @@ static inline uint32_t CompareMax(uint32_t a, uint32_t b)
 {
     return a < b ? b : a;
 }
+/**
+ * @brief A function used to free memory if some error ocurrs and it's no longer used, preventing memory leak.
+ *
+ */
+static inline int32_t FreeMemoryAndReturnError(void *memory)
+{
+    CHECK_AND_RETURN_RET_LOG(memory, RESAMPLER_ERR_ALLOC_FAILED, "no need to fail memory");
+    free(memory);
+    return RESAMPLER_ERR_ALLOC_FAILED;
+}
 
 /**
  * @brief A function that helps update resampler state
@@ -160,7 +170,7 @@ static int32_t CalculateFilter(SingleStagePolyphaseResamplerState* state)
             CHECK_AND_RETURN_RET_LOG(filterCoefficients, RESAMPLER_ERR_ALLOC_FAILED, "malloc filterCoefficients fail!");
             int32_t ret = memcpy_s(filterCoefficients, requiredFilterCoefficientsSize * sizeof(float),
                 state->filterCoefficients, state->filterCoefficientsSize * sizeof(float));
-            CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, RESAMPLER_ERR_ALLOC_FAILED,
+            CHECK_AND_RETURN_RET_LOG(ret == RESAMPLER_ERR_SUCCESS, FreeMemoryAndReturnError(filterCoefficients),
                 "memcpy_s filterCoefficients fail with error code %{public}d", ret);
             free(state->filterCoefficients);
             state->filterCoefficients = filterCoefficients;
@@ -1309,7 +1319,8 @@ static int32_t UpdateFilterMemory(SingleStagePolyphaseResamplerState* state, uin
                 Restore filterLength so that filterLength - 1 still points to the position after
                 the last of these samples. */
                 state->filterLength = oldFilterLength;
-                return RESAMPLER_ERR_ALLOC_FAILED;
+
+                return FreeMemoryAndReturnError(inputMemory);
             }
             free(state->inputMemory);
             state->inputMemory = inputMemory;

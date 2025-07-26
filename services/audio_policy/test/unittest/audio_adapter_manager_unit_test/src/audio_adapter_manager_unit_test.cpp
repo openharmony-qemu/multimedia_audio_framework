@@ -176,21 +176,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadVolume_001, TestSize.Level1)
     audioAdapterManager_->Init();
     AudioStreamType streamType = STREAM_MUSIC;
     float volumeDb = 1;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SPEECH;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SYSTEM;
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_DP;
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 
     streamType = STREAM_SYSTEM;
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     auto interruptServiceTest = GetTnterruptServiceTest();
     audioAdapterManager_->audioServerProxy_ = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    ASSERT_NE(audioAdapterManager_->audioServerProxy_, nullptr);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 }
 
 /**
@@ -219,13 +219,21 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetOffloadSessionId_001, TestSize.Level1)
  */
 HWTEST_F(AudioAdapterManagerUnitTest, SetDoubleRingVolumeDb_001, TestSize.Level1)
 {
+    uint32_t sessionId = MIN_STREAMID - 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    AudioAdapterManager::GetInstance().ResetOffloadSessionId();
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     AudioStreamType streamType = STREAM_RING;
     int32_t volumeLevel = 5;
     audioAdapterManager_->useNonlinearAlgo_ = true;
+    sessionId = MAX_STREAMID + 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
     int32_t result = audioAdapterManager_->SetDoubleRingVolumeDb(streamType, volumeLevel);
     EXPECT_EQ(result, SUCCESS);
 
+    sessionId = MIN_STREAMID + 1;
+    AudioAdapterManager::GetInstance().SetOffloadSessionId(sessionId);
+    AudioAdapterManager::GetInstance().ResetOffloadSessionId();
     audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_SPEAKER;
     streamType = STREAM_DEFAULT;
     audioAdapterManager_->useNonlinearAlgo_ = true;
@@ -241,23 +249,6 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetDoubleRingVolumeDb_001, TestSize.Level1
     audioAdapterManager_->useNonlinearAlgo_ = false;
     result = audioAdapterManager_->SetDoubleRingVolumeDb(streamType, volumeLevel);
     EXPECT_EQ(result, SUCCESS);
-}
-
-/**
- * @tc.name: ResetOffloadSessionId_001
- * @tc.desc: Test ResetOffloadSessionId
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioAdapterManagerUnitTest, ResetOffloadSessionId_001, TestSize.Level1)
-{
-    audioAdapterManager_->offloadSessionID_ = 12345;
-    audioAdapterManager_->ResetOffloadSessionId();
-    EXPECT_FALSE(audioAdapterManager_->offloadSessionID_.has_value());
-
-    audioAdapterManager_->offloadSessionID_.reset();
-    audioAdapterManager_->ResetOffloadSessionId();
-    EXPECT_FALSE(audioAdapterManager_->offloadSessionID_.has_value());
 }
 
 /**
@@ -322,6 +313,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeLevel_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name: SetAbsVolumeMute_001
+ * @tc.desc: Test SetAbsVolumeMute
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAbsVolumeMute_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    bool mute = true;
+
+    audioAdapterManager_->SetAbsVolumeMute(mute);
+    int32_t ret = audioAdapterManager_->SetVolumeDb(STREAM_MUSIC);
+
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
  * @tc.name: UpdateSinkArgs_001
  * @tc.desc: Test UpdateSinkArgs all args have value
  * @tc.type: FUNC
@@ -366,6 +374,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, UpdateSinkArgs_002, TestSize.Level1)
     AudioAdapterManager::UpdateSinkArgs(info, ret);
     EXPECT_EQ(ret, " network_id=LocalDevice");
 }
+
+/**
+ * @tc.name: Test AudioAdapterManager
+ * @tc.desc: HandleHearingAidVolume_001
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, HandleHearingAidVolume_001, TestSize.Level1)
+{
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = DEVICE_TYPE_HEARING_AID;
+    AudioStreamType streamType = STREAM_MUSIC;
+    int defaultVolume =
+        static_cast<int>(std::ceil(audioAdapterManager_->GetMaxVolumeLevel(STREAM_MUSIC) * 0.8));
+    audioAdapterManager_->HandleHearingAidVolume(streamType);
+    EXPECT_EQ(audioAdapterManager_->volumeDataMaintainer_.GetStreamVolume(STREAM_MUSIC), defaultVolume);
+}
+
 
 } // namespace AudioStandard
 } // namespace OHOS

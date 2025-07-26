@@ -23,7 +23,30 @@ public:
     void OnDumpSinkInfoCb(std::string& dumpStr, int32_t result) override {}
     void OnDumpSourceInfoCb(std::string &dumpStr, int32_t result) override {}
     void OnDumpAllAvailableDeviceCb(int32_t result) override {}
+    void OnDumpSinkInputsInfoCb(std::vector<HpaeInputOutputInfo> &sinkInputs, int32_t result) override
+    {
+        if (result == 0) {
+            sinkInputs_.swap(sinkInputs);
+        }
+    }
+    void OnDumpSourceOutputsInfoCb(std::vector<HpaeInputOutputInfo> &sourceOutputs, int32_t result) override
+    {
+        if (result == 0) {
+            sourceOutputs_.swap(sourceOutputs);
+        }
+    }
     ~HpaeAudioServiceDumpCallbackUnitTest() override {}
+    size_t GetSinkInputsSize()
+    {
+        return sinkInputs_.size();
+    }
+    size_t GetSourceOutputsSize()
+    {
+        return sourceOutputs_.size();
+    }
+private:
+    std::vector<HpaeInputOutputInfo> sinkInputs_;
+    std::vector<HpaeInputOutputInfo> sourceOutputs_;
 };
 }
 }

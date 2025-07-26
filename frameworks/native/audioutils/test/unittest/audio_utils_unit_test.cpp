@@ -1067,6 +1067,20 @@ HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_014, TestSize.Le
 }
 
 /**
+* @tc.name  : Test AudioInfoDumpUtils::GetDeviceTypeName  API
+* @tc.type  : FUNC
+* @tc.number: AudioInfoDumpUtils_GetDeviceTypeName_015
+* @tc.desc  : Test AudioInfoDumpUtils GetDeviceTypeName API,Return HEARING_AID
+*             when deviceType is DEVICE_TYPE_HEARING_AID
+*/
+HWTEST(AudioUtilsUnitTest, AudioInfoDumpUtils_GetDeviceTypeName_015, TestSize.Level0)
+{
+    DeviceType deviceType = DEVICE_TYPE_HEARING_AID;
+    const std::string deviceTypeName = AudioInfoDumpUtils::GetDeviceTypeName(deviceType);
+    EXPECT_EQ(deviceTypeName, "HEARING_AID");
+}
+
+/**
 * @tc.name  : Test AudioInfoDumpUtils::GetConnectTypeName  API
 * @tc.type  : FUNC
 * @tc.number: AudioInfoDumpUtils_GetConnectTypeName_001
@@ -1301,6 +1315,22 @@ HWTEST(AudioUtilsUnitTest, GetEncryptStr_002, TestSize.Level0)
     const std::string src = "abcdef";
     std::string dst = GetEncryptStr(src);
     EXPECT_EQ(dst, "*bcdef");
+}
+
+/**
+* @tc.name  : Test Hide API
+* @tc.type  : FUNC
+* @tc.number: Hide_001
+* @tc.desc  : Test Hide API
+*/
+HWTEST(AudioUtilsUnitTest, Hide_001, TestSize.Level0)
+{
+    string str{"12345"};
+    EXPECT_EQ(Hide(str), "*");
+    str = "123456";
+    EXPECT_EQ(Hide(str), "123*456");
+    str = "13682363247";
+    EXPECT_EQ(Hide(str), "136*247");
 }
 
 class DemoThreadData {
@@ -2906,6 +2936,59 @@ HWTEST(AudioUtilsUnitTest, ConvertNetworkId_003, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_001
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_001, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test CheckCallingUidPermission  API
+* @tc.type  : FUNC
+* @tc.number: CheckCallingUidPermission_002
+* @tc.desc  : Test CheckCallingUidPermission API
+*/
+HWTEST(AudioUtilsUnitTest, CheckCallingUidPermission_002, TestSize.Level1)
+{
+    const std::vector<uid_t> allowedUids = {3001, 3003};
+    bool result = PermissionUtil::CheckCallingUidPermission(allowedUids);
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test UpdateBGSet  API
+* @tc.type  : FUNC
+* @tc.number: UpdateBGSet_001
+* @tc.desc  : Test UpdateBGSet API
+*/
+HWTEST(AudioUtilsUnitTest, UpdateBGSet_001, TestSize.Level1)
+{
+    PermissionUtil::UpdateBGSet();
+
+    char ch = '0';
+    bool result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, false);
+
+    ch = '2';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+
+    ch = '4';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+
+    ch = '5';
+    result = PermissionUtil::IsFoldAble(ch);
+    EXPECT_EQ(result, true);
+}
+
+/**
 * @tc.name  : Test NeedVerifyBackgroundCapture  API
 * @tc.type  : FUNC
 * @tc.number: NeedVerifyBackgroundCapture_001
@@ -3378,6 +3461,30 @@ HWTEST(AudioUtilsUnitTest, AudioUtilsUnitTest_007, TestSize.Level1)
 
     EXPECT_TRUE(StringConverter(str2, result8Signed));
     EXPECT_EQ(result8Signed, 10);
+}
+
+/**
+* @tc.name  : Test GetSupportedAudioVolumeTypes  API
+* @tc.type  : FUNC
+* @tc.number: GetSupportedAudioVolumeTypes_001
+* @tc.desc  : Test GetSupportedAudioVolumeTypes API
+*/
+HWTEST(AudioUtilsUnitTest, GetSupportedAudioVolumeTypes_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetSupportedAudioVolumeTypes();
+    EXPECT_GE(ret.size(), 0);
+}
+
+/**
+* @tc.name  : Test GetStreamUsagesByVolumeType  API
+* @tc.type  : FUNC
+* @tc.number: GetStreamUsagesByVolumeType_001
+* @tc.desc  : Test GetStreamUsagesByVolumeType API
+*/
+HWTEST(AudioUtilsUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    auto ret = VolumeUtils::GetStreamUsagesByVolumeType(STREAM_MUSIC);
+    EXPECT_GE(ret.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

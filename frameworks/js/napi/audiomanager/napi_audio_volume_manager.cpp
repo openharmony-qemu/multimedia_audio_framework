@@ -174,6 +174,7 @@ napi_value NapiAudioVolumeManager::Init(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("getStreamUsagesByVolumeType", GetStreamUsagesByVolumeType),
         DECLARE_NAPI_FUNCTION("on", On),
         DECLARE_NAPI_FUNCTION("off", Off),
+        DECLARE_NAPI_FUNCTION("forceVolumeKeyControlType", ForceVolumeKeyControlType),
     };
 
     status = napi_define_class(env, AUDIO_VOLUME_MANAGER_NAPI_CLASS_NAME.c_str(), NAPI_AUTO_LENGTH, Construct, nullptr,
@@ -1069,19 +1070,19 @@ napi_value NapiAudioVolumeManager::RegisterActiveVolumeTypeChangeCallback(napi_e
     if (napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ == nullptr) {
         napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ =
             std::make_shared<NapiAudioManagerActiveVolumeTypeChangeCallback>(env);
-    }
-    CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ != nullptr,
-        NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
-        "RegisterActiveVolumeTypeChangeForUidCallback: Memory Allocation Failed !");
-    int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetActiveVolumeTypeCallback(
-        napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
-    if (ret != SUCCESS) {
-        if (ret == ERROR_INVALID_PARAM) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
-        } else if (ret == ERR_PERMISSION_DENIED) {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
-        } else {
-            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+        CHECK_AND_RETURN_RET_LOG(napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_ != nullptr,
+            NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error"),
+            "RegisterActiveVolumeTypeChangeForUidCallback: Memory Allocation Failed !");
+        int32_t ret = napiAudioVolumeManager->audioSystemMngr_->SetActiveVolumeTypeCallback(
+            napiAudioVolumeManager->activeVolumeTypeChangeCallbackNapi_);
+        if (ret != SUCCESS) {
+            if (ret == ERROR_INVALID_PARAM) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_INVALID_PARAM, "Invalid parameter");
+            } else if (ret == ERR_PERMISSION_DENIED) {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_PERMISSION_DENIED, "Permission denied");
+            } else {
+                NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_SYSTEM, "System error");
+            }
         }
     }
     std::shared_ptr<NapiAudioManagerActiveVolumeTypeChangeCallback> cb =
@@ -1523,6 +1524,55 @@ std::shared_ptr<NapiAudioSystemVolumeChangeCallback> NapiAudioVolumeManager::Get
         }
     }
     return cb;
+}
+
+napi_value NapiAudioVolumeManager::ForceVolumeKeyControlType(napi_env env, napi_callback_info info)
+{
+    auto context = std::make_shared<AudioVolumeManagerAsyncContext>();
+    if (context == nullptr) {
+        AUDIO_ERR_LOG("ForceVolumeKeyControlType failed : no memory");
+        NapiAudioError::ThrowError(env, "ForceVolumeKeyControlType failed : no memory", NAPI_ERR_SYSTEM);
+        return NapiParamUtils::GetUndefinedValue(env);
+    }
+    size_t argNum = 0;
+    auto inputParser = [env, context, &argNum](size_t argc, napi_value *argv) {
+        argNum = argc;
+        NAPI_CHECK_ARGS_RETURN_VOID(context, argc >= ARGS_TWO, " Invalid arguments count or types.",
+            NAPI_ERR_INVALID_PARAM);
+        context->status = NapiParamUtils::GetValueInt32(env, context->volumeType, argv[PARAM0]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get volumeType failed",
+            NAPI_ERR_INPUT_INVALID);
+        context->status = NapiParamUtils::GetValueInt32(env, context->duration, argv[PARAM1]);
+        NAPI_CHECK_ARGS_RETURN_VOID(context, context->status == napi_ok, "get duration failed",
+            NAPI_ERR_INPUT_INVALID);
+    };
+    context->GetCbInfo(env, info, inputParser);
+
+    auto executor = [context]() {
+        CHECK_AND_RETURN_LOG(CheckContextStatus(context), "context object state is error.");
+        auto obj = reinterpret_cast<NapiAudioVolumeManager*>(context->native);
+        ObjectRefMap objectGuard(obj);
+        auto *napiAudioVolumeManager = objectGuard.GetPtr();
+        CHECK_AND_RETURN_LOG(CheckAudioVolumeManagerStatus(napiAudioVolumeManager, context),
+            "audio volume manager state is error.");
+        context->intValue = napiAudioVolumeManager->audioSystemMngr_->ForceVolumeKeyControlType(
+            NapiAudioEnum::GetNativeAudioVolumeType(context->volumeType), context->duration);
+        CHECK_AND_RETURN(context->intValue != SUCCESS);
+        if (context->intValue == ERR_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_NO_PERMISSION);
+        } else if (context->intValue == ERR_SYSTEM_PERMISSION_DENIED) {
+            context->SignError(NAPI_ERR_PERMISSION_DENIED);
+        } else if (context->intValue == ERR_INVALID_PARAM) {
+            context->SignError(NAPI_ERR_INVALID_PARAM);
+        } else {
+            context->SignError(NAPI_ERR_SYSTEM, "ForceVolumeKeyControlType fail.");
+        }
+    };
+
+    auto complete = [env](napi_value &output) {
+        output = NapiParamUtils::GetUndefinedValue(env);
+    };
+    return NapiAsyncWork::Enqueue(env, context, "ForceVolumeKeyControlType", executor, complete);
 }
 }  // namespace AudioStandard
 }  // namespace OHOS

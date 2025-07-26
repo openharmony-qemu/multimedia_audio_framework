@@ -17,7 +17,7 @@
 #define LOG_TAG "HpaeDfxTree"
 #endif
 #include "hpae_dfx_tree.h"
-#include <audio_engine_log.h>
+#include "audio_engine_log.h"
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -74,7 +74,11 @@ bool HpaeDfxTree::Insert(const uint32_t parentNodeId, const HpaeDfxNodeInfo &inf
         AUDIO_INFO_LOG("Insert can not find correct parent");
         return false;
     }
-    parent->children_.push_back(new DfxTreeNode(info));
+    auto it = find_if(parent->children_.begin(), parent->children_.end(),
+        [&info](DfxTreeNode *node) -> bool { return node->nodeInfo_.nodeId == info.nodeId; });
+    if (it == parent->children_.end()) {
+        parent->children_.push_back(new DfxTreeNode(info));
+    }
     return true;
 }
 

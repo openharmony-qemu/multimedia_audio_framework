@@ -44,7 +44,7 @@ typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
     "PCM_DUMP",
-    "live_effect",
+    "hpae_effect",
     "test",
 };
 
@@ -494,11 +494,7 @@ void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     AudioScene audioScene = *reinterpret_cast<const AudioScene*>(rawData);
-    DeviceType outputDevice = *reinterpret_cast<const DeviceType*>(rawData);
-    DeviceType inputDevice = *reinterpret_cast<const DeviceType*>(rawData);
     data.WriteInt32(static_cast<int32_t>(audioScene));
-    data.WriteInt32(static_cast<int32_t>(outputDevice));
-    data.WriteInt32(static_cast<int32_t>(inputDevice));
 
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -1092,9 +1088,7 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    static uint32_t step = 0;
     uint32_t index = static_cast<uint32_t>(size);
-    step += index;
     static const vector<AudioScene> testAudioScenes = {
         AUDIO_SCENE_INVALID,
         AUDIO_SCENE_DEFAULT,
@@ -1113,12 +1107,75 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     };
     bool scoExcludeFlag = static_cast<bool>(index % NUM_2);
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(g_testDeviceTypes[step % g_testDeviceTypes.size()]);
-    int32_t activeInputDevice = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     AudioScene audioScene = testAudioScenes[static_cast<uint32_t>(size) % testAudioScenes.size()];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
+    audioServerPtr->SetAudioScene(audioScene, a2dpOffloadFlag, scoExcludeFlag);
+}
+
+void AudioServerNotifyDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::string networkId = "test_network_id";
+    bool connected = *reinterpret_cast<const bool*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->NotifyDeviceInfo(networkId, connected);
+}
+
+void AudioServerSetVoiceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    float volume = *reinterpret_cast<const float*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->SetVoiceVolume(volume);
+}
+
+void AudioServerCheckRemoteDeviceStateFuzzTest(const uint8_t *rawData, size_t size)
+{
+    static const vector<DeviceRole> testDeviceRole = {
+        DEVICE_ROLE_NONE,
+        INPUT_DEVICE,
+        OUTPUT_DEVICE,
+        DEVICE_ROLE_MAX,
+    };
+    if (rawData == nullptr || size < LIMITSIZE || testDeviceRole.size() == 0) {
+        return;
+    }
+
+    std::string networkId = "test_network_id";
+    uint32_t deviceId = *reinterpret_cast<const uint32_t*>(rawData);
+    DeviceRole deviceRole = testDeviceRole[deviceId % testDeviceRole.size()];
+    bool isStartDevice = *reinterpret_cast<const bool*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->CheckRemoteDeviceState(networkId, deviceRole, isStartDevice);
+}
+
+void AudioServerSetAudioBalanceValueFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    float audioBalance = *reinterpret_cast<const float*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (audioServerPtr == nullptr) {
+        return;
+    }
+    audioServerPtr->SetAudioBalanceValue(audioBalance);
 }
 
 } // namespace AudioStandard
@@ -1176,6 +1233,10 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerGetAudioParameterByKeyTest,
     OHOS::AudioStandard::AudioServerGetDPParameterTest,
     OHOS::AudioStandard::AudioServerSetAudioSceneByDeviceTypeTest,
+    OHOS::AudioStandard::AudioServerNotifyDeviceInfoFuzzTest,
+    OHOS::AudioStandard::AudioServerSetVoiceVolumeFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateFuzzTest,
+    OHOS::AudioStandard::AudioServerSetAudioBalanceValueFuzzTest,
 };
 
 /* Fuzzer entry point */

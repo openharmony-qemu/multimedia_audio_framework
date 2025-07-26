@@ -24,7 +24,6 @@
 #include "high_resolution_timer.h"
 #ifdef ENABLE_HOOK_PCM
 #include "high_resolution_timer.h"
-#include "hpae_pcm_dumper.h"
 #endif
 namespace OHOS {
 namespace AudioStandard {
@@ -39,7 +38,7 @@ public:
     virtual bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
-    int32_t GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
+    int32_t GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId);
     int32_t RenderSinkInit(IAudioSinkAttr &attr);
     int32_t RenderSinkDeInit();
     int32_t RenderSinkFlush(void);
@@ -49,6 +48,7 @@ public:
     int32_t RenderSinkStart(void);
     int32_t RenderSinkStop(void);
     int32_t RenderSinkSetPriPaPower(void);
+    int32_t RenderSinkSetSyncId(int32_t syncId);
     size_t GetPreOutNum();
     // for ut test
     const char *GetRenderFrameData(void);
@@ -59,6 +59,7 @@ public:
 private:
     void HandleRemoteTiming();
     void HandlePaPower(HpaePcmBuffer *pcmBuffer);
+    void HandleHapticParam(uint64_t syncTime);
     InputPort<HpaePcmBuffer *> inputStream_;
     std::vector<char> renderFrameData_;
     std::vector<float> interleveData_;
@@ -71,10 +72,12 @@ private:
     int64_t silenceDataUs_ = 0;
     bool isOpenPaPower_ = true;
     bool isDisplayPaPowerState_ = false;
+    bool isSyncIdSet_ = false;
+    int32_t syncId_ = -1;
     uint32_t latency_ = 0;
+    uint64_t renderFrameTimes_ = 0;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
 #endif
 };
 

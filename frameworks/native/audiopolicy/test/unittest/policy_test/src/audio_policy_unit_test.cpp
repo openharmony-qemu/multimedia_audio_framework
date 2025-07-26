@@ -430,6 +430,18 @@ HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioManagerInterruptCallback_001, T
 }
 
 /**
+ * @tc.name  : Test Audio_Policy_SetAudioRouteCallback_001 via illegal state
+ * @tc.number: Audio_Policy_SetAudioRouteCallback_001
+ * @tc.desc  : Test SetAudioRouteCallback interface. Returns invalid.
+ */
+HWTEST(AudioPolicyUnitTest, Audio_Policy_SetAudioRouteCallback_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioRouteCallback> callback = nullptr;
+    int32_t ret = AudioPolicyManager::GetInstance().SetAudioRouteCallback(0, callback, 0);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
  * @tc.name  : Test Audio_Policy_RegisterTracker_001 via illegal state
  * @tc.number: Audio_Policy_RegisterTracker_001
  * @tc.desc  : Test RegisterTracker interface. Returns invalid.
@@ -1671,6 +1683,88 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyClientStub_OnFormatUnsupportedError_001, 
     MessageOption option;
     int ret = renderErrorStub->OnRemoteRequest(code, data, reply, option);
     EXPECT_LE(ret, 0);
+}
+
+/**
+ * tc.name  : Test IsStreamActiveByStreamUsage API
+ * tc.number: IsStreamActiveByStreamUsage_001
+ * tc.desc: : Test IsStreamActiveByStreamUsage interface
+ */
+HWTEST(AudioPolicyUnitTest, IsStreamActiveByStreamUsage_001, TestSize.Level1)
+{
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    bool result = AudioPolicyManager::GetInstance().IsStreamActiveByStreamUsage(streamUsage);
+    EXPECT_EQ(result, false);
+}
+
+/**
+ * tc.name  : Test GetVolumeInDbByStream API
+ * tc.number: GetVolumeInDbByStream_001
+ * tc.desc: : Test GetVolumeInDbByStream interface
+ */
+HWTEST(AudioPolicyUnitTest, GetVolumeInDbByStream_001, TestSize.Level1)
+{
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    int32_t volLevel = 5;
+    int32_t TEST_RET_NUM = 0;
+    float result = AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage,
+        volLevel, deviceType);
+    EXPECT_GE(result, TEST_RET_NUM);
+}
+
+/**
+ * tc.name  : Test GetSupportedAudioVolumeType API
+ * tc.number: GetSupportedAudioVolumeType_001
+ * tc.desc: : Test GetSupportedAudioVolumeType interface
+ */
+HWTEST(AudioPolicyUnitTest, GetSupportedAudioVolumeType_001, TestSize.Level1)
+{
+    int32_t TEST_EMPTY_SIZE = 0;
+    std::vector<AudioVolumeType> result = AudioPolicyManager::GetInstance().GetSupportedAudioVolumeType();
+    EXPECT_GE(result.size(), TEST_EMPTY_SIZE);
+}
+
+/**
+ * tc.name  : Test GetAudioVolumeTypeByStreamUsage API
+ * tc.number: GetAudioVolumeTypeByStreamUsage_001
+ * tc.desc: : Test GetAudioVolumeTypeByStreamUsage interface
+ */
+HWTEST(AudioPolicyUnitTest, GetAudioVolumeTypeByStreamUsage_001, TestSize.Level1)
+{
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_MUSIC;
+    AudioVolumeType result = AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
+    EXPECT_GE(result, STREAM_DEFAULT);
+    EXPECT_LE(result, STREAM_ALL);
+}
+
+/**
+ * tc.name  : Test GetStreamUsagesByVolumeType API
+ * tc.number: GetStreamUsagesByVolumeType_001
+ * tc.desc: : Test GetStreamUsagesByVolumeType interface
+ */
+HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
+{
+    int32_t TEST_EMPTY_SIZE = 0;
+    AudioVolumeType volType = AudioVolumeType::STREAM_MUSIC;
+    std::vector<StreamUsage> result = AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(volType);
+    EXPECT_GE(result.size(), TEST_EMPTY_SIZE);
+}
+
+/**
+ * tc.name  : Test SetSystemVolumeChangeCallback API
+ * tc.number: SetSystemVolumeChangeCallback_001
+ * tc.desc: : Test SetSystemVolumeChangeCallback interface
+ */
+HWTEST(AudioPolicyUnitTest, SetSystemVolumeChangeCallback_001, TestSize.Level1)
+{
+    int32_t testClientId = 300300;
+    std::shared_ptr<SystemVolumeChangeCallback> callback = std::make_shared<
+            NapiAudioSystemVolumeChangeCallback>();
+    int32_t result = AudioPolicyManager::GetInstance().SetSystemVolumeChangeCallback(testClientId, callback);
+    EXPECT_EQ(result, SUCCESS);
+    result = AudioSystemManager::GetInstance()->UnsetSystemVolumeChangeCallback(callback);
+    EXPECT_EQ(result, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -45,6 +45,7 @@ public:
     int32_t Drain(uint32_t sessionId) override;
     int32_t Stop(uint32_t sessionId) override;
     int32_t Release(uint32_t sessionId) override;
+    int32_t SetStreamMute(uint32_t sessionId, bool isMute) override;
     int32_t MoveStream(uint32_t sessionId, const std::string& sourceName) override;
     int32_t MoveAllStream(const std::string& sourceName, const std::vector<uint32_t>& sessionIds,
         MoveSessionType moveType = MOVE_ALL) override;
@@ -72,7 +73,7 @@ public:
     std::string GetThreadName() override;
     void SetCaptureId(uint32_t captureId);
     int32_t ReloadCaptureManager(const HpaeSourceInfo &sourceInfo) override;
-    void DumpSourceInfo() override;
+    int32_t DumpSourceInfo() override;
     std::string GetDeviceHDFDumpInfo() override;
 private:
     void SendRequest(Request &&request, bool isInit = false);

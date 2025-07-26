@@ -173,7 +173,7 @@ void AudioVolumeManagerSetOffloadVolumeFuzzTest(const uint8_t *rawData, size_t s
     AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
     float volumeDb = static_cast<float>(size);
     audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb);
+    audioAdapterManager_->SetOffloadVolume(streamType, volumeDb, "offload");
 }
 
 void AudioVolumeManagerSetOffloadSessionIdFuzzTest(const uint8_t *rawData, size_t size)

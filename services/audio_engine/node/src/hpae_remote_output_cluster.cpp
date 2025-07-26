@@ -17,29 +17,20 @@
 #define LOG_TAG "HpaeRemoteOutputCluster"
 #endif
 
+#include <sstream>
 #include "hpae_remote_output_cluster.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_errors.h"
 #include "audio_utils.h"
-#include <sstream>
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-HpaeRemoteOutputCluster::HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo)
-    : HpaeNode(nodeInfo), HpaeOutputCluster(nodeInfo),
-      hpaeSinkOutputNode_(std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo))
+HpaeRemoteOutputCluster::HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
+    : HpaeNode(nodeInfo), hpaeSinkOutputNode_(std::make_shared<HpaeRemoteSinkOutputNode>(nodeInfo, sinkInfo))
 {
-#ifdef ENABLE_HIDUMP_DFX
-    if (nodeInfo.statusCallback.lock()) {
-        nodeInfo.nodeName = "hpaeSinkOutputNode";
-        nodeInfo.nodeId = nodeInfo.statusCallback.lock()->OnGetNodeId();
-        hpaeSinkOutputNode_->SetNodeInfo(nodeInfo);
-        nodeInfo.statusCallback.lock()->OnNotifyDfxNodeInfo(true, 0, nodeInfo);
-    }
-#endif
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
     AUDIO_INFO_LOG("HpaeRemoteOutputCluster frameLenMs_:%{public}u ms,"
         "timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
@@ -54,14 +45,23 @@ void HpaeRemoteOutputCluster::DoProcess()
 {
     Trace trace("HpaeRemoteOutputCluster::DoProcess");
     hpaeSinkOutputNode_->DoProcess();
-    if (hpaeSinkOutputNode_->GetPreOutNum() == 0) {
-        timeoutStopCount_++;
-    } else {
-        timeoutStopCount_ = 0;
+    std::vector<HpaeProcessorType> needErased;
+    for (auto &mixerNode : sceneMixerMap_) {
+        if (mixerNode.second->GetPreOutNum() == 0) {
+            ++sceneStopCountMap_[mixerNode.first];
+        } else {
+            sceneStopCountMap_[mixerNode.first] = 0;
+        }
+        if (sceneStopCountMap_[mixerNode.first] > timeoutThdFrames_) {
+            needErased.emplace_back(mixerNode.first);
+            hpaeSinkOutputNode_->DisConnect(mixerNode.second);
+        }
     }
-    if (timeoutStopCount_ > timeoutThdFrames_) {
+    for (auto sceneType : needErased) {
+        sceneMixerMap_.erase(sceneType);
+    }
+    if (hpaeSinkOutputNode_->GetPreOutNum() == 0) {
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
-        timeoutStopCount_ = 0;
         AUDIO_INFO_LOG("HpaeRemoteOutputCluster timeout RenderSinkStop ret :%{public}d", ret);
     }
 }
@@ -69,6 +69,9 @@ void HpaeRemoteOutputCluster::DoProcess()
 bool HpaeRemoteOutputCluster::Reset()
 {
     hpaeSinkOutputNode_->Reset();
+    for (auto &mixerNode : sceneMixerMap_) {
+        mixerNode.second->Reset();
+    }
     for (auto converterNode : sceneConverterMap_) {
         converterNode.second->Reset();
     }
@@ -88,45 +91,26 @@ bool HpaeRemoteOutputCluster::ResetAll()
 void HpaeRemoteOutputCluster::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     HpaeNodeInfo &preNodeInfo = preNode->GetSharedInstance()->GetNodeInfo();
-    HpaeNodeInfo &curNodeInfo = GetNodeInfo();
+    HpaeNodeInfo nodeInfo = GetNodeInfo();
     HpaeProcessorType sceneType = preNodeInfo.sceneType;
-    AUDIO_INFO_LOG("HpaeRemoteOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
+    AUDIO_INFO_LOG("HpaeRemoteOutputCluster input sceneType is %{public}u", sceneType);
     AUDIO_INFO_LOG("HpaeRemoteOutputCluster input rate is %{public}u, ch is %{public}u",
         preNodeInfo.samplingRate, preNodeInfo.channels);
     AUDIO_INFO_LOG(" HpaeRemoteOutputCluster output rate is %{public}u, ch is %{public}u",
-        curNodeInfo.samplingRate, curNodeInfo.channels);
+        nodeInfo.samplingRate, nodeInfo.channels);
     AUDIO_INFO_LOG(" HpaeRemoteOutputCluster preNode name %{public}s, curNode name is %{public}s",
-        preNodeInfo.nodeName.c_str(), curNodeInfo.nodeName.c_str());
-
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        curNodeInfo.nodeId = callBack->OnGetNodeId();
-        curNodeInfo.nodeName = "HpaeAudioFormatConverterNode";
-    }
-#endif
-    
+        preNodeInfo.nodeName.c_str(), nodeInfo.nodeName.c_str());
+    nodeInfo.sceneType = sceneType;
     if (!SafeGetMap(sceneConverterMap_, sceneType)) {
-        sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
-    } else {
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(),
-                sceneConverterMap_[sceneType]->GetNodeInfo());
-        }
-#endif
-        sceneConverterMap_.erase(sceneType);
-        sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, curNodeInfo);
+        sceneConverterMap_[sceneType] = std::make_shared<HpaeAudioFormatConverterNode>(preNodeInfo, nodeInfo);
     }
+    if (!SafeGetMap(sceneMixerMap_, sceneType)) {
+        sceneMixerMap_[sceneType] = std::make_shared<HpaeMixerNode>(nodeInfo);
+        sceneStopCountMap_[sceneType] = 0;
+        hpaeSinkOutputNode_->Connect(sceneMixerMap_[sceneType]);
+    }
+    sceneMixerMap_[sceneType]->Connect(sceneConverterMap_[sceneType]);
     sceneConverterMap_[sceneType]->Connect(preNode);
-#ifdef ENABLE_HIDUMP_DFX
-    if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-        AUDIO_INFO_LOG("HpaeRemoteOutputCluster connect curNodeInfo name %{public}s", curNodeInfo.nodeName.c_str());
-        AUDIO_INFO_LOG("HpaeRemoteOutputCluster connect preNodeInfo name %{public}s", preNodeInfo.nodeName.c_str());
-        callBack->OnNotifyDfxNodeInfo(true, hpaeSinkOutputNode_->GetNodeId(), curNodeInfo);
-        callBack->OnNotifyDfxNodeInfo(true, curNodeInfo.nodeId, preNodeInfo);
-    }
-#endif
-    hpaeSinkOutputNode_->Connect(sceneConverterMap_[sceneType]);
     connectedProcessCluster_.insert(sceneType);
 }
 
@@ -137,21 +121,8 @@ void HpaeRemoteOutputCluster::DisConnect(const std::shared_ptr<OutputNode<HpaePc
     AUDIO_INFO_LOG("HpaeRemoteOutputCluster input sceneType is %{public}u", preNodeInfo.sceneType);
     if (SafeGetMap(sceneConverterMap_, sceneType)) {
         sceneConverterMap_[sceneType]->DisConnect(preNode);
-        hpaeSinkOutputNode_->DisConnect(sceneConverterMap_[sceneType]);
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(),
-                sceneConverterMap_[sceneType]->GetNodeInfo());
-        }
-#endif
+        sceneMixerMap_[sceneType]->DisConnect(sceneConverterMap_[sceneType]);
         sceneConverterMap_.erase(sceneType);
-    } else {
-        hpaeSinkOutputNode_->DisConnect(preNode);
-#ifdef ENABLE_HIDUMP_DFX
-        if (auto callBack = hpaeSinkOutputNode_->GetNodeStatusCallback().lock()) {
-            callBack->OnNotifyDfxNodeInfo(false, hpaeSinkOutputNode_->GetNodeId(), preNodeInfo);
-        }
-#endif
     }
     connectedProcessCluster_.erase(sceneType);
 }
@@ -161,7 +132,7 @@ int32_t HpaeRemoteOutputCluster::GetConverterNodeCount()
     return sceneConverterMap_.size();
 }
 
-int32_t HpaeRemoteOutputCluster::GetInstance(std::string deviceClass, std::string deviceNetId)
+int32_t HpaeRemoteOutputCluster::GetInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     return hpaeSinkOutputNode_->GetRenderSinkInstance(deviceClass, deviceNetId);
 }

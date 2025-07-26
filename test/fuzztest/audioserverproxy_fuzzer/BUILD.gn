@@ -1,0 +1,67 @@
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../appgallery.gni")
+import("../../../av_session.gni")
+import("../../../bluetooth_part.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("AudioServerProxyFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audioserverproxy_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_policy/server/infra/ipc_proxy/include",
+  ]
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+
+  sources = [
+    "audio_server_proxy_fuzzer.cpp",
+  ]
+
+  cflags_cc = [ "-std=c++20" ]
+
+  deps = [
+    "../../../services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_policy:audio_policy_service_static",
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_consumer",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  configs = [ "../../../services/audio_service:audio_service_config" ]
+
+  defines = []
+  if (audio_framework_feature_inner_capturer) {
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":AudioServerProxyFuzzTest" ]
+}

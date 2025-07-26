@@ -43,7 +43,7 @@ DirectPlayBackEngine::DirectPlayBackEngine()
       latency_(0),
       stream_(nullptr),
       uChannel_(0),
-      uFormat_(sizeof(int32_t)),
+      format_(sizeof(int32_t)),
       uSampleRate_(0)
 {
     AUDIO_INFO_LOG("Constructor");
@@ -84,8 +84,8 @@ int32_t DirectPlayBackEngine::Start()
     AUDIO_INFO_LOG("Enter in");
     int32_t ret = SUCCESS;
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink");
-    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first");
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_HANDLE, "null sink!");
+    CHECK_AND_RETURN_RET_LOG(sink->IsInited(), ERR_NOT_STARTED, "sink Not Inited! Init the sink first!");
     failedCount_ = 0;
     latency_ = 0;
     if (!isStart_) {
@@ -153,7 +153,7 @@ void DirectPlayBackEngine::DirectCallback(const RenderCallbackType type)
     switch (type) {
         case CB_NONBLOCK_WRITE_COMPLETED: { //need more data
             MixStreams();
-            [[fallthrough]];
+            break;
         }
         case CB_DRAIN_COMPLETED:
         case CB_FLUSH_COMPLETED:
@@ -173,8 +173,7 @@ int32_t DirectPlayBackEngine::RegisterWriteCallback()
 
     std::function<void(const RenderCallbackType type)> callback =
         std::bind(&DirectPlayBackEngine::DirectCallback, this, std::placeholders::_1);
-    sink->RegistDirectHdiCallback(callback);
-    return SUCCESS;
+    return sink->RegistDirectHdiCallback(callback);
 }
 
 void DirectPlayBackEngine::DoRenderFrame(std::vector<char> &audioBufferConverted, int32_t index, int32_t appUid)
@@ -183,6 +182,7 @@ void DirectPlayBackEngine::DoRenderFrame(std::vector<char> &audioBufferConverted
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     CHECK_AND_RETURN(sink != nullptr);
     sink->RenderFrame(*audioBufferConverted.data(), audioBufferConverted.size(), written);
+    CHECK_AND_RETURN(stream_ != nullptr);
     stream_->ReturnIndex(index);
 }
 
@@ -216,6 +216,7 @@ void DirectPlayBackEngine::MixStreams()
 int32_t DirectPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_INFO_LOG("Enter add");
+    CHECK_AND_RETURN_RET_LOG(stream != nullptr, ERR_INVALID_PARAM, "stream is null");
     if (!stream_) {
         AudioProcessConfig config = stream->GetAudioProcessConfig();
         int32_t result = InitSink(config.streamInfo);
@@ -234,6 +235,7 @@ int32_t DirectPlayBackEngine::AddRenderer(const std::shared_ptr<IRendererStream>
 void DirectPlayBackEngine::RemoveRenderer(const std::shared_ptr<IRendererStream> &stream)
 {
     AUDIO_INFO_LOG("step in remove");
+    CHECK_AND_RETURN_LOG(stream != nullptr, "stream is null");
     if (stream_ == nullptr) {
         AUDIO_INFO_LOG("stream already removed.");
         return;
@@ -271,7 +273,7 @@ int32_t DirectPlayBackEngine::InitSink(const AudioStreamInfo &clientStreamInfo)
 
     std::shared_ptr<IAudioRenderSink> sink = HdiAdapterManager::GetInstance().GetRenderSink(renderId_);
     if (isInit_ && sink) {
-        if (uChannel_ != channel || uFormat_ != format || uSampleRate_ != samplingRate) {
+        if (uChannel_ != channel || format_ != format || uSampleRate_ != samplingRate) {
             if (sink && sink->IsInited()) {
                 sink->Stop();
                 sink->DeInit();
@@ -308,13 +310,14 @@ int32_t DirectPlayBackEngine::InitSink(uint32_t channel, AudioSampleFormat forma
         sinkName.c_str(), attr.deviceType, attr.sampleRate, attr.format, attr.channel);
     int32_t ret = sink->Init(attr);
     if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("init sink fail, sinkName: %{public}s", sinkName.c_str());
         return ret;
     }
     float volume = 1.0f;
     ret = sink->SetVolume(volume, volume);
     uChannel_ = attr.channel;
     uSampleRate_ = attr.sampleRate;
-    uFormat_ = GetDirectFormatByteSize(attr.format);
+    format_ = GetDirectFormatByteSize(attr.format);
 
     return ret;
 }

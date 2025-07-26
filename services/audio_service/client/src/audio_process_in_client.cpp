@@ -57,6 +57,8 @@ static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
 static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 5; // 5ms
+static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
+static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 }
 
 class ProcessCbImpl;
@@ -198,6 +200,10 @@ private:
     void WaitForWritableSpace();
 
     int32_t WriteDataChunk(const BufferDesc &bufDesc, size_t clientRemainSizeInFrame);
+
+    bool WaitIfBufferEmpty(const BufferDesc &bufDesc);
+
+    void ExitStandByIfNeed();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -272,6 +278,13 @@ private:
 
     std::vector<uint8_t> tmpBuffer_ = {};
     std::mutex tmpBufferMutex_;
+
+    struct HandleInfo {
+        uint64_t serverHandlePos = 0;
+        int64_t serverHandleTime = 0;
+    };
+
+    std::atomic<HandleInfo> lastHandleInfo_;
 };
 
 // ProcessCbImpl --> sptr | AudioProcessInClientInner --> shared_ptr
@@ -417,24 +430,28 @@ int32_t AudioProcessInClientInner::GetSessionID(uint32_t &sessionID)
 bool AudioProcessInClientInner::GetAudioTime(uint32_t &framePos, int64_t &sec, int64_t &nanoSec)
 {
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, false, "buffer is null, maybe not inited.");
-    uint64_t pos = 0;
-    if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-        pos = audioBuffer_->GetCurWriteFrame();
+
+    uint64_t serverHandlePos = 0;
+    int64_t serverHandleTime = 0;
+    bool ret = audioBuffer_->GetHandleInfo(serverHandlePos, serverHandleTime);
+    CHECK_AND_RETURN_RET_LOG(ret, false, "GetHandleInfo failed");
+
+    if (serverHandlePos > UINT32_MAX) {
+        framePos = serverHandlePos % UINT32_MAX;
     } else {
-        pos = audioBuffer_->GetCurReadFrame();
+        framePos = static_cast<uint32_t>(serverHandlePos);
     }
 
-    if (pos > UINT32_MAX) {
-        framePos = pos % UINT32_MAX;
+    auto lastHandleInfo = lastHandleInfo_.load();
+    if (lastHandleInfo.serverHandlePos < framePos || lastHandleInfo.serverHandleTime == 0) {
+        lastHandleInfo_.compare_exchange_strong(lastHandleInfo, {framePos, serverHandleTime});
     } else {
-        framePos = static_cast<uint32_t>(pos);
+        framePos = lastHandleInfo.serverHandlePos;
+        serverHandleTime = lastHandleInfo.serverHandleTime;
     }
-    int64_t time = handleTimeModel_.GetTimeOfPos(pos);
-    int64_t deltaTime = 20000000; // note: 20ms
-    time += deltaTime;
 
-    sec = time / AUDIO_NS_PER_SECOND;
-    nanoSec = time % AUDIO_NS_PER_SECOND;
+    sec = serverHandleTime / AUDIO_NS_PER_SECOND;
+    nanoSec = serverHandleTime % AUDIO_NS_PER_SECOND;
     return true;
 }
 
@@ -485,7 +502,7 @@ int32_t AudioProcessInClientInner::SetMute(bool mute)
 {
     muteVolumeInFloat_ = mute ? 0.0f : 1.0f;
     CHECK_AND_RETURN_RET_LOG(audioBuffer_ != nullptr, SUCCESS, "audiobuffer_ is null");
-    audioBuffer_->SetDuckFactor(muteVolumeInFloat_);
+    audioBuffer_->SetMuteFactor(muteVolumeInFloat_);
     return SUCCESS;
 }
 
@@ -811,10 +828,11 @@ int32_t AudioProcessInClientInner::ReadFromProcessClient() const
         ERR_OPERATION_FAILED, "get client mmap read buffer failed, ret %{public}d.", ret);
     ringBuffer.dataLength = spanSizeInByte_;
 
-    ret = RingBufferWrapper{{{
-        {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
-        {.buffer = nullptr, .bufLength = 0}}},
-        .dataLength = spanSizeInByte_}.MemCopyFrom(ringBuffer);
+    ret = RingBufferWrapper{
+        .basicBufferDescs = {{
+            {.buffer = callbackBuffer_.get(), .bufLength = spanSizeInByte_},
+            {.buffer = nullptr, .bufLength = 0}}},
+        .dataLength = spanSizeInByte_}.CopyInputBufferValueToCurBuffer(ringBuffer);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "%{public}s memcpy fail, ret %{public}d,"
         " spanSizeInByte %{public}zu.", __func__, ret, spanSizeInByte_);
     DumpFileUtil::WriteDumpFile(dumpFile_, static_cast<void *>(callbackBuffer_.get()), spanSizeInByte_);
@@ -994,31 +1012,28 @@ int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const 
 
 int32_t AudioProcessInClientInner::ProcessData(const BufferDesc &srcDesc, const RingBufferWrapper &dstDesc)
 {
+    BufferDesc tmpDstDesc;
     if (dstDesc.dataLength <= dstDesc.basicBufferDescs[0].bufLength) {
-        BufferDesc tmpDstDesc;
         tmpDstDesc.buffer = dstDesc.basicBufferDescs[0].buffer;
         tmpDstDesc.dataLength = dstDesc.dataLength;
         tmpDstDesc.bufLength = dstDesc.dataLength;
         return ProcessData(srcDesc, tmpDstDesc);
-    } else {
-        std::lock_guard lock(tmpBufferMutex_);
-        tmpBuffer_.resize(0);
-        tmpBuffer_.resize(dstDesc.dataLength);
-        BufferDesc tmpDstDesc;
-        tmpDstDesc.buffer = tmpBuffer_.data();
-        tmpDstDesc.dataLength = dstDesc.dataLength;
-        tmpDstDesc.bufLength = dstDesc.dataLength;
-        int32_t ret = ProcessData(srcDesc, tmpDstDesc);
-        CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
-
-        RingBufferWrapper ringBufferDescForCotinueData;
-        ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
-        ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
-        ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
-
-        RingBufferWrapper(dstDesc).MemCopyFrom(ringBufferDescForCotinueData);
-        return SUCCESS;
     }
+
+    std::lock_guard lock(tmpBufferMutex_);
+    tmpBuffer_.resize(0);
+    tmpBuffer_.resize(dstDesc.dataLength);
+    tmpDstDesc.buffer = tmpBuffer_.data();
+    tmpDstDesc.dataLength = dstDesc.dataLength;
+    tmpDstDesc.bufLength = dstDesc.dataLength;
+    int32_t ret = ProcessData(srcDesc, tmpDstDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "ProcessData failed!");
+    RingBufferWrapper ringBufferDescForCotinueData;
+    ringBufferDescForCotinueData.dataLength = tmpDstDesc.dataLength;
+    ringBufferDescForCotinueData.basicBufferDescs[0].buffer = tmpDstDesc.buffer;
+    ringBufferDescForCotinueData.basicBufferDescs[0].bufLength = tmpDstDesc.dataLength;
+    RingBufferWrapper(dstDesc).CopyInputBufferValueToCurBuffer(ringBufferDescForCotinueData);
+    return SUCCESS;
 }
 
 void AudioProcessInClientInner::WaitForWritableSpace()
@@ -1081,13 +1096,24 @@ int32_t AudioProcessInClientInner::WriteDataChunk(const BufferDesc &bufDesc, siz
     return SUCCESS;
 }
 
+bool AudioProcessInClientInner::WaitIfBufferEmpty(const BufferDesc &bufDesc)
+{
+    if (bufDesc.dataLength == 0) {
+        const uint32_t sleepTimeUs = isVoipMmap_ ? VOIP_WAIT_FOR_NEXT_CB_US : FAST_WAIT_FOR_NEXT_CB_US;
+        AUDIO_WARNING_LOG("%{public}u", sleepTimeUs);
+        usleep(sleepTimeUs);
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("AudioProcessInClient::Enqueue");
     CHECK_AND_RETURN_RET_LOG(isInited_, ERR_ILLEGAL_STATE, "not inited!");
 
     CHECK_AND_RETURN_RET_LOG(bufDesc.buffer != nullptr && bufDesc.bufLength <= clientSpanSizeInByte_ &&
-        bufDesc.dataLength <= clientSpanSizeInByte_, ERR_INVALID_PARAM,
+        bufDesc.dataLength <= bufDesc.bufLength, ERR_INVALID_PARAM,
         "bufDesc error, bufLen %{public}zu, dataLen %{public}zu, spanSize %{public}zu.",
         bufDesc.bufLength, bufDesc.dataLength, clientSpanSizeInByte_);
     // check if this buffer is form us.
@@ -1101,6 +1127,10 @@ int32_t AudioProcessInClientInner::Enqueue(const BufferDesc &bufDesc)
         }
         return SUCCESS;
     };
+
+    CHECK_AND_RETURN_RET(WaitIfBufferEmpty(bufDesc), ERR_INVALID_PARAM);
+
+    ExitStandByIfNeed();
 
     DoFadeInOut(bufDesc);
 
@@ -1473,6 +1503,14 @@ std::string AudioProcessInClientInner::GetStatusInfo(StreamStatus status)
     return "NO_SUCH_STATUS";
 }
 
+void AudioProcessInClientInner::ExitStandByIfNeed()
+{
+    if (streamStatus_->load() == STREAM_STAND_BY) {
+        AUDIO_INFO_LOG("Status is STAND_BY, let's call exit!");
+        CallExitStandBy();
+    }
+}
+
 bool AudioProcessInClientInner::KeepLoopRunning()
 {
     StreamStatus targetStatus = STREAM_INVALID;
@@ -1481,8 +1519,6 @@ bool AudioProcessInClientInner::KeepLoopRunning()
         case STREAM_RUNNING:
             return true;
         case STREAM_STAND_BY:
-            AUDIO_INFO_LOG("Status is STAND_BY, let's call exit!");
-            CallExitStandBy();
             return true;
         case STREAM_STARTING:
             targetStatus = STREAM_RUNNING;
@@ -1642,8 +1678,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) < spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) < spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1659,8 +1695,8 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
             return true;
         }
 
-        int32_t wriableSizeInframe = audioBuffer_->GetWritableDataFrames();
-        if ((wriableSizeInframe > 0) && ((totalSizeInFrame_ - wriableSizeInframe) >= spanSizeInFrame_)) {
+        int32_t writableSizeInFrame = audioBuffer_->GetWritableDataFrames();
+        if ((writableSizeInFrame > 0) && ((totalSizeInFrame_ - writableSizeInFrame) >= spanSizeInFrame_)) {
             return true;
         }
         return false;
@@ -1684,7 +1720,8 @@ bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
         return true;
     }
 
-    if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
+    auto status = streamStatus_->load();
+    if (status != StreamStatus::STREAM_RUNNING && status != StreamStatus::STREAM_STAND_BY) {
         return true;
     }
     // call client write

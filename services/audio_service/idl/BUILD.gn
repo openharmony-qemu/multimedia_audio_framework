@@ -14,6 +14,7 @@
 import("//build/config/components/idl_tool/idl.gni")
 import("//foundation/multimedia/audio_framework/config.gni")
 
+audio_framework_root = "../../.."
 audio_policy_idl_location = "${audio_framework_root}/services/audio_policy/idl"
 
 idl_gen_interface("audio_service_idl_interface") {
@@ -34,7 +35,10 @@ idl_gen_interface("audio_service_idl_interface") {
   sources_common = [ "AudioServiceTypes.idl" ]
 
   # client_enable = true
-  # log_tag = "audio_service"
+  log_tag = "AudioServiceIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+
+  log_domainid = "0xD002B8B"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -50,15 +54,16 @@ idl_gen_interface("audio_policy_idl_interface") {
     "${audio_policy_idl_location}/IStandardAudioRoutingManagerListener.idl",
     "${audio_policy_idl_location}/IStandardAudioZoneClient.idl",
     "${audio_policy_idl_location}/IStandardClientTracker.idl",
-    "${audio_policy_idl_location}/IStandardConcurrencyStateListener.idl",
     "${audio_policy_idl_location}/IStandardSleAudioOperationCallback.idl",
     "${audio_policy_idl_location}/IStandardSpatializationStateChangeListener.idl",
   ]
   sources_callback = []
   sources_common = []
 
-  # client_enable = true
-  # log_tag = "audio_policy"
+  log_tag = "AudioPolicyIdl"
+  hitrace = "HITRACE_TAG_ZAUDIO"
+
+  log_domainid = "0xD002B87"
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
@@ -103,8 +108,6 @@ ohos_shared_library("audio_framework_interface") {
     "-Os",
   ]
 
-  # ldflags = [ "-Wl,--exclude-libs=ALL" ]
-
   output_values = get_target_outputs(":audio_service_idl_interface")
   output_values += get_target_outputs(":audio_policy_idl_interface")
 
@@ -131,6 +134,7 @@ ohos_shared_library("audio_framework_interface") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "hitrace:hitrace_meter",
     "ipc:ipc_core",
     "ipc:ipc_single",
     "samgr:samgr_proxy",

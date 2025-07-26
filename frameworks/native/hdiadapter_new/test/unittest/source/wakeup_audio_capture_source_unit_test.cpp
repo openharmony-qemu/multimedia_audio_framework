@@ -211,7 +211,7 @@ HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_009, TestSize.Le
 HWTEST_F(WakeupAudioCaptureSourceUnitTest, WakeupSourceUnitTest_010, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
-    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
+    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
 }
  

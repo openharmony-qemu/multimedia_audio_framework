@@ -65,6 +65,8 @@ public:
     bool IsProcessHasSystemPermission(int32_t pid);
     void RegisterAudioWorkgroupDeathRecipient(pid_t pid);
     std::vector<int32_t> GetProcessesOfAudioWorkgroup();
+    int32_t ImproveAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, bool> &threads);
+    int32_t RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered_map<int32_t, int32_t> &threads);
     // Inner class for death handler
     class AudioWorkgroupDeathRecipient : public IRemoteObject::DeathRecipient {
     public:

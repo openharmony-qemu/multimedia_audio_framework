@@ -17,22 +17,23 @@
 #define LOG_TAG "HpaeRemoteSinkOutputNode"
 #endif
 
-#include <hpae_remote_sink_output_node.h>
-#include "audio_errors.h"
 #include <iostream>
+#include "hpae_remote_sink_output_node.h"
+#include "audio_errors.h"
 #include "hpae_format_convert.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 
-HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo)
+HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo),
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
-      interleveData_(nodeInfo.frameLen * nodeInfo.channels)
+      interleveData_(nodeInfo.frameLen * nodeInfo.channels),
+      needEmptyChunk_(sinkInfo.needEmptyChunk)
 {
 #ifdef ENABLE_HOOK_PCM
     outputMediaPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeRemoteSinkOutputNode_Out_Media_bit_" +
@@ -45,6 +46,13 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo)
         std::to_string(GetBitWidth()) + "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
         std::to_string(GetSampleRate()) + ".pcm");
     AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
+#endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeRemoteSinkOutputNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
 #endif
 }
 
@@ -95,11 +103,8 @@ void HpaeRemoteSinkOutputNode::DoProcess()
         return;
     }
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
-    if (outputVec.empty()) {
-        return;
-    }
     for (auto &outputData : outputVec) {
-        if (outputData == nullptr || !outputData->IsValid()) {
+        if (outputData == nullptr || (!outputData->IsValid() && !needEmptyChunk_)) {
             continue;
         }
         HpaeSplitStreamType streamType = outputData->GetSplitStreamType();
@@ -151,14 +156,25 @@ bool HpaeRemoteSinkOutputNode::ResetAll()
 void HpaeRemoteSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeRemoteSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
-int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+int32_t HpaeRemoteSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     if (deviceNetId.empty()) {
         renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);

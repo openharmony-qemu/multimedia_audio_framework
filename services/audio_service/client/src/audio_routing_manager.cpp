@@ -123,20 +123,16 @@ int32_t AudioRoutingManager::UnsetAudioDeviceRefinerCallback()
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
 }
 
-int32_t AudioRoutingManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
-{
-    return AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
-}
-
 int32_t AudioRoutingManager::SetPreferredDevice(const PreferredType preferredType,
     const std::shared_ptr<AudioDeviceDescriptor> &desc, const int32_t uid)
 {
     return AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
 }
 
-void AudioRoutingManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+int32_t AudioRoutingManager::SetDeviceVolumeBehavior(const std::string &networkId,
+    DeviceType deviceType, VolumeBehavior volumeBehavior)
 {
-    AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
+    return AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
 int32_t AudioRoutingManager::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

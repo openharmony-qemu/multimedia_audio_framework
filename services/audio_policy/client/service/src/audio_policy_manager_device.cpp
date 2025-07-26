@@ -354,7 +354,7 @@ int32_t AudioPolicyManager::UnsetPreferredOutputDeviceChangeCallback(
         audioPolicyClientStubCB_->RemovePreferredOutputDeviceChangeCallback(callback);
         if (audioPolicyClientStubCB_->GetPreferredOutputDeviceChangeCallbackSize() == 0) {
             callbackChangeInfos_[CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE].isEnable = false;
-            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false);
+            SetClientCallbacksEnable(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE, false, false);
         }
     }
     return SUCCESS;
@@ -570,14 +570,29 @@ int32_t AudioPolicyManager::MoveToNewPipe(const uint32_t sessionId, const AudioP
     return gsp->MoveToNewPipe(sessionId, pipeType);
 }
 
-void AudioPolicyManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+int32_t AudioPolicyManager::SetDeviceVolumeBehavior(const std::string &networkId,
+    DeviceType deviceType, VolumeBehavior volumeBehavior)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
-    if (gsp != nullptr) {
-        gsp->SaveRemoteInfo(networkId, deviceType);
-    } else {
-        AUDIO_ERR_LOG("audio policy manager proxy is NULL.");
-    }
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+    return gsp->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
+}
+
+int32_t AudioPolicyManager::SetQueryDeviceVolumeBehaviorCallback(
+    const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback)
+{
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
+
+    sptr<AudioPolicyManagerListenerStubImpl> listener = new(std::nothrow) AudioPolicyManagerListenerStubImpl();
+    CHECK_AND_RETURN_RET_LOG(listener != nullptr, ERROR, "object null");
+    listener->SetQueryDeviceVolumeBehaviorCallback(callback);
+
+    sptr<IRemoteObject> object = listener->AsObject();
+    CHECK_AND_RETURN_RET_LOG(object != nullptr, ERROR, "listenerStub->AsObject is nullptr.");
+
+    return gsp->SetQueryDeviceVolumeBehaviorCallback(object);
 }
 
 int32_t AudioPolicyManager::SetDeviceConnectionStatus(const std::shared_ptr<AudioDeviceDescriptor> &desc,

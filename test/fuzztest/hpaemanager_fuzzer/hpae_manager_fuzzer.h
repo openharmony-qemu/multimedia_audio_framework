@@ -18,7 +18,7 @@
 
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
-
+#include "hpae_manager.h"
 class HpaeAudioServiceCallbackFuzzTest : public OHOS::AudioStandard::AudioServiceHpaeCallback {
 public:
     ~HpaeAudioServiceCallbackFuzzTest() override {}
@@ -33,6 +33,11 @@ public:
         closeAudioPortResult_ = result;
     }
 
+    void OnReloadAudioPortCb(int32_t portId) override
+    {
+        portId_ = portId;
+    }
+    
     void OnSetSinkMuteCb(int32_t result) override
     {
         setSinkMuteResult_ = result;

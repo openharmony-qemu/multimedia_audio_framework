@@ -45,7 +45,7 @@ ohos_fuzztest("AudioConnectedDeviceFuzzTest") {
   sources = [ "audio_connected_device_fuzzer.cpp" ]
 
   deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../../services/audio_service/idl:audio_framework_interface",
     "../../../frameworks/native/audioclock:audio_clock",
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",

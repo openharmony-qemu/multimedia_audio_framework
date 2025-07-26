@@ -18,39 +18,39 @@
 #include "hpae_mixer_node.h"
 #include "hpae_sink_output_node.h"
 #include "hpae_audio_format_converter_node.h"
+#include "i_hpae_output_cluster.h"
 
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr uint32_t TIME_OUT_STOP_THD_DEFAULT_FRAME = 150;
-constexpr uint32_t FRAME_LEN_MS_DEFAULT_MS = 20;
-class HpaeOutputCluster : public InputNode<HpaePcmBuffer *> {
+class HpaeOutputCluster : public IHpaeOutputCluster {
 public:
     HpaeOutputCluster(HpaeNodeInfo &nodeInfo);
     virtual ~HpaeOutputCluster();
-    virtual void DoProcess() override;
-    virtual bool Reset() override;
-    virtual bool ResetAll() override;
+    void DoProcess() override;
+    bool Reset() override;
+    bool ResetAll() override;
     void Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
     void DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode) override;
-    virtual int32_t GetConverterNodeCount();
-    virtual int32_t GetPreOutNum();
-    virtual int32_t GetInstance(std::string deviceClass, std::string deviceNetId);
-    virtual int32_t Init(IAudioSinkAttr &attr);
-    virtual int32_t DeInit();
-    virtual int32_t Flush(void);
-    virtual int32_t Pause(void);
-    virtual int32_t ResetRender(void);
-    virtual int32_t Resume(void);
-    virtual int32_t Start(void);
-    virtual int32_t Stop(void);
-    virtual int32_t SetTimeoutStopThd(uint32_t timeoutThdMs);
-    virtual const char *GetFrameData(void);
-    virtual StreamManagerState GetState(void);
-    virtual bool IsProcessClusterConnected(HpaeProcessorType sceneType);
-    virtual int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid);
-    virtual int32_t SetPriPaPower(void);
-    uint32_t GetLatency();
+    int32_t GetConverterNodeCount() override;
+    int32_t GetPreOutNum() override;
+    int32_t GetInstance(const std::string &deviceClass, const std::string &deviceNetId) override;
+    int32_t Init(IAudioSinkAttr &attr) override;
+    int32_t DeInit() override;
+    int32_t Flush(void) override;
+    int32_t Pause(void) override;
+    int32_t ResetRender(void) override;
+    int32_t Resume(void) override;
+    int32_t Start(void) override;
+    int32_t Stop(void) override;
+    int32_t SetTimeoutStopThd(uint32_t timeoutThdMs) override;
+    const char *GetFrameData(void) override;
+    StreamManagerState GetState(void) override;
+    bool IsProcessClusterConnected(HpaeProcessorType sceneType) override;
+    int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) override;
+    int32_t SetPriPaPower(void) override;
+    int32_t SetSyncId(int32_t syncId) override;
+    uint32_t GetLatency() override;
 private:
     std::shared_ptr<HpaeMixerNode> mixerNode_ = nullptr;
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode_ = nullptr;

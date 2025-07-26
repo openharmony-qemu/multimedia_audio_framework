@@ -341,6 +341,7 @@ enum CallbackChange : int32_t {
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
+    CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_MAX,
 };
 
@@ -396,6 +397,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_STREAM_VOLUME_CHANGE,
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
+    CALLBACK_AUDIO_SESSION_DEVICE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -865,14 +867,6 @@ struct CaptureFilterOptions {
         this->pidFilterMode = pFilterMode;
     }
 
-    CaptureFilterOptions(const CaptureFilterOptions &filter)
-    {
-        usages = filter.usages;
-        usageFilterMode = filter.usageFilterMode;
-        pids = filter.pids;
-        pidFilterMode = filter.pidFilterMode;
-    }
-
     bool operator ==(CaptureFilterOptions& filter)
     {
         std::sort(filter.usages.begin(), filter.usages.end());
@@ -892,13 +886,8 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
     bool silentCapture {false}; // To be deprecated since 12
 
     AudioPlaybackCaptureConfig() = default;
-    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool slient)
-        : filterOptions(filter), silentCapture(slient)
-    {
-    }
-
-    AudioPlaybackCaptureConfig(const AudioPlaybackCaptureConfig &capturerConfig)
-        : filterOptions(capturerConfig.filterOptions), silentCapture(capturerConfig.silentCapture)
+    AudioPlaybackCaptureConfig(const CaptureFilterOptions &filter, const bool silent)
+        : filterOptions(filter), silentCapture(silent)
     {
     }
 
@@ -1490,6 +1479,7 @@ enum AudioPin {
     AUDIO_PIN_OUT_BLUETOOTH_A2DP = 1 << 10,  // Bluetooth A2dp output pin
     AUDIO_PIN_OUT_DP = 1 << 11,
     AUDIO_PIN_OUT_NEARLINK = 1 << 12, // Nearlink output pin
+    AUDIO_PIN_OUT_HEARING_AID = 1 << 13, // HearingAid output pin
     AUDIO_PIN_IN_MIC = 1 << 27 | 1 << 0, // Microphone input pin
     AUDIO_PIN_IN_HS_MIC = 1 << 27 | 1 << 1, // Wired headset microphone pin for input
     AUDIO_PIN_IN_LINEIN = 1 << 27 | 1 << 2, // Line-in pin

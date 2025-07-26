@@ -70,7 +70,7 @@ public:
 
     virtual void DumpInfo(std::string &dumpString) = 0;
 
-    virtual void SetDmDeviceType(uint16_t dmDeviceType) = 0;
+    virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) = 0;
 
     virtual void SetAudioScene(const AudioScene scene) = 0;
 };

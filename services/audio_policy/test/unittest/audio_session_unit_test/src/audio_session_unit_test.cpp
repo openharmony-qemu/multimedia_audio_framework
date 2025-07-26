@@ -32,7 +32,7 @@ void AudioSessionUnitTest::TearDown(void) {}
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_001.
-* @tc.desc  : Test AddAudioInterrpt.
+* @tc.desc  : Test AddStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_001, TestSize.Level1)
 {
@@ -42,15 +42,17 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_001, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    auto ret = audioSession->AddAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = 1;
+    audioSession->AddStreamInfo(audioInterrupt);
+    EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_002.
-* @tc.desc  : Test RemoveAudioInterrpt.
+* @tc.desc  : Test RemoveStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_002, TestSize.Level1)
 {
@@ -60,15 +62,17 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_002, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    auto ret = audioSession->RemoveAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = 1;
+    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->RemoveStreamInfo(0);
+    EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_003.
-* @tc.desc  : Test RemoveAudioInterrpt.
+* @tc.desc  : Test RemoveStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_003, TestSize.Level1)
 {
@@ -78,16 +82,16 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_003, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[audioInterrupt.streamId] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = 10;
+    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_004.
-* @tc.desc  : Test RemoveAudioInterrpt.
+* @tc.desc  : Test RemoveStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_004, TestSize.Level1)
 {
@@ -97,16 +101,16 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_004, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[audioInterrupt.streamId] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = 0;
+    audioSession->AddStreamInfo(audioInterrupt);
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
+    EXPECT_TRUE(audioSession->IsAudioSessionEmpty());
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_005.
-* @tc.desc  : Test RemoveAudioInterrpt.
+* @tc.desc  : Test RemoveStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_005, TestSize.Level1)
 {
@@ -117,17 +121,22 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_005, TestSize.Level1)
 
     uint32_t i = 1;
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[audioInterrupt.streamId] = interruptPair;
-    audioSession->interruptMap_[i] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = i;
+    audioSession->AddStreamInfo(audioInterrupt);
+
+    AudioInterrupt audioInterrupt2;
+    audioInterrupt2.streamId = i + 1;
+    audioSession->AddStreamInfo(audioInterrupt2);
+
+    audioSession->RemoveStreamInfo(audioInterrupt2.streamId);
+    EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_006.
-* @tc.desc  : Test RemoveAudioInterrpt.
+* @tc.desc  : Test RemoveStreamInfo.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_006, TestSize.Level1)
 {
@@ -138,17 +147,17 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_006, TestSize.Level1)
 
     uint32_t i = 1;
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[audioInterrupt.streamId] = interruptPair;
-    audioSession->interruptMap_[i] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrpt(interruptPair);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = i;
+
+    audioSession->AddStreamInfo(audioInterrupt);
+    EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
+    audioSession->RemoveStreamInfo(audioInterrupt.streamId);
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_007.
-* @tc.desc  : Test RemoveAudioInterrptByStreamId.
+* @tc.desc  : Test IsAudioRendererEmpty.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_007, TestSize.Level1)
 {
@@ -157,60 +166,65 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_007, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId = 10;
+    uint32_t streamId = 1;
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrptByStreamId(streamId);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = streamId;
+    audioInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
+
+    audioSession->AddStreamInfo(audioInterrupt);
+    EXPECT_TRUE(audioSession->IsAudioRendererEmpty());
+    audioSession->RemoveStreamInfo(streamId);
 }
 
 /**
 * @tc.name  : Test AudioSession.
 * @tc.number: AudioSessionUnitTest_008.
-* @tc.desc  : Test RemoveAudioInterrptByStreamId.
+* @tc.desc  : Test IsAudioRendererEmpty.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_008, TestSize.Level1)
 {
     int32_t callerPid = 1;
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId = 10;
+    uint32_t streamId = 1;
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrptByStreamId(streamId);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.streamId = streamId;
+    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+
+    audioSession->AddStreamInfo(audioInterrupt);
+    EXPECT_FALSE(audioSession->IsAudioRendererEmpty());
 }
 
 /**
-* @tc.name  : Test AudioSession.
+* @tc.name  : Test EnableDefaultDevice.
 * @tc.number: AudioSessionUnitTest_009.
-* @tc.desc  : Test RemoveAudioInterrptByStreamId.
+* @tc.desc  : Test EnableDefaultDevice function.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_009, TestSize.Level1)
 {
     int32_t callerPid = 1;
     AudioSessionStrategy strategy;
-    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId0 = 1;
-    uint32_t streamId = 10;
-    AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    audioSession->interruptMap_[streamId0] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrptByStreamId(streamId);
-    EXPECT_EQ(ret, SUCCESS);
+    audioSession->fakeStreamId_ = 0;
+    audioSession->state_ = AudioSessionState::SESSION_RELEASED;
+    EXPECT_EQ(audioSession->EnableDefaultDevice(), 0);
+
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSession->defaultDeviceType_ = DEVICE_TYPE_INVALID;
+    EXPECT_EQ(audioSession->EnableDefaultDevice(), 0);
+
+    audioSession->defaultDeviceType_ = DEVICE_TYPE_EARPIECE;
+    EXPECT_NE(audioSession->EnableDefaultDevice(), 0);
 }
 
 /**
-* @tc.name  : Test AudioSession.
+* @tc.name  : Test ShouldExcludeStreamType.
 * @tc.number: AudioSessionUnitTest_010.
-* @tc.desc  : Test RemoveAudioInterrptByStreamId.
+* @tc.desc  : Test ShouldExcludeStreamType function.
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_010, TestSize.Level1)
 {
@@ -219,20 +233,23 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_010, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId0 = 1;
-    uint32_t streamId = 10;
     AudioInterrupt audioInterrupt;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    audioSession->interruptMap_[streamId0] = interruptPair;
-    auto ret = audioSession->RemoveAudioInterrptByStreamId(streamId);
-    EXPECT_EQ(ret, SUCCESS);
+    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(audioInterrupt));
+
+
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    EXPECT_FALSE(audioSession->ShouldExcludeStreamType(audioInterrupt));
+
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(audioInterrupt));
 }
 
 /**
-* @tc.name  : Test AudioSession.
-* @tc.number: AudioSessionUnitTest_011.
-* @tc.desc  : Test IsAudioRendererEmpty.
+* @tc.name  : Test SetSessionDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_011
+* @tc.desc  : Test SetSessionDefaultOutputDevice function
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_011, TestSize.Level1)
 {
@@ -241,19 +258,23 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_011, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId = 1;
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    auto ret = audioSession->IsAudioRendererEmpty();
-    EXPECT_TRUE(ret);
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_INVALID), ERROR_INVALID_PARAM);
+ 
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSession->fakeStreamId_ = 0;
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_EARPIECE), 0);
+
+    audioSession->state_ = AudioSessionState::SESSION_DEACTIVE;
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_EARPIECE), 0);
+
+    DeviceType type;
+    audioSession->GetSessionDefaultOutputDevice(type);
 }
 
 /**
-* @tc.name  : Test AudioSession.
-* @tc.number: AudioSessionUnitTest_012.
-* @tc.desc  : Test IsAudioRendererEmpty.
+* @tc.name  : Test IsStreamContainedInCurrentSession
+* @tc.number: AudioSessionUnitTest_012
+* @tc.desc  : Test IsStreamContainedInCurrentSession function
 */
 HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
 {
@@ -262,13 +283,37 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    uint32_t streamId = 1;
-    AudioInterrupt audioInterrupt;
-    audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
-    auto interruptPair = std::pair<AudioInterrupt, AudioFocuState>(audioInterrupt, AudioFocuState::DUCK);
-    audioSession->interruptMap_[streamId] = interruptPair;
-    auto ret = audioSession->IsAudioRendererEmpty();
-    EXPECT_FALSE(ret);
+    audioSession->bypassStreamInfoVec_.clear();
+    EXPECT_FALSE(audioSession->IsStreamContainedInCurrentSession(0));
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 0;
+    audioSession->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    EXPECT_TRUE(audioSession->IsStreamContainedInCurrentSession(0));
 }
+
+/**
+* @tc.name  : Test IsRecommendToStopAudio
+* @tc.number: AudioSessionUnitTest_013
+* @tc.desc  : Test IsRecommendToStopAudio function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(nullptr));
+
+    std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj =
+        std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->reason_ = AudioStreamDeviceChangeReason::OVERRODE;
+    eventContextObj->reason_ = AudioStreamDeviceChangeReason::UNKNOWN;
+    eventContextObj->descriptor = nullptr;
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -328,7 +328,8 @@ static void ThreadFunc(void *userdata)
         }
 
         /* Hmm, nothing to do. Let's sleep */
-        if ((ret = pa_rtpoll_run(u->rtpoll)) < 0) {
+        ret = pa_rtpoll_run(u->rtpoll);
+        if (ret < 0) {
             goto fail;
         }
 

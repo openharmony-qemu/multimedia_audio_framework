@@ -14,11 +14,12 @@
  */
 #ifndef HPAE_MSG_CHANNEL_H
 #define HPAE_MSG_CHANNEL_H
+
 #include <any>
 #include "i_stream.h"
 #include "hpae_info.h"
-#include "audio_engine_log.h"
 #include "hpae_pcm_buffer.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -495,7 +495,8 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
 
 int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node)
 {
-    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT) {
+    if (currentAudioScene_.load() != AUDIO_SCENE_DEFAULT ||
+        dmDeviceTypeMap_[DEVICE_TYPE_NEARLINK_IN] == DM_DEVICE_TYPE_NEARLINK_SCO) {
         node.ext.device.type = PIN_OUT_NEARLINK_SCO;
         node.ext.device.desc = (char *)"pin_out_nearlink_sco";
         return SUCCESS;
@@ -538,10 +539,10 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
             source.ext.device.desc = (char *)"pin_in_bluetooth_sco_headset";
             break;
         case DEVICE_TYPE_ACCESSORY:
-            if (dmDeviceType_ == DM_DEVICE_TYPE_PENCIL) {
+            if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_PENCIL) {
                 source.ext.device.type = PIN_IN_PENCIL;
                 source.ext.device.desc = (char *)"pin_in_pencil";
-            } else if (dmDeviceType_ == DM_DEVICE_TYPE_UWB) {
+            } else if (dmDeviceTypeMap_[DEVICE_TYPE_ACCESSORY] == DM_DEVICE_TYPE_UWB) {
                 source.ext.device.type = PIN_IN_UWB;
                 source.ext.device.desc = (char *)"pin_in_uwb";
             }
@@ -567,9 +568,9 @@ void LocalDeviceManager::SaveSetParameter(const std::string &adapterName, const 
     reSetParams_.push_back({ adapterName, key, condition, value });
 }
 
-void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType)
+void LocalDeviceManager::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
-    dmDeviceType_ = dmDeviceType;
+    dmDeviceTypeMap_[deviceType] = dmDeviceType;
 }
 
 void LocalDeviceManager::SetAudioScene(const AudioScene scene)

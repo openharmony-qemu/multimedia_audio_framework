@@ -302,6 +302,12 @@ int32_t AudioRenderSink::RestoreRenderSink(void)
 
 void AudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::string &condition, const std::string &value)
 {
+    AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
+    CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
+    int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
+    if (ret != SUCCESS) {
+        AUDIO_WARNING_LOG("set parameter fail, error code: %{public}d", ret);
+    }
 }
 
 std::string AudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -463,15 +469,10 @@ int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
-        ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, currentAudioScene_, activeDevices.front(), scoExcludeFlag);
     if (!openSpeaker_) {
         return SUCCESS;
     }
@@ -504,10 +505,6 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
     if (isRingingToDefaultScene) {
         AUDIO_INFO_LOG("ringing scene to default scene");
         return SUCCESS;
-    }
-    int32_t ret = UpdateActiveDevice(activeDevices);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     return SUCCESS;
 }

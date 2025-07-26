@@ -21,6 +21,7 @@
 #include "audio_errors.h"
 #include "audio_stream_manager.h"
 #include "audio_interrupt_info.h"
+#include "audio_session_device_info.h"
 #include "audio_device_info.h"
 #include "napi_param_utils.h"
 #include "audio_asr.h"
@@ -89,6 +90,7 @@ napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
 napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
 napi_ref NapiAudioEnum::audioSessionScene_ = nullptr;
 napi_ref NapiAudioEnum::audioSessionStateChangeHint_ = nullptr;
+napi_ref NapiAudioEnum::outputDeviceChangeRecommendedAction_ = nullptr;
 
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
@@ -186,6 +188,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::deviceTypeMap = {
     {"BLUETOOTH_SCO", DEVICE_TYPE_BLUETOOTH_SCO},
     {"BLUETOOTH_A2DP", DEVICE_TYPE_BLUETOOTH_A2DP},
     {"NEARLINK", DEVICE_TYPE_NEARLINK},
+    {"HEARING_AID", DEVICE_TYPE_HEARING_AID},
     {"MIC", DEVICE_TYPE_MIC},
     {"WAKEUP", DEVICE_TYPE_WAKEUP},
     {"USB_HEADSET", DEVICE_TYPE_USB_HEADSET},
@@ -308,6 +311,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioVolumeTypeMap = {
     {"VOICE_ASSISTANT", NapiAudioEnum::VOICE_ASSISTANT},
     {"ALARM", NapiAudioEnum::ALARM},
     {"ACCESSIBILITY", NapiAudioEnum::ACCESSIBILITY},
+    {"SYSTEM", NapiAudioEnum::SYSTEM},
     {"ULTRASONIC", NapiAudioEnum::ULTRASONIC},
     {"ALL", NapiAudioEnum::ALL}
 };
@@ -421,6 +425,8 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioDeviceChangeReasonMap =
     {"REASON_NEW_DEVICE_AVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE)},
     {"REASON_OLD_DEVICE_UNAVAILABLE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE)},
     {"REASON_OVERRODE", static_cast<int32_t>(AudioStreamDeviceChangeReason::OVERRODE)},
+    {"REASON_SESSION_ACTIVATED", static_cast<int32_t>(AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)},
+    {"REASON_STREAM_PRIORITY_CHANGED", static_cast<int32_t>(AudioStreamDeviceChangeReason::STREAM_PRIORITY_CHANGED)},
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioSpatialDeivceTypeMap = {
@@ -573,6 +579,12 @@ const std::map<std::string, int32_t> NapiAudioEnum::audioSessionStateChangeHintM
         static_cast<int32_t>(AudioSessionStateChangeHint::TIME_OUT_STOP)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_DUCK", static_cast<int32_t>(AudioSessionStateChangeHint::DUCK)},
     {"AUDIO_SESSION_STATE_CHANGE_HINT_UNDUCK", static_cast<int32_t>(AudioSessionStateChangeHint::UNDUCK)},
+};
+
+const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommendedActionMap = {
+    {"DEVICE_CHANGE_RECOMMEND_TO_CONTINUE",
+        static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE)},
+    {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
 };
 
 NapiAudioEnum::NapiAudioEnum()
@@ -757,6 +769,8 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap, audioSessionScene_)),
         DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
             CreateEnumObject(env, audioSessionStateChangeHintMap, audioSessionStateChangeHint_)),
+        DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
+            CreateEnumObject(env, outputDeviceChangeRecommendedActionMap, outputDeviceChangeRecommendedAction_)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1611,6 +1625,7 @@ bool NapiAudioEnum::IsLegalOutputDeviceType(int32_t deviceType)
         case DeviceType::DEVICE_TYPE_LINE_DIGITAL:
         case DeviceType::DEVICE_TYPE_REMOTE_DAUDIO:
         case DeviceType::DEVICE_TYPE_NEARLINK:
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
             result = true;
             break;
         default:

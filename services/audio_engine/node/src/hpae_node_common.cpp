@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef LOG_TAG
+#define LOG_TAG "HpaeNodeCommon"
+#endif
 
+#include <cinttypes>
 #include "hpae_node_common.h"
 #include "audio_errors.h"
 #include "audio_engine_log.h"
-#include "cinttypes"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -246,8 +249,7 @@ AudioEnhanceScene TransProcessType2EnhanceScene(const HpaeProcessorType &process
 
 size_t ConvertUsToFrameCount(uint64_t usTime, const HpaeNodeInfo &nodeInfo)
 {
-    return usTime * nodeInfo.samplingRate / TIME_US_PER_S /
-        (nodeInfo.frameLen * nodeInfo.channels * static_cast<uint32_t>(GetSizeFromFormat(nodeInfo.format)));
+    return usTime * nodeInfo.samplingRate / TIME_US_PER_S / nodeInfo.frameLen;
 }
 
 uint64_t ConvertDatalenToUs(size_t bufferSize, const HpaeNodeInfo &nodeInfo)
@@ -319,6 +321,9 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     sinkInfo.fixedLatency = static_cast<uint32_t>(std::atol(audioModuleInfo.fixedLatency.c_str()));
     sinkInfo.deviceName = audioModuleInfo.name;
     AdjustMchSinkInfo(audioModuleInfo, sinkInfo);
+    if (audioModuleInfo.needEmptyChunk) {
+        sinkInfo.needEmptyChunk = audioModuleInfo.needEmptyChunk.value();
+    }
     return SUCCESS;
 }
 
@@ -409,6 +414,29 @@ void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo)
         AUDIO_INFO_LOG("collaboration disabled, effectScene changed to %{public}d, sceneType changed to %{public}d",
             nodeInfo.effectInfo.effectScene, nodeInfo.sceneType);
     }
+}
+
+void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSessionInfo> &streamInfoMap,
+    std::vector<HpaeInputOutputInfo> &dumpInfo)
+{
+    std::transform(streamInfoMap.begin(), streamInfoMap.end(), std::back_inserter(dumpInfo),
+        [](const auto &pair) {
+            const HpaeSessionInfo &sessionInfo = pair.second;
+            std::string config;
+            TransDeviceInfoToString(sessionInfo.streamInfo, config);
+            return HpaeInputOutputInfo {
+                .sessionId = sessionInfo.streamInfo.sessionId,
+                .deviceName = sessionInfo.streamInfo.deviceName,
+                .uid = sessionInfo.streamInfo.uid,
+                .pid = sessionInfo.streamInfo.pid,
+                .tokenId = sessionInfo.streamInfo.tokenId,
+                .offloadEnable = sessionInfo.offloadEnable,
+                .privacyType = sessionInfo.streamInfo.privacyType,
+                .config = config,
+                .state = sessionInfo.state,
+                .startTime = sessionInfo.startTime
+            };
+        });
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

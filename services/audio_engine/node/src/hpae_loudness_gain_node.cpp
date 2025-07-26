@@ -15,14 +15,15 @@
 #ifndef LOG_TAG
 #define LOG_TAG "HpaeLoudnessGainNode"
 #endif
+
+#include <dlfcn.h>
+#include <cinttypes>
+#include <cmath>
 #include "hpae_loudness_gain_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include <dlfcn.h>
-#include <cinttypes>
-
-#include <cmath>
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,6 +81,12 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         std::to_string(GetChannelCount()) + "_scenType_" + std::to_string(GetSceneType()) + "_rate_" +
         std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeLoudnessGainNode");
+    }
+#endif
 }
 
 HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
@@ -93,7 +100,6 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
         dlHandle_ = nullptr;
         audioEffectLibHandle_ = nullptr;
     }
-    AUDIO_INFO_LOG("HpaeLoudnessGainNode destroyed");
 }
 
 HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
@@ -190,7 +196,7 @@ int32_t HpaeLoudnessGainNode::SetLoudnessGain(float loudnessGain)
         "SetLoudnessGain: Same loudnessGain: %{public}f", loudnessGain);
     AUDIO_INFO_LOG("loudnessGain changed from %{public}f to %{public}f", loudnessGain_, loudnessGain);
     if (!dlHandle_ || !audioEffectLibHandle_) {
-        linearGain_ = LoudnessDbToLinearGain(loudnessGain_);
+        linearGain_ = LoudnessDbToLinearGain(loudnessGain);
         loudnessGain_ = loudnessGain;
         return SUCCESS;
     }

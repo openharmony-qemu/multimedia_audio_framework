@@ -55,6 +55,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(audioMode_) &&
         parcel.WriteUint32(audioFlag_) &&
         parcel.WriteUint32(routeFlag_) &&
+        parcel.WriteInt64(createTimeStamp_) &&
         parcel.WriteInt64(startTimeStamp_) &&
         rendererInfo_.Marshalling(parcel) &&
         capturerInfo_.Marshalling(parcel) &&
@@ -81,6 +82,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+    info->createTimeStamp_ = parcel.ReadInt64();
     info->startTimeStamp_ = parcel.ReadInt64();
     info->rendererInfo_.UnmarshallingSelf(parcel);
     info->capturerInfo_.UnmarshallingSelf(parcel);
@@ -164,6 +166,7 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
         streamInfo_.format, streamInfo_.encoding);
 
     AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x\n", audioFlag_, routeFlag_);
+    AppendFormat(dumpString, "    - CreateTimestamp: %" PRId64"\n", createTimeStamp_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
 }
 
@@ -212,5 +215,23 @@ std::string AudioStreamDescriptor::GetNewDevicesTypeString()
     return out;
 }
 
+std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_RET_LOG(desc != nullptr, "", "desc is nullptr");
+    std::string out = "[";
+    out.append(std::to_string(static_cast<uint32_t>(desc->deviceType_)));
+    out.append(":" + std::to_string(static_cast<uint32_t>(desc->deviceId_)));
+    return out + "]";
+}
+
+std::string AudioStreamDescriptor::GetNewDevicesInfo()
+{
+    std::string out = "";
+    for (auto &desc : newDeviceDescs_) {
+        CHECK_AND_CONTINUE(desc != nullptr);
+        out += GetDeviceInfo(desc);
+    }
+    return out;
+}
 } // AudioStandard
 } // namespace OHOS

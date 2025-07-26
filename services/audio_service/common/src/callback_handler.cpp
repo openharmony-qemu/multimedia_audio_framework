@@ -27,7 +27,7 @@ using namespace std;
 class CallbackHandlerInner : public CallbackHandler, public AppExecFwk::EventHandler {
 public:
     explicit CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, const std::string &handlerName);
-    ~CallbackHandlerInner();
+    ~CallbackHandlerInner() = default;
 
     void SendCallbackEvent(uint32_t eventCode, int64_t data) override;
     void SendCallbackEvent(uint32_t eventCode, int64_t data, int64_t delayTime) override;
@@ -51,11 +51,6 @@ CallbackHandlerInner::CallbackHandlerInner(std::shared_ptr<IHandler> iHandler, c
     : AppExecFwk::EventHandler(AppExecFwk::EventRunner::Create(handlerName))
 {
     iHandler_ = iHandler;
-}
-
-CallbackHandlerInner::~CallbackHandlerInner()
-{
-    AUDIO_WARNING_LOG("Destructor callback handler inner");
 }
 
 void CallbackHandlerInner::SendCallbackEvent(uint32_t eventCode, int64_t data)

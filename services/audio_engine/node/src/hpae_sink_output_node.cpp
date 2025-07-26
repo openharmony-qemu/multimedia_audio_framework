@@ -21,9 +21,9 @@
 #include "audio_errors.h"
 #include <iostream>
 #include "hpae_format_convert.h"
-#include "audio_engine_log.h"
 #include "audio_utils.h"
 #include "hpae_node_common.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -33,6 +33,7 @@ constexpr uint32_t SLEEP_TIME_IN_US = 20000;
 static constexpr int64_t WAIT_CLOSE_PA_TIME = 4; // 4s
 static constexpr int64_t MONITOR_CLOSE_PA_TIME = 5 * 60; // 5m
 static constexpr int64_t TIME_IN_US = 1000000;
+static constexpr uint64_t MS_PER_FRAME = 20; // 20ms
 }
 
 HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
@@ -40,11 +41,13 @@ HpaeSinkOutputNode::HpaeSinkOutputNode(HpaeNodeInfo &nodeInfo)
       renderFrameData_(nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format)),
       interleveData_(nodeInfo.frameLen * nodeInfo.channels)
 {
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeSinkOutputNode_Out_bit_" + std::to_string(GetBitWidth()) +
-                                                       "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-                                                       std::to_string(GetSampleRate()) + ".pcm");
     AUDIO_INFO_LOG("HpaeSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeSinkOutputNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
 #endif
 }
 
@@ -69,6 +72,7 @@ void HpaeSinkOutputNode::DoProcess()
         AUDIO_WARNING_LOG("audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
         return;
     }
+    
     std::vector<HpaePcmBuffer *> &outputVec = inputStream_.ReadPreOutputData();
     CHECK_AND_RETURN(!outputVec.empty());
     HpaePcmBuffer *outputData = outputVec.front();
@@ -82,11 +86,9 @@ void HpaeSinkOutputNode::DoProcess()
     HighResolutionTimer timer;
     timer.Start();
     intervalTimer_.Stop();
-    if (outputPcmDumper_) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
-    }
 #endif
+    HandleHapticParam(renderFrameTimes_);
+    renderFrameTimes_ += MS_PER_FRAME;
     auto ret = audioRendererSink_->RenderFrame(*renderFrameData, renderFrameData_.size(), writeLen);
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
@@ -137,14 +139,25 @@ bool HpaeSinkOutputNode::ResetAll()
 void HpaeSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
-int32_t HpaeSinkOutputNode::GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId)
+int32_t HpaeSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass, const std::string &deviceNetId)
 {
     if (deviceNetId.empty()) {
         renderId_ = HdiAdapterManager::GetInstance().GetRenderIdByDeviceClass(deviceClass, HDI_ID_INFO_DEFAULT, true);
@@ -190,9 +203,6 @@ int32_t HpaeSinkOutputNode::RenderSinkInit(IAudioSinkAttr &attr)
         interval,
         ret);
     std::string adapterName = sinkOutAttr_.adapterName;
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeSinkOutputNode_" + adapterName + "_bit_" + std::to_string(GetBitWidth()) + "_ch_" +
-        std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
     return ret;
 }
@@ -250,7 +260,7 @@ int32_t HpaeSinkOutputNode::RenderSinkResume(void)
 int32_t HpaeSinkOutputNode::RenderSinkStart(void)
 {
     CHECK_AND_RETURN_RET(audioRendererSink_ != nullptr, ERROR);
-
+    renderFrameTimes_ = 0;
     int32_t ret;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
@@ -366,6 +376,7 @@ void HpaeSinkOutputNode::HandlePaPower(HpaePcmBuffer *pcmBuffer)
 
 int32_t HpaeSinkOutputNode::RenderSinkSetPriPaPower()
 {
+    CHECK_AND_RETURN_RET_LOG(audioRendererSink_ != nullptr, ERROR, "audioRendererSink_ is nullptr");
     int32_t ret = audioRendererSink_->SetPriPaPower();
     AUDIO_INFO_LOG("Open pri pa:[%{public}s] -- [%{public}s], ret:%{public}d",
         GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
@@ -379,6 +390,25 @@ uint32_t HpaeSinkOutputNode::GetLatency()
     }
     audioRendererSink_->GetLatency(latency_);
     return latency_;
+}
+
+int32_t HpaeSinkOutputNode::RenderSinkSetSyncId(int32_t syncId)
+{
+    isSyncIdSet_ = true;
+    syncId_ = syncId;
+    return SUCCESS;
+}
+
+void HpaeSinkOutputNode::HandleHapticParam(uint64_t syncTime)
+{
+    if (isSyncIdSet_) {
+        isSyncIdSet_ = false;
+        AudioParamKey key = NONE;
+        std::string condition = "haptic";
+        std::string param = "haptic_sessionid=" + std::to_string(syncId_) +
+            ";haptic_offset=" + std::to_string(syncTime);
+        audioRendererSink_->SetAudioParameter(key, condition, param);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

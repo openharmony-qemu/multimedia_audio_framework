@@ -73,10 +73,10 @@ CapturerInServer::~CapturerInServer()
 int32_t CapturerInServer::ConfigServerBuffer()
 {
     if (audioServerBuffer_ != nullptr) {
-        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
+        AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed.");
         return SUCCESS;
     }
-    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null");
+    CHECK_AND_RETURN_RET_LOG(stream_ != nullptr, ERR_OPERATION_FAILED, "ConfigServerBuffer failed, stream_ is null!");
     stream_->GetSpanSizePerFrame(spanSizeInFrame_);
     const size_t bufferNum = ((processConfig_.capturerInfo.sourceType == SOURCE_TYPE_WAKEUP)
         ? CAPTURER_BUFFER_WAKE_UP_NUM : CAPTURER_BUFFER_DEFAULT_NUM);
@@ -111,7 +111,7 @@ int32_t CapturerInServer::ConfigServerBuffer()
 int32_t CapturerInServer::InitBufferStatus()
 {
     if (audioServerBuffer_ == nullptr) {
-        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer.");
+        AUDIO_ERR_LOG("InitBufferStatus failed, null buffer!");
         return ERR_ILLEGAL_STATE;
     }
 
@@ -312,7 +312,7 @@ static uint32_t GetByteSizeByFormat(enum AudioSampleFormat format)
 
 void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
 {
-    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr");
+    CHECK_AND_RETURN_LOG(capturerClock_ != nullptr, "capturerClock_ is nullptr!");
     uint64_t timestamp = 0;
     uint32_t sizePerPos = static_cast<uint32_t>(GetByteSizeByFormat(processConfig_.streamInfo.format)) *
         processConfig_.streamInfo.channels;
@@ -321,9 +321,7 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     CHECK_AND_RETURN_LOG(readLen >= 0, "readLen is illegal!");
     lastPosInc_ = static_cast<uint64_t>(readLen) / sizePerPos;
 
-    if (!capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp)) {
-        AUDIO_ERR_LOG("GetTimeStampByPosition fail!");
-    }
+    capturerClock_->GetTimeStampByPosition(curProcessPos_, timestamp);
 
     AUDIO_DEBUG_LOG("update buffer timestamp pos:%{public}" PRIu64 " ts:%{public}" PRIu64,
         curProcessPos_, timestamp);
@@ -335,8 +333,8 @@ void CapturerInServer::ReadData(size_t length)
     CHECK_AND_RETURN_LOG(length >= spanSizeInBytes_,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", length, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr");
-    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null");
+    CHECK_AND_RETURN_LOG(stateListener != nullptr, "IStreamListener is nullptr!");
+    CHECK_AND_RETURN_LOG(stream_ != nullptr, "ReadData failed, stream_ is null!");
 
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(length, currentWriteFrame, stateListener)) {
@@ -399,7 +397,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     CHECK_AND_RETURN_RET_LOG(requestDataLen >= spanSizeInBytes_, ERR_READ_FAILED,
         "Length %{public}zu is less than spanSizeInBytes %{public}zu", requestDataLen, spanSizeInBytes_);
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();
-    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr");
+    CHECK_AND_RETURN_RET_LOG(stateListener != nullptr, ERR_READ_FAILED, "IStreamListener is nullptr!");
     uint64_t currentWriteFrame = audioServerBuffer_->GetCurWriteFrame();
     if (IsReadDataOverFlow(requestDataLen, currentWriteFrame, stateListener)) {
         UpdateBufferTimeStamp(requestDataLen);
@@ -444,6 +442,9 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
+
+    CaptureConcurrentCheck(streamIndex_);
+
     return SUCCESS;
 }
 
@@ -909,6 +910,16 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
     uint32_t &spanSizeInFrame, uint64_t &engineTotalSizeInFrame)
 {
     return ERR_NOT_SUPPORTED;
+}
+
+inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
+{
+    if (captureConcurretChecked_) {
+        return;
+    }
+    captureConcurretChecked_ = 1;
+    int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
+    AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d", ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

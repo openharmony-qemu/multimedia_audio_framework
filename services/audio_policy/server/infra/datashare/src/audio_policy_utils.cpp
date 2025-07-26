@@ -28,7 +28,6 @@
 #include "audio_policy_manager_factory.h"
 #include "device_init_callback.h"
 #include "audio_recovery_device.h"
-#include "audio_config_manager.h"
 
 #include "audio_server_proxy.h"
 
@@ -233,6 +232,9 @@ std::string AudioPolicyUtils::GetNewSinkPortName(DeviceType deviceType)
             break;
         case DeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
+            break;
+        case DeviceType::DEVICE_TYPE_HEARING_AID:
+            portName = HEARING_AID_SPEAKER;
             break;
         default:
             portName = PORT_NONE;
@@ -457,7 +459,7 @@ int32_t AudioPolicyUtils::GetDeviceNameFromDataShareHelper(std::string &deviceNa
     resultSet->GoToFirstRow();
     resultSet->GetColumnIndex(SETTINGS_DATA_FIELD_VALUE, columnIndex);
     resultSet->GetString(columnIndex, deviceName);
-    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper deviceName[%{public}s]", deviceName.c_str());
+    AUDIO_INFO_LOG("GetDeviceNameFromDataShareHelper");
 
     resultSet->Close();
     dataShareHelper->Release();

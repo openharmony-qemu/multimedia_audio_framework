@@ -153,12 +153,6 @@ int32_t AudioPolicyServerHandler::RemoveDistributedRoutingRoleChangeCbsMap(int32
     return SUCCESS;
 }
 
-void AudioPolicyServerHandler::AddConcurrencyEventDispatcher(
-    std::shared_ptr<IAudioConcurrencyEventDispatcher> dispatcher)
-{
-    concurrencyEventDispatcher_ = dispatcher;
-}
-
 bool AudioPolicyServerHandler::SendDeviceChangedCallback(
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected)
 {
@@ -401,6 +395,21 @@ bool AudioPolicyServerHandler::SendDistributedRoutingRoleChange(
     return ret;
 }
 
+bool AudioPolicyServerHandler::SendAudioSessionDeviceChange(
+    const AudioStreamDeviceChangeReason changeReason, int callerPid)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
+    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
+    eventContextObj->reason_ = changeReason;
+    eventContextObj->callerPid_ = callerPid;
+
+    lock_guard<mutex> runnerlock(runnerMutex_);
+    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::SESSION_DEVICE_CHANGE,
+        eventContextObj));
+    CHECK_AND_RETURN_RET_LOG(ret, ret, "SendAudionSessionOutputDeviceChange event failed");
+    return ret;
+}
+
 bool AudioPolicyServerHandler::SendRendererInfoEvent(
     const std::vector<std::shared_ptr<AudioRendererChangeInfo>> &audioRendererChangeInfos)
 {
@@ -638,19 +647,6 @@ bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendConcurrencyEventWithSessionIDCallback(const uint32_t sessionID)
-{
-    AUDIO_INFO_LOG("session %{public}u send concurrency event", sessionID);
-    std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
-    CHECK_AND_RETURN_RET_LOG(eventContextObj != nullptr, false, "EventContextObj get nullptr");
-    eventContextObj->sessionId = sessionID;
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID,
-        eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send CONCURRENCY_EVENT_WITH_SESSIONID event failed");
-    return ret;
-}
-
 bool AudioPolicyServerHandler::SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -871,7 +867,7 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
+    AUDIO_INFO_LOG("focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (clientCallbacksMap_.count(it->first) > 0 &&
@@ -1139,6 +1135,63 @@ void AudioPolicyServerHandler::HandleDistributedRoutingRoleChangeEvent(const App
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = distributedRoutingRoleChangeCbsMap_.begin(); it != distributedRoutingRoleChangeCbsMap_.end(); it++) {
         it->second->OnDistributedRoutingRoleChange(eventContextObj->descriptor, eventContextObj->type);
+    }
+}
+
+void AudioPolicyServerHandler::HandleAudioSessionDeviceChangeEvent(const AppExecFwk::InnerEvent::Pointer &event)
+{
+    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
+    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
+    std::unordered_map<int32_t, std::shared_ptr<AudioPolicyClientHolder>> audioPolicyClientProxyAPSCbsMap;
+    std::unordered_map<int32_t, std::unordered_map<CallbackChange, bool>> clientCallbacksMap;
+
+    {
+        std::lock_guard<std::mutex> lock(handleMapMutex_);
+        audioPolicyClientProxyAPSCbsMap = audioPolicyClientProxyAPSCbsMap_;
+        clientCallbacksMap = clientCallbacksMap_;
+    }
+
+    std::shared_ptr<AudioSession> audioSession = nullptr;
+    for (auto it = audioPolicyClientProxyAPSCbsMap.begin(); it != audioPolicyClientProxyAPSCbsMap.end(); ++it) {
+        if ((eventContextObj->callerPid_ != -1) && (it->first != eventContextObj->callerPid_)) {
+            AUDIO_INFO_LOG("current callerPid is %{public}d, not %{public}d", it->first, eventContextObj->callerPid_);
+            continue;
+        }
+
+        std::shared_ptr<AudioPolicyClientHolder> sessionDeviceChangeCb = it->second;
+        if (sessionDeviceChangeCb == nullptr) {
+            AUDIO_ERR_LOG("sessionDeviceChangeCb : nullptr for client : %{public}d", it->first);
+            continue;
+        }
+
+        if ((clientCallbacksMap.count(it->first) > 0) &&
+            (clientCallbacksMap[it->first].count(CALLBACK_AUDIO_SESSION_DEVICE) > 0) &&
+            (clientCallbacksMap[it->first][CALLBACK_AUDIO_SESSION_DEVICE])) {
+            std::shared_ptr<AudioSessionService> audioSessionService = AudioSessionService::GetAudioSessionService();
+            audioSession = audioSessionService->GetAudioSessionByPid(it->first);
+            if ((audioSession == nullptr) || (!audioSession->IsActivated())) {
+                continue;
+            }
+
+            CurrentOutputDeviceChangedEvent deviceChangedEvent;
+            AudioRendererInfo rendererInfo;
+            rendererInfo.streamUsage = audioSession->GetSessionStreamUsage();
+            deviceChangedEvent.devices = AudioCoreService::GetCoreService()->GetEventEntry()->
+                GetPreferredOutputDeviceDescriptors(rendererInfo);
+
+            CHECK_AND_CONTINUE_LOG((deviceChangedEvent.devices.size() > 0) &&
+                (deviceChangedEvent.devices[0] != nullptr), "get invalid preferred output devices list");
+            CHECK_AND_CONTINUE_LOG((!audioSession->IsSessionOutputDeviceChanged(deviceChangedEvent.devices[0]) ||
+                (eventContextObj->reason_ == AudioStreamDeviceChangeReason::AUDIO_SESSION_ACTIVATE)),
+                "device of session %{public}d is not changed", it->first);
+
+            deviceChangedEvent.changeReason = eventContextObj->reason_;
+            deviceChangedEvent.recommendedAction = audioSession->IsRecommendToStopAudio(eventContextObj) ?
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP :
+                OutputDeviceChangeRecommendedAction::RECOMMEND_TO_CONTINUE;
+
+            sessionDeviceChangeCb->OnAudioSessionCurrentDeviceChanged(deviceChangedEvent);
+        }
     }
 }
 
@@ -1426,19 +1479,6 @@ void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::Inne
     AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
 }
 
-void AudioPolicyServerHandler::HandleConcurrencyEventWithSessionID(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
-    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-
-    std::unique_lock<std::mutex> lock(handleMapMutex_);
-    RestoreInfo restoreInfo;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-    restoreInfo.targetStreamFlag = AUDIO_FLAG_FORCED_NORMAL;
-    restoreInfo.routeFlag = AUDIO_FLAG_NONE;
-    AudioPolicyService::GetAudioPolicyService().RestoreSession(eventContextObj->sessionId, restoreInfo);
-}
-
 void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1512,9 +1552,6 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
     const AppExecFwk::InnerEvent::Pointer &event)
 {
     switch (eventId) {
-        case EventAudioServerCmd::CONCURRENCY_EVENT_WITH_SESSIONID:
-            HandleConcurrencyEventWithSessionID(event);
-            break;
         case EventAudioServerCmd::SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE:
             HandleSpatializatonEnabledChangeForAnyDeviceEvent(event);
             break;
@@ -1547,6 +1584,9 @@ void AudioPolicyServerHandler::HandleOtherServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::FORMAT_UNSUPPORTED_ERROR:
             HandleFormatUnsupportedErrorEvent(event);
+            break;
+        case EventAudioServerCmd::SESSION_DEVICE_CHANGE:
+            HandleAudioSessionDeviceChangeEvent(event);
             break;
         default:
             break;

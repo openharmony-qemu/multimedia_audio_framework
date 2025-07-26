@@ -22,9 +22,7 @@
 #include "common/hdi_adapter_type.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
-#ifdef ENABLE_HOOK_PCM
-#include "hpae_pcm_dumper.h"
-#endif
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -86,10 +84,6 @@ private:
     std::unordered_map<HpaeSourceBufferType, size_t> historyRemainSizeMap_;
     std::unordered_map<HpaeSourceBufferType, std::vector<char>> capturerFrameDataMap_; // input buffer
     std::unordered_map<HpaeSourceBufferType, FrameDesc> fdescMap_; // CaptureframeWithEc argument struct
-
-#ifdef ENABLE_HOOK_PCM
-    std::unordered_map<HpaeSourceBufferType, std::unique_ptr<HpaePcmDumper>> inputPcmDumperMap_;
-#endif
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

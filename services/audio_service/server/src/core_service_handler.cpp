@@ -46,7 +46,7 @@ CoreServiceHandler::~CoreServiceHandler()
 
 int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServiceProviderIpc> coreServiceProvider)
 {
-    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM, "Failed with null provider.");
+    CHECK_AND_RETURN_RET_LOG(coreServiceProvider != nullptr, ERR_INVALID_PARAM, "Failed with null provider!");
     if (iCoreServiceProvider_ == nullptr) {
         iCoreServiceProvider_ = coreServiceProvider;
         return SUCCESS;
@@ -58,26 +58,26 @@ int32_t CoreServiceHandler::ConfigCoreServiceProvider(const sptr<ICoreServicePro
 int32_t CoreServiceHandler::UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
     SessionOperationMsg opMsg)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     return iCoreServiceProvider_->UpdateSessionOperation(sessionId, operation, opMsg);
 }
 
 int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     return iCoreServiceProvider_->ReloadCaptureSession(sessionId, operation);
 }
 
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
     const StreamUsage streamUsage, bool isRunning)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
 }
 
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, "", "iCoreServiceProvider_ is nullptr!");
     std::string ret{};
     iCoreServiceProvider_->GetAdapterNameBySessionId(sessionId, ret);
     return ret;
@@ -86,13 +86,13 @@ std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
     bool isReloadProcess)
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
 }
 
 uint32_t CoreServiceHandler::GenerateSessionId()
 {
-    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr");
+    CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
     uint32_t ret{};
     iCoreServiceProvider_->GenerateSessionId(ret);
     return ret;

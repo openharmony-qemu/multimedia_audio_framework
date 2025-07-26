@@ -94,6 +94,7 @@ HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
+    int32_t syncId = 123;
 
     std::shared_ptr<HpaeOutputCluster> hpaeoutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     EXPECT_EQ(hpaeoutputCluster->GetSampleRate(), nodeInfo.samplingRate);
@@ -113,6 +114,7 @@ HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
     hpaeoutputCluster->Connect(hpaeSinkInputNode1);
     EXPECT_EQ(hpaeSinkInputNode1.use_count(), NUM_TWO);
     EXPECT_EQ(hpaeoutputCluster->GetConverterNodeCount(), 1);
+    EXPECT_EQ(hpaeoutputCluster->SetSyncId(syncId), SUCCESS);
 }
 
 HWTEST_F(HpaeOutputClusterTest, testHpaeWriteDataOutSessionTest, TestSize.Level0)

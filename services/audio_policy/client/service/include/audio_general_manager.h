@@ -43,7 +43,7 @@ public:
 
     int32_t UnsetAudioDeviceRefinerCallback();
 
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
 
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
 
@@ -62,6 +62,9 @@ public:
 
     int32_t SetQueryClientTypeCallback(
         const std::shared_ptr<AudioQueryClientTypeCallback>& callback);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
     int32_t SetExtraParameters(const std::string &key,
         const std::vector<std::pair<std::string, std::string>> &kvpairs);

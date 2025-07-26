@@ -45,7 +45,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 10;
+const uint8_t TESTSIZE = 17;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -121,6 +121,27 @@ vector<AudioDeviceUsage> AudioDeviceUsageVec = {
     CALL_INPUT_DEVICES,
     ALL_CALL_DEVICES,
     D_ALL_DEVICES,
+};
+
+const vector<SourceType> g_testSourceTypes = {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MAX,
 };
 
 void GetActiveA2dpDeviceStreamInfoFuzzTest()
@@ -248,6 +269,95 @@ void IsDeviceActiveFuzzTest()
     audioActiveDevice->IsDeviceActive(deviceType);
 }
 
+void AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    audioActiveDevice->GetCurrentInputDeviceMacAddr();
+    audioActiveDevice->GetCurrentOutputDeviceCategory();
+}
+
+void AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioActiveDevice == nullptr || audioDeviceDescriptor == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+        DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    StreamUsage streamUsage = STREAM_USAGE_ALARM;
+    audioActiveDevice->NotifyUserSelectionEventToBt(audioDeviceDescriptor, streamUsage);
+}
+
+void AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioActiveDevice == nullptr || audioDeviceDescriptor == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+        DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    audioActiveDevice->NotifyUserDisSelectionEventToBt(audioDeviceDescriptor);
+}
+
+void AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioActiveDevice == nullptr || audioDeviceDescriptor == nullptr || DeviceTypeVec.size() == 0
+        || g_testSourceTypes.size() == 0) {
+        return;
+    }
+    audioDeviceDescriptor->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    audioActiveDevice->currentActiveInputDevice_.deviceType_ =
+        DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
+    audioActiveDevice->NotifyUserSelectionEventForInput(audioDeviceDescriptor, sourceType);
+}
+
+void AudioActiveDeviceSetDeviceActiveFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    if (audioActiveDevice == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    bool active = GetData<uint32_t>() % NUM_2;
+    int32_t uid = GetData<int32_t>();
+    audioActiveDevice->SetDeviceActive(deviceType, active, uid);
+}
+
+void AudioActiveDeviceSetCallDeviceActiveFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    if (audioActiveDevice == nullptr || DeviceTypeVec.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
+    bool active = GetData<uint32_t>() % NUM_2;
+    int32_t uid = GetData<int32_t>();
+    std::string address = "testAddress";
+    audioActiveDevice->SetCallDeviceActive(deviceType, active, address, uid);
+}
+
+void AudioActiveDeviceIsDeviceInVectorFuzzTest()
+{
+    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
+    if (audioActiveDevice == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+    descs.push_back(desc);
+    audioActiveDevice->IsDeviceInVector(desc, descs);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
@@ -259,6 +369,13 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     CheckActiveOutputDeviceSupportOffloadFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
+    AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,
+    AudioActiveDeviceNotifyUserSelectionEventToBtFuzzTest,
+    AudioActiveDeviceNotifyUserDisSelectionEventToBtFuzzTest,
+    AudioActiveDeviceNotifyUserSelectionEventForInputFuzzTest,
+    AudioActiveDeviceSetDeviceActiveFuzzTest,
+    AudioActiveDeviceSetCallDeviceActiveFuzzTest,
+    AudioActiveDeviceIsDeviceInVectorFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

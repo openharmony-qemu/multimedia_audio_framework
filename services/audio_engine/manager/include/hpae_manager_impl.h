@@ -35,9 +35,16 @@ public:
     void DumpSinkInfo(std::string deviceName) override;
     void DumpSourceInfo(std::string deviceName) override;
     void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) override;
+    void DumpSinkInputsInfo() override;
+    void DumpSourceOutputsInfo() override;
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
+    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) override;
+
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
     int32_t MoveSourceOutputByIndexOrName(
@@ -59,13 +66,14 @@ public:
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
+    int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) override;
     int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
     int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
-        const std::weak_ptr<IStatusCallback> &callback) override;
+        const std::weak_ptr<IStreamStatusCallback> &callback) override;
     // record stream interface
     int32_t RegisterReadCallback(uint32_t sessionId, const std::weak_ptr<ICapturerStreamCallback> &callback) override;
     int32_t GetSourceOutputInfo(uint32_t sessionId, HpaeStreamInfo &streamInfo) override;
@@ -84,6 +92,7 @@ public:
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
 
     // interfaces for render effect
     void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
@@ -95,6 +104,7 @@ public:
     int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) override;
     int32_t EffectRotationUpdate(const uint32_t rotationState) override;
     int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) override;
+    int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) override;
     int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) override;

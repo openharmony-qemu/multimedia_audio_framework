@@ -272,11 +272,11 @@ float RemoteAudioCaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t RemoteAudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t RemoteAudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevice);
+    AUDIO_INFO_LOG("scene: %{public}d", audioScene);
 
     struct AudioSceneDescriptor sceneDesc = {
         .scene.id = GetAudioCategory(audioScene),
@@ -454,7 +454,7 @@ void RemoteAudioCaptureSource::CheckUpdateState(char *frame, size_t replyBytes)
     }
 }
 
-void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType)
+void RemoteAudioCaptureSource::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
 {
     AUDIO_INFO_LOG("not support");
 }

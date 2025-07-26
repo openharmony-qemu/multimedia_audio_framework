@@ -181,7 +181,7 @@ int32_t ProAudioStreamManager::CreatePlayBackEngine(const std::shared_ptr<IRende
     AudioProcessConfig config = stream->GetAudioProcessConfig();
     bool result = PolicyHandler::GetInstance().GetProcessDeviceInfo(config, true, deviceInfo);
     CHECK_AND_RETURN_RET_LOG(result, ERR_DEVICE_INIT, "GetProcessDeviceInfo failed.");
-    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init");
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, ERR_NOT_SUPPORTED, "engine not init!");
     playbackEngine_->Init(deviceInfo, managerType_ == VOIP_PLAYBACK);
     ret = playbackEngine_->AddRenderer(stream);
     return ret;
@@ -195,7 +195,7 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
     std::shared_ptr<ProRendererStreamImpl> rendererStream =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirectStream);
     if (rendererStream->InitParams() != SUCCESS) {
-        AUDIO_ERR_LOG("Create rendererStream Failed");
+        AUDIO_ERR_LOG("Create rendererStream Failed!");
         return nullptr;
     }
     return rendererStream;
@@ -204,25 +204,25 @@ std::shared_ptr<IRendererStream> ProAudioStreamManager::CreateRendererStream(Aud
 int32_t ProAudioStreamManager::CreateCapturer(AudioProcessConfig processConfig,
                                               std::shared_ptr<ICapturerStream> &stream)
 {
-    AUDIO_ERR_LOG("Unsupported operation: CreateCapturer");
+    AUDIO_ERR_LOG("Unsupported operation: CreateCapturer!");
     return SUCCESS;
 }
 
 int32_t ProAudioStreamManager::ReleaseCapturer(uint32_t streamIndex)
 {
-    AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer");
+    AUDIO_ERR_LOG("Unsupported operation: ReleaseCapturer!");
     return SUCCESS;
 }
 
 int32_t ProAudioStreamManager::AddUnprocessStream(int32_t appUid)
 {
-    AUDIO_ERR_LOG("Unsupported operation: AddUnprocessStream");
+    AUDIO_ERR_LOG("Unsupported operation: AddUnprocessStream!");
     return SUCCESS;
 }
 
 uint64_t ProAudioStreamManager::GetLatency() noexcept
 {
-    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init");
+    CHECK_AND_RETURN_RET_LOG(playbackEngine_ != nullptr, 0, "engine not init!");
     return playbackEngine_->GetLatency();
 }
 

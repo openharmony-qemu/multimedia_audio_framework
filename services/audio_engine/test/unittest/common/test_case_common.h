@@ -78,9 +78,9 @@ private:
     AudioSampleFormat format_ = SAMPLE_F32LE;
 };
 
-class StatusChangeCb : public IStatusCallback, public std::enable_shared_from_this<StatusChangeCb> {
+class StatusChangeCb : public IStreamStatusCallback, public std::enable_shared_from_this<StatusChangeCb> {
 public:
-    void OnStatusUpdate(IOperation operation) override;
+    void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     IStatus GetStatus();
     virtual ~StatusChangeCb() = default;
 private:

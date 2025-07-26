@@ -71,9 +71,9 @@ public:
     virtual void SetAudioMonoState(bool audioMono) = 0;
     virtual void SetAudioBalanceValue(float audioBalance) = 0;
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
+    virtual void SetSpeed(float speed) {}
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
     virtual int32_t GetAudioScene(void) = 0;
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;
@@ -92,6 +92,7 @@ public:
     virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) = 0;
+    virtual bool IsSinkInited(void) NOT_SUPPORT_RET
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -101,7 +102,10 @@ public:
     // offload extend function
     virtual int32_t Drain(AudioDrainType type) NOT_SUPPORT_RET
     virtual void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
-    virtual void RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) {}
+    virtual int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback)
+    {
+        return SUCCESS;
+    }
     virtual int32_t SetBufferSize(uint32_t sizeMs) NOT_SUPPORT_RET
     virtual int32_t SetOffloadRenderCallbackType(RenderCallbackType type) NOT_SUPPORT_RET
     virtual int32_t LockOffloadRunningLock(void) NOT_SUPPORT_RET

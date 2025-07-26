@@ -71,6 +71,10 @@ int32_t GetSimpleBufferAvg(uint8_t *buffer, int32_t length);
 
 enum FadeStrategy GetFadeStrategy(uint64_t expectedPlaybackDurationMs);
 
+void SetOffloadType(uint32_t streamIndex, int32_t offloadType);
+
+int32_t GetOffloadType(uint32_t streamIndex);
+
 #ifdef __cplusplus
 }
 #endif

@@ -267,7 +267,7 @@ int32_t AudioPolicyConfigManager::GetMaxRendererInstances()
             continue;
         }
         int32_t convertValue = 0;
-        AUDIO_INFO_LOG("Max output normal instance is %{public}s", commonConfig.value_.c_str());
+        AUDIO_INFO_LOG("Max instance is %{public}s", commonConfig.value_.c_str());
         CHECK_AND_RETURN_RET_LOG(StringConverter(commonConfig.value_, convertValue),
             DEFAULT_MAX_OUTPUT_NORMAL_INSTANCES,
             "convert invalid configInfo.value_: %{public}s", commonConfig.value_.c_str());
@@ -609,7 +609,6 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     }
 
     if (SupportImplicitConversion(desc->routeFlag_)) {
-        AUDIO_INFO_LOG("Select first attribute");
         info = pipeIt->second->streamPropInfos_.front();
     }
 
@@ -676,13 +675,14 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     std::shared_ptr<PipeStreamPropInfo> defaultStreamProp = nullptr;
     AUDIO_INFO_LOG("use dynamic streamProp");
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
-        CHECK_AND_CONTINUE(streamProp->format_ == format && streamProp->channels_ == channels &&
-            streamProp->sampleRate_ >= sampleRate);
+        CHECK_AND_CONTINUE(streamProp && streamProp->sampleRate_ >= sampleRate);
         CHECK_AND_RETURN_RET(streamProp->sampleRate_ != sampleRate, streamProp);
         CHECK_AND_CONTINUE(defaultStreamProp != nullptr &&
             defaultStreamProp->sampleRate_ < streamProp->sampleRate_);
         defaultStreamProp = streamProp;
     }
+    CHECK_AND_RETURN_RET_LOG(defaultStreamProp != nullptr, info->dynamicStreamPropInfos_.back(),
+        "not match any streamProp");
     return defaultStreamProp;
 }
 

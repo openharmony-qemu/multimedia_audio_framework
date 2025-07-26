@@ -18,7 +18,9 @@
 
 #include <sstream>
 #include "audio_policy_config_parser.h"
+
 #include "audio_errors.h"
+#include "audio_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -719,6 +721,8 @@ ClassType AudioPolicyConfigParser::GetClassTypeByAdapterType(AudioAdapterType ad
         return ClassType::TYPE_PRIMARY;
     } else if (adapterType == AudioAdapterType::TYPE_A2DP) {
         return ClassType::TYPE_A2DP;
+    } else if (adapterType == AudioAdapterType::TYPE_HEARING_AID) {
+        return ClassType::TYPE_HEARING_AID;
     } else if (adapterType == AudioAdapterType::TYPE_REMOTE_AUDIO) {
         return ClassType::TYPE_REMOTE_AUDIO;
     } else if (adapterType == AudioAdapterType::TYPE_FILE_IO) {

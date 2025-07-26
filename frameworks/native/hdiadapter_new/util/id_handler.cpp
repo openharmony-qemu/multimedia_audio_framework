@@ -63,6 +63,8 @@ uint32_t IdHandler::GetRenderIdByDeviceClass(const std::string &deviceClass, con
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "a2dp_fast") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_MMAP);
+    } else if (deviceClass == "hearing_aid") {
+        return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_HEARING_AID);
 #ifdef FEATURE_FILE_IO
     } else if (deviceClass == "file_io") {
         return GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_FILE, HDI_ID_INFO_DEFAULT);

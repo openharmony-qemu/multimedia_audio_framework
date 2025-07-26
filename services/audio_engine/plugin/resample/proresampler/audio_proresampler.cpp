@@ -16,9 +16,9 @@
 #define LOG_TAG "AudioProResampler"
 #endif
 #include "audio_proresampler.h"
-#include "audio_engine_log.h"
 #include "audio_stream_info.h"
 #include "securec.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

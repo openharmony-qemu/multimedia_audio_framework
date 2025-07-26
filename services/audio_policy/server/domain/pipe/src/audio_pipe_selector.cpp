@@ -47,6 +47,43 @@ static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, 
         (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
 }
 
+static bool IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
+    std::shared_ptr<AudioStreamDescriptor> streamDescB)
+{
+    CHECK_AND_RETURN_RET(streamDescA != nullptr && streamDescB != nullptr, true);
+
+    auto findFunc = [](const std::shared_ptr<AudioPipeInfo> &info, std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        std::string &adapterName) -> bool {
+        CHECK_AND_RETURN_RET(info != nullptr && streamDesc != nullptr, false);
+        for (auto item : info->streamDescriptors_) {
+            CHECK_AND_CONTINUE(item && item->sessionId_ == streamDesc->sessionId_);
+            adapterName = info->adapterName_;
+            return true;
+        }
+        return false;
+    };
+
+    std::string adapterNameA = "";
+    std::string adapterNameB = "";
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, true, "pipeManager is nullptr");
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager->GetPipeList();
+    auto item = std::find_if(pipeInfoList.begin(), pipeInfoList.end(), [findFunc, streamDescA, &adapterNameA]
+        (const auto &info) {
+        return findFunc(info, streamDescA, adapterNameA);
+    });
+    CHECK_AND_RETURN_RET(item != pipeInfoList.end(), true);
+    item = std::find_if(pipeInfoList.begin(), pipeInfoList.end(), [findFunc, streamDescB, &adapterNameB]
+        (const auto &info) {
+        return findFunc(info, streamDescB, adapterNameB);
+    });
+    CHECK_AND_RETURN_RET(item != pipeInfoList.end(), true);
+    // just check remote
+    CHECK_AND_RETURN_RET(adapterNameA == "remote" || adapterNameB == "remote", true);
+    AUDIO_INFO_LOG("adapterNameA: %{public}s, adapterNameB: %{public}s", adapterNameA.c_str(), adapterNameB.c_str());
+    return adapterNameA == adapterNameB;
+}
+
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
 {
 }
@@ -303,8 +340,9 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
     ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
         GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
+    action = IsSameAdapter(stream, cmpStream) ? action : PLAY_BOTH;
+    AUDIO_INFO_LOG("Action: %{public}u  %{public}u -- %{public}u", action, stream->sessionId_, cmpStream->sessionId_);
     uint32_t newFlag;
-    AUDIO_INFO_LOG("Action: %{public}u", action);
     switch (action) {
         case PLAY_BOTH:
             stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
@@ -343,6 +381,7 @@ std::string AudioPipeSelector::GetAdapterNameByStreamDesc(std::shared_ptr<AudioS
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, name, "streamDesc is nullptr");
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
+    CHECK_AND_RETURN_RET_LOG(streamPropInfo != nullptr, "", "StreamProp Info is null");
 
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
@@ -453,7 +492,7 @@ void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<A
 {
     sort(streamDescs.begin(), streamDescs.end(), [](const std::shared_ptr<AudioStreamDescriptor> &streamDesc1,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
-            return streamDesc1->startTimeStamp_ < streamDesc2->startTimeStamp_;
+            return streamDesc1->createTimeStamp_ < streamDesc2->createTimeStamp_;
         });
 }
 } // namespace AudioStandard

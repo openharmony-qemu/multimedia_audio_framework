@@ -34,6 +34,7 @@ declare_args() {
   audio_framework_feature_file_io = true
   audio_framework_feature_inner_capturer = true
   audio_framework_feature_low_latency = true
+  audio_framework_feature_new_engine_flag = false
   audio_framework_feature_usb_audio = false
 
   if (defined(global_parts_info) &&
@@ -104,4 +105,3 @@ declare_args() {
 }
 
 third_party_path = "//third_party"
-audio_framework_root = "//foundation/multimedia/audio_framework"

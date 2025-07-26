@@ -329,33 +329,6 @@ HWTEST_F(AudioOffloadStreamTest, ReleaseOffloadStream_WhenSessionIdDoesNotMatch,
 }
 
 /**
- * @tc.name  : AudioOffloadStreamTest_013
- * @tc.number: AudioOffloadStreamTest_013
- * @tc.desc  : Test FilterSinkInputs function
- */
-HWTEST_F(AudioOffloadStreamTest, FilterSinkInputs_ShouldReturnEmpty_WhenSinkInputsIsEmpty, TestSize.Level0)
-{
-    AudioOffloadStream audioOffloadStream;
-    int64_t activateSessionId = 1;
-    audioOffloadStream_->CheckStreamMode(activateSessionId);
-    std::vector<SinkInput> sinkInputs;
-    std::vector<SinkInput> result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_TRUE(result.empty());
-    SinkInput sinkInput;
-    sinkInput.uid = 123;
-    sinkInput.streamType = AudioStreamType::STREAM_DEFAULT;
-    sinkInputs.push_back(sinkInput);
-
-    result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_TRUE(result.empty());
-    sinkInput.streamId = 1;
-    sinkInputs.push_back(sinkInput);
-
-    result = audioOffloadStream.FilterSinkInputs(1, sinkInputs);
-    EXPECT_EQ(result.size(), 0);
-}
-
-/**
  * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
  * @tc.number: AudioOffloadStreamTest_014
  * @tc.desc  : Test scenario when spatialization is enabled and effect offload is enabled.
@@ -472,21 +445,6 @@ HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_020, TestSize.Level0)
     audioOffloadStream.isOffloadOpened_.store(true);
     ret = audioOffloadStream.UnloadOffloadModule();
     EXPECT_NE(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : SpatializationEnabledAndEffectOffloadEnabled
- * @tc.number: AudioOffloadStreamTest_021
- * @tc.desc  : Test ActivateConcurrencyFromServer Interface.
- */
-HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_021, TestSize.Level0)
-{
-    AudioPipeType incomingPipe = PIPE_TYPE_UNKNOWN;
-    AudioOffloadStream audioOffloadStream;
-    int32_t ret;
-
-    ret = audioOffloadStream.ActivateConcurrencyFromServer(incomingPipe);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

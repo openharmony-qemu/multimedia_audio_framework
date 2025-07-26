@@ -23,12 +23,13 @@
 
 #include "hpae_format_convert.h"
 #include "hpae_node_common.h"
-#include "audio_engine_log.h"
 #include "audio_volume.h"
 #include "audio_common_utils.h"
 #ifdef ENABLE_HOOK_PCM
 #include "hpae_pcm_dumper.h"
 #endif
+#include "audio_engine_log.h"
+
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
@@ -61,20 +62,26 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
         std::to_string(GetChannelCount()) + "_rate_" + std::to_string(GetSampleRate()) + ".pcm");
 #endif
     frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        SetNodeId(callback->OnGetNodeId());
+        SetNodeName("hpaeOffloadSinkOutputNode");
+        callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
+    }
+#endif
 }
 
 bool HpaeOffloadSinkOutputNode::CheckIfSuspend()
 {
-    static uint32_t suspendCount = 0;
     if (!GetPreOutNum()) {
-        suspendCount++;
+        suspendCount_++;
         usleep(TIME_US_PER_MS * FRAME_TIME_IN_MS);
-        if (suspendCount > timeoutThdFrames_) {
+        if (suspendCount_ > timeoutThdFrames_) {
             RenderSinkStop();
         }
         return true;
     } else {
-        suspendCount = 0;
+        suspendCount_ = 0;
         return false;
     }
 }
@@ -144,11 +151,22 @@ bool HpaeOffloadSinkOutputNode::ResetAll()
 void HpaeOffloadSinkOutputNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.Connect(preNode->GetSharedInstance(), preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        callback->OnNotifyDfxNodeInfo(true, GetNodeId(), preNode->GetSharedInstance()->GetNodeInfo());
+    }
+#endif
 }
 
 void HpaeOffloadSinkOutputNode::DisConnect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>> &preNode)
 {
     inputStream_.DisConnect(preNode->GetOutputPort());
+#ifdef ENABLE_HIDUMP_DFX
+    if (auto callback = GetNodeStatusCallback().lock()) {
+        auto preNodeReal = preNode->GetSharedInstance();
+        callback->OnNotifyDfxNodeInfo(false, preNodeReal->GetNodeId(), preNodeReal->GetNodeInfo());
+    }
+#endif
 }
 
 int32_t HpaeOffloadSinkOutputNode::GetRenderSinkInstance(const std::string &deviceClass,
@@ -386,6 +404,12 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
     return SUCCESS;
 }
 
+void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    audioRendererSink_->SetSpeed(speed);
+}
+
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
 {
     if (islock) {
@@ -516,7 +540,9 @@ void HpaeOffloadSinkOutputNode::OffloadSetHdiVolume()
 {
     struct VolumeValues volumes;
     AudioStreamType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(GetStreamType());
-    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, GetDeviceClass(), &volumes);
+    std::string deviceClass = GetDeviceClass();
+    std::string volumeDeviceClass = deviceClass == "remote_offload" ? "remote" : deviceClass;
+    float volumeEnd = AudioVolume::GetInstance()->GetVolume(GetSessionId(), volumeType, volumeDeviceClass, &volumes);
     float volumeBeg = AudioVolume::GetInstance()->GetHistoryVolume(GetSessionId());
     if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("HpaeOffloadSinkOutputNode::sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",

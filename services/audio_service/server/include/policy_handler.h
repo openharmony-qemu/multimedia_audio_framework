@@ -69,8 +69,6 @@ public:
 
     int32_t GetMaxRendererInstances();
 
-    int32_t ActivateConcurrencyFromServer(AudioPipeType incomingPipe);
-
     int32_t NotifyCapturerRemoved(uint64_t sessionId);
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -79,6 +77,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId);
 #endif
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
+
+    int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
 private:
     PolicyHandler();
     sptr<IPolicyProviderIpc> iPolicyProvider_ = nullptr;

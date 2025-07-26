@@ -1,0 +1,64 @@
+# Copyright (c) 2022 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+import("../../../../../../config.gni")
+
+module_output_path = "audio_framework/audio_framework_route/audio_opensles"
+
+config("audio_renderer_config") {
+  include_dirs = [
+    "../../../../audiocapturer/include",
+    "../../../../audiopolicy/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+}
+config("audio_opensles_config") {
+  include_dirs = [ "../../../../opensles/include" ]
+}
+
+ohos_unittest("audio_capturer_adapter_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "../../../opensles/include",
+    "./include",
+  ]
+
+  configs = [
+    ":audio_opensles_config",
+    ":audio_renderer_config",
+  ]
+
+  sources = [ "./src/audiocapturer_adapter_unit_test.cpp" ]
+
+  deps = [
+    "../../../../../../frameworks/native/audiocapturer:audio_capturer",
+    "../../../../../../services/audio_service:audio_client",
+    "../../../../opensles:opensles",
+  ]
+  external_deps = [
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "opensles:libSLES",
+    "pulseaudio:pulse",
+    "eventhandler:libeventhandler",
+  ]
+}

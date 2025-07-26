@@ -39,9 +39,15 @@ public:
     virtual void DumpSinkInfo(std::string deviceName) = 0;
     virtual void DumpSourceInfo(std::string deviceName) = 0;
     virtual void DumpAllAvailableDevice(HpaeDeviceInfo &devicesInfo) = 0;
+    virtual void DumpSinkInputsInfo() = 0;
+    virtual void DumpSourceOutputsInfo() = 0;
     virtual uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
     virtual int32_t CloseAudioPort(int32_t audioHandleIndex) = 0;
     virtual uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) = 0;
+    virtual int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
+        std::function<void()> callback) = 0;
+    virtual int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
+        std::function<void()> callback) = 0;
 
     virtual int32_t SetDefaultSink(std::string name) = 0;
     virtual int32_t SetDefaultSource(std::string name) = 0;
@@ -62,13 +68,14 @@ public:
     virtual int32_t CreateStream(const HpaeStreamInfo &streamInfo) = 0;
     virtual int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Start(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
+    virtual int32_t StartWithSyncId(HpaeStreamClassType streamClassType, uint32_t sessionId, int32_t syncId) = 0;
     virtual int32_t Pause(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Flush(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Drain(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Stop(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
     virtual int32_t Release(HpaeStreamClassType streamClassType, uint32_t sessionId) = 0;
-    virtual int32_t RegisterStatusCallback(
-        HpaeStreamClassType streamClassType, uint32_t sessionId, const std::weak_ptr<IStatusCallback> &callback) = 0;
+    virtual int32_t RegisterStatusCallback(HpaeStreamClassType streamClassType, uint32_t sessionId,
+        const std::weak_ptr<IStreamStatusCallback> &callback) = 0;
 
     virtual int32_t RegisterReadCallback(uint32_t sessionId,
         const std::weak_ptr<ICapturerStreamCallback> &callback) = 0;
@@ -89,6 +96,7 @@ public:
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) = 0;
     virtual int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) = 0;
     virtual int32_t SetOffloadRenderCallbackType(uint32_t sessionId, int32_t type) = 0;
+    virtual void SetSpeed(uint32_t sessionId, float speed) = 0;
 
     // interfaces for render effect
     virtual void InitAudioEffectChainManager(const std::vector<EffectChain> &effectChains,
@@ -100,6 +108,7 @@ public:
     virtual int32_t SetSpatializationSceneType(AudioSpatializationSceneType spatializationSceneType) = 0;
     virtual int32_t EffectRotationUpdate(const uint32_t rotationState) = 0;
     virtual int32_t SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume) = 0;
+    virtual int32_t SetAbsVolumeStateToEffect(const bool absVolumeState) = 0;
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray) = 0;
     virtual int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray) = 0;
     virtual int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray) = 0;
