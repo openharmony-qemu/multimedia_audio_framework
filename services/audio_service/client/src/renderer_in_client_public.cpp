@@ -1235,7 +1235,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (CheckStopFlushUid() && state_ == STOPPED) {
+    if (NeedStopFlush() && state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     
@@ -1945,7 +1945,7 @@ void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyn
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
 }
 
-bool RendererInClientInner::CheckStopFlushUid()
+bool RendererInClientInner::NeedStopFlush()
 {
     return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
 }

@@ -287,7 +287,7 @@ private:
 
     bool CheckBufferNeedWrite();
 
-    bool CheckStopFlushUid();
+    bool NeedStopFlush();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
