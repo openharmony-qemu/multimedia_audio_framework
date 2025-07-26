@@ -32,6 +32,7 @@ enum class FadeOutState {
 class HpaeGainNode : public HpaePluginNode {
 public:
     HpaeGainNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeGainNode();
     bool SetClientVolume(float gain);
     float GetClientVolume();
     void SetFadeState(IOperation operation);

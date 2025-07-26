@@ -31,6 +31,7 @@ class HpaeSourceInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSourceInputNode(HpaeNodeInfo &nodeInfo);
     HpaeSourceInputNode(std::vector<HpaeNodeInfo> &nodeInfos);
+    virtual ~HpaeSourceInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;
     virtual bool ResetAll() override;

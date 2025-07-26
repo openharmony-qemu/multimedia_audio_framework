@@ -29,8 +29,6 @@ namespace HPAE {
 const uint32_t DEFAULT_FRAME_LENGTH = 960;
 const uint32_t DEFAULT_NODE_ID = 1243;
 const uint32_t DEFAULT_FORMAT = 16;
-const uint32_t DEFAULT_SAMPLE_RATE = 48000;
-const uint32_t DEFAULT_CHANNEL = 2;
 static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm";
 
 class HpaeCaptureEffectNodeTest : public testing::Test {
@@ -144,6 +142,8 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002, TestSize.Leve
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->GetSampleRate(), nodeInfo.samplingRate);
     EXPECT_EQ(hpaeCaptureEffectNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeCaptureEffectNode->GetFrameLen(), nodeInfo.frameLen);
@@ -210,7 +210,7 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003, TestSize.Leve
         .micRefChannels = STEREO,
     };
     EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectCreate(0, attr), 0);
-    EXPECT_NE(hpaeCaptureEffectNode->CaptureEffectRelease(0), 0);
+    EXPECT_EQ(hpaeCaptureEffectNode->CaptureEffectRelease(0), 0);
 }
 
 /*
@@ -262,14 +262,15 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_006, TestSize.Leve
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
 
     std::vector<HpaePcmBuffer *> inputs;
-    PcmBufferInfo pcmBufferInfo(DEFAULT_CHANNEL, DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE);
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
     hpaePcmBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_EC);
     inputs.emplace_back(&hpaePcmBuffer);
-    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), inputs[0]);
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
 }
 
 /*
@@ -285,14 +286,15 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_007, TestSize.Leve
     std::shared_ptr<NodeStatusCallback> testStatuscallback = std::make_shared<NodeStatusCallback>();
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
+    PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
+    hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->Reset(), true);
 
     std::vector<HpaePcmBuffer *> inputs = {};
-    PcmBufferInfo pcmBufferInfo(DEFAULT_CHANNEL, DEFAULT_FRAME_LENGTH, DEFAULT_SAMPLE_RATE);
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
     hpaePcmBuffer.SetSourceBufferType(HPAE_SOURCE_BUFFER_TYPE_MICREF);
     inputs.emplace_back(&hpaePcmBuffer);
-    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), inputs[0]);
+    EXPECT_EQ(hpaeCaptureEffectNode->SignalProcess(inputs), hpaeCaptureEffectNode->outPcmBuffer_.get());
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

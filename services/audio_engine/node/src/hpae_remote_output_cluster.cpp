@@ -34,11 +34,18 @@ HpaeRemoteOutputCluster::HpaeRemoteOutputCluster(HpaeNodeInfo &nodeInfo, HpaeSin
     frameLenMs_ = nodeInfo.frameLen * MILLISECOND_PER_SECOND / nodeInfo.samplingRate;
     AUDIO_INFO_LOG("HpaeRemoteOutputCluster frameLenMs_:%{public}u ms,"
         "timeoutThdFrames_:%{public}u", frameLenMs_, timeoutThdFrames_);
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeRemoteOutputCluster");
+#endif
 }
 
 HpaeRemoteOutputCluster::~HpaeRemoteOutputCluster()
 {
     Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeRemoteOutputCluster::DoProcess()
