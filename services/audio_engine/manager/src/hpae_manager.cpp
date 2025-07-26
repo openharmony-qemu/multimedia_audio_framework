@@ -1125,9 +1125,14 @@ void HpaeManager::HandleUpdateStatus(
     auto it = streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY ? rendererIdStreamInfoMap_.find(sessionId)
                                                              : capturerIdStreamInfoMap_.find(sessionId);
     if (it != rendererIdStreamInfoMap_.end() && it != capturerIdStreamInfoMap_.end()) {
-        if (auto callback = it->second.statusCallback.lock()) {
-            callback->OnStatusUpdate(operation, sessionId);
-        }
+        UpdateStatus(callback, operation, sessionId);
+    }
+}
+
+void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback, IOperation operation, uint32_t sessionId)
+{
+    if (auto lock = callback.lock()) {
+        lock->OnStatusUpdate(operation, sessionId);
     }
 }
 
@@ -1356,17 +1361,13 @@ bool HpaeManager::SetMovingStreamState(HpaeStreamClassType streamType, uint32_t 
         }
     }
     if (streamType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        if (auto statusCallback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-            statusCallback->OnStatusUpdate(operation, sessionId);
-        }
+        UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, operation, sessionId);
         if (operation == OPERATION_RELEASED) {
             sinkInputs_.erase(sessionId);
             idPreferSinkNameMap_.erase(sessionId);
         }
     } else {
-        if (auto statusCallback = capturerIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-            statusCallback->OnStatusUpdate(operation, sessionId);
-        }
+        UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, operation, sessionId);
         if (operation == OPERATION_RELEASED) {
             sourceOutputs_.erase(sessionId);
             if (auto serviceCallback = serviceCallback_.lock()) {
@@ -1454,9 +1455,7 @@ int32_t HpaeManager::Start(HpaeStreamClassType streamClassType, uint32_t session
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            if (auto callback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-                callback->OnStatusUpdate(OPERATION_STARTED, sessionId);
-            }
+            UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Start sessionId: %{public}u deviceName:%{public}s",
@@ -1500,9 +1499,7 @@ int32_t HpaeManager::StartWithSyncId(HpaeStreamClassType streamClassType, uint32
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Start(sessionId);
             rendererIdStreamInfoMap_[sessionId].state = HPAE_SESSION_RUNNING;
-            if (auto callback = rendererIdStreamInfoMap_[sessionId].statusCallback.lock()) {
-                callback->OnStatusUpdate(OPERATION_STARTED, sessionId);
-            }
+            UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_STARTED, sessionId);
         } else {
             AUDIO_WARNING_LOG("StartWithSyncId can not find sessionId streamClassType  %{public}d,"
                 "sessionId %{public}u syncId: %{public}d",
