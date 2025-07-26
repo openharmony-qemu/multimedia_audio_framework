@@ -64,7 +64,6 @@ HWTEST_F(HpaeSourceInputNodeTest, constructHpaeSourceInputNode, TestSize.Level0)
     EXPECT_EQ(hpaeSourceInputNode->GetBitWidth(), nodeInfo.format);
     HpaeNodeInfo &retNi = hpaeSourceInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);

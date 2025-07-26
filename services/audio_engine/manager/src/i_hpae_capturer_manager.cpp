@@ -22,7 +22,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-std::atomic<uint32_t> IHpaeCapturerManager::nodeIdCounter_ = 100;
 void IHpaeCapturerManager::UploadDumpSourceInfo(std::string &deviceName)
 {
 #ifdef ENABLE_HIDUMP_DFX
