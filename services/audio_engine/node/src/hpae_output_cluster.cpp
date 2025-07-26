@@ -33,7 +33,7 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeOutputCluster");
-#endif  
+#endif
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("HpaeOutputCluster mixerNode SetupAudioLimiter failed!");
     }

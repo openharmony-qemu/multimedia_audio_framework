@@ -39,7 +39,7 @@ HpaeCoBufferNode::HpaeCoBufferNode()
 {
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("HpaeCoBufferNode");
-#endif  
+#endif
     const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
                         static_cast<size_t>(STEREO) *
                         sizeof(float) *

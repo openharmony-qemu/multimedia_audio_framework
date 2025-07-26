@@ -151,7 +151,7 @@ private:
     static uint32_t GenerateHpaeNodeId()
     {
         std::lock_guard<std::mutex> lock(nodeIdCounterMutex_);
-        if (nodeIdCounter_ == std::numeric_limits<uin32_t>::max()) {
+        if (nodeIdCounter_ == std::numeric_limits<uint32_t>::max()) {
             nodeIdCounter_ = MIN_START_NODE_ID;
         } else {
             ++nodeIdCounter_;
