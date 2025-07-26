@@ -1,4 +1,3 @@
-dd
 /*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,6 +37,7 @@ public:
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
     napi_threadsafe_function GetTsfn();
+    void FreeVolumeTsfn(napi_env env);
     
 private:
     struct AudioVolumeKeyEventJsCallback {
