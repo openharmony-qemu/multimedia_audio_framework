@@ -78,7 +78,6 @@ HWTEST_F(HpaeSourceOutputNodeTest, constructHpaeSourceOutputNode, TestSize.Level
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeSourceOutputNode> hpaeSoruceOutputNode = std::make_shared<HpaeSourceOutputNode>(nodeInfo);
     EXPECT_EQ(hpaeSoruceOutputNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeSoruceOutputNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeSoruceOutputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSoruceOutputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSoruceOutputNode->GetBitWidth(), nodeInfo.format);

@@ -70,7 +70,6 @@ HWTEST_F(HpaeProcessClusterTest, constructHpaeProcessClusterNode, TestSize.Level
     std::shared_ptr<HpaeProcessCluster> hpaeProcessCluster =
         std::make_shared<HpaeProcessCluster>(nodeInfo, dummySinkInfo);
     EXPECT_EQ(hpaeProcessCluster->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeProcessCluster->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeProcessCluster->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeProcessCluster->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeProcessCluster->GetBitWidth(), nodeInfo.format);

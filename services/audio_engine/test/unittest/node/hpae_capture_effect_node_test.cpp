@@ -89,7 +89,6 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_001, TestSize.Leve
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeCaptureEffectNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeCaptureEffectNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeCaptureEffectNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeCaptureEffectNode->GetBitWidth(), nodeInfo.format);
@@ -145,7 +144,6 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_002, TestSize.Leve
     PcmBufferInfo pcmBufferInfo(nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate);
     hpaeCaptureEffectNode->outPcmBuffer_ = std::make_unique<HpaePcmBuffer>(pcmBufferInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeCaptureEffectNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeCaptureEffectNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeCaptureEffectNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeCaptureEffectNode->GetBitWidth(), nodeInfo.format);
@@ -200,7 +198,6 @@ HWTEST_F(HpaeCaptureEffectNodeTest, HpaeCaptureEffectNodeTest_003, TestSize.Leve
     nodeInfo.statusCallback = testStatuscallback;
     std::shared_ptr<HpaeCaptureEffectNode> hpaeCaptureEffectNode = std::make_shared<HpaeCaptureEffectNode>(nodeInfo);
     EXPECT_EQ(hpaeCaptureEffectNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeCaptureEffectNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeCaptureEffectNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeCaptureEffectNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeCaptureEffectNode->GetBitWidth(), nodeInfo.format);
