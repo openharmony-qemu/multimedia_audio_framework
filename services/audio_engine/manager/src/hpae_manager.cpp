@@ -1129,7 +1129,8 @@ void HpaeManager::HandleUpdateStatus(
     }
 }
 
-void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback, IOperation operation, uint32_t sessionId)
+void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callback,
+    IOperation operation, uint32_t sessionId)
 {
     if (auto lock = callback.lock()) {
         lock->OnStatusUpdate(operation, sessionId);
@@ -2301,12 +2302,13 @@ void HpaeManager::LoadEffectLive()
     }
     std::string state = HpaePolicyManager::GetInstance().GetAudioParameter(
         "primary", AudioParamKey::PARAM_KEY_STATE, "live_effect_supported");
+    AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
     if (state != "true") {
         effectLiveState_ = "NoSupport";
+        return;
     } else {
         effectLiveState_ = "NROFF";
     }
-    AUDIO_INFO_LOG("EffectLive %{public}s", effectLiveState_.c_str());
     if (settingProvider.CheckOsAccountReady()) {
         settingProvider.PutStringValue("live_effect_enable", effectLiveState_, "system");
     }
