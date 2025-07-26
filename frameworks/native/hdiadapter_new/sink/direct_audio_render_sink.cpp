@@ -380,6 +380,11 @@ void DirectAudioRenderSink::DumpInfo(std::string &dumpString)
     dumpString += "type: directSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
 }
 
+void DirectAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type,
     int8_t *reserved, int8_t *cookie)
 {

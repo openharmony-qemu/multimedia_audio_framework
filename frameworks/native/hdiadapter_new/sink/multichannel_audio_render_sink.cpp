@@ -474,6 +474,11 @@ void MultichannelAudioRenderSink::DumpInfo(std::string &dumpString)
         "\tcurrentActiveDevice: " + std::to_string(currentActiveDevice_) + "\n";
 }
 
+void MultichannelAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 uint32_t MultichannelAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);

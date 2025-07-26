@@ -614,6 +614,11 @@ void RemoteOffloadAudioRenderSink::OnAudioParamChange(const std::string &adapter
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
 }
 
+void RemoteOffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 uint32_t RemoteOffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
 {
     AudioFormat hdiFormat = ConvertToHdiFormat(format);

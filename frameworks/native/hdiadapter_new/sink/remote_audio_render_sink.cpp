@@ -484,6 +484,11 @@ void RemoteAudioRenderSink::OnAudioParamChange(const std::string &adapterName, c
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
 }
 
+void RemoteAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
+}
+
 AudioFormat RemoteAudioRenderSink::ConvertToHdiFormat(AudioSampleFormat format)
 {
     AudioFormat hdiFormat;

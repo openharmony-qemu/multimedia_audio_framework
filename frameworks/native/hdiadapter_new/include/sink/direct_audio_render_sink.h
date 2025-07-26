@@ -83,6 +83,8 @@ public:
     int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+
 private:
     static int32_t DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type, int8_t *reserved,
         int8_t *cookie);

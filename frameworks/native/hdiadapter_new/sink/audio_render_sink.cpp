@@ -1198,6 +1198,25 @@ int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
     return SUCCESS;
 }
 
+void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    const auto &it = dmDeviceTypeMap_.find(deviceType);
+    bool isDmDeviceTypeUpdated = it == dmDeviceTypeMap_.end() || it->second != dmDeviceType;
+    dmDeviceTypeMap_[deviceType] = dmDeviceType;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->SetDmDeviceType(dmDeviceType, deviceType);
+
+    CHECK_AND_RETURN(isDmDeviceTypeUpdated);
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(currentActiveDevice_);
+    AUDIO_INFO_LOG("dm deviceType update, need update output port pin");
+    int32_t ret = DoSetOutputRoute(outputDevices);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "DoSetOutputRoute fails");
+}
+
 void AudioRenderSink::WaitForDataLinkConnected()
 {
     std::unique_lock<std::mutex> dataConnectionWaitLock(dataConnectionMutex_);

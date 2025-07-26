@@ -83,6 +83,8 @@ public:
     void OnAudioParamChange(const std::string &adapterName, const AudioParamKey key, const std::string &condition,
         const std::string &value) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;

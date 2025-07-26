@@ -84,6 +84,8 @@ public:
     // for a2dp_offload connection state
     int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -183,6 +185,7 @@ private:
     bool forceSetRouteFlag_ = false;
     int32_t paStatus_ = 1;
     std::string address_ = "";
+    std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;
     // for setdeviceconnect flag
