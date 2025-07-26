@@ -334,8 +334,6 @@ int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
             sourceOutputNodeMap_[sessionId]->SetState(HPAE_SESSION_RUNNING);
             ConnectCapturerOutputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_RUNNING);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-                capturerSessionNodeMap_[sessionId].state, OPERATION_STARTED);
         }
     };
     SendRequestInner(request);
@@ -354,15 +352,11 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_PAUSED);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                rendererSessionNodeMap_[sessionId].state, OPERATION_PAUSED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseCapturerStream");
             AUDIO_INFO_LOG("PauseCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_PAUSED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-                capturerSessionNodeMap_[sessionId].state, OPERATION_PAUSED);
         }
     };
     SendRequestInner(request);
@@ -380,15 +374,11 @@ int32_t HpaeInnerCapturerManager::Flush(uint32_t sessionId)
             AUDIO_INFO_LOG("FlushCapRendererStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(rendererSessionNodeMap_.find(sessionId) != rendererSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                rendererSessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::FlushCapturerStream");
             AUDIO_INFO_LOG("FlushCapCapturerStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(capturerSessionNodeMap_.find(sessionId) != capturerSessionNodeMap_.end(),
                 "Flush not find sessionId %{public}u", sessionId);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-                capturerSessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
         }
     };
     SendRequestInner(request);
@@ -409,16 +399,12 @@ int32_t HpaeInnerCapturerManager::Drain(uint32_t sessionId)
             sinkInputNodeMap_[sessionId]->Drain();
             if (rendererSessionNodeMap_[sessionId].state != HPAE_SESSION_RUNNING) {
                 AUDIO_INFO_LOG("TriggerCallback Drain sessionId %{public}u", sessionId);
-                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                    rendererSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
             }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DrainCapturerStream");
             AUDIO_INFO_LOG("DrainCapCapturerStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(capturerSessionNodeMap_.find(sessionId) != capturerSessionNodeMap_.end(),
                 "Drain not find sessionId %{public}u", sessionId);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-                capturerSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
         }
     };
     SendRequestInner(request);
@@ -437,15 +423,11 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_STOPPED);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_STOPPED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-                rendererSessionNodeMap_[sessionId].state, OPERATION_STOPPED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopCapturerStream");
             AUDIO_INFO_LOG("StopCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_STOPPED);
-            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
-                capturerSessionNodeMap_[sessionId].state, OPERATION_STOPPED);
         }
     };
     SendRequestInner(request);

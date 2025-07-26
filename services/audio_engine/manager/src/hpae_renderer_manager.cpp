@@ -637,8 +637,6 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
-        TriggerCallback(
-            UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -652,14 +650,6 @@ int32_t HpaeRendererManager::Drain(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
             "Drain not find sessionId %{public}u", sessionId);
         sinkInputNodeMap_[sessionId]->Drain();
-        if (sessionNodeMap_[sessionId].state != HPAE_SESSION_RUNNING) {
-            AUDIO_INFO_LOG("TriggerCallback Drain sessionId %{public}u", sessionId);
-            TriggerCallback(UPDATE_STATUS,
-                HPAE_STREAM_CLASS_TYPE_PLAY,
-                sessionId,
-                sessionNodeMap_[sessionId].state,
-                OPERATION_DRAINED);
-        }
     };
     SendRequest(request);
     return SUCCESS;

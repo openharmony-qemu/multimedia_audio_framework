@@ -218,7 +218,6 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             sinkOutputNode_->StopStream();
         }
         sessionInfo_.state = HPAE_SESSION_PAUSED;
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -234,7 +233,6 @@ int32_t HpaeOffloadRendererManager::Flush(uint32_t sessionId)
         sinkInputNode_->Flush();
         // flush sinkoutput cache
         sinkOutputNode_->FlushStream();
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_FLUSHED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -247,10 +245,6 @@ int32_t HpaeOffloadRendererManager::Drain(uint32_t sessionId)
             sessionId == sinkInputNode_->GetSessionId(), "Drain not find sessionId %{public}u", sessionId);
         AUDIO_INFO_LOG("Drain sessionId %{public}u", sessionId);
         sinkInputNode_->Drain();
-        if (sessionInfo_.state != HPAE_SESSION_RUNNING) {
-            TriggerCallback(
-                UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_DRAINED);
-        }
     };
     SendRequest(request);
     return SUCCESS;
@@ -269,7 +263,6 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         if (state == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->StopStream();
         }
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
