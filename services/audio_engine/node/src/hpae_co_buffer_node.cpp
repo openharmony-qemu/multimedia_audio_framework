@@ -55,7 +55,7 @@ HpaeCoBufferNode::~HpaeCoBufferNode()
 #ifdef ENABLE_HIDUMP_DFX
     AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
         GetNodeId(), GetNodeName().c_str());
-#endif  
+#endif
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
