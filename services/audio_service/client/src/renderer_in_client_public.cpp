@@ -1235,7 +1235,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED ||
+    if (state_ == STOPPED &&
         std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), appUid_) != STOP_FLUSH_UIDS.end()) {
         flushAfterStop_ = true;
     }
