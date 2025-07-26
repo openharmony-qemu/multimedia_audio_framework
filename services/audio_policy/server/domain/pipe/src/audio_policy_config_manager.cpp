@@ -500,6 +500,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
+            useMatchingPropInfo = true;
             break;
         default:
             break;

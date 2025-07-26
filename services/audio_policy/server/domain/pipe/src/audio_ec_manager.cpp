@@ -622,6 +622,7 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_UNPROCESSED:
             targetSource = SOURCE_TYPE_UNPROCESSED;
+            useMatchingPropInfo = true;
             break;
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;
