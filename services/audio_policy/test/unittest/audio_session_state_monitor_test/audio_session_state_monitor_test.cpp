@@ -146,5 +146,24 @@ HWTEST(AudioSessionStateMonitorTest, StartMonitorOutOfMaxPidNumTest, TestSize.Le
     }
 }
 
+/**
+ * @tc.name  : RemoveFromMonitorMapTest
+ * @tc.desc  : Test for monitor RemoveFromMonitorMap
+ */
+HWTEST(AudioSessionStateMonitorTest, RemoveFromMonitorMapTest, TestSize.Level1)
+{
+    auto audioSessionService = std::make_shared<AudioSessionService>();
+    EXPECT_NE(audioSessionService, nullptr);
+    auto audioSessionMonitor = std::static_pointer_cast<AudioSessionStateMonitor>(audioSessionService);
+
+    audioSessionMonitor->StartMonitor(0, AUDIO_SESSION_TIME_OUT_DURATION_S);
+    EXPECT_NE(audioSessionMonitor->pidCbIdMap_.count(0), 0);
+
+    audioSessionMonitor->RemoveFromMonitorMap(0);
+    EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.count(0), 0);
+    audioSessionMonitor->RemoveFromMonitorMap(0);
+    EXPECT_EQ(audioSessionMonitor->pidCbIdMap_.count(0), 0);
+}
+
 } // AudioStandardnamespace
 } // OHOSnamespace

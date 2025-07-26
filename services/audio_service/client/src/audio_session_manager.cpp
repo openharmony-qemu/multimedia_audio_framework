@@ -35,12 +35,12 @@ int32_t AudioSessionManager::ActivateAudioSession(const AudioSessionStrategy &st
 {
     AUDIO_INFO_LOG("Activate audio session with strategy: %{public}d", static_cast<int32_t>(strategy.concurrencyMode));
     int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
-    if (ret == SUCCESS) {
-        std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
-        if (setDefaultOutputDevice_) {
-            AUDIO_INFO_LOG("need retain SetDefaultOutputDevice");
-            AudioPolicyManager::GetInstance().SetDefaultOutputDevice(setDeviceType_);
-        }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ActivateAudioSession failed, ret:%{public}d", ret);
+
+    std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);
+    if (setDefaultOutputDevice_) {
+        AUDIO_INFO_LOG("need retain SetDefaultOutputDevice");
+        AudioPolicyManager::GetInstance().SetDefaultOutputDevice(setDeviceType_);
     }
     return ret;
 }
@@ -138,10 +138,7 @@ int32_t AudioSessionManager::SetDefaultOutputDevice(DeviceType deviceType)
 {
     AUDIO_INFO_LOG("SetDefaultOutputDevice with deviceType: %{public}d", static_cast<int32_t>(deviceType));
     int32_t ret = AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetDefaultOutputDevice failed ret:%{public}d", ret);
-        return ret;
-    }
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "SetDefaultOutputDevice failed ret:%{public}d", ret);
 
     AUDIO_INFO_LOG("SetDefaultOutputDevice successful.");
     std::lock_guard<std::mutex> lock(setDefaultOutputDeviceMutex_);

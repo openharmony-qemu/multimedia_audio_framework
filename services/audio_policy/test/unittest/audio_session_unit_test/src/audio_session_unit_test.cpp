@@ -196,5 +196,124 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_008, TestSize.Level1)
     audioSession->AddStreamInfo(audioInterrupt);
     EXPECT_FALSE(audioSession->IsAudioRendererEmpty());
 }
+
+/**
+* @tc.name  : Test EnableDefaultDevice.
+* @tc.number: AudioSessionUnitTest_009.
+* @tc.desc  : Test EnableDefaultDevice function.
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_009, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    audioSession->fakeStreamId_ = 0;
+    audioSession->state_ = AudioSessionState::SESSION_RELEASED;
+    EXPECT_EQ(audioSession->EnableDefaultDevice(), 0);
+
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSession->defaultDeviceType_ = DEVICE_TYPE_INVALID;
+    EXPECT_EQ(audioSession->EnableDefaultDevice(), 0);
+
+    audioSession->defaultDeviceType_ = DEVICE_TYPE_EARPIECE;
+    EXPECT_NE(audioSession->EnableDefaultDevice(), 0);
+}
+
+/**
+* @tc.name  : Test ShouldExcludeStreamType.
+* @tc.number: AudioSessionUnitTest_010.
+* @tc.desc  : Test ShouldExcludeStreamType function.
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_010, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(audioInterrupt));
+
+
+    audioInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    EXPECT_FALSE(audioSession->ShouldExcludeStreamType(audioInterrupt));
+
+    audioInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(audioInterrupt));
+}
+
+/**
+* @tc.name  : Test SetSessionDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_011
+* @tc.desc  : Test SetSessionDefaultOutputDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_011, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_INVALID), ERROR_INVALID_PARAM);
+ 
+    audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
+    audioSession->fakeStreamId_ = 0;
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_EARPIECE), 0);
+
+    audioSession->state_ = AudioSessionState::SESSION_DEACTIVE;
+    EXPECT_EQ(audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_EARPIECE), 0);
+
+    DeviceType type;
+    audioSession->GetSessionDefaultOutputDevice(type);
+}
+
+/**
+* @tc.name  : Test IsStreamContainedInCurrentSession
+* @tc.number: AudioSessionUnitTest_012
+* @tc.desc  : Test IsStreamContainedInCurrentSession function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    audioSession->bypassStreamInfoVec_.clear();
+    EXPECT_FALSE(audioSession->IsStreamContainedInCurrentSession(0));
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = 0;
+    audioSession->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    EXPECT_TRUE(audioSession->IsStreamContainedInCurrentSession(0));
+}
+
+/**
+* @tc.name  : Test IsRecommendToStopAudio
+* @tc.number: AudioSessionUnitTest_013
+* @tc.desc  : Test IsRecommendToStopAudio function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(nullptr));
+
+    std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj =
+        std::make_shared<AudioPolicyServerHandler::EventContextObj>();
+    eventContextObj->reason_ = AudioStreamDeviceChangeReason::OVERRODE;
+    eventContextObj->reason_ = AudioStreamDeviceChangeReason::UNKNOWN;
+    eventContextObj->descriptor = nullptr;
+    EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
+}
+
+
 } // namespace AudioStandard
 } // namespace OHOS
