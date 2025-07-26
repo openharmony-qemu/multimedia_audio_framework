@@ -146,6 +146,9 @@ void HpaePcmBuffer::Reset()
     for (HpaePcmProcess &pcmProc : pcmProcessVec_) {
         pcmProc.Reset();
     }
+    readPos_.store(0);
+    writePos_.store(0);
+    curFrames_.store(0);
 }
 
 bool HpaePcmBuffer::GetFrameData(std::vector<float> &frameData)

@@ -73,6 +73,7 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
+const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -647,7 +648,8 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
+    writtenAtSpeedChange_.store(
+        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
@@ -1233,7 +1235,7 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED) {
+    if (NeedStopFlush() && state_ == STOPPED) {
         flushAfterStop_ = true;
     }
     
@@ -1802,9 +1804,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
 
-    uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
+    uint64_t unprocessSamples = unprocessedFramesBytes_.load();
     // cal latency between readIdx and framesWritten
-    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
+    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load();
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
@@ -1941,6 +1943,11 @@ void RendererInClientInner::SetAudioHapticsSyncId(const int32_t &audioHapticsSyn
     CHECK_AND_RETURN_LOG(ipcStream_ != nullptr, "ipcStream is not inited!");
     int32_t ret = ipcStream_->SetAudioHapticsSyncId(audioHapticsSyncId);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "Set sync id failed");
+}
+
+bool RendererInClientInner::NeedStopFlush()
+{
+    return std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), uidGetter_()) != STOP_FLUSH_UIDS.end();
 }
 } // namespace AudioStandard
 } // namespace OHOS

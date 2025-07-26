@@ -1614,21 +1614,21 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
 
     Timestamp timestamp;
     ptrRendererInClientInner->state_ = State::RUNNING;
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 2000 bytes = 500 samples
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200); // 200 bytes = 50 samples
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(500);
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(50);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50, frameposition = 500 - 50 = 450
     }
     ptrRendererInClientInner->SetSpeed(2.0); // lastspeed = 1.0, speed = 2.0, lastFrameWritten = 50
-    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(800); // 800 bytes = 200 samples
+    ptrRendererInClientInner->totalBytesWrittenAfterFlush_.store(200);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 450); // latency = 50 + (200 - 50) * 2 = 350, frameposition = 150 < 450
     }
-    ptrRendererInClientInner->unprocessedFramesBytes_.store(2000); // 4000 bytes = 1000 samples
+    ptrRendererInClientInner->unprocessedFramesBytes_.store(1000);
     for (auto i = 0; i < Timestamp::Timestampbase::BASESIZE; i++) {
         ptrRendererInClientInner->GetAudioTimestampInfo(timestamp,
             static_cast<Timestamp::Timestampbase>(i));
@@ -1978,6 +1978,10 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_078, TestSize.Level1
     ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
     ptrRendererInClientInner->converter_ = std::make_unique<AudioSpatialChannelConverter>();
     ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
+    EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
+
+    ptrRendererInClientInner->state_ = STOPPED;
+    ptrRendererInClientInner->uidGetter_ = []() -> uid_t { return 1013; }; // 1013 media_service uid
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
     ptrRendererInClientInner->notifiedOperation_ = MAX_OPERATION_CODE;
