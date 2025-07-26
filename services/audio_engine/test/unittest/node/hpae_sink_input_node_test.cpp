@@ -53,13 +53,11 @@ HWTEST_F(HpaeSinkInputNodeTest, constructHpaeSinkInputNode, TestSize.Level0)
     nodeInfo.format = SAMPLE_F32LE;
     std::unique_ptr<HpaeSinkInputNode> hpaeSinkInputNode =  std::make_unique<HpaeSinkInputNode>(nodeInfo);
     EXPECT_EQ(hpaeSinkInputNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeSinkInputNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeSinkInputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkInputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkInputNode->GetBitWidth(), nodeInfo.format);
     HpaeNodeInfo &retNi = hpaeSinkInputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);
@@ -81,7 +79,6 @@ HWTEST_F(HpaeSinkInputNodeTest, testSinkInputOutputCase, TestSize.Level0)
         std::shared_ptr<HpaeNode> hpaeNode = outputNode->GetSharedInstance();
         EXPECT_EQ(hpaeSinkInputNode.use_count(), 1 + 1 + 1); // add 1 count because hpaeNode
         EXPECT_EQ(hpaeNode->GetSampleRate(), nodeInfo.samplingRate);
-        EXPECT_EQ(hpaeNode->GetNodeId(), nodeInfo.nodeId);
         EXPECT_EQ(hpaeNode->GetFrameLen(), nodeInfo.frameLen);
         EXPECT_EQ(hpaeNode->GetChannelCount(), nodeInfo.channels);
         EXPECT_EQ(hpaeNode->GetBitWidth(), nodeInfo.format);

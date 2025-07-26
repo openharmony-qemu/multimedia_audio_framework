@@ -48,11 +48,18 @@ HpaeRemoteSinkOutputNode::HpaeRemoteSinkOutputNode(HpaeNodeInfo &nodeInfo, HpaeS
     AUDIO_INFO_LOG("HpaeRemoteSinkOutputNode name is %{public}s", sinkOutAttr_.adapterName.c_str());
 #endif
 #ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeRemoteSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeRemoteSinkOutputNode");
         callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
     }
+#endif
+}
+
+HpaeRemoteSinkOutputNode::~HpaeRemoteSinkOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 

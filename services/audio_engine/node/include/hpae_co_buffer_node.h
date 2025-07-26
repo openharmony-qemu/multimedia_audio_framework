@@ -38,7 +38,7 @@ enum class FrameFlag {
 class HpaeCoBufferNode : public OutputNode<HpaePcmBuffer *>, public InputNode<HpaePcmBuffer *> {
 public:
     HpaeCoBufferNode();
-    virtual ~HpaeCoBufferNode() {};
+    virtual ~HpaeCoBufferNode();
     void DoProcess() override;
     bool Reset() override;
     bool ResetAll() override;

@@ -65,13 +65,11 @@ HWTEST_F(HpaeResampleNodeTest, constructHpaeResampleNode, TestSize.Level0)
     dstNodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
     EXPECT_EQ(hpaeResampleNode->GetSampleRate(), dstNodeInfo.samplingRate);
-    EXPECT_EQ(hpaeResampleNode->GetNodeId(), dstNodeInfo.nodeId);
     EXPECT_EQ(hpaeResampleNode->GetFrameLen(), dstNodeInfo.frameLen);
     EXPECT_EQ(hpaeResampleNode->GetChannelCount(), dstNodeInfo.channels);
     EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
     HpaeNodeInfo &retNi = hpaeResampleNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, dstNodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, dstNodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, dstNodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, dstNodeInfo.channels);
     EXPECT_EQ(retNi.format, dstNodeInfo.format);
@@ -96,13 +94,11 @@ HWTEST_F(HpaeResampleNodeTest, testReset, TestSize.Level0)
     std::shared_ptr<HpaeResampleNode> hpaeResampleNode2 =
         std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo, (ResamplerType)0xff);
     EXPECT_EQ(hpaeResampleNode->GetSampleRate(), dstNodeInfo.samplingRate);
-    EXPECT_EQ(hpaeResampleNode->GetNodeId(), dstNodeInfo.nodeId);
     EXPECT_EQ(hpaeResampleNode->GetFrameLen(), dstNodeInfo.frameLen);
     EXPECT_EQ(hpaeResampleNode->GetChannelCount(), dstNodeInfo.channels);
     EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);
     HpaeNodeInfo &retNi = hpaeResampleNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, dstNodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, dstNodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, dstNodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, dstNodeInfo.channels);
     EXPECT_EQ(retNi.format, dstNodeInfo.format);
@@ -199,7 +195,6 @@ HWTEST_F(HpaeResampleNodeTest, testConnectWithInfo, TestSize.Level0)
     dstNodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeResampleNode> hpaeResampleNode = std::make_shared<HpaeResampleNode>(srcNodeInfo, dstNodeInfo);
     EXPECT_EQ(hpaeResampleNode->GetSampleRate(), dstNodeInfo.samplingRate);
-    EXPECT_EQ(hpaeResampleNode->GetNodeId(), dstNodeInfo.nodeId);
     EXPECT_EQ(hpaeResampleNode->GetFrameLen(), dstNodeInfo.frameLen);
     EXPECT_EQ(hpaeResampleNode->GetChannelCount(), dstNodeInfo.channels);
     EXPECT_EQ(hpaeResampleNode->GetBitWidth(), dstNodeInfo.format);

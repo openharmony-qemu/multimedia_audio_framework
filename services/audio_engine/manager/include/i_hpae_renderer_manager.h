@@ -98,8 +98,6 @@ public:
 
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
 
-    virtual uint32_t OnGetNodeId();
-
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo)
     {
 #ifdef ENABLE_HIDUMP_DFX
@@ -112,7 +110,6 @@ public:
     virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
-    static std::atomic<uint32_t> nodeIdCounter_;
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxTree dfxTree_;
 #endif

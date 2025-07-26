@@ -55,13 +55,11 @@ HWTEST_F(HpaeMixerNodeTest, constructHpaeMixerNode, TestSize.Level0)
     nodeInfo.format = SAMPLE_F32LE;
     std::shared_ptr<HpaeMixerNode> hpaeMixerNode = std::make_shared<HpaeMixerNode>(nodeInfo);
     EXPECT_EQ(hpaeMixerNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeMixerNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeMixerNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeMixerNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeMixerNode->GetBitWidth(), nodeInfo.format);
     HpaeNodeInfo &retNi = hpaeMixerNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);

@@ -37,6 +37,9 @@ HpaeCoBufferNode::HpaeCoBufferNode()
       coBufferOut_(pcmBufferInfo_),
       silenceData_(pcmBufferInfo_)
 {
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeCoBufferNode");
+#endif
     const size_t size = static_cast<size_t>(SAMPLE_RATE_48000) *
                         static_cast<size_t>(STEREO) *
                         sizeof(float) *
@@ -45,6 +48,14 @@ HpaeCoBufferNode::HpaeCoBufferNode()
     AUDIO_INFO_LOG("Created ring cache, size: %{public}zu", size);
     ringCache_ = AudioRingCache::Create(size);
     CHECK_AND_RETURN_LOG(ringCache_ != nullptr, "Create ring cache failed");
+}
+
+HpaeCoBufferNode::~HpaeCoBufferNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeCoBufferNode::Enqueue(HpaePcmBuffer* buffer)
@@ -132,7 +143,8 @@ void HpaeCoBufferNode::Connect(const std::shared_ptr<OutputNode<HpaePcmBuffer *>
     HpaeNodeInfo nodeInfo = preNode->GetNodeInfo();
     if (connectedProcessCluster_.find(nodeInfo.sceneType) == connectedProcessCluster_.end()) {
         connectedProcessCluster_.insert(nodeInfo.sceneType);
-        nodeInfo.nodeName = "HpaeCoBufferNode";
+        nodeInfo.nodeId = GetNodeId();
+        nodeInfo.nodeName = GetNodeName();
         SetNodeInfo(nodeInfo);
         inputStream_.Connect(shared_from_this(), preNode->GetOutputPort(), HPAE_BUFFER_TYPE_COBUFFER);
         AUDIO_INFO_LOG("HpaeCoBufferNode connect to preNode");

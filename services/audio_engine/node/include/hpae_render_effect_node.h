@@ -32,6 +32,7 @@ enum ModifyAudioEffectChainInfoReason {
 class HpaeRenderEffectNode : public HpaePluginNode {
 public:
     HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeRenderEffectNode();
     void DoProcess() override;
     int32_t AudioRendererCreate(HpaeNodeInfo &nodeInfo);
     int32_t AudioRendererStart(HpaeNodeInfo &nodeInfo);
