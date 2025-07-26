@@ -1125,7 +1125,7 @@ void HpaeManager::HandleUpdateStatus(
     auto it = streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY ? rendererIdStreamInfoMap_.find(sessionId)
                                                              : capturerIdStreamInfoMap_.find(sessionId);
     if (it != rendererIdStreamInfoMap_.end() && it != capturerIdStreamInfoMap_.end()) {
-        UpdateStatus(callback, operation, sessionId);
+        UpdateStatus(it->second.statusCallback, operation, sessionId);
     }
 }
 
