@@ -648,7 +648,8 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
+    writtenAtSpeedChange_.store(
+        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
@@ -1803,9 +1804,9 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     // cal readIdx from last flush
     readIdx = readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0;
 
-    uint64_t unprocessSamples = unprocessedFramesBytes_.load() / sizePerFrameInByte_;
+    uint64_t unprocessSamples = unprocessedFramesBytes_.load();
     // cal latency between readIdx and framesWritten
-    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_;
+    uint64_t samplesWritten = totalBytesWrittenAfterFlush_.load();
     uint64_t deepLatency = samplesWritten > readIdx ? samplesWritten - readIdx : 0;
     // get position and speed since last change
     WrittenFramesWithSpeed fsPair = writtenAtSpeedChange_.load();
