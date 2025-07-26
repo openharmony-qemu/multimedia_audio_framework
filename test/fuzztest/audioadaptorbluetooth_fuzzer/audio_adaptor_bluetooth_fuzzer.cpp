@@ -92,9 +92,7 @@ void IsInitedFuzzTest()
 void SetAudioSceneFuzzTest()
 {
     AudioScene audioScene = GetData<AudioScene>();
-    DeviceType deviceType = GetData<DeviceType>();
-    std::vector<DeviceType> activeDevices = {deviceType};
-    GetAdaptorBlueToothSink()->SetAudioScene(audioScene, activeDevices);
+    GetAdaptorBlueToothSink()->SetAudioScene(audioScene);
 }
 
 void SetOutputRoutesFuzzTest()

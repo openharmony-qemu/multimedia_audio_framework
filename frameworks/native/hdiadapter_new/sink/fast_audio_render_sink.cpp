@@ -38,7 +38,7 @@ FastAudioRenderSink::~FastAudioRenderSink()
 
 int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("init with format:%{publci}d", attr.format);
+    AUDIO_INFO_LOG("init with format:%{public}d", attr.format);
     attr_ = attr;
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
     int32_t ret = CreateRender();
@@ -383,8 +383,7 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return SUCCESS;
@@ -444,6 +443,11 @@ int32_t FastAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 void FastAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FastSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void FastAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 int32_t FastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

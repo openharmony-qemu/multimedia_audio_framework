@@ -456,8 +456,7 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set speed fail, ret: %{public}d", ret);
 }
 
-int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -613,6 +612,11 @@ void RemoteOffloadAudioRenderSink::OnAudioParamChange(const std::string &adapter
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
+}
+
+void RemoteOffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t RemoteOffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)

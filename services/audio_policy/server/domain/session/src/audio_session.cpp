@@ -235,6 +235,7 @@ void AudioSession::UpdateVoipStreamsDefaultOutputDevice()
     for (auto interrupt : bypassStreamInfoVec_) {
         UpdateSingleVoipStreamDefaultOutputDevice(interrupt);
     }
+    deviceManager_.UpdateDefaultOutputDeviceWhenStopping(fakeStreamId_);
 }
 
 int32_t AudioSession::Deactivate()

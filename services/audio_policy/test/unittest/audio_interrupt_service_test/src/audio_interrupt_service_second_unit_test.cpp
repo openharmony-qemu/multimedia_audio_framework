@@ -81,6 +81,14 @@ public:
         ret = true;
         return SUCCESS;
     }
+
+    ErrCode OnQueryDeviceVolumeBehavior(VolumeBehavior &volumeBehavior) override
+    {
+        volumeBehavior.isReady = false;
+        volumeBehavior.isVolumeControlDisabled = false;
+        volumeBehavior.databaseVolumeName = "";
+        return SUCCESS;
+    }
 };
 
 class AudioInterruptCallbackTest : public AudioInterruptCallback {

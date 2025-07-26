@@ -492,7 +492,7 @@ void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<A
 {
     sort(streamDescs.begin(), streamDescs.end(), [](const std::shared_ptr<AudioStreamDescriptor> &streamDesc1,
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
-            return streamDesc1->startTimeStamp_ < streamDesc2->startTimeStamp_;
+            return streamDesc1->createTimeStamp_ < streamDesc2->createTimeStamp_;
         });
 }
 } // namespace AudioStandard

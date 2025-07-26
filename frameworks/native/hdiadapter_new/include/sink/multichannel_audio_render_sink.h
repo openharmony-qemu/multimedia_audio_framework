@@ -61,8 +61,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -76,6 +75,8 @@ public:
     int32_t UpdateAppsUid(const std::vector<int32_t> &appsUid) final;
 
     void DumpInfo(std::string &dumpString) override;
+
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);

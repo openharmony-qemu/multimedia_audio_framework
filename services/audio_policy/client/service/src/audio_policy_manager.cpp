@@ -54,7 +54,7 @@ static bool RegisterDeathRecipientInner(sptr<IRemoteObject> object)
     pid_t pid = 0;
     pid_t uid = 0;
     sptr<AudioServerDeathRecipient> deathRecipient = new(std::nothrow) AudioServerDeathRecipient(pid, uid);
-    CHECK_AND_RETURN_RET_LOG(deathRecipient != nullptr, false, "deathRecipient is null");
+    CHECK_AND_RETURN_RET(deathRecipient != nullptr, false);
     deathRecipient->SetNotifyCb(
         [] (pid_t pid, pid_t uid) { AudioPolicyManager::AudioPolicyServerDied(pid, uid); });
     AUDIO_DEBUG_LOG("Register audio policy server death recipient");

@@ -104,7 +104,6 @@ uint32_t GetArrLength(T& arr)
 void AudioVolumeManagerInitSharedVolumeFuzzTest(const uint8_t *rawData, size_t size)
 {
     std::shared_ptr<AudioSharedMemory> buffer;
-    int32_t ret;
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
 
     audioVolumeManager.InitSharedVolume(buffer);

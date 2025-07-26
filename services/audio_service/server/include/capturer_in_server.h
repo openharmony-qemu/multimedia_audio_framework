@@ -78,6 +78,7 @@ private:
     void HandleOperationFlushed();
     void HandleOperationStopped(CapturerStage stage);
     void UpdateBufferTimeStamp(size_t readLen);
+    inline void CaptureConcurrentCheck(uint32_t streamIndex);
 
     std::mutex statusLock_;
     std::condition_variable statusCv_;
@@ -121,6 +122,8 @@ private:
     uint64_t curProcessPos_ = 0;
     uint64_t lastPosInc_ = 0;
     std::shared_ptr<CapturerClock> capturerClock_ = nullptr;
+
+    bool captureConcurretChecked_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

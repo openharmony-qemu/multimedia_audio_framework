@@ -1840,7 +1840,8 @@ int32_t RendererInServer::SetClientVolume()
         OffloadSetVolumeInner();
     }
 
-    RendererStage stage = clientVolume == 0 ? RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
+    RendererStage stage = static_cast<size_t>(clientVolume) == 0 ?
+        RENDERER_STAGE_SET_VOLUME_ZERO : RENDERER_STAGE_SET_VOLUME_NONZERO;
     playerDfx_->WriteDfxActionMsg(streamIndex_, stage);
     return ret;
 }

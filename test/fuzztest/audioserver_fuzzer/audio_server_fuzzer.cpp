@@ -494,11 +494,7 @@ void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     AudioScene audioScene = *reinterpret_cast<const AudioScene*>(rawData);
-    DeviceType outputDevice = *reinterpret_cast<const DeviceType*>(rawData);
-    DeviceType inputDevice = *reinterpret_cast<const DeviceType*>(rawData);
     data.WriteInt32(static_cast<int32_t>(audioScene));
-    data.WriteInt32(static_cast<int32_t>(outputDevice));
-    data.WriteInt32(static_cast<int32_t>(inputDevice));
 
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
@@ -1092,9 +1088,7 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    static uint32_t step = 0;
     uint32_t index = static_cast<uint32_t>(size);
-    step += index;
     static const vector<AudioScene> testAudioScenes = {
         AUDIO_SCENE_INVALID,
         AUDIO_SCENE_DEFAULT,
@@ -1113,12 +1107,9 @@ void AudioServerSetAudioSceneByDeviceTypeTest(const uint8_t *rawData, size_t siz
     };
     bool scoExcludeFlag = static_cast<bool>(index % NUM_2);
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(g_testDeviceTypes[step % g_testDeviceTypes.size()]);
-    int32_t activeInputDevice = g_testDeviceTypes[index % g_testDeviceTypes.size()];
     AudioScene audioScene = testAudioScenes[static_cast<uint32_t>(size) % testAudioScenes.size()];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SetAudioScene(audioScene, activeOutputDevices, activeInputDevice, a2dpOffloadFlag, scoExcludeFlag);
+    audioServerPtr->SetAudioScene(audioScene, a2dpOffloadFlag, scoExcludeFlag);
 }
 
 void AudioServerNotifyDeviceInfoFuzzTest(const uint8_t *rawData, size_t size)

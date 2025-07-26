@@ -121,11 +121,23 @@ bool BluetoothAudioRenderSink::IsInited(void)
     return sinkInited_;
 }
 
+bool BluetoothAudioRenderSink::IsSinkInited(void)
+{
+    if (!sinkInited_) {
+        AUDIO_ERR_LOG("sinkInited_ is false!");
+        HdiMonitor::ReportHdiException(HdiType::A2DP, ErrorCase::CALL_HDI_FAILED, ERR_NOT_STARTED, "Hdi not inited"
+            ":" + std::string(isBluetoothLowLatency_ ? "fast" : "normal"));
+        return false;
+    }
+    return true;
+}
+
 int32_t BluetoothAudioRenderSink::Start(void)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("BluetoothAudioRenderSink::Start");
     AUDIO_INFO_LOG("%{public}s in", logTypeTag_.c_str());
+    CHECK_AND_RETURN_RET(IsSinkInited(), ERR_NOT_STARTED);
 #ifdef FEATURE_POWER_MANAGER
     if (runningLock_ == nullptr) {
         WatchTimeout guard("create AudioRunningLock start");
@@ -143,9 +155,7 @@ int32_t BluetoothAudioRenderSink::Start(void)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpFileName_, &dumpFile_);
 
     InitLatencyMeasurement();
-    if (started_) {
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET(!started_, SUCCESS);
     int32_t tryCount = 3;
     while (tryCount-- > 0) {
         AUDIO_INFO_LOG("try to start bluetooth render");
@@ -476,8 +486,7 @@ int32_t BluetoothAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t BluetoothAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t BluetoothAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -550,6 +559,11 @@ void BluetoothAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: BtSink\tstarted: " + std::string(started_ ? "true" : "false") + "\tisLowLatency: " +
         std::string(isBluetoothLowLatency_ ? "true" : "false") + "\n";
+}
+
+void BluetoothAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 int32_t BluetoothAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

@@ -90,8 +90,7 @@ public:
     int32_t SetMicrophoneMute(bool isMute) override;
     int32_t SetVoiceVolume(float volume) override;
     int32_t OffloadSetVolume(float volume, const std::string &deviceClass, const std::string &networkId) override;
-    int32_t SetAudioScene(int32_t audioScene, const std::vector<int32_t> &activeOutputDevices,
-        int32_t activeInputDevice, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
+    int32_t SetAudioScene(int32_t audioScene, int32_t a2dpOffloadFlag, bool scoExcludeFlag) override;
     static void *paDaemonThread(void *arg);
     int32_t SetExtraParameters(const std::string& key,
         const std::vector<StringPair>& kvpairs) override;
@@ -217,6 +216,8 @@ public:
 
     int32_t SetForegroundList(const std::vector<std::string>& list) override;
 
+    int32_t SetRenderWhitelist(const std::vector<std::string>& list) override;
+
     int32_t GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime) override;
 
     int32_t GenerateSessionId(uint32_t &sessionId) override;
@@ -316,7 +317,6 @@ private:
     void RecognizeAudioEffectType(const std::string &mainkey, const std::string &subkey,
         const std::string &extraSceneType);
     int32_t SetSystemVolumeToEffect(const AudioStreamType streamType, float volume);
-    const std::string GetBundleNameFromUid(int32_t uid);
     bool IsFastBlocked(int32_t uid, PlayerType playerType);
     int32_t SetVolumeInfoForEnhanceChain(const AudioStreamType &streamType);
     int32_t SetMicrophoneMuteForEnhanceChain(const bool &isMute);
@@ -349,8 +349,7 @@ private:
     const std::string GetAudioParameterInner(const std::string &key);
     const std::string GetAudioParameterInner(const std::string& networkId, const AudioParamKey key,
         const std::string& condition);
-    int32_t SetAudioSceneInner(AudioScene audioScene, std::vector<DeviceType> &activeOutputDevices,
-        DeviceType activeInputDevice, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
+    int32_t SetAudioSceneInner(AudioScene audioScene, BluetoothOffloadState a2dpOffloadFlag, bool scoExcludeFlag);
     sptr<IRemoteObject> CreateAudioProcessInner(const AudioProcessConfig &config, int32_t &errorCode,
         const AudioPlaybackCaptureConfig &filterConfig);
     int32_t GetExtraParametersInner(const std::string &mainKey,

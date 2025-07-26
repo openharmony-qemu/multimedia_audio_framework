@@ -426,9 +426,11 @@ void TransStreamInfoToStreamDumpInfo(const std::unordered_map<uint32_t, HpaeSess
             TransDeviceInfoToString(sessionInfo.streamInfo, config);
             return HpaeInputOutputInfo {
                 .sessionId = sessionInfo.streamInfo.sessionId,
+                .deviceName = sessionInfo.streamInfo.deviceName,
                 .uid = sessionInfo.streamInfo.uid,
                 .pid = sessionInfo.streamInfo.pid,
                 .tokenId = sessionInfo.streamInfo.tokenId,
+                .offloadEnable = sessionInfo.offloadEnable,
                 .privacyType = sessionInfo.streamInfo.privacyType,
                 .config = config,
                 .state = sessionInfo.state,

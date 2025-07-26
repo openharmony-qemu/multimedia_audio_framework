@@ -24,7 +24,7 @@
 #include "audio_effect_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 static constexpr uint32_t DEFUALT_EFFECT_RATE = 48000;
 static constexpr uint32_t DEFAULT_EFFECT_FRAMELEN = 960;
@@ -306,7 +306,7 @@ void HpaeRenderEffectNode::ModifyAudioEffectChainInfo(HpaeNodeInfo &nodeInfo,
             info.channels = static_cast<uint32_t>(nodeInfo.channels);
             info.channelLayout = nodeInfo.channelLayout;
             info.streamUsage = nodeInfo.effectInfo.streamUsage;
-            info.systemVolumeType = nodeInfo.effectInfo.volumeType;
+            info.systemVolumeType = static_cast<int32_t>(nodeInfo.effectInfo.systemVolumeType);
             ret = AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID, info);
             break;
         }

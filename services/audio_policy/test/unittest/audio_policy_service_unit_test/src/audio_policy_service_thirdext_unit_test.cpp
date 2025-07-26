@@ -681,34 +681,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, SetRotationToEffect_001, TestSize.Lev
     EXPECT_NE(nullptr, AudioServerProxy::GetInstance().GetAudioServerProxy());
 }
 #endif
-/**
-* @tc.name  : Test DealAudioSceneOutputDevices.
-* @tc.number: DealAudioSceneOutputDevices_001
-* @tc.desc  : Test IsA2dpOffloadConnected interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, DealAudioSceneOutputDevices_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest DealAudioSceneOutputDevices_001 start");
-    ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
-
-    const AudioScene audioScene = AUDIO_SCENE_RINGING;
-    std::vector<DeviceType> activeOutputDevices;
-    bool haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene, activeOutputDevices, haveArmUsbDevice);
-
-    const AudioScene audioScene2 = AUDIO_SCENE_VOICE_RINGING;
-    haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene2, activeOutputDevices, haveArmUsbDevice);
-    EXPECT_EQ(false, haveArmUsbDevice);
-
-    const AudioScene audioScene3 = AUDIO_SCENE_DEFAULT;
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs {};
-    haveArmUsbDevice = false;
-    GetServerUtil::GetServerPtr()->audioPolicyService_.audioSceneManager_.DealAudioSceneOutputDevices(
-        audioScene3, activeOutputDevices, haveArmUsbDevice);
-}
 
 /**
 * @tc.name  : Test SelectRingerOrAlarmDevices.

@@ -259,7 +259,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_010, TestSize.Level1)
 {
     InitPrimarySource();
     EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
+    int32_t ret = primarySource_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
     DeInitPrimarySource();
 }
@@ -290,6 +290,21 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_012, TestSize.Level1)
     vector<int32_t> appsUid;
     int32_t ret = primarySource_->UpdateAppsUid(appsUid);
     EXPECT_EQ(ret, SUCCESS);
+    DeInitPrimarySource();
+}
+
+/**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : PrimarySourceUnitTest_013
+ * @tc.desc   : Test primary source IsCaptureInvalid
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_013, TestSize.Level1)
+{
+    InitPrimarySource();
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    EXPECT_TRUE(primarySource_->IsCaptureInvalid());
+    primarySource_->DeInit();
+    EXPECT_FALSE(primarySource_->IsCaptureInvalid());
     DeInitPrimarySource();
 }
 

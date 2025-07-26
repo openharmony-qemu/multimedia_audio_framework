@@ -295,6 +295,9 @@ public:
     void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
+    void HandleDistributedDeviceVolume();
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -397,6 +400,7 @@ private:
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
+    bool IsDistributedVolumeType(AudioStreamType streamType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -469,6 +473,7 @@ private:
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
     bool isDpReConnect_ = false;
+    sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

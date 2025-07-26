@@ -390,8 +390,7 @@ int32_t OffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t OffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -523,6 +522,11 @@ int32_t OffloadAudioRenderSink::UnLockOffloadRunningLock(void)
 void OffloadAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: OffloadSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void OffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t OffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)

@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include "securec.h"
 
 #include <pulse/rtclock.h>
@@ -66,6 +67,7 @@
 #define SCENE_TYPE_NUM 7
 #define PA_ERR (-1)
 #define MAX_PARTS 10
+#define EPSILON (1e-6f)
 
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
@@ -479,7 +481,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         }
         pa_memblock_release(pchunk->memblock);
     }
-    if (volumeBeg != volumeEnd) {
+    if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             sessionID, volumeBeg, volumeEnd);
         SetPreVolume(sessionID, volumeEnd);

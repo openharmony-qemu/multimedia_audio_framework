@@ -25,7 +25,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "audio_effect_map.h"
 #include "audio_utils.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

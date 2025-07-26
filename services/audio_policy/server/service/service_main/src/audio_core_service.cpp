@@ -399,8 +399,7 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
 void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId)
 {
     CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
-    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()),
-        "current output device is same as new device");
+    CHECK_AND_RETURN_LOG(!IsSameDevice(desc, audioActiveDevice_.GetCurrentOutputDevice()), "same device");
     audioActiveDevice_.SetCurrentOutputDevice(*(desc));
     std::string sinkName = AudioPolicyUtils::GetInstance().GetSinkName(desc, sessionId);
     if (audioDeviceManager_.IsDeviceConnected(desc)) {
@@ -458,6 +457,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
             streamDesc->newDeviceDescs_[0]->deviceName_, streamDesc->newDeviceDescs_[0]->networkId_);
         streamCollector_.UpdateCapturerDeviceInfo(streamDesc->newDeviceDescs_.front());
     }
+    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
     return SUCCESS;
 }
@@ -500,10 +500,10 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
-    FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
-
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
+    FetchDeviceAndRoute("SetAudioScene", AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
     if (!isSameScene) {
         OnAudioSceneChange(audioScene);
     }
@@ -1323,6 +1323,24 @@ void AudioCoreService::ClearStreamPropInfo(const std::string &adapterName, const
 uint32_t AudioCoreService::GetStreamPropInfoSize(const std::string &adapterName, const std::string &pipeName)
 {
     return policyConfigMananger_.GetStreamPropInfoSize(adapterName, pipeName);
+}
+
+int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = pipeManager_->GetStreamDescById(sessionId);
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "streamDesc is null");
+    if (streamDesc->audioMode_ != AUDIO_MODE_RECORD) {
+        return ERR_NOT_SUPPORTED;
+    }
+ 
+    auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
+    WriteCapturerConcurrentMsg(streamDesc, dfxResult);
+    if (dfxResult->existingAppName.size() < CONCURRENT_CAPTURE_DFX_THRESHOLD) {
+        return ERR_INVALID_HANDLE;
+    }
+    LogCapturerConcurrentResult(dfxResult);
+    WriteCapturerConcurrentEvent(dfxResult);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS

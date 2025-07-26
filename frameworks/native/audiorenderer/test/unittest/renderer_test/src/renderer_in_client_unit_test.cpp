@@ -20,6 +20,7 @@
 #include "renderer_in_client_private.h"
 #include "i_stream_listener.h"
 #include "meta/audio_types.h"
+#include "oh_audio_buffer.h"
 
 
 using namespace testing::ext;
@@ -2195,6 +2196,56 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_087, TestSize.Level1
     ptrRendererInClientInner->callbackLoopTid_ = -1;
     int32_t ret = ptrRendererInClientInner->GetCallbackLoopTid();
     EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_088
+ * @tc.desc  : Test RendererInClientInner::CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_088, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // totalsize is 100
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    // enginesizeinframe 2
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    // Readable == enginesizeinframe
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(2);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_089
+ * @tc.desc  : Test RendererInClientInner::CheckBufferNeedWrite
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // totalsize is 100
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    // enginesizeinframe 2
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+
+    // Readable > enginesizeinframe
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(3);
+    bool ret = ptrRendererInClientInner->CheckBufferNeedWrite();
+
+    EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
 } // namespace OHOS

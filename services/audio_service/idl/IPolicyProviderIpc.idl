@@ -36,4 +36,5 @@ interface IPolicyProviderIpc {
     void LoadModernInnerCapSink([in] int innerCapId);
     void UnloadModernInnerCapSink([in] int innerCapId);
     void ClearAudioFocusBySessionID([in] int sessionID);
+    [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }

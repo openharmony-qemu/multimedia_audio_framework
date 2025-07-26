@@ -21,6 +21,8 @@
 #include <variant>
 
 #include "system_ability.h"
+#include "app_mgr_client.h"
+#include "hisysevent.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_utils.h"
 #include "iservice_registry.h"
@@ -30,6 +32,7 @@
 #include "audio_collaborative_service.h"
 #include "audio_stream_id_allocator.h"
 #include "ipc_skeleton.h"
+#include "audio_bundle_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1062,7 +1065,7 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
-    if (policyConfigMananger_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
+    if (policyConfigMananger_.GetUpdateRouteSupport()) {
         UpdateOutputRoute(streamDesc);
     }
 
@@ -2125,8 +2128,6 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
         }
     }
 
-    AUDIO_INFO_LOG("isRingDualToneOnPrimarySpeaker: %{public}d , usage: %{public}d",
-        isRingDualToneOnPrimarySpeaker_, streamUsage);
     if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
         CHECK_AND_RETURN_LOG(!streamCollector_.IsStreamActive(AudioVolumeType::STREAM_RING),
@@ -2636,6 +2637,136 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
     }
 
     return SUCCESS;
+}
+
+static AppExecFwk::AppProcessState GetAppState(int32_t appPid)
+{
+    OHOS::AppExecFwk::AppMgrClient appManager;
+    OHOS::AppExecFwk::RunningProcessInfo infos;
+    int32_t res = appManager.GetRunningProcessInfoByPid(appPid, infos);
+    if (res != ERR_OK) {
+        AUDIO_WARNING_LOG("GetRunningProcessInfoByPid failed, appPid=%{public}d", appPid);
+    }
+    return infos.state_;
+}
+ 
+static uint32_t GetTimeCostFrom(int64_t timeNS)
+{
+    return static_cast<uint32_t>((ClockTime::GetCurNano() - timeNS) / AUDIO_NS_PER_SECOND);
+}
+ 
+static void GetHdiInfo(uint8_t &hdiSourceType, std::string &hdiSourceAlg)
+{
+    std::string hdiInfoStr = AudioServerProxy::GetInstance().GetAudioParameterProxy("concurrent_capture_stream_info");
+    AUDIO_INFO_LOG("hdiInfo = %{public}s", hdiInfoStr.c_str());
+ 
+    std::vector<std::string> hdiSegments;
+    std::istringstream infoStream(hdiInfoStr);
+    std::string segment;
+    while (std::getline(infoStream, segment, '#')) {
+        if (!segment.empty()) {
+            hdiSegments.push_back(segment);
+        }
+    }
+ 
+    if (hdiSegments.size() != CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS) {
+        hdiSourceType = 0;
+        hdiSourceAlg.clear();
+        return;
+    }
+ 
+    int sourceTypeInt = std::atoi(hdiSegments[0].c_str());
+    if (sourceTypeInt == 0 && hdiSegments[0] != "0") {
+        AUDIO_ERR_LOG("Failed to convert hdiSegments[0] to uint8_t");
+        hdiSourceType = 0;
+        hdiSourceAlg.clear();
+        return;
+    }
+ 
+    hdiSourceType = static_cast<uint8_t>(sourceTypeInt);
+    hdiSourceAlg = hdiSegments[1];
+}
+ 
+void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
+{
+    CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    std::vector<std::string> existingAppName{};
+    std::vector<uint8_t> existingAppState{};
+    std::vector<uint8_t> existingSourceType{};
+    std::vector<uint8_t> existingCaptureState{};
+    std::vector<uint32_t> existingCreateDuration{};
+    std::vector<uint32_t> existingStartDuration{};
+    std::vector<bool> existingFastFlag{};
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
+    for (auto &pipeInfo : pipeInfoList) {
+        for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
+            if (streamDescInPipe->audioMode_ != streamDesc->audioMode_) {
+                continue;
+            }
+            if (existingAppName.size() >= CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX) {
+                break;
+            }
+            int32_t uid = streamDescInPipe->appInfo_.appUid;
+            std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+            existingAppName.push_back(bundleName);
+            existingAppState.push_back(static_cast<uint8_t>(GetAppState(streamDescInPipe->appInfo_.appPid)));
+            existingSourceType.push_back(static_cast<uint8_t>(streamDescInPipe->capturerInfo_.sourceType));
+            existingCaptureState.push_back(static_cast<uint8_t>(streamDescInPipe->streamStatus_));
+            existingCreateDuration.push_back(GetTimeCostFrom(streamDescInPipe->createTimeStamp_));
+            existingStartDuration.push_back(GetTimeCostFrom(streamDescInPipe->startTimeStamp_));
+            existingFastFlag.push_back(static_cast<bool>(streamDescInPipe->routeFlag_ & AUDIO_INPUT_FLAG_FAST));
+        }
+    }
+    result->existingAppName = std::move(existingAppName);
+    result->existingAppState = std::move(existingAppState);
+    result->existingSourceType = std::move(existingSourceType);
+    result->existingCaptureState = std::move(existingCaptureState);
+    result->existingCreateDuration = std::move(existingCreateDuration);
+    result->existingStartDuration = std::move(existingStartDuration);
+    result->existingFastFlag = std::move(existingFastFlag);
+    GetHdiInfo(result->hdiSourceType, result->hdiSourceAlg);
+    result->deviceType = streamDesc->newDeviceDescs_[0]->deviceType_;
+}
+ 
+void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
+{
+    CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    size_t count = result->existingAppName.size();
+    for (size_t i = 0; i < count; ++i) {
+        AUDIO_INFO_LOG("------------------APP%{public}zu begin---------------------", i);
+        AUDIO_INFO_LOG("AppName:          %{public}s", result->existingAppName[i].c_str());
+        AUDIO_INFO_LOG("AppState:         %{public}d", result->existingAppState[i]);
+        AUDIO_INFO_LOG("SourceType:       %{public}d", result->existingSourceType[i]);
+        AUDIO_INFO_LOG("CaptureState:     %{public}d", result->existingCaptureState[i]);
+        AUDIO_INFO_LOG("CreateDuration: 0x%{public}u", result->existingCreateDuration[i]);
+        AUDIO_INFO_LOG("StartDuration:  0x%{public}u", result->existingStartDuration[i]);
+        AUDIO_INFO_LOG("FastFlag:         %{public}d", static_cast<uint32_t>(result->existingFastFlag[i]));
+        AUDIO_INFO_LOG("hdiSourceType:    %{public}d", result->hdiSourceType);
+        AUDIO_INFO_LOG("hdiSourceAlg:     %{public}s", result->hdiSourceAlg.c_str());
+        AUDIO_INFO_LOG("deviceType:       %{public}d", result->deviceType);
+        AUDIO_INFO_LOG("------------------APP%{public}zu end-----------------------", i);
+    }
+}
+ 
+void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
+{
+    CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    auto ret = HiSysEventWrite(HiviewDFX::HiSysEvent::Domain::AUDIO, "CONCURRENT_CAPTURE",
+        HiviewDFX::HiSysEvent::EventType::STATISTIC,
+        "EXISTING_APP_NAME", result->existingAppName,
+        "EXISTING_APP_STATE", result->existingAppState,
+        "EXISTING_SOURCE_TYPE", result->existingSourceType,
+        "EXISTING_CAPTURE_STATE", result->existingCaptureState,
+        "EXISTING_CREATE_DURATION", result->existingCreateDuration,
+        "EXISTING_START_DURATION", result->existingStartDuration,
+        "EXISTING_FAST_FLAG", result->existingFastFlag,
+        "HDI_SOURCE_TYPE", result->hdiSourceType,
+        "HDI_SOURCE_ALG", result->hdiSourceAlg,
+        "DEVICE_TYPE", result->deviceType);
+    if (ret) {
+        AUDIO_ERR_LOG("Write event fail: CONCURRENT_CAPTURE, ret = %{public}d", ret);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

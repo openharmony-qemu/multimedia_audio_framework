@@ -482,31 +482,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     bool scoExcludeFlag = false;
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        NO_A2DP_DEVICE, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
     EXPECT_NE(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE
-/**
- * @tc.name  : Test SetAudioScene API
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetAudioScene_002
- * @tc.desc  : Test SetAudioScene interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    bool scoExcludeFlag = false;
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_ACCESSORY,
-        NO_A2DP_DEVICE, scoExcludeFlag);
-    EXPECT_EQ(SUCCESS, ret);
-}
 
 /**
  * @tc.name  : Test SetForegroundList API
@@ -542,15 +522,13 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     std::vector<int32_t> activeOutputDevices;
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
 
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
         A2DP_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD, scoExcludeFlag);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
@@ -2516,6 +2494,22 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     std::unordered_map<int32_t, int32_t> threads = {};
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
     EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test SetRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetRenderWhitelist_001
+ * @tc.desc  : Test SetRenderWhitelist interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::string> list;
+    list.push_back("com.test");
+    int32_t ret = audioServer->SetRenderWhitelist(list);
+    EXPECT_EQ(SUCCESS, ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

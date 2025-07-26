@@ -137,7 +137,6 @@ void AudioInterruptService::AudioInterruptClient::SetCallingUid(uint32_t uid)
 
 uint32_t AudioInterruptService::AudioInterruptClient::GetCallingUid()
 {
-    AUDIO_INFO_LOG("callingUid_: %{public}u", callingUid_);
     return callingUid_;
 }
 

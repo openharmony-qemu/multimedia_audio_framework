@@ -252,6 +252,8 @@ public:
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object) override;
 
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) override;
+
     int32_t SetAudioClientInfoMgrCallback(const sptr<IRemoteObject> &object) override;
 
     int32_t SetAudioVKBInfoMgrCallback(const sptr<IRemoteObject> &object) override;
@@ -517,7 +519,8 @@ public:
     int32_t SetPreferredDevice(int32_t preferredType,
         const std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t uid) override;
 
-    int32_t SaveRemoteInfo(const std::string &networkId, int32_t deviceType) override;
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, int32_t deviceType,
+        const VolumeBehavior &volumeBehavior) override;
 
     int32_t SetAudioDeviceAnahsCallback(const sptr<IRemoteObject> &object) override;
 
@@ -851,6 +854,7 @@ private:
 
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_;
     bool volumeApplyToAll_ = false;
+    bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
 
     bool isHighResolutionExist_ = false;

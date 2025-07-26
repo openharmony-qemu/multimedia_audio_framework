@@ -550,5 +550,191 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_024, TestSize.
     audioSession->audioSessionScene_ = AudioSessionScene::MEDIA;
     EXPECT_NO_THROW(sessionService->NotifyAppStateChange(pid, true));
 }
+
+/*
+* @tc.name  : Test RemoveStreamInfo
+* @tc.number: RemoveStreamInfoTest
+* @tc.desc  : Test RemoveStreamInfo
+*/
+HWTEST_F(AudioSessionServiceUnitTest, RemoveStreamInfoTest, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = 0;
+    audioInterrupt.isAudioSessionInterrupt = true;
+    audioInterrupt.streamId = 0;
+    sessionService->RemoveStreamInfo(audioInterrupt);
+
+    audioInterrupt.isAudioSessionInterrupt = false;
+    sessionService->RemoveStreamInfo(audioInterrupt);
+
+    audioInterrupt.pid = fakePid;
+    sessionService->RemoveStreamInfo(audioInterrupt);
+}
+
+/**
+* @tc.name  : Test ClearStreamInfo
+* @tc.number: ClearStreamInfoTest
+* @tc.desc  : Test ClearStreamInfo
+*/
+HWTEST_F(AudioSessionServiceUnitTest, ClearStreamInfoTest, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    sessionService->ClearStreamInfo(0);
+
+    sessionService->sessionMap_[0] = nullptr;
+    sessionService->ClearStreamInfo(0);
+
+    sessionService->ClearStreamInfo(fakePid);
+}
+
+/**
+* @tc.name  : Test SetSessionDefaultOutputDevice
+* @tc.number: SetSessionDefaultOutputDeviceTest
+* @tc.desc  : Test SetSessionDefaultOutputDevice
+*/
+HWTEST_F(AudioSessionServiceUnitTest, SetSessionDefaultOutputDeviceTest, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_EQ(sessionService->SetSessionDefaultOutputDevice(0, DEVICE_TYPE_INVALID), ERROR_INVALID_PARAM);
+
+    sessionService->sessionMap_[1] = nullptr;
+    EXPECT_EQ(sessionService->SetSessionDefaultOutputDevice(1, DEVICE_TYPE_INVALID), ERROR_INVALID_PARAM);
+
+    EXPECT_EQ(sessionService->SetSessionDefaultOutputDevice(fakePid, DEVICE_TYPE_INVALID), ERROR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test GetSessionDefaultOutputDevice
+* @tc.number: GetSessionDefaultOutputDeviceTest
+* @tc.desc  : Test GetSessionDefaultOutputDevice
+*/
+HWTEST_F(AudioSessionServiceUnitTest, GetSessionDefaultOutputDeviceTest, TestSize.Level1)
+{
+    int32_t fakePid = 100;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_EQ(sessionService->GetSessionDefaultOutputDevice(0), DEVICE_TYPE_INVALID);
+
+    sessionService->sessionMap_[1] = nullptr;
+    EXPECT_EQ(sessionService->GetSessionDefaultOutputDevice(1), DEVICE_TYPE_INVALID);
+
+    EXPECT_EQ(sessionService->GetSessionDefaultOutputDevice(fakePid), DEVICE_TYPE_INVALID);
+}
+
+/**
+* @tc.name  : Test IsStreamAllowedToSetDevice
+* @tc.number: IsStreamAllowedToSetDeviceTest
+* @tc.desc  : Test IsStreamAllowedToSetDevice
+*/
+HWTEST_F(AudioSessionServiceUnitTest, IsStreamAllowedToSetDeviceTest, TestSize.Level1)
+{
+    int32_t fakePid = 100;
+    int32_t fakeSessionId = 100;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_TRUE(sessionService->IsStreamAllowedToSetDevice(0));
+
+    sessionService->sessionMap_[1] = nullptr;
+    EXPECT_TRUE(sessionService->IsStreamAllowedToSetDevice(1));
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = fakeSessionId;
+    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    EXPECT_TRUE(sessionService->IsStreamAllowedToSetDevice(fakeSessionId));
+
+    sessionService->sessionMap_[fakePid]->state_ = AudioSessionState::SESSION_ACTIVE;
+    EXPECT_TRUE(sessionService->IsStreamAllowedToSetDevice(fakeSessionId));
+}
+
+/**
+* @tc.name  : Test IsSessionNeedToFetchOutputDevice
+* @tc.number: IsSessionNeedToFetchOutputDeviceTest
+* @tc.desc  : Test IsSessionNeedToFetchOutputDevice
+*/
+HWTEST_F(AudioSessionServiceUnitTest, IsSessionNeedToFetchOutputDeviceTest, TestSize.Level1)
+{
+    int32_t fakePid = 100;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    EXPECT_FALSE(sessionService->IsSessionNeedToFetchOutputDevice(0));
+
+    sessionService->sessionMap_[1] = nullptr;
+    EXPECT_FALSE(sessionService->IsSessionNeedToFetchOutputDevice(1));
+
+    EXPECT_FALSE(sessionService->IsSessionNeedToFetchOutputDevice(fakePid));
+}
+
+/**
+* @tc.name  : Test NotifyAppStateChange
+* @tc.number: NotifyAppStateChangeTest
+* @tc.desc  : Test NotifyAppStateChange
+*/
+HWTEST_F(AudioSessionServiceUnitTest, NotifyAppStateChangeTest, TestSize.Level1)
+{
+    int32_t fakePid = 100;
+    int32_t fakeSessionId = 100;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    sessionService->sessionMap_.clear();
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+
+    sessionService->NotifyAppStateChange(0, true);
+
+    sessionService->sessionMap_[1] = nullptr;
+    sessionService->NotifyAppStateChange(1, true);
+
+    sessionService->NotifyAppStateChange(fakePid, false);
+
+    sessionService->sessionMap_[fakePid]->audioSessionScene_ = AudioSessionScene::MEDIA;
+    sessionService->NotifyAppStateChange(fakePid, false);
+
+    sessionService->sessionMap_[fakePid]->audioSessionScene_ = AudioSessionScene::INVALID;
+    sessionService->NotifyAppStateChange(fakePid, true);
+
+    sessionService->sessionMap_[fakePid]->state_ = AudioSessionState::SESSION_ACTIVE;
+    sessionService->NotifyAppStateChange(fakePid, true);
+
+    sessionService->sessionMap_[fakePid]->audioSessionScene_ = AudioSessionScene::MEDIA;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamId = fakeSessionId;
+    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    sessionService->NotifyAppStateChange(fakeSessionId, false);
+
+    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.clear();
+    sessionService->NotifyAppStateChange(fakeSessionId, false);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

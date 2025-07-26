@@ -285,6 +285,8 @@ private:
 
     void FlushSpeedBuffer();
 
+    bool CheckBufferNeedWrite();
+
     bool CheckStopFlushUid();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;

@@ -66,8 +66,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -83,6 +82,8 @@ public:
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
+
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -104,6 +105,7 @@ private:
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
     bool IsValidState(void);
+    bool IsSinkInited(void) override;
 
     // low latency
     int32_t PrepareMmapBuffer(void);

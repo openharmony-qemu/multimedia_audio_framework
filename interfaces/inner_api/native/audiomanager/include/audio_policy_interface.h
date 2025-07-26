@@ -169,6 +169,12 @@ public:
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
 };
 
+class AudioQueryDeviceVolumeBehaviorCallback {
+public:
+    virtual ~AudioQueryDeviceVolumeBehaviorCallback() = default;
+    virtual VolumeBehavior OnQueryDeviceVolumeBehavior() = 0;
+};
+
 class VolumeKeyEventCallback {
 public:
     virtual ~VolumeKeyEventCallback() = default;

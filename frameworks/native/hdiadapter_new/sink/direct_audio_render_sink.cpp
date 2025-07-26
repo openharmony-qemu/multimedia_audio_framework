@@ -297,8 +297,7 @@ int32_t DirectAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t DirectAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -379,6 +378,11 @@ int32_t DirectAudioRenderSink::RegistDirectHdiCallback(std::function<void(const 
 void DirectAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: directSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void DirectAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 int32_t DirectAudioRenderSink::DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type,

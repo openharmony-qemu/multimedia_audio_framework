@@ -23,8 +23,6 @@ namespace AudioStandard {
 using namespace std;
 
 #ifdef FEATURE_DEVICE_MANAGER
-constexpr size_t HEAD_LEN = 2;
-constexpr size_t TAIL_LEN = 2;
 
 static string GetExtraDataField(const string &src, const string &field)
 {
@@ -63,12 +61,6 @@ static DmDevice ParseDmDevice(const DistributedHardware::DmDeviceInfo &dmDeviceI
         dmDeviceInfo.networkId,
         DistributedHardware::DEVICE_TYPE_CAR,
     };
-}
-
-static string Hide(const string &str)
-{
-    CHECK_AND_RETURN_RET(str.length() >= HEAD_LEN + TAIL_LEN, "");
-    return str.substr(0, HEAD_LEN) + "**" + str.substr(str.length() - TAIL_LEN);
 }
 
 DeviceStatusCallbackImpl::DeviceStatusCallbackImpl()

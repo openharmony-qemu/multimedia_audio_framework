@@ -102,7 +102,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     const std::unordered_map<AudioEffectScene, std::string> &audioSupportedSceneTypes = GetSupportedSceneType();
     streamInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(GetKeyFromValue(
         audioSupportedSceneTypes, processConfig_.rendererInfo.sceneType));
-    streamInfo.effectInfo.volumeType = STREAM_MUSIC;
+    streamInfo.effectInfo.systemVolumeType = VolumeUtils::GetVolumeTypeFromStreamType(processConfig_.streamType);
     streamInfo.effectInfo.streamUsage = processConfig_.rendererInfo.streamUsage;
     streamInfo.sourceType = processConfig_.isInnerCapturer == true ? SOURCE_TYPE_PLAYBACK_CAPTURE : SOURCE_TYPE_INVALID;
     streamInfo.deviceName = deviceName;

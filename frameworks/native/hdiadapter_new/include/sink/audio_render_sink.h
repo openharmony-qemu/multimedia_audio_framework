@@ -65,8 +65,7 @@ public:
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
     int32_t SetDeviceConnectedFlag(bool flag) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -84,6 +83,8 @@ public:
     void DumpInfo(std::string &dumpString) override;
     // for a2dp_offload connection state
     int32_t UpdatePrimaryConnectionState(uint32_t operation) override;
+
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
@@ -184,6 +185,7 @@ private:
     bool forceSetRouteFlag_ = false;
     int32_t paStatus_ = 1;
     std::string address_ = "";
+    std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
     AdapterType sinkType_ = ADAPTER_TYPE_PRIMARY;
     std::mutex sinkMutex_;
     // for setdeviceconnect flag

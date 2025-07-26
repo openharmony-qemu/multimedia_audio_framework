@@ -492,6 +492,11 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
+{
+    return audioPolicyManager_.SetQueryDeviceVolumeBehaviorCallback(object);
+}
+
 static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
     bool hasSystemPermission)
 {
@@ -1209,6 +1214,11 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
 int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
+}
+
+int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
+{
+    return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

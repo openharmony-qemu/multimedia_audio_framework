@@ -36,7 +36,7 @@ enum HpaeNodeType {
 
 struct HpaeEffectInfo {
     StreamUsage streamUsage = STREAM_USAGE_INVALID;
-    AudioVolumeType volumeType = STREAM_DEFAULT;
+    AudioVolumeType systemVolumeType = STREAM_MUSIC;
     AudioEffectScene effectScene = SCENE_OTHERS;
     AudioEffectMode effectMode = EFFECT_NONE;
     AudioEnhanceScene enhanceScene = SCENE_NONE;
@@ -93,7 +93,7 @@ struct HpaeStreamInfo {
     SourceType sourceType;
     int32_t uid = -1;
     int32_t pid = 0;
-    int32_t tokenId = 0;
+    uint32_t tokenId = 0;
     HpaeEffectInfo effectInfo;
     std::string deviceName;
     bool isMoveAble = true;

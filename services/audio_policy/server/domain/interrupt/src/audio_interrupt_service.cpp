@@ -1602,7 +1602,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     if (!audioFocusInfoList.empty() && (itZone->second != nullptr)) {
         // If the session is present in audioFocusInfoList and the placeholder's stream type is not VoIP communication,
         // and the incoming stream type is not Capturer, remove and treat it as a new request
-        AUDIO_DEBUG_LOG("audioFocusInfoList is not empty, check if the session meets the removal criteria");
+        AUDIO_DEBUG_LOG("audioFocusInfoList is not empty");
         audioFocusInfoList.remove_if(
             [&audioInterrupt, this](const std::pair<AudioInterrupt, AudioFocuState> &audioFocus) {
             return AudioFocusInfoListRemovalCondition(audioInterrupt, audioFocus);
@@ -1620,7 +1620,7 @@ void AudioInterruptService::ProcessAudioScene(const AudioInterrupt &audioInterru
     if (audioFocusInfoList.empty()) {
         InterruptDfxBuilder dfxBuilder;
         WriteStartDfxMsg(dfxBuilder, audioInterrupt);
-        AUDIO_INFO_LOG("audioFocusInfoList is empty, add the session into it directly");
+        AUDIO_INFO_LOG("audioFocusInfoList is empty");
         if (itZone->second != nullptr) {
             itZone->second->audioFocusInfoList.emplace_back(std::make_pair(audioInterrupt, ACTIVE));
             zonesMap_[zoneId] = itZone->second;
@@ -2168,9 +2168,10 @@ void AudioInterruptService::UpdateAudioSceneFromInterrupt(const AudioScene audio
     int32_t scene = AUDIO_SCENE_INVALID;
     policyServer_->GetAudioScene(scene);
     AudioScene currentAudioScene = static_cast<AudioScene>(scene);
-
-    AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
-        currentAudioScene, audioScene, changeType);
+    if (currentAudioScene != audioScene) {
+        AUDIO_PRERELEASE_LOGI("currentScene: %{public}d, targetScene: %{public}d, changeType: %{public}d",
+            currentAudioScene, audioScene, changeType);
+    }
 
     switch (changeType) {
         case ACTIVATE_AUDIO_INTERRUPT:
@@ -2211,7 +2212,7 @@ bool AudioInterruptService::EvaluateWhetherContinue(const AudioInterrupt &incomi
 
 std::list<std::pair<AudioInterrupt, AudioFocuState>> AudioInterruptService::SimulateFocusEntry(const int32_t zoneId)
 {
-    AUDIO_INFO_LOG("Simulate a new focus list to check whether any streams need to be restored");
+    AUDIO_INFO_LOG("Simulate in");
     std::list<std::pair<AudioInterrupt, AudioFocuState>> newAudioFocuInfoList;
     auto itZone = zonesMap_.find(zoneId);
     std::list<std::pair<AudioInterrupt, AudioFocuState>> audioFocusInfoList {};
@@ -2483,10 +2484,10 @@ void AudioInterruptService::SendActiveVolumeTypeChangeEvent(const int32_t zoneId
     const uint32_t DEFAUFT_UID = 0;
     AudioStreamType streamInFocus = GetStreamInFocusInternal(DEFAUFT_UID, zoneId);
     streamInFocus = VolumeUtils::GetVolumeTypeFromStreamType(streamInFocus);
-    AUDIO_INFO_LOG("activeStreamType_: %{public}d, streamInFocus: %{public}d",
-        activeStreamType_, streamInFocus);
-
     if (activeStreamType_ != streamInFocus) {
+        AUDIO_INFO_LOG("activeStreamType_: %{public}d, streamInFocus: %{public}d",
+            activeStreamType_, streamInFocus);
+
         activeStreamType_ = streamInFocus;
         handler_->SendActiveVolumeTypeChangeCallback(activeStreamType_);
     }

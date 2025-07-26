@@ -1831,7 +1831,9 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_063, TestSize.Level1)
     ASSERT_TRUE(server != nullptr);
 
     std::string networkId = "test";
-    server->SaveRemoteInfo(networkId, DeviceType::DEVICE_TYPE_EARPIECE);
+    VolumeBehavior volumeBehavior;
+    int32_t result = server->SetDeviceVolumeBehavior(networkId, DeviceType::DEVICE_TYPE_EARPIECE, volumeBehavior);
+    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -3504,6 +3506,60 @@ HWTEST(AudioPolicyUnitTest, GetStreamUsagesByVolumeType_001, TestSize.Level1)
 
     int32_t ret = server->GetStreamUsagesByVolumeType(volType, streamUsages);
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer
+ * @tc.number: SetQueryDeviceVolumeBehaviorCallback_001
+ * @tc.desc  : AudioPolicyServer::SetQueryDeviceVolumeBehaviorCallback
+ */
+HWTEST(AudioPolicyUnitTest, SetQueryDeviceVolumeBehaviorCallback_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    sptr<IRemoteObject> object = nullptr;
+
+    int32_t ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+
+    object = new RemoteObjectTestStub();
+
+    ret = server->SetQueryDeviceVolumeBehaviorCallback(object);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: SetDeviceVolumeBehavior_001
+* @tc.desc  : Test SetDeviceVolumeBehavior.
+*/
+HWTEST(AudioPolicyUnitTest, SetDeviceVolumeBehavior_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string networkId = "test";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    VolumeBehavior volumeBehavior;
+    int32_t result = server->audioDeviceManager_.SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioDeviceManager.
+* @tc.number: GetDeviceVolumeBehavior_001
+* @tc.desc  : Test GetDeviceVolumeBehavior.
+*/
+HWTEST(AudioPolicyUnitTest, GetDeviceVolumeBehavior_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerUnitTest();
+    ASSERT_TRUE(server != nullptr);
+
+    std::string networkId = "test";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    VolumeBehavior volumeBehavior = server->audioDeviceManager_.GetDeviceVolumeBehavior(networkId, deviceType);
+    EXPECT_EQ(volumeBehavior.isReady, false);
 }
 } // AudioStandard
 } // OHOS

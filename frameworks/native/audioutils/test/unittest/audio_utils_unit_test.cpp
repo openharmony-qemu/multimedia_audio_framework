@@ -1317,6 +1317,22 @@ HWTEST(AudioUtilsUnitTest, GetEncryptStr_002, TestSize.Level0)
     EXPECT_EQ(dst, "*bcdef");
 }
 
+/**
+* @tc.name  : Test Hide API
+* @tc.type  : FUNC
+* @tc.number: Hide_001
+* @tc.desc  : Test Hide API
+*/
+HWTEST(AudioUtilsUnitTest, Hide_001, TestSize.Level0)
+{
+    string str{"12345"};
+    EXPECT_EQ(Hide(str), "*");
+    str = "123456";
+    EXPECT_EQ(Hide(str), "123*456");
+    str = "13682363247";
+    EXPECT_EQ(Hide(str), "136*247");
+}
+
 class DemoThreadData {
 public:
     DemoThreadData()

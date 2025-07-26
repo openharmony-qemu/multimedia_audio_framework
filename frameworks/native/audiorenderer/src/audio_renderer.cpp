@@ -713,7 +713,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
@@ -2014,7 +2014,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
     audioStream->SetRenderMode(info.renderMode);
-    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    callbackLoopTid_ = audioStream->GetCallbackLoopTid();
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
     audioStream->SetUnderflowCount(info.underFlowCount);
@@ -2348,7 +2348,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwit
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());

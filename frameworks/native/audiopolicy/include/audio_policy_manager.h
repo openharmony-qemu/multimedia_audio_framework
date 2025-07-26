@@ -606,7 +606,10 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
 
     int32_t SetVirtualCall(const bool isVirtual);
 
