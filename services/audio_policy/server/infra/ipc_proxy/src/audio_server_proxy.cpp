@@ -78,8 +78,10 @@ int64_t AudioServerProxy::GetVolumeDataCount(std::string sinkName)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     int64_t volumeDataCount = 0;
     gsp->GetVolumeDataCount(sinkName, volumeDataCount);
+    IPCSkeleton::SetCallingIdentity(identity);
     return volumeDataCount;
 }
 
