@@ -73,7 +73,7 @@ static const int32_t DATA_CONNECTION_TIMEOUT_IN_MS = 1000; // ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
 constexpr uint32_t SONIC_LATENCY_IN_MS = 20; // cache in sonic
-const std::vector<uid_t> FLUSH_AFTER_STOP_UIDS = {1013}; // MEDIA_SERVICE_UID
+const std::vector<int32_t> STOP_FLUSH_UIDS = {1013}; // MEDIA_SERVICE_UID
 } // namespace
 std::shared_ptr<RendererInClient> RendererInClient::GetInstance(AudioStreamType eStreamType, int32_t appUid)
 {
@@ -1235,7 +1235,8 @@ bool RendererInClientInner::FlushAudioStream()
     waitLock.unlock();
     ResetFramePosition();
 
-    if (state_ == STOPPED || PermissionUtil::CheckCallingUidPermission(FLUSH_AFTER_STOP_UIDS)) {
+    if (state_ == STOPPED ||
+        std::find(STOP_FLUSH_UIDS.begin(), STOP_FLUSH_UIDS.end(), appUid_) != STOP_FLUSH_UIDS.end()) {
         flushAfterStop_ = true;
     }
     
