@@ -106,6 +106,7 @@ public:
     void SetInterruptEventCallbackType(InterruptEventCallbackType callbackType) override;
 
     void RestoreAudioInLoop(bool &restoreResult, int32_t &tryCounter);
+    void HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions, const AppInfo &appInfo);
 
     std::shared_ptr<IAudioStream> audioStream_;
     AudioCapturerInfo capturerInfo_ = {};
