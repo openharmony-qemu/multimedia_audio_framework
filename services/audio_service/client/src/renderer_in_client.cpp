@@ -359,7 +359,9 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
             result = WriteInner(bufferDesc.buffer, bufferDesc.bufLength);
             sleepCount_ = LOG_COUNT_LIMIT;
         } else {
-            if (sleepCount_++ == LOG_COUNT_LIMIT) {
+            int32_t readableSizeInFrames = clientBuffer_->GetReadableDataFrames();
+            bool flagTryPrintLog = ((readableSizeInFrames >= 0) && (readableSizeInFrames < spanSizeInFrame_));
+            if (flagTryPrintLog && (sleepCount_++ == LOG_COUNT_LIMIT)) {
                 sleepCount_ = 0;
                 AUDIO_WARNING_LOG("1st or 200 times INVALID buffer");
             }

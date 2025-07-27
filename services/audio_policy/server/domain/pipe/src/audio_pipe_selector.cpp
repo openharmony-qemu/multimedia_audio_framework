@@ -288,7 +288,6 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
 
 AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
 {
-    AUDIO_INFO_LOG("Route flag: %{public}u", flag);
     if (audioMode == AUDIO_MODE_PLAYBACK) {
         if (flag & AUDIO_OUTPUT_FLAG_FAST) {
             if (flag & AUDIO_OUTPUT_FLAG_VOIP) {
