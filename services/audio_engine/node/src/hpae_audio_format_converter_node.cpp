@@ -216,14 +216,6 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
     nodeInfo.samplingRate = (AudioSamplingRate)resampler_->GetOutRate();
     SetNodeInfo(nodeInfo);
-    // update PCM dumper
-#ifdef ENABLE_HOOK_PCM
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
-        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
-        + "_nodeId_" + std::to_string(GetNodeId()) +
-        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
-        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-#endif
     return true;
 }
 
@@ -327,6 +319,14 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
         if (auto callBack = GetNodeStatusCallback().lock()) {
             callBack->OnNotifyDfxNodeInfoChanged(GetNodeId(), GetNodeInfo());
         }
+#endif
+// update PCM dumper
+#ifdef ENABLE_HOOK_PCM
+    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+        + "_nodeId_" + std::to_string(GetNodeId()) +
+        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
     }
 }
