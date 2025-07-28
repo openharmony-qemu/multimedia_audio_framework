@@ -503,6 +503,16 @@ public:
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
     }
 
+    bool IsUnknown() const
+    {
+        return reason_ == ExtEnum::UNKNOWN;
+    }
+
+    bool IsDistributedDeviceUnavailable() const
+    {
+        return reason_ == ExtEnum::DISTRIBUTED_DEVICE;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(reason_));
