@@ -31,11 +31,7 @@ constexpr uint32_t HISTORY_INTERVAL_S = 7;  // 7s buffer for rewind
 
 HpaeOffloadRendererManager::HpaeOffloadRendererManager(HpaeSinkInfo &sinkInfo)
     : hpaeNoLockQueue_(CURRENT_REQUEST_COUNT), sinkInfo_(sinkInfo)
-{
-    if (sinkInfo_.channelLayout == CH_LAYOUT_UNKNOWN) {
-        sinkInfo_.channelLayout = DownMixer::SetDefaultChannelLayout(sinkInfo_.channels);
-    }
-}
+{}
 
 HpaeOffloadRendererManager::~HpaeOffloadRendererManager()
 {
@@ -390,9 +386,6 @@ int32_t HpaeOffloadRendererManager::ReloadRenderManager(const HpaeSinkInfo &sink
             DisConnectInputSession();
         }
         sinkInfo_ = sinkInfo;
-        if (sinkInfo_.channelLayout == CH_LAYOUT_UNKNOWN) {
-            sinkInfo_.channelLayout = DownMixer::SetDefaultChannelLayout(sinkInfo_.channels);
-        }
         InitSinkInner(isReload);
 
         if (sinkOutputNode_ != nullptr && sinkOutputNode_->GetSinkState() == STREAM_MANAGER_RUNNING) {

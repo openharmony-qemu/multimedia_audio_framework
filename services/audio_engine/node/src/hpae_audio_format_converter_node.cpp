@@ -175,9 +175,9 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     uint32_t numChannels = basicFormat.audioChannelInfo.numChannels;
     AudioChannelLayout channelLayout = basicFormat.audioChannelInfo.channelLayout;
     AudioSamplingRate sampleRate = basicFormat.rate;
-    if (numChannels == 0 || channelLayout == CH_LAYOUT_UNKNOWN) {
+    if (numChannels == 0) {
         // set to node info, which is device output info
-        AUDIO_WARNING_LOG("Fail to check format info from effect node");
+        AUDIO_WARNING_LOG("Fail to check format info from down stream nodes");
         numChannels = GetChannelCount();
         channelLayout = GetChannelLayout();
         sampleRate = GetSampleRate();
