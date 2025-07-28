@@ -38,6 +38,7 @@ OH_AudioCommon_Result OH_AudioManager_GetAudioSessionManager(OH_AudioSessionMana
     OHAudioSessionManager* ohAudioSessionManager = OHAudioSessionManager::GetInstance();
     if (audioSessionManager == nullptr) {
         AUDIO_ERR_LOG("audioSessionManager is nullptr");
+        return AUDIOCOMMON_RESULT_SUCCESS;
     }
     *audioSessionManager = reinterpret_cast<OH_AudioSessionManager*>(ohAudioSessionManager);
     return AUDIOCOMMON_RESULT_SUCCESS;
