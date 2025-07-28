@@ -1525,6 +1525,7 @@ void AudioEndpointInner::GetAllReadyProcessDataSub(size_t i,
 
 void AudioEndpointInner::HandleMuteWriteData(BufferDesc &bufferDesc, int32_t index)
 {
+    CHECK_AND_RETURN_LOG(static_cast<size_t>(index + 1) <= processList_.size(), "invalid index");
     auto tempProcess = processList_[index];
     CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
     tempProcess->AddNormalFrameSize();
@@ -2238,6 +2239,7 @@ bool AudioEndpointInner::IsInvalidBuffer(uint8_t *buffer, size_t bufferSize, Aud
 
 void AudioEndpointInner::WriteMuteDataSysEvent(uint8_t *buffer, size_t bufferSize, int32_t index)
 {
+    CHECK_AND_RETURN_LOG(static_cast<size_t>(index + 1) <= processList_.size(), "invalid index");
     auto tempProcess = processList_[index];
     CHECK_AND_RETURN_LOG(tempProcess, "tempProcess is nullptr");
     if (IsInvalidBuffer(buffer, bufferSize, processList_[index]->GetStreamInfo().format)) {
