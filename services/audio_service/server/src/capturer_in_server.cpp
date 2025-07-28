@@ -208,6 +208,7 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
+    CaptureConcurrentCheck(streamIndex_);
 }
 
 void CapturerInServer::HandleOperationFlushed()
@@ -442,8 +443,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
-
-    CaptureConcurrentCheck(streamIndex_);
 
     return SUCCESS;
 }
@@ -914,10 +913,10 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
 
 inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
 {
-    if (captureConcurretChecked_) {
+    if (laststatus_ == status_) {
         return;
     }
-    captureConcurretChecked_ = 1;
+    std::atomic_store(&laststatus_, status_);
     int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
     AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d", ret);
 }

@@ -2698,6 +2698,7 @@ void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     std::vector<bool> existingFastFlag{};
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
     for (auto &pipeInfo : pipeInfoList) {
+        
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
             if (streamDescInPipe->audioMode_ != streamDesc->audioMode_) {
                 continue;

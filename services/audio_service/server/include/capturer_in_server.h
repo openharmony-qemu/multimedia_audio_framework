@@ -123,7 +123,7 @@ private:
     uint64_t lastPosInc_ = 0;
     std::shared_ptr<CapturerClock> capturerClock_ = nullptr;
 
-    bool captureConcurretChecked_ = 0;
+    std::atomic<IStatus> laststatus_ = I_STATUS_IDLE;
 };
 } // namespace AudioStandard
 } // namespace OHOS
