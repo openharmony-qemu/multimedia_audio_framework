@@ -254,50 +254,6 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_009, TestSize.Level1)
 /**
 * @tc.name  : Test SwitchStreamUtil API
 * @tc.type  : FUNC
-* @tc.number: SwitchStreamUtil_010
-* @tc.desc  : Test SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord().
-*/
-HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_010, TestSize.Level1)
-{
-    SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_PREPARED};
-    SwitchState targetState = SwitchState::SWITCH_STATE_CREATED;
-
-    SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
-
-    SwitchStreamInfo info2 = {0, 1, 0, 0, 0, CAPTURER_PREPARED};
-    SwitchState targetState2 = SwitchState::SWITCH_STATE_STARTED;
-
-    SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(info2, targetState2);
-
-    auto ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test SwitchStreamUtil API
-* @tc.type  : FUNC
-* @tc.number: SwitchStreamUtil_011
-* @tc.desc  : Test SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord().
-*/
-HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_011, TestSize.Level1)
-{
-    SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_RUNNING};
-    SwitchState targetState = SwitchState::SWITCH_STATE_CREATED;
-
-    SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
-
-    SwitchStreamInfo info2 = {0, 1, 0, 0, 0, CAPTURER_PREPARED};
-    SwitchState targetState2 = SwitchState::SWITCH_STATE_STARTED;
-
-    SwitchStreamUtil::TimeoutThreadHandleTimeoutRecord(info2, targetState2);
-
-    auto ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
-    EXPECT_EQ(ret, true);
-}
-
-/**
-* @tc.name  : Test SwitchStreamUtil API
-* @tc.type  : FUNC
 * @tc.number: SwitchStreamUtil_012
 * @tc.desc  : Test SwitchStreamUtil::RemoveSwitchStreamRecord().
 */
