@@ -861,6 +861,7 @@ void AudioCoreService::RemoveUnusedPipe()
         }
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+        audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
     }
 }
 
@@ -2187,6 +2188,7 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
         AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
         audioPolicyManager_.CloseAudioPort(id, paIndex);
         pipeManager_->RemoveAudioPipeInfo(id);
+        audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
     }
     return SUCCESS;
 }
