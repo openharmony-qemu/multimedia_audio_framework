@@ -226,7 +226,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     RouterType routerType = ROUTER_TYPE_NONE;
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
     if (zoneId != 0) {
-        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+        vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
+            AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+        CHECK_AND_RETURN_RET(zoneDescs.size() == 0, zoneDescs);
     }
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
