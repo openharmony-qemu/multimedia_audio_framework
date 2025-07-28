@@ -797,6 +797,24 @@ HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
     uint32_t testValue = 123;
     EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
 }
+
+/**
+* @tc.name  : Test SetSyncReadFrame API
+* @tc.type  : FUNC
+* @tc.number: SetSyncReadFrame
+* @tc.desc  : Test SetSyncReadFrame interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    uint32_t testValue = 123;
+    EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
+}
+
 /**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
