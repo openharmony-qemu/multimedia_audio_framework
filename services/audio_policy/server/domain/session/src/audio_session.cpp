@@ -266,7 +266,8 @@ bool AudioSession::IsLegalStreamUsage(const StreamUsage &streamUsage)
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
-    return (!(IsLegalStreamUsage(GetStreamUsageByAudioSessionScene(audioSessionScene_))) && IsLegalStreamUsage(interrupt.streamUsage));
+    return (!(IsLegalStreamUsage(GetStreamUsageByAudioSessionScene(audioSessionScene_))) &&
+        IsLegalStreamUsage(interrupt.streamUsage));
 }
 
 int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
