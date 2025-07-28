@@ -649,7 +649,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
     }
     audioSpeed_->SetSpeed(speed);
     writtenAtSpeedChange_.store(
-        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
+        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
