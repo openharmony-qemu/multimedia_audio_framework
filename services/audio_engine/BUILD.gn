@@ -235,7 +235,6 @@ ohos_shared_library("audio_engine_manager") {
   ]
 
   deps = [
-    ":audio_engine_plugins",
     ":audio_engine_node",
     ":audio_engine_utils",
     "../../frameworks/native/audioeffect:audio_effect",
