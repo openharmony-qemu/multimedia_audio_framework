@@ -41,6 +41,7 @@ namespace AudioStandard {
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const int32_t POLICY_SYSTEM_ABILITY_ID = 3009;
+const int32_t NUM_2 = 2;
 const uint32_t LIMIT_TWO = 2;
 const uint32_t FUZZ_TEST_UID = 10000; // for test
 const uint32_t STD_OUT_FD = 1;
@@ -53,6 +54,9 @@ bool g_dumpCapturer = false;
 const uint8_t *g_baseFuzzData = nullptr;
 size_t g_baseFuzzSize = 0;
 size_t g_baseFuzzPos;
+
+static AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+    AudioChannelLayout::CH_LAYOUT_UNKNOWN);
 
 template <class T> T GetData()
 {
@@ -433,36 +437,36 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
 
+    Parcel parcel;
     AudioProcessConfig config = {};
     config.callerUid = GetData<int32_t>();
     config.appInfo = GetData<AppInfo>();
-    config.streamInfo = GetData<AudioStreamInfo>();
-    config.audioMode = GetData<AudioMode>();
 
-    config.rendererInfo.contentType = GetData<ContentType>();
-    config.rendererInfo.streamUsage = GetData<StreamUsage>();
+    config.streamInfo = testStreamInfo;
     config.rendererInfo.rendererFlags = GetData<int32_t>();
 
     config.rendererInfo.sceneType = ""; // in plan
 
     config.rendererInfo.originalFlag = GetData<int32_t>();
-    config.rendererInfo.pipeType = GetData<AudioPipeType>();
-    config.rendererInfo.samplingRate = GetData<AudioSamplingRate>();
-    config.rendererInfo.format = GetData<AudioSampleFormat>();
+    config.rendererInfo.pipeType = PIPE_TYPE_DIRECT_MUSIC;
+    config.rendererInfo.contentType = static_cast<ContentType>(parcel.ReadInt32());
+    config.rendererInfo.streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+    config.rendererInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
+    config.rendererInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
 
-    config.capturerInfo.sourceType = GetData<SourceType>();
+    config.capturerInfo.sourceType = SourceType::SOURCE_TYPE_MIC;
     config.capturerInfo.capturerFlags = GetData<int32_t>();
-    config.capturerInfo.pipeType = GetData<AudioPipeType>();
-    config.capturerInfo.samplingRate = GetData<AudioSamplingRate>();
+    config.capturerInfo.pipeType = PIPE_TYPE_CALL_IN;
+    config.capturerInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
     config.capturerInfo.encodingType = GetData<uint8_t>();
     config.capturerInfo.channelLayout = GetData<uint64_t>();
     config.capturerInfo.sceneType = ""; // in plan
     config.capturerInfo.originalFlag = GetData<int32_t>();
 
-    config.streamType = GetData<AudioStreamType>();
-    config.deviceType = GetData<DeviceType>();
-    config.privacyType = GetData<AudioPrivacyType>();
-    config.innerCapMode = GetData<InnerCapMode>();
+    config.streamType = AudioStreamType::STREAM_MUSIC;
+    config.deviceType = DEVICE_TYPE_USB_HEADSET;
+    config.privacyType = static_cast<AudioPrivacyType>(GetData<uint32_t>() % NUM_2);
+    config.innerCapMode = InnerCapMode::LEGACY_MUTE_CAP;
 
     ModifyProcessConfig(config);
 
