@@ -44,6 +44,7 @@ public:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         bool isReloadProcess);
     uint32_t GenerateSessionId();
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

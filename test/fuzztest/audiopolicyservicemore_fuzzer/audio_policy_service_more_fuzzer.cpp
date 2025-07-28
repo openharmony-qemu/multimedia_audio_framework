@@ -232,7 +232,6 @@ void AudioPolicyServiceThirdTest()
     std::thread t1(ThreadFunctionTest);
     t1.join();
     GetServerPtr()->audioPolicyService_.audioConfigManager_.Init(true);
-    GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
 
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     AudioStreamManager::GetInstance()->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
