@@ -208,6 +208,8 @@ void CapturerInServer::OnStatusUpdate(IOperation operation)
             AUDIO_INFO_LOG("Invalid operation %{public}u", operation);
             status_ = I_STATUS_INVALID;
     }
+
+    CaptureConcurrentCheck(streamIndex_);
 }
 
 void CapturerInServer::HandleOperationFlushed()
@@ -442,8 +444,6 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
     UpdateBufferTimeStamp(dstBuffer.bufLength);
 
     stateListener->OnOperationHandled(UPDATE_STREAM, currentWriteFrame);
-
-    CaptureConcurrentCheck(streamIndex_);
 
     return SUCCESS;
 }
@@ -914,12 +914,12 @@ int32_t CapturerInServer::ResolveBufferBaseAndGetServerSpanSize(std::shared_ptr<
 
 inline void CapturerInServer::CaptureConcurrentCheck(uint32_t streamIndex)
 {
-    if (captureConcurretChecked_) {
+    if (lastStatus_ == status_) {
         return;
     }
-    captureConcurretChecked_ = 1;
+    std::atomic_store(&lastStatus_, status_);
     int32_t ret = PolicyHandler::GetInstance().CaptureConcurrentCheck(streamIndex);
-    AUDIO_INFO_LOG("CaptureConcurrentCheck ret = %{public}d", ret);
+    AUDIO_INFO_LOG("ret:%{public}d streamIndex_:%{public}d status_:%{public}u", ret, streamIndex, status_.load());
 }
 } // namespace AudioStandard
 } // namespace OHOS
