@@ -108,10 +108,10 @@ struct HpaeSinkInfo {
     std::string lib;
     std::string filePath;
     std::string deviceName;
-    size_t frameLen;
-    AudioSamplingRate samplingRate;
-    AudioSampleFormat format;
-    AudioChannel channels;
+    size_t frameLen = 0;
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat format = INVALID_WIDTH;
+    AudioChannel channels = CHANNEL_UNKNOW;
     uint32_t suspendTime = 0; // in ms
     uint64_t channelLayout = 0ULL;
     int32_t deviceType = 0;
@@ -146,25 +146,25 @@ struct HpaeSourceInfo {
     SourceType sourceType;
     std::string filePath;
     std::string deviceName;
-    size_t frameLen;
-    AudioSamplingRate samplingRate;
-    AudioSampleFormat format;
-    AudioChannel channels;
+    size_t frameLen = 0;
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat format = INVALID_WIDTH;
+    AudioChannel channels = CHANNEL_UNKNOW;
     uint64_t channelLayout = 0ULL;
     int32_t deviceType = 0;
     float volume = 0.0f;
-    HpaeEcType ecType;
-    size_t ecFrameLen;
+    HpaeEcType ecType = HPAE_EC_TYPE_NONE;
+    size_t ecFrameLen = 0;
     std::string ecAdapterName;
-    AudioSamplingRate ecSamplingRate;
-    AudioSampleFormat ecFormat;
-    AudioChannel ecChannels;
-    HpaeMicRefSwitch micRef;
-    size_t micRefFrameLen;
-    AudioSamplingRate micRefSamplingRate;
-    AudioSampleFormat micRefFormat;
-    AudioChannel micRefChannels;
-    uint32_t openMicSpeaker;
+    AudioSamplingRate ecSamplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat ecFormat = INVALID_WIDTH;
+    AudioChannel ecChannels = CHANNEL_UNKNOW;
+    HpaeMicRefSwitch micRef = HPAE_REF_OFF;
+    size_t micRefFrameLen = 0;
+    AudioSamplingRate micRefSamplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat micRefFormat = INVALID_WIDTH;
+    AudioChannel micRefChannels = CHANNEL_UNKNOW;
+    uint32_t openMicSpeaker = 0;
 };
 
 static inline int32_t GetSizeFromFormat(int32_t format)
