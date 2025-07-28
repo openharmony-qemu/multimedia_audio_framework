@@ -1566,5 +1566,60 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.L
     EXPECT_EQ(streamInfo.format, AudioSampleFormat::SAMPLE_S16LE);
     EXPECT_EQ(streamInfo.channels, STEREO);
 }
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: ParseFormat_001
+* @tc.desc  : Test ParseFormat
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, ParseFormat_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+    EXPECT_EQ(manager.ParseFormat("s16le"), SAMPLE_S16LE);
+    EXPECT_EQ(manager.ParseFormat("s24le"), SAMPLE_S24LE);
+    EXPECT_EQ(manager.ParseFormat("s32le"), SAMPLE_S32LE);
+    EXPECT_EQ(manager.ParseFormat("123"), SAMPLE_S16LE);
+}
+
+/**
+* @tc.name  : Test AudioPolicyConfigManager.
+* @tc.number: CheckDynamicCapturerConfig_001
+* @tc.desc  : Test CheckDynamicCapturerConfig
+*/
+HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckDynamicCapturerConfig_001, TestSize.Level1)
+{
+    AudioPolicyConfigManager &manager = AudioPolicyConfigManager::GetInstance();
+    EXPECT_EQ(manager.Init(true), true);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<PipeStreamPropInfo> info = std::make_shared<PipeStreamPropInfo>();
+    deviceDesc->deviceType_ = DEVICE_TYPE_USB_ARM_HEADSET;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioModuleInfo moduleInfo = {
+        .rate = "8000",
+        .format = "s16le",
+    };
+    manager.dynamicCapturerConfig_[ClassType::TYPE_USB] = moduleInfo;
+
+    manager.CheckDynamicCapturerConfig(streamDesc, info);
+    EXPECT_EQ(info->format_, SAMPLE_S16LE);
+    EXPECT_EQ(info->sampleRate_, 8000);
+
+    manager.dynamicCapturerConfig_.clear();
+    info->format_ = SAMPLE_U8;
+    info->sampleRate_ = 0;
+    manager.CheckDynamicCapturerConfig(streamDesc, info);
+    EXPECT_EQ(info->format_, SAMPLE_U8);
+    EXPECT_EQ(info->sampleRate_, 0);
+
+    streamDesc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_DEFAULT;
+    info->format_ = SAMPLE_U8;
+    info->sampleRate_ = 0;
+    manager.CheckDynamicCapturerConfig(streamDesc, info);
+    EXPECT_EQ(info->format_, SAMPLE_U8);
+    EXPECT_EQ(info->sampleRate_, 0);
+}
 } // namespace AudioStandard
 } // namespace OHOS
