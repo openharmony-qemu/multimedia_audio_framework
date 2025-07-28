@@ -135,8 +135,8 @@ void AudioCapturerPrivate::HandleSetCapturerInfoByOptions(const AudioCapturerOpt
 {
     capturerInfo_.sourceType = capturerOptions.capturerInfo.sourceType;
     capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
-    capturerInfo_.originalFlag = ((capturerOptions.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION)
-        && (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
+    capturerInfo_.originalFlag = ((capturerOptions.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
+        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
         AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
     capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
     capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
