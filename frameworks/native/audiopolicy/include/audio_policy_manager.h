@@ -281,7 +281,7 @@ public:
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId);
 
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);

@@ -149,7 +149,7 @@ void AudioCoreService::DumpPipeManager(std::string &dumpString)
 }
 
 int32_t AudioCoreService::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
     if (sessionId == 0) {
@@ -200,6 +200,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
     int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
+    networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
     return SUCCESS;

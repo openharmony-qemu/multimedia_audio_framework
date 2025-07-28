@@ -89,7 +89,7 @@ public:
     int32_t SetRendererFirstFrameWritingCallback(
         const std::shared_ptr<AudioRendererFirstFrameWritingCallback> &callback) override;
     void OnFirstFrameWriting() override;
-    int32_t SetSpeed(float speed) override;
+    int32_t SetSpeed(float speed, bool force = false) override;
     int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 
@@ -277,7 +277,7 @@ private:
 
     void ResetCallbackLoopTid();
 
-    bool DoHdiSetSpeed(float speed);
+    bool DoHdiSetSpeed(float speed, bool force);
 
     void WaitForBufferNeedWrite();
 

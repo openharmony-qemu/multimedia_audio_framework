@@ -610,12 +610,12 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
-bool RendererInClientInner::DoHdiSetSpeed(float speed)
+bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 {
     CHECK_AND_RETURN_RET(isHdiSpeed_.load(), false);
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
-    CHECK_AND_RETURN_RET(!isEqual(speed, speed_), true);
+    CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, speed_), true, "forbid duplicate set speed");
     ipcStream_->SetSpeed(speed);
     speed_ = speed;
     return true;
@@ -628,13 +628,13 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
     CHECK_AND_RETURN(curIsHdiSpeed != isHdiSpeed_.load());
     AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
     isHdiSpeed_.store(curIsHdiSpeed);
-    SetSpeed(speed_);
+    SetSpeed(speed_, true);
 }
 
-int32_t RendererInClientInner::SetSpeed(float speed)
+int32_t RendererInClientInner::SetSpeed(float speed, bool force)
 {
     std::lock_guard lock(speedMutex_);
-    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed), SUCCESS);
+    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed, force), SUCCESS);
     // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
     if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
         speed_ = speed;

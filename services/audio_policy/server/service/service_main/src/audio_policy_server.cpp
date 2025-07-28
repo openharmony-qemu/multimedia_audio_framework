@@ -2868,7 +2868,7 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(const AudioCapturerInfo &
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &flag, uint32_t &sessionId)
+    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
@@ -2878,8 +2878,10 @@ int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStrea
         streamDesc->SetBunduleName(bundleName);
     }
     uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
-    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId);
+    std::string networkIdIn = LOCAL_NETWORK_ID;
+    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId, networkIdIn);
     flag = flagIn;
+    networkId = networkIdIn;
     return ret;
 }
 

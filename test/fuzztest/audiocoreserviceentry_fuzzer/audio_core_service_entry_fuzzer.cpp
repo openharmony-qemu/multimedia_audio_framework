@@ -167,7 +167,8 @@ void CreateRendererClientFuzzTest()
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
-    eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId);
+    std::string networkId = "";
+    eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
 }
 
 void CreateCapturerClientFuzzTest()

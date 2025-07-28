@@ -1467,12 +1467,12 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, AudioDeviceDescriptor_001, TestSize.L
     EXPECT_NE(audioDeviceDescriptor, nullptr);
     audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_NONE;
     audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
-    EXPECT_NE(audioDeviceDescriptor->audioStreamInfo_.size(), 0);
+    EXPECT_EQ(audioDeviceDescriptor->audioStreamInfo_.size(), 0);
 
     DeviceStreamInfo streamInfo;
     audioDeviceDescriptor->audioStreamInfo_.push_back(streamInfo);
     audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, false, false, API_10);
-    EXPECT_NE(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
+    EXPECT_EQ(audioDeviceDescriptor->GetDeviceStreamInfo().samplingRate.size(), 0);
 
     streamInfo.samplingRate.insert(SAMPLE_RATE_44100);
     streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);

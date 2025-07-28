@@ -80,7 +80,8 @@ public:
 
         // Stream operations
         int32_t CreateRendererClient(
-            std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+            std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId,
+            std::string &networkId);
         int32_t CreateCapturerClient(
             std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
 
@@ -187,7 +188,8 @@ private:
     // Called by EventEntry - with lock
     // Stream operations
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId,
+        std::string &networkId);
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId);
     int32_t StartClient(uint32_t sessionId);

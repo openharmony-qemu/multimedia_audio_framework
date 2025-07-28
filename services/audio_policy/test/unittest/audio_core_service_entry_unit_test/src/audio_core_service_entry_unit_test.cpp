@@ -197,8 +197,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
+    std::string networkId = "";
 
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
