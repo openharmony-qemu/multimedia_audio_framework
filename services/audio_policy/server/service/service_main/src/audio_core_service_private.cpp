@@ -2601,6 +2601,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
     std::variant<StreamUsage, SourceType> audioStreamConfig;
     bool isRunning = streamDesc->streamStatus_ == STREAM_STATUS_STARTED;
     bool isRecognitionSource = false;
+    int32_t clientUid = GetRealUid(streamDesc);
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         audioStreamConfig = streamDesc->rendererInfo_.streamUsage;
     } else {
@@ -2608,11 +2609,11 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
         isRecognitionSource = Util::IsScoSupportSource(streamDesc->capturerInfo_.sourceType);
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
-        auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning](auto &&config) -> int32_t {
+        auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning, &clientUid](auto &&config) -> int32_t {
             int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, config);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Activating Nearlink device fails");
             CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not runningf, no needs start playing");
-            return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config);
+            return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config, clientUid);
         };
 
         AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(isRecognitionSource ? DM_DEVICE_TYPE_NEARLINK_SCO : 0,

@@ -104,25 +104,27 @@ int32_t SleAudioOperationCallbackStubImpl::SetActiveSinkDevice(
     return SUCCESS;
 }
 
-int32_t SleAudioOperationCallbackStubImpl::StartPlaying(const std::string &device, uint32_t streamType, int32_t& ret)
+int32_t SleAudioOperationCallbackStubImpl::StartPlaying(const std::string &device, uint32_t streamType,
+    int32_t clientUid, int32_t& ret)
 {
     std::unique_lock lock(sleAudioOperationCallbackMutex_);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
     lock.unlock();
 
-    ret = sleAudioOperationCallback->StartPlaying(device, streamType);
+    ret = sleAudioOperationCallback->StartPlaying(device, streamType, clientUid);
     return SUCCESS;
 }
 
-int32_t SleAudioOperationCallbackStubImpl::StopPlaying(const std::string &device, uint32_t streamType, int32_t& ret)
+int32_t SleAudioOperationCallbackStubImpl::StopPlaying(const std::string &device, uint32_t streamType,
+    int32_t clientUid, int32_t& ret)
 {
     std::unique_lock lock(sleAudioOperationCallbackMutex_);
     std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback = sleAudioOperationCallback_.lock();
     CHECK_AND_RETURN_RET_LOG(sleAudioOperationCallback != nullptr, ERROR, "sleAudioOperationCallback_ is nullptr");
     lock.unlock();
 
-    ret = sleAudioOperationCallback->StopPlaying(device, streamType);
+    ret = sleAudioOperationCallback->StopPlaying(device, streamType, clientUid);
     return SUCCESS;
 }
 
