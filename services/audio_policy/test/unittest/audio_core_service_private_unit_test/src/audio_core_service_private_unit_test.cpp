@@ -2559,7 +2559,7 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level1)
     auto audioCoreService = std::make_shared<AudioCoreService>();
     ASSERT_NE(audioCoreService, nullptr);
 
-    std::shared_ptr<AudioDeviceDescriptor> streamDesc = std::make_shared<AudioDeviceDescriptor>();
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     ASSERT_NE(streamDesc, nullptr);
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(
