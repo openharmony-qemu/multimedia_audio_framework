@@ -2561,18 +2561,6 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level1)
 
     std::shared_ptr<AudioDeviceDescriptor> streamDesc = std::make_shared<AudioDeviceDescriptor>();
     ASSERT_NE(streamDesc, nullptr);
-    auto &streamInfo = streamDesc->streamInfo_;
-    streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
-    streamInfo.channels = AudioChannel::STEREO;
-    streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
-    streamInfo.channelLayout = AudioChannelLayout::CH_LAYOUT_STEREO;
-    streamInfo.streamUsage = STREAM_USAGE_MOVIE;
-
-    streamDesc->audioMode_ = AUDIO_MODE_RECORD;
-    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
-    streamDesc->startTimeStamp_ = streamDescs[i]->createTimeStamp_ + 1;
-    streamDesc->callerUid_ = getuid();
 
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(
         DeviceType::DEVICE_TYPE_USB_ARM_HEADSET,
