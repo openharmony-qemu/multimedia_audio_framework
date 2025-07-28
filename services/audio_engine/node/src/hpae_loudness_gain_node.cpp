@@ -94,7 +94,9 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
 HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     Trace trace("HpaeLoudnessGainNode::SignalProcess");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "inputs is empty");
+
+    CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &silenceData_,
+        "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
 
     CHECK_AND_RETURN_RET((!IsFloatValueEqual(loudnessGain_, 0.0f)), inputs[0]);
     CheckUpdateInfo(inputs[0]);
@@ -141,6 +143,8 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
     pcmBufferInfo_.channelLayout = input->GetChannelLayout();
     
     loudnessGainOutput_.ReConfig(pcmBufferInfo_);
+    silenceData_.ReConfig(pcmBufferInfo_);
+    silenceData_.SetBufferSilence(true);
     CHECK_AND_RETURN_LOG(handle_, "no handle.");
 
     uint32_t replyData = 0;
