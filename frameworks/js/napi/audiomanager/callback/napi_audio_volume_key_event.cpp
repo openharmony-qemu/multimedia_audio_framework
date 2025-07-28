@@ -29,12 +29,12 @@ namespace AudioStandard {
 NapiAudioVolumeKeyEvent::NapiAudioVolumeKeyEvent(napi_env env)
     :env_(env)
 {
-    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Constructor");
+    AUDIO_INFO_LOG("Constructor");
 }
 
 NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 {
-    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Destructor");
+    AUDIO_INFO_LOG("Destructor");
 }
 
 void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)

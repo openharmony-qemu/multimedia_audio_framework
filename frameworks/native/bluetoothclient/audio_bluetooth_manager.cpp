@@ -108,7 +108,7 @@ static bool GetAudioStreamInfo(A2dpCodecInfo codecInfo, AudioStreamInfo &audioSt
 // LCOV_EXCL_START
 void AudioA2dpManager::RegisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("AudioA2dpManager::RegisterBluetoothA2dpListener");
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     a2dpInstance_ = A2dpSource::GetProfile();
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "Failed to obtain A2DP profile instance");
@@ -117,7 +117,7 @@ void AudioA2dpManager::RegisterBluetoothA2dpListener()
 
 void AudioA2dpManager::UnregisterBluetoothA2dpListener()
 {
-    AUDIO_INFO_LOG("AudioA2dpManager::UnregisterBluetoothA2dpListener");
+    AUDIO_INFO_LOG("in");
     std::lock_guard<std::shared_mutex> a2dpLock(g_a2dpInstanceLock);
     CHECK_AND_RETURN_LOG(a2dpInstance_ != nullptr, "A2DP profile instance unavailable");
 
@@ -419,13 +419,13 @@ void AudioA2dpListener::OnCaptureConnectionStateChanged(const BluetoothRemoteDev
 void AudioHfpManager::RegisterBluetoothScoListener()
 {
     HfpBluetoothDeviceManager::RegisterDisconnectScoFunc(&DisconnectScoForDevice);
-    AUDIO_INFO_LOG("AudioHfpManager::RegisterBluetoothScoListener");
+    AUDIO_INFO_LOG("in");
     BluetoothHfpInterface::GetInstance().RegisterObserver(hfpListener_);
 }
 
 void AudioHfpManager::UnregisterBluetoothScoListener()
 {
-    AUDIO_INFO_LOG("AudioHfpManager::UnregisterBluetoothScoListene");
+    AUDIO_INFO_LOG("in");
     BluetoothHfpInterface::GetInstance().DeregisterObserver(hfpListener_);
 }
 

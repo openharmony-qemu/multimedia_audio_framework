@@ -991,7 +991,7 @@ int32_t RendererInServer::StartInner()
     needForceWrite_ = 0;
     std::unique_lock<std::mutex> lock(statusLock_);
     if (status_ != I_STATUS_IDLE && status_ != I_STATUS_PAUSED && status_ != I_STATUS_STOPPED) {
-        AUDIO_ERR_LOG("RendererInServer::Start failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
     status_ = I_STATUS_STARTING;
@@ -1144,7 +1144,7 @@ int32_t RendererInServer::Flush()
     } else if (status_ == I_STATUS_STOPPED) {
         status_ = I_STATUS_FLUSHING_WHEN_STOPPED;
     } else {
-        AUDIO_ERR_LOG("RendererInServer::Flush failed, Illegal state: %{public}u", status_.load());
+        AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
         return ERR_ILLEGAL_STATE;
     }
 
@@ -1183,7 +1183,7 @@ int32_t RendererInServer::Drain(bool stopFlag)
     {
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED) {
-            AUDIO_ERR_LOG("RendererInServer::Drain failed, Illegal state: %{public}u", status_.load());
+            AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_DRAINING;
@@ -1226,7 +1226,7 @@ int32_t RendererInServer::Stop()
         std::unique_lock<std::mutex> lock(statusLock_);
         if (status_ != I_STATUS_STARTED && status_ != I_STATUS_PAUSED && status_ != I_STATUS_DRAINING &&
             status_ != I_STATUS_STARTING) {
-            AUDIO_ERR_LOG("RendererInServer::Stop failed, Illegal state: %{public}u", status_.load());
+            AUDIO_ERR_LOG("failed, Illegal state: %{public}u", status_.load());
             return ERR_ILLEGAL_STATE;
         }
         status_ = I_STATUS_STOPPING;
@@ -1649,7 +1649,7 @@ int32_t StreamCallbacks::OnWriteData(int8_t *inputData, size_t requestDataLen)
         std::unique_ptr<AudioRingCache> &dupBuffer = dupRingBuffer_;
         // no need mutex
         // todo wait readable
-        AUDIO_INFO_LOG("StreamCallbacks::OnWriteData running");
+        AUDIO_INFO_LOG("running");
         OptResult result = dupBuffer->GetReadableSize();
         CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
             "dupBuffer get readable size failed, size is:%{public}zu", result.size);
