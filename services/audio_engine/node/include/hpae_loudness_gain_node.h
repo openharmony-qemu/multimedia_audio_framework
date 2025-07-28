@@ -48,11 +48,6 @@ private:
     float loudnessGain_ = 0.0f;
     float linearGain_ = 1.0f;
     void *dlHandle_ = nullptr;
-
-#ifdef ENABLE_HOOK_PCM
-    std::unique_ptr<HpaePcmDumper> inputPcmDumper_ = nullptr;
-    std::unique_ptr<HpaePcmDumper> outputPcmDumper_ = nullptr;
-#endif
 };
 
 }  // namespace HPAE

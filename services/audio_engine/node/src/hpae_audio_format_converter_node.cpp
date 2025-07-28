@@ -177,7 +177,7 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     AudioSamplingRate sampleRate = basicFormat.rate;
     if (numChannels == 0 || channelLayout == CH_LAYOUT_UNKNOWN) {
         // set to node info, which is device output info
-        AUDIO_INFO_LOG("Fail to check format into from effect node");
+        AUDIO_WARNING_LOG("Fail to check format info from effect node");
         numChannels = GetChannelCount();
         channelLayout = GetChannelLayout();
         sampleRate = GetSampleRate();
@@ -198,7 +198,6 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
             GetNodeId(), curOutChannelInfo.numChannels, numChannels);
         CHECK_AND_RETURN_RET_LOG(channelConverter_.SetOutChannelInfo(newOutChannelInfo) == DMIX_ERR_SUCCESS, false,
             "NodeId: %{public}d, Fail to set output channel info from effectNode!", GetNodeId());
- 
         uint32_t resampleChannels = std::min(channelConverter_.GetInChannelInfo().numChannels, numChannels);
         if (resampleChannels != resampler_->GetChannels()) {
             AUDIO_INFO_LOG("NodeId: %{public}d, Update resampler work channel from effectNode!", GetNodeId());
@@ -217,6 +216,14 @@ bool HpaeAudioFormatConverterNode::CheckUpdateOutInfo()
     nodeInfo.channelLayout = (AudioChannelLayout)channelLayout;
     nodeInfo.samplingRate = (AudioSamplingRate)resampler_->GetOutRate();
     SetNodeInfo(nodeInfo);
+    // update PCM dumper
+#ifdef ENABLE_HOOK_PCM
+    outputPcmDumper_ = std::make_unique<HpaePcmDumper>(
+        "HpaeConverterNodeOutput_id_" + std::to_string(GetSessionId()) +
+        + "_nodeId_" + std::to_string(GetNodeId()) +
+        "_ch_" + std::to_string(GetChannelCount()) + "_rate_" +
+        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
+#endif
     return true;
 }
 
