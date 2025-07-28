@@ -521,6 +521,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
         if (isEcFeatureEnable_) {
             usbSourceModuleInfo_ = moduleInfo;
         }
+        audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
     }
 }
 

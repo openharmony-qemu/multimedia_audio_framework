@@ -47,6 +47,10 @@ const std::set<AudioSampleFormat> FAST_OUTPUT_SUPPORTED_FORMATS = {
     SAMPLE_F32LE
 };
 
+const std::map<DeviceType, ClassType> dynamicCaptureConfigMap = {
+    { DEVICE_TYPE_USB_ARM_HEADSET, ClassType::TYPE_USB },
+};
+
 bool AudioPolicyConfigManager::Init(bool isRefresh)
 {
     if (xmlHasLoaded_ && !isRefresh) {
@@ -235,6 +239,11 @@ bool AudioPolicyConfigManager::GetModuleListByType(ClassType type, std::list<Aud
         return true;
     }
     return false;
+}
+
+void AudioPolicyConfigManager::UpdateDynamicCapturerConfig(ClassType type, const AudioModuleInfo moduleInfo)
+{
+    dynamicCapturerConfig_[type] = moduleInfo;
 }
 
 void AudioPolicyConfigManager::GetDeviceClassInfo(
@@ -507,6 +516,32 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
     }
 }
 
+AudioSampleFormat AudioPolicyConfigManager::ParseFormat(std::string format)
+{
+    auto it = AudioDefinitionPolicyUtils::formatStrToEnum.find(format);
+    if (it != AudioDefinitionPolicyUtils::formatStrToEnum.end()) {
+        return AudioDefinitionPolicyUtils::formatStrToEnum[format];
+    }
+    AUDIO_WARNING_LOG("invalid format:%{public}s, use default SAMPLE_S16LE", format.c_str());
+    return SAMPLE_S16LE;
+}
+void AudioPolicyConfigManager::CheckDynamicCapturerConfig(std::shared_ptr<AudioStreamDescriptor> desc,
+    std::shared_ptr<PipeStreamPropInfo> &info)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr && desc->newDeviceDescs_.size() > 0 &&
+        desc->newDeviceDescs_[0] != nullptr, "invalid streamDesc");
+    auto it = dynamicCaptureConfigMap.find(desc->newDeviceDescs_.front()->deviceType_);
+    if (it != dynamicCaptureConfigMap.end()) {
+        auto config = dynamicCapturerConfig_.find(it->second);
+        if (config != dynamicCapturerConfig_.end()) {
+            AUDIO_INFO_LOG("use dynamic config for %{public}d", it->first);
+            CHECK_AND_RETURN_LOG(StringConverter(config->second.rate, info->sampleRate_),
+                "convert invalid sampleRate_: %{public}s", config->second.rate.c_str());
+            info->format_ = ParseFormat(config->second.format);
+        }
+    }
+}
+
 void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
     std::shared_ptr<AudioStreamDescriptor> desc, std::shared_ptr<AdapterPipeInfo> adapterPipeInfo,
     std::shared_ptr<PipeStreamPropInfo> &info, const AudioChannel &tempChannel)
@@ -544,6 +579,8 @@ void AudioPolicyConfigManager::GetStreamPropInfoForRecord(
             *info = *streamProp;
         }
     }
+
+    CheckDynamicCapturerConfig(desc, info);
 
     if (AudioEcManager::GetInstance().GetEcFeatureEnable()) {
         if (desc->newDeviceDescs_.front() != nullptr &&
