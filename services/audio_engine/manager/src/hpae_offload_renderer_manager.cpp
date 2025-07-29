@@ -710,6 +710,9 @@ int32_t HpaeOffloadRendererManager::GetNodeInputFormatInfo(uint32_t sessionId, A
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_, ERROR, "sessionId %{public}d, gainNode does not exist", sessionId);
     CHECK_AND_RETURN_RET_LOG(loudnessGainNode_->GetSessionId() == sessionId, ERROR, "loudness node id %{public}d,"
         "set sessionId %{public}d does not match!", loudnessGainNode_->GetSessionId(), sessionId);
+    basicFormat.audioChannelInfo.channelLayout = (AudioChannelLayout)sinkInfo_.channelLayout;
+    basicFormat.audioChannelInfo.numChannels = (uint32_t)sinkInfo_.channels;
+    basicFormat.rate = sinkInfo_.samplingRate;
     if (loudnessGainNode_->IsLoudnessAlgoOn()) {
         // has loudness gain algorithm, should convert to 48k, channels and chanellayout stay same as input
         basicFormat.rate = SAMPLE_RATE_48000;
