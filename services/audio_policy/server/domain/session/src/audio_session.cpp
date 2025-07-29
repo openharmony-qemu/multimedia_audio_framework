@@ -195,7 +195,6 @@ void AudioSession::Dump(std::string &dumpString)
         callerPid_, static_cast<int32_t>(defaultDeviceType_));
     AppendFormat(dumpString, "    - pid: %d, AudioSession state is: %u.\n",
         callerPid_, static_cast<uint32_t>(state_));
-    AppendFormat(dumpString, "    - pid: %d, Stream in interruptMap are:\n", callerPid_);
     AppendFormat(dumpString, "    - pid: %d, Streams in session are:\n", callerPid_);
     for (auto &it : streamsInSession_) {
         AppendFormat(dumpString, "        - StreamId is: %u, streamType is: %u\n",
@@ -212,7 +211,7 @@ int32_t AudioSession::Activate(const AudioSessionStrategy strategy)
         callerPid_, static_cast<int32_t>(state_));
     needToFetch_ = (EnableDefaultDevice() == NEED_TO_FETCH) ? true : false;
     AudioRendererInfo rendererInfo;
-    rendererInfo.streamUsage = GetStreamUsageByAudioSessionScene(audioSessionScene_);
+    rendererInfo.streamUsage = GetStreamUsageInner();
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> preferredOutputDevices =
         AudioDeviceCommon::GetInstance().GetPreferredOutputDeviceDescInner(rendererInfo, LOCAL_NETWORK_ID);
     if ((preferredOutputDevices.size() == 0) || (preferredOutputDevices[0] == nullptr)) {
@@ -256,7 +255,7 @@ int32_t AudioSession::Deactivate()
     return SUCCESS;
 }
 
-bool AudioSession::IsLegalStreamUsage(const StreamUsage &streamUsage)
+bool AudioSession::IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage)
 {
     return (streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
         (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
@@ -266,8 +265,8 @@ bool AudioSession::IsLegalStreamUsage(const StreamUsage &streamUsage)
 
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
-    return (!(IsLegalStreamUsage(GetStreamUsageByAudioSessionScene(audioSessionScene_))) &&
-        IsLegalStreamUsage(interrupt.streamUsage));
+    return (!(IsOutputDeviceConfigurableByStreamUsage(GetStreamUsageInner())) &&
+        IsOutputDeviceConfigurableByStreamUsage(interrupt.streamUsage));
 }
 
 int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
@@ -297,7 +296,7 @@ int32_t AudioSession::EnableVoipStreamsDefaultOutputDevice()
     int32_t ret = SUCCESS;
     bool success = false;
 
-    for (auto interrupt : streamsInSession_) {
+    for (const auto &interrupt : streamsInSession_) {
         ret = EnableSingleVoipStreamDefaultOutputDevice(interrupt);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("enable default output device for stream %d failed, ret is %d", interrupt.streamId, ret);
@@ -316,7 +315,7 @@ int32_t AudioSession::EnableDefaultDevice()
     }
 
     int32_t ret = deviceManager_.SetDefaultOutputDevice(defaultDeviceType_, fakeStreamId_,
-        GetStreamUsageByAudioSessionScene(audioSessionScene_), true);
+        GetStreamUsageInner(), true);
     AUDIO_INFO_LOG("enable default output device for session %d, ret is %d", fakeStreamId_, ret);
     if (ret == NEED_TO_FETCH) {
         needToFetch_ = true;
@@ -338,7 +337,7 @@ bool AudioSession::GetAndClearNeedToFetchFlag()
     return ret;
 }
 
-StreamUsage AudioSession::GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene)
+StreamUsage AudioSession::GetStreamUsageInner()
 {
     static const std::unordered_map<AudioSessionScene, StreamUsage> mapping = {
         {AudioSessionScene::MEDIA, StreamUsage::STREAM_USAGE_MUSIC},
@@ -430,7 +429,7 @@ void AudioSession::GetSessionDefaultOutputDevice(DeviceType &deviceType)
 bool AudioSession::IsStreamContainedInCurrentSession(const uint32_t &streamId)
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    for (auto streamInfo : streamsInSession_) {
+    for (const auto &streamInfo : streamsInSession_) {
         if (streamInfo.streamId == streamId) {
             return true;
         }
@@ -482,7 +481,7 @@ bool AudioSession::IsSessionOutputDeviceChanged(const std::shared_ptr<AudioDevic
 StreamUsage AudioSession::GetSessionStreamUsage()
 {
     std::lock_guard<std::mutex> lock(sessionMutex_);
-    return GetStreamUsageByAudioSessionScene(audioSessionScene_);
+    return GetStreamUsageInner();
 }
 
 bool AudioSession::IsBackGroundApp(void)

@@ -332,7 +332,7 @@ int32_t AudioInterruptService::DeactivateAudioSession(const int32_t zoneId, cons
 }
 
 void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
-    const int32_t zoneId, const int32_t callerPid, std::vector<AudioInterrupt> streamsInSession)
+    const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession)
 {
     auto deactivateTask = [this, zoneId, callerPid, streamsInSession] {
         std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -357,7 +357,12 @@ void AudioInterruptService::DelayToDeactivateStreamsInAudioSession(
             }
         }
 
+        lock.unlock();
+
+        // Sleep for 50 milliseconds to allow streams in the session to stop.
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         // Before deactivating the fake interrupt, all stream interrupts within the session must be stopped.
+        lock.lock();
         DeactivateAudioSessionFakeInterrupt(zoneId, callerPid);
     };
 
@@ -1431,6 +1436,46 @@ bool AudioInterruptService::SwitchHintType(std::list<std::pair<AudioInterrupt, A
     return needRemoveCurIter;
 }
 
+std::set<int32_t> AudioInterruptService::GetStreamIdsForAudioSessionByStreamUsage(
+    const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet)
+{
+    std::set<int32_t> streamIds;
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    auto targetZoneIt = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG(targetZoneIt != zonesMap_.end(), streamIds, "can not find zone id");
+    auto &tmpFocusInfoList = targetZoneIt->second->audioFocusInfoList;
+    for (auto focusIter = tmpFocusInfoList.begin(); focusIter != tmpFocusInfoList.end(); ++focusIter) {
+        const auto &audioInterrupt = focusIter->first;
+        if (audioInterrupt.isAudioSessionInterrupt &&
+            streamUsageSet.find(audioInterrupt.streamUsage) != streamUsageSet.end()) {
+            streamIds.insert(static_cast<int32_t>(audioInterrupt.streamId));
+        }
+    }
+    return streamIds;
+}
+
+std::set<int32_t> AudioInterruptService::GetStreamIdsForAudioSessionByDeviceType(
+    const int32_t zoneId, DeviceType deviceType)
+{
+    std::set<int32_t> streamIds;
+
+    std::unique_lock<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(sessionService_ != nullptr, streamIds, "sessionService_ is nullptr");
+    auto targetZoneIt = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG(targetZoneIt != zonesMap_.end(), streamIds, "can not find zone id");
+    auto &tmpFocusInfoList = targetZoneIt->second->audioFocusInfoList;
+    for (auto focusIter = tmpFocusInfoList.begin(); focusIter != tmpFocusInfoList.end(); ++focusIter) {
+        const auto &audioInterrupt = focusIter->first;
+        if (audioInterrupt.isAudioSessionInterrupt &&
+            sessionService_->HasStreamForDeviceType(audioInterrupt.pid, deviceType)) {
+                streamIds.insert(static_cast<int32_t>(audioInterrupt.streamId));
+            }
+    }
+
+    return streamIds;
+}
+
 void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent)
 {
     std::unique_lock<std::mutex> lock(mutex_);
@@ -2320,7 +2365,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
     CHECK_AND_RETURN_LOG(dfxCollector_ != nullptr, "dfxCollector is null");
-    AUDIO_INFO_LOG("[SendInterruptEventCallback] hintType= %{public}d", interruptEvent.hintType);
+    AUDIO_INFO_LOG("hintType= %{public}d", interruptEvent.hintType);
     InterruptDfxBuilder dfxBuilder;
     auto& [infoIdx, effectIdx] = dfxCollector_->GetDfxIndexes(audioInterrupt.streamId);
 

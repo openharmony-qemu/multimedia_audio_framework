@@ -582,6 +582,8 @@ public:
     int32_t ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+    std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
+        const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0);
