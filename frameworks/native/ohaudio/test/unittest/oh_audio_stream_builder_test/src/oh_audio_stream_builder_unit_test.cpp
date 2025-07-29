@@ -1372,6 +1372,7 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_00
 
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+    EXPECT_NE(builder, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
