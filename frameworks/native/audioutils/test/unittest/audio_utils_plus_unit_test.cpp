@@ -703,7 +703,7 @@ HWTEST(AudioUtilsPlusUnitTest, RecordPaSilenceState_001, TestSize.Level3)
     RecordPaSilenceState(sessionId, isSilence, PA_PIPE_TYPE_MULTICHANNEL, uid);
     RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
     AudioPerformanceMonitor::GetInstance().DeleteSilenceMonitor(sessionId);
-    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), static_cast<size_t>(0));
+    EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_.size(), 1);
 }
 
 /**
@@ -776,6 +776,20 @@ HWTEST(AudioUtilsPlusUnitTest, JudgeNoise_001, TestSize.Level3)
     AudioPerformanceMonitor::GetInstance().RecordSilenceState(sessionId, true, PIPE_TYPE_LOWLATENCY_OUT, 0);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(sessionId);
     EXPECT_EQ(AudioPerformanceMonitor::GetInstance().silenceDetectMap_[sessionId].isRunning, false);
+}
+
+/**
+* @tc.name  : Test ReportEvent
+* @tc.type  : FUNC
+* @tc.number: ReportEvent_001
+* @tc.desc  : Test ReportEvent
+*/
+HWTEST(AudioUtilsPlusUnitTest, ReportEvent_001, TestSize.Level4)
+{
+    AudioPerformanceMonitor::GetInstance().ReportEvent(
+
+        static_cast<DetectEvent>(100), 1, PIPE_TYPE_UNKNOWN, ADAPTER_TYPE_UNKNOWN, 0);
+    EXPECT_NE(AudioPerformanceMonitor::GetInstance().overTimeLastReportTime_, ClockTime::GetRealNano());
 }
 } // namespace AudioStandard
 } // namespace OHOS

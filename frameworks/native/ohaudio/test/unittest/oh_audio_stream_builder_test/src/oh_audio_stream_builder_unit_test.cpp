@@ -1354,5 +1354,24 @@ HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetVolumeMode_001, Te
     result = OH_AudioStreamBuilder_Destroy(builder);
     EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioStreamBuilder_SetRendererPrivacy API.
+ * @tc.number: OH_AudioStreamBuilder_SetRendererPrivacy_004
+ * @tc.desc  : Test OH_AudioStreamBuilder_SetRendererPrivacy interface via private privacy.
+ */
+HWTEST(OHAudioStreamBuilderUnitTest, OH_AudioStreamBuilder_SetRendererPrivacy_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder;
+    OH_AudioStream_Type type = AUDIOSTREAM_TYPE_RENDERER;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_Create(&builder, type);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioStreamBuilder_SetRendererPrivacy(builder, static_cast<OH_AudioStream_PrivacyType>(3));
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+
+    result = OH_AudioStreamBuilder_Destroy(builder);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

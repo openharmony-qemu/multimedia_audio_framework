@@ -42,6 +42,7 @@ namespace {
     SLOHBufferQueueItf bufferQueueItf_;
     SLObjectItf pcmPlayerObject_;
     SLEngineItf engineEngine_;
+    SLRecordItf recordItf_;
 } // namespace
 
 static void BufferQueueCallback(SLOHBufferQueueItf bufferQueueItf, void *pContext, SLuint32 size)
@@ -1382,6 +1383,26 @@ HWTEST(AudioOpenslesPlayerUnitTest, Destroy_001, TestSize.Level1)
 {
     (*pcmPlayerObject_)->Destroy(nullptr);
     EXPECT_TRUE(true);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, SetRecordState_001, TestSize.Level1)
+{
+    SLRecordItf self = {};
+    SLuint32 state = 1;
+    SLresult result = (*recordItf_)->SetRecordState(nullptr, state);
+    EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
+    result = (*recordItf_)->SetRecordState(self, state);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS);
+}
+
+HWTEST(AudioOpenslesPlayerUnitTest, GetRecordState_001, TestSize.Level1)
+{
+    SLRecordItf self = {};
+    SLuint32 state = 1;
+    SLresult result = (*recordItf_)->GetRecordState(nullptr, &state);
+    EXPECT_EQ(result, SL_RESULT_PARAMETER_INVALID);
+    result = (*recordItf_)->GetRecordState(self, &state);
+    EXPECT_EQ(result, SL_RESULT_SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
