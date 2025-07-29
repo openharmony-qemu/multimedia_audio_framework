@@ -970,6 +970,7 @@ void AudioCaptureSource::InitLatencyMeasurement(void)
 {
     std::lock_guard<std::mutex> lock(signalDetectMutex_);
 
+    CHECK_AND_RETURN(AudioLatencyMeasurement::CheckIfEnabled());
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "signalDetectAgent is nullptr");
     signalDetectAgent_->sampleFormat_ = attr_.format;

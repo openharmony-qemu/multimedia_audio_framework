@@ -239,8 +239,12 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_007, TestSize.Level1)
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 
     devType = DEVICE_TYPE_USB_HEADSET;
-    role = INPUT_DEVICE;
+    role = OUTPUT_DEVICE;
     isConnected = true;
+    audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
+    EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
+
+    isConnected = false;
     audioDeviceStatus.OnDeviceStatusUpdated(devType, isConnected, macAddress, deviceName, streamInfo, role, hasPair);
     EXPECT_NE(audioDeviceStatus.audioA2dpOffloadManager_, nullptr);
 
