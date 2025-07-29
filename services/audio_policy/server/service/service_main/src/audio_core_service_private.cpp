@@ -2178,16 +2178,8 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
         return isOffloadOpened_[type].load();
     });
 
-    {
-        std::lock_guard<std::mutex> lk(offloadReOpenMutex_);
-        AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", isOffloadOpened_[type].load());
-        CHECK_AND_RETURN_RET_LOG(!isOffloadOpened_[type].load(), ERROR, "offload restart");
-        AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
-        audioPolicyManager_.CloseAudioPort(id, paIndex);
-        pipeManager_->RemoveAudioPipeInfo(id);
-        audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
-    }
-    return SUCCESS;
+    CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
+    return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
 }
 
 void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
