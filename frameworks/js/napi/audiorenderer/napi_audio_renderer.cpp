@@ -47,6 +47,15 @@ static constexpr double MAX_LOUDNESS_GAIN_IN_DOUBLE = 24.0;
 NapiAudioRenderer::NapiAudioRenderer()
     : audioRenderer_(nullptr), contentType_(CONTENT_TYPE_MUSIC), streamUsage_(STREAM_USAGE_MEDIA), env_(nullptr) {}
 
+NapiAudioRender::~NapiAudioRenderer()
+{
+    if (audioRenderer_ != nullptr) {
+        audioRenderer_->Release();
+        audioRenderer_ = nullptr;
+        AUDIO_INFO_LOG("Proactively release audioRenderer");
+    }
+}
+
 void NapiAudioRenderer::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
     if (nativeObject == nullptr) {
