@@ -532,3 +532,4 @@ int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint3
     return SUCCESS;
 }
 }
+}
