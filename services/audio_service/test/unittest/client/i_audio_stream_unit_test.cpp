@@ -29,15 +29,8 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
-// Supported audio parameters for fast audio stream
 const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_48000,
-};
-
-const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
-    MONO,
-    STEREO,
 };
 
 const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
@@ -54,9 +47,7 @@ const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
  */
 HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_001, TestSize.Level1)
 {
-    AudioStreamParams params;
-    params.format = SAMPLE_S16LE;
-    params.channels = 2;
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, SUCCESS);
@@ -70,9 +61,7 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_001, TestSize.Level1)
  */
 HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_002, TestSize.Level1)
 {
-    AudioStreamParams params;
-    params.format = 100;
-    params.channels = 2;
+    AudioStreamParams params = {SAMPLE_RATE_48000, 100, 2};
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
@@ -86,9 +75,7 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_002, TestSize.Level1)
  */
 HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_003, TestSize.Level1)
 {
-    AudioStreamParams params;
-    params.format = 100;
-    params.channels = -1;
+    AudioStreamParams params = {SAMPLE_RATE_48000, 100, -1};
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
@@ -103,9 +90,21 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_003, TestSize.Level1)
 HWTEST(IAudioStreamUnitTest, IsStreamSupported_001, TestSize.Level1)
 {
     int32_t streamFlags = 0;
-    AudioStreamParams params;
-    params.format = 100;
-    params.channels = 2;
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
+    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test IsStreamSupported API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamSupported_002
+ * @tc.desc  : Test IsStreamSupported interface.
+ */
+HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
+{
+    int32_t streamFlags = STREAM_FLAG_FAST;
+    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
     bool result = IAudioStream::IsStreamSupported(streamFlags, params);
     EXPECT_TRUE(result);
 }
