@@ -799,10 +799,10 @@ HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test SetSyncReadFrame API
+* @tc.name  : Test GetMuteFactor API
 * @tc.type  : FUNC
-* @tc.number: SetSyncReadFrame
-* @tc.desc  : Test SetSyncReadFrame interface.
+* @tc.number: GetMuteFactor
+* @tc.desc  : Test GetMuteFactor interface.
 */
 HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_001, TestSize.Level1)
 {
@@ -811,8 +811,24 @@ HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_001, TestSize.Level1)
     uint32_t byteSizePerFrame = 100;
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
 
-    uint32_t testValue = 123;
-    EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
+    EXPECT_EQ(ohAudioBuffer->GetMuteFactor(), 1);
+}
+
+/**
+* @tc.name  : Test SetRestoreStatus API
+* @tc.type  : FUNC
+* @tc.number: SetRestoreStatus
+* @tc.desc  : Test SetRestoreStatus interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, SetRestoreStatus_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    RestoreStatus result = ohAudioBuffer->SetRestoreStatus(NEED_RESTORE);
+
+    EXPECT_NE(RESTORE_ERROR, result);
 }
 
 /**
