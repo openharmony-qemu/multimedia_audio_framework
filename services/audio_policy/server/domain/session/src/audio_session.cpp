@@ -256,12 +256,18 @@ int32_t AudioSession::Deactivate()
     return SUCCESS;
 }
 
+bool AudioSession::IsLegalStreamUsage(const StreamUsage &streamUsage)
+{
+    return (streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
+        (streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
+        (streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
+        (streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+}
+
 bool AudioSession::CanCurrentStreamSetDefaultOutputDevice(const AudioInterrupt &interrupt)
 {
-    return (interrupt.streamUsage == STREAM_USAGE_VOICE_MESSAGE) ||
-        (interrupt.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION) ||
-        (interrupt.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION) ||
-        (interrupt.streamUsage == STREAM_USAGE_VOICE_MODEM_COMMUNICATION);
+    return (!(IsLegalStreamUsage(GetStreamUsageByAudioSessionScene(audioSessionScene_))) &&
+        IsLegalStreamUsage(interrupt.streamUsage));
 }
 
 int32_t AudioSession::EnableSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt)
