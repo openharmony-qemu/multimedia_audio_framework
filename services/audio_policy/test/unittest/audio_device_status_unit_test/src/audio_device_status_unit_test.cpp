@@ -217,6 +217,20 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_006, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioDeviceStatus.
+* @tc.number: GetModuleNameByType_001
+* @tc.desc  : Test GetModuleNameByType interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, GetModuleNameByType_001, TestSize.Level1)
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    auto moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_PRIMARY);
+    EXPECT_NE(moduleName, string(""));
+    moduleName = audioDeviceStatus.GetModuleNameByType(TYPE_INVALID);
+    EXPECT_EQ(moduleName, string(""));
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
 * @tc.number: AudioDeviceStatus_007
 * @tc.desc  : Test OnDeviceStatusUpdated interface.
 */
