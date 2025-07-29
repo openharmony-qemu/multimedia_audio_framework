@@ -59,16 +59,6 @@ napi_threadsafe_function NapiAudioVolumeKeyEvent::GetTsfn()
     return amVolEntTsfn_;
 }
 
-void NapiAudioVolumeKeyEvent::FreeVolumeTsfn(napi_env env)
-{
-    std::lock_guard<std::mutex> lock(mutex_);
-    napi_remove_env_cleanup_hook(env, NapiAudioVolumeKeyEvent::Cleanup, this);
-    if (amVolEntTsfn_ != nullptr) {
-        napi_release_threadsafe_function(amVolEntTsfn_, napi_tsfn_abort);
-        amVolEntTsfn_ = nullptr;
-    }
-}
-
 void NapiAudioVolumeKeyEvent::OnVolumeKeyEvent(VolumeEvent volumeEvent)
 {
     std::lock_guard<std::mutex> lock(mutex_);

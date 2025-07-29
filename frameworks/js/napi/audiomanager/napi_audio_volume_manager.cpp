@@ -1308,7 +1308,6 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
             int32_t ret = napiVolumeManager->audioSystemMngr_->UnregisterVolumeKeyEventCallback(
                 napiVolumeManager->cachedClientId_, cb);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "Unset of VolumeKeyEventCallback failed");
-            cb->FreeVolumeTsfn(env);
             napiVolumeManager->volumeKeyEventCallbackNapiList_.remove(cb);
             napiVolumeManager->volumeKeyEventCallbackNapi_.reset();
             napiVolumeManager->volumeKeyEventCallbackNapi_ = nullptr;
@@ -1317,9 +1316,6 @@ napi_value NapiAudioVolumeManager::UnregisterCallback(napi_env env, napi_value j
             int32_t ret = napiVolumeManager->audioSystemMngr_->UnregisterVolumeKeyEventCallback(
                 napiVolumeManager->cachedClientId_);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, undefinedResult, "Unset of VolumeKeyEventCallback failed");
-            for (auto &event : napiVolumeManager->volumeKeyEventCallbackNapiList_) {
-                event->FreeVolumeTsfn(env);
-            }
             napiVolumeManager->volumeKeyEventCallbackNapiList_.clear();
             napiVolumeManager->volumeKeyEventCallbackNapi_.reset();
             napiVolumeManager->volumeKeyEventCallbackNapi_ = nullptr;
