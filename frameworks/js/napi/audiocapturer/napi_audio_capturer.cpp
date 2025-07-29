@@ -46,7 +46,8 @@ NapiAudioCapturer::NapiAudioCapturer()
 NapiAudioCapturer::~NapiAudioCapturer()
 {
     if (audioCapturer_ != nullptr) {
-        audioCapturer_->Release();
+        bool ret = audioCapturer_->Release();
+        CHECK_AND_RETURN_LOG(ret, "AudioCapturer release fail");
         audioCapturer_ = nullptr;
         AUDIO_INFO_LOG("Proactively release audioCapturer");
     }
