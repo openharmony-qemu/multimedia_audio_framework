@@ -1981,7 +1981,12 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_078, TestSize.Level1
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
     ptrRendererInClientInner->state_ = STOPPED;
+    ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
     ptrRendererInClientInner->uidGetter_ = []() -> uid_t { return 1013; }; // 1013 media_service uid
+    EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
+
+    ptrRendererInClientInner->notifiedOperation_ = FLUSH_STREAM;
+    ptrRendererInClientInner->uidGetter_ = []() -> uid_t { return 9999; }; // 9999 invalid uid
     EXPECT_TRUE(ptrRendererInClientInner->FlushAudioStream());
 
     ptrRendererInClientInner->notifiedOperation_ = MAX_OPERATION_CODE;

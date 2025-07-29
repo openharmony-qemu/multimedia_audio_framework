@@ -646,6 +646,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
+
+    unprocessedFramesBytes_.fetch_add(bufferSize / sizePerFrameInByte_);
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
         return bufferSize;
     }
@@ -659,8 +661,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-
-    unprocessedFramesBytes_.fetch_add(oriBufferSize / sizePerFrameInByte_);
     totalBytesWrittenAfterFlush_.fetch_add(bufferSize / sizePerFrameInByte_);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);

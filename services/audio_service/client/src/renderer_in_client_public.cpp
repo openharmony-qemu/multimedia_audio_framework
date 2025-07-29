@@ -648,8 +648,7 @@ int32_t RendererInClientInner::SetSpeed(float speed)
         speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
     }
     audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(
-        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
     speed_ = speed;
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
