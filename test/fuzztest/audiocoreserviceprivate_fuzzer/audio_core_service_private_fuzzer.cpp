@@ -1054,54 +1054,6 @@ void AudioCoreServicePrivateCheckOffloadStreamFuzzTest()
     audioCoreService->CheckOffloadStream(streamChangeInfo);
 }
 
-void AudioCoreServicePrivateMuteSinkForSwitchGeneralDeviceFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
-        return;
-    }
-
-    AudioStreamDeviceChangeReasonExt reason;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
-    if (audioDeviceDescriptorNew == nullptr) {
-        return;
-    }
-    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
-    bool isClear = GetData<bool>();
-    if (isClear) {
-        streamDesc->oldDeviceDescs_.clear();
-    }
-    audioCoreService->MuteSinkForSwitchGeneralDevice(streamDesc, reason);
-}
-
-void AudioCoreServicePrivateMuteSinkForSwitchBluetoothDeviceFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    if (audioCoreService == nullptr || streamDesc == nullptr || DeviceTypeVec.size() == 0) {
-        return;
-    }
-
-    AudioStreamDeviceChangeReasonExt reason;
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorNew = std::make_shared<AudioDeviceDescriptor>();
-    if (audioDeviceDescriptorNew == nullptr) {
-        return;
-    }
-    audioDeviceDescriptorNew->deviceType_ = DeviceTypeVec[GetData<uint32_t>() % DeviceTypeVec.size()];
-    streamDesc->newDeviceDescs_.push_back(audioDeviceDescriptorNew);
-    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorOld = std::make_shared<AudioDeviceDescriptor>();
-    streamDesc->oldDeviceDescs_.push_back(audioDeviceDescriptorOld);
-    bool isClear = GetData<bool>();
-    if (isClear) {
-        streamDesc->oldDeviceDescs_.clear();
-    }
-    audioCoreService->MuteSinkForSwitchBluetoothDevice(streamDesc, reason);
-}
-
 void AudioCoreServicePrivateActivateInputDeviceFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -1198,8 +1150,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServicePrivateHandleDeviceChangeForFetchOutputDeviceFuzzTest,
     AudioCoreServicePrivateHandleDeviceChangeForFetchInputDeviceFuzzTest,
     AudioCoreServicePrivateCheckOffloadStreamFuzzTest,
-    AudioCoreServicePrivateMuteSinkForSwitchGeneralDeviceFuzzTest,
-    AudioCoreServicePrivateMuteSinkForSwitchBluetoothDeviceFuzzTest,
     AudioCoreServicePrivateActivateInputDeviceFuzzTest,
     LoadSplitModuleFuzzTest,
 };

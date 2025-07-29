@@ -431,12 +431,13 @@ private:
     void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
-    void MuteSinkForSwitchGeneralDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const AudioStreamDeviceChangeReasonExt reason);
-    void MuteSinkForSwitchBluetoothDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
+    void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
+    bool IsHeadsetToSpkOrEp(std::shared_ptr<AudioDeviceDescriptor> oldDesc,
+        std::shared_ptr<AudioDeviceDescriptor> newDesc);
+    bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
         AudioStreamDeviceChangeReasonExt reason);
@@ -523,7 +524,6 @@ private:
     bool enableDualHalToneState_ = false;
     int32_t shouldUpdateDeviceDueToDualTone_ = false;
     bool isFastControlled_ = true;
-    bool isVoiceCallMuted_ = false;
     std::mutex serviceFlagMutex_;
 
     // offload delay release

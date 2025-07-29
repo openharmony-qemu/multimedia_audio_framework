@@ -2576,5 +2576,101 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level1)
     ASSERT_EQ(result, SUCCESS);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_001 end");
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: SleepForSwitchDevice_001
+ * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->SleepForSwitchDevice(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: SleepForSwitchDevice_002
+ * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->SleepForSwitchDevice(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    uint32_t targetTime = 160000; // 160ms
+    EXPECT_GE(duration, targetTime);
+    EXPECT_LE(duration, targetTime + deltaUs);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: SleepForSwitchDevice_003
+ * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_BLUETOOTH_A2DP, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->oldDeviceDescs_.push_back(oldDesc);
+    streamDesc->oldDeviceDescs_.push_back(newDesc);
+
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt reason(extReason);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->SleepForSwitchDevice(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+}
 } // namespace AudioStandard
 } // namespace OHOS
