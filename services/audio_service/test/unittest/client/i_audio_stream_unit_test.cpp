@@ -29,33 +29,85 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+const std::map<std::pair<ContentType, StreamUsage>, AudioStreamType> streamTypeMap_ = IAudioStream::CreateStreamMap();
+// Supported audio parameters for fast audio stream
+const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
+    SAMPLE_RATE_48000,
+};
+
+const std::vector<AudioChannel> AUDIO_FAST_STREAM_SUPPORTED_CHANNELS {
+    MONO,
+    STEREO,
+};
+
+const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
+    SAMPLE_S16LE,
+    SAMPLE_S32LE,
+    SAMPLE_F32LE
+};
 
 /**
- * @tc.name  : Test OnOperationHandled API
+ * @tc.name  : Test GetByteSizePerFrame API
  * @tc.type  : FUNC
- * @tc.number: OnOperationHandled_001
- * @tc.desc  : Test OnOperationHandled interface.
+ * @tc.number: GetByteSizePerFrame_001
+ * @tc.desc  : Test GetByteSizePerFrame interface.
  */
-HWTEST(CapturerInClientUnitTest, OnOperationHandled_001, TestSize.Level1)
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_001, TestSize.Level1)
 {
-    std::shared_ptr<CapturerInClientInner> capturerInClientInner_ =
-        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
-    Operation operation = Operation::UPDATE_STREAM;
-    int64_t result = 1;
-    int32_t ret = capturerInClientInner_->OnOperationHandled(operation, result);
+    AudioStreamParams params;
+    params.format = SAMPLE_S16LE;
+    params.channels = 2;
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, SUCCESS);
+}
 
-    operation = Operation::BUFFER_OVERFLOW;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
-    EXPECT_EQ(ret, SUCCESS);
+/**
+ * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrame_002
+ * @tc.desc  : Test GetByteSizePerFrame interface.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_002, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.format = 100;
+    params.channels = 2;
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 
-    operation = Operation::RESTORE_SESSION;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
-    EXPECT_EQ(ret, SUCCESS);
+/**
+ * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrame_003
+ * @tc.desc  : Test GetByteSizePerFrame interface.
+ */
+HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_003, TestSize.Level1)
+{
+    AudioStreamParams params;
+    params.format = 100;
+    params.channels = -1;
+    size_t result = 0;
+    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
 
-    operation = Operation::START_STREAM;
-    ret = capturerInClientInner_->OnOperationHandled(operation, result);
-    EXPECT_EQ(ret, SUCCESS);
+/**
+ * @tc.name  : Test IsStreamSupported API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamSupported_001
+ * @tc.desc  : Test IsStreamSupported interface.
+ */
+HWTEST(IAudioStreamUnitTest, IsStreamSupported_001, TestSize.Level1)
+{
+    int32_t streamFlags = 0;
+    AudioStreamParams params;
+    params.format = 100;
+    params.channels = 2;
+    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
+    EXPECT_TRUE(result);
 }
 } // namespace AudioStandard
 } // namespace OHOS
