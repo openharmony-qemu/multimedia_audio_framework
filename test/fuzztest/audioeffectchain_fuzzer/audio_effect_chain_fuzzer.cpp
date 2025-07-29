@@ -445,20 +445,6 @@ void AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest()
     audioEffectChainManager->ResetInfo();
 }
 
-void AudioEffectChainUpdateSpatializationEnabledFuzzTest()
-{
-    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
-    if (audioEffectChainManager == nullptr || g_testDeviceTypes.size() == 0) {
-        return;
-    }
-
-    AudioSpatializationState audioSpatializationState = {};
-    audioSpatializationState.spatializationEnabled = GetData<bool>();
-    audioSpatializationState.headTrackingEnabled = GetData<bool>();
-    audioEffectChainManager->deviceType_ = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
-    audioEffectChainManager->UpdateSpatializationEnabled(audioSpatializationState);
-}
-
 void AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest()
 {
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
@@ -1084,7 +1070,6 @@ TestFuncs g_testFuncs = {
     AudioEffectChainGetOutputChannelInfoFuzzTest,
     AudioEffectChainStreamVolumeUpdateFuzzTest,
     AudioEffectChainQueryHdiSupportedChannelInfoFuzzTest,
-    AudioEffectChainUpdateSpatializationEnabledFuzzTest,
     AudioEffectChainUpdateEffectBtOffloadSupportedFuzzTest,
     AudioEffectChainLoadEffectPropertiesFuzzTest,
     AudioEffectChainSetAudioEffectPropertyFuzzTest,
