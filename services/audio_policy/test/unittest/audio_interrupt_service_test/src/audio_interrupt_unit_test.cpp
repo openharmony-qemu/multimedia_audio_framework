@@ -4145,5 +4145,38 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_010, TestSize.Level1)
     std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
+/**
+* @tc.name  : Test InterruptStrategy Mute
+* @tc.number: AudioInterruptStrategy_001
+* @tc.desc  : Test InterruptStrategy Mute
+*/
+HWTEST(AudioInterruptServiceUnitTest, AudioInterruptStrategy_001, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    EXPECT_NE(audioInterruptService, nullptr);
+
+    int32_t fakePid = 123;
+    AudioInterrupt incomingInterrupt1;
+    incomingInterrupt1.pid = fakePid;
+    incomingInterrupt1.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt1.streamId = 888; // 888 is a fake stream id.
+
+    int32_t fakePid2 = 124;
+    AudioInterrupt incomingInterrupt2;
+    incomingInterrupt2.pid = fakePid2;
+    incomingInterrupt2.audioFocusType.sourceType = SOURCE_TYPE_UNPROCESSED;
+    incomingInterrupt2.streamId = 889; // 889 is a fake stream id.
+    incomingInterrupt1.strategy = InterruptStrategy::MUTE;
+
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->UpdateMuteAudioFocusStrategy(incomingInterrupt1, incomingInterrupt2, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    audioInterruptService->UpdateMuteAudioFocusStrategy(incomingInterrupt2, incomingInterrupt1, focusEntry);
+    EXPECT_EQ(focusEntry.hintType, INTERRUPT_HINT_MUTE);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

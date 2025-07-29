@@ -445,7 +445,11 @@ void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
         return;
     }
     allCapturerMap_.erase(sessionId);
-    muteStateCallbacks_.erase(sessionId);
+    {
+        std::unique_lock<std::mutex> muteStatelock(muteStateMapMutex_);
+        muteStateCallbacks_.erase(sessionId);
+    }
+
     if (!isSwitchStream) {
         RemoveIdFromMuteControlSet(sessionId);
     }
