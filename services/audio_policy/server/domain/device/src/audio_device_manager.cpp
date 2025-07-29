@@ -864,6 +864,7 @@ std::vector<shared_ptr<AudioDeviceDescriptor>> AudioDeviceManager::GetAvailableD
     GetDefaultAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     GetRemoteAvailableDevicesByUsage(usage, audioDeviceDescriptors);
     for (const auto &dev : connectedDevices_) {
+        CHECK_AND_BREAK_LOG(dev != nullptr, "dev is nullptr");
         for (const auto &devicePrivacy : devicePrivacyMaps_) {
             list<DevicePrivacyInfo> deviceInfos = devicePrivacy.second;
             std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(*dev);
