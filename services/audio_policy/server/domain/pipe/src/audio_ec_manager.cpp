@@ -521,6 +521,7 @@ void AudioEcManager::PresetArmIdleInput(const string& address)
         if (isEcFeatureEnable_) {
             usbSourceModuleInfo_ = moduleInfo;
         }
+        audioConfigManager_.UpdateDynamicCapturerConfig(ClassType::TYPE_USB, moduleInfo);
     }
 }
 
@@ -622,6 +623,7 @@ void AudioEcManager::GetTargetSourceTypeAndMatchingFlag(SourceType source,
             break;
         case SOURCE_TYPE_UNPROCESSED:
             targetSource = SOURCE_TYPE_UNPROCESSED;
+            useMatchingPropInfo = true;
             break;
         case SOURCE_TYPE_LIVE:
             targetSource = SOURCE_TYPE_LIVE;

@@ -811,6 +811,19 @@ int32_t RendererInClientInner::GetBufQueueState(BufferQueueState &bufState)
     return SUCCESS;
 }
 
+bool RendererInClientInner::CheckBufferValid(const BufferDesc &bufDesc)
+{
+    if (bufDesc.bufLength > cbBufferSize_) {
+        return false;
+    }
+
+    if (bufDesc.dataLength > cbBufferSize_) {
+        return false;
+    }
+
+    return true;
+}
+
 int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
 {
     Trace trace("RendererInClientInner::Enqueue " + std::to_string(bufDesc.bufLength));
@@ -822,7 +835,8 @@ int32_t RendererInClientInner::Enqueue(const BufferDesc &bufDesc)
     CHECK_AND_RETURN_RET_LOG(curStreamParams_.encoding != ENCODING_AUDIOVIVID ||
             converter_ != nullptr && converter_->CheckInputValid(bufDesc),
         ERR_INVALID_PARAM, "Invalid buffer desc");
-    if (bufDesc.bufLength > cbBufferSize_ || bufDesc.dataLength > cbBufferSize_) {
+    // allow opensles enqueue self buffer
+    if ((rendererInfo_.playerType != PLAYER_TYPE_OPENSL_ES) && !CheckBufferValid(bufDesc)) {
         AUDIO_WARNING_LOG("Invalid bufLength:%{public}zu or dataLength:%{public}zu, should be %{public}zu",
             bufDesc.bufLength, bufDesc.dataLength, cbBufferSize_);
     }

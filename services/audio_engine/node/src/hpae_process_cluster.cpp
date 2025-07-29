@@ -48,12 +48,19 @@ HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sink
     } else {
         renderEffectNode_ = nullptr;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeProcessCluster");
+#endif
 }
 
 HpaeProcessCluster::~HpaeProcessCluster()
 {
     AUDIO_INFO_LOG("process cluster destroyed, processor scene type is %{public}d", GetSceneType());
     Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeProcessCluster::DoProcess()

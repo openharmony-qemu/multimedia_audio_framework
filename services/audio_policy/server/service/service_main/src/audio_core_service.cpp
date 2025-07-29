@@ -294,7 +294,6 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
-    AUDIO_INFO_LOG("deviceType: %{public}d", streamDesc->newDeviceDescs_.front()->deviceType_);
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal cases");
 
@@ -317,7 +316,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
-    AUDIO_INFO_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
+    AUDIO_DEBUG_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ =
@@ -353,7 +352,6 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     if (IsStreamSupportMultiChannel(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_MULTICHANNEL;
     }
-    AUDIO_INFO_LOG("default - NORMAL");
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
@@ -1073,6 +1071,11 @@ void AudioCoreService::OnCapturerSessionRemoved(uint64_t sessionID)
     audioCapturerSession_.OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioCoreService::CloseWakeUpAudioCapturer()
+{
+    audioCapturerSession_.CloseWakeUpAudioCapturer();
+}
+
 int32_t AudioCoreService::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     FetchOutputDeviceAndRoute("TriggerFetchDevice", reason);
@@ -1239,8 +1242,8 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller)
         }
 
         // handle nearlink
-        int32_t nearlinkFetchResult = ActivateNearlinkDevice(streamDesc);
-        CHECK_AND_CONTINUE_LOG(nearlinkFetchResult == SUCCESS, "nearlink fetch output device failed");
+        int32_t inputRet = ActivateInputDevice(streamDesc);
+        CHECK_AND_RETURN_RET_LOG(inputRet == SUCCESS, inputRet, "Activate input device failed");
 
         if (needUpdateActiveDevice) {
             isUpdateActiveDevice = UpdateInputDevice(inputDeviceDesc, GetRealUid(streamDesc));

@@ -18,6 +18,7 @@ package OHOS.AudioStandard;
 import AudioServiceTypes;
 
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
+sequenceable audio_info..OHOS.AudioStandard.AudioProcessConfig;
 interface ICoreServiceProviderIpc {
     [ipccode 0] void UpdateSessionOperation(
         [in] unsigned int sessionId,
@@ -37,4 +38,7 @@ interface ICoreServiceProviderIpc {
     void ReloadCaptureSession(
         [in] unsigned int sessionId,
         [in] unsigned int operation /* SessionOperation */);
+    void SetWakeUpAudioCapturerFromAudioServer(
+        [in] AudioProcessConfig config,
+        [out] int ret);
 }

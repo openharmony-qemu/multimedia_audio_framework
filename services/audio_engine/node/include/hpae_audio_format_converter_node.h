@@ -27,6 +27,7 @@ namespace HPAE {
 class HpaeAudioFormatConverterNode : public HpaePluginNode {
 public:
     HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeInfo, HpaeNodeInfo nodeInfo);
+    virtual ~HpaeAudioFormatConverterNode();
     void RegisterCallback(INodeFormatInfoCallback *callback);
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,

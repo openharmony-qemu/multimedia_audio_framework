@@ -77,7 +77,6 @@ int32_t AudioCoreService::EventEntry::CreateRendererClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateRendererClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -86,7 +85,6 @@ int32_t AudioCoreService::EventEntry::CreateCapturerClient(
     std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    AUDIO_INFO_LOG("withlock flag %{public}u, sessionId %{public}u", flag, sessionId);
     coreService_->CreateCapturerClient(streamDesc, flag, sessionId);
     return SUCCESS;
 }
@@ -428,6 +426,12 @@ void AudioCoreService::EventEntry::OnCapturerSessionRemoved(uint64_t sessionID)
     coreService_->OnCapturerSessionRemoved(sessionID);
 }
 
+void AudioCoreService::EventEntry::CloseWakeUpAudioCapturer()
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    coreService_->CloseWakeUpAudioCapturer();
+}
+
 int32_t AudioCoreService::EventEntry::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
@@ -506,6 +510,12 @@ int32_t AudioCoreService::EventEntry::GetPreferredInputStreamType(AudioCapturerI
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->GetPreferredInputStreamType(capturerInfo);
+}
+
+int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->SetWakeUpAudioCapturerFromAudioServer(config);
 }
 }
 }

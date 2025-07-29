@@ -70,10 +70,15 @@ HpaeRenderEffectNode::HpaeRenderEffectNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     }
 #endif
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeRenderEffectNode");
-    }
+    SetNodeName("hpaeRenderEffectNode");
+#endif
+}
+
+HpaeRenderEffectNode::~HpaeRenderEffectNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 

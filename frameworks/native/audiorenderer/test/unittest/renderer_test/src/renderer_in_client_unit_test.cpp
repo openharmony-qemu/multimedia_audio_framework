@@ -2252,5 +2252,68 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_089, TestSize.Level1
 
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_090
+ * @tc.desc  : Test RendererInClientInner::ProcessWriteInner
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_090, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // totalsize is 100
+    uint32_t totalSizeInFrame = 100;
+    uint32_t byteSizePerFrame = 1;
+    ptrRendererInClientInner->clientBuffer_ = OHAudioBufferBase::CreateFromLocal(totalSizeInFrame, byteSizePerFrame);
+    ptrRendererInClientInner->sizePerFrameInByte_ = 1;
+    // enginesizeinframe 2
+    ptrRendererInClientInner->engineTotalSizeInFrame_ = 2;
+    ptrRendererInClientInner->cbBufferSize_ = 1;
+    ptrRendererInClientInner->spanSizeInFrame_ = 1;
+
+    // datalenth == 0
+    BufferDesc bufferDesc;
+    int32_t ret = ptrRendererInClientInner->ProcessWriteInner(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+
+    // totalsize is 100
+    ptrRendererInClientInner->clientBuffer_->SetCurWriteFrame(100);
+    ret = ptrRendererInClientInner->ProcessWriteInner(bufferDesc);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInClientInner_091
+ * @tc.desc  : Test RendererInClientInner::CheckBufferValid
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_091, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    // buffersize 10 byte
+    ptrRendererInClientInner->cbBufferSize_ = 10;
+
+    BufferDesc bufferDesc;
+    // bufLength > cbBufferSize_
+    bufferDesc.bufLength = 100;
+    bool ret = ptrRendererInClientInner->CheckBufferValid(bufferDesc);
+    EXPECT_EQ(ret, false);
+
+    // bufLength == cbBufferSize_
+    bufferDesc.bufLength = 10;
+    // dataLength == cbBufferSize_
+    bufferDesc.dataLength = 10;
+    ret = ptrRendererInClientInner->CheckBufferValid(bufferDesc);
+    EXPECT_EQ(ret, true);
+
+    // bufLength == cbBufferSize_
+    bufferDesc.bufLength = 10;
+    // dataLength > cbBufferSize_
+    bufferDesc.dataLength = 100;
+    ret = ptrRendererInClientInner->CheckBufferValid(bufferDesc);
+    EXPECT_EQ(ret, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -36,10 +36,15 @@ HpaeSourceOutputNode::HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo)
       framesRead_(0), totalFrames_(0), isMute_(false)
 {
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeSourceOutputNode");
-    }
+    SetNodeName("hpaeSourceOutputNode");
+#endif
+}
+
+HpaeSourceOutputNode::~HpaeSourceOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 

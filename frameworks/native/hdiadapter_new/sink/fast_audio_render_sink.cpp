@@ -274,7 +274,7 @@ void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
-    AUDIO_INFO_LOG("FastAudioRenderSink::SetAudioParameter SetExtraParams ret: %{public}d", ret);
+    AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);
 }
 
 std::string FastAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)

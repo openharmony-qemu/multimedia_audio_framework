@@ -28,6 +28,9 @@ namespace HPAE {
 HpaeSourceInputCluster::HpaeSourceInputCluster(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), sourceInputNode_(std::make_shared<HpaeSourceInputNode>(nodeInfo))
 {
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeSourceInputCluster");
+#endif
 }
 
 HpaeSourceInputCluster::HpaeSourceInputCluster(std::vector<HpaeNodeInfo> &nodeInfos)
@@ -35,12 +38,19 @@ HpaeSourceInputCluster::HpaeSourceInputCluster(std::vector<HpaeNodeInfo> &nodeIn
     CHECK_AND_RETURN_LOG(!nodeInfos.empty(), "nodeInfos vector is empty!");
     auto nodeInfo = *nodeInfos.begin();
     SetNodeInfo(nodeInfo);
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeSourceInputCluster");
+#endif
     sourceInputNode_ = std::make_shared<HpaeSourceInputNode>(nodeInfos);
 }
 
 HpaeSourceInputCluster::~HpaeSourceInputCluster()
 {
     Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeSourceInputCluster::DoProcess()

@@ -58,7 +58,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
     nodeInfo.sessionId = sessionId;
     std::shared_ptr<HpaeSinkOutputNode> hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
     EXPECT_EQ(hpaeSinkOutputNode->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeSinkOutputNode->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeSinkOutputNode->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSinkOutputNode->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSinkOutputNode->GetBitWidth(), nodeInfo.format);
@@ -66,7 +65,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, constructHpaeSinkOutputNode, TestSize.Level0)
 
     HpaeNodeInfo &retNi = hpaeSinkOutputNode->GetNodeInfo();
     EXPECT_EQ(retNi.samplingRate, nodeInfo.samplingRate);
-    EXPECT_EQ(retNi.nodeId, nodeInfo.nodeId);
     EXPECT_EQ(retNi.frameLen, nodeInfo.frameLen);
     EXPECT_EQ(retNi.channels, nodeInfo.channels);
     EXPECT_EQ(retNi.format, nodeInfo.format);

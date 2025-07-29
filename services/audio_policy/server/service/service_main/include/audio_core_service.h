@@ -129,6 +129,7 @@ public:
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
         void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
         int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
+        void CloseWakeUpAudioCapturer();
         void OnCapturerSessionRemoved(uint64_t sessionID);
         int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
         void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,
@@ -161,6 +162,7 @@ public:
         int32_t GetSessionDefaultOutputDevice(const int32_t callerPid, DeviceType &deviceType);
         int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
         std::vector<sptr<VolumeGroupInfo>> GetVolumeGroupInfos();
+        int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
 private:
         std::shared_ptr<AudioCoreService> coreService_;
         std::shared_mutex eventMutex_;
@@ -234,6 +236,8 @@ private:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     void NotifyRemoteRenderState(std::string networkId, std::string condition, std::string value);
     int32_t OnCapturerSessionAdded(uint64_t sessionID, SessionInfo sessionInfo, AudioStreamInfo streamInfo);
+    void CloseWakeUpAudioCapturer();
+    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
     void OnCapturerSessionRemoved(uint64_t sessionID);
     int32_t TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason);
     void FetchOutputDeviceForTrack(AudioStreamChangeInfo &streamChangeInfo,

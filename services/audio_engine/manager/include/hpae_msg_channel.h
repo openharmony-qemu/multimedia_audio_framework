@@ -134,11 +134,6 @@ public:
     virtual void OnRewindAndFlush(uint64_t rewindTime){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
-    // add callback
-    virtual uint32_t OnGetNodeId()
-    {
-        return 0;
-    };
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t NodeId, const HpaeDfxNodeInfo &nodeInfo){};
 };

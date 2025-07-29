@@ -31,6 +31,9 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo), mixerNode_(std::make_shared<HpaeMixerNode>(nodeInfo)),
       hpaeSinkOutputNode_(std::make_shared<HpaeSinkOutputNode>(nodeInfo))
 {
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeOutputCluster");
+#endif
     if (mixerNode_->SetupAudioLimiter() != SUCCESS) {
         AUDIO_INFO_LOG("HpaeOutputCluster mixerNode SetupAudioLimiter failed!");
     }
@@ -43,6 +46,10 @@ HpaeOutputCluster::HpaeOutputCluster(HpaeNodeInfo &nodeInfo)
 HpaeOutputCluster::~HpaeOutputCluster()
 {
     Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeOutputCluster::DoProcess()

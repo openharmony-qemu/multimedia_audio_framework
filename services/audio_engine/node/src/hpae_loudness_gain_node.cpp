@@ -82,10 +82,7 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
         std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
 #endif
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeLoudnessGainNode");
-    }
+    SetNodeName("hpaeLoudnessGainNode");
 #endif
 }
 
@@ -100,6 +97,10 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
         dlHandle_ = nullptr;
         audioEffectLibHandle_ = nullptr;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)

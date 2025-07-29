@@ -197,7 +197,7 @@ int32_t HpaeAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processCo
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t ret = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
+            int32_t ret = CoreServiceHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
             if (ret < 0) {
                 AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
                 return ERROR;

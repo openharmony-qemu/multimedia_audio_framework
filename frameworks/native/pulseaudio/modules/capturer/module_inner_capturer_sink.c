@@ -176,7 +176,7 @@ static void ProcessRewind(struct userdata *u, pa_usec_t now)
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
 
     rewindNbytes = u->sink->thread_info.rewind_nbytes;
-    if (!PA_SINK_IS_OPENED(u->sink->thread_info.state) || rewindNbytes <= 0) {
+    if (!PA_SINK_IS_OPENED(u->sink->thread_info.state) || rewindNbytes == 0) {
         goto do_nothing;
     }
     AUDIO_DEBUG_LOG("Requested to rewind %lu bytes.", (unsigned long) rewindNbytes);

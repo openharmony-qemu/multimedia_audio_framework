@@ -54,7 +54,7 @@ NapiAudioManager::NapiAudioManager()
 
 NapiAudioManager::~NapiAudioManager()
 {
-    AUDIO_DEBUG_LOG("NapiAudioManager::~NapiAudioManager()");
+    AUDIO_DEBUG_LOG("in");
 }
 
 NapiAudioManager* NapiAudioManager::GetParamWithSync(const napi_env &env, napi_callback_info info,
@@ -1283,12 +1283,12 @@ template<typename T> void NapiAudioManager::RegisterInterruptCallback(napi_env e
     napi_typeof(env, argv[PARAM1], &paramArg1);
     napi_valuetype handler = napi_undefined;
     if (paramArg1 != napi_object) {
-        AUDIO_ERR_LOG("NapiAudioManager::On Type mismatch for parameter 2");
+        AUDIO_ERR_LOG("Type mismatch for parameter 2");
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
     if (napi_typeof(env, argv[PARAM2], &handler) != napi_ok || handler != napi_function) {
-        AUDIO_ERR_LOG("NapiAudioManager::On type mismatch for parameter 3");
+        AUDIO_ERR_LOG("type mismatch for parameter 3");
         NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
         return;
     }
@@ -1421,7 +1421,7 @@ napi_value NapiAudioManager::On(napi_env env, napi_callback_info info)
     if (argCount == minArgCount) {
         napi_valuetype handler = napi_undefined;
         if (napi_typeof(env, argv[PARAM1], &handler) != napi_ok || handler != napi_function) {
-            AUDIO_ERR_LOG("NapiAudioManager::On type mismatch for parameter 2");
+            AUDIO_ERR_LOG("type mismatch for parameter 2");
             NapiAudioError::ThrowError(env, NAPI_ERR_INPUT_INVALID);
             return undefinedResult;
         }

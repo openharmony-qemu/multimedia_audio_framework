@@ -48,6 +48,8 @@ BluetoothAudioCaptureSource::~BluetoothAudioCaptureSource()
     if (sourceInited_) {
         DeInit();
     }
+
+    DumpFileUtil::CloseDumpFile(&dumpFile_);
     AUDIO_INFO_LOG("[%{public}s] volumeDataCount: %{public}" PRId64, logUtilsTag_.c_str(), volumeDataCount_);
     CapturerClockManager::GetInstance().DeleteAudioSourceClock(captureId_);
 }
@@ -89,7 +91,6 @@ void BluetoothAudioCaptureSource::DeInit(void)
     }
     audioCapture_ = nullptr;
     validState_ = true;
-    DumpFileUtil::CloseDumpFile(&dumpFile_);
 }
 
 bool BluetoothAudioCaptureSource::IsInited(void)

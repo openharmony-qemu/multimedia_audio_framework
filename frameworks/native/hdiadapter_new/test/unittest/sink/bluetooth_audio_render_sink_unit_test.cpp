@@ -49,7 +49,7 @@ void BluetoothAudioRenderSinkUnitTest::SetUpTestCase()
 {
     id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
     hearingAidId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
+        HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_HEARING_AID, true);
 }
 
 void BluetoothAudioRenderSinkUnitTest::TearDownTestCase()

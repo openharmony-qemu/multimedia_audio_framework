@@ -63,11 +63,18 @@ HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
 #endif
     frameLenMs_ = nodeInfo.samplingRate ? nodeInfo.frameLen * TIME_MS_PER_SEC / nodeInfo.samplingRate : 0;
 #ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("hpaeOffloadSinkOutputNode");
     if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeOffloadSinkOutputNode");
         callback->OnNotifyDfxNodeInfo(true, 0, GetNodeInfo());
     }
+#endif
+}
+
+HpaeOffloadSinkOutputNode::~HpaeOffloadSinkOutputNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 

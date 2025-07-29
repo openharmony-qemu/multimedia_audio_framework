@@ -32,7 +32,7 @@ typedef void (*AppCallbackFunc)(void *pHndl);
 class HpaeSinkInputNode : public OutputNode<HpaePcmBuffer *> {
 public:
     HpaeSinkInputNode(HpaeNodeInfo &nodeInfo);
-    ~HpaeSinkInputNode() = default;
+    virtual ~HpaeSinkInputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;     // no implement, virtual class
     virtual bool ResetAll() override;  // no implement, virtual class

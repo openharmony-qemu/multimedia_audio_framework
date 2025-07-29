@@ -28,6 +28,7 @@ namespace HPAE {
 class HpaeSourceOutputNode : public InputNode<HpaePcmBuffer *> {
 public:
     HpaeSourceOutputNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeSourceOutputNode();
     virtual void DoProcess() final;
     virtual bool Reset() final;
     bool ResetAll() final;
