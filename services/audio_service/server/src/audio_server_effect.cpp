@@ -208,7 +208,7 @@ int32_t AudioServer::LoadHdiEffectModel()
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray,
     int32_t deviceType)
 {
-    int32_t size = propertyArray.property.size();
+    size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -250,15 +250,15 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArrayV3 &property
     propertyArray.property.insert(propertyArray.property.end(),
         enhancePropertyArray.property.begin(), enhancePropertyArray.property.end());
 
-    int32_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+    size_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     return AUDIO_OK;
 }
 
 int32_t AudioServer::SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray)
 {
-    int32_t size = propertyArray.property.size();
+    size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -283,8 +283,8 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
     AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEffectChainManager != nullptr, ERROR, "audioEffectChainManager is nullptr");
     int32_t ret = audioEffectChainManager->GetAudioEffectProperty(propertyArray);
-    int32_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+    size_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "audio enhance property array size invalid");
     return ret;
 }
@@ -292,7 +292,7 @@ int32_t AudioServer::GetAudioEffectProperty(AudioEffectPropertyArray &propertyAr
 int32_t AudioServer::SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray,
     int32_t deviceType)
 {
-    int32_t size = propertyArray.property.size();
+    size_t size = propertyArray.property.size();
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -318,8 +318,8 @@ int32_t AudioServer::GetAudioEnhanceProperty(AudioEnhancePropertyArray &property
     AudioEnhanceChainManager *audioEnhanceChainManager = AudioEnhanceChainManager::GetInstance();
     CHECK_AND_RETURN_RET_LOG(audioEnhanceChainManager != nullptr, ERROR, "audioEnhanceChainManager is nullptr");
     int32_t ret = audioEnhanceChainManager->GetAudioEnhanceProperty(propertyArray, static_cast<DeviceType>(deviceType));
-    int32_t size = propertyArray.property.size();
-    CHECK_AND_RETURN_RET_LOG(size >= 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
+    size_t size = propertyArray.property.size();
+    CHECK_AND_RETURN_RET_LOG(size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
         ERROR_INVALID_PARAM, "Audio enhance property array size invalid");
     return ret;
 }
