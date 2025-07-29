@@ -2576,5 +2576,19 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level1)
     ASSERT_EQ(result, SUCCESS);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_001 end");
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AddSessionId_001
+ * @tc.desc  : Test AudioCoreService::AddSessionId()
+ */
+HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    uint32_t sessionId = 1;
+    audioCoreService->AddSessionId(sessionId);
+    ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
+    audioCoreService->DeleteSessionId(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -107,12 +107,17 @@ constexpr int32_t MAX_RENDERER_STREAM_CNT_PER_UID = 128;
 const int32_t DEFAULT_MAX_RENDERER_INSTANCES = 128;
 const int32_t DEFAULT_MAX_LOOPBACK_INSTANCES = 1;
 const int32_t MCU_UID = 7500;
+const int32_t TV_SERVICE_UID = 7501;
 constexpr int32_t CHECK_ALL_RENDER_UID = -1;
 constexpr int64_t RENDER_DETECTION_CYCLE_NS = 10000000000;
 constexpr int32_t RENDER_BAD_FRAMES_RATIO = 100;
 static const std::set<int32_t> RECORD_CHECK_FORWARD_LIST = {
     VM_MANAGER_UID,
     UID_CAMERA
+};
+static const std::set<int32_t> GENERATE_SESSIONID_UID_SET = {
+    MCU_UID,
+    TV_SERVICE_UID
 };
 const int32_t RSS_THRESHOLD = 2;
 // using pass-in appInfo for uids:
@@ -2711,7 +2716,7 @@ int32_t AudioServer::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64
 int32_t AudioServer::GenerateSessionId(uint32_t &sessionId)
 {
     int32_t uid = IPCSkeleton::GetCallingUid();
-    CHECK_AND_RETURN_RET_LOG(uid == MCU_UID, ERROR, "uid is %{public}d, not mcu uid", uid);
+    CHECK_AND_RETURN_RET_LOG(GENERATE_SESSIONID_UID_SET.count(uid) == 1, ERROR, "uid is %{public}d, not mcu uid", uid);
     sessionId = PolicyHandler::GetInstance().GenerateSessionId(uid);
     return SUCCESS;
 }

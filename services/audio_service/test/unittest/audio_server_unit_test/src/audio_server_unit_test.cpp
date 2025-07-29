@@ -2511,5 +2511,19 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2
     int32_t ret = audioServer->SetRenderWhitelist(list);
     EXPECT_EQ(SUCCESS, ret);
 }
+
+/**
+ * @tc.name  : Test GenerateSessionId API
+ * @tc.type  : FUNC
+ * @tc.number: GenerateSessionId_001
+ * @tc.desc  : Test GenerateSessionId interface.
+ */
+HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    uint32_t sessionId = 0;
+    int32_t ret = audioServer->GenerateSessionId(sessionId);
+    EXPECT_EQ(ERROR, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
