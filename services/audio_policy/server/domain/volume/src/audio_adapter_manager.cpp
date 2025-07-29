@@ -2348,7 +2348,8 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
         }
     }
 
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && streamType == STREAM_MUSIC) {
+    if ((currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_HDMI)
+        && streamType == STREAM_MUSIC) {
         AUDIO_INFO_LOG("first time switch dp, use default volume");
         int32_t initialVolume = GetMaxVolumeLevel(streamType) > MAX_VOLUME_LEVEL ?
             DP_DEFAULT_VOLUME_LEVEL : GetMaxVolumeLevel(streamType);
