@@ -37,7 +37,6 @@ public:
     void CreateVolumeTsfn(napi_env env);
     bool GetVolumeTsfnFlag();
     napi_threadsafe_function GetTsfn();
-    void FreeVolumeTsfn(napi_env env);
     
 private:
     struct AudioVolumeKeyEventJsCallback {
