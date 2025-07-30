@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
 ohos_shared_library("pro_audio_service_adapter") {
   sanitize = {
