@@ -495,14 +495,8 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
         HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
-        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
         SetSessionState(sessionId, state);
         inputNode->SetState(state);
-        TriggerCallback(UPDATE_STATUS,
-            HPAE_STREAM_CLASS_TYPE_PLAY,
-            sessionId,
-            sessionNodeMap_[sessionId].state,
-            operation);
         // todo: do fade out
     }
     DeleteInputSessionForMove(sessionId);
@@ -637,8 +631,6 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
-        TriggerCallback(
-            UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionNodeMap_[sessionId].state, OPERATION_FLUSHED);
     };
     SendRequest(request);
     return SUCCESS;
