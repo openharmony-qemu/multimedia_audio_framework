@@ -171,9 +171,12 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_HEADPHONE;
             break;
-         case ADD_DEVICE_ADAPTER:
+        case ADD_DEVICE_ADAPTER:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_ADAPTER_DEVICE;
+            break;
+        default:
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
             break;
     }
