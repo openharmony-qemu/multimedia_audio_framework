@@ -101,7 +101,7 @@ audio_ohos_library("audio_effect") {
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
-    source += [
+    sources += [
       "src/audio_effect_chain_adapter.cpp",
       "src/audio_enhance_chain_adapter.cpp",
     ]
