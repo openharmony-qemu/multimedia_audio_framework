@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("HpaeInnerCapturerManagerFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_engine"
+  module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../hpaeinnercapturermanager_fuzzer"
 
   include_dirs = [
