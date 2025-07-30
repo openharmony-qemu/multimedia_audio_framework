@@ -2740,10 +2740,10 @@ static void GetHdiInfo(uint8_t &hdiSourceType, std::string &hdiSourceAlg)
     hdiSourceAlg = hdiSegments[1];
 }
  
-void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+bool AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
 {
-    CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
+    CHECK_AND_RETURN_RET_LOG(result != nullptr, false, "result is null");
     std::vector<std::string> existingAppName{};
     std::vector<uint8_t> existingAppState{};
     std::vector<uint8_t> existingSourceType{};
@@ -2751,28 +2751,24 @@ void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     std::vector<uint32_t> existingCreateDuration{};
     std::vector<uint32_t> existingStartDuration{};
     std::vector<bool> existingFastFlag{};
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
-    
-    for (auto &pipeInfo : pipeInfoList) {
-        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
-        for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
-            CHECK_AND_CONTINUE_LOG(streamDescInPipe != nullptr, "streamDescInPipe is nullptr");
-            if (streamDescInPipe->audioMode_ != streamDesc->audioMode_) {
-                continue;
-            }
-            if (existingAppName.size() >= CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX) {
-                break;
-            }
-            int32_t uid = streamDescInPipe->appInfo_.appUid;
-            std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
-            existingAppName.push_back(bundleName);
-            existingAppState.push_back(static_cast<uint8_t>(GetAppState(streamDescInPipe->appInfo_.appPid)));
-            existingSourceType.push_back(static_cast<uint8_t>(streamDescInPipe->capturerInfo_.sourceType));
-            existingCaptureState.push_back(static_cast<uint8_t>(streamDescInPipe->streamStatus_));
-            existingCreateDuration.push_back(GetTimeCostFrom(streamDescInPipe->createTimeStamp_));
-            existingStartDuration.push_back(GetTimeCostFrom(streamDescInPipe->startTimeStamp_));
-            existingFastFlag.push_back(static_cast<bool>(streamDescInPipe->routeFlag_ & AUDIO_INPUT_FLAG_FAST));
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> capturerStreamDescs = pipeManager_->GetAllCapturerStreamDescs();
+    if (capturerStreamDescs.size() < CONCURRENT_CAPTURE_DFX_THRESHOLD) {
+        return false;
+    }
+    for (auto &desc : capturerStreamDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+        if (existingAppName.size() >= CONCURRENT_CAPTURE_DFX_MSG_ARRAY_MAX) {
+            break;
         }
+        int32_t uid = desc->appInfo_.appUid;
+        std::string bundleName = AudioBundleManager::GetBundleNameFromUid(uid);
+        existingAppName.push_back(bundleName);
+        existingAppState.push_back(static_cast<uint8_t>(GetAppState(desc->appInfo_.appPid)));
+        existingSourceType.push_back(static_cast<uint8_t>(desc->capturerInfo_.sourceType));
+        existingCaptureState.push_back(static_cast<uint8_t>(desc->streamStatus_));
+        existingCreateDuration.push_back(GetTimeCostFrom(desc->createTimeStamp_));
+        existingStartDuration.push_back(GetTimeCostFrom(desc->startTimeStamp_));
+        existingFastFlag.push_back(static_cast<bool>(desc->routeFlag_ & AUDIO_INPUT_FLAG_FAST));
     }
     result->existingAppName = std::move(existingAppName);
     result->existingAppState = std::move(existingAppState);
@@ -2783,6 +2779,7 @@ void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     result->existingFastFlag = std::move(existingFastFlag);
     GetHdiInfo(result->hdiSourceType, result->hdiSourceAlg);
     result->deviceType = streamDesc->newDeviceDescs_[0]->deviceType_;
+    return true;
 }
  
 void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
