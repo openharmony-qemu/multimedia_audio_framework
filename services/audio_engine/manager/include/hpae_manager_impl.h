@@ -40,10 +40,10 @@ public:
     uint32_t OpenAudioPort(const AudioModuleInfo &audioModuleInfo) override;
     int32_t CloseAudioPort(int32_t audioHandleIndex) override;
     uint32_t ReloadAudioPort(const AudioModuleInfo &audioModuleInfo) override;
-    int32_t GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-        std::function<void()> callback) override;
-    int32_t GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-        std::function<void()> callback) override;
+    int32_t GetSinkInfoByIdx(const int32_t &sinkIdx,
+        std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback) override;
+    int32_t GetSourceInfoByIdx(const int32_t &sourceIdx,
+        std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback) override;
 
     int32_t GetAllSinkInputs() override;
     int32_t GetAllSourceOutputs() override;
