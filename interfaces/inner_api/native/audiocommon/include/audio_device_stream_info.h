@@ -36,10 +36,6 @@ template<typename T> bool MarshallingSetInt32(const std::set<T> &value, Parcel &
         return false;
     }
 
-    if (size == 0) {
-        return true;
-    }
- 
     for (const auto &i : value) {
         if (!parcel.WriteInt32(i)) {
             return false;
