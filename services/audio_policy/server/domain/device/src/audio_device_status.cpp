@@ -465,7 +465,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
             audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(GetModuleNameByType(TYPE_DP));
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.CloseUsbArmDevice(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
@@ -805,6 +805,16 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
             break;
     }
     return DeviceType::DEVICE_TYPE_DEFAULT;
+}
+
+string AudioDeviceStatus::GetModuleNameByType(ClassType type)
+{
+    list<AudioModuleInfo> moduleList;
+    bool ret = audioConfigManager_.GetModuleListByType(type, moduleList);
+    if (ret && !moduleList.empty()) {
+        return moduleList.front().name;
+    }
+    return "";
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)

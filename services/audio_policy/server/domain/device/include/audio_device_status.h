@@ -153,6 +153,7 @@ private:
 
     void HandleOfflineDistributedDevice();
     DeviceType GetDeviceTypeFromPin(AudioPin pin);
+    string GetModuleNameByType(ClassType type);
     bool NoNeedChangeUsbDevice(const string &address);
     void WriteAllDeviceSysEvents(
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc, bool isConnected);
