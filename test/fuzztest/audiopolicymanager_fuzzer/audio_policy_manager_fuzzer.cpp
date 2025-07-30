@@ -232,7 +232,7 @@ void AudioPolicyManagerFourFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
-    std::string networkId = "netWorkId"
+    std::string networkId = "netWorkId";
 
     AudioPolicyManager::GetInstance().RequestAudioFocus(clientId, audioInterrupt);
     AudioPolicyManager::GetInstance().AbandonAudioFocus(clientId, audioInterrupt);
