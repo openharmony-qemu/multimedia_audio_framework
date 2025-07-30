@@ -203,19 +203,46 @@ HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_001, TestSize.Level0
     nodeInfo.sceneType = HPAE_SCENE_DEFAULT;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode_0 = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode_0, nullptr);
+}
 
+HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_002, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
     //2, non default nodeInfo.sceneType
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     nodeInfo.effectInfo.effectScene = SCENE_COLLABORATIVE;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode_1 = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode_1, nullptr);
+}
 
+HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_003, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
     //3, else branch 00
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     nodeInfo.effectInfo.effectScene = SCENE_SPEECH;
     std::shared_ptr<HpaeRenderEffectNode> hpaeRenderEffectNode_2 = std::make_shared<HpaeRenderEffectNode>(nodeInfo);
     EXPECT_NE(hpaeRenderEffectNode_2, nullptr);
+}
 
+HWTEST_F(HpaeRenderEffectNodeTest, testHpaeRenderEffectNode_004, TestSize.Level0)
+{
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.nodeId = TEST_ID;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
+    nodeInfo.samplingRate = SAMPLE_RATE_48000;
+    nodeInfo.channels = STEREO;
+    nodeInfo.format = SAMPLE_F32LE;
     //4, else branch 01 NODEINFO_EFFECTSCENEVALID
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     nodeInfo.effectInfo.effectScene = static_cast<AudioEffectScene>(NODEINFO_EFFECTSCENEVALID);
