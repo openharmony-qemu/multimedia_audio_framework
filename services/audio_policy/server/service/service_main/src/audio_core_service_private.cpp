@@ -2566,6 +2566,31 @@ bool AudioCoreService::IsFastAllowed(std::string &bundleName)
     return true;
 }
 
+void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc)
+{
+    CHECK_AND_RETURN_LOG(deviceDesc != nullptr, "deviceDesc is nullptr");
+
+    auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
+    auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK && currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        if (!deviceDesc->IsSameDeviceDesc(currentOutputDevice)) {
+            AUDIO_INFO_LOG("Reset nearlink output device state, macAddress: %{public}s",
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(currentOutputDevice.macAddress_).c_str());
+            sleAudioDeviceManager_.ResetSleStreamTypeCount(
+                std::make_shared<AudioDeviceDescriptor>(currentOutputDevice));
+        }
+    }
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN &&
+        currentInputDevice.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
+        if (!deviceDesc->IsSameDeviceDesc(currentInputDevice)) {
+            AUDIO_INFO_LOG("Reset nearlink input device state, macAddress: %{public}s",
+                AudioPolicyUtils::GetInstance().GetEncryptAddr(currentInputDevice.macAddress_).c_str());
+            sleAudioDeviceManager_.ResetSleStreamTypeCount(
+                std::make_shared<AudioDeviceDescriptor>(currentInputDevice));
+        }
+    }
+}
+
 int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
@@ -2592,6 +2617,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
 
         AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(isRecognitionSource ? DM_DEVICE_TYPE_NEARLINK_SCO : 0,
             DEVICE_TYPE_NEARLINK_IN);
+        ResetNearlinkDeviceState(deviceDesc);
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",

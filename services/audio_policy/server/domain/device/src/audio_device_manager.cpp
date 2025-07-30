@@ -1138,8 +1138,8 @@ AudioStreamDeviceChangeReasonExt AudioDeviceManager::UpdateDeviceUsage(
             desc->networkId_ == deviceDesc->networkId_ &&
             desc->deviceUsage_ != deviceDesc->deviceUsage_) {
             reason = (desc->deviceUsage_ > deviceDesc->deviceUsage_) ?
-                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE :
-                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE;
+                AudioStreamDeviceChangeReason::OLD_DEVICE_UNAVALIABLE :
+                AudioStreamDeviceChangeReason::NEW_DEVICE_AVAILABLE;
             desc->deviceUsage_ = deviceDesc->deviceUsage_;
             updateFlag = true;
         }

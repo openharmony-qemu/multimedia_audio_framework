@@ -208,9 +208,7 @@ void AudioActiveDevice::NotifyUserSelectionEventToBt(std::shared_ptr<AudioDevice
 void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor)
 {
     AUDIO_INFO_LOG("UserDisSelection start");
-    CHECK_AND_RETURN(audioDeviceDescriptor != nullptr);
-    CHECK_AND_RETURN(audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP ||
-                     audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO);
+    CHECK_AND_RETURN_LOG(audioDeviceDescriptor != nullptr, "deviceDesc is nullptr");
 #ifdef BLUETOOTH_ENABLE
     Bluetooth::SendUserSelectionEvent(
         audioDeviceDescriptor->deviceType_, audioDeviceDescriptor->macAddress_, USER_NOT_SELECT_BT);
@@ -221,6 +219,8 @@ void AudioActiveDevice::NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDev
 #endif
     if (audioDeviceDescriptor->deviceType_ == DEVICE_TYPE_NEARLINK) {
         SleAudioDeviceManager::GetInstance().SetActiveDevice(audioDeviceDescriptor->macAddress_,
+            STREAM_USAGE_INVALID);
+        SleAudioDeviceManager::GetInstance().SendUserSelection(*audioDeviceDescriptor,
             STREAM_USAGE_INVALID);
     }
 }
@@ -301,6 +301,16 @@ void AudioActiveDevice::HandleActiveBt(DeviceType deviceType, std::string macAdd
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
             macAddress, USER_SELECT_BT);
     }
+    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
+        deviceType != DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(GetCurrentOutputDeviceMacAddr(),
+            STREAM_USAGE_INVALID);
+        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
+    }
+    if (deviceType == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(),
+            STREAM_USAGE_VOICE_COMMUNICATION);
+    }
 }
 
 void AudioActiveDevice::HandleNegtiveBt(DeviceType deviceType)
@@ -310,6 +320,12 @@ void AudioActiveDevice::HandleNegtiveBt(DeviceType deviceType)
         Bluetooth::SendUserSelectionEvent(DEVICE_TYPE_BLUETOOTH_SCO,
             GetCurrentOutputDeviceMacAddr(), USER_NOT_SELECT_BT);
         Bluetooth::AudioHfpManager::DisconnectSco();
+    }
+    if (GetCurrentOutputDeviceType() == DEVICE_TYPE_NEARLINK &&
+        deviceType == DEVICE_TYPE_NEARLINK) {
+        SleAudioDeviceManager::GetInstance().SetActiveDevice(GetCurrentOutputDeviceMacAddr(),
+            STREAM_USAGE_INVALID);
+        SleAudioDeviceManager::GetInstance().SendUserSelection(GetCurrentOutputDevice(), STREAM_USAGE_INVALID);
     }
 }
 
