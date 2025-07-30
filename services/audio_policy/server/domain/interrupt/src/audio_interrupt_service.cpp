@@ -1470,7 +1470,7 @@ std::set<int32_t> AudioInterruptService::GetStreamIdsForAudioSessionByDeviceType
         if (audioInterrupt.isAudioSessionInterrupt &&
             sessionService_->HasStreamForDeviceType(audioInterrupt.pid, deviceType)) {
                 streamIds.insert(static_cast<int32_t>(audioInterrupt.streamId));
-            }
+        }
     }
 
     return streamIds;

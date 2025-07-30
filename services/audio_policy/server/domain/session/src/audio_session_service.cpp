@@ -328,7 +328,7 @@ bool AudioSessionService::HasStreamForDeviceType(int32_t callerPid, DeviceType d
         return false;
     }
 
-    std::set<int32_t> streamIds = 
+    std::set<int32_t> streamIds =
         AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
 
     std::vector<AudioInterrupt> streamsInSession = session->second->GetStreams();

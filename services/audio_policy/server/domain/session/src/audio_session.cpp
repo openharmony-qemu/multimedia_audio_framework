@@ -113,7 +113,7 @@ void AudioSession::AddStreamInfo(const AudioInterrupt &incomingInterrupt)
         return;
     }
 
-    for (auto stream : streamsInSession_) {
+    for (const auto &stream : streamsInSession_) {
         if (stream.streamId == incomingInterrupt.streamId) {
             AUDIO_INFO_LOG("stream aready exist.");
             return;
