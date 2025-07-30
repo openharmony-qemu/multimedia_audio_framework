@@ -394,10 +394,23 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
     return SUCCESS;
 }
 
+void HpaeCapturerManager::CapturerSourceStopForRemote()
+{
+    CHECK_AND_RETURN_LOG(sourceInfo_.deviceClass == "remote", "not remote source");
+    CHECK_AND_RETURN_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_),
+        "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+    CHECK_AND_RETURN_LOG(sourceInputClusterMap_[mainMicType_]->GetOutputPortNum() == 0, "source has running stream");
+    sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
+}
+
 int32_t HpaeCapturerManager::CapturerSourceStop()
 {
     CHECK_AND_RETURN_RET_LOG(SafeGetMap(sourceInputClusterMap_, mainMicType_), ERR_ILLEGAL_STATE,
         "sourceInputClusterMap_[%{public}d] is nullptr", mainMicType_);
+
+    // If remote source has no running stream, stop source
+    CapturerSourceStopForRemote();
+
     CHECK_AND_RETURN_RET_LOG(sourceInputClusterMap_[mainMicType_]->GetSourceState() != STREAM_MANAGER_SUSPENDED,
         SUCCESS, "capturer source is already stopped");
     sourceInputClusterMap_[mainMicType_]->CapturerSourceStop();
