@@ -31,6 +31,7 @@
 #include "hpae_capture_effect_node.h"
 #include "hpae_source_input_cluster.h"
 #include "hpae_format_convert.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
