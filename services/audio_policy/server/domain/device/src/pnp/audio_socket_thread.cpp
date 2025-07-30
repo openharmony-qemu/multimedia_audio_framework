@@ -164,7 +164,6 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
             audioEvent->deviceType = h2wTypeLast;
             break;
         case ADD_DEVICE_HEADSET:
-        case ADD_DEVICE_HEADSET_WITHOUT_MIC:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_HEADSET;
             break;
