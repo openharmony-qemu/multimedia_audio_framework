@@ -46,7 +46,7 @@ ohos_unittest("pro_audio_service_adapter_unit_test") {
   configs = [ ":audio_engine_private_config" ]
 
   deps = [
-    "../../:pulse_audio_service_adapter",
+    "../../:pro_audio_service_adapter",
     "../../../../../services/audio_engine:audio_engine_manager",
     "../../../audioutils:audio_utils",
     "../../../hdiadapter_new:hdiadapter_new",
@@ -90,7 +90,6 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 
@@ -102,7 +101,7 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
   ]
 
   deps = [
-    "../../:pulse_audio_service_adapter",
+    "../../:pro_audio_service_adapter",
     "../../../../../frameworks/native/audioschedule:audio_schedule",
     "../../../../../frameworks/native/audioutils:audio_utils",
     "../../../../../services/audio_engine:audio_engine_manager",

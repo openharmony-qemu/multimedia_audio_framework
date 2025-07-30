@@ -27,7 +27,6 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audiorenderer/test/unittest/audio_renderer_test:jsunittest",
     "../frameworks/js/napi/audiorenderer/toneplayer/test/unittest/tone_player_test:jsunittest",
     "../frameworks/native/audioadapter/test/unittest:pro_audio_service_adapter_unit_test",
-    "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
@@ -111,7 +110,6 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:format_converter_unit_test",
     "../services/audio_service/test/unittest:futex_tool_unit_test",
     "../services/audio_service/test/unittest:hpae_capturer_stream_impl_unit_test",
@@ -120,17 +118,12 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
     "../services/audio_service/test/unittest/hpae_adapter_manager_unit_test:hpae_adapter_manager_unit_test",
 
-    # "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
-    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
-    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:policy_handler_unit_test",
     "../services/audio_service/test/unittest:resource_manager_adapter_unit_test",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
-    "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_hpae_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
-    # "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:ring_buffer_wrapper_unit_test",
@@ -173,6 +166,17 @@ group("audio_unit_test") {
 
   if (audio_framework_feature_inner_capturer) {
     deps += [ "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test" ]
+  }
+    if (!audio_framework_feature_new_engine_flag) {
+    sdeps += [
+    "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
+    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
+    "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
+    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
+    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
+    "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
+    "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
+    ]
   }
 }
 

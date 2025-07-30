@@ -102,7 +102,6 @@ ohos_fuzztest("AudioPolicyMoreFuzzTest") {
     "power_manager:powermgr_client",
     "power_manager:powermgr_client",
     "pulseaudio:pulse",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",

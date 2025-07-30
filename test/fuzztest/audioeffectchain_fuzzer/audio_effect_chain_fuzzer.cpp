@@ -21,8 +21,10 @@
 #include "audio_effect_chain.h"
 #include "audio_effect_log.h"
 #include "audio_effect_chain_manager.h"
+#ifdef SUPPORT_OLD_ENGINE
 #include "audio_effect_chain_adapter.h"
 #include "audio_enhance_chain_adapter.h"
+#endif
 #include "audio_enhance_chain_manager.h"
 #include "audio_enhance_chain_manager_impl.h"
 #include "audio_errors.h"
@@ -143,6 +145,7 @@ uint32_t GetArrLength(T& arr)
 
 void EffectChainManagerInitCbFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS, DEFAULT_MAP,
         DEFAULT_EFFECT_LIBRARY_LIST);
 
@@ -152,10 +155,12 @@ void EffectChainManagerInitCbFuzzTest()
     EffectChainManagerInitCb(sceneType);
     sceneType = "";
     EffectChainManagerInitCb(sceneType);
+#endif
 }
 
 void EffectChainManagerCreateCbFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     const char *sceneType = SCENETYPEMUSIC;
     EffectChainManagerInitCb(sceneType);
 
@@ -165,34 +170,42 @@ void EffectChainManagerCreateCbFuzzTest()
     sessionid = "";
     EffectChainManagerCreateCb(sceneType, sessionid);
     EffectChainManagerReleaseCb(sceneType, sessionid);
+#endif
 }
 
 void EffectChainManagerCheckEffectOffloadFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     const char *sceneType = "";
     EffectChainManagerInitCb(sceneType);
     EffectChainManagerCheckEffectOffload();
+#endif
 }
 
 void EffectChainManagerAddSessionInfoFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     SessionInfoPack pack = {2, "3", EFFECTDEFAULT, "true"};
     EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
+#endif   
 }
 
 void EffectChainManagerDeleteSessionInfoFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     SessionInfoPack pack = {2, "3", SESSIONIDDEFAULT, "true"};
     EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
     EffectChainManagerDeleteSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT);
+#endif
 }
 
 void EffectChainManagerReturnEffectChannelInfoFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     SessionInfoPack pack = {2, "3", SESSIONIDDEFAULT, "true"};
@@ -201,44 +214,57 @@ void EffectChainManagerReturnEffectChannelInfoFuzzTest()
     uint32_t processChannels = GetData<uint32_t>();
     uint64_t processChannelLayout = GetData<uint64_t>();
     EffectChainManagerReturnEffectChannelInfo(SCENETYPEMUSIC, &processChannels, &processChannelLayout);
+#endif
 }
 
 void EffectChainManagerReturnMultiChannelInfoFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
 
     uint32_t processChannels = GetData<uint32_t>();
     uint64_t processChannelLayout = GetData<uint64_t>();
     EffectChainManagerReturnMultiChannelInfo(&processChannels, &processChannelLayout);
+#endif
 }
 
 void EffectChainManagerSceneCheckFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb("SCENE_MUSIC");
     EffectChainManagerSceneCheck("SCENE_MUSIC", "SCENE_MUSIC");
+#endif
 }
 
 void EffectChainManagerProcessFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
+#endif
 }
 
 void EffectChainManagerMultichannelUpdateFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
     EffectChainManagerMultichannelUpdate(nullptr);
     EffectChainManagerMultichannelUpdate(SCENETYPEMUSIC);
+#endif
 }
 
 void EffectChainManagerExistFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
+#endif
 }
 
 void EffectChainManagerVolumeUpdateFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerInitCb(SCENETYPEMUSIC);
     EffectChainManagerVolumeUpdate(SESSIONIDDEFAULT);
+#endif
 }
 
 void AudioEffectChainManagerFirst(std::shared_ptr<AudioEffectChain> audioEffectChain)
@@ -350,6 +376,7 @@ void AudioEnhanceChainManagerPropertyFuzzTest(AudioEnhanceChainManager *manager)
 
 void AudioEnhanceChainFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     EffectChainManagerParam managerParam;
     managerParam.maxExtraNum = MAX_EXTRA_NUM;
     managerParam.defaultSceneName = "SCENE_DEFAULT";
@@ -388,6 +415,7 @@ void AudioEnhanceChainFuzzTest()
     AudioEnhanceChainManagerFuzzTest(audioEnhanceChainMananger);
     AudioEnhanceChainManagerCreateFuzzTest(audioEnhanceChainMananger);
     AudioEnhanceChainManagerPropertyFuzzTest(audioEnhanceChainMananger);
+#endif
 }
 
 void AudioEffectChainGetOutputChannelInfoFuzzTest()

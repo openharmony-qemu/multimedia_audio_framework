@@ -177,7 +177,6 @@ ohos_executable("audio_voip_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"
@@ -235,7 +234,6 @@ ohos_executable("audio_blendmode_test") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 

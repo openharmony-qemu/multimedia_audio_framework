@@ -66,7 +66,6 @@ ohos_unittest("audio_endpoint_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "qos_manager:concurrent_task_client",
@@ -140,19 +139,25 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "qos_manager:concurrent_task_client",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
+      "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
+      "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
+    ]
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
-  }
-
-  if (!audio_framework_feature_new_engine_flag) {
-    defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 
   if (audio_framework_feature_inner_capturer) {

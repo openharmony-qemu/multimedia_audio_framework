@@ -61,11 +61,16 @@ ohos_shared_library("module-inner-capturer-sink") {
 
   external_deps = [
     "hilog:libhilog",
-    "pulseaudio:pulse",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
   ]
-
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+      "pulseaudio:pulsecommon",
+      "pulseaudio:pulsecore",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   public_external_deps = [ "bounds_checking_function:libsec_shared" ]
 
   subsystem_name = "multimedia"
