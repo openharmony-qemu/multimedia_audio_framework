@@ -252,6 +252,7 @@ int32_t HpaeSoftLink::Release()
 
 void HpaeSoftLink::FlushRingCache()
 {
+    CHECK_AND_RETURN_LOG(bufferQueue_ != nullptr, "ring cache is null");
     bufferQueue_->ResetBuffer();
 }
 
