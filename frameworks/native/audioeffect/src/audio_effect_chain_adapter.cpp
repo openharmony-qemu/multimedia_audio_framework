@@ -354,4 +354,4 @@ uint32_t EffectChainManagerGetSceneCount(const char *sceneType)
     std::string sceneTypeString = sceneType;
     return audioEffectChainManager->GetSceneTypeToChainCount(sceneType);
 }
-#endif // SUPPORT_OLD_ENGINE 
+#endif // SUPPORT_OLD_ENGINE

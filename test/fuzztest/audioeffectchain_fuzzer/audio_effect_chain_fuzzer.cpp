@@ -189,7 +189,7 @@ void EffectChainManagerAddSessionInfoFuzzTest()
 
     SessionInfoPack pack = {2, "3", EFFECTDEFAULT, "true"};
     EffectChainManagerAddSessionInfo(SCENETYPEMUSIC, SESSIONIDDEFAULT, pack);
-#endif   
+#endif 
 }
 
 void EffectChainManagerDeleteSessionInfoFuzzTest()

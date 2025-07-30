@@ -436,7 +436,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
             "Audio Service Dump Not initialised\n");
         dumpObj.AudioDataDump(dumpString, argQue);
     }
-#else 
+#else
     if (hpaeDumpObj_ == nullptr) {
         hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
     }
