@@ -281,13 +281,15 @@ void AudioPolicyManagerFiveFuzzTest()
 
     AudioPolicyManager::GetInstance().UpdateStreamState(clientUid, streamSetState, streamUsage);
     AudioPolicyManager::GetInstance().GetVolumeGroupInfos(networkId, infos);
-    AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId, networkId);;
+    AudioPolicyManager::GetInstance().GetNetworkIdByGroupId(groupId, networkId);
     AudioPolicyManager::GetInstance().SetSystemSoundUri(key, uri);
     AudioPolicyManager::GetInstance().GetSystemSoundUri(key);
     AudioPolicyManager::GetInstance().GetMinStreamVolume();
     AudioPolicyManager::GetInstance().GetMaxStreamVolume();
-    AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, audioRendererPolicyServiceDiedCallback);
-    AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid, audioCapturerPolicyServiceDiedCallback);
+    AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid,
+        audioRendererPolicyServiceDiedCallback);
+    AudioPolicyManager::GetInstance().RegisterAudioPolicyServerDiedCb(clientPid,
+        audioCapturerPolicyServiceDiedCallback);
     AudioPolicyManager::GetInstance().UnregisterAudioPolicyServerDiedCb(clientPid);
     AudioPolicyManager::GetInstance().RegisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCallback);
     AudioPolicyManager::GetInstance().UnregisterAudioStreamPolicyServerDiedCb(audioStreamPolicyServiceDiedCallback);
@@ -337,7 +339,8 @@ void AudioPolicyManagerSixFuzzTest()
     AudioPolicyManager::GetInstance().IsHeadTrackingEnabled(address);
     AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(enable);
     AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(selectedAudioDevice, enable);
-    AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(audioSpatializationEnabledChangeCallback);
+    AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(
+        audioSpatializationEnabledChangeCallback);
     AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(currentDeviceCallback);
     AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(audioHeadTrackingEnabledChangeCallback);
     AudioPolicyManager::GetInstance().RegisterNnStateEventListener(audioNnStateChangeCallback);
@@ -370,11 +373,11 @@ void AudioPolicyManagerSevenFuzzTest()
     AudioSessionScene audioSessionScene = GetData<AudioSessionScene>();
     std::shared_ptr<AudioSessionStateChangedCallback> stateChangedCallback;
 
-
     AudioPolicyManager::GetInstance().IsHeadTrackingSupported();
     AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(address);
     AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
-    AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(sessionId, streamUsage, audioSpatializationStateChangeCallback);
+    AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(sessionId,
+        streamUsage, audioSpatializationStateChangeCallback);
     AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionId);
     AudioPolicyManager::GetInstance().CreateAudioInterruptZone(pids, zoneId);
     AudioPolicyManager::GetInstance().AddAudioInterruptZonePids(pids, zoneId);
@@ -397,7 +400,7 @@ void AudioPolicyManagerSevenFuzzTest()
 }
 
 void AudioPolicyManagerEightFuzzTest()
-{ 
+{
     DeviceType deviceType = GetData<DeviceType>();
     std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> deviceChangedCallback;
     AudioSpatializationSceneType spatializationSceneType = GetData<AudioSpatializationSceneType>();
