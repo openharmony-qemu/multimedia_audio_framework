@@ -441,56 +441,34 @@ uint32_t LocalDeviceManager::GetPortId(const std::string &adapterName, enum Audi
     return portId;
 }
 
+static const DevicePinMap devicePinMap[] = {
+    { DEVICE_TYPE_EARPIECE, PIN_OUT_EARPIECE, "pin_out_earpiece" },
+    { DEVICE_TYPE_SPEAKER, PIN_OUT_SPEAKER, "pin_out_speaker" },
+    { DEVICE_TYPE_WIRED_HEADSET, PIN_OUT_HEADSET, "pin_out_headset" },
+    { DEVICE_TYPE_WIRED_HEADPHONES, PIN_OUT_HEADPHONE, "pin_out_headphone" },
+    { DEVICE_TYPE_USB_ARM_HEADSET, PIN_OUT_USB_HEADSET, "pin_out_usb_headset" },
+    { DEVICE_TYPE_USB_HEADSET, PIN_OUT_USB_EXT, "pin_out_usb_ext" },
+    { DEVICE_TYPE_BLUETOOTH_SCO, PIN_OUT_BLUETOOTH_SCO, "pin_out_bluetooth_sco" },
+    { DEVICE_TYPE_BLUETOOTH_A2DP, PIN_OUT_BLUETOOTH_A2DP, "pin_out_bluetooth_a2dp" },
+    { DEVICE_TYPE_HDMI, PIN_OUT_HDMI, "pin_out_hdmi" },
+    { DEVICE_TYPE_NONE, PIN_NONE, "pin_out_none" }
+};
+
 int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
 {
-    int32_t ret = SUCCESS;
+    if (outputDevice == DEVICE_TYPE_NEARLINK) {
+        HandleNearlinkScene(outputDevice, sink);
+        return SUCCESS;
+     }
 
-    switch (outputDevice) {
-        case DEVICE_TYPE_EARPIECE:
-            sink.ext.device.type = PIN_OUT_EARPIECE;
-            sink.ext.device.desc = (char *)"pin_out_earpiece";
-            break;
-        case DEVICE_TYPE_SPEAKER:
-            sink.ext.device.type = PIN_OUT_SPEAKER;
-            sink.ext.device.desc = (char *)"pin_out_speaker";
-            break;
-        case DEVICE_TYPE_WIRED_HEADSET:
-            sink.ext.device.type = PIN_OUT_HEADSET;
-            sink.ext.device.desc = (char *)"pin_out_headset";
-            break;
-        case DEVICE_TYPE_USB_ARM_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_HEADSET;
-            sink.ext.device.desc = (char *)"pin_out_usb_headset";
-            break;
-        case DEVICE_TYPE_USB_HEADSET:
-            sink.ext.device.type = PIN_OUT_USB_EXT;
-            sink.ext.device.desc = (char *)"pin_out_usb_ext";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_SCO:
-            sink.ext.device.type = PIN_OUT_BLUETOOTH_SCO;
-            sink.ext.device.desc = (char *)"pin_out_bluetooth_sco";
-            break;
-        case DEVICE_TYPE_BLUETOOTH_A2DP:
-            sink.ext.device.type = PIN_OUT_BLUETOOTH_A2DP;
-            sink.ext.device.desc = (char *)"pin_out_bluetooth_a2dp";
-            break;
-        case DEVICE_TYPE_HDMI:
-             sink.ext.device.type = PIN_OUT_HDMI;
-             sink.ext.device.desc = (char *)"pin_out_hdmi";
-             break;
-        case DEVICE_TYPE_NEARLINK:
-            HandleNearlinkScene(outputDevice, sink);
-            break;
-        case DEVICE_TYPE_NONE:
-            sink.ext.device.type = PIN_NONE;
-            sink.ext.device.desc = (char *)"pin_out_none";
-            break;
-        default:
-            ret = ERR_NOT_SUPPORTED;
-            break;
+    for (const auto& entry : devicePinMap) {
+        if (entry.deviceType == outputDevice) {
+            sink.ext.device.type = entry.pinType;
+            sink.ext.device.desc = const_cast<char*>(entry.desc);
+            return SUCCESS;
+        }
     }
-
-    return ret;
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t LocalDeviceManager::HandleNearlinkScene(DeviceType deviceType, AudioRouteNode &node)

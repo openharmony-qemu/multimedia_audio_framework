@@ -2759,6 +2759,7 @@ std::string AudioAdapterManager::GetMuteKeyForDeviceType(DeviceType deviceType, 
             type = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             type = "wired";

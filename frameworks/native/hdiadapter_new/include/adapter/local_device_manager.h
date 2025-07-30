@@ -46,6 +46,12 @@ typedef struct LocalParameter {
     std::string value_ = "";
 } LocalParameter;
 
+struct DevicePinMap {
+    DeviceType deviceType;
+    enum AudioPortPin pinType;
+    const char* desc;
+};
+
 class LocalDeviceManager : public IDeviceManager {
 public:
     LocalDeviceManager() = default;

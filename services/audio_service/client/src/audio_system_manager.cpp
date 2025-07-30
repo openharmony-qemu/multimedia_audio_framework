@@ -1623,6 +1623,7 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             pin = AUDIO_PIN_IN_MIC;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
         case OHOS::AudioStandard::DEVICE_TYPE_USB_HEADSET:
         case OHOS::AudioStandard::DEVICE_TYPE_HDMI:
@@ -1663,6 +1664,9 @@ AudioPin AudioSystemManager::GetPinValueForPeripherals(DeviceType deviceType, De
             } else {
                 pin = AUDIO_PIN_OUT_HEADSET;
             }
+            break;
+        case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADPHONES:
+            pin = AUDIO_PIN_OUT_HEADPHONE;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_DP:
             pin = AUDIO_PIN_OUT_DP;

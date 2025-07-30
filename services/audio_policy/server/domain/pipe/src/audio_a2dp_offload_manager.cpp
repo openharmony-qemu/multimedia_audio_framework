@@ -529,6 +529,7 @@ std::string AudioA2dpOffloadManager::GetVolumeGroupType(DeviceType deviceType)
             volumeGroupType = "wireless";
             break;
         case DEVICE_TYPE_WIRED_HEADSET:
+        case DEVICE_TYPE_WIRED_HEADPHONES:
         case DEVICE_TYPE_USB_HEADSET:
         case DEVICE_TYPE_USB_ARM_HEADSET:
             volumeGroupType = "wired";
