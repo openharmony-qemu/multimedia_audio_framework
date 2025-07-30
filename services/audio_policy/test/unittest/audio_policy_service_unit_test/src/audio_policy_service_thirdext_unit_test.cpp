@@ -1537,9 +1537,11 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, UpdateBasicStreamInfo_001, TestSize.L
     std::shared_ptr<AudioStreamDescriptor> streamDesc = nullptr;
     std::shared_ptr<AdapterPipeInfo> pipeInfo = nullptr;
     AudioStreamInfo streamInfo;
+    streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
     manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
 
     streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamInfo_.channels = MONO;
     manager.UpdateBasicStreamInfo(streamDesc, pipeInfo, streamInfo);
 
     pipeInfo = std::make_shared<AdapterPipeInfo>();
