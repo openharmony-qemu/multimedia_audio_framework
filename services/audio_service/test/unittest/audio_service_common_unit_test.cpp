@@ -810,7 +810,6 @@ HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_001, TestSize.Level1)
     uint32_t totalSizeInFrame = spanSizeInFrame;
     uint32_t byteSizePerFrame = 100;
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
-
     EXPECT_EQ(ohAudioBuffer->GetMuteFactor(), 1);
 }
 
@@ -827,7 +826,6 @@ HWTEST(AudioServiceCommonUnitTest, SetRestoreStatus_001, TestSize.Level1)
     uint32_t byteSizePerFrame = 100;
     auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
     RestoreStatus result = ohAudioBuffer->SetRestoreStatus(NEED_RESTORE);
-
     EXPECT_NE(RESTORE_ERROR, result);
 }
 
