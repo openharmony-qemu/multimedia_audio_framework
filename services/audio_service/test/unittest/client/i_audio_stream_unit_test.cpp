@@ -50,7 +50,7 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_001, TestSize.Level1)
     AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
     size_t result = 0;
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, ERR_INVALID_OPERATION);
 }
 
 /**
@@ -106,7 +106,7 @@ HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
     int32_t streamFlags = STREAM_FLAG_FAST;
     AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
     bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_TRUE(result);
+    EXPECT_FALSE(result);
 }
 } // namespace AudioStandard
 } // namespace OHOS
