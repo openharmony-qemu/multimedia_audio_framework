@@ -37,7 +37,7 @@ const std::string NAPI_AUDIO_RENDERER_CLASS_NAME = "AudioRenderer";
 class NapiAudioRenderer {
 public:
     NapiAudioRenderer();
-    ~NapiAudioRenderer() = default;
+    ~NapiAudioRenderer();
 
     static napi_value Init(napi_env env, napi_value exports);
     void DestroyCallbacks();

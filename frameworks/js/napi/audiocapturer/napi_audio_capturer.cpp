@@ -43,7 +43,15 @@ int32_t NapiAudioCapturer::isConstructSuccess_ = SUCCESS;
 NapiAudioCapturer::NapiAudioCapturer()
     : audioCapturer_(nullptr),  sourceType_(SOURCE_TYPE_MIC), env_(nullptr) {}
 
-NapiAudioCapturer::~NapiAudioCapturer() = default;
+NapiAudioCapturer::~NapiAudioCapturer()
+{
+    if (audioCapturer_ != nullptr) {
+        bool ret = audioCapturer_->Release();
+        CHECK_AND_RETURN_LOG(ret, "AudioCapturer release fail");
+        audioCapturer_ = nullptr;
+        AUDIO_INFO_LOG("Proactively release audioCapturer");
+    }
+}
 
 void NapiAudioCapturer::Destructor(napi_env env, void *nativeObject, void *finalizeHint)
 {
