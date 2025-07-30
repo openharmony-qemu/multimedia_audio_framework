@@ -85,7 +85,7 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
   ]
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
-    source += [
+    sources += [
       "src/audio_effect_chain_adapter_unit_test.cpp",
     ]
     external_deps += [
