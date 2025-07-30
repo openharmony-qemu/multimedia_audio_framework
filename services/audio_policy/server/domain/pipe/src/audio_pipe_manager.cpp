@@ -523,5 +523,23 @@ void AudioPipeManager::UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
     AUDIO_WARNING_LOG("Cannot find ioHandle: %{public}u", id);
 }
 
+std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllCapturerStreamDescs()
+{
+    std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
+    for (auto &pipeInfo : curPipeList_) {
+        CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
+        if (pipeInfo->pipeRole_ != PIPE_ROLE_INPUT) {
+            continue;
+        }
+        for (auto &desc : pipeInfo->streamDescriptors_) {
+            CHECK_AND_CONTINUE_LOG(desc != nullptr, "desc is nullptr");
+            if (desc->audioMode_ == AUDIO_MODE_RECORD) {
+                streamDescs.push_back(desc);
+            }
+        }
+    }
+    return streamDescs;
+}
 } // namespace AudioStandard
 } // namespace OHOS
