@@ -90,7 +90,7 @@ public:
     int32_t SetRenderRate(AudioRendererRate renderRate) override;
     AudioRendererRate GetRenderRate() override;
     int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) override;
-    int32_t SetSpeed(float speed) override;
+    int32_t SetSpeed(float speed, bool force = false) override;
     int32_t SetPitch(float pitch) override;
     float GetSpeed() override;
 

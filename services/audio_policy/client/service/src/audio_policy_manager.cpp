@@ -1460,11 +1460,11 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyManager::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateRendererClient(streamDesc, flag, sessionId);
+    return gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
 }
 
 int32_t AudioPolicyManager::CreateCapturerClient(

@@ -620,7 +620,8 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
-    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result,  SUCCESS);
 }
 
