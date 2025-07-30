@@ -168,7 +168,7 @@ group("audio_unit_test") {
     deps += [ "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test" ]
   }
     if (!audio_framework_feature_new_engine_flag) {
-    sdeps += [
+    deps += [
     "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
     "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
