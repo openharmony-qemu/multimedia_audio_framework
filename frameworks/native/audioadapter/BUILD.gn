@@ -66,6 +66,7 @@ ohos_shared_library("pro_audio_service_adapter") {
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
   ]
+  defines = []
   if (!audio_framework_feature_new_engine_flag) {
     external_deps += [
       "pulseaudio:pulse",
