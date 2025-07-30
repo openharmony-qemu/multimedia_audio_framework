@@ -488,6 +488,10 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
 
 int32_t AudioSocketThread::DetectAnalogHeadsetState(AudioEvent *audioEvent)
 {
+    if (audioEvent == NULL) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return ERROR;
+    }
     int8_t state = 0;
     FILE *fp = fopen(SWITCH_STATE_PATH, "r");
     if (fp == NULL) {
