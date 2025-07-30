@@ -230,6 +230,10 @@ private:
     void PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt);
     void UpdateMicFocusStrategy(SourceType existSourceType, SourceType incomingSourceType,
         const std::string &bundleName, AudioFocusEntry &focusEntry);
+    bool CheckWindowState(const int32_t pid);
+    void UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
+        const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType,
+        AudioFocusEntry &focusTypess);
     bool IsMicSource(SourceType sourceType);
 
     // zone debug interfaces

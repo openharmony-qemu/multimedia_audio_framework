@@ -31,6 +31,7 @@
 #include "dfx_msg_manager.h"
 #include "audio_bundle_manager.h"
 #include "istandard_audio_service.h"
+#include "session_manager_lite.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1695,6 +1696,8 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
     int32_t uid = incomingInterrupt.uid;
+    int32_t currentPid = currentInterrupt.pid;
+    int32_t incomingPid = incomingInterrupt.pid;
     AudioFocusType incomingAudioFocusType = incomingInterrupt.audioFocusType;
     AudioFocusType existAudioFocusType = currentInterrupt.audioFocusType;
     std::string bundleName = GetRealBundleName(static_cast<uint32_t>(uid));
@@ -1710,6 +1713,7 @@ void AudioInterruptService::UpdateAudioFocusStrategy(const AudioInterrupt &curre
     } else {
         UpdateMicFocusStrategy(existSourceType, incomingSourceType, bundleName, focusEntry);
     }
+    UpdateWindowFocusStrategy(currentPid, incomingPid, existStreamType, incomingStreamType, focusEntry);
     UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
 
@@ -1749,6 +1753,47 @@ bool AudioInterruptService::IsMicSource(SourceType sourceType)
     return (sourceType == SOURCE_TYPE_VOICE_CALL ||
             sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION||
             sourceType == SOURCE_TYPE_VOICE_COMMUNICATION);
+}
+
+bool AudioInterruptService::CheckWindowState(const int32_t pid)
+{
+    auto sceneSessionManager = Rosen::SessionManagerLite::GetInstance().GetSceneSessionManagerLiteProxy();
+    if (sceneSessionManager == nullptr) {
+        AUDIO_INFO_LOG("AudioInterruptService null manager");
+        return false;
+    }
+    std::vector<Rosen::MainWindowState> windowStates;
+    Rosen::WSError ret = sceneSessionManager->GetMainWindowStatesByPid(pid, windowStates);
+    if (ret != Rosen::WSError::WS_OK || windowStates.empty()) {
+        AUDIO_INFO_LOG("AudioInterruptService fail GetWindow");
+        return false;
+    }
+    for (auto &windowState : windowStates) {
+        if (windowState.isVisible_) {
+            AUDIO_INFO_LOG("AudioInterruptService app window front desk");
+            return true;
+        }
+    }
+    return false;
+}
+
+void AudioInterruptService::UpdateWindowFocusStrategy(const int32_t &currentPid, const int32_t &incomingPid,
+    const AudioStreamType &existStreamType, const AudioStreamType &incomingStreamType, AudioFocusEntry &focusEntry)
+{
+    if (!CheckWindowState(currentPid) || !CheckWindowState(incomingPid)) {
+        AUDIO_INFO_LOG("currentWindowState: %{public}d incomingWindowState: %{public}d"
+            " Not all front desk audio access", CheckWindowState(currentPid), CheckWindowState(incomingPid));
+        return;
+    }
+    if ((existStreamType == STREAM_MUSIC ||
+        existStreamType == STREAM_MOVIE || existStreamType == STREAM_SPEECH) &&
+        (incomingStreamType == STREAM_MUSIC || incomingStreamType == STREAM_MOVIE ||
+        incomingStreamType == STREAM_SPEECH)) {
+        focusEntry.hintType = INTERRUPT_HINT_NONE;
+        focusEntry.actionOn = INCOMING;
+        AUDIO_INFO_LOG("The media windowStates concurrent");
+        return;
+    }
 }
 
 bool AudioInterruptService::FocusEntryContinue(std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator

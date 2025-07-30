@@ -376,6 +376,7 @@ audio_ohos_library("audio_policy_service") {
     "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "window_manager:session_manager_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
