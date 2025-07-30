@@ -65,7 +65,7 @@ T GetData()
 {
     T object {};
     size_t objectSize = sizeof(object);
-    if (g_dataSize < g_pos) {
+    if (g_dataSize <= g_pos) {
         return object;
     }
     if (RAW_DATA == nullptr || objectSize > g_dataSize - g_pos) {
