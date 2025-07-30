@@ -18,6 +18,7 @@
 
 #include "audio_errors.h"
 #include "hpae_manager_impl.h"
+#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
