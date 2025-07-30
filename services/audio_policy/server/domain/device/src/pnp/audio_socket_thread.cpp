@@ -157,6 +157,10 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
 
 void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchState)
  {
+    if (audioEvent ==NULL) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return;
+    }
     static uint32_t h2wTypeLast = PNP_DEVICE_HEADSET;
     switch (switchState) {
         case REMOVE_AUDIO_DEVICE:
@@ -185,6 +189,10 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
 
 int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
 {
+    if (audioEvent == NULL) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return ERROR;
+    }
     if (strncmp(audioPnpUevent->subSystem, UEVENT_SUBSYSTEM_SWITCH, strlen(UEVENT_SUBSYSTEM_SWITCH)) == 0) {
         if (strncmp(audioPnpUevent->switchName, UEVENT_SWITCH_NAME_H2W, strlen(UEVENT_SWITCH_NAME_H2W)) != 0) {
             AUDIO_ERR_LOG("the switch name of 'h2w' not found!");
