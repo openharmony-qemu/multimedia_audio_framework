@@ -1134,6 +1134,8 @@ void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callb
 {
     if (auto lock = callback.lock()) {
         lock->OnStatusUpdate(operation, sessionId);
+    } else {
+        AUDIO_WARNING_LOG("sessionId: %{public}d, statusCallback is nullptr");
     }
 }
 
@@ -1618,7 +1620,6 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
             CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, rendererIdSinkNameMap_[sessionId]),
                 "cannot find device:%{public}s", rendererIdSinkNameMap_[sessionId].c_str());
             rendererManagerMap_[rendererIdSinkNameMap_[sessionId]]->Drain(sessionId);
-            UpdateStatus(rendererIdStreamInfoMap_[sessionId].statusCallback, OPERATION_DRAINED, sessionId);
         } else if (streamClassType == HPAE_STREAM_CLASS_TYPE_RECORD &&
                    capturerIdSourceNameMap_.find(sessionId) != capturerIdSourceNameMap_.end()) {
             AUDIO_INFO_LOG("capturer Drain sessionId: %{public}u deviceName:%{public}s",
@@ -1633,7 +1634,6 @@ int32_t HpaeManager::Drain(HpaeStreamClassType streamClassType, uint32_t session
                     "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
                 capturerManagerMap_[capturerIdSourceNameMap_[sessionId]]->Drain(sessionId);
             }
-            UpdateStatus(capturerIdStreamInfoMap_[sessionId].statusCallback, OPERATION_DRAINED, sessionId);
         } else {
             AUDIO_WARNING_LOG("Drain can not find sessionId streamClassType  %{public}d, sessionId %{public}u",
                 streamClassType, sessionId);

@@ -399,12 +399,16 @@ int32_t HpaeInnerCapturerManager::Drain(uint32_t sessionId)
             sinkInputNodeMap_[sessionId]->Drain();
             if (rendererSessionNodeMap_[sessionId].state != HPAE_SESSION_RUNNING) {
                 AUDIO_INFO_LOG("TriggerCallback Drain sessionId %{public}u", sessionId);
+                TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+                    rendererSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
             }
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::DrainCapturerStream");
             AUDIO_INFO_LOG("DrainCapCapturerStream sessionId %{public}u", sessionId);
             CHECK_AND_RETURN_LOG(capturerSessionNodeMap_.find(sessionId) != capturerSessionNodeMap_.end(),
                 "Drain not find sessionId %{public}u", sessionId);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+                capturerSessionNodeMap_[sessionId].state, OPERATION_DRAINED);
         }
     };
     SendRequestInner(request);

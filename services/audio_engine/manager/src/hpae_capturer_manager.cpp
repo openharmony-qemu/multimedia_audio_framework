@@ -381,6 +381,8 @@ int32_t HpaeCapturerManager::Drain(uint32_t sessionId)
         CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
             "Drain not find sessionId %{public}u", sessionId);
         // no cache data need to drain
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+            sessionNodeMap_[sessionId].state, OPERATION_DRAINED);
     };
     SendRequest(request);
     return SUCCESS;
