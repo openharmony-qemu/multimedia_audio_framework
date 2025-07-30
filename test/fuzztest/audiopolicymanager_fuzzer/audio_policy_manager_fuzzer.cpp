@@ -232,6 +232,7 @@ void AudioPolicyManagerFourFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    std::string networkId = "netWorkId"
 
     AudioPolicyManager::GetInstance().RequestAudioFocus(clientId, audioInterrupt);
     AudioPolicyManager::GetInstance().AbandonAudioFocus(clientId, audioInterrupt);
@@ -251,7 +252,7 @@ void AudioPolicyManagerFourFuzzTest()
     AudioPolicyManager::GetInstance().UpdateTracker(mode, streamChangeInfo);
     AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo);
     AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo);
-    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId);
+    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, netWorkId);
     AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
