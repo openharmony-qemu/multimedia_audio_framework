@@ -1540,7 +1540,7 @@ int32_t HpaeManager::Pause(HpaeStreamClassType streamClassType, uint32_t session
             if (INNER_SOURCE_TYPE_SET.count(capturerIdStreamInfoMap_[sessionId].streamInfo.sourceType) != 0) {
                 CHECK_AND_RETURN_LOG(SafeGetMap(rendererManagerMap_, capturerIdSourceNameMap_[sessionId]),
                     "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
-                rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Pause(sessionId);    
+                rendererManagerMap_[capturerIdSourceNameMap_[sessionId]]->Pause(sessionId);
             } else {
                 CHECK_AND_RETURN_LOG(SafeGetMap(capturerManagerMap_, capturerIdSourceNameMap_[sessionId]),
                     "cannot find device:%{public}s", capturerIdSourceNameMap_[sessionId].c_str());
