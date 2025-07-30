@@ -32,6 +32,7 @@ public:
     virtual int32_t Start() = 0;
     virtual int32_t Stop() = 0;
     virtual int32_t Release() = 0;
+    virtual int32_t SetVolume(float volume) = 0;
 };
 } // namespace HPAE
 } // namespace AudioStandard

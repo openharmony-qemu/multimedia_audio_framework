@@ -105,18 +105,18 @@ int32_t HpaeManagerImpl::CloseAudioPort(int32_t audioHandleIndex)
     return manager_->CloseAudioPort(audioHandleIndex);
 }
 
-int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &renderIdx, HpaeSinkInfo &sinkInfo, int32_t &result,
-    std::function<void()> callback)
+int32_t HpaeManagerImpl::GetSinkInfoByIdx(const int32_t &sinkIdx,
+    std::function<void(const HpaeSinkInfo &sinkInfo, int32_t result)> callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetSinkInfoByIdx(renderIdx, sinkInfo, result, callback);
+    return manager_->GetSinkInfoByIdx(sinkIdx, callback);
 }
 
-int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &captureIdx, HpaeSourceInfo &sourceInfo, int32_t &result,
-    std::function<void()> callback)
+int32_t HpaeManagerImpl::GetSourceInfoByIdx(const int32_t &sourceIdx,
+    std::function<void(const HpaeSourceInfo &sourceInfo, int32_t result)> callback)
 {
     CHECK_AND_RETURN_RET_LOG(manager_, ERR_ILLEGAL_STATE, "manager is nullptr");
-    return manager_->GetSourceInfoByIdx(captureIdx, sourceInfo, result, callback);
+    return manager_->GetSourceInfoByIdx(sourceIdx, callback);
 }
 
 int32_t HpaeManagerImpl::GetAllSinkInputs()

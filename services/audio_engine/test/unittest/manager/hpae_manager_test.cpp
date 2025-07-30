@@ -1459,7 +1459,35 @@ HWTEST_F(HpaeManagerUnitTest, HpaeRenderManagerReloadTest002, TestSize.Level1)
     WaitForMsgProcessing(hpaeManager_);
 }
 
-HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest, TestSize.Level1)
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest_001, TestSize.Level1)
+{
+    EXPECT_NE(hpaeManager_, nullptr);
+    hpaeManager_->Init();
+    sleep(1);
+    EXPECT_EQ(hpaeManager_->IsInit(), true);
+    HpaeSinkInfo sinkInfo;
+    HpaeSourceInfo sourceInfo;
+
+    int32_t ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(0,
+        [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+            sinkInfo = sinkInfoRet;
+            ret = result;
+    }), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+
+    ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(0,
+        [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+            sourceInfo  = sourceInfoRet;
+            ret = result;
+    }), SUCCESS);
+    WaitForMsgProcessing(hpaeManager_);
+    EXPECT_EQ(ret, ERROR);
+}
+
+HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest_002, TestSize.Level1)
 {
     EXPECT_NE(hpaeManager_, nullptr);
     hpaeManager_->Init();
@@ -1469,23 +1497,17 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest, TestSize.Lev
     hpaeManager_->RegisterSerivceCallback(callback);
     HpaeSinkInfo sinkInfo;
     HpaeSourceInfo sourceInfo;
-    int32_t ret = -1;
-
-    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(0, sinkInfo, ret, []() {}), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(ret, ERROR);
-
-    ret = -1;
-    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(0, sourceInfo, ret, []() {}), SUCCESS);
-    WaitForMsgProcessing(hpaeManager_);
-    EXPECT_EQ(ret, ERROR);
 
     AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
     EXPECT_EQ(hpaeManager_->OpenAudioPort(audioModuleInfo1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     int32_t portId = callback->GetPortId();
-    ret = -1;
-    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(portId, sinkInfo, ret, []() {}), SUCCESS);
+    int32_t ret = -1;
+    EXPECT_EQ(hpaeManager_->GetSinkInfoByIdx(portId,
+        [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+            sinkInfo = sinkInfoRet;
+            ret = result;
+    }), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(std::to_string(sinkInfo.channels) == audioModuleInfo1.channels, true);
@@ -1498,7 +1520,11 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeManagerGetSinkAndSourceInfoTest, TestSize.Lev
     WaitForMsgProcessing(hpaeManager_);
     portId = callback->GetPortId();
     ret = -1;
-    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(portId, sourceInfo, ret, []() {}), SUCCESS);
+    EXPECT_EQ(hpaeManager_->GetSourceInfoByIdx(portId,
+        [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+            sourceInfo  = sourceInfoRet;
+            ret = result;
+    }), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(std::to_string(sourceInfo.channels) == audioModuleInfo2.channels, true);

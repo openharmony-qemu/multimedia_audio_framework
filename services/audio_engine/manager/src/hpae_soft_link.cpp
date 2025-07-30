@@ -37,7 +37,7 @@ static constexpr uint32_t DEFAULT_FRAME_LEN_MS = 20;
 static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 4;
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
-std::atomic<uint32_t> HpaeSoftLink::g_sessionId = {FIRST_SESSIONID}; // begin at 90000
+uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
 std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
 {
     std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(renderIdx, captureIdx, mode);
@@ -48,6 +48,7 @@ std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, 
 
 uint32_t HpaeSoftLink::GenerateSessionId()
 {
+    std::lock_guard<std::mutex> lock(sessionIdMutex_);
     uint32_t sessionId = g_sessionId++;
     AUDIO_INFO_LOG("hpae softlink sessionId: %{public}u", sessionId);
     if (g_sessionId > MAX_VALID_SESSIONID) {
@@ -58,30 +59,28 @@ uint32_t HpaeSoftLink::GenerateSessionId()
 }
 
 HpaeSoftLink::HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
-    : renderIdx_(renderIdx), captureIdx_(captureIdx), linkMode_(mode)
+    : renderIdx_(renderIdx), captureIdx_(captureIdx), linkMode_(mode), state_(HpaeSoftLinkState::NEW)
 {
     sinkInfo_.sinkId = renderIdx;
     sourceInfo_.sourceId = captureIdx;
-    state_ = HpaeSoftLinkState::NEW;
 }
 
 HpaeSoftLink::~HpaeSoftLink()
 {
     AUDIO_INFO_LOG("~HpaeSoftLink");
+    Release();
 }
 
 int32_t HpaeSoftLink::Init()
 {
+    Trace trace("HpaeSoftLink::Init");
     AUDIO_INFO_LOG("init in");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
-    Trace trace("HpaeSoftLink::Init");
-    CHECK_AND_RETURN_RET_LOG(renderIdx_ >= 0 && captureIdx_ >= 0, ERR_INVALID_PARAM, "error renderIdx or capturerIdx");
-    int ret = GetSinkInfoByIdx();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetSinkInfoByIdx error");
-    
-    ret = GetSourceInfoByIdx();
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "GetSourceInfoByIdx error");
+    CHECK_AND_RETURN_RET_LOG(renderIdx_ >= 0 && captureIdx_ >= 0, ERR_INVALID_PARAM, "invalid renderIdx or capturerIdx");
+
+    int32_t ret = GetDeviceInfo();
+    CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
 
     size_t frameBytes = sinkInfo_.channels * GetSizeFromFormat(sinkInfo_.format) *
         DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
@@ -96,38 +95,42 @@ int32_t HpaeSoftLink::Init()
     return ret;
 }
 
-int32_t HpaeSoftLink::GetSinkInfoByIdx()
+int32_t HpaeSoftLink::GetDeviceInfo()
 {
-    Trace trace("HpaeSoftLink::GetSinkInfoByIdx");
-    AUDIO_INFO_LOG("GetSinkInfoByIdx");
+    Trace trace("HpaeSoftLink::GetDeviceInfo");
+    AUDIO_INFO_LOG("get device info");
     std::unique_lock<std::mutex> lock(callbackMutex_);
-    isOperationFinish_ = false;
-    int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_, sinkInfo_, ret, [this] {
-        this->OnDeviceInfoReceived();
+    isDeviceOperationFinish_ = 0;
+    int32_t retGetSink = ERROR;
+    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_,
+        [this, &retGetSink](const HpaeSinkInfo &sinkInfo, int32_t result) {
+            sinkInfo_ = sinkInfo;
+            retGetSink = result;
+            OnDeviceInfoReceived(SOFTLINK_SINK_OPERATION);
+    });
+    int32_t retGetSource = ERROR;
+    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_,
+        [this, &retGetSource](const HpaeSourceInfo &sourceInfo, int32_t result) {
+            sourceInfo_ = sourceInfo;
+            retGetSource = result;
+            OnDeviceInfoReceived(SOFTLINK_SOURCE_OPERATION);
     });
     bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isOperationFinish_;
+        return (isDeviceOperationFinish_ & SOFTLINK_SINK_OPERATION) &&
+            (isDeviceOperationFinish_ & SOFTLINK_SOURCE_OPERATION);
     });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetSinkInfoByIdx timeout");
-    return ret;
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "get device info timeout");
+    CHECK_AND_RETURN_RET_LOG(retGetSink == SUCCESS, ERROR, "get sink info failed");
+    CHECK_AND_RETURN_RET_LOG(retGetSource == SUCCESS, ERROR, "get source info failed");
+    return SUCCESS;
 }
 
-int32_t HpaeSoftLink::GetSourceInfoByIdx()
+void HpaeSoftLink::OnDeviceInfoReceived(const HpaeSoftLinkDeviceOperation &operation)
 {
-    Trace trace("HpaeSoftLink::GetSourceInfoByIdx");
-    AUDIO_INFO_LOG("GetSourceInfoByIdx");
     std::unique_lock<std::mutex> lock(callbackMutex_);
-    isOperationFinish_ = false;
-    int32_t ret = ERROR;
-    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_, sourceInfo_, ret, [this] {
-        this->OnDeviceInfoReceived();
-    });
-    bool stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-        return isOperationFinish_;
-    });
-    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "GetSourceInfoByIdx timeout");
-    return ret;
+    isDeviceOperationFinish_ |= operation;
+    AUDIO_INFO_LOG("GetDeviceInfo callback, operation: %{public}d", operation);
+    callbackCV_.notify_all();
 }
 
 void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType)
@@ -138,11 +141,10 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
     info.channelLayout = sinkInfo_.channelLayout;
     info.frameLen = DEFAULT_FRAME_LEN_MS * static_cast<uint32_t>(sinkInfo_.samplingRate) / MS_PER_SECOND;
     info.streamClassType = streamClassType;
-    // info.effectInfo; // todo : check effect mode
     info.isMoveAble = false;
     info.sessionId = GenerateSessionId();
     if (streamClassType == HPAE_STREAM_CLASS_TYPE_PLAY) {
-        info.streamType = STREAM_DEFAULT;
+        info.streamType = STREAM_VOICE_CALL;
         info.deviceName = sinkInfo_.deviceName;
         info.sourceType = SOURCE_TYPE_INVALID;
         info.fadeType = DEFAULT_FADE;
@@ -156,7 +158,7 @@ void HpaeSoftLink::TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStr
         info.sourceType = SOURCE_TYPE_MIC;
     }
 }
-// todo : check state at func in
+
 int32_t HpaeSoftLink::CreateStream()
 {
     TransSinkInfoToStreamInfo(rendererStreamInfo_, HPAE_STREAM_CLASS_TYPE_PLAY);
@@ -184,52 +186,47 @@ int32_t HpaeSoftLink::CreateStream()
     return SUCCESS;
 }
 
-void HpaeSoftLink::OnDeviceInfoReceived()
+int32_t HpaeSoftLink::SetVolume(float volume)
 {
-    std::unique_lock<std::mutex> lock(callbackMutex_);
-    isOperationFinish_ = true;
-    callbackCV_.notify_all();
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "softlink not prepared");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, ERR_ILLEGAL_STATE, "softlink already release");
+    AudioVolume::GetInstance()->SetStreamVolume(rendererStreamInfo_.sessionId, volume);
+    return SUCCESS;
 }
 
 int32_t HpaeSoftLink::Start()
 {
+    Trace trace("HpaeSoftLink::Start");
     AUDIO_INFO_LOG("Start in");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RUNNING, SUCCESS, "softlink already start");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::PREPARED || state_ == HpaeSoftLinkState::STOPPED,
         ERR_ILLEGAL_STATE, "softlink not init");
-    Trace trace("HpaeSoftLink::Start");
+    std::unique_lock<std::mutex> lock(callbackMutex_);
+    isStreamOperationFinish_ = 0;
+    IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
+    IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
+    bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
+        return (isStreamOperationFinish_ & SOFTLINK_RENDERER_OPERATION) &&
+            (isStreamOperationFinish_ & SOFTLINK_CAPTURER_OPERATION);
+    });
+
+    CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start timeout");
     {
-        std::unique_lock<std::mutex> lock(callbackMutex_);
-        isOperationFinish_ = false;
-        IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
-        bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-            return isOperationFinish_;
-        });
-        CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start renderer timeout");
+        std::lock_guard<std::mutex> stateLock(stateMutex_);
         CHECK_AND_RETURN_RET_LOG(streamStateMap_[rendererStreamInfo_.sessionId] == HpaeSoftLinkState::RUNNING,
-            ERROR, "start renderer failed");
-    }
-    {
-        std::unique_lock<std::mutex> lock(callbackMutex_);
-        isOperationFinish_ = false;
-        IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
-        bool  stopWaiting = callbackCV_.wait_for(lock, std::chrono::milliseconds(OPERATION_TIMEOUT_IN_MS), [this] {
-            return isOperationFinish_;
-        });
-        CHECK_AND_RETURN_RET_LOG(stopWaiting, ERROR, "start capturer timeout");
+            ERROR, "start renderer[%{public}d] failed", rendererStreamInfo_.sessionId);
         CHECK_AND_RETURN_RET_LOG(streamStateMap_[capturerStreamInfo_.sessionId] == HpaeSoftLinkState::RUNNING,
-            ERROR, "start capturer failed");
+            ERROR, "start capturer[%{public}d] failed", capturerStreamInfo_.sessionId);
+        state_ = HpaeSoftLinkState::RUNNING;
     }
-    std::lock_guard<std::mutex> lock(stateMutex_);
-    state_ = HpaeSoftLinkState::RUNNING;
     return SUCCESS;
 }
 
 int32_t HpaeSoftLink::Stop()
 {
+    Trace trace("HpaeSoftLink::Stop");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::STOPPED, SUCCESS, "softlink already stop");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::RUNNING, ERR_ILLEGAL_STATE, "softlink not init");
-    Trace trace("HpaeSoftLink::Stop");
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Stop(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
     std::lock_guard<std::mutex> lock(stateMutex_);
@@ -240,6 +237,11 @@ int32_t HpaeSoftLink::Stop()
 int32_t HpaeSoftLink::Release()
 {
     Trace trace("HpaeSoftLink::Release");
+    CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::RELEASED, SUCCESS, "softlink already release");
+    if (state_ == HpaeSoftLinkState::RUNNING) {
+        AUDIO_INFO_LOG("softlink not stop, stop before release");
+        Stop();
+    }
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_PLAY, rendererStreamInfo_.sessionId);
     AudioVolume::GetInstance()->RemoveStreamVolume(rendererStreamInfo_.sessionId);
     IHpaeManager::GetHpaeManager().Release(HPAE_STREAM_CLASS_TYPE_RECORD, capturerStreamInfo_.sessionId);
@@ -248,16 +250,26 @@ int32_t HpaeSoftLink::Release()
     return SUCCESS;
 }
 
+void HpaeSoftLink::FlushRingCache()
+{
+    bufferQueue_->ResetBuffer();
+}
+
 void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
 {
     AUDIO_INFO_LOG("stream %{public}u recv operation:%{public}d", streamIndex, operation);
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "stream already released");
+    CHECK_AND_RETURN_LOG(streamIndex == rendererStreamInfo_.sessionId || streamIndex == capturerStreamInfo_.sessionId,
+        "invalid streamIndex");
     {
         std::lock_guard<std::mutex> lock(stateMutex_);
         if (operation == OPERATION_STARTED) {
             streamStateMap_[streamIndex] = HpaeSoftLinkState::RUNNING;
         } else if (operation == OPERATION_STOPPED) {
             streamStateMap_[streamIndex] = HpaeSoftLinkState::STOPPED;
+            if (streamIndex == capturerStreamInfo_.sessionId) {
+                FlushRingCache();
+            }
         } else if (operation == OPERATION_RELEASED) {
             streamStateMap_[streamIndex] = HpaeSoftLinkState::RELEASED;
         } else {
@@ -265,7 +277,8 @@ void HpaeSoftLink::OnStatusUpdate(IOperation operation, uint32_t streamIndex)
         }
     }
     std::lock_guard<std::mutex> lock(callbackMutex_);
-    isOperationFinish_ = true;
+    isStreamOperationFinish_ |=
+        (streamIndex == rendererStreamInfo_.sessionId ? SOFTLINK_RENDERER_OPERATION : SOFTLINK_CAPTURER_OPERATION);
     callbackCV_.notify_all();
 }
 
@@ -308,7 +321,7 @@ static void CopyLeftToRight(uint8_t *data, size_t size, const AudioSampleFormat 
     const size_t frameSize = bytesPerSample * 2;
     uint8_t *left = nullptr;
     uint8_t *right = nullptr;
-    for (size_t i = 0; i < size; i += frameSize) {
+    for (size_t i = 0; i < size - frameSize + 1; i += frameSize) {
         left = data + i;
         right = left + bytesPerSample;
         CHECK_AND_RETURN_LOG(memcpy_s(right, bytesPerSample, left, bytesPerSample) == 0, "memcpy_s failed");
@@ -355,6 +368,7 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
 // for test
 HpaeSoftLinkState HpaeSoftLink::GetStreamStateById(uint32_t sessionId)
 {
+    std::lock_guard<std::mutex> lock(stateMutex_);
     CHECK_AND_RETURN_RET_LOG(streamStateMap_.find(sessionId) != streamStateMap_.end(), HpaeSoftLinkState::INVALID,
         "invalid param");
     return streamStateMap_[sessionId];
