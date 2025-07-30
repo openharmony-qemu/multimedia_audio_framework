@@ -252,7 +252,7 @@ void AudioPolicyManagerFourFuzzTest()
     AudioPolicyManager::GetInstance().UpdateTracker(mode, streamChangeInfo);
     AudioPolicyManager::GetInstance().GetPreferredOutputStreamType(rendererInfo);
     AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo);
-    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, netWorkId);
+    AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, networkId);
     AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
     AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
     AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
