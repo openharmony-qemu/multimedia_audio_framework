@@ -24,9 +24,6 @@ using namespace std;
 namespace OHOS {
 namespace AudioStandard {
 const int32_t LIMITSIZE = 4;
-// const int32_t SYSTEM_ABILITY_ID = 3009;
-// const float FLOAT_VOLUME = 1.0f;
-// const bool RUN_ON_CREATE = false;
 bool g_hasPermission = false;
 bool g_hasServerInit = false;
 static const uint8_t *RAW_DATA = nullptr;
@@ -95,6 +92,7 @@ void AudioPolicyManagerOneFuzzTest()
     AudioPolicyManager::GetInstance().AudioPolicyServerDied(pid, uid);
     AudioPolicyManager::GetInstance().RegisterServerDiedCallBack(func);
     AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType);
+    AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
     AudioPolicyManager::GetInstance().SetSelfAppVolumeLevel(volumeLevel, volumeFlag);
     AudioPolicyManager::GetInstance().SetAppVolumeLevel(appUid, volumeLevel, volumeFlag);
     AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
@@ -304,8 +302,217 @@ void AudioPolicyManagerFiveFuzzTest()
     AudioPolicyManager::GetInstance().GetAvailableMicrophones();
 }
 
+void AudioPolicyManagerSixFuzzTest()
+{
+    std::string macAddress = "macAddress";
+    bool support = GetData<bool>();
+    int32_t volume = GetData<int32_t>();
+    bool updateUi = GetData<bool>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
+    CastType castType = GetData<CastType>();
+    std::shared_ptr<AudioDistributedRoutingRoleCallback> audioDistributedRoutingRoleCallback;
+    std::string address = "address";
+    bool enable = GetData<bool>();
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    std::shared_ptr<AudioSpatializationEnabledChangeCallback> audioSpatializationEnabledChangeCallback;
+    std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> currentDeviceCallback;
+    std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> audioHeadTrackingEnabledChangeCallback;
+    std::shared_ptr<AudioNnStateChangeCallback> audioNnStateChangeCallback;
+    StreamUsage streamUsage = GetData<StreamUsage>();
 
-typedef void (*TestFuncs[5])();
+    AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
+    AudioPolicyManager::GetInstance().IsAbsVolumeScene();
+    AudioPolicyManager::GetInstance().SetA2dpDeviceVolume(macAddress, volume, updateUi);
+    AudioPolicyManager::GetInstance().SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
+    AudioPolicyManager::GetInstance().ConfigDistributedRoutingRole(descriptor, castType);
+    AudioPolicyManager::GetInstance().SetDistributedRoutingRoleCallback(audioDistributedRoutingRoleCallback);
+    AudioPolicyManager::GetInstance().UnsetDistributedRoutingRoleCallback();
+    AudioPolicyManager::GetInstance().IsSpatializationEnabled();
+    AudioPolicyManager::GetInstance().IsSpatializationEnabled(address);
+    AudioPolicyManager::GetInstance().IsSpatializationEnabledForCurrentDevice();
+    AudioPolicyManager::GetInstance().SetSpatializationEnabled(enable);
+    AudioPolicyManager::GetInstance().SetSpatializationEnabled(selectedAudioDevice, enable);
+    AudioPolicyManager::GetInstance().IsHeadTrackingEnabled();
+    AudioPolicyManager::GetInstance().IsHeadTrackingEnabled(address);
+    AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(enable);
+    AudioPolicyManager::GetInstance().SetHeadTrackingEnabled(selectedAudioDevice, enable);
+    AudioPolicyManager::GetInstance().RegisterSpatializationEnabledEventListener(audioSpatializationEnabledChangeCallback);
+    AudioPolicyManager::GetInstance().RegisterSpatializationEnabledForCurrentDeviceEventListener(currentDeviceCallback);
+    AudioPolicyManager::GetInstance().RegisterHeadTrackingEnabledEventListener(audioHeadTrackingEnabledChangeCallback);
+    AudioPolicyManager::GetInstance().RegisterNnStateEventListener(audioNnStateChangeCallback);
+    AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledEventListener();
+    AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();
+    AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
+    AudioPolicyManager::GetInstance().UnregisterNnStateEventListener();
+    AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
+    AudioPolicyManager::GetInstance().IsSpatializationSupported();
+    AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
+}
+
+void AudioPolicyManagerSevenFuzzTest()
+{
+    std::string address = "address";
+    AudioSpatialDeviceState audioSpatialDeviceState;
+    uint32_t sessionId = GetData<uint32_t>();
+    StreamUsage streamUsage = GetData<StreamUsage>();
+    std::shared_ptr<AudioSpatializationStateChangeCallback> audioSpatializationStateChangeCallback;
+    std::set<int32_t> pids;
+    int32_t pid = GetData<int32_t>();
+    pids.insert(pid);
+    int32_t zoneId = GetData<int32_t>();
+    bool highResExist = GetData<bool>();
+    AudioSessionStrategy strategy;
+    DeviceType deviceType = GetData<DeviceType>();
+    SourceType sourceType = GetData<SourceType>();
+    bool isRunning = GetData<bool>();
+    std::shared_ptr<AudioSessionCallback> audioSessionCallback;
+    AudioSessionScene audioSessionScene = GetData<AudioSessionScene>();
+    std::shared_ptr<AudioSessionStateChangedCallback> stateChangedCallback;
+
+
+    AudioPolicyManager::GetInstance().IsHeadTrackingSupported();
+    AudioPolicyManager::GetInstance().IsHeadTrackingSupportedForDevice(address);
+    AudioPolicyManager::GetInstance().UpdateSpatialDeviceState(audioSpatialDeviceState);
+    AudioPolicyManager::GetInstance().RegisterSpatializationStateEventListener(sessionId, streamUsage, audioSpatializationStateChangeCallback);
+    AudioPolicyManager::GetInstance().UnregisterSpatializationStateEventListener(sessionId);
+    AudioPolicyManager::GetInstance().CreateAudioInterruptZone(pids, zoneId);
+    AudioPolicyManager::GetInstance().AddAudioInterruptZonePids(pids, zoneId);
+    AudioPolicyManager::GetInstance().RemoveAudioInterruptZonePids(pids, zoneId);
+    AudioPolicyManager::GetInstance().ReleaseAudioInterruptZone(zoneId);
+    AudioPolicyManager::GetInstance().GetConverterConfig();
+    AudioPolicyManager::GetInstance().IsHighResolutionExist();
+    AudioPolicyManager::GetInstance().SetHighResolutionExist(highResExist);
+    AudioPolicyManager::GetInstance().ActivateAudioSession(strategy);
+    AudioPolicyManager::GetInstance().DeactivateAudioSession();
+    AudioPolicyManager::GetInstance().IsAudioSessionActivated();
+    AudioPolicyManager::GetInstance().SetInputDevice(deviceType, sessionId, sourceType, isRunning);
+    AudioPolicyManager::GetInstance().SetAudioSessionCallback(audioSessionCallback);
+    AudioPolicyManager::GetInstance().UnsetAudioSessionCallback();
+    AudioPolicyManager::GetInstance().UnsetAudioSessionCallback(audioSessionCallback);
+    AudioPolicyManager::GetInstance().SetAudioSessionScene(audioSessionScene);
+    AudioPolicyManager::GetInstance().SetAudioSessionStateChangeCallback(stateChangedCallback);
+    AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback();
+    AudioPolicyManager::GetInstance().UnsetAudioSessionStateChangeCallback(stateChangedCallback);
+}
+
+void AudioPolicyManagerEightFuzzTest()
+{ 
+    DeviceType deviceType = GetData<DeviceType>();
+    std::shared_ptr<AudioSessionCurrentDeviceChangedCallback> deviceChangedCallback;
+    AudioSpatializationSceneType spatializationSceneType = GetData<AudioSpatializationSceneType>();
+    int32_t deviceId = GetData<int32_t>();
+    std::string macAddress = "macAddress";
+    std::shared_ptr<HeadTrackingDataRequestedChangeCallback> HTDRcallback;
+    std::shared_ptr<AudioDeviceRefiner> audioDeviceRefiner;
+    std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback;
+    AudioStreamChangeInfo streamChangeInfo;
+    int32_t sessionId = GetData<int32_t>();
+
+    AudioPolicyManager::GetInstance().GetDefaultOutputDevice(deviceType);
+    AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType);
+    AudioPolicyManager::GetInstance().SetAudioSessionCurrentDeviceChangeCallback(deviceChangedCallback);
+    AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentDeviceChangeCallback();
+    AudioPolicyManager::GetInstance().UnsetAudioSessionCurrentDeviceChangeCallback(deviceChangedCallback);
+    AudioPolicyManager::GetInstance().GetSpatializationSceneType();
+    AudioPolicyManager::GetInstance().SetSpatializationSceneType(spatializationSceneType);
+    AudioPolicyManager::GetInstance().GetMaxAmplitude(deviceId);
+    AudioPolicyManager::GetInstance().DisableSafeMediaVolume();
+    AudioPolicyManager::GetInstance().IsHeadTrackingDataRequested(macAddress);
+    AudioPolicyManager::GetInstance().RegisterHeadTrackingDataRequestedEventListener(macAddress, HTDRcallback);
+    AudioPolicyManager::GetInstance().UnregisterHeadTrackingDataRequestedEventListener(macAddress);
+    AudioPolicyManager::GetInstance().SetAudioDeviceRefinerCallback(audioDeviceRefiner);
+    AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
+    AudioPolicyManager::GetInstance().SetAudioClientInfoMgrCallback(audioClientInfoMgrCallback);
+    AudioPolicyManager::GetInstance().ResetClientTrackerStubMap();
+    AudioPolicyManager::GetInstance().CheckAndRemoveClientTrackerStub(AUDIO_MODE_PLAYBACK, streamChangeInfo);
+    AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionId);
+}
+
+void AudioPolicyManagerDeviceOneFuzzTest()
+{
+    sptr<AudioRendererFilter> audioRendererFilter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    int32_t uid = GetData<int32_t>();
+    int32_t pid = GetData<int32_t>();
+    AudioStreamType streamType = GetData<AudioStreamType>();
+    sptr<AudioCapturerFilter> audioCapturerFilter;
+    AudioDeviceUsage audioDevUsage = GetData<AudioDeviceUsage>();
+    DeviceFlag deviceFlag = GetData<DeviceFlag>();
+    AudioRendererInfo rendererInfo;
+    bool forceNoBTPermission = GetData<bool>();
+    AudioCapturerInfo capturerInfo;
+    bool active = GetData<bool>();
+    int32_t clientId = GetData<int32_t>();
+    std::shared_ptr<AudioManagerDeviceChangeCallback> audioManagerDeviceChangeCallback;
+    std::shared_ptr<AudioPreferredOutputDeviceChangeCallback> outputDeviceChangeCallback;
+    std::shared_ptr<AudioPreferredInputDeviceChangeCallback> inputDeviceChangeCallback;
+
+    AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
+    AudioPolicyManager::GetInstance().GetSelectedDeviceInfo(uid, pid, streamType);
+    AudioPolicyManager::GetInstance().SelectInputDevice(audioCapturerFilter, audioDeviceDescriptors);
+    AudioPolicyManager::GetInstance().ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AudioPolicyManager::GetInstance().UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+    AudioPolicyManager::GetInstance().GetExcludedDevices(audioDevUsage);
+    AudioPolicyManager::GetInstance().GetDevices(deviceFlag);
+    AudioPolicyManager::GetInstance().GetDevicesInner(deviceFlag);
+    AudioPolicyManager::GetInstance().GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission);
+    AudioPolicyManager::GetInstance().GetPreferredInputDeviceDescriptors(capturerInfo);
+    AudioPolicyManager::GetInstance().GetOutputDevice(audioRendererFilter);
+    AudioPolicyManager::GetInstance().GetInputDevice(audioCapturerFilter);
+    AudioPolicyManager::GetInstance().SetDeviceActive(DEVICE_TYPE_SPEAKER, active, uid);
+    AudioPolicyManager::GetInstance().GetActiveOutputDevice();
+    AudioPolicyManager::GetInstance().GetDmDeviceType();
+    AudioPolicyManager::GetInstance().GetActiveInputDevice();
+    AudioPolicyManager::GetInstance().SetDeviceChangeCallback(clientId, deviceFlag, audioManagerDeviceChangeCallback);
+    AudioPolicyManager::GetInstance().UnsetDeviceChangeCallback(clientId, deviceFlag, audioManagerDeviceChangeCallback);
+    AudioPolicyManager::GetInstance().SetPreferredOutputDeviceChangeCallback(rendererInfo, outputDeviceChangeCallback);
+    AudioPolicyManager::GetInstance().SetPreferredInputDeviceChangeCallback(capturerInfo, inputDeviceChangeCallback);
+    AudioPolicyManager::GetInstance().UnsetPreferredOutputDeviceChangeCallback(outputDeviceChangeCallback);
+    AudioPolicyManager::GetInstance().UnsetPreferredInputDeviceChangeCallback(inputDeviceChangeCallback);
+}
+
+void AudioPolicyManagerDeviceTwoFuzzTest()
+{
+    uint32_t sessionId = GetData<uint32_t>();
+    std::weak_ptr<DeviceChangeWithInfoCallback> deviceChangeWithInfoCallback;
+    AudioDeviceUsage audioDevUsage = GetData<AudioDeviceUsage>();
+    int32_t clientId = GetData<int32_t>();
+    std::shared_ptr<AudioManagerAvailableDeviceChangeCallback> AMADCCallback;
+    bool active = GetData<bool>();
+    std::string address = "address";
+    int32_t uid = GetData<int32_t>();
+    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamDeviceChangeReasonExt reason;
+    PreferredType preferredType = GetData<PreferredType>();
+    std::shared_ptr<AudioDeviceDescriptor> desc;
+    std::shared_ptr<AudioDeviceAnahs> audioDeviceAnahs;
+    AudioPipeType pipeType = GetData<AudioPipeType>();
+    bool isConnected = GetData<bool>();
+    DeviceInfoUpdateCommand command = GetData<DeviceInfoUpdateCommand>();
+    std::shared_ptr<SleAudioOperationCallback> sleAudioOperationCallback;
+
+    AudioPolicyManager::GetInstance().RegisterDeviceChangeWithInfoCallback(sessionId, deviceChangeWithInfoCallback);
+    AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(sessionId);
+    AudioPolicyManager::GetInstance().GetAvailableDevices(audioDevUsage);
+    AudioPolicyManager::GetInstance().SetAvailableDeviceChangeCallback(clientId, audioDevUsage, AMADCCallback);
+    AudioPolicyManager::GetInstance().UnsetAvailableDeviceChangeCallback(clientId, audioDevUsage);
+    AudioPolicyManager::GetInstance().SetCallDeviceActive(DEVICE_TYPE_SPEAKER, active, address, uid);
+    AudioPolicyManager::GetInstance().GetActiveBluetoothDevice();
+    AudioPolicyManager::GetInstance().FetchOutputDeviceForTrack(streamChangeInfo, reason);
+    AudioPolicyManager::GetInstance().FetchInputDeviceForTrack(streamChangeInfo);
+    AudioPolicyManager::GetInstance().TriggerFetchDevice(reason);
+    AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
+    AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);
+    AudioPolicyManager::GetInstance().UnsetAudioDeviceAnahsCallback();
+    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
+    AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
+    AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
+    AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);
+}
+
+
+typedef void (*TestFuncs[10])();
 
 TestFuncs g_testFuncs = {
     AudioPolicyManagerOneFuzzTest,
@@ -313,6 +520,11 @@ TestFuncs g_testFuncs = {
     AudioPolicyManagerThreeFuzzTest,
     AudioPolicyManagerFourFuzzTest,
     AudioPolicyManagerFiveFuzzTest,
+    AudioPolicyManagerSixFuzzTest,
+    AudioPolicyManagerSevenFuzzTest,
+    AudioPolicyManagerEightFuzzTest,
+    AudioPolicyManagerDeviceOneFuzzTest,
+    AudioPolicyManagerDeviceTwoFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
