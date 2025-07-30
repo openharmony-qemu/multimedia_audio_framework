@@ -1135,7 +1135,7 @@ void HpaeManager::UpdateStatus(const std::weak_ptr<IStreamStatusCallback> &callb
     if (auto lock = callback.lock()) {
         lock->OnStatusUpdate(operation, sessionId);
     } else {
-        AUDIO_WARNING_LOG("sessionId: %{public}d, statusCallback is nullptr");
+        AUDIO_WARNING_LOG("sessionId: %{public}u, statusCallback is nullptr", sessionId);
     }
 }
 
