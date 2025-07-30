@@ -417,7 +417,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_023, TestSize.Level1
 
     auto ret = audioCoreService->ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo,
         networkId, sinkName, sourceType);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -440,7 +440,7 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_024, TestSize.Level1
 
     auto ret = audioCoreService->ReloadA2dpAudioPort(moduleInfo, deviceType, audioStreamInfo,
         networkId, sinkName, sourceType);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

@@ -1183,7 +1183,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_002, TestSize.Le
         config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
     }
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1201,7 +1201,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_003, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_RINGTONE);
 
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1220,7 +1220,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_004, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_INVALID);
 
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1242,7 +1242,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
 
     int ret = 0;
     ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

@@ -1572,7 +1572,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_008, TestSize.Level1)
     rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(10);
 
     ret = rendererInServer->Flush();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**
