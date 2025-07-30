@@ -38,9 +38,9 @@ static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 4;
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
 uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
-std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
+std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode)
 {
-    std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(renderIdx, captureIdx, mode);
+    std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(sinkIdx, sourceIdx, mode);
     CHECK_AND_RETURN_RET_LOG(softLink != nullptr, nullptr, "new HpaeSoftLink failed");
     CHECK_AND_RETURN_RET_LOG(softLink->Init() == SUCCESS, nullptr, "HpaeSoftLink init failed");
     return softLink;
@@ -58,11 +58,11 @@ uint32_t HpaeSoftLink::GenerateSessionId()
     return sessionId;
 }
 
-HpaeSoftLink::HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode)
-    : renderIdx_(renderIdx), captureIdx_(captureIdx), linkMode_(mode), state_(HpaeSoftLinkState::NEW)
+HpaeSoftLink::HpaeSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode)
+    : sinkIdx_(sinkIdx), sourceIdx_(sourceIdx), linkMode_(mode), state_(HpaeSoftLinkState::NEW)
 {
-    sinkInfo_.sinkId = renderIdx;
-    sourceInfo_.sourceId = captureIdx;
+    sinkInfo_.sinkId = sinkIdx;
+    sourceInfo_.sourceId = sourceIdx;
 }
 
 HpaeSoftLink::~HpaeSoftLink()
@@ -77,7 +77,7 @@ int32_t HpaeSoftLink::Init()
     AUDIO_INFO_LOG("init in");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
-    CHECK_AND_RETURN_RET_LOG(renderIdx_ >= 0 && captureIdx_ >= 0, ERR_INVALID_PARAM, "invalid renderIdx or capturerIdx");
+    CHECK_AND_RETURN_RET_LOG(sinkIdx_ >= 0 && sourceIdx_ >= 0, ERR_INVALID_PARAM, "invalid sinkIdx or capturerIdx");
 
     int32_t ret = GetDeviceInfo();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
@@ -102,14 +102,14 @@ int32_t HpaeSoftLink::GetDeviceInfo()
     std::unique_lock<std::mutex> lock(callbackMutex_);
     isDeviceOperationFinish_ = 0;
     int32_t retGetSink = ERROR;
-    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(renderIdx_,
+    IHpaeManager::GetHpaeManager().GetSinkInfoByIdx(sinkIdx_,
         [this, &retGetSink](const HpaeSinkInfo &sinkInfo, int32_t result) {
             sinkInfo_ = sinkInfo;
             retGetSink = result;
             OnDeviceInfoReceived(SOFTLINK_SINK_OPERATION);
     });
     int32_t retGetSource = ERROR;
-    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(captureIdx_,
+    IHpaeManager::GetHpaeManager().GetSourceInfoByIdx(sourceIdx_,
         [this, &retGetSource](const HpaeSourceInfo &sourceInfo, int32_t result) {
             sourceInfo_ = sourceInfo;
             retGetSource = result;

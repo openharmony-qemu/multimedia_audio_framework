@@ -50,7 +50,7 @@ class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
                      public IStreamCallback,
                      public ICapturerStreamCallback {
 public:
-    HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode);
+    HpaeSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
     static uint32_t GenerateSessionId();
     int32_t Init() override;
@@ -73,8 +73,8 @@ private:
 private:
     static uint32_t g_sessionId;
     inline static std::mutex sessionIdMutex_;
-    int32_t renderIdx_ = -1;
-    int32_t captureIdx_ = -1;
+    int32_t sinkIdx_ = -1;
+    int32_t sourceIdx_ = -1;
     SoftLinkMode linkMode_ = SoftLinkMode::HEARING_AID;
     HpaeSinkInfo sinkInfo_;
     HpaeSourceInfo sourceInfo_;
