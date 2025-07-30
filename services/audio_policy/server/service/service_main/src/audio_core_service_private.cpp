@@ -2752,6 +2752,7 @@ void AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     std::vector<uint32_t> existingStartDuration{};
     std::vector<bool> existingFastFlag{};
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager_->GetPipeList();
+    
     for (auto &pipeInfo : pipeInfoList) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {

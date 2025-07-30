@@ -1338,8 +1338,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     }
  
     auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
-    WriteCapturerConcurrentMsg(streamDesc, dfxResult);
-    if (dfxResult->existingAppName.size() < CONCURRENT_CAPTURE_DFX_THRESHOLD) {
+    if (!WriteCapturerConcurrentMsg(streamDesc, dfxResult)) {
         return ERR_INVALID_HANDLE;
     }
     LogCapturerConcurrentResult(dfxResult);
