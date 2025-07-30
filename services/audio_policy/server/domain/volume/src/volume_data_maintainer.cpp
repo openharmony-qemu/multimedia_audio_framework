@@ -873,11 +873,9 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             type = "_earpiece";
             return type;
         case DEVICE_TYPE_SPEAKER:
-            type = "_builtin";
-            return type;
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
-            type = "_dp";
+            type = "_builtin";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
