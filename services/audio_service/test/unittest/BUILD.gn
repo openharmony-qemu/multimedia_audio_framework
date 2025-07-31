@@ -301,6 +301,7 @@ ohos_unittest("audio_service_unit_test") {
     "./common/limiter_unit_test/audio_limiter_unit_test.cpp",
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
+    "./client/i_audio_stream_unit_test.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
