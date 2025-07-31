@@ -157,7 +157,7 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
 
 void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchState)
 {
-    if (audioEvent ==nullptr) {
+    if (audioEvent == nullptr) {
         AUDIO_ERR_LOG("audioEvent is null!");
         return;
     }
