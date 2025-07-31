@@ -441,7 +441,7 @@ int32_t AudioServer::Dump(int32_t fd, const std::vector<std::u16string> &args)
         hpaeDumpObj_ = std::make_shared<AudioServerHpaeDump>();
     }
     res = hpaeDumpObj_->Initialize();
-    CHECK_AND_RETURN_RET_LOG(res == AUDIO_DUMP_SUCCESS, AUDIO_DUMP_INIT_ERR,
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERROR,
         "Audio Service Hpae Dump Not Initialed");
     hpaeDumpObj_->AudioDataDump(dumpString, argQue);
 #endif // SUPPORT_OLD_ENGINE

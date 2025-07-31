@@ -146,11 +146,6 @@ ohos_unittest("audio_endpoint_plus_unit_test") {
 
   defines = []
   if (!audio_framework_feature_new_engine_flag) {
-    sources += [
-      "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
-      "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
-      "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
-    ]
     external_deps += [
       "pulseaudio:pulse",
     ]
