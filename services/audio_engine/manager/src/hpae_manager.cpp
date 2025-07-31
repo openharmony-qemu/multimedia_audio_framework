@@ -2011,6 +2011,9 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
 {
     auto request = [device, sinkName]() {
         HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
+        std::shared_ptr<IHpaeRendererManager> renderermanager = GetRendererManagerByName(sinkName);
+        CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
+        renderermanager->UpdateOutputDevice();
     };
     SendRequest(request, __func__);
 }

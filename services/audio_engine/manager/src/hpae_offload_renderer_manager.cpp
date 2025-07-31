@@ -633,6 +633,11 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     return SUCCESS;
 }
 
+int32_t HpaeOffloadRendererManager::UpdateOutputDevice()
+{
+    return SUCCESS;
+}
+
 HpaeSinkInfo HpaeOffloadRendererManager::GetSinkInfo()
 {
     return sinkInfo_;

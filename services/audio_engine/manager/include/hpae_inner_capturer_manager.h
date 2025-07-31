@@ -75,6 +75,7 @@ public:
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
+    int32_t UpdateOutputDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;

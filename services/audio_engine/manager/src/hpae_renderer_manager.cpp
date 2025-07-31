@@ -176,7 +176,6 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("processCluster is null, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
-            
             break;
         case CREATE_NEW_PROCESSCLUSTER:
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
@@ -210,9 +209,7 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
         default:
             break;
     }
-    if (processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-        sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-    }
+    sessionNodeMap_[nodeInfo.sessionId].bypass = (processClusterDecision == USE_NONE_PROCESSCLUSTER) ? true : false;
     return;
 }
 
@@ -255,6 +252,32 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
             return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
+}
+
+int32_t HpaeRendererManager::UpdateOutputDevice()
+{
+
+    auto request = [this]() {
+        for (const auto &it : sinkInputNodeMap_) {
+            HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
+            std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
+            int32_t processClusterDecision =
+                AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+            if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                CreateProcessClusterInner(nodeInfo, processClusterDecision);
+                sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
+                int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
+                if (ret != SUCCESS) {
+                    AUDIO_WARNING_LOG("update audio effect when creating failed, ret = %{public}d", ret);
+                }
+            } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
+                !sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+            }
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
 }
 
 int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
