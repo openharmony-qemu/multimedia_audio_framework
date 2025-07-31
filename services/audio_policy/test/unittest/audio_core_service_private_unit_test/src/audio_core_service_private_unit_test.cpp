@@ -2738,7 +2738,8 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
     streamDesc->oldDeviceDescs_.push_back(oldDesc);
     streamDesc->oldDeviceDescs_.push_back(newDesc);
 
-    AudioStreamDeviceChangeReasonExt::ExtEnum extReason = AudioStreamDeviceChangeReasonExt::ExtEnum::OVERRODE;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extReason =
+        AudioStreamDeviceChangeReasonExt::ExtEnum::OLD_DEVICE_UNAVALIABLE;
     AudioStreamDeviceChangeReasonExt reason(extReason);
 
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;

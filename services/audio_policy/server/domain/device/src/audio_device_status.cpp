@@ -927,7 +927,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         }
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
-        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
+        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
         std::string currentActivePort = REMOTE_CLASS;
@@ -1406,9 +1406,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
     AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleOfflineDistributedDevice",
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleOfflineDistributedDevice");
     for (auto &moduleName : modulesNeedClose) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);

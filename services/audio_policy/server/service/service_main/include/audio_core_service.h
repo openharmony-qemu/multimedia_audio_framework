@@ -436,10 +436,10 @@ private:
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
-    void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> streamDesc,
+    void SleepForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         const AudioStreamDeviceChangeReasonExt reason);
-    bool IsHeadsetToSpkOrEp(std::shared_ptr<AudioDeviceDescriptor> oldDesc,
-        std::shared_ptr<AudioDeviceDescriptor> newDesc);
+    bool IsHeadsetToSpkOrEp(const std::shared_ptr<AudioDeviceDescriptor> &oldDesc,
+        const std::shared_ptr<AudioDeviceDescriptor> &newDesc);
     bool IsSceneRequireMuteAndSleep();
     void SetVoiceCallMuteForSwitchDevice();
     void MuteSinkPort(const std::string &oldSinkName, const std::string &newSinkName,
