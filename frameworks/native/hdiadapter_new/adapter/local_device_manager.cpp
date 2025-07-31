@@ -459,7 +459,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
     if (outputDevice == DEVICE_TYPE_NEARLINK) {
         HandleNearlinkScene(outputDevice, sink);
         return SUCCESS;
-     }
+    }
 
     for (const auto& entry : devicePinMap) {
         if (entry.deviceType == outputDevice) {
