@@ -103,6 +103,24 @@ HWTEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase, TestSize.Level0)
     EXPECT_EQ(outputPort->GetInputNum(), 0);
 }
 
+static InitAudioSourceAttr(IAudioSourceAttr &attr)
+{
+    attr.adapterName = "";
+    attr.openMicSpeaker = 0;
+    attr.format = AudioSampleFormat::INVALID_WIDTH;
+    attr.sampleRate = nodeInfo.samplingRate;
+    attr.channel = nodeInfo.channels;
+    attr.volume = 0.0f;
+    attr.bufferSize = 0;
+    attr.isBigEndian = false;
+    attr.filePath = g_rootCapturerPath;
+    attr.deviceNetworkId = "";
+    attr.deviceType = 0;
+    attr.sourceType = 0;
+    attr.channelLayout = 0;
+    attr.audioStreamFlag = 0;
+}
+
 HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.Level0)
 {
     HpaeNodeInfo nodeInfo;
@@ -123,20 +141,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    attr.adapterName = "";
-    attr.openMicSpeaker = 0;
-    attr.format = AudioSampleFormat::INVALID_WIDTH;
-    attr.sampleRate = nodeInfo.samplingRate;
-    attr.channel = nodeInfo.channels;
-    attr.volume = 0.0f;
-    attr.bufferSize = 0;
-    attr.isBigEndian = false;
-    attr.filePath = g_rootCapturerPath;
-    attr.deviceNetworkId = "";
-    attr.deviceType = 0;
-    attr.sourceType = 0;
-    attr.channelLayout = 0;
-    attr.audioStreamFlag = 0;
+    InitAudioSourceAttr(attr);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
