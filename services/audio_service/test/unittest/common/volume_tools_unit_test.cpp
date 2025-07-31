@@ -185,7 +185,7 @@ HWTEST(VolumeToolsUnitTest, Process_003, TestSize.Level1)
 /**
  * @tc.name  : Test Process API
  * @tc.type  : FUNC
- * @tc.number: Process_003
+ * @tc.number: Process_004
  * @tc.desc  : Test Process interface.
  */
 HWTEST(VolumeToolsUnitTest, Process_004, TestSize.Level1)
