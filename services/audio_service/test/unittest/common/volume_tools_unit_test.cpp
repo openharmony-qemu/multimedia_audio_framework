@@ -168,24 +168,37 @@ HWTEST(VolumeToolsUnitTest, Process_002, TestSize.Level1)
 /**
  * @tc.name  : Test Process API
  * @tc.type  : FUNC
- * @tc.number: Process_002
+ * @tc.number: Process_003
  * @tc.desc  : Test Process interface.
  */
 HWTEST(VolumeToolsUnitTest, Process_003, TestSize.Level1)
 {
     std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
-    size_t len = 10;
-    std::unique_ptr<float[]> buffer = std::make_unique<float[]>(len);
-    for (size_t i = 0; i < 10; ++i) {
-        buffer[i] = static_cast<float>(i);
-    }
-    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 0, 0};
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest Process_001 start");
+    ChannelVolumes channelVolumes = {STEREO, {1, 2}, {3, 4}};
+    BufferDesc bufferDesc = {nullptr, 0, 0};
+    bufferDesc.dataLength = 0;
+    int32_t ret = volumeTools->Process(bufferDesc, SAMPLE_S16LE, channelVolumes);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
+}
+
+/**
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: Process_003
+ * @tc.desc  : Test Process interface.
+ */
+HWTEST(VolumeToolsUnitTest, Process_004, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest Process_001 start");
     ChannelVolumes channelVols = {};
-    channelVols.channel = MONO;
+    channelVols.channel = CHANNEL_UNKNOW;
     channelVols.volStart[0] = 0;
     channelVols.volEnd[0] = 0;
-    int32_t ret = volumeTools->Process(bufferDesc, SAMPLE_F32LE, channelVols);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t ret = volumeTools->Process(bufferDesc, SAMPLE_S16LE, channelVols);
+    EXPECT_EQ(ERR_INVALID_PARAM, ret);
 }
 
 /**
