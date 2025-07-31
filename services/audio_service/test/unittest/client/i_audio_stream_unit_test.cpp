@@ -29,6 +29,15 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+class IAudioStreamUnitTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp();
+    void TearDown();
+};
+
 const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
     SAMPLE_RATE_48000,
 };
