@@ -419,7 +419,7 @@ void AudioDeviceDescriptor::UnmarshallingSelf(Parcel &parcel)
 
 AudioDeviceDescriptor *AudioDeviceDescriptor::Unmarshalling(Parcel &parcel)
 {
-    auto deviceDescriptor = new AudioDeviceDescriptor();
+    auto deviceDescriptor = new(std::nothrow) AudioDeviceDescriptor();
     if (deviceDescriptor == nullptr) {
         return nullptr;
     }

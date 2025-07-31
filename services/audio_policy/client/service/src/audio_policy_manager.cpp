@@ -1649,9 +1649,9 @@ float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    float out = -1;
+    float out = -1.0f;
     int32_t ret = gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, out);
-    return ret == SUCCESS ? out : ERR_INVALID_PARAM;
+    return ret == SUCCESS ? out : static_cast<float>(ERR_INVALID_PARAM);
 }
 
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)

@@ -57,7 +57,7 @@ typedef struct IAudioSinkAttr : public Parcelable {
 
     static IAudioSinkAttr *Unmarshalling(Parcel &parcel)
     {
-        auto attr = new IAudioSinkAttr();
+        auto attr = new(std::nothrow) IAudioSinkAttr();
         if (attr == nullptr) {
             return nullptr;
         }
@@ -123,7 +123,7 @@ typedef struct IAudioSourceAttr : public Parcelable {
 
     static IAudioSourceAttr *Unmarshalling(Parcel &parcel)
     {
-        auto attr = new IAudioSourceAttr();
+        auto attr = new(std::nothrow) IAudioSourceAttr();
         if (attr == nullptr) {
             return nullptr;
         }
