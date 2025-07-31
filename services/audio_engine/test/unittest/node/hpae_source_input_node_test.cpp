@@ -111,6 +111,8 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_S16LE;
+    nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
+    nodeInfo.sourceInputNodeType = HPAE_SOURCE_MIC;
     std::shared_ptr<HpaeSourceInputNode> hpaeSourceInputNode = std::make_shared<HpaeSourceInputNode>(nodeInfo);
     uint64_t requestBytes = nodeInfo.frameLen * nodeInfo.channels * GetSizeFromFormat(nodeInfo.format);
     std::vector<char> testData(requestBytes);
