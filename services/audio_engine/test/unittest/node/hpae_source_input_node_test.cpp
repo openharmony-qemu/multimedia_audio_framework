@@ -103,7 +103,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase, TestSize.Level0)
     EXPECT_EQ(outputPort->GetInputNum(), 0);
 }
 
-static InitAudioSourceAttr(IAudioSourceAttr &attr)
+static void InitAudioSourceAttr(IAudioSourceAttr &attr)
 {
     attr.adapterName = "";
     attr.openMicSpeaker = 0;
