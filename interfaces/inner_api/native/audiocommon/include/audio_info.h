@@ -132,7 +132,7 @@ public:
 
     static ToneSegment *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneSegment();
+        auto info = new(std::nothrow) ToneSegment();
         if (info == nullptr) {
             return nullptr;
         }
@@ -164,7 +164,7 @@ public:
     }
     static ToneInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new ToneInfo();
+        auto info = new(std::nothrow) ToneInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -439,7 +439,7 @@ struct VolumeEvent : public Parcelable {
 
     static VolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new VolumeEvent();
+        auto event = new(std::nothrow) VolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -476,7 +476,7 @@ struct StreamVolumeEvent : public Parcelable {
 
     static StreamVolumeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamVolumeEvent();
+        auto event = new(std::nothrow) StreamVolumeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -643,7 +643,7 @@ struct AudioRendererInfo : public Parcelable {
 
     static AudioRendererInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererInfo();
+        auto info = new(std::nothrow) AudioRendererInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -706,7 +706,7 @@ public:
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
     {
-        auto audioCapturerInfo = new AudioCapturerInfo();
+        auto audioCapturerInfo = new(std::nothrow) AudioCapturerInfo();
         if (audioCapturerInfo == nullptr) {
             return nullptr;
         }
@@ -737,7 +737,7 @@ struct MicStateChangeEvent : public Parcelable {
 
     static MicStateChangeEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new MicStateChangeEvent();
+        auto event = new(std::nothrow) MicStateChangeEvent();
         if (event == nullptr) {
             return nullptr;
         }
@@ -927,7 +927,7 @@ struct AudioPlaybackCaptureConfig : public Parcelable {
 
     static AudioPlaybackCaptureConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioPlaybackCaptureConfig();
+        auto config = new(std::nothrow) AudioPlaybackCaptureConfig();
         if (config == nullptr) return nullptr;
         // filterOptions.usages
         uint32_t usageSize = parcel.ReadUint32();
@@ -1045,7 +1045,7 @@ struct SinkInput : public Parcelable {
 
     static SinkInput *Unmarshalling(Parcel &parcel)
     {
-        auto sinkInput = new SinkInput();
+        auto sinkInput = new(std::nothrow) SinkInput();
         if (sinkInput == nullptr) {
             return nullptr;
         }
@@ -1298,7 +1298,7 @@ struct AudioProcessConfig : public Parcelable {
 
     static AudioProcessConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new AudioProcessConfig();
+        auto config = new(std::nothrow) AudioProcessConfig();
         if (config == nullptr) {
             return nullptr;
         }
@@ -1453,7 +1453,7 @@ struct StreamSetStateEventInternal : public Parcelable {
     }
     static StreamSetStateEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto event = new StreamSetStateEventInternal();
+        auto event = new(std::nothrow) StreamSetStateEventInternal();
         if (event == nullptr) {
             return nullptr;
         }
@@ -1867,7 +1867,7 @@ struct RestoreInfoIpc : public Parcelable {
 
     static RestoreInfoIpc *Unmarshalling(Parcel &parcel)
     {
-        auto info = new RestoreInfoIpc();
+        auto info = new(std::nothrow) RestoreInfoIpc();
         if (info == nullptr) {
             return nullptr;
         }

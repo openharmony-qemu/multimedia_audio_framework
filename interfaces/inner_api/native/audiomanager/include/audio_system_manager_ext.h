@@ -146,7 +146,7 @@ struct MicrophoneBlockedInfo : public Parcelable {
 
     static MicrophoneBlockedInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new MicrophoneBlockedInfo();
+        auto info = new(std::nothrow) MicrophoneBlockedInfo();
         if (info == nullptr) {
             return nullptr;
         }

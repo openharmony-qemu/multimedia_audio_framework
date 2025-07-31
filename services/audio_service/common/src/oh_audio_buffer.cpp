@@ -230,7 +230,7 @@ OHAudioBuffer *OHAudioBuffer::Unmarshalling(Parcel &parcel)
     if (infoFd != INVALID_FD) {
         CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
     }
-    auto buffer = new OHAudioBuffer(bufferHolder, totalSizeInFrame,
+    auto buffer = new(std::nothrow) OHAudioBuffer(bufferHolder, totalSizeInFrame,
         spanSizeInFrame, byteSizePerFrame);
     CHECK_AND_RETURN_RET_LOG(buffer != nullptr, nullptr, "failed to create");
     if (buffer == nullptr || buffer->Init(dataFd, infoFd) != SUCCESS ||
