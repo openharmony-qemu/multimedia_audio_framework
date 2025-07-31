@@ -238,10 +238,11 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test MockPcmData  API
-* @tc.type  : FUNC
-* @tc.number: MockPcmData_003
-* @tc.desc  : Test MockPcmData API
+* @tc.name  :Test MockPcmData  API
+* @tc.type  :FUNC
+* @tc.number:MockPcmData_003
+* @tc.desc  :Test MockPcmData API if format is SAMPLE_S16LE
+* when mockedTime_ >= MOCK_INTERVAL
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
 {
@@ -258,10 +259,11 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test MockPcmData  API
-* @tc.type  : FUNC
-* @tc.number: MockPcmData_004
-* @tc.desc  : Test MockPcmData API
+* @tc.name  :Test MockPcmData  API
+* @tc.type  :FUNC
+* @tc.number:MockPcmData_004
+* @tc.desc  :Test MockPcmData API if format is SAMPLE_S32LE
+* when mockedTime_ >= MOCK_INTERVAL
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
 {
