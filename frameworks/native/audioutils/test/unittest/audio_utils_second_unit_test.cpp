@@ -273,7 +273,7 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
 
     audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S32LE;
-    ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
+    bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
