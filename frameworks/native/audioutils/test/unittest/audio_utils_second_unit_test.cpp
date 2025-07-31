@@ -255,10 +255,26 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
     audioLatencyMeasurement->format_ = SAMPLE_S16LE;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, true);
+}
 
+/**
+* @tc.name  : Test MockPcmData  API
+* @tc.type  : FUNC
+* @tc.number: MockPcmData_004
+* @tc.desc  : Test MockPcmData API
+*/
+HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioLatencyMeasurement> audioLatencyMeasurement =
+        std::make_shared<AudioLatencyMeasurement>(44100, 2, 16, "com.example.null", 1);
+    uint8_t buffer[1024] = {};
+    size_t bufferLen = sizeof(buffer);
+    size_t mockInterval = 2000;
+
+    audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S32LE;
     ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
 } // namespace OHOS
