@@ -23,6 +23,7 @@ interface IStandardAudioPolicyManagerListener {
     [ipccode 1, oneway] void OnInterrupt([in] InterruptEventInternal interruptEvent);
     [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnRouteUpdate([in] unsigned int routeFlag, [in] String networkId);
+    [customMsgOption flags=MessageOption::TF_ASYNC_WAKEUP_LATER | MessageOption::TF_ASYNC]
     void OnAvailableDeviceChange([in] unsigned int usage, [in] DeviceChangeAction deviceChangeAction);
     void OnQueryClientType([in] String bundleName, [in] unsigned int uid, [out] boolean ret);
     void OnCheckClientInfo([in] String bundleName, [out] int uid, [in] int pid, [out] boolean ret);
