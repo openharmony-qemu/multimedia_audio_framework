@@ -1630,5 +1630,24 @@ HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_001, TestSize.Level1)
     RestoreStatus status = fastAudioStream->CheckRestoreStatus();
     EXPECT_EQ(status, NEED_RESTORE_TO_NORMAL);
 }
+
+/**
+ * @tc.name  : Test CheckRestoreStatus API
+ * @tc.type  : FUNC
+ * @tc.number: CheckRestoreStatus_001
+ * @tc.desc  : Test CheckRestoreStatus interface. - return RESTORE_TO_NORMAL when spkProcClientCb_ is null
+ */
+HWTEST(FastSystemStreamUnitTest, CheckRestoreStatus_002, TestSize.Level1)
+{
+    int32_t appUid = static_cast<int32_t>(getuid());
+    std::shared_ptr<FastAudioStream> fastAudioStream =
+        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
+    EXPECT_NE(fastAudioStream, nullptr);
+
+    fastAudioStream->spkProcClientCb_ = nullptr;
+    fastAudioStream->micProcClientCb_ = nullptr;
+    RestoreStatus status = fastAudioStream->CheckRestoreStatus();
+    EXPECT_EQ(status, NEED_RESTORE_TO_NORMAL);
+}
 } // namespace AudioStandard
 } // namespace OHOS

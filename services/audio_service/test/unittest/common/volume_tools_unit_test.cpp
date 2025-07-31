@@ -166,6 +166,29 @@ HWTEST(VolumeToolsUnitTest, Process_002, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: Process_002
+ * @tc.desc  : Test Process interface.
+ */
+HWTEST(VolumeToolsUnitTest, Process_003, TestSize.Level1)
+{
+    std::shared_ptr<VolumeTools> volumeTools = std::make_shared<VolumeTools>();
+    size_t len = 10;
+    std::unique_ptr<float[]> buffer = std::make_unique<float[]>(len);
+    for (size_t i = 0; i < 10; ++i) {
+        buffer[i] = static_cast<float>(i);
+    }
+    BufferDesc bufferDesc = {reinterpret_cast<uint8_t *>(buffer.get()), 0, 0};
+    ChannelVolumes channelVols = {};
+    channelVols.channel = MONO;
+    channelVols.volStart[0] = 0;
+    channelVols.volEnd[0] = 0;
+    int32_t ret = volumeTools->Process(bufferDesc, SAMPLE_F32LE, channelVols);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
  * @tc.name  : Test GetVolDb API
  * @tc.type  : FUNC
  * @tc.number: GetVolDb_001
