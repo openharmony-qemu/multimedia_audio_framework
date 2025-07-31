@@ -2456,7 +2456,7 @@ int32_t AudioCoreService::ActivateInputDevice(std::shared_ptr<AudioStreamDescrip
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
     }
-    
+
     return SUCCESS;
 }
 
@@ -2619,9 +2619,9 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
             CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not runningf, no needs start playing");
             return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config);
         };
-
-        AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(isRecognitionSource ? DM_DEVICE_TYPE_NEARLINK_SCO : 0,
-            DEVICE_TYPE_NEARLINK_IN);
+        if (isRecognitionSource) {
+            AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
+        }
         ResetNearlinkDeviceState(deviceDesc);
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
@@ -2733,17 +2733,17 @@ static AppExecFwk::AppProcessState GetAppState(int32_t appPid)
     }
     return infos.state_;
 }
- 
+
 static uint32_t GetTimeCostFrom(int64_t timeNS)
 {
     return static_cast<uint32_t>((ClockTime::GetCurNano() - timeNS) / AUDIO_NS_PER_SECOND);
 }
- 
+
 static void GetHdiInfo(uint8_t &hdiSourceType, std::string &hdiSourceAlg)
 {
     std::string hdiInfoStr = AudioServerProxy::GetInstance().GetAudioParameterProxy("concurrent_capture_stream_info");
     AUDIO_INFO_LOG("hdiInfo = %{public}s", hdiInfoStr.c_str());
- 
+
     std::vector<std::string> hdiSegments;
     std::istringstream infoStream(hdiInfoStr);
     std::string segment;
@@ -2752,13 +2752,13 @@ static void GetHdiInfo(uint8_t &hdiSourceType, std::string &hdiSourceAlg)
             hdiSegments.push_back(segment);
         }
     }
- 
+
     if (hdiSegments.size() != CONCURRENT_CAPTURE_DFX_HDI_SEGMENTS) {
         hdiSourceType = 0;
         hdiSourceAlg.clear();
         return;
     }
- 
+
     int sourceTypeInt = std::atoi(hdiSegments[0].c_str());
     if (sourceTypeInt == 0 && hdiSegments[0] != "0") {
         AUDIO_ERR_LOG("Failed to convert hdiSegments[0] to uint8_t");
@@ -2766,11 +2766,11 @@ static void GetHdiInfo(uint8_t &hdiSourceType, std::string &hdiSourceAlg)
         hdiSourceAlg.clear();
         return;
     }
- 
+
     hdiSourceType = static_cast<uint8_t>(sourceTypeInt);
     hdiSourceAlg = hdiSegments[1];
 }
- 
+
 bool AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,
     const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
 {
@@ -2812,7 +2812,7 @@ bool AudioCoreService::WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDes
     result->deviceType = streamDesc->newDeviceDescs_[0]->deviceType_;
     return true;
 }
- 
+
 void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");
@@ -2832,7 +2832,7 @@ void AudioCoreService::LogCapturerConcurrentResult(const std::unique_ptr<Concurr
         AUDIO_INFO_LOG("------------------APP%{public}zu end-----------------------", i);
     }
 }
- 
+
 void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result)
 {
     CHECK_AND_RETURN_LOG(result != nullptr, "result is null");

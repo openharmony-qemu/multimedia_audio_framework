@@ -811,10 +811,8 @@ string AudioDeviceStatus::GetModuleNameByType(ClassType type)
 {
     list<AudioModuleInfo> moduleList;
     bool ret = audioConfigManager_.GetModuleListByType(type, moduleList);
-    if (ret && !moduleList.empty()) {
-        return moduleList.front().name;
-    }
-    return "";
+    CHECK_AND_RETURN_RET_LOG(ret && !moduleList.empty(), "", "Get module info of type[%{public}d] failed", type);
+    return moduleList.front().name;
 }
 
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
