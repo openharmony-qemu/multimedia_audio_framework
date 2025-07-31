@@ -176,11 +176,11 @@ public:
     {
         return 0;
     }
-    int32_t StartPlaying(const std::string &device, uint32_t streamType) override
+    int32_t StartPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) override
     {
         return 0;
     }
-    int32_t StopPlaying(const std::string &device, uint32_t streamType) override
+    int32_t StopPlaying(const std::string &device, uint32_t streamType, int32_t clientUid) override
     {
         return 0;
     }
@@ -307,10 +307,11 @@ void SleAudioDeviceManagerStartPlayingFuzzTest()
         return;
     }
     StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
-    manager.StartPlaying(deviceDesc, streamUsage);
+    int32_t clientUid = GetData<int32_t>();
+    manager.StartPlaying(deviceDesc, streamUsage, clientUid);
     AudioDeviceDescriptor deviceDescBySource;
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    manager.StartPlaying(deviceDescBySource, sourceType);
+    manager.StartPlaying(deviceDescBySource, sourceType, clientUid);
 }
 
 void SleAudioDeviceManagerStopPlayingFuzzTest()
@@ -325,10 +326,11 @@ void SleAudioDeviceManagerStopPlayingFuzzTest()
         return;
     }
     StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
-    manager.StopPlaying(deviceDesc, streamUsage);
+    int32_t clientUid = GetData<int32_t>();
+    manager.StopPlaying(deviceDesc, streamUsage, clientUid);
     AudioDeviceDescriptor deviceDescBySource;
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    manager.StopPlaying(deviceDescBySource, sourceType);
+    manager.StopPlaying(deviceDescBySource, sourceType, clientUid);
 }
 
 void SleAudioDeviceManagerConnectAllowedProfilesFuzzTest()

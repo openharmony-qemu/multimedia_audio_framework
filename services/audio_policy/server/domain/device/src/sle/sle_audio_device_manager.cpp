@@ -95,28 +95,29 @@ int32_t SleAudioDeviceManager::SetActiveSinkDevice(const std::string &device, ui
     return ret;
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType)
+int32_t SleAudioDeviceManager::StartPlaying(const std::string &device, uint32_t streamType, int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
-    AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
+    AUDIO_INFO_LOG("sle streamType %{public}u, uid [%{public}d]", streamType, clientUid);
     std::lock_guard<std::mutex> lock(startedSleStreamTypeMutex_);
     int32_t ret = ERROR;
     if (!startedSleStreamType_[device][streamType].empty()) {
         AUDIO_INFO_LOG("sle stream type %{public}u is already started", streamType);
         return SUCCESS;
     }
-    callback_->StartPlaying(device, streamType, ret);
+    streamTypeUidInfo_[streamType] = clientUid;
+    callback_->StartPlaying(device, streamType, clientUid, ret);
     return ret;
 }
 
-int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t streamType)
+int32_t SleAudioDeviceManager::StopPlaying(const std::string &device, uint32_t streamType, int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(callback_ != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
 
     int32_t ret = ERROR;
-    AUDIO_INFO_LOG("sle streamType %{public}u", streamType);
-    callback_->StopPlaying(device, streamType, ret);
+    AUDIO_INFO_LOG("sle streamType %{public}u, uid [%{public}d]", streamType, clientUid);
+    callback_->StopPlaying(device, streamType, clientUid, ret);
     return ret;
 }
 
@@ -198,28 +199,32 @@ int32_t SleAudioDeviceManager::SetActiveDevice(const std::string &device, Source
     return SetActiveSinkDevice(device, GetSleStreamTypeBySourceType(sourceType));
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
+    int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage), clientUid);
 }
 
-int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
+    int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
-    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+    return StartPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType), clientUid);
 }
 
-int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage,
+    int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK, ERROR, "device type is not nearlink");
-    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
+    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage), clientUid);
 }
 
-int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
+int32_t SleAudioDeviceManager::StopPlaying(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType,
+    int32_t clientUid)
 {
     CHECK_AND_RETURN_RET_LOG(deviceDesc.deviceType_ == DEVICE_TYPE_NEARLINK_IN, ERROR, "device type is not nearlink");
-    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
+    return StopPlaying(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType), clientUid);
 }
 
 int32_t SleAudioDeviceManager::SetDeviceAbsVolume(const std::string &device, AudioStreamType streamType, int32_t volume)
@@ -309,7 +314,10 @@ void SleAudioDeviceManager::UpdateStreamTypeMap(const std::string &deviceAddr, u
     } else {
         bool isErased = sessionSet.erase(sessionId) > 0;
         if (isErased && sessionSet.empty()) {
-            StopPlaying(deviceAddr, streamType);
+            auto it = streamTypeUidInfo_.find(streamType);
+            CHECK_AND_RETURN_LOG(it != streamTypeUidInfo_.end(), "not find streamType");
+            StopPlaying(deviceAddr, streamType, it->second);
+            streamTypeUidInfo_.erase(it);
         }
     }
 }
@@ -378,7 +386,10 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
     for (const auto &pair : it->second) {
         uint32_t streamType = pair.first;
         CHECK_AND_CONTINUE_LOG(!pair.second.empty(), "streamType %{public}u has no session", streamType);
-        StopPlaying(deviceDesc->macAddress_, streamType);
+        auto iter = streamTypeUidInfo_.find(streamType);
+        CHECK_AND_RETURN_LOG(iter != streamTypeUidInfo_.end(), "not find streamType");
+        StopPlaying(deviceDesc->macAddress_, streamType, iter->second);
+        streamTypeUidInfo_.erase(iter);
     }
 
     startedSleStreamType_.erase(it);
