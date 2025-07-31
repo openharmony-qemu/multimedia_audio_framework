@@ -693,6 +693,7 @@ HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_002, TestSize.Level1)
 HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
     std::string macAddress = "";
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
@@ -711,6 +712,7 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
 HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
     std::string macAddress = "A1:B2:C3:D4:E5:F6";
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;

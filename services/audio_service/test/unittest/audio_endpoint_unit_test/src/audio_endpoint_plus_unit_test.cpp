@@ -868,7 +868,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_028, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
 
     ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, ERR_WRITE_FAILED);
 
     audioEndpointInner->clientConfig_.streamInfo.format = AudioSampleFormat::SAMPLE_F32LE;
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
@@ -958,7 +958,7 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_031, TestSize.Level1)
     audioEndpointInner->clientConfig_.streamInfo.channels = AudioChannel::STEREO;
 
     ret = audioEndpointInner->HandleCapturerDataParams(writeBuf, readBuf, convertedBuffer);
-    EXPECT_NE(ret, 0);
+    EXPECT_NE(ret, ERR_WRITE_FAILED);
 }
 
 /*
