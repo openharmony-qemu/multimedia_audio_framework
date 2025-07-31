@@ -4374,6 +4374,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     ret = audioRenderer->StartDataCallback();
     ASSERT_NE(SUCCESS, ret);
 
+    ret = audioRenderer->SetSpeed(2.0f);
+    EXPECT_EQ(SUCCESS, ret);
+
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
@@ -4431,6 +4434,13 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(1.0f);
+    EXPECT_EQ(SUCCESS, ret);
+    float speed = audioRenderer->GetSpeed();
+    speed = 3.5f; // 3.5f speed
+    ret = audioRenderer->SetSpeed(speed);
+    EXPECT_EQ(SUCCESS, ret);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);

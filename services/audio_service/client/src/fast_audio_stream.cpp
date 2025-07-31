@@ -599,7 +599,7 @@ int64_t FastAudioStream::GetFramesRead()
     return result;
 }
 
-int32_t FastAudioStream::SetSpeed(float speed, bool force)
+int32_t FastAudioStream::SetSpeed(float speed)
 {
     AUDIO_ERR_LOG("SetSpeed is not supported");
     return ERR_OPERATION_FAILED;

@@ -158,7 +158,7 @@ public:
     virtual int32_t SetRenderRate(AudioRendererRate renderRate) = 0;
     virtual AudioRendererRate GetRenderRate() = 0;
     virtual int32_t SetStreamCallback(const std::shared_ptr<AudioStreamCallback> &callback) = 0;
-    virtual int32_t SetSpeed(float speed, bool force = false) = 0;
+    virtual int32_t SetSpeed(float speed) = 0;
     virtual int32_t SetPitch(float pitch) = 0;
     virtual float GetSpeed() = 0;
 

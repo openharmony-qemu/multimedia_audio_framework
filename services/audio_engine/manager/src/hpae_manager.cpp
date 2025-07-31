@@ -937,6 +937,7 @@ bool HpaeManager::MovingSinkStateChange(uint32_t sessionId, const std::shared_pt
             sinkInput->SetState(movingIds_[sessionId]);
         }
         sinkInput->SetOffloadEnabled(rendererIdStreamInfoMap_[sessionId].offloadEnable);
+        sinkInput->SetSpeed(rendererIdStreamInfoMap_[sessionId].speed);
         movingIds_.erase(sessionId);
     }
     return false;
@@ -1939,6 +1940,10 @@ void HpaeManager::SetSpeed(uint32_t sessionId, float speed)
 {
     auto request = [this, sessionId, speed]() {
         AUDIO_INFO_LOG("SetSpeed sessionId %{public}u %{public}f", sessionId, speed);
+        CHECK_AND_RETURN_LOG(rendererIdStreamInfoMap_.find(sessionId) != rendererIdStreamInfoMap_.end(),
+            "rendererIdStreamInfoMap_ can not find sessionId %{public}u", sessionId);
+        rendererIdStreamInfoMap_[sessionId].speed = speed;
+        CHECK_AND_RETURN_LOG(movingIds_.find(sessionId) == movingIds_.end(), "moving sessionId: %{public}u", sessionId);
         auto rendererManager = GetRendererManagerById(sessionId);
         CHECK_AND_RETURN_LOG(rendererManager != nullptr, "SetSpeed cannot find sessionId: %{public}u", sessionId);
         rendererManager->SetSpeed(sessionId, speed);

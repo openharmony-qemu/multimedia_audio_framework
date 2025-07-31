@@ -293,6 +293,16 @@ float HpaeSinkInputNode::GetLoudnessGain()
 {
     return loudnessGain_;
 }
+
+void HpaeSinkInputNode::SetSpeed(float speed)
+{
+    speed_ = speed;
+}
+
+float HpaeSinkInputNode::GetSpeed()
+{
+    return speed_;
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

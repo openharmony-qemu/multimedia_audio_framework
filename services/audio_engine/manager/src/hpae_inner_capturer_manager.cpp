@@ -896,6 +896,31 @@ int32_t HpaeInnerCapturerManager::DumpSinkInfo()
     SendRequestInner(request);
     return SUCCESS;
 }
+
+int32_t HpaeInnerCapturerManager::SetOffloadPolicy(uint32_t sessionId, int32_t state)
+{
+    auto request = [this, sessionId, state]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::SetOffloadPolicy");
+        AUDIO_INFO_LOG("SetOffloadPolicy sessionId %{public}u, deviceName %{public}s, state %{public}d", sessionId,
+            sinkInfo_.deviceName.c_str(), state);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
+        sinkInputNodeMap_[sessionId]->SetOffloadEnabled(state != OFFLOAD_DEFAULT);
+    };
+    SendRequestInner(request);
+    return SUCCESS;
+}
+
+void HpaeInnerCapturerManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    auto request = [this, sessionId, speed]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::SetSpeed");
+        AUDIO_INFO_LOG("SetSpeed sessionId %{public}u, deviceName %{public}s, speed %{public}f", sessionId,
+            sinkInfo_.deviceName.c_str(), speed);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
+        sinkInputNodeMap_[sessionId]->SetSpeed(speed);
+    };
+    SendRequestInner(request);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS
