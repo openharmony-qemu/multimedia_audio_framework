@@ -238,10 +238,11 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test MockPcmData  API
+* @tc.name  : Test MockPcmData API
 * @tc.type  : FUNC
 * @tc.number: MockPcmData_003
-* @tc.desc  : Test MockPcmData API
+* @tc.desc  : Test MockPcmData API if format is SAMPLE_S16LE
+* when mockedTime_ >= MOCK_INTERVAL
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
 {
@@ -254,10 +255,27 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
     audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S16LE;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
+}
 
+/**
+* @tc.name  : Test MockPcmData API
+* @tc.type  : FUNC
+* @tc.number: MockPcmData_004
+* @tc.desc  : Test MockPcmData API if format is SAMPLE_S32LE
+* when mockedTime_ >= MOCK_INTERVAL
+*/
+HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioLatencyMeasurement> audioLatencyMeasurement =
+        std::make_shared<AudioLatencyMeasurement>(44100, 2, 16, "com.example.null", 1);
+    uint8_t buffer[1024] = {};
+    size_t bufferLen = sizeof(buffer);
+    size_t mockInterval = 2000;
+
+    audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S32LE;
-    ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
+    bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, true);
 }
 } // namespace AudioStandard
