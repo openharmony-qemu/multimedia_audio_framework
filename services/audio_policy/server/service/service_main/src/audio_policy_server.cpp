@@ -110,7 +110,7 @@ constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
 constexpr int32_t UID_TV_SERVICE = 7501;
-static const int32_t DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS = 5; // 5s is better
+static const int32_t DATASHARE_SERVICE_TIMEOUT_SECONDS = 10; // 10s is better
 const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
@@ -849,6 +849,10 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
+        if (isInitRingtoneReady_ == false) {
+            std::thread([&]() { CallRingtoneLibrary(); }).detach();
+            isInitRingtoneReady_ = true;
+        }
         audioPolicyManager_.SetDataShareReady(true);
         RegisterDataObserver();
         if (isInitMuteState_ == false) {
@@ -5034,7 +5038,7 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
 
-    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS,
+    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("CallRingtoneLibrary timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -5042,7 +5046,8 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
 
-    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone");
+    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone", "",
+        DATASHARE_SERVICE_TIMEOUT_SECONDS);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;
