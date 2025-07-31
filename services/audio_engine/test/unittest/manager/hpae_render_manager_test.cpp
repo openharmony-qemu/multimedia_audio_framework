@@ -265,7 +265,6 @@ static void TestIRendererManagerStartPuaseStream()
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     // offload need enable after start
     hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
-    WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
@@ -278,7 +277,6 @@ static void TestIRendererManagerStartPuaseStream()
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     // offload need enable after start
     hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
-    WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
@@ -508,7 +506,6 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     EXPECT_EQ(hpaeRendererManager->Start(streamInfo.sessionId) == SUCCESS, true);
     // offload need enable after start
     hpaeRendererManager->SetOffloadPolicy(streamInfo.sessionId, 0);
-    WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->SetSpeed(streamInfo.sessionId, 1.0f);
     WaitForMsgProcessing(hpaeRendererManager);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
@@ -520,8 +517,7 @@ HWTEST_F(HpaeRendererManagerTest, HpaeRendererManagerTransStreamUsage, TestSize.
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_STOPPED);
     EXPECT_EQ(hpaeRendererManager->DestroyStream(streamInfo.sessionId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(
-        hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == ERR_INVALID_OPERATION, true);
+    EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo), ERR_INVALID_OPERATION);
     EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
 }
