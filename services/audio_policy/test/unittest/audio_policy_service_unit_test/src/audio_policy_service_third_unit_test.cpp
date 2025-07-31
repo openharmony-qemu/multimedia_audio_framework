@@ -981,7 +981,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_002, TestSize.Le
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioDeviceDescriptor updatedDesc;
+    AudioDeviceDescriptor updatedDesc = {};
     bool isConnected = false;
 
     server->audioPolicyService_.OnDeviceStatusUpdated(updatedDesc, isConnected);

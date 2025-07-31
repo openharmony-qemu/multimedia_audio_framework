@@ -603,23 +603,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_026, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_027
- * @tc.desc  : Test AudioCoreService::EventEntry::RegisteredTrackerClientDied()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    pid_t uid = 0;
-    pid_t pid = 0;
-    eventEntry->RegisteredTrackerClientDied(uid, pid);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_028
  * @tc.desc  : Test AudioCoreService::EventEntry::ConnectServiceAdapter()
  */

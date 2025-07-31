@@ -67,12 +67,6 @@ enum PermissionStatus {
     PERMISSION_UNKNOWN = 2,
 };
 
-class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
-public:
-    void OnDataTransferStateChange(const int32_t &callbackId,
-            const AudioRendererDataTransferStateChangeInfo &info) override {}
-};
-
 class WakeUpSourceCallbackTest : public WakeUpSourceCallback {
 public:
     void OnCapturerState(bool isActive) override {}
@@ -1355,8 +1349,8 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     audioServer->RemoveRendererDataTransferCallback(0);
 
-    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
-        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     int32_t pid = IPCSkeleton::GetCallingPid();
     audioServer->audioDataTransferCbMap_[pid] = callback;
     AudioRendererDataTransferStateChangeInfo info;
@@ -1969,8 +1963,8 @@ HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
     info.badDataRatio[0] = 0;
     info.badDataRatio[1] = 0;
 
-    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
-        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     int32_t pid = IPCSkeleton::GetCallingPid();
     info.clientPid = pid;
     audioServer->audioDataTransferCbMap_[pid] = callback;
