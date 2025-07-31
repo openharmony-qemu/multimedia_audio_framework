@@ -15,7 +15,7 @@
 
 #ifndef PA_ADAPTER_MANAGER_H
 #define PA_ADAPTER_MANAGER_H
-
+#ifdef SUPPORT_OLD_ENGINE
 #include <map>
 #include <set>
 #include <mutex>
@@ -146,4 +146,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE
 #endif // PA_ADAPTER_MANAGER_H

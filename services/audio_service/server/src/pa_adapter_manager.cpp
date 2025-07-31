@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "PaAdapterManager"
 #endif
-
+#ifdef SUPPORT_OLD_ENGINE
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
@@ -927,3 +927,4 @@ std::string PaAdapterManager::AppendDeviceName(int32_t innerCapId, AppendType ty
 
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE
