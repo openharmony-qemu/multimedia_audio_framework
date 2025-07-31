@@ -356,7 +356,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test.cpp" ]
+  sources = [ ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -374,12 +374,19 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_renderer_stream_impl_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
@@ -429,7 +436,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+  sources = []
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -447,12 +454,19 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
@@ -681,7 +695,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_capturer_stream_impl_unit_test.cpp" ]
+  sources = []
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -699,12 +713,19 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_capturer_stream_impl_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }

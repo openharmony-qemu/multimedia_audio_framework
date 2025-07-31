@@ -169,13 +169,13 @@ group("audio_unit_test") {
   }
     if (!audio_framework_feature_new_engine_flag) {
     deps += [
-    "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
-    "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
-    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
-    "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
-    "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
-    "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
+      "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
+      "../services/audio_service/test/unittest:capturer_in_server_unit_test",
+      "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
+      "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
+      "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
+      "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
+      "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     ]
   }
 }

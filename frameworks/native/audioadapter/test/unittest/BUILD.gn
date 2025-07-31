@@ -97,9 +97,17 @@ ohos_unittest("pulse_audio_service_adapter_impl_unit_test") {
     "../../src/audio_service_adapter.cpp",
     "../../src/pro_audio_service_adapter_impl.cpp",
     "../../src/pulse_audio_service_adapter_impl.cpp",
-    "pulse_audio_service_adapter_impl_unit_test.cpp",
   ]
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
 
+    sources += [ "pulse_audio_service_adapter_impl_unit_test.cpp"]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   deps = [
     "../../:pro_audio_service_adapter",
     "../../../../../frameworks/native/audioschedule:audio_schedule",

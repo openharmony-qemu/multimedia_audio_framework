@@ -36,7 +36,7 @@ ohos_unittest("audio_server_dump_unit_test") {
 
   cflags = [ "-fno-access-control" ]
 
-  sources = [ "./src/audio_server_dump_unit_test.cpp" ]
+  sources = []
 
   include_dirs = [
     "../../../server/include",
@@ -81,6 +81,15 @@ ohos_unittest("audio_server_dump_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "./src/audio_server_dump_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
 }
 
 ohos_unittest("audio_server_hpae_dump_unit_test") {
