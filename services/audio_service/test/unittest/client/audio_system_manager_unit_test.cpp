@@ -1387,10 +1387,10 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_002, TestSize.Level1)
 
 /**
  * @tc.name   : Test GetMaxVolumeByUsage API
- * @tc.number : GetMaxVolumeByUsage_002
+ * @tc.number : GetMaxVolumeByUsage_003
  * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
  */
-HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_002, TestSize.Level1)
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_003, TestSize.Level1)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(1000);
     AudioSystemManager audioSystemManager;
@@ -1399,7 +1399,7 @@ HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_002, TestSize.Level1)
 
 /**
  * @tc.name   : Test GetMaxVolumeByUsage API
- * @tc.number : GetMaxVolumeByUsage_002
+ * @tc.number : GetMinVolumeByUsage_002
  * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
  */
 HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_002, TestSize.Level1)
