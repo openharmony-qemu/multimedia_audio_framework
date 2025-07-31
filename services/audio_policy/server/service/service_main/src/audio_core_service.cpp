@@ -317,7 +317,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
-    AUDIO_DEBUG_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
+    HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ =
@@ -341,9 +341,7 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, AUDIO_OUTPUT_FLAG_NORMAL, "Invalid stream desc");
-    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
-    }
+
     if (IsStreamSupportDirect(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_HD;
     }
