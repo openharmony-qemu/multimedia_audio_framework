@@ -156,8 +156,8 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
 }
 
 void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchState)
- {
-    if (audioEvent ==NULL) {
+{
+    if (audioEvent ==nullptr) {
         AUDIO_ERR_LOG("audioEvent is null!");
         return;
     }
@@ -185,11 +185,11 @@ void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchSta
             break;
     }
     h2wTypeLast = audioEvent->deviceType;
- }
+}
 
 int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
 {
-    if (audioEvent == NULL) {
+    if (audioEvent == nullptr) {
         AUDIO_ERR_LOG("audioEvent is null!");
         return ERROR;
     }
