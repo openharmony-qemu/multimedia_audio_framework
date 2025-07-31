@@ -660,8 +660,6 @@ void AudioStreamCollectorGetSessionIdsOnRemoteDeviceByStreamUsageFuzzTest(const 
     
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByStreamUsage(streamUsage);
     audioStreamCollector_.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
-    audioStreamCollector_.GetSessionIdsPauseOnRemoteDeviceByRemote(
-        testInterruptHints[index % testInterruptHints.size()]);
 }
 
 void AudioStreamCollectorIsOffloadAllowedFuzzTest(const uint8_t *rawData, size_t size)
@@ -1125,23 +1123,6 @@ void AudioStreamCollectorIsVoipStreamActiveFuzzTest(const uint8_t *rawData, size
     audioStreamCollector_.IsVoipStreamActive();
 }
 
-void AudioStreamCollectorGetSessionIdsOnRemoteDeviceBySourceTypeFuzzTest(const uint8_t *rawData, size_t size)
-{
-    auto changeInfo = std::make_unique<AudioCapturerChangeInfo>();
-    int32_t randIntValue = static_cast<int32_t>(size);
-    uint32_t index = static_cast<uint32_t>(size);
-    SourceType sourceType = g_testSourceTypes[index % g_testSourceTypes.size()];
-    changeInfo->clientUID = randIntValue;
-    changeInfo->muted = static_cast<bool>(index % NUM_2);
-    changeInfo->sessionId = randIntValue / NUM_2;
-    changeInfo->capturerInfo.sourceType = sourceType;
-    changeInfo->inputDeviceInfo.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
-    audioStreamCollector_.audioCapturerChangeInfos_.clear();
-    audioStreamCollector_.audioCapturerChangeInfos_.push_back(std::move(changeInfo));
-    audioStreamCollector_.audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    audioStreamCollector_.GetSessionIdsOnRemoteDeviceBySourceType(sourceType);
-}
-
 void AudioStreamCollectorCheckVoiceCallActiveFuzzTest(const uint8_t *rawData, size_t size)
 {
     int32_t randIntValue = static_cast<int32_t>(size);
@@ -1216,7 +1197,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioStreamCollectorHasVoipRendererStreamFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsMediaPlayingFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorIsVoipStreamActiveFuzzTest,
-    OHOS::AudioStandard::AudioStreamCollectorGetSessionIdsOnRemoteDeviceBySourceTypeFuzzTest,
     OHOS::AudioStandard::AudioStreamCollectorCheckVoiceCallActiveFuzzTest,
 };
 

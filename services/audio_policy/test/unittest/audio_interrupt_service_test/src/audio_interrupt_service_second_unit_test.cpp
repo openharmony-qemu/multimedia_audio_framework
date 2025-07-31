@@ -655,7 +655,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_019, TestSize.
     EXPECT_EQ(SUCCESS, ret);
     sessionService->sessionMap_[pid]->audioSessionScene_ = AudioSessionScene::MEDIA;
     sessionService->sessionMap_[pid]->state_ = AudioSessionState::SESSION_ACTIVE;
-    sessionService->sessionMap_[pid]->bypassStreamInfoVec_.push_back(audioInterrupt);
+    sessionService->sessionMap_[pid]->streamsInSession_.push_back(audioInterrupt);
     audioInterruptService->sessionService_ = sessionService;
     ret = audioInterruptService->GetStreamInFocusInternal(uid, 0);
     EXPECT_EQ(STREAM_VOICE_ASSISTANT, ret);
@@ -735,7 +735,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_023, TestSize.
     EXPECT_EQ(SUCCESS, ret);
     sessionService->sessionMap_[pid]->audioSessionScene_ = AudioSessionScene::MEDIA;
     sessionService->sessionMap_[pid]->state_ = AudioSessionState::SESSION_ACTIVE;
-    sessionService->sessionMap_[pid]->bypassStreamInfoVec_.push_back(audioInterrupt);
+    sessionService->sessionMap_[pid]->streamsInSession_.push_back(audioInterrupt);
     audioInterruptService->sessionService_ = sessionService;
     audioFocusEntry.actionOn = INCOMING;
     ret = audioInterruptService->CheckAudioSessionExistence(audioInterrupt, audioFocusEntry);
@@ -765,7 +765,7 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_024, TestSize.
     EXPECT_EQ(SUCCESS, ret);
     sessionService->sessionMap_[pid]->audioSessionScene_ = AudioSessionScene::MEDIA;
     sessionService->sessionMap_[pid]->state_ = AudioSessionState::SESSION_ACTIVE;
-    sessionService->sessionMap_[pid]->bypassStreamInfoVec_.push_back(audioInterrupt);
+    sessionService->sessionMap_[pid]->streamsInSession_.push_back(audioInterrupt);
     audioInterruptService->sessionService_ = sessionService;
     audioFocusEntry.actionOn = CURRENT;
     audioInterruptService->UpdateHintTypeForExistingSession(audioInterrupt, audioFocusEntry);

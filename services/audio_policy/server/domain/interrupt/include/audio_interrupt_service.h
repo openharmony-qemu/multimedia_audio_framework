@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <list>
+#include <set>
 #include <functional>
 #include <unordered_map>
 
@@ -114,6 +115,9 @@ public:
     AudioScene GetHighestPriorityAudioScene(const int32_t zoneId) const;
     // for audiosessionv2
     int32_t SetAudioSessionScene(int32_t callerPid, AudioSessionScene scene);
+    std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
+        const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
+    std::set<int32_t> GetStreamIdsForAudioSessionByDeviceType(const int32_t zoneId, DeviceType deviceType);
 
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
@@ -305,7 +309,8 @@ private:
     int32_t HandleExistStreamsForSession(const int32_t zoneId, const int32_t callerPid, bool &updateScene);
     AudioScene GetHighestPriorityAudioSceneFromAudioSession(
         const AudioInterrupt &audioInterrupt, const AudioScene &audioScene) const;
-    void DelayToDeactivateStreamsInAudioSession(const int32_t callerPid, std::vector<AudioInterrupt> streamsInSession);
+    void DelayToDeactivateStreamsInAudioSession(
+        const int32_t zoneId, const int32_t callerPid, const std::vector<AudioInterrupt> &streamsInSession);
 
     int32_t ProcessActiveStreamFocus(std::list<std::pair<AudioInterrupt, AudioFocuState>> &audioFocusInfoList,
         const AudioInterrupt &incomingInterrupt, AudioFocuState &incomingState,

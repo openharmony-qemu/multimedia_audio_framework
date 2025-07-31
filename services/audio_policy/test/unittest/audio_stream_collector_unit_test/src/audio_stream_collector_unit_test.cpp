@@ -1612,28 +1612,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceByStreamUsage_
 
 /**
 * @tc.name  : Test AudioStreamCollector.
-* @tc.number: GetSessionIdsOnRemoteDeviceBySourceType_001
-* @tc.desc  : Test GetSessionIdsOnRemoteDeviceBySourceType.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceBySourceType_001, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    SourceType sourceType = SOURCE_TYPE_MIC;
-    AudioDeviceDescriptor inputDeviceInfo(DEVICE_TYPE_MIC, INPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-    shared_ptr<AudioCapturerChangeInfo> captureChangeInfo = make_shared<AudioCapturerChangeInfo>();
-    captureChangeInfo->clientUID = 1001;
-    captureChangeInfo->createrUID = 1001;
-    captureChangeInfo->sessionId = 2001;
-    captureChangeInfo->inputDeviceInfo = inputDeviceInfo;
-    captureChangeInfo->capturerInfo.sourceType = sourceType;
-    collector.audioCapturerChangeInfos_.push_back(move(captureChangeInfo));
-
-    std::set<int32_t> sessionIdSet = collector.GetSessionIdsOnRemoteDeviceBySourceType(sourceType);
-    EXPECT_EQ(sessionIdSet.size(), 1);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
 * @tc.number: GetSessionIdsOnRemoteDeviceByDeviceType_001
 * @tc.desc  : Test GetSessionIdsOnRemoteDeviceByDeviceType.
 */
@@ -1651,50 +1629,6 @@ HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsOnRemoteDeviceByDeviceType_0
 
     std::set<int32_t> sessionIdSet = collector.GetSessionIdsOnRemoteDeviceByDeviceType(deviceType);
     EXPECT_EQ(sessionIdSet.size(), 1);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: GetSessionIdsPauseOnRemoteDeviceByRemote_001
-* @tc.desc  : Test GetSessionIdsPauseOnRemoteDeviceByRemote.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsPauseOnRemoteDeviceByRemote_001, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    InterruptHint hintType = INTERRUPT_HINT_NONE;
-    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_SPEAKER, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = 1001;
-    rendererChangeInfo->createrUID = 1001;
-    rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
-    rendererChangeInfo->rendererState == RendererState::RENDERER_RUNNING;
-    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
-    int32_t ret = collector.GetSessionIdsPauseOnRemoteDeviceByRemote(hintType);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
-* @tc.name  : Test AudioStreamCollector.
-* @tc.number: GetSessionIdsPauseOnRemoteDeviceByRemote_002
-* @tc.desc  : Test GetSessionIdsPauseOnRemoteDeviceByRemote.
-*/
-HWTEST_F(AudioStreamCollectorUnitTest, GetSessionIdsPauseOnRemoteDeviceByRemote_002, TestSize.Level1)
-{
-    AudioStreamCollector collector;
-    InterruptHint hintType = INTERRUPT_HINT_NONE;
-    AudioDeviceDescriptor outputDeviceInfo(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE, 0, 0, REMOTE_NETWORK_ID);
-    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->clientUID = 1001;
-    rendererChangeInfo->createrUID = 1001;
-    rendererChangeInfo->sessionId = 2001;
-    rendererChangeInfo->outputDeviceInfo = outputDeviceInfo;
-    rendererChangeInfo->rendererState = RendererState::RENDERER_RUNNING;
-    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
-
-    int32_t ret = collector.GetSessionIdsPauseOnRemoteDeviceByRemote(hintType);
-    EXPECT_EQ(ret, 2001);
 }
 
 /**

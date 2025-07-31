@@ -283,12 +283,12 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    audioSession->bypassStreamInfoVec_.clear();
+    audioSession->streamsInSession_.clear();
     EXPECT_FALSE(audioSession->IsStreamContainedInCurrentSession(0));
 
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.streamId = 0;
-    audioSession->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    audioSession->streamsInSession_.push_back(incomingInterrupt);
     EXPECT_TRUE(audioSession->IsStreamContainedInCurrentSession(0));
 }
 

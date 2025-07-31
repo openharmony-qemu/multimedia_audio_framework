@@ -171,7 +171,7 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_008, TestSize.
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
     AudioInterrupt audioInterrupt;
     audioInterrupt.streamId = 0;
-    audioSession->bypassStreamInfoVec_.push_back(audioInterrupt);
+    audioSession->streamsInSession_.push_back(audioInterrupt);
 
     audioSessionService->sessionMap_[callerPid] = audioSession;
     audioSessionService->AudioSessionInfoDump(dumpString);
@@ -451,12 +451,12 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_021, TestSize.
     audioInterrupt.streamId = streamId;
 
     std::shared_ptr<AudioSession> audioSession1 = std::make_shared<AudioSession>(callerPid, strategy, nullptr);
-    audioSession1->bypassStreamInfoVec_.push_back(audioInterrupt);
+    audioSession1->streamsInSession_.push_back(audioInterrupt);
     audioSession1->state_ == AudioSessionState::SESSION_ACTIVE;
     sessionService->sessionMap_.insert(std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, audioSession1));
     callerPid = 2;
     std::shared_ptr<AudioSession> audioSession2 = std::make_shared<AudioSession>(callerPid, strategy, nullptr);
-    audioSession2->bypassStreamInfoVec_.push_back(audioInterrupt);
+    audioSession2->streamsInSession_.push_back(audioInterrupt);
     audioSession2->state_ == AudioSessionState::SESSION_NEW;
     sessionService->sessionMap_.insert(std::pair<int32_t, std::shared_ptr<AudioSession>>(callerPid, audioSession2));
     callerPid = 3;
@@ -531,11 +531,11 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_024, TestSize.
     std::shared_ptr<AudioSession> audioSession = std::make_shared<AudioSession>(pid, strategy, nullptr);
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
     audioSession->audioSessionScene_ = AudioSessionScene::MEDIA;
-    audioSession->bypassStreamInfoVec_.clear();
+    audioSession->streamsInSession_.clear();
     sessionService->sessionMap_.insert(std::pair<int32_t, std::shared_ptr<AudioSession>>(pid, audioSession));
     EXPECT_NO_THROW(sessionService->NotifyAppStateChange(pid, true));
 
-    audioSession->bypassStreamInfoVec_.push_back(audioInterrupt);
+    audioSession->streamsInSession_.push_back(audioInterrupt);
     EXPECT_NO_THROW(sessionService->NotifyAppStateChange(pid, true));
 
     audioSession->audioSessionScene_ = AudioSessionScene::INVALID;
@@ -544,7 +544,7 @@ HWTEST_F(AudioSessionServiceUnitTest, AudioSessionServiceUnitTest_024, TestSize.
     audioSession->state_ = AudioSessionState::SESSION_NEW;
     EXPECT_NO_THROW(sessionService->NotifyAppStateChange(pid, true));
 
-    audioSession->bypassStreamInfoVec_.clear();
+    audioSession->streamsInSession_.clear();
     EXPECT_NO_THROW(sessionService->NotifyAppStateChange(pid, true));
 
     audioSession->audioSessionScene_ = AudioSessionScene::MEDIA;
@@ -666,7 +666,7 @@ HWTEST_F(AudioSessionServiceUnitTest, IsStreamAllowedToSetDeviceTest, TestSize.L
 
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.streamId = fakeSessionId;
-    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    sessionService->sessionMap_[fakePid]->streamsInSession_.push_back(incomingInterrupt);
     EXPECT_TRUE(sessionService->IsStreamAllowedToSetDevice(fakeSessionId));
 
     sessionService->sessionMap_[fakePid]->state_ = AudioSessionState::SESSION_ACTIVE;
@@ -729,10 +729,10 @@ HWTEST_F(AudioSessionServiceUnitTest, NotifyAppStateChangeTest, TestSize.Level1)
     sessionService->sessionMap_[fakePid]->audioSessionScene_ = AudioSessionScene::MEDIA;
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.streamId = fakeSessionId;
-    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    sessionService->sessionMap_[fakePid]->streamsInSession_.push_back(incomingInterrupt);
     sessionService->NotifyAppStateChange(fakeSessionId, false);
 
-    sessionService->sessionMap_[fakePid]->bypassStreamInfoVec_.clear();
+    sessionService->sessionMap_[fakePid]->streamsInSession_.clear();
     sessionService->NotifyAppStateChange(fakeSessionId, false);
 }
 
