@@ -83,8 +83,11 @@ void RendererInServerUnitTest::TearDown(void) {}
 void InitAudioProcessConfig(AudioStreamInfo streamInfo, DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET,
     int32_t rendererFlags = AUDIO_FLAG_NORMAL, AudioStreamType streamType = STREAM_DEFAULT)
 {
+    processConfig = {};
     processConfig.streamInfo = streamInfo;
     processConfig.deviceType = deviceType;
+    processConfig.rendererInfo = {};
+    processConfig.capturerInfo = {};
     processConfig.rendererInfo.rendererFlags = rendererFlags;
     processConfig.streamType = streamType;
 }

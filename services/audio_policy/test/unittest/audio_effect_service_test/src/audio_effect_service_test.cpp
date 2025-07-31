@@ -66,7 +66,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_003, TestSize.Level1)
     audioEffectService_->UpdateEffectChains(availableLayout);
     EXPECT_NE(audioEffectService_, nullptr);
 
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     audioEffectService_->supportedEffectConfig_.effectChains.push_back(effectChain);
     for (auto it = audioEffectService_->supportedEffectConfig_.effectChains.begin();
         it != audioEffectService_->supportedEffectConfig_.effectChains.end(); ++it) {
@@ -436,7 +436,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_022, TestSize.Level1)
 {
     Device device;
     Effect effect;
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
     std::unordered_map<std::string, std::set<std::pair<std::string, std::string>>> device2PropertySet;
     audioEffectService_->UpdateSupportedEffectProperty(device, device2PropertySet);
@@ -491,7 +491,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_024, TestSize.Level1)
     audioEffectService_->BuildAvailableAEConfig();
     EXPECT_NE(audioEffectService_, nullptr);
 
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     PreStreamScene preStreamScene;
     PostStreamScene postStreamScene;
     audioEffectService_->oriEffectConfig_.effectChains.push_back(effectChain);
@@ -533,7 +533,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_025, TestSize.Level1)
 HWTEST(AudioEffectServiceTest, audioEffectService_026, TestSize.Level1)
 {
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     std::string chainName = "chainName";
     std::unordered_map<std::string, std::string> effectDefaultProperty;
     audioEffectService_->supportedEffectConfig_.effectChains.push_back(effectChain);
@@ -549,7 +549,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_026, TestSize.Level1)
 HWTEST(AudioEffectServiceTest, audioEffectService_027, TestSize.Level1)
 {
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     effectChain.name = "chainName";
     effectChain.apply.push_back("test");
     std::string chainName = "chainName";
@@ -569,7 +569,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_027, TestSize.Level1)
 HWTEST(AudioEffectServiceTest, audioEffectService_028, TestSize.Level1)
 {
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     effectChain.name = "chainName";
     effectChain.apply.push_back("test");
     effectChain.apply.push_back("test");
@@ -592,7 +592,7 @@ HWTEST(AudioEffectServiceTest, audioEffectService_028, TestSize.Level1)
 HWTEST(AudioEffectServiceTest, audioEffectService_029, TestSize.Level1)
 {
     auto audioEffectService_ = std::make_shared<AudioEffectService>();
-    EffectChain effectChain;
+    EffectChain effectChain = {};
     effectChain.name = "chainName";
     effectChain.apply.push_back("test");
     std::string chainName = "chainName";
