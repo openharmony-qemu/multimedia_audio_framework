@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifdef SUPPORT_OLD_ENGINE
 #ifndef LOG_TAG
 #define LOG_TAG "AudioEffectChainAdapter"
 #endif
@@ -353,3 +354,4 @@ uint32_t EffectChainManagerGetSceneCount(const char *sceneType)
     std::string sceneTypeString = sceneType;
     return audioEffectChainManager->GetSceneTypeToChainCount(sceneType);
 }
+#endif // SUPPORT_OLD_ENGINE

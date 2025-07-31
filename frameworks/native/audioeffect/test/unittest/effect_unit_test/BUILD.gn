@@ -35,7 +35,6 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
   ]
 
   sources = [
-    "src/audio_effect_chain_adapter_unit_test.cpp",
     "src/audio_effect_chain_manager_unit_test.cpp",
     "src/audio_effect_chain_unit_test.cpp",
     "src/audio_effect_hdi_param_unit_test.cpp",
@@ -80,12 +79,20 @@ ohos_unittest("audio_effect_chain_manager_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "src/audio_effect_chain_adapter_unit_test.cpp",
+    ]
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (sensor_enable == true) {
     cflags += [ "-DSENSOR_ENABLE" ]
     external_deps += [ "sensor:sensor_interface_native" ]

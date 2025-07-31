@@ -83,7 +83,6 @@ ohos_unittest("audio_balance_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "eventhandler:libeventhandler",
@@ -132,7 +131,6 @@ ohos_unittest("none_mix_engine_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
 }
 
@@ -168,7 +166,6 @@ ohos_unittest("direct_playback_engine_unit_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
 }
 
@@ -334,7 +331,6 @@ ohos_unittest("audio_service_unit_test") {
     "c_utils:utils",
     "googletest:gtest",
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -361,7 +357,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test.cpp" ]
+  sources = [ ]
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -379,12 +375,19 @@ ohos_unittest("pa_renderer_stream_impl_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_renderer_stream_impl_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
@@ -434,7 +437,7 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+  sources = []
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -452,12 +455,19 @@ ohos_unittest("pa_renderer_stream_impl_unit_test_p2") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_renderer_stream_impl_unit_test_p2.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
@@ -496,7 +506,6 @@ ohos_unittest("ipc_stream_in_server_unit_test") {
     "c_utils:utils",
     "googletest:gmock",
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "ipc:ipc_single",
   ]
 }
@@ -525,7 +534,6 @@ ohos_unittest("volume_tools_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -576,7 +584,6 @@ ohos_unittest("audio_process_in_server_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 
@@ -638,7 +645,6 @@ ohos_unittest("capturer_in_client_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -690,7 +696,7 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "../../../../interfaces/inner_api/native/audiomanager/include",
     "../../../../services/audio_service/server/include",
   ]
-  sources = [ "pa_capturer_stream_impl_unit_test.cpp" ]
+  sources = []
 
   configs = [ ":module_private_config" ]
   cflags = [ "-fno-access-control" ]
@@ -708,12 +714,19 @@ ohos_unittest("pa_capturer_stream_impl_unit_test") {
     "hilog:libhilog",
     "hisysevent:libhisysevent",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "pa_capturer_stream_impl_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }
@@ -751,9 +764,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "../../../../services/audio_service/server/src/direct_playback_engine.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
-    "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
-    "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
@@ -804,7 +814,6 @@ ohos_unittest("audio_process_in_client_unit_test") {
     "ipc:ipc_core",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
@@ -813,6 +822,17 @@ ohos_unittest("audio_process_in_client_unit_test") {
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
+      "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
+      "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
+    ]
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
@@ -870,9 +890,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/ipc_stream_in_server.cpp",
     "../../../../services/audio_service/server/src/none_mix_engine.cpp",
     "../../../../services/audio_service/server/src/offline_stream_in_server.cpp",
-    "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
-    "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
-    "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
     "../../../../services/audio_service/server/src/policy_handler.cpp",
     "../../../../services/audio_service/server/src/pro_audio_stream_manager.cpp",
     "../../../../services/audio_service/server/src/pro_renderer_stream_impl.cpp",
@@ -924,7 +941,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
@@ -932,6 +948,17 @@ ohos_unittest("capturer_in_server_unit_test") {
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
+      "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
+      "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
+    ]
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
     defines += [ "RESSCHE_ENABLE" ]
@@ -978,7 +1005,6 @@ ohos_unittest("audio_dump_pcm_unit_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gmock",
-    "pulseaudio:pulse",
     "eventhandler:libeventhandler",
   ]
 }
@@ -999,7 +1025,6 @@ ohos_unittest("format_converter_unit_test") {
   external_deps = [
     "c_utils:utils",
     "googletest:gmock",
-    "pulseaudio:pulse",
   ]
 }
 
@@ -1089,7 +1114,6 @@ ohos_unittest("audio_spatial_channel_converter_unit_test") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
   ]
 }
 
