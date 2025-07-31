@@ -147,7 +147,6 @@ if (!audio_framework_feature_opensl_es) {
     external_deps = [
       "hilog:libhilog",
       "opensles:libSLES",
-      "pulseaudio:pulse",
     ]
 
     part_name = "audio_framework"
@@ -177,7 +176,6 @@ if (!audio_framework_feature_opensl_es) {
       "c_utils:utils",
       "hilog:libhilog",
       "opensles:libSLES",
-      "pulseaudio:pulse",
     ]
 
     part_name = "audio_framework"
