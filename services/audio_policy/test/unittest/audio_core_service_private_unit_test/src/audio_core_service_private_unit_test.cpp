@@ -2753,5 +2753,19 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
 
     audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AddSessionId_001
+ * @tc.desc  : Test AudioCoreService::AddSessionId()
+ */
+HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    uint32_t sessionId = 1;
+    audioCoreService->AddSessionId(sessionId);
+    ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
+    audioCoreService->DeleteSessionId(sessionId);
+}
 } // namespace AudioStandard
 } // namespace OHOS

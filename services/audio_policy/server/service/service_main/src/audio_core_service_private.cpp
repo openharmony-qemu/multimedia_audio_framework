@@ -41,6 +41,7 @@ static const int32_t MEDIA_SERVICE_UID = 1013;
 const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
+const uid_t TV_SERVICE_UID = 7501;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -73,6 +74,10 @@ static const std::unordered_set<SourceType> specialSourceTypeSet_ = {
     SOURCE_TYPE_WAKEUP,
     SOURCE_TYPE_VIRTUAL_CAPTURE,
     SOURCE_TYPE_REMOTE_CAST
+};
+static const std::unordered_set<uid_t> skipAddSessionIdUidSet_ = {
+    MCU_UID,
+    TV_SERVICE_UID
 };
 }
 
@@ -902,7 +907,7 @@ void AudioCoreService::AddSessionId(const uint32_t sessionId)
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
     AUDIO_INFO_LOG("AddSessionId: %{public}u, callingUid: %{public}u", sessionId, callingUid);
-    if (callingUid == MCU_UID) {
+    if (skipAddSessionIdUidSet_.count(callingUid)) {
         // There is no audio stream for the session id of MCU. So no need to save it.
         return;
     }
