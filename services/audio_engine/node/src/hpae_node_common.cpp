@@ -121,17 +121,17 @@ static std::unordered_map<std::string, AudioPipeType> g_deviceClassToPipeMap = {
     {"primary", PIPE_TYPE_NORMAL_OUT},
     {"a2dp", PIPE_TYPE_NORMAL_OUT},
     {"remote", PIPE_TYPE_NORMAL_OUT},
-    {"offload", PIPE_TYPE_OFFLOAD},
     {"dp", PIPE_TYPE_NORMAL_OUT},
     {"multichannel", PIPE_TYPE_MULTICHANNEL},
 };
 
-AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass)
+AudioPipeType ConvertDeviceClassToPipe(const std::string &deviceClass)
 {
-    if (g_deviceClassToPipeMap.find(deviceClass) == g_deviceClassToPipeMap.end()) {
+    auto item = g_deviceClassToPipeMap.find(deviceClass);
+    if (item == g_deviceClassToPipeMap.end()) {
         return PIPE_TYPE_UNKNOWN;
     }
-    return g_deviceClassToPipeMap[deviceClass];
+    return item->second;
 }
 
 std::string ConvertSessionState2Str(HpaeSessionState state)
@@ -274,6 +274,10 @@ AudioSampleFormat TransFormatFromStringToEnum(std::string format)
 
 void AdjustMchSinkInfo(const AudioModuleInfo &audioModuleInfo, HpaeSinkInfo &sinkInfo)
 {
+    if (sinkInfo.deviceName == "DP_MCH_speaker") {
+        sinkInfo.channelLayout = static_cast<uint64_t>(std::atol(audioModuleInfo.channelLayout.c_str()));
+        return;
+    }
     if (sinkInfo.deviceName != "MCH_Speaker") {
         return;
     }
@@ -397,6 +401,34 @@ bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo
             sourceInfo.micRefChannels);
     };
     return getKey(info) != getKey(oldInfo);
+}
+
+void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo)
+{
+    AUDIO_INFO_LOG("rate: %{public}s ch: %{public}s buffersize: %{public}s ",
+        audioModuleInfo.rate.c_str(),
+        audioModuleInfo.channels.c_str(),
+        audioModuleInfo.bufferSize.c_str());
+    AUDIO_INFO_LOG("format: %{public}s name: %{public}s  lib: %{public}s ",
+        audioModuleInfo.format.c_str(),
+        audioModuleInfo.name.c_str(),
+        audioModuleInfo.lib.c_str());
+    AUDIO_INFO_LOG("deviceType: %{public}s  className: %{public}s  adapterName: %{public}s ",
+        audioModuleInfo.deviceType.c_str(),
+        audioModuleInfo.className.c_str(),
+        audioModuleInfo.adapterName.c_str());
+    AUDIO_INFO_LOG("OpenMicSpeaker: %{public}s networkId: %{public}s fileName: %{public}s ",
+        audioModuleInfo.OpenMicSpeaker.c_str(),
+        audioModuleInfo.networkId.c_str(),
+        audioModuleInfo.fileName.c_str());
+    AUDIO_INFO_LOG("fixedLatency: %{public}s sinkLatency: %{public}s renderInIdleState: %{public}s ",
+        audioModuleInfo.fixedLatency.c_str(),
+        audioModuleInfo.sinkLatency.c_str(),
+        audioModuleInfo.renderInIdleState.c_str());
+    AUDIO_INFO_LOG("sceneName: %{public}s sourceType: %{public}s offloadEnable: %{public}s ",
+        audioModuleInfo.sceneName.c_str(),
+        audioModuleInfo.sourceType.c_str(),
+        audioModuleInfo.offloadEnable.c_str());
 }
 
 std::string TransFormatFromEnumToString(AudioSampleFormat format)

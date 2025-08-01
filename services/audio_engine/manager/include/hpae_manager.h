@@ -183,7 +183,6 @@ public:
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
 private:
     int32_t CloseOutAudioPort(std::string sinkName);
-    void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
     int32_t CloseInAudioPort(std::string sourceName);
     template <typename... Args>
     void RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...));
@@ -222,7 +221,7 @@ private:
     std::shared_ptr<IHpaeCapturerManager> GetCapturerManagerByName(const std::string &sourceName);
     void AddStreamToCollection(const HpaeStreamInfo &streamInfo, const std::string &name);
 
-    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> serviceCallback);
+    void MoveToPreferSink(const std::string& name, std::shared_ptr<AudioServiceHpaeCallback> &serviceCallback);
     int32_t ReloadRenderManager(const AudioModuleInfo &audioModuleInfo, bool isReload = false);
     void DestroyCapture(uint32_t sessionId);
     void LoadEffectLive();
