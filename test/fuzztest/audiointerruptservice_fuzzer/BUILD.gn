@@ -34,6 +34,7 @@ ohos_fuzztest("AudioInterruptServiceFuzzTest") {
     "-g",
     "-O0",
     "-fno-omit-frame-pointer",
+    "-fno-access-control",
   ]
 
   cflags_cc = cflags
