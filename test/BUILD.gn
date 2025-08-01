@@ -275,6 +275,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/coreserviceproviderstub_fuzzer:fuzztest",
     "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
     "fuzztest/dfxutils_fuzzer:fuzztest",
