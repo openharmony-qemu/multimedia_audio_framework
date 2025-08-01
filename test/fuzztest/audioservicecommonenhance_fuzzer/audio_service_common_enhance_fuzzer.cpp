@@ -81,6 +81,17 @@ uint32_t GetArrLength(T& arr)
 void AudioCommonConverterFuzzTest()
 {
     BufferBaseInfo srcBuffer;
+    std::unique_ptr<int32_t[]> buffer = std::make_unique<int32_t[]>(FRAMESIZE);
+    for (size_t i = 0; i < FRAMESIZE; ++i) {
+        buffer[i] = static_cast<int32_t>(i);
+    }
+    srcBuffer.buffer = reinterpret_cast<uint8_t *>(buffer.get());
+    srcBuffer.samplePerFrame = 1;
+    srcBuffer.channelCount = 2;
+    srcBuffer.volumeBg = 0.0f;
+    srcBuffer.volumeEd = 1.0f;
+    srcBuffer.bufLength = FRAMESIZE;
+    srcBuffer.format = AUDIO_SAMPLE_FORMAT_8BIT;
     srcBuffer.frameSize = FRAMESIZE;
     size_t floatBufferSize = SIZE_FLOAT;
     std::vector<float> floatBuffer(floatBufferSize, FLOAT_BUFFER);
@@ -88,6 +99,10 @@ void AudioCommonConverterFuzzTest()
     AudioCommonConverter::ConvertFloatToFloatWithVolume(srcBuffer, floatBuffer);
 
     BufferBaseInfo srcBufferTo;
+    BufferBaseInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
+    BufferBaseInfo.channelCount = 2;
+    BufferBaseInfo.volumeBg = 0.0f;
+    BufferBaseInfo.volumeEd = 1.0f;
     srcBufferTo.frameSize = FRAMESIZE_NEW;
     std::vector<char> dstBuffer32Bit{'0', '0', '0', '0'};
     std::vector<char> dstBuffer16Bit{'0', '0'};

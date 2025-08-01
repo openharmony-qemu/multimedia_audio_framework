@@ -127,6 +127,9 @@ void InitFuzzTest()
 {
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
+    attr.sampleRate = 48000;
+    attr.channel = 2;
+    attr.format = SAMPLE_S16LE;
     attr.sampleRate = GetData<uint32_t>();
     attr.channel = GetData<uint32_t>();
     attr.format = GetData<AudioSampleFormat>();
