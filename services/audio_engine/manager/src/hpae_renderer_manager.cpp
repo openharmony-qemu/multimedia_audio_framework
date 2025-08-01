@@ -254,7 +254,7 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
-int32_t HpaeRendererManager::UpdateOutputDevice()
+int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {

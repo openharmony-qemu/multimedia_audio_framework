@@ -602,7 +602,7 @@ int32_t HpaeInnerCapturerManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkI
     return SUCCESS;
 }
 
-int32_t HpaeInnerCapturerManager::UpdateOutputDevice()
+int32_t HpaeInnerCapturerManager::RefreshProcessClusrerByDevice()
 {
     return SUCCESS;
 }
