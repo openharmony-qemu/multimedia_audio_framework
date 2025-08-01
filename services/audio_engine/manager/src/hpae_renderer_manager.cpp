@@ -49,7 +49,7 @@ HpaeRendererManager::~HpaeRendererManager()
 
 bool HpaeRendererManager::IsMchDevice()
 {
-    return sinkInfo_.deviceName == "MCH_Speaker";
+    return sinkInfo_.deviceName == "MCH_Speaker" || sinkInfo_.deviceName == "DP_MCH_speaker";
 }
 
 int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo)
@@ -445,9 +445,7 @@ void HpaeRendererManager::MoveAllStreamToNewSink(const std::string &sinkName,
         if (moveType == MOVE_ALL || std::find(moveIds.begin(), moveIds.end(), it.first) != moveIds.end()) {
             sinkInputs.emplace_back(it.second);
             sessionIds.emplace_back(it.first);
-            idStr.append("[");
-            idStr.append(std::to_string(it.first));
-            idStr.append("],");
+            idStr.append("[").append(std::to_string(it.first)).append("],");
         }
     }
     for (const auto &it : sessionIds) {
@@ -572,12 +570,12 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
         AUDIO_INFO_LOG("mixerNode trigger callback, sceneType %{public}d", sceneType);
         if (SafeGetMap(sceneClusterMap_, sceneType) && sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             sceneClusterMap_[sceneType]->DisConnectMixerNode();
-            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             // for collaboration
             if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
                 hpaeCoBufferNode_->DisConnect(sceneClusterMap_[sceneType]);
                 TriggerCallback(DISCONNECT_CO_BUFFER_NODE, hpaeCoBufferNode_);
             }
+            outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
 
@@ -1280,21 +1278,30 @@ void HpaeRendererManager::EnableCollaboration()
         hpaeCoBufferNode_ = std::make_shared<HpaeCoBufferNode>();
     }
 
+    std::vector<uint32_t> sinkInputNodeMapKeys;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
         if (nodeInfo.effectInfo.effectScene == SCENE_MUSIC || nodeInfo.effectInfo.effectScene == SCENE_MOVIE) {
-            ReConnectNodeForCollaboration(key);
+            sinkInputNodeMapKeys.push_back(key);
         }
+    }
+
+    for (auto& key : sinkInputNodeMapKeys) {
+        ReConnectNodeForCollaboration(key);
     }
 }
 
 void HpaeRendererManager::DisableCollaboration()
 {
+    std::vector<uint32_t> sinkInputNodeMapKeys;
     for (auto& [key, node] : sinkInputNodeMap_) {
         HpaeNodeInfo nodeInfo = node->GetNodeInfo();
         if (nodeInfo.effectInfo.effectScene == SCENE_COLLABORATIVE) {
-            ReConnectNodeForCollaboration(key);
+            sinkInputNodeMapKeys.push_back(key);
         }
+    }
+    for (auto& key : sinkInputNodeMapKeys) {
+        ReConnectNodeForCollaboration(key);
     }
     hpaeCoBufferNode_.reset();
 }

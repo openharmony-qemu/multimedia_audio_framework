@@ -357,7 +357,8 @@ void HpaeRenderEffectNode::ReconfigOutputBuffer()
             "channelLayout change from %{public}" PRIu64 " to %{public}" PRIu64,
             sceneType_.c_str(), effectNodeInfo.channels, channels, effectNodeInfo.channelLayout, channelLayout);
         PcmBufferInfo pcmBufferInfo = PcmBufferInfo(channels, DEFAULT_EFFECT_FRAMELEN,
-            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames(), effectOutput_.IsMultiFrames());
+            DEFUALT_EFFECT_RATE, channelLayout, effectOutput_.GetFrames());
+        pcmBufferInfo.isMultiFrames = effectOutput_.IsMultiFrames();
         effectOutput_.ReConfig(pcmBufferInfo);
         effectNodeInfo.channels = static_cast<AudioChannel>(channels);
         effectNodeInfo.channelLayout = static_cast<AudioChannelLayout>(channelLayout);
