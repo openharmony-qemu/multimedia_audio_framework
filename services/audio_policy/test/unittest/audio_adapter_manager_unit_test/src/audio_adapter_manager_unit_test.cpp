@@ -16,6 +16,7 @@
 #include "audio_adapter_manager_unit_test.h"
 #include "audio_stream_descriptor.h"
 #include "audio_interrupt_service.h"
+#include "audio_adapter_manager_handler.h"
 
 using namespace testing::ext;
 
@@ -26,8 +27,6 @@ static AudioAdapterManager *audioAdapterManager_;
 
 void AudioAdapterManagerUnitTest::SetUpTestCase(void) {}
 void AudioAdapterManagerUnitTest::TearDownTestCase(void) {}
-void AudioAdapterManagerUnitTest::SetUp(void) {}
-void AudioAdapterManagerUnitTest::TearDown(void) {}
 
 std::shared_ptr<AudioInterruptService> GetTnterruptServiceTest()
 {
@@ -286,6 +285,85 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetVolumeForSwitchDevice_001, TestSize.Lev
     deviceDescriptor.deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
     audioAdapterManager->SetVolumeForSwitchDevice(deviceDescriptor);
     EXPECT_EQ(audioAdapterManager->currentActiveDevice_.deviceType_, DEVICE_TYPE_BLUETOOTH_SCO);
+}
+
+/**
+ * @tc.name: SetZoneVolumeLevel_001
+ * @tc.desc: Test SetZoneVolumeLevel
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetZoneVolumeLevel_001, TestSize.Level1)
+{
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    std::shared_ptr<AudioDeviceDescriptor> desc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    desc->networkId_ = "LocalDevice";
+    devices.push_back(desc);
+
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
+    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t vLevel = 10;
+    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
+
+    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
+    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
+
+    audioAdapterManager_->handler_ = nullptr;
+    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
+    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
+
+    desc->networkId_ = "RemoteDevice";
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    audioAdapterManager->volumeDataExtMaintainer_.clear();
+    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
+
+    audioAdapterManager_->handler_ = std::make_shared<AudioAdapterManagerHandler>();
+    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
+    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
+
+    audioAdapterManager_->handler_ = nullptr;
+    audioAdapterManager->SetZoneVolumeLevel(zoneId1_, STREAM_MUSIC, vLevel);
+    EXPECT_EQ(audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()]->GetStreamVolume(STREAM_MUSIC), vLevel);
+}
+
+/**
+ * @tc.name: SetAdjustVolumeForZone_001
+ * @tc.desc: Test SetAdjustVolumeForZone
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetAdjustVolumeForZone_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    auto ret = audioAdapterManager->SetAdjustVolumeForZone(0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices;
+    std::shared_ptr<AudioDeviceDescriptor> desc =
+        std::make_shared<AudioDeviceDescriptor>(DEVICE_TYPE_REMOTE_CAST, OUTPUT_DEVICE);
+    desc->networkId_ = "LocalDevice";
+    devices.push_back(desc);
+    AudioZoneService::GetInstance().BindDeviceToAudioZone(zoneId1_, devices);
+    AudioConnectedDevice::GetInstance().AddConnectedDevice(desc);
+    AudioZoneService::GetInstance().UpdateDeviceFromGlobalForAllZone(desc);
+
+    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
+    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
+    EXPECT_EQ(ret, SUCCESS);
+
+    audioAdapterManager->volumeDataExtMaintainer_.clear();
+    desc->networkId_ = "RemoteDevice";
+    desc->deviceType_ = DEVICE_TYPE_SPEAKER;
+
+    audioAdapterManager->volumeDataExtMaintainer_[desc->GetKey()] = std::make_shared<VolumeDataMaintainer>();
+    ret = audioAdapterManager->SetAdjustVolumeForZone(zoneId2_);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

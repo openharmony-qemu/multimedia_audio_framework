@@ -548,7 +548,8 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     if (keyType == OHOS::MMI::KeyEvent::KEYCODE_VOLUME_UP && IsContinueAddVol()) {
         std::thread([this]() { TriggerMuteCheck(); }).detach();
     }
-    int32_t zoneId = audioVolumeManager_.GetVolumeAdjustZoneId();
+    int32_t zoneId = AudioZoneService::GetInstance().CheckZoneExist(audioVolumeManager_.GetVolumeAdjustZoneId()) ?
+        audioVolumeManager_.GetVolumeAdjustZoneId() : 0;
     AudioStreamType streamInFocus = AudioStreamType::STREAM_MUSIC; // use STREAM_MUSIC as default stream type
     if (volumeApplyToAll_) {
         streamInFocus = AudioStreamType::STREAM_ALL;
@@ -578,6 +579,13 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
         VolumeUtils::IsPCVolumeEnable()) {
         SetStreamMuteInternal(STREAM_SYSTEM, false, true);
     }
+    return SetVolumeInternalByKeyEvent(streamInFocus, zoneId, keyType);
+}
+#endif
+
+int32_t AudioPolicyServer::SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId,
+    const int32_t keyType)
+{
     int32_t volumeLevelInInt = GetSystemVolumeLevelInternal(streamInFocus, zoneId);
     if (MaxOrMinVolumeOption(volumeLevelInInt, keyType, streamInFocus)) {
         AUDIO_ERR_LOG("device %{public}d, stream %{public}d, volumelevel %{public}d invalid",
@@ -595,7 +603,6 @@ int32_t AudioPolicyServer::ProcessVolumeKeyEvents(const int32_t keyType)
     }
     return AUDIO_OK;
 }
-#endif
 
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
 int32_t AudioPolicyServer::RegisterVolumeKeyMuteEvents()
