@@ -56,7 +56,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 12;
+const uint8_t TESTSIZE = 14;
 
 typedef void (*TestFuncs)();
 
@@ -229,6 +229,25 @@ void StreamStatusToStringFuzzTest()
     streamDesc->DumpCommonAttrs(bundleName);
 }
 
+void GetDeviceInfoFuzzTest()
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (streamDesc == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> fuzzAudioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->GetDeviceInfo(fuzzAudioDeviceDescriptorSptr);
+}
+
+void GetNewDevicesInfoFuzzTest()
+{
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    if (streamDesc == nullptr) {
+        return;
+    }
+    streamDesc->GetNewDevicesInfo();
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     MarshallingFuzzTest,
     UnmarshallingFuzzTest,
@@ -242,6 +261,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     DumpDeviceAttrsFuzzTest,
     GetNewDevicesTypeStringFuzzTest,
     StreamStatusToStringFuzzTest,
+    GetDeviceInfoFuzzTest,
+    GetNewDevicesInfoFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

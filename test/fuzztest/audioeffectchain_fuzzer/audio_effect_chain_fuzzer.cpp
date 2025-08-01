@@ -1078,7 +1078,48 @@ void AudioEnhanceChainUpdateExtraSceneTypeFuzzTest()
     audioEnhanceChainManagerImpl.UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
-typedef void (*TestFuncs[52])();
+void SetAbsVolumeStateToEffectFuzzTest()
+{
+    std::string scene = "SCENE_MUSIC";
+    auto headTracker = std::make_shared<HeadTracker>();
+    std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
+    if (audioEffectChain == nullptr) {
+        return;
+    }
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"1", nullptr});
+    bool absVolumeState = GetData<bool>();
+    AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
+    AudioEffectChainManager::GetInstance()->EffectDspAbsVolumeStateUpdate(absVolumeState);
+    AudioEffectChainManager::GetInstance()->EffectApAbsVolumeStateUpdate(absVolumeState);
+}
+
+void ReleaseAudioEffectChainDynamicInnerFuzzTest()
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamicInner(sceneType);
+}
+
+void EnhanceChainManagerGetAlgoConfigFuzzTest()
+{
+    struct DeviceAttrAdapter validAdapter;
+    EnhanceChainManagerCreateCb(0, &validAdapter);
+    EnhanceChainManagerSendInitCommand();
+}
+
+void QueryEffectChannelInfoInnerFuzzTest()
+{
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    uint32_t channels = GetData<uint32_t>();
+    uint64_t channelLayout = GetData<uint64_t>();
+    AudioEffectChainManager::GetInstance()->QueryEffectChannelInfoInner(sceneType, channels, channelLayout);
+}
+
+typedef void (*TestFuncs[56])();
 
 TestFuncs g_testFuncs = {
     EffectChainManagerInitCbFuzzTest,
@@ -1132,6 +1173,10 @@ TestFuncs g_testFuncs = {
     AudioEnhanceChainSetAudioEnhancePropertyToChainsFuzzTest,
     AudioEnhanceChainApplyEnhanceChainByIdFuzzTest,
     AudioEnhanceChainUpdateExtraSceneTypeFuzzTest,
+    SetAbsVolumeStateToEffectFuzzTest,
+    ReleaseAudioEffectChainDynamicInnerFuzzTest,
+    EnhanceChainManagerGetAlgoConfigFuzzTest,
+    QueryEffectChannelInfoInnerFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
