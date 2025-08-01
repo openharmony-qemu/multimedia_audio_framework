@@ -2516,12 +2516,12 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
 #ifdef BLUETOOTH_ENABLE
     CHECK_AND_RETURN_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, "Invalid stream desc");
+    CHECK_AND_RETURN(streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP); // no need log
     vector<Bluetooth::A2dpStreamInfo> allSessionInfos;
     Bluetooth::A2dpStreamInfo a2dpStreamInfo;
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     streamCollector_.GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    AUDIO_INFO_LOG("Current renderer number: %{public}zu, isCreateProcess: %{public}d",
-        audioRendererChangeInfos.size(), isCreateProcess);
+
     for (auto &changeInfo : audioRendererChangeInfos) {
         a2dpStreamInfo.sessionId = changeInfo->sessionId;
         a2dpStreamInfo.streamType = streamCollector_.GetStreamType(changeInfo->sessionId);
@@ -2541,14 +2541,10 @@ void AudioCoreService::HandlePlaybackStreamInA2dp(std::shared_ptr<AudioStreamDes
         a2dpStreamInfo.isSpatialAudio = spatialState.spatializationEnabled;
         allSessionInfos.push_back(a2dpStreamInfo);
     }
-    auto receiveOffloadFlag =
+    auto flag =
         static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allSessionInfos));
-    if (receiveOffloadFlag != A2DP_OFFLOAD) {
-        streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = receiveOffloadFlag;
-        return;
-    }
-    AUDIO_INFO_LOG("A2dp offload flag: %{public}d", receiveOffloadFlag);
-    streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = A2DP_OFFLOAD;
+    streamDesc->newDeviceDescs_[0]->a2dpOffloadFlag_ = flag;
+    AUDIO_INFO_LOG("A2dp offload flag:%{public}d isCreate:%{public}s", flag, isCreateProcess ? "true" : "false");
 #endif
 }
 
