@@ -3063,6 +3063,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        volumeDataMaintainer_.GetVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
         SetVolumeDb(STREAM_MUSIC);
     } else {
         AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
