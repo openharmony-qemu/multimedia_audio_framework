@@ -256,7 +256,6 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
 
 int32_t HpaeRendererManager::UpdateOutputDevice()
 {
-
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
@@ -272,6 +271,8 @@ int32_t HpaeRendererManager::UpdateOutputDevice()
                 }
             } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
                 !sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
+                DisConnectProcessCluster(GetProcessorType(nodeInfo.sessionId));
                 sessionNodeMap_[nodeInfo.sessionId].bypass = true;
             }
         }
@@ -367,14 +368,7 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
     }
-    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-        sceneClusterMap_.erase(sceneType);
-        sceneTypeToProcessClusterCountMap_.erase(sceneType);
-    }
-    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-    }
+    DisConnectProcessCluster(sceneType);
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
@@ -400,6 +394,19 @@ void HpaeRendererManager::DeleteProcessCluster(
             nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType],
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
+}
+
+int32_t HpaeRendererManager::DisConnectProcessCluster(HpaeProcessCluster sceneType)
+{
+    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
+        sceneClusterMap_.erase(sceneType);
+        sceneTypeToProcessClusterCountMap_.erase(sceneType);
+    }
+    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
+        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
+    }
+    return SUCCESS;
 }
 
 bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
@@ -609,15 +616,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             }
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
-
-        if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-            sceneClusterMap_.erase(sceneType);
-            sceneTypeToProcessClusterCountMap_.erase(sceneType);
-        }
-        if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-            sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-            sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-        }
+        DisConnectProcessCluster(sceneType);
     };
     SendRequest(request);
 }

@@ -135,6 +135,7 @@ private:
     void EnableCollaboration();
     void DisableCollaboration();
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
+    int32_t DisConnectProcessCluster(HpaeProcessCluster sceneType);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
