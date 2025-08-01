@@ -66,6 +66,7 @@ public:
     void SetAudioMonoState(bool audioMono) override;
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
+    void SetSpeed(float speed) override;
 
     int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
@@ -121,6 +122,7 @@ private:
     static constexpr const char *RUNNING_LOCK_NAME = "AudioOffloadBackgroundPlay";
     static constexpr int32_t RUNNING_LOCK_TIMEOUTMS_LASTING = -1;
 #endif
+    static constexpr uint32_t AUDIO_SPEED_BASE = 1000;
 
     IAudioSinkAttr attr_ = {};
     SinkCallbackWrapper callback_ = {};
@@ -160,7 +162,7 @@ private:
 #endif
     FILE *dumpFile_ = nullptr;
     std::string dumpFileName_ = "";
-    uint64_t renderPos_ = 0;
+    std::atomic<uint64_t> renderPos_ = 0;
     std::mutex sinkMutex_;
 };
 

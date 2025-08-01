@@ -1004,6 +1004,18 @@ int32_t HpaeRendererManager::UpdateMaxLength(uint32_t sessionId, uint32_t maxLen
     return SUCCESS;
 }
 
+void HpaeRendererManager::SetSpeed(uint32_t sessionId, float speed)
+{
+    auto request = [this, sessionId, speed]() {
+        Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::SetSpeed");
+        AUDIO_INFO_LOG("SetSpeed sessionId %{public}u, deviceName %{public}s, speed %{public}f", sessionId,
+            sinkInfo_.deviceName.c_str(), speed);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "not find sessionId %{public}u", sessionId);
+        sinkInputNodeMap_[sessionId]->SetSpeed(speed);
+    };
+    SendRequest(request);
+}
+
 std::vector<SinkInput> HpaeRendererManager::GetAllSinkInputsInfo()
 {
     return {};

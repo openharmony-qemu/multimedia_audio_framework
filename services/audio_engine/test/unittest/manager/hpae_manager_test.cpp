@@ -1053,6 +1053,15 @@ HWTEST_F(HpaeManagerUnitTest, IHpaeRenderStreamManagerMoveTest004, TestSize.Leve
     EXPECT_EQ(hpaeManager_->SetOffloadPolicy(streamInfo.sessionId, 1), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
 
+    hpaeManager_->SetSpeed(SESSION_ID_NOEXIST, 1.0f);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->movingIds_.emplace(streamInfo.sessionId, HPAE_SESSION_RUNNING);
+    hpaeManager_->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->movingIds_.erase(streamInfo.sessionId);
+    hpaeManager_->SetSpeed(streamInfo.sessionId, 1.0f);
+    WaitForMsgProcessing(hpaeManager_);
+
     EXPECT_EQ(hpaeManager_->Drain(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeManager_);
     EXPECT_EQ(hpaeManager_->Flush(streamInfo.streamClassType, streamInfo.sessionId), SUCCESS);
