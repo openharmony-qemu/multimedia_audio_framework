@@ -917,6 +917,7 @@ int32_t AudioRendererPrivate::StartSwitchProcess(RestoreInfo &restoreInfo, IAudi
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        CHECK_AND_RETURN_RET_LOG(releaseFlag_ == false, SUCCESS, "In renderer release, return");
     }
 
     // Block interrupt calback, avoid pausing wrong stream.
@@ -963,6 +964,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         std::unique_lock<std::shared_mutex> lock;
         if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
             lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+            CHECK_AND_RETURN_RET_LOG(releaseFlag_ == false, SUCCESS, "In renderer release, return");
         }
 
         // Return in advance if there's no need for restore.
@@ -1274,11 +1276,28 @@ bool AudioRendererPrivate::Stop()
     return result;
 }
 
+void AudioRendererPrivate::SetReleaseFlagWithLock(bool releaseFlag)
+{
+    std::unique_lock<std::shared_mutex> lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    releaseFlag_ = releaseFlag;
+}
+
+void AudioRendererPrivate::SetReleaseFlagNoLock(bool releaseFlag)
+{
+    releaseFlag_ = releaseFlag;
+}
+
 bool AudioRendererPrivate::Release()
 {
     Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
+
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        SetReleaseFlagWithLock(true);
+        auto audioStreamInner = GetInnerStream();
+        if (audioStreamInner != nullptr) {
+            audioStreamInner->JoinCallbackLoop();
+        }
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
@@ -1286,6 +1305,7 @@ bool AudioRendererPrivate::Release()
     abortRestore_ = true;
     if (audioStream_ == nullptr) {
         AUDIO_ERR_LOG("audioStream is null");
+        SetReleaseFlagNoLock(false);
         return true;
     }
     bool result = audioStream_->ReleaseAudioStream();
@@ -1303,6 +1323,7 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
