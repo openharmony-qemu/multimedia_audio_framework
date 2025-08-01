@@ -645,6 +645,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &in
 
 int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
