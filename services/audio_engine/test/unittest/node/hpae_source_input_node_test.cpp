@@ -103,7 +103,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testSourceInputOutputCase, TestSize.Level0)
     EXPECT_EQ(outputPort->GetInputNum(), 0);
 }
 
-static void InitAudioSourceAttr(IAudioSourceAttr &attr)
+static void InitAudioSourceAttr(IAudioSourceAttr &attr, const HpaeNodeInfo &nodeInfo)
 {
     attr.adapterName = "";
     attr.openMicSpeaker = 0;
@@ -141,7 +141,7 @@ HWTEST_F(HpaeSourceInputNodeTest, testWriteDataToSourceInputDataCase, TestSize.L
     std::string sourceName = "mic";
     EXPECT_EQ(hpaeSourceInputNode->GetCapturerSourceInstance(deviceClass, deviceNetId, sourceType, sourceName), 0);
     IAudioSourceAttr attr;
-    InitAudioSourceAttr(attr);
+    InitAudioSourceAttr(attr, nodeInfo);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceInit(attr), SUCCESS);
     EXPECT_EQ(hpaeSourceInputNode->CapturerSourceStart(), SUCCESS);
