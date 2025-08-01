@@ -118,7 +118,7 @@ private:
     void UpdateProcessClusterConnection(uint32_t sessionId, int32_t effectMode);
     void ConnectProcessCluster(uint32_t sessionId, HpaeProcessorType sceneType);
     void DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType);
-    void DeleteProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
+    void DisConnectProcessCluster(const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId);
     void CreateProcessCluster(HpaeNodeInfo &nodeInfo);
     void CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int32_t processClusterDecision);
     bool SetSessionFade(uint32_t sessionId, IOperation operation);
@@ -135,7 +135,7 @@ private:
     void EnableCollaboration();
     void DisableCollaboration();
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
-    int32_t DisConnectProcessCluster(HpaeProcessCluster sceneType);
+    int32_t DeleteProcessCluster(HpaeProcessCluster sceneType);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;
