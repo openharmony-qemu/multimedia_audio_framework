@@ -2348,8 +2348,9 @@ void AudioAdapterManager::HandleDistributedVolume(AudioStreamType streamType)
         }
     }
 
-    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP && streamType == STREAM_MUSIC) {
-        AUDIO_INFO_LOG("first time switch dp, use default volume");
+    if ((currentActiveDevice_.deviceType_ == DEVICE_TYPE_DP || currentActiveDevice_.deviceType_ == DEVICE_TYPE_HDMI)
+        && streamType == STREAM_MUSIC) {
+        AUDIO_INFO_LOG("first time switch dp or hdmi, use default volume");
         int32_t initialVolume = GetMaxVolumeLevel(streamType) > MAX_VOLUME_LEVEL ?
             DP_DEFAULT_VOLUME_LEVEL : GetMaxVolumeLevel(streamType);
         volumeDataMaintainer_.SetStreamVolume(STREAM_MUSIC, initialVolume);
