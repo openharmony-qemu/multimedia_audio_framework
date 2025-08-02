@@ -424,7 +424,7 @@ void AudioPolicyManagerNiNeFuzzTest()
     vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     StreamUsage streamUsage = GetData<StreamUsage>();
-
+    std::string address = "address";
 
     AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
     AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
