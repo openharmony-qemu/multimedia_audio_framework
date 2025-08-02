@@ -314,6 +314,28 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
 }
 
+/**
+* @tc.name  : Test UpdateVoipStreamsDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_014
+* @tc.desc  : Test UpdateVoipStreamsDefaultOutputDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_014, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 1;
+    audioInterrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA);
+    int32_t ret = audioSession->Activate(strategy);
+    EXPECT_EQ(ret, SUCCESS);
+    audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_DEFAULT);
+    ret = audioSession->Deactivate();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
