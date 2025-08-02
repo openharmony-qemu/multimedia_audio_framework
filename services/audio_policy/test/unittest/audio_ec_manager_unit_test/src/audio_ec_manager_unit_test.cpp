@@ -457,15 +457,12 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_017, TestSize.Level1)
 /**
 * @tc.name  : Test AudioEcManager.
 * @tc.number: AudioEcManager_018
-* @tc.desc  : Test PrepareAndOpenNormalSource & CloseNormalSource & GetSourceOpened interface.
+* @tc.desc  : Test CloseNormalSource & GetSourceOpened interface.
 */
 HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_018, TestSize.Level1)
 {
     AudioEcManager& ecManager(AudioEcManager::GetInstance());
 
-    SessionInfo sessionInfo;
-    PipeStreamPropInfo propInfo;
-    ecManager.PrepareAndOpenNormalSource(sessionInfo, propInfo, SOURCE_TYPE_MIC);
     EXPECT_EQ(ecManager.GetSourceOpened(), SOURCE_TYPE_MIC);
 
     ecManager.Init(1, 0);

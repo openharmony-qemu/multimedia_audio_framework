@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
-#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -185,53 +184,6 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
-}
-
-uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
-{
-    enum AudioInputType hdiAudioInputType;
-    switch (sourceType) {
-        case SOURCE_TYPE_INVALID:
-            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
-            break;
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_WAKEUP:
-            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_CALL:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
-            break;
-        case SOURCE_TYPE_CAMCORDER:
-            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
-            break;
-        case SOURCE_TYPE_EC:
-            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
-            break;
-        case SOURCE_TYPE_MIC_REF:
-            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
-            break;
-        case SOURCE_TYPE_UNPROCESSED:
-            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
-            break;
-        case SOURCE_TYPE_LIVE:
-            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
-            break;
-        default:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-    }
-    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)

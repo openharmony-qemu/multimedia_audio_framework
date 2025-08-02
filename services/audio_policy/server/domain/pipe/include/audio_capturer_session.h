@@ -84,7 +84,6 @@ private:
     }
     ~AudioCapturerSession() {}
 
-    void HandleRemainingSource();
     void HandleRemoteCastDevice(bool isConnected, AudioStreamInfo streamInfo = {});
 
     void LoadInnerCapturerSink(std::string moduleName, AudioStreamInfo streamInfo);
