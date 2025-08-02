@@ -100,10 +100,10 @@ void AudioCommonConverterFuzzTest()
     AudioCommonConverter::ConvertFloatToFloatWithVolume(srcBuffer, floatBuffer);
 
     BufferBaseInfo srcBufferTo;
-    BufferBaseInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
-    BufferBaseInfo.channelCount = CHANNEL_COUNT;
-    BufferBaseInfo.volumeBg = 0.0f;
-    BufferBaseInfo.volumeEd = 1.0f;
+    srcBufferTo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
+    srcBufferTo.channelCount = CHANNEL_COUNT;
+    srcBufferTo.volumeBg = 0.0f;
+    srcBufferTo.volumeEd = 1.0f;
     srcBufferTo.frameSize = FRAMESIZE_NEW;
     std::vector<char> dstBuffer32Bit{'0', '0', '0', '0'};
     std::vector<char> dstBuffer16Bit{'0', '0'};
