@@ -37,6 +37,7 @@ const uint8_t BUFFER_CONSTANT = 1;
 const uint32_t FRAMESIZE = 5;
 const uint32_t FRAMESIZE_NEW = 1;
 const size_t SIZE_FLOAT = 5;
+const uint32_t CHANNEL_COUNT = 2;
 const float FLOAT_BUFFER = 5.0f;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_8BIT = 0;
 constexpr int32_t AUDIO_SAMPLE_FORMAT_16BIT = 1;
@@ -87,7 +88,7 @@ void AudioCommonConverterFuzzTest()
     }
     srcBuffer.buffer = reinterpret_cast<uint8_t *>(buffer.get());
     srcBuffer.samplePerFrame = 1;
-    srcBuffer.channelCount = 2;
+    srcBuffer.channelCount = CHANNEL_COUNT;
     srcBuffer.volumeBg = 0.0f;
     srcBuffer.volumeEd = 1.0f;
     srcBuffer.bufLength = FRAMESIZE;
@@ -100,7 +101,7 @@ void AudioCommonConverterFuzzTest()
 
     BufferBaseInfo srcBufferTo;
     BufferBaseInfo.buffer = reinterpret_cast<uint8_t *>(buffer.get());
-    BufferBaseInfo.channelCount = 2;
+    BufferBaseInfo.channelCount = CHANNEL_COUNT;
     BufferBaseInfo.volumeBg = 0.0f;
     BufferBaseInfo.volumeEd = 1.0f;
     srcBufferTo.frameSize = FRAMESIZE_NEW;

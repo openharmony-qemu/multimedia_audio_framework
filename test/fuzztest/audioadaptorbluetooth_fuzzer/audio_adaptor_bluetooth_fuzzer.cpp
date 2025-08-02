@@ -32,6 +32,8 @@ namespace AudioStandard {
 using namespace std;
 const char *SINK_ADAPTER_NAME = "primary";
 const uint64_t COMMON_UINT64_NUM = 2;
+const uint32_t CHANNEL = 2;
+const uint32_t SAMPLE_RATE = 48000;
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -127,8 +129,8 @@ void InitFuzzTest()
 {
     IAudioSinkAttr attr = {};
     attr.adapterName = SINK_ADAPTER_NAME;
-    attr.sampleRate = 48000;
-    attr.channel = 2;
+    attr.sampleRate = SAMPLE_RATE;
+    attr.channel = CHANNEL;
     attr.format = SAMPLE_S16LE;
     attr.sampleRate = GetData<uint32_t>();
     attr.channel = GetData<uint32_t>();
