@@ -938,6 +938,7 @@ void HpaeManagerEffectLiveTest()
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->SetEffectLiveParameter(params);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectTest()

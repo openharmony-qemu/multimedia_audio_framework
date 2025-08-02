@@ -1078,8 +1078,6 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
-        TriggerCallback(
-            UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionNodeMap_[sessionId].state, operation);
     };
     SendRequest(request);
 }
@@ -1146,11 +1144,6 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionState(sessionId, state);
             sinkInputNodeMap_[sessionId]->SetState(state);
-            TriggerCallback(UPDATE_STATUS,
-                HPAE_STREAM_CLASS_TYPE_PLAY,
-                sessionId,
-                sessionNodeMap_[sessionId].state,
-                operation);
         }
         return false;
     }
