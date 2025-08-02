@@ -392,6 +392,23 @@ int32_t AudioAdapterManager::SetAppVolumeMuted(int32_t appUid, bool muted)
     return SetAppVolumeMutedDB(appUid, muted);
 }
 
+int32_t AudioAdapterManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("appUid: %{public}d, muted: %{public}d", appUid, muted);
+    auto audioVolume = AudioVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioVolume != nullptr, ERR_INVALID_PARAM, "audioVolume handle null");
+    bool isSetSuccess = audioVolume->SetAppRingMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(isSetSuccess, ERROR, "set app ring muted: %{public}d fail", muted);
+    volumeDataMaintainer_.SetAppStreamMuted(appUid, STREAM_RING, muted);
+    return SUCCESS;
+}
+
+bool AudioAdapterManager::IsAppRingMuted(int32_t appUid)
+{
+    AudioStreamType streamType = STREAM_RING;
+    return volumeDataMaintainer_.IsAppStreamMuted(appUid, streamType);
+}
+
 int32_t AudioAdapterManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     std::lock_guard<std::mutex> lock(volumeDataMapMutex_);

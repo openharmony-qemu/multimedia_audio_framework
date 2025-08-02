@@ -335,6 +335,19 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
+int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppRingMuted");
+    int32_t result = audioPolicyManager_.SetAppRingMuted(appUid, muted);
+    return result;
+}
+
+bool AudioVolumeManager::IsAppRingMuted(int32_t appUid)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppRingMuted");
+    return audioPolicyManager_.IsAppRingMuted(appUid);
+}
+
 int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 {
     return audioPolicyManager_.GetVolumeAdjustZoneId();

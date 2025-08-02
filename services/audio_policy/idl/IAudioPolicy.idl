@@ -55,6 +55,7 @@ interface IAudioPolicy {
         [in] int uid /* uid default 0 */); 
     void SetAppVolumeLevel([in] int appUid, [in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
     void SetAppVolumeMuted([in] int appUid, [in] boolean muted, [in] int volumeFlag); /*volumeFlag default 0*/
+    void SetAppRingMuted([in] int appUid, [in] boolean muted);
     void SetAdjustVolumeForZone([in] int zoneId);
     void IsAppVolumeMute([in] int appUid, [in] boolean muted, [out] boolean isMute);
     void SetSelfAppVolumeLevel([in] int volumeLevel, [in] int volumeFlag); /*volumeFlag default 0*/
