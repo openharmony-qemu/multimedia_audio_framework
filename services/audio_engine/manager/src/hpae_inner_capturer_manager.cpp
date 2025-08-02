@@ -604,8 +604,6 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-            rendererSessionNodeMap_[sessionId].state, operation);
     };
     SendRequestInner(request);
 }
