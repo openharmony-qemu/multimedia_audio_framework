@@ -561,6 +561,7 @@ int32_t AudioDeviceStatus::LoadAccessoryModule(std::string deviceInfo)
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_ACCESSORY));
             auto size_begin = deviceInfo.find("buffer_size=");
             auto size_end = deviceInfo.find_first_of(" ", size_begin);
+            CHECK_AND_RETURN_RET_LOG(size_end > size_begin, ERR_OPERATION_FAILED, "get size failed");
             string bufferSize = deviceInfo.substr(size_begin + std::strlen("buffer_size="),
                 size_end - size_begin - std::strlen("buffer_size"));
             moduleInfo.bufferSize = bufferSize;
