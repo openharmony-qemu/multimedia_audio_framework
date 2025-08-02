@@ -40,6 +40,7 @@ void AudioCapturerDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
         return;
     }
 
+    std::lock_guard<std::mutex> lock(mutex_);
     for (auto &item : dfxInfos_) {
         AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d, size=%{public}d", item.first, appUid,
             static_cast<int32_t>(item.second.size()));
