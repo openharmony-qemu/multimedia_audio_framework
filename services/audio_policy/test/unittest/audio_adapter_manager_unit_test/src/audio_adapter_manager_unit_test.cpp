@@ -408,6 +408,23 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_001, TestSize.Level1)
     EXPECT_EQ(audioAdapterManager->GetStreamMute(streamType), mute);
 }
 
+/**
+ * @tc.name: Test SetInnerStreamMute
+ * @tc.desc: SetInnerStreamMute_002
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioStreamType streamType = STREAM_MUSIC;
+    bool mute = true;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    audioAdapterManager->SetInnerStreamMute(streamType, mute, streamUsage);
+    EXPECT_EQ(audioAdapterManager->GetStreamMute(streamType), mute);
+}
+
 
 } // namespace AudioStandard
 } // namespace OHOS

@@ -886,6 +886,10 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
     // set stream mute status to mem.
     volumeDataMaintainer_.SetStreamMuteStatus(streamType, mute);
 
+    if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_NEARLINK) {
+        SetAbsVolumeMute(mute);
+    }
+
     int32_t volume = GetSystemVolumeLevel(streamType);
     VolumeEvent volumeEvent = VolumeEvent(streamType, volume, false);
     if (audioPolicyServerHandler_ != nullptr) {
