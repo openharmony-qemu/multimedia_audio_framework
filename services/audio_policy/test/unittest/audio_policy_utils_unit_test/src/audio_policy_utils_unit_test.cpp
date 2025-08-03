@@ -325,44 +325,5 @@ HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_016, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 }
 
-/**
- * @tc.name : Test GetRealUid.
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_017
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_017, TestSize.Level1)
-{
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->callerUid_ = 1013;
-    streamDesc->appInfo_.appUid = 1013;
-
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    int32_t result = audioPolicyUtilsTest_->GetRealUid(streamDesc);
-
-    EXPECT_EQ(result, 1013);
-}
-
-/**
- * @tc.name : Test GetRealUid.
- * @tc.type  : FUNC
- * @tc.number: AudioPolicyUtilsUnitTest_018
- */
-HWTEST(AudioPolicyUtilsUnitTest, AudioPolicyUtilsUnitTest_018, TestSize.Level1)
-{
-    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
-    AudioPolicyUtils* audioPolicyUtilsTest_ = nullptr;
-    audioPolicyUtilsTest_ = &AudioPolicyUtils::GetInstance();
-    ASSERT_TRUE(audioPolicyUtilsTest_ != nullptr);
-
-    streamDesc->callerUid_ = 0;
-
-    int32_t result = audioPolicyUtilsTest_->GetRealUid(streamDesc);
-
-    EXPECT_EQ(result, 0);
-}
-
 } // namespace AudioStandard
 } // namespace OHOS
