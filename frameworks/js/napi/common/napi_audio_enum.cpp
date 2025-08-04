@@ -554,7 +554,7 @@ napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<s
 {
 
     napi_value enumObject = nullptr;
-    napi status = napi_create_object(env, &enumObject);
+    napi_status status = napi_create_object(env, &enumObject);
     if (status != napi_ok) {
         goto error;
     }
