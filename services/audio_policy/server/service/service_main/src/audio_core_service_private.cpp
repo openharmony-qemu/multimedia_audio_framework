@@ -1581,18 +1581,16 @@ bool AudioCoreService::HasLowLatencyCapability(DeviceType deviceType, bool isRem
 void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc,
     const AudioStreamDeviceChangeReasonExt reason)
 {
-    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
     Trace trace("AudioCoreService::TriggerRecreateRendererStreamCallback");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+    CHECK_AND_RETURN_LOG(audioPolicyServerHandler_ != nullptr, "audioPolicyServerHandler_ is null");
     int32_t callerPid = streamDesc->callerPid_;
     int32_t sessionId = streamDesc->sessionId_;
     uint32_t routeFlag = streamDesc->routeFlag_;
     AUDIO_INFO_LOG("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
         sessionId, callerPid, routeFlag);
-    if (audioPolicyServerHandler_ != nullptr) {
-        audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
-    } else {
-        AUDIO_WARNING_LOG("No audio policy server handler");
-    }
+    audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
+
     CHECK_AND_RETURN_LOG(streamDesc->oldDeviceDescs_.size() > 0 && streamDesc->oldDeviceDescs_.front() != nullptr,
         "oldDeviceDesc is invalid");
     CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.size() > 0 && streamDesc->newDeviceDescs_.front() != nullptr,
