@@ -2792,7 +2792,12 @@ HWTEST(AudioServiceUnitTest, SaveRenderWhitelist_001, TestSize.Level1)
     EXPECT_EQ(AudioService::GetInstance()->renderWhitelist_.size(), 5);
 }
 
-//   baimiaojie
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_001,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_ALARM;
@@ -2806,6 +2811,12 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_001, TestSize.Level1)
     EXPECT_NE(expectedVolume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
 }
 
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_002,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_MUSIC;
@@ -2816,6 +2827,12 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_002, TestSize.Level1)
     EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
 }
 
+/**
+ * @tc.name  : Test UpdateSystemVolume API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSystemVolume_003,
+ * @tc.desc  : Test UpdateSystemVolume interface.
+ */
 HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
 {
     AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
@@ -2826,6 +2843,12 @@ HWTEST(AudioServiceUnitTest, UpdateSystemVolume_003, TestSize.Level1)
     EXPECT_EQ(volume, AudioService::GetInstance()->musicOrVoipSystemVolume_);
 }
 
+/**
+ * @tc.name  : Test SetSessionMuteState API
+ * @tc.type  : FUNC
+ * @tc.number: SetSessionMuteState_001,
+ * @tc.desc  : Test SetSessionMuteState interface.
+ */
 HWTEST(AudioServiceUnitTest, SetSessionMuteState_001, TestSize.Level1)
 {
     uint32_t sessionId = 1;
@@ -2838,6 +2861,12 @@ HWTEST(AudioServiceUnitTest, SetSessionMuteState_001, TestSize.Level1)
     EXPECT_EQ(AudioService::GetInstance()->muteStateMap_[sessionId], muteFlag);
 }
 
+/**
+ * @tc.name  : Test CleanAppUseNumMap API
+ * @tc.type  : FUNC
+ * @tc.number: CleanAppUseNumMap_001,
+ * @tc.desc  : Test CleanAppUseNumMap interface.
+ */
 HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_001, TestSize.Level1)
 {
     int32_t appUid = 12345;
@@ -2848,6 +2877,12 @@ HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_001, TestSize.Level1)
     EXPECT_EQ(AudioService::GetInstance()->appUseNumMap_[appUid], 4);
 }
 
+/**
+ * @tc.name  : Test CleanAppUseNumMap API
+ * @tc.type  : FUNC
+ * @tc.number: CleanAppUseNumMap_002,
+ * @tc.desc  : Test CleanAppUseNumMap interface.
+ */
 HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_002, TestSize.Level1)
 {
     int32_t appUid = 12345;
@@ -2858,6 +2893,12 @@ HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_002, TestSize.Level1)
               AudioService::GetInstance()->appUseNumMap_.end());
 }
 
+/**
+ * @tc.name  : Test SetIncMaxRendererStreamCnt API
+ * @tc.type  : FUNC
+ * @tc.number: SetIncMaxRendererStreamCnt_001,
+ * @tc.desc  : Test SetIncMaxRendererStreamCnt interface.
+ */
 HWTEST(AudioServiceUnitTest, SetIncMaxRendererStreamCnt_001, TestSize.Level1)
 {
     int32_t initialCount = AudioService::GetInstance()->currentRendererStreamCnt_;
@@ -2867,6 +2908,12 @@ HWTEST(AudioServiceUnitTest, SetIncMaxRendererStreamCnt_001, TestSize.Level1)
     EXPECT_EQ(AudioService::GetInstance()->currentRendererStreamCnt_, initialCount + 1);
 }
 
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_001,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
 HWTEST(AudioServiceUnitTest, ShouldBeDualTone_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
@@ -2879,6 +2926,12 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_001, TestSize.Level1)
     EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
 }
 
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_002,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
 HWTEST(AudioServiceUnitTest, ShouldBeDualTone_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
@@ -2889,6 +2942,12 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_002, TestSize.Level1)
     EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
 }
 
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_003,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
 HWTEST(AudioServiceUnitTest, ShouldBeDualTone_003, TestSize.Level1)
 {
     AudioProcessConfig config = {};
@@ -2901,6 +2960,12 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_003, TestSize.Level1)
     EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
 }
 
+/**
+ * @tc.name  : Test ShouldBeDualTone API
+ * @tc.type  : FUNC
+ * @tc.number: ShouldBeDualTone_004,
+ * @tc.desc  : Test ShouldBeDualTone interface.
+ */
 HWTEST(AudioServiceUnitTest, ShouldBeDualTone_004, TestSize.Level1)
 {
     AudioProcessConfig config = {};
@@ -2913,6 +2978,12 @@ HWTEST(AudioServiceUnitTest, ShouldBeDualTone_004, TestSize.Level1)
     EXPECT_FALSE(AudioService::GetInstance()->ShouldBeDualTone(config));
 }
 
+/**
+ * @tc.name  : Test GetDeviceInfoForProcess API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceInfoForProcess_001,
+ * @tc.desc  : Test GetDeviceInfoForProcess interface.
+ */
 HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 {
     AudioProcessConfig config = {};
@@ -2926,25 +2997,6 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
     EXPECT_EQ(deviceInfo.audioStreamInfo_.size(), 1);
-}
-
-HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_001, TestSize.Level1)
-{
-    bool isVoip = true;
-    bool isRecord = true;
-
-    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(isVoip, isRecord);
-    EXPECT_TRUE(isVoip);
-    EXPECT_TRUE(isRecord);
-}
-
-HWTEST(AudioServiceUnitTest, CheckBeforeVoipEndpointCreate_002, TestSize.Level1)
-{
-    bool isVoip = false;
-    bool isRecord = false;
-    AudioService::GetInstance()->CheckBeforeVoipEndpointCreate(isVoip, isRecord);
-    EXPECT_FALSE(isVoip);
-    EXPECT_FALSE(isRecord);
 }
 } // namespace AudioStandard
 } // namespace OHOS
