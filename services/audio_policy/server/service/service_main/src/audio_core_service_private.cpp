@@ -127,11 +127,11 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             needUpdateActiveDevice = !isUpdateActiveDevice;
             sessionId = streamDesc->sessionId_;
         }
-
         // started stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
             MuteSinkPortForSwitchDevice(streamDesc, reason);
         }
+        UpdatePlaybackStreamFlag(streamDesc, false);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
