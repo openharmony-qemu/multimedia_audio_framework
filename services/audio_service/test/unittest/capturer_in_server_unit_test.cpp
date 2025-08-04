@@ -1307,5 +1307,46 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_042, TestSize.Level1
     auto ret = capturerInServer_->RestoreSession(restoreInfo);
     EXPECT_EQ(NEED_RESTORE, ret);
 }
+
+//   baimiaojie
+HWTEST_F(CapturerInServerUnitTest, ConfigServerBuffer_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+
+    int32_t result = capturerInServer_->ConfigServerBuffer();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_001, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    capturerInServer_->status_ = I_STATUS_RELEASED;
+
+    capturerInServer_->OnStatusUpdate(OPERATION_STARTED);
+
+    EXPECT_EQ(capturerInServer_->status_, I_STATUS_RELEASED);
+}
+
+HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    capturerInServer_->status_ = I_STATUS_STARTED;
+
+    capturerInServer_->OnStatusUpdate(static_cast<IOperation>(999));
+
+    EXPECT_NE(capturerInServer_->status_, I_STATUS_INVALID);
+}
 } // namespace AudioStandard
 } // namespace OHOS

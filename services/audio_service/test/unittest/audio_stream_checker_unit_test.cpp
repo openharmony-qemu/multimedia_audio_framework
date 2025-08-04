@@ -1284,5 +1284,177 @@ HWTEST(AudioStreamCheckerTest, IsMonitorNoDataFrame_001, TestSize.Level1)
     bool ret = checker->IsMonitorNoDataFrame(checkerParamTest);
     EXPECT_EQ(ret, false);
 }
+
+//    baimiaojie
+HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_002, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->checkParaVector_.push_back({1, 1});
+    checker->DeleteCheckerPara(1, 1);
+    EXPECT_EQ(checker->checkParaVector_.size(), 0);
+}
+
+HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_003, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->checkParaVector_.push_back({1, 1});
+    checker->DeleteCheckerPara(2, 2);
+    EXPECT_EQ(checker->checkParaVector_.size(), 1);
+}
+
+HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_004, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->DeleteCheckerPara(1, 1);
+    EXPECT_EQ(checker->checkParaVector_.size(), 0);
+}
+
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_006, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    int32_t pid = 1234;
+    checker->checkParaVector_.push_back({pid, 0});
+    checker->OnRemoteAppDied(pid);
+    EXPECT_EQ(checker->checkParaVector_.size(), 0);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
+    EXPECT_EQ(checker->isKeepCheck_.load(), false);
+}
+
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_007, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    int32_t pid = 1234;
+    checker->checkParaVector_.push_back({5678, 0});
+    checker->OnRemoteAppDied(pid);
+    EXPECT_EQ(checker->checkParaVector_.size(), 1);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
+    EXPECT_NE(checker->isKeepCheck_.load(), true);
+}
+
+HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_008, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    int32_t pid = 1234;
+    checker->OnRemoteAppDied(pid);
+    EXPECT_EQ(checker->checkParaVector_.size(), 0);
+    EXPECT_EQ(checker->isNeedCreateThread_.load(), true);
+    EXPECT_EQ(checker->isKeepCheck_.load(), false);
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_005, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->monitorSwitch_ = false;
+    checker->MonitorCheckFrame();
+    EXPECT_FALSE(checker->monitorSwitch_);
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_006, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->monitorSwitch_ = true;
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.lastUpdateTime = 0;
+    checkerParamTest.hasInitCheck = true;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest); // Assuming CheckPara is a valid struct
+    checker->MonitorCheckFrame();
+    EXPECT_TRUE(checker->monitorSwitch_);
+}
+
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_007, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    para.standbyStartTime = 0;
+    para.standbyStopTime = 0;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
+    EXPECT_EQ(abnormalFrameNum, 0);
+}
+
+HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_008, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    para.standbyStartTime = 0;
+    para.standbyStopTime = 200;
+    int64_t abnormalFrameNum = 0;
+    checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
+    EXPECT_NE(abnormalFrameNum, 10);
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_006, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    para.hasInitCheck = false;
+    para.para.clientUID = 12345;
+    checker->MonitorCheckFrameSub(para);
+    EXPECT_NE(para.lastStatus, -1); // Assuming lastStatus is updated in the function
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_007, TestSize.Level0)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    CheckerParam para;
+    para.hasInitCheck = true;
+    para.isMonitorMuteFrame = true;
+    para.muteFrameNum = 10;
+    checker->MonitorCheckFrameSub(para);
+    EXPECT_NE(para.lastStatus, -1); // Assuming lastStatus is updated in the function
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->monitorSwitch_ = false;
+    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, false);
+    EXPECT_FALSE(checker->monitorSwitch_);
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_009, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->monitorSwitch_ = true;
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.lastUpdateTime = 0;
+    checkerParamTest.hasInitCheck = true;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, true);
+    EXPECT_TRUE(checker->monitorSwitch_);
+}
+
+HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_010, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+    checker->monitorSwitch_ = true;
+    CheckerParam checkerParamTest;
+    checkerParamTest.pid = 0;
+    checkerParamTest.lastUpdateTime = 0;
+    checkerParamTest.hasInitCheck = false;
+    checker->checkParaVector_.clear();
+    checker->checkParaVector_.push_back(checkerParamTest);
+    checker->MonitorOnAllCallback(DATA_TRANS_RESUME, false);
+    EXPECT_TRUE(checker->monitorSwitch_);
+}
 }
 }
