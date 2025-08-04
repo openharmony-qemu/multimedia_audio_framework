@@ -1278,7 +1278,7 @@ bool AudioRendererPrivate::Stop()
 
 void AudioRendererPrivate::SetReleaseFlagWithLock(bool releaseFlag)
 {
-    std::unique_lock<std::shared_mutex> lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
     releaseFlag_ = releaseFlag;
 }
 
