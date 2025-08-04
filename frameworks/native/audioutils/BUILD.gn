@@ -61,7 +61,6 @@ ohos_shared_library("audio_utils") {
     "hitrace:hitrace_meter",
     "init:libbegetutil",
     "ipc:ipc_single",
-    "drivers_interface_audio:libaudio_proxy_5.0",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",

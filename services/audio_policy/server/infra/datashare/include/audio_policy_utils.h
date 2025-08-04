@@ -31,7 +31,6 @@
 #include "audio_state_manager.h"
 #include "audio_device_manager.h"
 #include "audio_stream_collector.h"
-#include "audio_stream_descriptor.h"
 
 #include "audio_a2dp_offload_flag.h"
 #include "audio_policy_config_manager.h"
@@ -79,7 +78,6 @@ public:
     DeviceType GetDeviceType(const std::string &deviceName);
     std::string GetEncryptAddr(const std::string &addr);
     std::string GetDevicesStr(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
-    int32_t GetRealUid(const std::shared_ptr<AudioStreamDescriptor> &streamDesc);
 
     AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);
     PreferredType GetPreferredTypeByStreamUsage(StreamUsage streamUsage);

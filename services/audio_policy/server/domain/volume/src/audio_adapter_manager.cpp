@@ -3063,6 +3063,7 @@ void AudioAdapterManager::SetAbsVolumeScene(bool isAbsVolumeScene)
     audioServiceAdapter_->SetAbsVolumeStateToEffect(isAbsVolumeScene);
     AudioVolumeManager::GetInstance().SetSharedAbsVolumeScene(isAbsVolumeScene_);
     if (currentActiveDevice_.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        volumeDataMaintainer_.GetVolume(DEVICE_TYPE_BLUETOOTH_A2DP, STREAM_MUSIC);
         SetVolumeDb(STREAM_MUSIC);
     } else {
         AUDIO_INFO_LOG("The currentActiveDevice is not A2DP or nearlink device");
@@ -3227,7 +3228,7 @@ void AudioAdapterManager::RegisterDoNotDisturbStatus()
     sptr observer = settingProvider.CreateObserver(DO_NOT_DISTURB_STATUS, updateFuncDoNotDisturb);
     ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
     if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed");
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus failed! Err: %{public}d", ret);
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus successfully");
     }
@@ -3251,7 +3252,7 @@ void AudioAdapterManager::RegisterDoNotDisturbStatusWhiteList()
         updateFuncDoNotDisturbWhiteList);
     ErrCode ret = settingProvider.RegisterObserver(observer, "secure");
     if (ret != ERR_OK) {
-        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed");
+        AUDIO_ERR_LOG("RegisterObserver doNotDisturbStatus WhiteList failed! Err: %{public}d", ret);
     } else {
         AUDIO_INFO_LOG("Register doNotDisturbStatus WhiteList successfully");
     }

@@ -183,10 +183,12 @@ std::string IdHandler::ParseInfo(uint32_t id)
 
 uint32_t IdHandler::CreateInfoId(void)
 {
+    std::lock_guard<std::mutex> lock(freeInfoIdMtx_);
+
     if (freeInfoIdSet_.empty()) {
         return infoIdMap_.size();
     }
-    std::lock_guard<std::mutex> lock(freeInfoIdMtx_);
+
     uint32_t infoId = *freeInfoIdSet_.begin();
     freeInfoIdSet_.erase(infoId);
     return infoId;
