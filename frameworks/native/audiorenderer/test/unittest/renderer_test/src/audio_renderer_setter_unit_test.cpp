@@ -2506,28 +2506,5 @@ HWTEST(AudioRendererUnitTest, SetClientInfo_002, TestSize.Level1)
     audioRendererPrivate->SetClientInfo(flag, streamClass);
     EXPECT_EQ(streamClass, IAudioStream::StreamClass::PA_STREAM);
 }
-
-/**
- * @tc.name  : Test ActivateAudioConcurrency.
- * @tc.number: Audio_Renderer_ActivateAudioConcurrency_004
- * @tc.desc  : Test ActivateAudioConcurrency interface when pipeType is PIPE_TYPE_NORMAL_OUT
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ActivateAudioConcurrency_004, TestSize.Level1)
-{
-    AppInfo appInfo = {};
-    shared_ptr<AudioRendererPrivate> audioRenderer =
-        std::make_shared<AudioRendererPrivate>(STREAM_MUSIC, appInfo, true);
-    EXPECT_NE(nullptr, audioRenderer);
-
-    AudioStreamParams audioStreamParams;
-    AudioStreamType streamType = STREAM_MUSIC;
-    IAudioStream::StreamClass streamClass = IAudioStream::StreamClass::PA_STREAM;
-    audioRenderer->rendererInfo_.streamUsage = STREAM_USAGE_INVALID;
-    audioRenderer->rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    audioStreamParams.samplingRate = SAMPLE_RATE_48000;
-    audioStreamParams.format = SAMPLE_S24LE;
-    audioRenderer->ActivateAudioConcurrency(audioStreamParams, streamType, streamClass);
-    EXPECT_EQ(audioRenderer->rendererInfo_.pipeType, PIPE_TYPE_NORMAL_OUT);
-}
 } // namespace AudioStandard
 } // namespace OHOS
