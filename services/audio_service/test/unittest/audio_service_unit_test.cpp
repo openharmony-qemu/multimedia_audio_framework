@@ -2618,7 +2618,7 @@ HWTEST(AudioServiceUnitTest, ForceStopAudioStream_002, TestSize.Level1)
  * @tc.number: ConfigCoreServiceProvider_001
  * @tc.desc  : Test ConfigCoreServiceProvider interface.
  */
-HWTEST(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, ConfigCoreServiceProvider_001, TestSize.Level1)
 {
     auto coreServiceHandler = CoreServiceHandler::GetInstance();
     sptr<ICoreServiceProviderIpc> provider = nullptr;
@@ -2632,7 +2632,7 @@ HWTEST(CoreServiceHandlerUnitTest, ConfigCoreServiceProvider_001, TestSize.Level
  * @tc.number: AddThread_001
  * @tc.desc  : Test AddThread interface.
  */
-HWTEST(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, AddThread_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = 10;
@@ -2648,7 +2648,7 @@ HWTEST(AudioWorkgroupUnitTest, AddThread_001, TestSize.Level1)
  * @tc.number: AddThread_002
  * @tc.desc  : Test AddThread interface.
  */
-HWTEST(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, AddThread_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = 10;
@@ -2664,7 +2664,7 @@ HWTEST(AudioWorkgroupUnitTest, AddThread_002, TestSize.Level1)
  * @tc.number: RemoveThread_001
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, RemoveThread_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = -1;
@@ -2680,7 +2680,7 @@ HWTEST(AudioWorkgroupUnitTest, RemoveThread_001, TestSize.Level1)
  * @tc.number: RemoveThread_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, RemoveThread_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t tid = -1;
@@ -2696,7 +2696,7 @@ HWTEST(AudioWorkgroupUnitTest, RemoveThread_002, TestSize.Level1)
  * @tc.number: Start_001
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, Start_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(100, 100);
@@ -2709,7 +2709,7 @@ HWTEST(AudioWorkgroupUnitTest, Start_001, TestSize.Level1)
  * @tc.number: Start_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, Start_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(100, 200);
@@ -2722,7 +2722,7 @@ HWTEST(AudioWorkgroupUnitTest, Start_002, TestSize.Level1)
  * @tc.number: Start_003
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, Start_003, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int32_t result = workgroup.Start(200, 100);
@@ -2735,7 +2735,7 @@ HWTEST(AudioWorkgroupUnitTest, Start_003, TestSize.Level1)
  * @tc.number: Stop_003
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, Stop_001, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int result = workgroup.Stop();
@@ -2750,7 +2750,7 @@ HWTEST(AudioWorkgroupUnitTest, Stop_001, TestSize.Level1)
  * @tc.number: Stop_002
  * @tc.desc  : Test AudioWorkgroup interface.
  */
-HWTEST(AudioWorkgroupUnitTest, Stop_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, Stop_002, TestSize.Level1)
 {
     AudioWorkgroup workgroup(1);
     int result = workgroup.Stop();
@@ -2854,7 +2854,8 @@ HWTEST(AudioServiceUnitTest, CleanAppUseNumMap_002, TestSize.Level1)
 
     AudioService::GetInstance()->CleanAppUseNumMap(appUid);
 
-    EXPECT_NE(AudioService::GetInstance()->appUseNumMap_.find(appUid), AudioService::GetInstance()->appUseNumMap_.end());
+    EXPECT_NE(AudioService::GetInstance()->appUseNumMap_.find(appUid),
+              AudioService::GetInstance()->appUseNumMap_.end());
 }
 
 HWTEST(AudioServiceUnitTest, SetIncMaxRendererStreamCnt_001, TestSize.Level1)

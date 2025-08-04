@@ -2526,7 +2526,7 @@ HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
  * @tc.number: SetAsrVoiceMuteMode_001
  * @tc.desc  : Test SetAsrVoiceMuteMode interface.
  */
-HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
+HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     int32_t asrVoiceMuteMode = 0;
