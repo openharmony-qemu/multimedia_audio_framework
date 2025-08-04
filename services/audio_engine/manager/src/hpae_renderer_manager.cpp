@@ -1308,7 +1308,6 @@ void HpaeRendererManager::DisableCollaboration()
             ReConnectNodeForCollaboration(key);
         }
     }
-    hpaeCoBufferNode_.reset();
 }
 
 int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
