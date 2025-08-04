@@ -201,6 +201,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
     "fuzztest/audiocollaborativeservice_fuzzer:fuzztest",
     "fuzztest/audioconnecteddevice_fuzzer:fuzztest",
+    "fuzztest/audiocoreservice_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
     "fuzztest/audiodevicecommon_fuzzer:fuzztest",
