@@ -2651,11 +2651,32 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_001, TestSize.Level1)
 
     auto result = audioCoreService->ActivateInputDevice(streamDesc);
     ASSERT_EQ(result, SUCCESS);
-    
-    deviceDesc->deviceType_ = DeviceType::DEVICE_TYPE_NONE;
-    result = audioCoreService->ActivateInputDevice(streamDesc);
-    ASSERT_EQ(result, SUCCESS);
     AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_001 end");
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: ActivateInputDevice_002
+ * @tc.desc  : Test AudioCoreService::ActivateInputDevice()
+ */
+HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_002 start");
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+
+    auto deviceDesc = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_NONE,
+        DeviceRole::INPUT_DEVICE);
+    ASSERT_NE(deviceDesc, nullptr);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto result = audioCoreService->ActivateInputDevice(streamDesc);
+    ASSERT_EQ(result, SUCCESS);
+    AUDIO_INFO_LOG("AudioCoreServicePrivateTest ActivateInputDevice_002 end");
 }
 
 /**
