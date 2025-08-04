@@ -224,18 +224,23 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
 {
     // get each streamDesc in each newPipe to judge action 
     for (auto &newPipeInfo : newPipeInfoList) {
+        if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
+            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
+        }
+        AUDIO_INFO_LOG("[PipeFetchInfo] Name %{public}s, PipeAction: %{public}d",
+            newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
+
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
             streamDesc->streamAction_ = JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->sessionId_]);
-            AUDIO_INFO_LOG("[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
+            AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
                 "streamAction %{public}d", streamDesc->sessionId_,
                 streamDescToOldPipeInfo[streamDesc->sessionId_]->routeFlag_,
                 newPipeInfo->routeFlag_, streamDesc->streamAction_);
         }
-        if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
-            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
+        if (newPipeInfo->streamDescriptors_.size() == 0) {
+            AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
         }
-        AUDIO_INFO_LOG("[PipeFetchInfo] AdapterName %{public}s, PipeAction: %{public}d",
-            newPipeInfo->routeFlag_, newPipeInfo->pipeAction_);
+
     }
 }
 
@@ -275,6 +280,13 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     DecideFinalRouteFlag(streamDescs);
     ProcessNewPipeList(oldPipeInfoList, newPipeInfoList, streamDescs);
     DecidePipesAndStreamAction(oldPipeInfoList, newPipeInfoList, streamDescToPipeInfo);
+
+    // check is pipe update
+    for (auto &pipeInfo : oldPipeInfoList) {
+        if (pipeInfo->streamDescriptors_.size() == 0) {
+            pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        }
+    }
     return newPipeInfoList;
 }
 
