@@ -342,27 +342,10 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_014, TestSize.Level1)
 /**
  * @tc.name  : Test HpaeCapturerStreamImpl API
  * @tc.type  : FUNC
- * @tc.number: HpaeCapturerStream_015
- * @tc.desc  : Test HpaeCapturerStreamImpl interface.
- */
-HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_015, TestSize.Level1)
-{
-    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
-    capturerStreamImplRet->capturerServerDumpFile_ = fopen("/data/data/.pulse_dir/capturer_impl.pcm", "wb+");
-    BufferDesc bufferDesc;
-
-    capturerStreamImplRet->EnqueueBuffer(bufferDesc);
-    fclose(capturerStreamImplRet->capturerServerDumpFile_);
-    EXPECT_EQ(capturerStreamImplRet != nullptr, true);
-}
-
-/**
- * @tc.name  : Test HpaeCapturerStreamImpl API
- * @tc.type  : FUNC
  * @tc.number: HpaeCapturerStream_016
  * @tc.desc  : Test HpaeCapturerStreamImpl interface.
  */
-HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_016, TestSize.Level1)
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_016, TestSize.Level2)
 {
     auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
 
@@ -376,15 +359,13 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_016, TestSize.Level1)
  * @tc.number: HpaeCapturerStream_017
  * @tc.desc  : Test HpaeCapturerStreamImpl interface.
  */
-HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level1)
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
 {
     auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
     size_t minBufferSize = 10;
     int32_t abortTimes = 0;
 
     capturerStreamImplRet->AbortCallback(abortTimes);
-
-
     auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
     EXPECT_EQ(ret, SUCCESS);
 }

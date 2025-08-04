@@ -182,6 +182,7 @@ private:
     void UpdateLatestForWorkgroup(float systemVolume);
     int32_t DisableInnerCapHandle(int32_t innerCapId);
     int32_t InitDupStreamVolume(uint32_t dupStreamIndex);
+    void ProcessManagerType();
 private:
     std::mutex statusLock_;
     std::condition_variable statusCv_;

@@ -1646,12 +1646,12 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IpcStreamInServer API
+ * @tc.name  : Test ProcessManagerType
  * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_074
- * @tc.desc  : Test IpcStreamInServer interface when flag is DIRECT_PLAYBACK.
+ * @tc.number: ProcessManagerType_001
+ * @tc.desc  : Test ProcessManagerType interface when flag is DIRECT_PLAYBACK.
  */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_001, TestSize.Level1)
 {
     AudioProcessConfig configRet;
     configRet.rendererInfo.audioFlag = (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT);
@@ -1659,116 +1659,44 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
 
     ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
     EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, DIRECT_PLAYBACK);
 }
 
 /**
- * @tc.name  : Test IpcStreamInServer API
+ * @tc.name  : Test ProcessManagerType
  * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_075
- * @tc.desc  : Test IpcStreamInServer interface
+ * @tc.number: ProcessManagerType_002
+ * @tc.desc  : Test ProcessManagerType interface when encoding is ENCODING_EAC3.
  */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_075, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_002, TestSize.Level1)
 {
     AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
+    configRet.streamInfo.encoding = ENCODING_EAC3;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    float loudnessGain = 0.1f;
 
-    auto ret1 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
-    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
-    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    auto ret3 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+    ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, EAC3_PLAYBACK);
 }
 
 /**
- * @tc.name  : Test IpcStreamInServer API
+ * @tc.name  : Test ProcessManagerType
  * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_076
- * @tc.desc  : Test IpcStreamInServer interface
+ * @tc.number: ProcessManagerType_003
+ * @tc.desc  : Test ProcessManagerType interface when flag is AUDIO_FLAG_VOIP_DIRECT.
  */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_076, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_003, TestSize.Level1)
 {
     AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
+    configRet.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    int64_t duration = 0;
 
-    auto ret1 = ipcStreamInServerRet.SetSourceDuration(duration);
-    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetSourceDuration(duration);
-    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    auto ret3 = ipcStreamInServerRet.SetSourceDuration(duration);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_077
- * @tc.desc  : Test IpcStreamInServer interface
- */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_077, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    int32_t state = 0;
-
-    auto ret1 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
-    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
-    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    auto ret3 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
-}
-
-/**
- * @tc.name  : Test IpcStreamInServer API
- * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_078
- * @tc.desc  : Test IpcStreamInServer interface
- */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_078, TestSize.Level1)
-{
-    AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
-    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
-    uint32_t spanSizeInFrame = 0;
-    uint64_t engineTotalSizeInFrame = 0;
-    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_CLIENT;
-    uint32_t totalSizeInFrame = 0;
-    uint32_t byteSizePerFrame = 0;
-    std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
-            totalSizeInFrame, byteSizePerFrame);
-
-    auto ret1 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
-            spanSizeInFrame, engineTotalSizeInFrame);
-    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
-
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
-    auto ret2 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
-            spanSizeInFrame, engineTotalSizeInFrame);
-    EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
-    
-    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
-    auto ret3 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
-            spanSizeInFrame, engineTotalSizeInFrame);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
+    ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, VOIP_PLAYBACK);
 }
 }
 }

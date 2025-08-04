@@ -32,6 +32,8 @@ void AudioInterruptDfxCollector::FlushDfxMsg(uint32_t index, int32_t appUid)
         AUDIO_INFO_LOG("flush failed index=%{public}d, appUid=%{public}d", index, appUid);
         return;
     }
+
+    std::lock_guard<std::mutex> lock(mutex_);
     auto &item = dfxInfos_[index];
     AUDIO_INFO_LOG("FlushDfxMsg..., index=%{public}u, appUid=%{public}d, size=%{public}d", index, appUid,
         static_cast<int32_t>(item.size()));

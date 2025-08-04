@@ -198,15 +198,14 @@ HWTEST(SleAudioDeviceManagerUnitTest, MixAudioDeviceTest_003, TestSize.Level1)
 
     std::string device = "LocalDevice";
     uint32_t streamType = 1;
-    int32_t clientUid = 1000;
 
     int32_t ret = sleAudioDeviceManager_->SetActiveSinkDevice(device, streamType);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    ret = sleAudioDeviceManager_->StartPlaying(device, streamType, clientUid);
+    ret = sleAudioDeviceManager_->StartPlaying(device, streamType);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    ret = sleAudioDeviceManager_->StopPlaying(device, streamType, clientUid);
+    ret = sleAudioDeviceManager_->StopPlaying(device, streamType);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 }
 
@@ -230,12 +229,11 @@ HWTEST(SleAudioDeviceManagerUnitTest, MixAudioDeviceTest_004, TestSize.Level1)
     EXPECT_EQ(ret, SUCCESS);
 
     uint32_t element = 100;
-    int32_t clientUid = 1000;
     sleAudioDeviceManager_->startedSleStreamType_[device][streamType].insert(element);
-    ret = sleAudioDeviceManager_->StartPlaying(device, streamType, clientUid);
+    ret = sleAudioDeviceManager_->StartPlaying(device, streamType);
     EXPECT_EQ(ret, SUCCESS);
 
-    ret = sleAudioDeviceManager_->StopPlaying(device, streamType, clientUid);
+    ret = sleAudioDeviceManager_->StopPlaying(device, streamType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -502,11 +500,10 @@ HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_001, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t clientUid = 1000;
-    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage, clientUid);
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage);
     EXPECT_EQ(ret, ERROR);
 
-    int32_t result = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType, clientUid);
+    int32_t result = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -527,14 +524,12 @@ HWTEST(SleAudioDeviceManagerUnitTest, StartPlaying_002, TestSize.Level1)
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-
-    int32_t clientUid = 1000;
-    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage, clientUid);
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceDesc, streamUsage);
     EXPECT_EQ(ret, SUCCESS);
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
-    int32_t result = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType, clientUid);
+    int32_t result = sleAudioDeviceManager_->StartPlaying(deviceDesc, sourceType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -554,11 +549,10 @@ HWTEST(SleAudioDeviceManagerUnitTest, StopPlaying_001, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t clientUid = 1000;
-    int32_t ret = sleAudioDeviceManager_->StopPlaying(deviceDesc, streamUsage, clientUid);
+    int32_t ret = sleAudioDeviceManager_->StopPlaying(deviceDesc, streamUsage);
     EXPECT_EQ(ret, ERROR);
 
-    int32_t result = sleAudioDeviceManager_->StopPlaying(deviceDesc, sourceType, clientUid);
+    int32_t result = sleAudioDeviceManager_->StopPlaying(deviceDesc, sourceType);
     EXPECT_EQ(result, ERROR);
 }
 
@@ -579,14 +573,12 @@ HWTEST(SleAudioDeviceManagerUnitTest, StopPlaying_002, TestSize.Level1)
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-
-    int32_t clientUid = 1000;
-    int32_t ret = sleAudioDeviceManager_->StopPlaying(deviceDesc, streamUsage, clientUid);
+    int32_t ret = sleAudioDeviceManager_->StopPlaying(deviceDesc, streamUsage);
     EXPECT_EQ(ret, SUCCESS);
 
     deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
-    int32_t result = sleAudioDeviceManager_->StopPlaying(deviceDesc, sourceType, clientUid);
+    int32_t result = sleAudioDeviceManager_->StopPlaying(deviceDesc, sourceType);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -935,14 +927,13 @@ HWTEST(SleAudioDeviceManagerUnitTest, UpdateStreamTypeMap_001, TestSize.Level1)
     uint32_t sessionId = 1000;
     bool isAdd = true;
 
-    int32_t clientUid = 1000;
     sleAudioDeviceManager_->UpdateStreamTypeMap(deviceAddr, streamType, sessionId, isAdd);
-    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceAddr, streamType, clientUid);
+    int32_t ret = sleAudioDeviceManager_->StartPlaying(deviceAddr, streamType);
     EXPECT_EQ(ret, SUCCESS);
 
     isAdd = false;
     sleAudioDeviceManager_->UpdateStreamTypeMap(deviceAddr, streamType, sessionId, isAdd);
-    ret = sleAudioDeviceManager_->StopPlaying(deviceAddr, streamType, clientUid);
+    ret = sleAudioDeviceManager_->StopPlaying(deviceAddr, streamType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
