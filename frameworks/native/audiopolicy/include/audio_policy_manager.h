@@ -67,6 +67,8 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);

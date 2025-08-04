@@ -288,6 +288,42 @@ void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
     appMuteStatusMap_[appUid][ownedAppUid] = muted;
 }
 
+void VolumeDataMaintainer::SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    if (muted) {
+        // Set mute status for the given app and stream type
+        appStreamMuteMap_[appUid][streamType] = true;
+    } else {
+        auto uidIt = appStreamMuteMap_.find(appUid);
+        if (uidIt != appStreamMuteMap_.end()) {
+            // Remove the stream type if mute is false
+            uidIt->second.erase(streamType);
+            // If no more stream types under this appUid, remove the appUid entry
+            if (uidIt->second.empty()) {
+                appStreamMuteMap_.erase(uidIt);
+            }
+        }
+    }
+}
+
+bool VolumeDataMaintainer::IsAppStreamMuted(int32_t appUid, AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto uidIt = appStreamMuteMap_.find(appUid);
+    if (uidIt == appStreamMuteMap_.end()) {
+        return false;
+    }
+
+    const auto &streamMap = uidIt->second;
+    auto streamIt = streamMap.find(streamType);
+    if (streamIt == streamMap.end()) {
+        return false;
+    }
+
+    return streamIt->second;
+}
+
 void VolumeDataMaintainer::GetAppMute(int32_t appUid, bool &isMute)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);

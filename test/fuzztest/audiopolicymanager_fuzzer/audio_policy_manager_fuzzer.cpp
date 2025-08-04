@@ -412,6 +412,8 @@ void AudioPolicyManagerEightFuzzTest()
     std::shared_ptr<AudioClientInfoMgrCallback> audioClientInfoMgrCallback;
     AudioStreamChangeInfo streamChangeInfo;
     int32_t sessionId = GetData<int32_t>();
+    bool isMuted = GetData<bool>();
+    int32_t appUid = GetData<int32_t>();
 
     AudioPolicyManager::GetInstance().GetDefaultOutputDevice(deviceType);
     AudioPolicyManager::GetInstance().SetDefaultOutputDevice(deviceType);
@@ -431,6 +433,7 @@ void AudioPolicyManagerEightFuzzTest()
     AudioPolicyManager::GetInstance().ResetClientTrackerStubMap();
     AudioPolicyManager::GetInstance().CheckAndRemoveClientTrackerStub(AUDIO_MODE_PLAYBACK, streamChangeInfo);
     AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionId);
+    AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, isMuted);
 }
 
 void AudioPolicyManagerDeviceOneFuzzTest()

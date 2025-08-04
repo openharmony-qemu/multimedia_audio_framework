@@ -568,6 +568,13 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
+
+int32_t AudioSystemManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
+}
 // LCOV_EXCL_STOP
 
 int32_t AudioSystemManager::UnsetSelfAppVolumeCallback(

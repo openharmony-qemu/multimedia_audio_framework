@@ -1012,6 +1012,12 @@ int32_t AudioPolicyServer::SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel
     return SetAppVolumeLevelInternal(appUid, volumeLevel, volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI);
 }
 
+int32_t AudioPolicyServer::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return SetAppRingMutedInternal(appUid, muted);
+}
+
 int32_t AudioPolicyServer::SetSystemVolumeLevel(int32_t streamTypeIn, int32_t volumeLevel, int32_t volumeFlag,
     int32_t uid)
 {
@@ -1476,6 +1482,14 @@ int32_t AudioPolicyServer::SetAppVolumeLevelInternal(int32_t appUid, int32_t vol
     AUDIO_INFO_LOG("SetAppVolumeLevelInternal appUid: %{public}d, volumeLevel: %{public}d, updateUi: %{public}d",
         appUid, volumeLevel, isUpdateUi);
     return SetAppSingleStreamVolume(appUid, volumeLevel, isUpdateUi);
+}
+
+int32_t AudioPolicyServer::SetAppRingMutedInternal(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("SetAppRingMutedInternal appUid: %{public}d, muted: %{public}d", appUid, muted);
+    int32_t ret = audioVolumeManager_.SetAppRingMuted(appUid, muted);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Failed to set app ring to mute");
+    return SUCCESS;
 }
 
 int32_t AudioPolicyServer::SetAppVolumeMutedInternal(int32_t appUid, bool muted, bool isUpdateUi)

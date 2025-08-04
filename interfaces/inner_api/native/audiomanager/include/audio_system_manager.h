@@ -166,6 +166,15 @@ public:
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
+    /**
+     * @brief Set the mute state of the VoIP ringtone for the specified app.
+     * @param appUid The UID fo the app.
+     * @param muted Set to true to mute the VoIP ringtone, false to unmute.
+     * @return Returns {@link SUCCESS} if the app ringtone is set successfully; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     /**
