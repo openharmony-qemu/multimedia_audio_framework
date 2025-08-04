@@ -41,10 +41,11 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
 bool CheckSourceInfoIsDifferent(const HpaeSourceInfo &info, const HpaeSourceInfo &oldInfo);
 int32_t TransModuleInfoToHpaeSourceInfo(const AudioModuleInfo &audioModuleInfo, HpaeSourceInfo &sourceInfo);
 AudioSampleFormat TransFormatFromStringToEnum(std::string format);
+void PrintAudioModuleInfo(const AudioModuleInfo &audioModuleInfo);
 std::string TransFormatFromEnumToString(AudioSampleFormat format);
+AudioPipeType ConvertDeviceClassToPipe(const std::string &deviceClass);
 void TransNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo, bool isCollaborationEnabled);
 void RecoverNodeInfoForCollaboration(HpaeNodeInfo &nodeInfo);
-AudioPipeType ConvertDeviceClassToPipe(std::string deviceClass);
 
 // for hidumper device / stream info trans, param should be HpaeSinkInfo / HpaeSourceInfo / HpaeStreamInfo
 template <typename T>

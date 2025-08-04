@@ -71,9 +71,8 @@ struct PcmBufferInfo {
         : ch(ch1), frameLen(frameLen1), rate(rate1), channelLayout(channelLayout1)
     {}
     PcmBufferInfo(uint32_t ch1, uint32_t frameLen1, uint32_t rate1, uint64_t channelLayout1,
-        uint32_t frames1, bool isMultiFrames)
-        : ch(ch1), frameLen(frameLen1), rate(rate1), channelLayout(channelLayout1), frames(frames1),
-        isMultiFrames(isMultiFrames)
+        uint32_t frames1)
+        : ch(ch1), frameLen(frameLen1), rate(rate1), channelLayout(channelLayout1), frames(frames1)
     {}
     PcmBufferInfo() = default;
     uint32_t ch;

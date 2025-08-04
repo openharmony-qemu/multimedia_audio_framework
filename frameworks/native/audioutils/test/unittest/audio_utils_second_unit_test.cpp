@@ -147,29 +147,6 @@ HWTEST(AudioUtilsUnitTest, ConvertFromFloatTo24Bit_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ConvertToHDIAudioInputType API
- * @tc.type  : FUNC
- * @tc.number: ConvertToHDIAudioInputType_001
- * @tc.desc  : Test ConvertToHDIAudioInputType
- */
-HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
-{
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_ULTRASONIC);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_CALL);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_CAMCORDER);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_EC);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_MIC_REF);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_UNPROCESSED);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_LIVE);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VIRTUAL_CAPTURE);
-    EXPECT_FALSE(static_cast<size_t>(0));
-}
-
-/**
  * @tc.name  : Test IsInnerCapSinkName API
  * @tc.type  : FUNC
  * @tc.number: IsInnerCapSinkName_001

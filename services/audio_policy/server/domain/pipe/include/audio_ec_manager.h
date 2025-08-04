@@ -46,7 +46,6 @@ public:
     }
 
     void Init(int32_t ecEnableState, int32_t micRefEnableState);
-    void PrepareAndOpenNormalSource(SessionInfo &sessionInfo, PipeStreamPropInfo &targetInfo, SourceType targetSource);
     void CloseNormalSource();
     AudioEcInfo GetAudioEcInfo();
     void ResetAudioEcInfo();

@@ -473,15 +473,14 @@ int32_t AudioCoreService::StopClient(uint32_t sessionId)
 
 int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg opMsg)
 {
-    bool isRemoved = true;
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
         AUDIO_INFO_LOG("Modem communication, sessionId %{public}u", sessionId);
+        bool isRemoved = true;
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetModemCommunicationStreamDescById(sessionId),
             isRemoved);
         pipeManager_->RemoveModemCommunicationId(sessionId);
         return SUCCESS;
     }
-    sleAudioDeviceManager_.UpdateSleStreamTypeCount(pipeManager_->GetStreamDescById(sessionId), isRemoved);
     pipeManager_->RemoveClient(sessionId);
     audioOffloadStream_.ResetOffloadStatus(sessionId);
     RemoveUnusedPipe();
