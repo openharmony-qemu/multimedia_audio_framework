@@ -4559,5 +4559,67 @@ HWTEST(AudioRendererUnitTest, InitSwitchInfo_002, TestSize.Level1)
     audioRendererPrivate->InitSwitchInfo(targetClass, info);
     EXPECT_EQ(info.params.originalSessionId, INVALID_SESSION_ID);
 }
+
+/**
+ * @tc.name  : Test FadeInAudioBuffer
+ * @tc.number: FadeInAudioBuffer_001
+ * @tc.desc  : Test FadeInAudioBuffer the branch when bufLength > dataLength
+ */
+HWTEST(AudioRendererUnitTest, FadeInAudioBuffer_001, TestSize.Level1)
+{
+    BufferDesc buffer;
+    buffer.bufLength = 2;
+    buffer.dataLength = 1;
+    int32_t result = AudioRenderer::FadeInAudioBuffer(buffer, SAMPLE_U8, STEREO);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test FadeOutAudioBuffer
+ * @tc.number: FadeOutAudioBuffer_001
+ * @tc.desc  : Test FadeOutAudioBuffer the branch when bufLength > dataLength
+ */
+HWTEST(AudioRendererUnitTest, FadeOutAudioBuffer_001, TestSize.Level1)
+{
+    BufferDesc buffer;
+    buffer.bufLength = 2;
+    buffer.dataLength = 1;
+    int32_t result = AudioRenderer::FadeOutAudioBuffer(buffer, SAMPLE_U8, STEREO);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test MuteAudioBuffer
+ * @tc.number: MuteAudioBuffer_001
+ * @tc.desc  : Test MuteAudioBuffer the branch when format is SAMPLE_U8 or SAMPLE_S16LE
+ */
+HWTEST(AudioRendererUnitTest, MuteAudioBuffer_001, TestSize.Level1)
+{
+    uint8_t addr = 1;
+    size_t offset = 1;
+    size_t length = 1;
+    int32_t result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_U8);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = AudioRenderer::MuteAudioBuffer(&addr, offset, length, SAMPLE_S16LE);
+    EXPECT_EQ(result, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test NotifyForcedEvent
+ * @tc.number: NotifyForcedEvent_001
+ * @tc.desc  : Test NotifyForcedEvent the branch when InterruptHint is INTERRUPT_HINT_RESUME
+ */
+HWTEST(AudioRendererUnitTest, NotifyForcedEvent_001, TestSize.Level1)
+{
+    AudioStreamParams audioStreamParams;
+    std::shared_ptr<IAudioStream> audioStream = IAudioStream::GetPlaybackStream(IAudioStream::FAST_STREAM,
+        audioStreamParams, STREAM_DEFAULT, 1);
+    AudioInterrupt audioInterrupt;
+    auto audioInterruptCallback = std::make_shared<AudioRendererInterruptCallbackImpl>(audioStream, audioInterrupt);
+    InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_RESUME, 20.0f};
+    audioInterruptCallback->NotifyForcedEvent(interruptEvent);
+    EXPECT_FALSE(audioInterruptCallback->isForcePaused_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
