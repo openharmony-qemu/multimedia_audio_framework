@@ -20,23 +20,6 @@
 namespace OHOS {
 namespace AudioStandard {
 
-bool AudioPipeInfo::HasSameStreams(std::shared_ptr<AudioPipeInfo> &pipeInfo1, std::shared_ptr<AudioPipeInfo> &pipeInfo2)
-{
-    if (pipeInfo1->streamDescriptors_.size() != pipeInfo2->streamDescriptors_.size()) {
-        return false;
-    }
-    for (auto &streamDesc1 : pipeInfo1->streamDescriptors_) {
-        auto iter = std::find_if(pipeInfo2->streamDescriptors_.begin(), pipeInfo2->streamDescriptors_.end(),
-            [&](const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
-                return streamDesc1->sessionId_ == streamDesc2->sessionId_;
-            });
-        if (iter == pipeInfo2->streamDescriptors_.end()) {
-            return false;
-        }
-    }
-    return true;
-}
-
 AudioPipeInfo::AudioPipeInfo()
 {
 }

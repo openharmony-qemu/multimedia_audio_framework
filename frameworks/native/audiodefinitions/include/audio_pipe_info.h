@@ -54,8 +54,6 @@ public:
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_ = {};
 
-    static bool HasSameStreams(std::shared_ptr<AudioPipeInfo> &pipeInfo1, std::shared_ptr<AudioPipeInfo> &pipeInfo2);
-
     AudioPipeInfo();
 
     virtual ~AudioPipeInfo();
