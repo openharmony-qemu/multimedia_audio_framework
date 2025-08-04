@@ -598,7 +598,6 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
-    ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(writtenSize);
 
     return speedCached ? oriBufferSize : writtenSize;
