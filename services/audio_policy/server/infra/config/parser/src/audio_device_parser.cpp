@@ -46,10 +46,8 @@ bool AudioDeviceParser::LoadConfiguration()
 {
     char buf[MAX_PATH_LEN];
     char *path = GetOneCfgFile(DEVICE_CONFIG_FILE, buf, MAX_PATH_LEN);
-    CHECK_AND_RETURN_RET_LOG(path != nullptr && *path != '\0', ERROR, "invalid path!");
     curNode_ = AudioXmlNode::Create();
-    int32_t ret = curNode_->Config(path, nullptr, 0);
-    if (ret != SUCCESS) {
+    if (path == nullptr || *path == '\0' || curNode_->Config(path, nullptr, 0) != SUCCESS) {
         Trace trace("SYSEVENT FAULT EVENT LOAD_CONFIG_ERROR, CATEGORY: "
             + std::to_string(Media::MediaMonitor::AUDIO_DEVICE_PRIVACY));
         std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
@@ -57,6 +55,7 @@ bool AudioDeviceParser::LoadConfiguration()
             Media::MediaMonitor::FAULT_EVENT);
         bean->Add("CATEGORY", Media::MediaMonitor::AUDIO_DEVICE_PRIVACY);
         Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+        return false;
     }
     CHECK_AND_RETURN_RET_LOG(curNode_->IsNodeValid(), false, "xmlReadFile Failed");
     if (!ParseInternal(curNode_->GetCopyNode())) {
