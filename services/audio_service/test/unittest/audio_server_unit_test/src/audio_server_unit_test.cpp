@@ -2518,6 +2518,14 @@ HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
     uint32_t sessionId = 0;
     int32_t ret = audioServer->GenerateSessionId(sessionId);
     EXPECT_EQ(ERROR, ret);
-}GHJGH
+}
+
+HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t asrVoiceMuteMode = 0;
+    bool on = true;
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
+}
 } // namespace AudioStandard
 } // namespace OHOS
