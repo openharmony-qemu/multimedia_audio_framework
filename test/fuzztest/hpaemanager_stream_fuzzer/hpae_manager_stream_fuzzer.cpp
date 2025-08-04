@@ -140,13 +140,8 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 void WaitForMsgProcessing(std::shared_ptr<HPAE::HpaeManager> &hpaeManager)
 {
     int waitCount = 0;
-    const int waitCountThd = 5;
     while (hpaeManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
-        waitCount++;
-        if (waitCount >= waitCountThd) {
-            break;
-        }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
@@ -429,7 +424,6 @@ void HpaeCaptureStreamManagerFuzzTest3()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest()
@@ -475,7 +469,6 @@ void HpaeRenderStreamManagerMoveFuzzTest()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest2()
@@ -529,7 +522,6 @@ void HpaeRenderStreamManagerMoveFuzzTest2()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest()
@@ -568,7 +560,6 @@ void HpaeCaptureStreamManagerMoveTest()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest2()
@@ -611,7 +602,6 @@ void HpaeCaptureStreamManagerMoveTest2()
     hpaeManager_->Release(streamClassType, sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerDumpStreamInfoTest()

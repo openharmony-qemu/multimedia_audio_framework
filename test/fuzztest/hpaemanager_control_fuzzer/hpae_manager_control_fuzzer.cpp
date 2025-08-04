@@ -140,13 +140,8 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 void WaitForMsgProcessing(std::shared_ptr<HPAE::HpaeManager> &hpaeManager)
 {
     int waitCount = 0;
-    const int waitCountThd = 5;
     while (hpaeManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
-        waitCount++;
-        if (waitCount >= waitCountThd) {
-            break;
-        }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
@@ -359,7 +354,6 @@ void HpaeManagerEffectLiveTest()
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->SetEffectLiveParameter(params);
-    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectTest()
@@ -416,24 +410,26 @@ void HpaeManagerEffectTest2()
     
     AudioEffectPropertyArrayV3 propertyV3;
     hpaeManager_->GetAudioEffectProperty(propertyV3);
-
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetAudioEffectProperty(propertyV3);
+    
     AudioEffectPropertyArray property;
     hpaeManager_->GetAudioEffectProperty(property);
-
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->UpdateEffectBtOffloadSupported(true);
     hpaeManager_->SetOutputDevice(TEST_STREAM_SESSION_ID, DEVICE_TYPE_SPEAKER);
 
     hpaeManager_->SetMicrophoneMuteInfo(false);
 
     hpaeManager_->GetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
-
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetAudioEnhanceProperty(propertyV3, DEVICE_TYPE_SPEAKER);
     
     AudioEnhancePropertyArray propertyEn;
     hpaeManager_->GetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
-
+    WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->SetAudioEnhanceProperty(propertyEn, DEVICE_TYPE_SPEAKER);
+    
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");
     WaitForMsgProcessing(hpaeManager_);
 }
