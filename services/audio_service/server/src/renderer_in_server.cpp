@@ -150,7 +150,7 @@ void RendererInServer::GetEAC3ControlParam()
     }
 }
 
-int32_t RendererInServer::Init()
+void RendererInServer::ProcessManagerType()
 {
     if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
         Trace trace("current stream marked as high resolution");
@@ -169,6 +169,11 @@ int32_t RendererInServer::Init()
             AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
         }
     }
+}
+
+int32_t RendererInServer::Init()
+{
+    ProcessManagerType();
     GetEAC3ControlParam();
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
