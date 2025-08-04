@@ -552,7 +552,6 @@ void NapiAudioEnum::Destructor(napi_env env, void *nativeObject, void *finalizeH
 
 napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<std::string, int32_t> &map)
 {
-
     napi_value enumObject = nullptr;
     napi_status status = napi_create_object(env, &enumObject);
     if (status != napi_ok) {
@@ -574,7 +573,6 @@ error:
 
 napi_value NapiAudioEnum::CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &map)
 {
-
     napi_value enumObject = nullptr;
     napi_status status = napi_create_object(env, &enumObject);
     if (status != napi_ok) {
