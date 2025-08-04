@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "hpae_manager_fuzzer02.h"
+#include "hpae_manager_control_fuzzer.h"
 
 #include <string>
 #include <thread>
@@ -199,54 +199,6 @@ HPAE::HpaeStreamInfo GetCaptureStreamInfo()
     return streamInfo;
 }
 
-
-void HpaeManagerDumpStreamInfoTest2()
-{
-    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-    hpaeManager_->Init();
-
-    hpaeManager_->IsInit();
-    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
-    hpaeManager_->RegisterSerivceCallback(callback);
-
-    AudioModuleInfo sinkAudioModuleInfo = GetSinkAudioModeInfo();
-    hpaeManager_->OpenAudioPort(sinkAudioModuleInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sinkPortId = GetData<int32_t>();
-    AudioModuleInfo sourceAudioModuleInfo = GetSourceAudioModeInfo();
-    hpaeManager_->OpenAudioPort(sourceAudioModuleInfo);
-    WaitForMsgProcessing(hpaeManager_);
-    int32_t sourcePortId = GetData<int32_t>();
-
-    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
-        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
-    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
-    HpaeStreamInfo rendererStreamInfo = GetRenderStreamInfo();
-    hpaeManager_->CreateStream(rendererStreamInfo);
-
-    hpaeManager_->DumpSinkInputsInfo();
-    WaitForMsgProcessing(hpaeManager_);
-    dumpCallback->GetSinkInputsSize();
-    uint32_t sessionId = GetData<uint32_t>();
-    uint32_t index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    HpaeStreamClassType streamClassType = HpaeStreamClassTypeVec[index];
-
-    hpaeManager_->ShouldNotSkipProcess(streamClassType, sessionId);
-    HpaeStreamInfo capturerStreamInfo = GetCaptureStreamInfo();
-    capturerStreamInfo.deviceName = sourceAudioModuleInfo.name;
-    hpaeManager_->CreateStream(capturerStreamInfo);
-    hpaeManager_->DumpSourceOutputsInfo();
-    dumpCallback->GetSourceOutputsSize();
-    sessionId = GetData<uint32_t>();
-    index = GetData<uint32_t>() % HpaeStreamClassTypeVec.size();
-    streamClassType = HpaeStreamClassTypeVec[index];
-    hpaeManager_->ShouldNotSkipProcess(streamClassType, sessionId);
-
-    hpaeManager_->CloseAudioPort(sinkPortId);
-    hpaeManager_->CloseAudioPort(sourcePortId);
-    WaitForMsgProcessing(hpaeManager_);
-}
-
 void HpaeRenderManagerReloadTest()
 {
     std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
@@ -405,6 +357,7 @@ void HpaeManagerEffectLiveTest()
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->SetEffectLiveParameter(params);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectTest()
@@ -483,8 +436,89 @@ void HpaeManagerEffectTest2()
     WaitForMsgProcessing(hpaeManager_);
 }
 
+void GetAllSinksFuzzTest()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
+        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    hpaeManager_->OpenAudioPort(audioModuleInfo);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->ReloadRenderManager(audioModuleInfo);
+    hpaeManager_->DumpSinkInfo(audioModuleInfo.name);
+    hpaeManager_->DumpSinkInfo("virtual1");
+    WaitForMsgProcessing(hpaeManager_);
+
+    uint32_t sinkSourceIndex = GetData<uint32_t>();
+    hpaeManager_->OpenVirtualAudioPort(audioModuleInfo, sinkSourceIndex);
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo("Speaker_File1");
+    hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, sinkSourceIndex);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->GetAllSinks();
+
+    audioModuleInfo1 = GetSourceAudioModeInfo();
+    hpaeManager_->OpenAudioPort(audioModuleInfo1);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->DumpSourceInfo(audioModuleInfo1.name);
+    hpaeManager_->DumpSourceInfo("virtual1");
+
+    HpaeDeviceInfo devicesInfo_;
+    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
+void GetAllSinksFuzzTest2()
+{
+    std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
+    hpaeManager_->Init();
+    hpaeManager_->IsInit();
+    std::shared_ptr<HpaeAudioServiceCallbackFuzzTest> callback = std::make_shared<HpaeAudioServiceCallbackFuzzTest>();
+    hpaeManager_->RegisterSerivceCallback(callback);
+    std::shared_ptr<HpaeAudioServiceDumpCallbackUnitTest> dumpCallback =
+        std::make_shared<HpaeAudioServiceDumpCallbackUnitTest>();
+    hpaeManager_->RegisterHpaeDumpCallback(dumpCallback);
+
+    AudioModuleInfo audioModuleInfo = GetSinkAudioModeInfo();
+    hpaeManager_->OpenAudioPort(audioModuleInfo);
+    hpaeManager_->SetDefaultSink(audioModuleInfo.name);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->ReloadRenderManager(audioModuleInfo);
+    hpaeManager_->DumpSinkInfo(audioModuleInfo.name);
+    hpaeManager_->DumpSinkInfo("virtual1");
+    WaitForMsgProcessing(hpaeManager_);
+    uint32_t sinkSourceIndex = GetData<uint32_t>();
+    hpaeManager_->OpenVirtualAudioPort(audioModuleInfo, sinkSourceIndex);
+    AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
+    hpaeManager_->OpenVirtualAudioPort(audioModuleInfo1, sinkSourceIndex);
+    WaitForMsgProcessing(hpaeManager_);
+
+    hpaeManager_->GetAllSinks();
+    WaitForMsgProcessing(hpaeManager_);
+
+    audioModuleInfo1 = GetSourceAudioModeInfo();
+    hpaeManager_->OpenAudioPort(audioModuleInfo1);
+
+    hpaeManager_->DumpSourceInfo(audioModuleInfo1.name);
+    hpaeManager_->DumpSourceInfo("virtual1");
+
+    HpaeDeviceInfo devicesInfo_;
+    hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    WaitForMsgProcessing(hpaeManager_);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
-    HpaeManagerDumpStreamInfoTest2,
     HpaeRenderManagerReloadTest,
     HpaeRenderManagerReloadTest2,
     HpaeManagerGetSinkAndSourceInfoTest,
@@ -492,6 +526,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeManagerEffectLiveTest,
     HpaeManagerEffectTest,
     HpaeManagerEffectTest2,
+    GetAllSinksFuzzTest,
+    GetAllSinksFuzzTest2,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

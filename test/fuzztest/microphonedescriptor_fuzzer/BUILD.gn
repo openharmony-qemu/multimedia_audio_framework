@@ -16,19 +16,20 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeManagerFuzzTest02") {
+ohos_fuzztest("MicrophoneDescriptorFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../hpaemanager_fuzzer02"
+  fuzz_config_file = "../microphonedescriptor_fuzzer"
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
+    "../../../frameworks/native/audioutils/include",
     "../../../services/audio_service/common/include/limiter/",
     "../../../services/audio_engine/manager/include",
-    "../../../services/audio_engine/test/unittest/common",
+    "../../../frameworks/native/audioinnercall/include",
     "../../../services/audio_service/server/include",
+    "../../../services/audio_policy/client/include",
   ]
-
   cflags = [
     "-g",
     "-O0",
@@ -36,13 +37,12 @@ ohos_fuzztest("HpaeManagerFuzzTest02") {
     "-fno-omit-frame-pointer",
     "-fno-access-control",
   ]
-
   configs = [
     "../../../services/audio_policy:audio_policy_public_config",
-    "../../../services/audio_engine:audio_engine_node_config",
+    "../../../services/audio_service:audio_service_config"
   ]
 
-  sources = [ "hpae_manager_fuzzer02.cpp" ]
+  sources = [ "microphone_descriptor_fuzzer.cpp" ]
 
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
@@ -51,45 +51,14 @@ ohos_fuzztest("HpaeManagerFuzzTest02") {
     "../../../services/audio_service:audio_common",
     "../../../frameworks/native/audioclock:audio_clock",
     "../../../services/audio_engine:audio_engine_manager",
-    "../../../services/audio_engine:audio_engine_utils",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_static",
   ]
 
   external_deps = [
-    "ability_base:want",
-    "ability_runtime:extension_manager",
-    "ability_runtime:wantagent_innerkits",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libnativetoken_shared",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "background_task_mgr:bgtaskmgr_innerkits",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
     "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "eventhandler:libeventhandler",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hicollie:libhicollie",
     "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "hitrace:hitrace_meter",
-    "init:libbegetutil",
     "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "pulseaudio:pulse",
-    "relational_store:native_appdatafwk",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-    "bluetooth:btframework"
   ]
   if (sonic_enable == true) {
     external_deps += [ "pulseaudio:sonic" ]
@@ -113,9 +82,7 @@ ohos_fuzztest("HpaeManagerFuzzTest02") {
   }
 }
 
-
-
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeManagerFuzzTest02" ]
+  deps = [ ":MicrophoneDescriptorFuzzTest" ]
 }

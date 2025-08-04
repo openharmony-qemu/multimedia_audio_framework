@@ -1,0 +1,87 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("DfxUtilsFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../dfxutils_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_policy/server/include",
+    "../../../frameworks/native/audioutils/include",
+    "../../../services/audio_service/common/include/limiter/",
+    "../../../services/audio_engine/manager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../services/audio_service/server/include",
+    "../../../services/audio_policy/client/include",
+  ]
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+  configs = [
+    "../../../services/audio_policy:audio_policy_public_config",
+    "../../../services/audio_service:audio_service_config"
+  ]
+
+  sources = [ "dfx_utils_fuzzer.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_common",
+    "../../../frameworks/native/audioclock:audio_clock",
+    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_static",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":DfxUtilsFuzzTest" ]
+}
