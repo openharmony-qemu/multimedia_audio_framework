@@ -559,7 +559,32 @@ napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<s
         goto error;
     }
     for (const auto &iter : map) {
-        SetNamedPropertyByInteger(env, enumObject, iter.second, iter.first)
+        napi_value prop = nullptr;
+        if (napi_create_int32(env, iter.second, &prop) == napi_ok) {
+            napi_set_named_property(env, enumObject, (iter.first).c_str(), prop);
+        }
+    }
+    return enumObject;
+
+error:
+    AUDIO_ERR_LOG("create Enum Object failed");
+    napi_get_undefined(env, &enumObject);
+    return enumObject;
+}
+
+napi_value NapiAudioEnum::CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &map)
+{
+
+    napi_value enumObject = nullptr;
+    napi_status status = napi_create_object(env, &enumObject);
+    if (status != napi_ok) {
+        goto error;
+    }
+    for (const auto &iter : map) {
+        napi_value prop = nullptr;
+        if (napi_create_int64(env, iter.second, &prop) == napi_ok) {
+            napi_set_named_property(env, enumObject, (iter.first).c_str(), prop);
+        }
     }
     return enumObject;
 
@@ -595,7 +620,7 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_PROPERTY("AudioSpatialDeviceType", CreateEnumObject(env,
             audioSpatialDeivceTypeMap)),
-        DECLARE_NAPI_PROPERTY("AudioChannelLayout", CreateEnumObject(env,
+        DECLARE_NAPI_PROPERTY("AudioChannelLayout", CreateEnumInt64Object(env,
             audioChannelLayoutMap)),
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
             CreateEnumObject(env, audioDeviceChangeReasonMap)),
