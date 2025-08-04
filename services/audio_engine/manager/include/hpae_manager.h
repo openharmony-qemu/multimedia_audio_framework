@@ -231,8 +231,8 @@ private:
     void AddPreferSinkForDefaultChange(bool isAdd, const std::string &sinkName);
     void OnCallbackOpenOrReloadFailed(bool isReload);
     bool ShouldNotSkipProcess(const HpaeStreamClassType &streamType, const uint32_t &sessionId);
-    bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string& sinkName);
-    bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string& sourceName);
+    bool CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName);
+    bool CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName);
 
 private:
     std::unique_ptr<HpaeManagerThread> hpaeManagerThread_ = nullptr;

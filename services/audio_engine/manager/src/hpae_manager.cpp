@@ -762,7 +762,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
     return SUCCESS;
 }
 
-bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string& sourceName)
+bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::string &sourceName)
 {
     if (sourceName.empty()) {
         AUDIO_ERR_LOG("move session:%{public}u failed,source name is empty.", sourceOutputId);
@@ -790,7 +790,7 @@ bool HpaeManager::CheckMoveSourceOutput(uint32_t sourceOutputId, const std::stri
     return true;
 }
 
-bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string& sinkName)
+bool HpaeManager::CheckMoveSinkInput(uint32_t sinkInputId, const std::string &sinkName)
 {
     if (sinkName.empty()) {
         AUDIO_ERR_LOG("move session:%{public}u failed,sink name is empty.", sinkInputId);
