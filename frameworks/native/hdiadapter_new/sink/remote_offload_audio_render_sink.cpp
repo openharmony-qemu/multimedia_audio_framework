@@ -452,7 +452,8 @@ int32_t RemoteOffloadAudioRenderSink::ForceRefreshPresentationPosition(uint64_t 
 
 int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
 {
-    return SUCCESS;
+    AUDIO_INFO_LOG("not support");
+    return ERR_NOT_SUPPORTED;
 }
 
 int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()

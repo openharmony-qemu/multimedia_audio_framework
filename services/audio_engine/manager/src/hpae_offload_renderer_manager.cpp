@@ -660,6 +660,8 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
 
 void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
+    CHECK_AND_RETURN_LOG(sinkInputNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnRewindAndFlush sinkInputNode_ is null");
     sinkInputNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 

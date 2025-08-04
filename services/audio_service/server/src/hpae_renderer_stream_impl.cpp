@@ -255,45 +255,6 @@ uint32_t HpaeRendererStreamImpl::GetNearlinkLatency()
     return nearlinkLatency;
 }
 
-int32_t HpaeRendererStreamImpl::GetRemoteOffloadLatency(uint64_t &latency)
-{
-    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
-
-    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
-    uint32_t curLatency = 0;
-    int32_t ret = sink->GetLatency(curLatency);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
-    AUDIO_DEBUG_LOG("get latency for remote offload, latency from hdi is %{public}u", curLatency);
-    curLatency /= AUDIO_MS_PER_S;
-    latency = static_cast<uint64_t>(curLatency);
-    return SUCCESS;
-}
-
-int32_t HpaeRendererStreamImpl::GetRemoteOffloadCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
-    uint64_t &latency)
-{
-    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
-
-    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
-    uint64_t frames;
-    int64_t timeSec;
-    int64_t timeNSec;
-    int32_t ret = sink->GetPresentationPosition(frames, timeSec, timeNSec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get position fail");
-
-    uint64_t curLatency = 0;
-    ret = GetRemoteOffloadLatency(curLatency);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
-
-    latency = curLatency;
-    framePosition = frames;
-    timestamp = static_cast<uint64_t>(timeNSec + timeSec * AUDIO_NS_PER_SECOND);
-    AUDIO_DEBUG_LOG("get position from hdi for remote offload, frame: %{public}" PRIu64, framePosition);
-    return SUCCESS;
-}
-
 int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency)
 {
