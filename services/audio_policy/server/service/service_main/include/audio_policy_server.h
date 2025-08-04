@@ -782,6 +782,7 @@ private:
     void SubscribeBackgroundTask();
     void SendMonitrtEvent(const int32_t keyType, int32_t resultOfVolumeKey);
     void RegisterDefaultVolumeTypeListener();
+    int32_t SetVolumeInternalByKeyEvent(AudioStreamType streamInFocus, int32_t zoneId, const int32_t keyType);
 
     void InitPolicyDumpMap();
     void PolicyDataDump(std::string &dumpString);
