@@ -739,7 +739,7 @@ int32_t HpaeManager::MoveSourceOutputByIndexOrName(
     auto request = [this, sourceOutputId, sourceName]() {
         if (!CheckMoveSourceOutput(sourceOutputId, sourceName)) {
             if (auto serviceCallback = serviceCallback_.lock()) {
-                serviceCallback->OnMoveSinkInputByIndexOrNameCb(ERROR_INVALID_PARAM);
+                serviceCallback->OnMoveSourceOutputByIndexOrNameCb(ERROR_INVALID_PARAM);
             }
             return;
         }
