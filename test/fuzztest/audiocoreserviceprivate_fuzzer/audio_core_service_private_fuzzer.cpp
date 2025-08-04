@@ -505,14 +505,16 @@ void NeedRehandleA2DPDeviceFuzzTest()
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = GetData<int32_t>() % NUM_2;
-    AudioStreamDeviceChangeReasonExt::ExtEnum reason = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerPid_ = 0;
+    streamDesc->sessionId_ = 0;
+    streamDesc->routeFlag_ = GetData<int32_t>() % NUM_2;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
-    audioCoreService->TriggerRecreateRendererStreamCallback(callerPid, sessionId, routeFlag, reason);
+    audioCoreService->TriggerRecreateRendererStreamCallback(streamDesc, reason);
 }
 
 void TriggerRecreateCapturerStreamCallbackFuzzTest()

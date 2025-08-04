@@ -1267,18 +1267,29 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_069, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_070, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
-    AudioStreamDeviceChangeReasonExt::ExtEnum reason =
+    shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerPid_ = 0;
+    streamDesc->sessionId_ = 0;
+    streamDesc->routeFlag_ = true;
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->rendererInfo_.playerType = PLAYER_TYPE_SOUND_POOL;
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(deviceDesc);
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum =
         AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     audioCoreService->SetCallbackHandler(nullptr);
 
-    audioCoreService->TriggerRecreateRendererStreamCallback(callerPid, sessionId, routeFlag, reason);
-
+    audioCoreService->TriggerRecreateRendererStreamCallback(streamDesc, reason);
     EXPECT_EQ(audioCoreService->audioPolicyServerHandler_, nullptr);
+
+    bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    EXPECT_EQ(isSupportLowPower, false);
 }
 
 /**
@@ -1288,20 +1299,34 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_070, TestSize.Level1
  */
 HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_071, TestSize.Level1)
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = true;
-    AudioStreamDeviceChangeReasonExt::ExtEnum reason =
+    shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerPid_ = 0;
+    streamDesc->sessionId_ = 0;
+    streamDesc->routeFlag_ = true;
+    streamDesc->rendererInfo_.isOffloadAllowed = true;
+    streamDesc->streamInfo_.channels = STEREO;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MUSIC;
+    streamDesc->rendererInfo_.playerType = PLAYER_TYPE_SOUND_POOL;
+    std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    streamDesc->oldDeviceDescs_.push_back(oldDeviceDesc);
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum =
         AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
 
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
 
-    audioCoreService->TriggerRecreateRendererStreamCallback(callerPid, sessionId, routeFlag, reason);
-
+    audioCoreService->TriggerRecreateRendererStreamCallback(streamDesc, reason);
     EXPECT_NE(audioCoreService->audioPolicyServerHandler_, nullptr);
+
+    bool isSupportLowPower = audioCoreService->IsStreamSupportLowpower(streamDesc);
+    EXPECT_EQ(isSupportLowPower, false);
 }
+
 /**
  * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_072

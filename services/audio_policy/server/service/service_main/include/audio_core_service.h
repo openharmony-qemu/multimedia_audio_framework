@@ -370,8 +370,8 @@ private:
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioPipeInfo> pipeInfo, std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
     bool HasLowLatencyCapability(DeviceType deviceType, bool isRemote);
-    void TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId, uint32_t routeFlag,
-        const AudioStreamDeviceChangeReasonExt::ExtEnum reason = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+    void TriggerRecreateRendererStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc,
+        const AudioStreamDeviceChangeReasonExt reason);
     void TriggerRecreateCapturerStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc);
     CapturerState HandleStreamStatusToCapturerState(AudioStreamStatus status);
     uint32_t OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInfo> pipeInfo, uint32_t &paIndex);
