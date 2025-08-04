@@ -1486,7 +1486,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
-    info.duckVolume_ = duckVolume_;
+    info.duckVolume = duckVolume_;
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
