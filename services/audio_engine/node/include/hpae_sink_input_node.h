@@ -55,6 +55,8 @@ public:
     bool GetOffloadEnabled();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
+    void SetSpeed(float speed);
+    float GetSpeed();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -76,6 +78,7 @@ private:
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     float loudnessGain_ = 0.0f;
+    float speed_ = 1.0f;
 };
 
 }  // namespace HPAE

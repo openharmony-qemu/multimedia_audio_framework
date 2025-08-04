@@ -48,7 +48,8 @@ HpaeSinkInputNode::HpaeSinkInputNode(HpaeNodeInfo &nodeInfo)
     if (nodeInfo.historyFrameCount > 0) {
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
-                nodeInfo.historyFrameCount, true};
+                nodeInfo.historyFrameCount};
+        pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
         AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
     } else {
@@ -82,7 +83,8 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
     } else if (historyBuffer_ == nullptr) {  // this case need to create historyBuffer_
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
-                nodeInfo.historyFrameCount, true};
+                nodeInfo.historyFrameCount};
+        pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
         AUDIO_INFO_LOG("HpaeSinkInputNode::historybuffer created");
     }
@@ -103,7 +105,7 @@ int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
         return writeCallback->OnStreamData(streamInfo_);
     }
     AUDIO_ERR_LOG("sessionId: %{public}d, writeCallback is nullptr", GetSessionId());
-    return SUCCESS;
+    return ERROR;
 }
 
 bool HpaeSinkInputNode::ReadToAudioBuffer(int32_t &ret)
@@ -157,18 +159,22 @@ void HpaeSinkInputNode::DoProcess()
     if (!ReadToAudioBuffer(ret)) {
         return;
     }
- 
+
     ConvertToFloat(
         GetBitWidth(), GetChannelCount() * GetFrameLen(), interleveData_.data(), inputAudioBuffer_.GetPcmDataBuffer());
     AudioPipeType  pipeType = ConvertDeviceClassToPipe(GetDeviceClass());
     if (ret != 0) {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
-            static_cast<uint32_t>(appUid_));
-        AUDIO_WARNING_LOG("request data is not enough sessionId:%{public}u", GetSessionId());
+        if (pipeType != PIPE_TYPE_UNKNOWN) {
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), true, pipeType,
+                static_cast<uint32_t>(appUid_));
+        }
+        Trace underflowTrace("[" + std::to_string(GetSessionId()) + "]HpaeSinkInputNode::DoProcess underflow");
         memset_s(inputAudioBuffer_.GetPcmDataBuffer(), inputAudioBuffer_.Size(), 0, inputAudioBuffer_.Size());
     } else {
-        AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
-            static_cast<uint32_t>(appUid_));
+        if (pipeType != PIPE_TYPE_UNKNOWN) {
+            AudioPerformanceMonitor::GetInstance().RecordSilenceState(GetSessionId(), false, pipeType,
+                static_cast<uint32_t>(appUid_));
+        }
         totalFrames_ = totalFrames_ + GetFrameLen();
         framesWritten_ = totalFrames_;
         if (historyBuffer_) {
@@ -214,7 +220,8 @@ void HpaeSinkInputNode::Flush()
         HpaeNodeInfo nodeInfo = GetNodeInfo();
         PcmBufferInfo pcmInfo = PcmBufferInfo{
             nodeInfo.channels, nodeInfo.frameLen, nodeInfo.samplingRate, nodeInfo.channelLayout,
-                nodeInfo.historyFrameCount, true};
+                nodeInfo.historyFrameCount};
+        pcmInfo.isMultiFrames = true;
         historyBuffer_ = std::make_unique<HpaePcmBuffer>(pcmInfo);
     }
 }
@@ -292,6 +299,16 @@ int32_t HpaeSinkInputNode::SetLoudnessGain(float loudnessGain)
 float HpaeSinkInputNode::GetLoudnessGain()
 {
     return loudnessGain_;
+}
+
+void HpaeSinkInputNode::SetSpeed(float speed)
+{
+    speed_ = speed;
+}
+
+float HpaeSinkInputNode::GetSpeed()
+{
+    return speed_;
 }
 }  // namespace HPAE
 }  // namespace AudioStandard

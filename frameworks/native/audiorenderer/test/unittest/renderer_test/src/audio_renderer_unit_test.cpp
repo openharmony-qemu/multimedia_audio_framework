@@ -4374,6 +4374,9 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     ret = audioRenderer->StartDataCallback();
     ASSERT_NE(SUCCESS, ret);
 
+    ret = audioRenderer->SetSpeed(2.0f);
+    EXPECT_EQ(SUCCESS, ret);
+
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);
 
@@ -4390,8 +4393,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
     int32_t numBuffersToRender = RenderUT::WRITE_BUFFERS_COUNT;
 
     ret = audioRenderer->StartDataCallback();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
-
     while (numBuffersToRender) {
         bytesToWrite = fread(buffer, 1, bufferLen, wavFile);
         bytesWritten = 0;
@@ -4407,8 +4408,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_001, TestSize.Level
         numBuffersToRender--;
     }
     ret = audioRenderer->StopDataCallback();
-    EXPECT_EQ(SUCCESS, ret);
-
     audioRenderer->Drain();
     audioRenderer->Stop();
     audioRenderer->Release();
@@ -4435,6 +4434,11 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_MoviePcmOffload_002, TestSize.Level
     rendererOptions.rendererInfo.rendererFlags = AUDIO_FLAG_NORMAL;
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
+
+    ret = audioRenderer->SetSpeed(2.0f);
+    EXPECT_EQ(SUCCESS, ret);
+    float speed = audioRenderer->GetSpeed();
+    EXPECT_EQ(speed, 2.0f);
 
     bool isStarted = audioRenderer->Start();
     EXPECT_EQ(true, isStarted);

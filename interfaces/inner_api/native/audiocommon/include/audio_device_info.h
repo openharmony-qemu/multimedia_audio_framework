@@ -389,7 +389,7 @@ struct VolumeBehavior : public Parcelable {
 
     static VolumeBehavior *Unmarshalling(Parcel &parcel)
     {
-        auto info = new VolumeBehavior();
+        auto info = new(std::nothrow) VolumeBehavior();
         if (info == nullptr) {
             return nullptr;
         }
@@ -520,7 +520,7 @@ public:
 
     static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamDeviceChangeReasonExt();
+        auto info = new(std::nothrow) AudioStreamDeviceChangeReasonExt();
         if (info == nullptr) {
             return nullptr;
         }

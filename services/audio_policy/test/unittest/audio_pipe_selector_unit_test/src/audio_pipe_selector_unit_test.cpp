@@ -186,7 +186,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, GetPipeType_004, TestSize.Level1)
     uint32_t flag = AUDIO_OUTPUT_FLAG_DIRECT;
     AudioMode audioMode = AUDIO_MODE_PLAYBACK;
     AudioPipeType result = AudioPipeSelector::GetPipeSelector()->GetPipeType(flag, audioMode);
-    EXPECT_EQ(result, PIPE_TYPE_DIRECT_OUT);
+    EXPECT_EQ(result, PIPE_TYPE_DIRECT_MUSIC);
 }
 
 /**

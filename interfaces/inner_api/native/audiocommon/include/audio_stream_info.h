@@ -586,7 +586,7 @@ public:
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamInfo();
+        auto info = new(std::nothrow) AudioStreamInfo();
         if (info == nullptr) {
             return nullptr;
         }

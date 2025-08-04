@@ -109,13 +109,15 @@ constexpr int32_t UID_MCU = 7500;
 constexpr int32_t UID_CAAS = 5527;
 constexpr int32_t UID_TELEPHONY = 1001;
 constexpr int32_t UID_DMSDP = 7071;
-static const int32_t DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS = 5; // 5s is better
+constexpr int32_t UID_TV_SERVICE = 7501;
+static const int32_t DATASHARE_SERVICE_TIMEOUT_SECONDS = 10; // 10s is better
 const std::set<int32_t> CALLBACK_TRUST_LIST = {
     UID_MEDIA,
     UID_MCU,
     UID_CAAS,
     UID_TELEPHONY,
-    UID_DMSDP
+    UID_DMSDP,
+    UID_TV_SERVICE
 };
 
 REGISTER_SYSTEM_ABILITY_BY_ID(AudioPolicyServer, AUDIO_POLICY_SERVICE_ID, true)
@@ -847,6 +849,10 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
     const AAFwk::Want& want = eventData.GetWant();
     std::string action = want.GetAction();
     if (action == "usual.event.DATA_SHARE_READY") {
+        if (isInitRingtoneReady_ == false) {
+            std::thread([&]() { CallRingtoneLibrary(); }).detach();
+            isInitRingtoneReady_ = true;
+        }
         audioPolicyManager_.SetDataShareReady(true);
         RegisterDataObserver();
         if (isInitMuteState_ == false) {
@@ -2515,6 +2521,17 @@ void AudioPolicyServer::ProcessRemoteInterrupt(std::set<int32_t> sessionIds, Int
     }
 }
 
+std::set<int32_t> AudioPolicyServer::GetStreamIdsForAudioSessionByStreamUsage(
+    const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet)
+{
+    std::set<int32_t> streamIds;
+    if (interruptService_ != nullptr) {
+        streamIds = interruptService_->GetStreamIdsForAudioSessionByStreamUsage(zoneId, streamUsageSet);
+    }
+
+    return streamIds;
+}
+
 int32_t AudioPolicyServer::ActivateAudioInterrupt(
     const AudioInterrupt &audioInterruptIn, int32_t zoneID, bool isUpdatedAudioStrategy)
 {
@@ -2868,7 +2885,7 @@ int32_t AudioPolicyServer::GetPreferredInputStreamType(const AudioCapturerInfo &
 }
 
 int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    uint32_t &flag, uint32_t &sessionId)
+    uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(coreService_ != nullptr && eventEntry_ != nullptr, ERR_NULL_POINTER,
         "Core service not inited");
@@ -2878,8 +2895,10 @@ int32_t AudioPolicyServer::CreateRendererClient(const std::shared_ptr<AudioStrea
         streamDesc->SetBunduleName(bundleName);
     }
     uint32_t flagIn = AUDIO_OUTPUT_FLAG_NORMAL;
-    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId);
+    std::string networkIdIn = LOCAL_NETWORK_ID;
+    int32_t ret = eventEntry_->CreateRendererClient(streamDesc, flagIn, sessionId, networkIdIn);
     flag = flagIn;
+    networkId = networkIdIn;
     return ret;
 }
 
@@ -3235,8 +3254,16 @@ void AudioPolicyServer::RemoteParameterCallback::InterruptOnChange(const std::st
     sessionIds.insert(sessionIdGame.begin(), sessionIdGame.end());
     sessionIds.insert(sessionIdAudioBook.begin(), sessionIdAudioBook.end());
 
+    const std::set<StreamUsage> streamUsageSet = {
+        StreamUsage::STREAM_USAGE_MUSIC,
+        StreamUsage::STREAM_USAGE_MOVIE,
+        StreamUsage::STREAM_USAGE_GAME,
+        StreamUsage::STREAM_USAGE_AUDIOBOOK};
+
     InterruptEventInternal interruptEvent {type, forceType, hint, 0.2f};
     if (server_ != nullptr) {
+        std::set<int32_t> fakeSessionIds = server_->GetStreamIdsForAudioSessionByStreamUsage(0, streamUsageSet);
+        sessionIds.insert(fakeSessionIds.begin(), fakeSessionIds.end());
         server_->ProcessRemoteInterrupt(sessionIds, interruptEvent);
     }
 }
@@ -4527,6 +4554,13 @@ int32_t AudioPolicyServer::InjectInterruption(const std::string &networkId, cons
     std::set<int32_t> sessionIds =
         AudioStreamCollector::GetAudioStreamCollector().GetSessionIdsOnRemoteDeviceByDeviceType(
             DEVICE_TYPE_REMOTE_CAST);
+
+    if (interruptService_ != nullptr) {
+        std::set<int32_t> fakeSessionIds =
+            interruptService_->GetStreamIdsForAudioSessionByDeviceType(0, DEVICE_TYPE_REMOTE_CAST);
+        sessionIds.insert(fakeSessionIds.begin(), fakeSessionIds.end());
+    }
+
     InterruptEventInternal interruptEvent { event.eventType, event.forceType, event.hintType, 0.2f};
     ProcessRemoteInterrupt(sessionIds, interruptEvent);
     return SUCCESS;
@@ -5004,7 +5038,7 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     auto saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     CHECK_AND_RETURN_RET_LOG(saManager != nullptr, ERROR, "Get system ability manager failed.");
 
-    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_FIVE_SECONDS,
+    AudioXCollie audioXCollie("CallRingtoneLibrary::start", DATASHARE_SERVICE_TIMEOUT_SECONDS,
         [](void *) {
             AUDIO_ERR_LOG("CallRingtoneLibrary timeout");
         }, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
@@ -5012,7 +5046,8 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     auto remoteObj = saManager->GetSystemAbility(STORAGE_MANAGER_MANAGER_ID);
     CHECK_AND_RETURN_RET_LOG(remoteObj != nullptr, ERROR, "Get system ability failed.");
 
-    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone");
+    auto dataShareHelper = DataShare::DataShareHelper::Creator(remoteObj, "datashare:///ringtone", "",
+        DATASHARE_SERVICE_TIMEOUT_SECONDS);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;

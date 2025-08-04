@@ -68,13 +68,11 @@ audio_ohos_library("audio_effect") {
 
   sources = [
     "src/audio_effect_chain.cpp",
-    "src/audio_effect_chain_adapter.cpp",
     "src/audio_effect_chain_manager.cpp",
     "src/audio_effect_hdi_param.cpp",
     "src/audio_effect_rotation.cpp",
     "src/audio_effect_volume.cpp",
     "src/audio_enhance_chain.cpp",
-    "src/audio_enhance_chain_adapter.cpp",
     "src/audio_enhance_chain_manager_impl.cpp",
     "src/audio_head_tracker.cpp",
     "src/chain_pool_impl.cpp",
@@ -99,10 +97,19 @@ audio_ohos_library("audio_effect") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "os_account:os_account_innerkits",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
-
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [
+      "src/audio_effect_chain_adapter.cpp",
+      "src/audio_enhance_chain_adapter.cpp",
+    ]
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }

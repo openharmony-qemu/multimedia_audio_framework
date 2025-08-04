@@ -19,7 +19,6 @@
 #include "i_stream.h"
 #include "hpae_info.h"
 #include "hpae_pcm_buffer.h"
-#include "audio_engine_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -35,9 +34,9 @@ enum HpaeMsgCode {
     DUMP_SINK_INFO,
     DUMP_SOURCE_INFO,
     MOVE_SESSION_FAILED,
+    RELOAD_AUDIO_SINK_RESULT,
     CONNECT_CO_BUFFER_NODE,
     DISCONNECT_CO_BUFFER_NODE,
-    RELOAD_AUDIO_SINK_RESULT,
     INIT_SOURCE_RESULT,
 };
 
@@ -65,8 +64,6 @@ public:
             // pack the arguments into a tuple
             auto packed = std::make_tuple(std::forward<Args>(args)...);
             callback->Invoke(cmdID, packed);
-        } else {
-            AUDIO_ERR_LOG("Hpae TriggerCallback callback is null");
         }
     }
 };

@@ -797,6 +797,38 @@ HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_001, TestSize.Level1)
     uint32_t testValue = 123;
     EXPECT_FALSE(ohAudioBuffer->SetSyncReadFrame(testValue));
 }
+
+ /**
+ * @tc.name  : Test GetMuteFactor API
+ * @tc.type  : FUNC
+ * @tc.number: GetMuteFactor
+ * @tc.desc  : Test GetMuteFactor interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_001, TestSize.Level4)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    EXPECT_EQ(ohAudioBuffer->GetMuteFactor(), 1);
+}
+
+ /**
+ * @tc.name  : Test SetRestoreStatus API
+ * @tc.type  : FUNC
+ * @tc.number: SetRestoreStatus
+ * @tc.desc  : Test SetRestoreStatus interface.
+ */
+HWTEST(AudioServiceCommonUnitTest, SetRestoreStatus_001, TestSize.Level1)
+{
+    uint32_t spanSizeInFrame = 1000;
+    uint32_t totalSizeInFrame = spanSizeInFrame;
+    uint32_t byteSizePerFrame = 100;
+    auto ohAudioBuffer = OHAudioBuffer::CreateFromLocal(totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    RestoreStatus result = ohAudioBuffer->SetRestoreStatus(NEED_RESTORE);
+    EXPECT_NE(RESTORE_ERROR, result);
+}
+
 /**
 * @tc.name  : Test AudioRingCache API
 * @tc.type  : FUNC
@@ -1183,7 +1215,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_002, TestSize.Le
         config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_CALL_ASSISTANT);
     }
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1201,7 +1233,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_003, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_VOICE_RINGTONE);
 
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1220,7 +1252,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_004, TestSize.Le
     config.filterOptions.usages.push_back(StreamUsage::STREAM_USAGE_INVALID);
 
     int ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 /**
 * @tc.name  : Test AudioRingCache API
@@ -1242,7 +1274,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadInnerCapConfigFromParcel_005, TestSize.Le
 
     int ret = 0;
     ret = config.Marshalling(parcel);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

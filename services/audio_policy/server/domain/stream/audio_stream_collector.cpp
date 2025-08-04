@@ -601,6 +601,7 @@ int32_t AudioStreamCollector::UpdateRendererDeviceInfo(AudioDeviceDescriptor &ou
 
 int32_t AudioStreamCollector::UpdateRendererDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> outputDeviceInfo)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
 
     for (auto it = audioRendererChangeInfos_.begin(); it != audioRendererChangeInfos_.end(); it++) {
@@ -644,6 +645,7 @@ int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(AudioDeviceDescriptor &in
 
 int32_t AudioStreamCollector::UpdateCapturerDeviceInfo(std::shared_ptr<AudioDeviceDescriptor> inputDeviceInfo)
 {
+    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
     bool deviceInfoUpdated = false;
 
     for (auto it = audioCapturerChangeInfos_.begin(); it != audioCapturerChangeInfos_.end(); it++) {
@@ -821,20 +823,6 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByStreamUsage
     return sessionIdSet;
 }
 
-std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceBySourceType(SourceType sourceType)
-{
-    std::set<int32_t> sessionIdSet;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioCapturerChangeInfos_) {
-        if (changeInfo->capturerInfo.sourceType == sourceType &&
-            changeInfo->inputDeviceInfo.deviceType_ == DEVICE_TYPE_MIC &&
-            changeInfo->inputDeviceInfo.networkId_ != LOCAL_NETWORK_ID) {
-            sessionIdSet.insert(changeInfo->sessionId);
-        }
-    }
-    return sessionIdSet;
-}
-
 std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByDeviceType(DeviceType deviceType)
 {
     std::set<int32_t> sessionIdSet;
@@ -845,19 +833,6 @@ std::set<int32_t> AudioStreamCollector::GetSessionIdsOnRemoteDeviceByDeviceType(
         }
     }
     return sessionIdSet;
-}
-
-int32_t AudioStreamCollector::GetSessionIdsPauseOnRemoteDeviceByRemote(InterruptHint hintType)
-{
-    int32_t sessionIdVec = -1;
-    std::lock_guard<std::mutex> lock(streamsInfoMutex_);
-    for (const auto &changeInfo : audioRendererChangeInfos_) {
-        if (changeInfo->outputDeviceInfo.deviceType_ == DEVICE_TYPE_REMOTE_CAST &&
-            changeInfo->rendererState == RendererState::RENDERER_RUNNING) {
-            return changeInfo->sessionId;
-        }
-    }
-    return sessionIdVec;
 }
 
 bool AudioStreamCollector::IsOffloadAllowed(const int32_t sessionId)

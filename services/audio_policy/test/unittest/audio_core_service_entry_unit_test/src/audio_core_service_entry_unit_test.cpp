@@ -197,8 +197,9 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_008, TestSize.Level1)
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     uint32_t audioFlag = 0;
     uint32_t sessionId = 0;
+    std::string networkId = "";
 
-    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId);
+    auto ret = eventEntry->CreateRendererClient(streamDesc, audioFlag, sessionId, networkId);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -602,23 +603,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_026, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCoreService.
- * @tc.number: AudioCoreService_027
- * @tc.desc  : Test AudioCoreService::EventEntry::RegisteredTrackerClientDied()
- */
-HWTEST(AudioCoreServiceEntryTest, AudioCoreService_027, TestSize.Level1)
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    EXPECT_NE(eventEntry, nullptr);
-
-    pid_t uid = 0;
-    pid_t pid = 0;
-    eventEntry->RegisteredTrackerClientDied(uid, pid);
-}
-
-/**
- * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreService_028
  * @tc.desc  : Test AudioCoreService::EventEntry::ConnectServiceAdapter()
  */
@@ -860,6 +844,27 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_039, TestSize.Level1)
     DeviceType type = DEVICE_TYPE_INVALID;
     auto ret = eventEntry->GetSessionDefaultOutputDevice(0, type);
     EXPECT_EQ(ret, 0);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_040
+ * @tc.desc  : Test AudioCoreService::HandlePlaybackStreamInA2dp
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    audioCoreService->HandlePlaybackStreamInA2dp(audioStreamDescriptor, false);
+    std::shared_ptr<AudioDeviceDescriptor> temp = audioStreamDescriptor->newDeviceDescs_.front();
+    EXPECT_NE(temp, nullptr);
+    EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
 }
 } // namespace AudioStandard
 } // namespace OHOS

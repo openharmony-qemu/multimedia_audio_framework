@@ -15,7 +15,7 @@
 
 #ifndef AUDIO_ENHANCE_CHAIN_ADAPTER_H
 #define AUDIO_ENHANCE_CHAIN_ADAPTER_H
-
+#ifdef SUPPORT_OLD_ENGINE
 #include <stdio.h>
 #include <stdint.h>
 #include <pulse/pulseaudio.h>
@@ -58,4 +58,5 @@ int32_t EnhanceChainManagerSendInitCommand(void);
 #ifdef __cplusplus
 }
 #endif
+#endif // SUPPORT_OLD_ENGINE
 #endif // AUDIO_ENHANCE_CHAIN_ADAPTER_H

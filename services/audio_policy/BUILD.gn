@@ -323,7 +323,7 @@ audio_ohos_library("audio_policy_service") {
 
   deps = [
     "../../services/audio_service/idl:audio_framework_interface",
-    "../../frameworks/native/audioadapter:pulse_audio_service_adapter",
+    "../../frameworks/native/audioadapter:pro_audio_service_adapter",
     "../../frameworks/native/audiodefinitions:audio_definitions",
     "../../frameworks/native/audioinnercall:audio_inner_call",
     "../../frameworks/native/audioutils:audio_utils",
@@ -373,9 +373,9 @@ audio_ohos_library("audio_policy_service") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "window_manager:session_manager_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

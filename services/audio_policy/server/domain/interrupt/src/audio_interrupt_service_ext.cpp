@@ -158,19 +158,28 @@ void AudioInterruptService::SetLatestMuteState(const InterruptEventInternal &int
 void AudioInterruptService::UpdateMuteAudioFocusStrategy(const AudioInterrupt &currentInterrupt,
     const AudioInterrupt &incomingInterrupt, AudioFocusEntry &focusEntry)
 {
-    if (focusEntry.hintType != INTERRUPT_HINT_STOP &&
-        focusEntry.hintType != INTERRUPT_HINT_PAUSE) {
+    if (currentInterrupt.strategy == InterruptStrategy::DEFAULT &&
+        incomingInterrupt.strategy == InterruptStrategy::DEFAULT) {
+        return;
+    }
+
+    if ((focusEntry.hintType != INTERRUPT_HINT_STOP &&
+        focusEntry.hintType != INTERRUPT_HINT_PAUSE) ||
+        incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP) {
         AUDIO_INFO_LOG("streamId: %{public}u, keep current hintType=%{public}d",
             currentInterrupt.streamId, focusEntry.hintType);
         return;
     }
 
-    if (incomingInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP ||
-        currentInterrupt.strategy == InterruptStrategy::DEFAULT) {
-        return;
+    if (currentInterrupt.strategy == InterruptStrategy::MUTE) {
+        focusEntry.actionOn = CURRENT;
     }
-    AUDIO_INFO_LOG("streamId: %{public}u enter mute interrupt mode, update hintType", currentInterrupt.streamId);
-    focusEntry.actionOn = CURRENT;
+    if (incomingInterrupt.strategy == InterruptStrategy::MUTE) {
+        focusEntry.actionOn = INCOMING;
+    }
+
+    AUDIO_INFO_LOG("currentStreamId:%{public}u, incomingStreamId:%{public}u, action:%{public}u",
+        currentInterrupt.streamId, incomingInterrupt.streamId, focusEntry.actionOn);
     focusEntry.isReject = false;
     focusEntry.hintType = INTERRUPT_HINT_MUTE;
 }

@@ -62,7 +62,7 @@ struct AudioRendererDataTransferStateChangeInfo : public Parcelable {
     }
     static AudioRendererDataTransferStateChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererDataTransferStateChangeInfo();
+        auto info = new(std::nothrow) AudioRendererDataTransferStateChangeInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -105,7 +105,7 @@ struct DataTransferMonitorParam : public Parcelable {
 
     static DataTransferMonitorParam *Unmarshalling(Parcel &parcel)
     {
-        auto param = new DataTransferMonitorParam();
+        auto param = new(std::nothrow) DataTransferMonitorParam();
         if (param == nullptr) {
             return nullptr;
         }

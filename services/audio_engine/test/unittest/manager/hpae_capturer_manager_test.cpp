@@ -856,7 +856,7 @@ HWTEST_F(HpaeCapturerManagerTest, OnRequestLatency_001, TestSize.Level0)
     std::shared_ptr<HpaeCapturerManager> capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     EXPECT_NE(capturerManager, nullptr);
 
-    uint64_t latency;
+    uint64_t latency = 0;
     capturerManager->OnRequestLatency(DEFAULT_SESSION_ID, latency);
     EXPECT_NE(capturerManager, nullptr);
 }

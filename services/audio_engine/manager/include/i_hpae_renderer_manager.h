@@ -20,7 +20,6 @@
 #include "i_capturer_stream.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_stream_manager.h"
-#include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
 #include "hpae_co_buffer_node.h"
 namespace OHOS {

@@ -824,5 +824,17 @@ void OffloadAudioRenderSink::UpdateSinkState(bool started)
     callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD), started);
 }
 
+void OffloadAudioRenderSink::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(speed <= 3.0f && speed >= 0.5f, "speed is invalid"); // 3.0 upper, 0.5 lower
+    uint32_t hdiSpeed = static_cast<uint32_t>(speed * AUDIO_SPEED_BASE);
+    AUDIO_INFO_LOG("speed: %{public}f, hdi speed: %{public}u", speed, hdiSpeed);
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    std::string parameters = "pcm_offload_player_speed=" + std::to_string(hdiSpeed) + ";";
+    deviceManager->SetAudioParameter(attr_.adapterName, NONE, "", parameters);
+}
 } // namespace AudioStandard
 } // namespace OHOS

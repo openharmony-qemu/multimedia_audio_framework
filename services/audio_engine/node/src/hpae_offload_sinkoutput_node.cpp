@@ -45,7 +45,6 @@ namespace {
     constexpr uint32_t OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS = 200;
     constexpr uint32_t OFFLOAD_HDI_CACHE_MOVIE_IN_MS = 500;
     // hdi fallback, modify when hdi change
-    constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
     static constexpr float EPSILON = 1e-6f;
@@ -357,11 +356,10 @@ void HpaeOffloadSinkOutputNode::StopStream()
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
     // flush hdi when disconnect
     RunningLock(true);
+    UpdatePresentationPosition();
     auto ret = RenderSinkFlush();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RenderSinkFlush failed");
     uint64_t cacheLenInHdi = CalcOffloadCacheLenInHdi();
-    cacheLenInHdi = cacheLenInHdi > OFFLOAD_FAD_INTERVAL_IN_US ?
-        cacheLenInHdi - OFFLOAD_FAD_INTERVAL_IN_US : 0;
     uint64_t rewindTime = cacheLenInHdi + ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
     AUDIO_DEBUG_LOG("OffloadRewindAndFlush rewind time in us %{public}" PRIu64, rewindTime);
     auto callback = GetNodeInfo().statusCallback.lock();
@@ -391,7 +389,7 @@ void HpaeOffloadSinkOutputNode::SetPolicyState(int32_t state)
 
 uint64_t HpaeOffloadSinkOutputNode::GetLatency()
 {
-    return CalcOffloadCacheLenInHdi() + ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
+    return ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
 }
 
 int32_t HpaeOffloadSinkOutputNode::SetTimeoutStopThd(uint32_t timeoutThdMs)
@@ -414,6 +412,7 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
 void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
+    speed_ = speed;
     audioRendererSink_->SetSpeed(speed);
 }
 
@@ -495,6 +494,7 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         // if the hdi is flushing, it will block the volume setting.
         // so the render frame judge it.
         OffloadSetHdiVolume();
+        SetSpeed(speed_);
         AUDIO_INFO_LOG("offload write pos: %{public}" PRIu64 " hdi pos: %{public}" PRIu64 " ",
             writePos_, hdiPos_.first);
     }
@@ -535,11 +535,11 @@ uint64_t HpaeOffloadSinkOutputNode::CalcOffloadCacheLenInHdi()
     auto now = std::chrono::high_resolution_clock::now();
     uint64_t time = now > hdiPos_.second ?
         static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::microseconds>(now - hdiPos_.second).count()) : 0;
-    uint64_t hdiPos = hdiPos_.first + time;
+    uint64_t hdiPos = hdiPos_.first + static_cast<uint64_t>(time * speed_);
     uint64_t cacheLenInHdi = writePos_ > hdiPos ? (writePos_ - hdiPos) : 0;
     AUDIO_DEBUG_LOG("offload latency: %{public}" PRIu64 " write pos: %{public}" PRIu64
-                    " hdi pos: %{public}" PRIu64 " time: %{public}" PRIu64,
-                    cacheLenInHdi, writePos_, hdiPos, time);
+                    " hdi pos: %{public}" PRIu64 " time: %{public}" PRIu64 " speed: %{public}f",
+                    cacheLenInHdi, writePos_, hdiPos, time, speed_);
     return cacheLenInHdi;
 }
 

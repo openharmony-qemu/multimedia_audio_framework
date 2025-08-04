@@ -27,7 +27,6 @@ group("audio_unit_test") {
     "../frameworks/js/napi/audiorenderer/test/unittest/audio_renderer_test:jsunittest",
     "../frameworks/js/napi/audiorenderer/toneplayer/test/unittest/tone_player_test:jsunittest",
     "../frameworks/native/audioadapter/test/unittest:pro_audio_service_adapter_unit_test",
-    "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:audio_fast_capturer_unit_test",
     "../frameworks/native/audiocapturer/test/unittest/capturer_test:inner_capturer_unit_test",
@@ -51,6 +50,9 @@ group("audio_unit_test") {
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_capture_interrupt_unit_test",
     "../frameworks/native/audiorenderer/test/unittest/renderer_test:renderer_in_client_unit_test",
     "../frameworks/native/audioschedule:audioschedule_unit_test",
+    "../frameworks/native/audiodefinitions:audio_definitions_unit_test",
+    "../frameworks/native/audioinnercall:audio_inner_call_unit_test",
+    "../frameworks/native/audioqosmanager:audio_qosmanager_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_speed_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_utils_plus_unit_test",
     "../frameworks/native/audioutils/test/unittest:audio_utils_pro_unit_test",
@@ -108,7 +110,6 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
-    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:format_converter_unit_test",
     "../services/audio_service/test/unittest:futex_tool_unit_test",
     "../services/audio_service/test/unittest:hpae_capturer_stream_impl_unit_test",
@@ -117,20 +118,17 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
     "../services/audio_service/test/unittest/hpae_adapter_manager_unit_test:hpae_adapter_manager_unit_test",
 
-    # "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
-    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
-    # "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
     "../services/audio_service/test/unittest:policy_handler_unit_test",
     "../services/audio_service/test/unittest:resource_manager_adapter_unit_test",
     "../services/audio_service/test/unittest:volume_tools_unit_test",
     "../services/audio_service/test/unittest/audio_param_parser_unit_test:audio_param_parser_unit_test",
-    "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_hpae_dump_unit_test",
     "../services/audio_service/test/unittest/audio_server_unit_test:audio_server_unit_test",
-    # "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
     "../services/audio_service/test/unittest/pro_audio_stream_manager_unit_test:pro_audio_stream_manager_unit_test",
     "../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test:pro_renderer_stream_impl_unit_test",
     "../services/audio_service/test/unittest:ring_buffer_wrapper_unit_test",
+    "../services/audio_service/test/unittest:audio_resource_service_unit_test",
+    "../services/audio_service/test/unittest:audio_stream_monitor_unit_test",
   ]
 
   if (audio_framework_feature_opensl_es) {
@@ -171,6 +169,17 @@ group("audio_unit_test") {
   if (audio_framework_feature_inner_capturer) {
     deps += [ "../frameworks/native/playbackcapturer/test/unittest:playback_capturer_manager_unit_test" ]
   }
+    if (!audio_framework_feature_new_engine_flag) {
+    deps += [
+      "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
+      "../services/audio_service/test/unittest:capturer_in_server_unit_test",
+      "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
+      "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
+      "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
+      "../services/audio_service/test/unittest/pa_adapter_manager_unit_test:pa_adapter_manager_unit_test",
+      "../services/audio_service/test/unittest/audio_server_dump_unit_test:audio_server_dump_unit_test",
+    ]
+  }
 }
 
 group("audio_module_test") {
@@ -190,6 +199,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audioaffinitymanager_fuzzer:fuzztest",
     "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
+    "fuzztest/audiocollaborativeservice_fuzzer:fuzztest",
     "fuzztest/audioconnecteddevice_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceentry_fuzzer:fuzztest",
     "fuzztest/audiocoreserviceprivate_fuzzer:fuzztest",
@@ -222,6 +232,7 @@ group("audio_fuzz_test") {
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
     "fuzztest/audiopolicyconcurrency_fuzzer:fuzztest",
+    "fuzztest/audiopolicymanager_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
     "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
@@ -249,6 +260,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
     "fuzztest/audiosessionservice_fuzzer:fuzztest",
+    "fuzztest/audiosocketthread_fuzzer:fuzztest",
     "fuzztest/audiospatializationservice_fuzzer:fuzztest",
     "fuzztest/audiostatemanager_fuzzer:fuzztest",
     "fuzztest/audiostream_fuzzer:fuzztest",
@@ -263,8 +275,10 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/coreserviceproviderstub_fuzzer:fuzztest",
     "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
+    "fuzztest/dfxutils_fuzzer:fuzztest",
     "fuzztest/formatconverter_fuzzer:fuzztest",
     "fuzztest/futextool_fuzzer:fuzztest",
     "fuzztest/hpaecaptureeffectnode_fuzzer:fuzztest",
@@ -281,13 +295,16 @@ group("audio_fuzz_test") {
     "fuzztest/hpaeremoteoutputcluster_fuzzer:fuzztest",
     "fuzztest/hpaeremotesinkoutputnode_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
+    "fuzztest/hpaerenderermanager_add_fuzzer:fuzztest",
     "fuzztest/hpaesinkinputnode_fuzzer:fuzztest",
     "fuzztest/hpaesourceinputcluster_fuzzer:fuzztest",
     "fuzztest/hpaesourceinputnode_fuzzer:fuzztest",
     "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",
     "fuzztest/istandardaudiozoneclient_fuzzer:fuzztest",
     "fuzztest/istandardspatializationstatechangelistener_fuzzer:fuzztest",
+    "fuzztest/microphonedescriptor_fuzzer:fuzztest",
     "fuzztest/powerstatelistener_fuzzer:fuzztest",
+    "fuzztest/resourcemanageradapter_fuzzer:fuzztest",
     "fuzztest/sleaudiodevicemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
   ]

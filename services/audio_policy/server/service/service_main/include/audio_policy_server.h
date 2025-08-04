@@ -281,7 +281,7 @@ public:
     int32_t GetPreferredInputStreamType(const AudioCapturerInfo &capturerInfo, int32_t &streamType) override;
 
     int32_t CreateRendererClient(const std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-        uint32_t &flag, uint32_t &sessionId) override;
+        uint32_t &flag, uint32_t &sessionId, std::string &networkId) override;
 
     int32_t CreateCapturerClient(
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc, uint32_t &flag, uint32_t &sessionId) override;
@@ -582,6 +582,8 @@ public:
     int32_t ForceVolumeKeyControlType(int32_t volumeType, int32_t duration, int32_t &ret) override;
 
     void ProcessRemoteInterrupt(std::set<int32_t> sessionIds, InterruptEventInternal interruptEvent);
+    std::set<int32_t> GetStreamIdsForAudioSessionByStreamUsage(
+        const int32_t zoneId, const std::set<StreamUsage> &streamUsageSet);
 
     void SendVolumeKeyEventCbWithUpdateUiOrNot(AudioStreamType streamType, const bool& isUpdateUi = false,
         int32_t zoneId = 0);
@@ -835,6 +837,7 @@ private:
     std::atomic<bool> isInitMuteState_ = false;
     std::atomic<bool> isInitSettingsData_ = false;
     std::atomic<bool> isScreenOffOrLock_ = false;
+    std::atomic<bool> isInitRingtoneReady_ = false;
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;

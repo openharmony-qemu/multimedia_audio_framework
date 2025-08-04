@@ -58,7 +58,9 @@ std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {REMOTE_CLASS, TYPE_REMOTE_AUDIO},
 };
 
-static std::string GetEncryptAddr(const std::string &addr)
+int32_t AudioPolicyUtils::startDeviceId = 1;
+
+std::string AudioPolicyUtils::GetEncryptAddr(const std::string &addr)
 {
     const int32_t START_POS = 6;
     const int32_t END_POS = 13;
@@ -73,8 +75,6 @@ static std::string GetEncryptAddr(const std::string &addr)
     }
     return out;
 }
-
-int32_t AudioPolicyUtils::startDeviceId = 1;
 
 void AudioPolicyUtils::WriteServiceStartupError(std::string reason)
 {

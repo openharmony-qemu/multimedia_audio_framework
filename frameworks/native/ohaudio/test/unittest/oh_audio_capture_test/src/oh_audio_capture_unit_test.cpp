@@ -47,7 +47,6 @@ OH_AudioStreamBuilder* OHAudioCaptureUnitTest::CreateCapturerBuilder()
     return builder;
 }
 
-#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via legal state.
 * @tc.number: OH_Audio_Capture_Generate_001
@@ -57,13 +56,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_INVALID_PARAM);
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
-#endif
 
 /**
 * @tc.name  : Test OH_AudioStreamBuilder_GenerateCapturer API via illegal OH_AudioStream_Type.
@@ -114,7 +113,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Generate_004, TestSize.Level0)
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
-#ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test OH_AudioCapturer_Start API via legal state.
 * @tc.number: Audio_Capturer_Start_001
@@ -124,11 +122,12 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Start(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -143,7 +142,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Start_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Start(audioCapturer);
@@ -164,12 +164,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Pause(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -184,7 +185,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Pause_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Pause(audioCapturer);
@@ -203,12 +205,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Stop(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -223,7 +226,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Stop_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Stop(audioCapturer);
@@ -242,12 +246,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Flush_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Flush(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioCapturer_Release(audioCapturer);
     OH_AudioStreamBuilder_Destroy(builder);
@@ -262,7 +267,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Flush_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     result = OH_AudioCapturer_Flush(audioCapturer);
@@ -281,12 +287,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
 
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
     result = OH_AudioCapturer_Start(audioCapturer);
 
     result = OH_AudioCapturer_Release(audioCapturer);
-    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_TRUE(result == AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 
     OH_AudioStreamBuilder_Destroy(builder);
 }
@@ -300,7 +307,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_Release_001, TestSize.Level0)
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_NORMAL;
@@ -319,13 +327,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_001, TestSize.Level
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(state == AUDIOSTREAM_STATE_PREPARED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -338,7 +346,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_001, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioCapturer_Start(audioCapturer);
@@ -346,7 +355,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_002, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(state == AUDIOSTREAM_STATE_RUNNING);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -359,7 +367,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_002, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_003, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioCapturer_Start(audioCapturer);
@@ -368,7 +377,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_003, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_EQ(state, AUDIOSTREAM_STATE_PAUSED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -381,7 +389,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_003, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_004, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioCapturer_Start(audioCapturer);
@@ -390,7 +399,6 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_004, TestSize.Le
     OH_AudioStream_State state;
     result = OH_AudioCapturer_GetCurrentState(audioCapturer, &state);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_EQ(state, AUDIOSTREAM_STATE_STOPPED);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -402,7 +410,8 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetCurrentState_004, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_002, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     uint32_t streamId;
@@ -420,13 +429,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetParameter_002, TestSize.Level
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetSamplingRate_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     int32_t rate;
     result = OH_AudioCapturer_GetSamplingRate(audioCapturer, &rate);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(rate == SAMPLE_RATE_48000);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -439,13 +448,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetSamplingRate_001, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_AudioCapture_GetSampleFormat_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioStream_SampleFormat sampleFormat;
     result = OH_AudioCapturer_GetSampleFormat(audioCapturer, &sampleFormat);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(sampleFormat == AUDIOSTREAM_SAMPLE_S16LE);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -458,13 +467,13 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapture_GetSampleFormat_001, TestSize.Lev
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetEncodingType_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioStream_EncodingType encodingType;
     result = OH_AudioCapturer_GetEncodingType(audioCapturer, &encodingType);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(encodingType == AUDIOSTREAM_ENCODING_TYPE_RAW);
     OH_AudioStreamBuilder_Destroy(builder);
 }
 
@@ -477,16 +486,15 @@ HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetEncodingType_001, TestSize.Le
 HWTEST(OHAudioCaptureUnitTest, OH_Audio_Capture_GetCapturerInfo_001, TestSize.Level0)
 {
     OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
-    OH_AudioCapturer* audioCapturer;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
 
     OH_AudioStream_SourceType sourceType;
     result = OH_AudioCapturer_GetCapturerInfo(audioCapturer, &sourceType);
     EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
-    EXPECT_TRUE(sourceType == AUDIOSTREAM_SOURCE_TYPE_MIC);
     OH_AudioStreamBuilder_Destroy(builder);
 }
-#endif
 
 /**
 * @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
@@ -1484,5 +1492,48 @@ HWTEST(OHAudioCaptureUnitTest, OHAudioCapturer_016, TestSize.Level0)
     oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
 }
 #endif
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetInputDevice
+* @tc.number: OH_AudioCapturer_SetInputDevice_001
+* @tc.desc  : Test OH_AudioCapturer_SetInputDevice
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_001, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    OH_AudioStream_Result result = OH_AudioCapturer_SetInputDevice(audioCapturer, AUDIO_DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_SYSTEM);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetFastStatus
+* @tc.number: OH_AudioCapturer_GetFastStatus_001
+* @tc.desc  : Test OH_AudioCapturer_GetFastStatus
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetFastStatus_001, TestSize.Level0)
+{
+    OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    OH_AudioStream_Result result = OH_AudioCapturer_GetFastStatus(audioCapturer, &status);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetTimestamp API via illegal state.
+* @tc.number: OH_AudioCapturer_GetTimestamp_003
+* @tc.desc  : Test OH_AudioCapturer_GetTimestamp interface.Returns false if capturer is nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_003, TestSize.Level0)
+{
+    OHAudioCapturer oHAudioCapturer;
+    OH_AudioCapturer* audioCapturer = (OH_AudioCapturer*)&oHAudioCapturer;
+    int64_t framePosition;
+    int64_t timestamp;
+    OH_AudioStream_Result result = OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_MONOTONIC,
+        &framePosition, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

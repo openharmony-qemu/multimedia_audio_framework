@@ -277,7 +277,11 @@ private:
 
     void ResetCallbackLoopTid();
 
-    bool DoHdiSetSpeed(float speed);
+    bool DoHdiSetSpeed(float speed, bool force);
+
+    int32_t SetSpeedInner(float speed);
+
+    void NotifyOffloadSpeed();
 
     void WaitForBufferNeedWrite();
 
@@ -408,7 +412,9 @@ private:
     AudioRendererRate rendererRate_ = RENDER_RATE_NORMAL;
     AudioEffectMode effectMode_ = EFFECT_DEFAULT;
 
+    std::optional<float> realSpeed_ = std::nullopt;
     float speed_ = 1.0;
+    float hdiSpeed_ = 1.0;
     std::unique_ptr<uint8_t[]> speedBuffer_ {nullptr};
     size_t bufferSize_ = 0;
     std::unique_ptr<AudioSpeed> audioSpeed_ = nullptr;

@@ -115,6 +115,7 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
+        NotifyOffloadSpeed();
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
         UpdateDataLinkState(false, false);
@@ -610,49 +611,47 @@ void RendererInClientInner::OnFirstFrameWriting()
     cb->OnFirstFrameWriting(latency);
 }
 
-bool RendererInClientInner::DoHdiSetSpeed(float speed)
+bool RendererInClientInner::DoHdiSetSpeed(float speed, bool force)
 {
-    CHECK_AND_RETURN_RET(isHdiSpeed_.load(), false);
     AUDIO_INFO_LOG("set speed to hdi, sessionId: %{public}d, speed: %{public}f", sessionId_, speed);
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, true, "ipcStream is not inited!");
-    CHECK_AND_RETURN_RET(!isEqual(speed, speed_), true);
+    CHECK_AND_RETURN_RET_LOG(force || !isEqual(speed, hdiSpeed_), true, "forbid duplicate set speed");
     ipcStream_->SetSpeed(speed);
-    speed_ = speed;
+    hdiSpeed_ = speed;
     return true;
 }
 
 void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::string &networkId)
 {
+    std::lock_guard lock(speedMutex_);
     bool isOffload = routeFlag & (AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD | AUDIO_OUTPUT_FLAG_LOWPOWER);
-    bool curIsHdiSpeed = isOffload && networkId != LOCAL_NETWORK_ID;
+    bool curIsHdiSpeed = isOffload && (networkId != LOCAL_NETWORK_ID || (eStreamType_ == STREAM_MOVIE &&
+        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD));
     CHECK_AND_RETURN(curIsHdiSpeed != isHdiSpeed_.load());
     AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
     isHdiSpeed_.store(curIsHdiSpeed);
-    SetSpeed(speed_);
+    if (curIsHdiSpeed) {
+        if (realSpeed_.has_value()) {
+            DoHdiSetSpeed(realSpeed_.value(), true);
+            SetSpeedInner(1.0);
+        }
+    } else {
+        if (realSpeed_.has_value()) {
+            SetSpeedInner(realSpeed_.value());
+        }
+    }
 }
 
 int32_t RendererInClientInner::SetSpeed(float speed)
 {
     std::lock_guard lock(speedMutex_);
-    CHECK_AND_RETURN_RET(!DoHdiSetSpeed(speed), SUCCESS);
-    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
-    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
-        speed_ = speed;
-        return SUCCESS;
+    realSpeed_ = speed;
+    if (isHdiSpeed_.load()) {
+        DoHdiSetSpeed(speed, false);
+        SetSpeedInner(1.0);
+    } else {
+        SetSpeedInner(speed);
     }
-
-    if (audioSpeed_ == nullptr) {
-        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
-            curStreamParams_.channels);
-        GetBufferSize(bufferSize_);
-        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
-    }
-    audioSpeed_->SetSpeed(speed);
-    writtenAtSpeedChange_.store(
-        WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load() / sizePerFrameInByte_, speed_});
-    speed_ = speed;
-    speedEnable_ = true;
-    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
 }
 
@@ -673,7 +672,7 @@ int32_t RendererInClientInner::SetPitch(float pitch)
 float RendererInClientInner::GetSpeed()
 {
     std::lock_guard lock(speedMutex_);
-    return speed_;
+    return realSpeed_.has_value() ? realSpeed_.value() : 1.0f;
 }
 
 void RendererInClientInner::InitCallbackLoop()

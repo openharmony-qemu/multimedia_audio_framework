@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../../config.gni")
+import("//build/test.gni")
 
 ohos_shared_library("audio_inner_call") {
   sanitize = {
@@ -40,4 +41,37 @@ ohos_shared_library("audio_inner_call") {
 
   subsystem_name = "multimedia"
   part_name = "audio_framework"
+}
+
+ohos_unittest("audio_inner_call_unit_test") {
+  module_out_path = "audio_framework/audio_framework_route/audioinnercall"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [ "./include" ]
+
+  sources = [
+    "test/unittest/audio_inner_call_unit_test.cpp",
+  ]
+
+  deps = [ 
+    ":audio_inner_call",
+    "../audioutils:audio_utils"
+  ]
+
+  defines = []
+
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
 }

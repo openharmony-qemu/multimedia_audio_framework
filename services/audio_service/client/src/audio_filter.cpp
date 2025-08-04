@@ -37,7 +37,7 @@ bool AudioRendererFilter::Marshalling(Parcel &parcel) const
 
 AudioRendererFilter *AudioRendererFilter::Unmarshalling(Parcel &parcel)
 {
-    auto info = new AudioRendererFilter();
+    auto info = new(std::nothrow) AudioRendererFilter();
     if (info == nullptr) {
         return nullptr;
     }

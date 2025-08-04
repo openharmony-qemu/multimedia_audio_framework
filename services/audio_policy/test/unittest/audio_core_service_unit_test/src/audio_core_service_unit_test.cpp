@@ -108,7 +108,8 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_001, TestSize.Level1)
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 0;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -133,7 +134,8 @@ HWTEST_F(AudioCoreServiceUnitTest, CreateRenderClient_002, TestSize.Level1)
     streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     uint32_t originalSessionId = 0;
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
-    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = GetServerPtr()->eventEntry_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result, SUCCESS);
 }
 
@@ -287,7 +289,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisterTracker_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest RegisterTracker_001 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     int32_t apiVersion = 1;
     auto result = GetServerPtr()->eventEntry_->RegisterTracker(mode, streamChangeInfo, nullptr, apiVersion);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -302,7 +304,7 @@ HWTEST_F(AudioCoreServiceUnitTest, RegisterTracker_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest RegisterTracker_002 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     int32_t apiVersion = 1;
     auto result = GetServerPtr()->eventEntry_->RegisterTracker(mode, streamChangeInfo, nullptr, apiVersion);
     EXPECT_EQ(result, ERR_INVALID_PARAM);
@@ -317,7 +319,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_001, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_001 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_NEW;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -332,7 +334,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_002, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_002 start");
     AudioMode mode = AUDIO_MODE_RECORD;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioCapturerChangeInfo.capturerState = CAPTURER_RELEASED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -347,7 +349,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_003, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_003 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_NEW;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -362,7 +364,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_004, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_004 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_RELEASED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);
     EXPECT_EQ(result, SUCCESS);
@@ -377,7 +379,7 @@ HWTEST_F(AudioCoreServiceUnitTest, UpdateTracker_005, TestSize.Level1)
 {
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest UpdateTracker_005 start");
     AudioMode mode = AUDIO_MODE_PLAYBACK;
-    AudioStreamChangeInfo streamChangeInfo;
+    AudioStreamChangeInfo streamChangeInfo = {};
     streamChangeInfo.audioRendererChangeInfo.rendererInfo.streamUsage = STREAM_USAGE_RINGTONE;
     streamChangeInfo.audioRendererChangeInfo.rendererState = RENDERER_PAUSED;
     auto result = GetServerPtr()->eventEntry_->UpdateTracker(mode, streamChangeInfo);

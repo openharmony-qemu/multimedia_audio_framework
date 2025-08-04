@@ -73,7 +73,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
 {
-    auto info = new AudioStreamDescriptor();
+    auto info = new(std::nothrow) AudioStreamDescriptor();
     if (info == nullptr) {
         return nullptr;
     }

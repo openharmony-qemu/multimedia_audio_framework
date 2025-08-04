@@ -53,7 +53,7 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "offload";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
-constexpr uint8_t TESTSIZE = 48;
+constexpr uint8_t TESTSIZE = 51;
 
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
@@ -592,6 +592,37 @@ void HpaeOffloadRendererManagerGetDeviceHDFDumpInfoFuzzTest()
     offloadRendererManager->GetDeviceHDFDumpInfo();
 }
 
+void HpaeOffloadRendererManagerSetLoudnessGainFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    float loudnessGain = GetData<float>();
+    offloadRendererManager->SetLoudnessGain(sessionId, loudnessGain);
+}
+
+
+void HpaeOffloadRendererManagerSetSpeedFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    float speed = GetData<float>();
+    offloadRendererManager->SetSpeed(sessionId, speed);
+}
+
+void HpaeOffloadRendererManagerSetOffloadRenderCallbackTypeFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    int32_t type = GetData<int32_t>();
+    offloadRendererManager->SetOffloadRenderCallbackType(sessionId, type);
+}
+
 typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[TESTSIZE] = {
     CreateRendererManagerFuzzTest,
@@ -642,6 +673,9 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeOffloadRendererManagerReloadRenderManagerFuzzTest,
     HpaeOffloadRendererManagerSetOffloadPolicyFuzzTest,
     HpaeOffloadRendererManagerGetDeviceHDFDumpInfoFuzzTest,
+    HpaeOffloadRendererManagerSetLoudnessGainFuzzTest,
+    HpaeOffloadRendererManagerSetSpeedFuzzTest,
+    HpaeOffloadRendererManagerSetOffloadRenderCallbackTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

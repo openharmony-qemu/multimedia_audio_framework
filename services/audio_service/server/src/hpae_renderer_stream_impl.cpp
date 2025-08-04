@@ -320,28 +320,22 @@ void HpaeRendererStreamImpl::GetLatencyInner(uint64_t &timestamp, uint64_t &late
     uint32_t sinkLatency = 0;
     uint32_t a2dpOffloadLatency = GetA2dpOffloadLatency();
     uint32_t nearlinkLatency = GetNearlinkLatency();
-    latencyUs = latency_;
-    if (deviceClass_ != DEVICE_CLASS_OFFLOAD && deviceClass_ != DEVICE_CLASS_REMOTE_OFFLOAD) {
-        std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
-        if (audioRendererSink) {
-            audioRendererSink->GetLatency(sinkLatency);
-        }
+    std::shared_ptr<IAudioRenderSink> audioRendererSink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+    if (audioRendererSink) {
+        audioRendererSink->GetLatency(sinkLatency);
     }
+    latencyUs = latency_;
     latencyUs += sinkLatency * AUDIO_US_PER_MS;
     latencyUs += a2dpOffloadLatency * AUDIO_US_PER_MS;
     latencyUs += nearlinkLatency * AUDIO_US_PER_MS;
     std::vector<uint64_t> timestampCurrent = {0};
     ClockTime::GetAllTimeStamp(timestampCurrent);
-    auto interval = (timestampCurrent[baseUsed] > timestamp_[baseUsed]) ?
-        (timestampCurrent[baseUsed] - timestamp_[baseUsed]) / AUDIO_NS_PER_US :
-        0;
-    latencyUs = latencyUs > interval ? latencyUs - interval : 0;
     timestamp = timestampCurrent[baseUsed];
 
     AUDIO_DEBUG_LOG("Latency info: framePosition: %{public}" PRIu64 ", latencyUs %{public}" PRIu64
-        ", base %{public}d, timestamp %{public}" PRIu64
+        ", base %{public}d, timestamp %{public}" PRIu64 ", pipe latency: %{public}" PRIu64
         ", sink latency: %{public}u ms, a2dp offload latency: %{public}u ms, nearlink latency: %{public}u ms",
-        framePosition_, latencyUs, base, timestamp, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
+        framePosition_, latencyUs, base, timestamp, latency_, sinkLatency, a2dpOffloadLatency, nearlinkLatency);
 }
 
 int32_t HpaeRendererStreamImpl::SetRate(int32_t rate)

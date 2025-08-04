@@ -95,7 +95,7 @@ struct AudioSpatialDeviceState : public Parcelable {
 
     static AudioSpatialDeviceState *Unmarshalling(Parcel &parcel)
     {
-        auto deviceState = new AudioSpatialDeviceState();
+        auto deviceState = new(std::nothrow) AudioSpatialDeviceState();
         if (deviceState == nullptr) {
             return nullptr;
         }
@@ -124,7 +124,7 @@ struct Library : public Parcelable {
 
     static Library *Unmarshalling(Parcel &parcel)
     {
-        auto library = new Library();
+        auto library = new(std::nothrow) Library();
         if (library == nullptr) {
             return nullptr;
         }
@@ -153,7 +153,7 @@ struct Effect : public Parcelable {
 
     static Effect *Unmarshalling(Parcel &parcel)
     {
-        auto effect = new Effect();
+        auto effect = new(std::nothrow) Effect();
         if (effect == nullptr) {
             return nullptr;
         }
@@ -198,7 +198,7 @@ struct EffectChain : public Parcelable {
 
     static EffectChain *Unmarshalling(Parcel &parcel)
     {
-        auto effectChain = new EffectChain();
+        auto effectChain = new(std::nothrow) EffectChain();
         if (effectChain == nullptr) {
             return nullptr;
         }
@@ -280,7 +280,7 @@ struct EffectChainManagerParam : public Parcelable {
 
     bool Marshalling(Parcel &parcel) const override
     {
-        parcel.WriteInt32(maxExtraNum);
+        parcel.WriteUint32(maxExtraNum);
         parcel.WriteString(defaultSceneName);
         int32_t size = static_cast<int32_t>(priorSceneList.size());
         parcel.WriteInt32(size);
@@ -304,11 +304,11 @@ struct EffectChainManagerParam : public Parcelable {
 
     static EffectChainManagerParam *Unmarshalling(Parcel &parcel)
     {
-        auto param = new EffectChainManagerParam();
+        auto param = new(std::nothrow) EffectChainManagerParam();
         if (param == nullptr) {
             return nullptr;
         }
-        param->maxExtraNum = parcel.ReadInt32();
+        param->maxExtraNum = parcel.ReadUint32();
         param->defaultSceneName = parcel.ReadString();
         int32_t size = parcel.ReadInt32();
         if (size < 0 || size > AUDIO_EFFECT_PRIOR_SCENE_UPPER_LIMIT) {
@@ -441,7 +441,7 @@ struct SupportedEffectConfig : public Parcelable {
 
     static SupportedEffectConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new SupportedEffectConfig();
+        auto config = new(std::nothrow) SupportedEffectConfig();
         if (config == nullptr) {
             return nullptr;
         }
@@ -579,7 +579,7 @@ struct AudioEffectPropertyArrayV3 : public Parcelable {
 
     static AudioEffectPropertyArrayV3 *Unmarshalling(Parcel &parcel)
     {
-        auto propertyArray = new AudioEffectPropertyArrayV3();
+        auto propertyArray = new(std::nothrow) AudioEffectPropertyArrayV3();
         if (propertyArray == nullptr) {
             return nullptr;
         }
@@ -634,7 +634,7 @@ struct AudioEnhancePropertyArray : public Parcelable {
 
     static AudioEnhancePropertyArray *Unmarshalling(Parcel &parcel)
     {
-        auto propertyArray = new AudioEnhancePropertyArray();
+        auto propertyArray = new(std::nothrow) AudioEnhancePropertyArray();
         if (propertyArray == nullptr) {
             return nullptr;
         }
@@ -689,7 +689,7 @@ struct AudioEffectPropertyArray : public Parcelable {
 
     static AudioEffectPropertyArray *Unmarshalling(Parcel &parcel)
     {
-        auto propertyArray = new AudioEffectPropertyArray();
+        auto propertyArray = new(std::nothrow) AudioEffectPropertyArray();
         if (propertyArray == nullptr) {
             return nullptr;
         }
@@ -834,7 +834,7 @@ struct AudioSpatializationState : public Parcelable {
 
     static AudioSpatializationState *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioSpatializationState();
+        auto info = new(std::nothrow) AudioSpatializationState();
         if (info == nullptr) {
             return nullptr;
         }
@@ -858,7 +858,7 @@ struct ConverterConfig : public Parcelable {
 
     static ConverterConfig *Unmarshalling(Parcel &parcel)
     {
-        auto config = new ConverterConfig();
+        auto config = new(std::nothrow) ConverterConfig();
         if (config == nullptr) {
             return nullptr;
         }

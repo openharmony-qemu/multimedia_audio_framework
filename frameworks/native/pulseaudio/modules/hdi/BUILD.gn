@@ -36,8 +36,12 @@ config("hdi_config") {
     "-Werror",
     "-DHAVE_CONFIG_H",
     "-D_GNU_SOURCE",
-    "-D__INCLUDED_FROM_PULSE_AUDIO",
   ]
+  if (!audio_framework_feature_new_engine_flag) {
+    cflags += [
+      "-D__INCLUDED_FROM_PULSE_AUDIO",
+    ]
+  }
 }
 
 ohos_shared_library("module-hdi-sink") {
@@ -78,10 +82,16 @@ ohos_shared_library("module-hdi-sink") {
     "drivers_interface_audio:libaudio_proxy_5.0",
     "hilog:libhilog",
     "init:libbegetutil",
-    "pulseaudio:pulse",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
   ]
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+      "pulseaudio:pulsecommon",
+      "pulseaudio:pulsecore",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }
@@ -125,11 +135,16 @@ ohos_shared_library("module-hdi-source") {
     "drivers_interface_audio:libaudio_proxy_5.0",
     "hdf_core:libhdf_utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
   ]
-
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+      "pulseaudio:pulsecommon",
+      "pulseaudio:pulsecore",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   subsystem_name = "multimedia"
   part_name = "audio_framework"
 }
@@ -164,11 +179,16 @@ ohos_shared_library("module-split-stream-sink") {
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
-    "pulseaudio:pulsecommon",
-    "pulseaudio:pulsecore",
   ]
-
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+      "pulseaudio:pulsecommon",
+      "pulseaudio:pulsecore",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (ressche_enable == true) {
     external_deps += [ "resource_schedule_service:ressched_client" ]
   }

@@ -1370,5 +1370,26 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetSilentModeAndMixWithOthers_003
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     OH_AudioStreamBuilder_Destroy(builder);
 }
+
+/**
+ * @tc.name  : Test OH_AudioRenderer_GetLoudnessGain API via legal and illegal loudnessGain.
+ * @tc.number: OH_Audio_Render_GetLoudnessGain_004
+ * @tc.desc  : Test OH_AudioRenderer_GetLoudnessGain interface after set loudnessGain fails.
+ */
+HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_GetLoudnessGain_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer* audioRenderer;
+    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_GAME;
+    OH_AudioStream_LatencyMode latencyMode = AUDIOSTREAM_LATENCY_MODE_FAST;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetRendererInfo(builder, usage);
+    result = OH_AudioStreamBuilder_SetLatencyMode(builder, latencyMode);
+    result = OH_AudioStreamBuilder_GenerateRenderer(builder, &audioRenderer);
+    float loudnessGain;
+    result = OH_AudioRenderer_GetLoudnessGain(audioRenderer, &loudnessGain);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    EXPECT_EQ(loudnessGain, 0.0f);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
 } // namespace AudioStandard
 } // namespace OHOS

@@ -841,18 +841,27 @@ void HpaeManagerGetSinkAndSourceInfoTest()
     HpaeSinkInfo sinkInfo;
     HpaeSourceInfo sourceInfo;
     int32_t ret = -1;
-    hpaeManager_->GetSinkInfoByIdx(0, sinkInfo, ret, []() {});
+    hpaeManager_->GetSinkInfoByIdx(0, [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+        sinkInfo = sinkInfoRet;
+        ret = result;
+    });
     WaitForMsgProcessing(hpaeManager_);
 
     ret = -1;
-    hpaeManager_->GetSourceInfoByIdx(0, sourceInfo, ret, []() {});
+    hpaeManager_->GetSourceInfoByIdx(0, [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+        sourceInfo  = sourceInfoRet;
+        ret = result;
+    });
 
     AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(audioModuleInfo1);
     WaitForMsgProcessing(hpaeManager_);
     int32_t portId = callback->GetPortId();
     ret = -1;
-    hpaeManager_->GetSinkInfoByIdx(portId, sinkInfo, ret, []() {});
+    hpaeManager_->GetSinkInfoByIdx(portId, [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+        sinkInfo = sinkInfoRet;
+        ret = result;
+    });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
 
@@ -861,7 +870,10 @@ void HpaeManagerGetSinkAndSourceInfoTest()
     WaitForMsgProcessing(hpaeManager_);
     portId = callback->GetPortId();
     ret = -1;
-    hpaeManager_->GetSourceInfoByIdx(portId, sourceInfo, ret, []() {});
+    hpaeManager_->GetSourceInfoByIdx(portId, [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+        sourceInfo  = sourceInfoRet;
+        ret = result;
+    });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
 }
@@ -875,18 +887,27 @@ void HpaeManagerGetSinkAndSourceInfoTest2()
     HpaeSinkInfo sinkInfo;
     HpaeSourceInfo sourceInfo;
     int32_t ret = -1;
-    hpaeManager_->GetSinkInfoByIdx(0, sinkInfo, ret, []() {});
+    hpaeManager_->GetSinkInfoByIdx(0, [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+        sinkInfo = sinkInfoRet;
+        ret = result;
+    });
     WaitForMsgProcessing(hpaeManager_);
 
     ret = -1;
-    hpaeManager_->GetSourceInfoByIdx(0, sourceInfo, ret, []() {});
+    hpaeManager_->GetSourceInfoByIdx(0, [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+        sourceInfo  = sourceInfoRet;
+        ret = result;
+    });
 
     AudioModuleInfo audioModuleInfo1 = GetSinkAudioModeInfo();
     hpaeManager_->OpenAudioPort(audioModuleInfo1);
     WaitForMsgProcessing(hpaeManager_);
     int32_t portId = GetData<int32_t>();
     ret = -1;
-    hpaeManager_->GetSinkInfoByIdx(portId, sinkInfo, ret, []() {});
+    hpaeManager_->GetSinkInfoByIdx(portId, [&sinkInfo, &ret](const HpaeSinkInfo &sinkInfoRet, int32_t result) {
+        sinkInfo = sinkInfoRet;
+        ret = result;
+    });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
 
@@ -895,7 +916,10 @@ void HpaeManagerGetSinkAndSourceInfoTest2()
     WaitForMsgProcessing(hpaeManager_);
     portId = GetData<int32_t>();
     ret = -1;
-    hpaeManager_->GetSourceInfoByIdx(portId, sourceInfo, ret, []() {});
+    hpaeManager_->GetSourceInfoByIdx(portId, [&sourceInfo, &ret](const HpaeSourceInfo &sourceInfoRet, int32_t result) {
+        sourceInfo  = sourceInfoRet;
+        ret = result;
+    });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
 }
@@ -914,6 +938,7 @@ void HpaeManagerEffectLiveTest()
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->SetEffectLiveParameter(params);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectTest()

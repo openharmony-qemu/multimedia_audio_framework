@@ -27,6 +27,7 @@
 #include "i_capturer_stream.h"
 #include "hpae_source_input_node.h"
 #include "hpae_source_output_node.h"
+#include "audio_engine_log.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 
