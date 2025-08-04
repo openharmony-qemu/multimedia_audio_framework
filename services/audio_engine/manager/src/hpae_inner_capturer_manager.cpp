@@ -309,8 +309,7 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSinkInner(sinkName, ids, MOVE_ALL);
     }
-    TriggerCallback(DEINIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-    return SUCCESS;
+    return ret;
 }
 
 int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
@@ -604,8 +603,6 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
-            rendererSessionNodeMap_[sessionId].state, operation);
     };
     SendRequestInner(request);
 }

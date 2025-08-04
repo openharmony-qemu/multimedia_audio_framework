@@ -67,14 +67,14 @@ void HpaeNoLockQueue::HandleRequests()
     uint64_t requestHeadindex;
     do {
         requestHeadindex = requestHeadIndex_.load();
-        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << 32) + INVALID_REQUEST_ID;
+        oldRequestFlag = (GetRequsetFlag(requestHeadindex) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     } while (!std::atomic_compare_exchange_strong(&requestHeadIndex_, &requestHeadindex, oldRequestFlag));
     ProcessRequests(requestHeadindex, true);
 }
 
 void HpaeNoLockQueue::Reset()
 {
-    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_) << 32) + INVALID_REQUEST_ID;
+    const uint64_t oldRequestFlag = (GetRequsetFlag(requestHeadIndex_) << SHIFT_32_OFFSET) + INVALID_REQUEST_ID;
     const uint64_t oldRequestHeadindex = requestHeadIndex_.exchange(oldRequestFlag);
     ProcessRequests(oldRequestHeadindex, false);
 }

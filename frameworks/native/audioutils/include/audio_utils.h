@@ -76,8 +76,6 @@ public:
     static bool IsRingerAudioScene(const AudioScene &audioScene);
 
     static uint32_t GetSamplePerFrame(const AudioSampleFormat &format);
-
-    static uint32_t ConvertToHDIAudioInputType(const SourceType sourceType);
 };
 
 class Trace {

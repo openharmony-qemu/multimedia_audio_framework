@@ -90,7 +90,7 @@ private:
     int32_t InitCapturer();
     void AddSingleNodeToSource(const HpaeCaptureMoveInfo &moveInfo, bool isConnect = true);
     void MoveAllStreamToNewSource(const std::string &sourceName,
-        const std::vector<uint32_t>& moveIds, MoveSessionType moveType);
+        const std::vector<uint32_t>& moveIds, MoveSessionType moveType = MOVE_ALL);
     int32_t CaptureEffectCreate(const HpaeProcessorType &sceneType, const AudioEnhanceScene &enhanceScene);
     int32_t CaptureEffectRelease(const HpaeProcessorType &sceneType);
     int32_t InitCapturerManager();

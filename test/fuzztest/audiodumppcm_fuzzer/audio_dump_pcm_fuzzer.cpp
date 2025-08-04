@@ -55,7 +55,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 8;
+const uint8_t TESTSIZE = 14;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -182,6 +182,68 @@ void OnHandleFuzzTest()
     audioCacheMgrInner->OnHandle(code, data);
 }
 
+void GetMemBlockFuzzTest()
+{
+    size_t dataLength = GetData<size_t>();
+    std::string dumpFileName = "abc";
+    MemBlock curMemBlock;
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    if (memChunk == nullptr) {
+        return;
+    }
+    memChunk->GetMemBlock(dataLength, dumpFileName, curMemBlock);
+}
+
+void GetMemChunkDurationFuzzTest()
+{
+    int64_t startTime = GetData<int64_t>();
+    int64_t endTime = GetData<int64_t>();
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    if (memChunk == nullptr) {
+        return;
+    }
+    memChunk->GetMemChunkDuration(startTime, endTime);
+}
+
+void GetCurUsedMemoryFuzzTest()
+{
+    size_t dataLength = GetData<size_t>();
+    size_t bufferLength = GetData<size_t>();
+    size_t structLength = GetData<size_t>();
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    if (memChunk == nullptr) {
+        return;
+    }
+    memChunk->GetCurUsedMemory(dataLength, bufferLength, structLength);
+}
+
+void ResetFuzzTest()
+{
+    std::shared_ptr<MemChunk> memChunk = std::make_shared<MemChunk>();
+    if (memChunk == nullptr) {
+        return;
+    }
+    memChunk->Reset();
+}
+
+void GetCurMemoryConditionFuzzTest()
+{
+    auto audioCacheMgrInner = std::make_shared<AudioCacheMgrInner>();
+    if (audioCacheMgrInner == nullptr) {
+        return;
+    }
+    size_t dataLength = GetData<size_t>();
+    size_t bufferLength = GetData<size_t>();
+    size_t structLength = GetData<size_t>();
+    audioCacheMgrInner->GetCurMemoryCondition(dataLength, bufferLength, structLength);
+}
+
+void PrintCurMemoryConditionFuzzTest()
+{
+    AudioCacheMgrInner audioCacheMgrInner;
+    audioCacheMgrInner.PrintCurMemoryCondition();
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     InitFuzzTest,
     DeInitFuzzTest,
@@ -191,6 +253,12 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     GetDumpParameterFuzzTest,
     SetDumpParameterFuzzTest,
     OnHandleFuzzTest,
+    GetMemBlockFuzzTest,
+    GetMemChunkDurationFuzzTest,
+    GetCurUsedMemoryFuzzTest,
+    ResetFuzzTest,
+    GetCurMemoryConditionFuzzTest,
+    PrintCurMemoryConditionFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

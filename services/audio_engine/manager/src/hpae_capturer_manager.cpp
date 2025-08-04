@@ -879,9 +879,7 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
             HpaeCaptureMoveInfo moveInfo;
             moveInfo.sessionId = it.first;
             moveInfo.sourceOutputNode = it.second;
-            idStr.append("[");
-            idStr.append(std::to_string(it.first));
-            idStr.append("],");
+            idStr.append("[").append(std::to_string(it.first)).append("],");
             if (sessionNodeMap_.find(it.first) != sessionNodeMap_.end()) {
                 moveInfo.sessionInfo = sessionNodeMap_[it.first];
                 moveInfos.emplace_back(moveInfo);

@@ -36,7 +36,6 @@ namespace AudioStandard {
 
 static constexpr int32_t NS_PER_MS = 1000000;
 static constexpr int32_t MS_PER_S = 1000;
-static constexpr int32_t MEDIA_SERVICE_UID = 1031;
 static const char* SETTINGS_DATA_FIELD_VALUE = "VALUE";
 static const char* SETTINGS_DATA_FIELD_KEYWORD = "KEYWORD";
 static const char* PREDICATES_STRING = "settings.general.device_name";
@@ -674,15 +673,6 @@ std::string AudioPolicyUtils::GetDevicesStr(const vector<shared_ptr<AudioDeviceD
         devices.append(" ");
     }
     return devices;
-}
-
-int32_t AudioPolicyUtils::GetRealUid(const std::shared_ptr<AudioStreamDescriptor> &streamDesc)
-{
-    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, INVALID_UID, "Stream desc is nullptr");
-    if (streamDesc->callerUid_ == MEDIA_SERVICE_UID) {
-        return streamDesc->appInfo_.appUid;
-    }
-    return streamDesc->callerUid_;
 }
 
 AudioDeviceUsage AudioPolicyUtils::GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage)
