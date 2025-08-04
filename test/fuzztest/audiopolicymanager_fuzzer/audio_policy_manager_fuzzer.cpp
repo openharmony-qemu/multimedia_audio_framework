@@ -417,7 +417,7 @@ void AudioPolicyManagerEightFuzzTest()
 void AudioPolicyManagerNiNeFuzzTest()
 {
     bool isMute = GetData<bool>();
-    int32_t clientUid = GetData<bool>();
+    int32_t clientUid = GetData<int32_t>();
     PolicyType type = GetData<PolicyType>();
     std::string countryCode = "countryCode";
     int32_t ltonetype = GetData<int32_t>();
