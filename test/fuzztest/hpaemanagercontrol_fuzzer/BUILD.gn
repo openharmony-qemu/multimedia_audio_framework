@@ -18,7 +18,7 @@ import("../../../config.gni")
 
 ohos_fuzztest("HpaeManagerControlFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../hpaemanager_control_fuzzer"
+  fuzz_config_file = "../hpaemanagercontrol_fuzzer"
 
   include_dirs = [
     "../../../services/audio_policy/server/include/service",
