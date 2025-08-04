@@ -307,6 +307,7 @@ void HpaeRenderStreamManagerFuzzTest3()
     hpaeManager_->Release(streamClassType, sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerFuzzTest4()
@@ -346,6 +347,7 @@ void HpaeRenderStreamManagerFuzzTest4()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerFuzzTest()
@@ -427,6 +429,7 @@ void HpaeCaptureStreamManagerFuzzTest3()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest()
@@ -472,6 +475,7 @@ void HpaeRenderStreamManagerMoveFuzzTest()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest2()
@@ -525,6 +529,7 @@ void HpaeRenderStreamManagerMoveFuzzTest2()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest()
@@ -563,6 +568,7 @@ void HpaeCaptureStreamManagerMoveTest()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest2()
@@ -605,6 +611,7 @@ void HpaeCaptureStreamManagerMoveTest2()
     hpaeManager_->Release(streamClassType, sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerDumpStreamInfoTest()

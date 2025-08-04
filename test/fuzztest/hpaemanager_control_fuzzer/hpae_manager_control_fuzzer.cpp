@@ -223,6 +223,7 @@ void HpaeRenderManagerReloadTest()
     WaitForMsgProcessing(hpaeManager_);
     portId = callback->GetPortId();
     hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderManagerReloadTest2()
@@ -249,6 +250,7 @@ void HpaeRenderManagerReloadTest2()
     WaitForMsgProcessing(hpaeManager_);
     portId = callback->GetPortId();
     hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerGetSinkAndSourceInfoTest()
