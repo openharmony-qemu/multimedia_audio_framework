@@ -315,7 +315,7 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
     return SUCCESS;
 }
 
-static void CopyLeftToRight(uint8_t *data, size_t size, const AudioSampleFormat &format)
+static void CopyRightToLeft(uint8_t *data, size_t size, const AudioSampleFormat &format)
 {
     CHECK_AND_RETURN_LOG(data != nullptr && size > 0, "error param");
     const uint8_t bytesPerSample = GetSizeFromFormat(format);
@@ -325,7 +325,7 @@ static void CopyLeftToRight(uint8_t *data, size_t size, const AudioSampleFormat 
     for (size_t i = 0; i < size - frameSize + 1; i += frameSize) {
         left = data + i;
         right = left + bytesPerSample;
-        CHECK_AND_RETURN_LOG(memcpy_s(right, bytesPerSample, left, bytesPerSample) == 0, "memcpy_s failed");
+        CHECK_AND_RETURN_LOG(memcpy_s(left, bytesPerSample, right, bytesPerSample) == 0, "memcpy_s failed");
     }
 }
 
@@ -341,7 +341,7 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackCapturerStreamInfo& callbackStre
     size_t requestDataLen = callbackStreamInfo.requestDataLen;
     // todo : channel select
     if (linkMode_ == SoftLinkMode::HEARING_AID && sinkInfo_.channels == STEREO) {
-        CopyLeftToRight(reinterpret_cast<uint8_t *>(outputData), requestDataLen, sinkInfo_.format);
+        CopyRightToLeft(reinterpret_cast<uint8_t *>(outputData), requestDataLen, sinkInfo_.format);
     }
     OptResult result = bufferQueue_->GetWritableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERR_READ_FAILED,
