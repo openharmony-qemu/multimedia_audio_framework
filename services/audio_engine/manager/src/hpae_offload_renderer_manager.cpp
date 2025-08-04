@@ -658,9 +658,9 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
     latency = sinkOutputNode_->GetLatency();
 }
 
-void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime)
+void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
-    sinkInputNode_->RewindHistoryBuffer(rewindTime);
+    sinkInputNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
 void HpaeOffloadRendererManager::OnNotifyQueue()

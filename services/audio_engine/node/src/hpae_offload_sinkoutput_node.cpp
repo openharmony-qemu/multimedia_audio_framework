@@ -363,7 +363,7 @@ void HpaeOffloadSinkOutputNode::StopStream()
     uint64_t rewindTime = cacheLenInHdi + ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
     AUDIO_DEBUG_LOG("OffloadRewindAndFlush rewind time in us %{public}" PRIu64, rewindTime);
     auto callback = GetNodeInfo().statusCallback.lock();
-    callback->OnRewindAndFlush(rewindTime);
+    callback->OnRewindAndFlush(rewindTime, hdiRealPos_);
     OffloadReset();
 }
 
@@ -523,8 +523,8 @@ int32_t HpaeOffloadSinkOutputNode::UpdatePresentationPosition()
     uint64_t frames;
     int64_t timeSec;
     int64_t timeNanoSec;
-    int ret = audioRendererSink_->GetPresentationPosition(frames, timeSec, timeNanoSec);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "GetPresentationPosition failed, errCode is %{public}d", ret);
+    int ret = audioRendererSink_->ForceRefreshPresentationPosition(frames, hdiRealPos_, timeSec, timeNanoSec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "ForceRefreshPresentationPosition failed, ret is %{public}d", ret);
     auto total_ns = std::chrono::seconds(timeSec) + std::chrono::nanoseconds(timeNanoSec);
     hdiPos_ = std::make_pair(frames, TimePoint(total_ns));
     return 0;

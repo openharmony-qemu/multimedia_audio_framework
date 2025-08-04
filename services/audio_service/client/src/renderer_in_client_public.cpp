@@ -115,7 +115,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
-        NotifyOffloadSpeed();
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
         UpdateDataLinkState(false, false);
@@ -379,10 +378,10 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
 
     uint64_t framePosition = lastSwitchPosition_[base] +
-        (readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0);
+        (readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0);
     framePosition = framePosition > latency ? framePosition - latency : 0;
 
     // reset the timestamp
@@ -393,9 +392,10 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+        ", lastSpeedFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+        framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);

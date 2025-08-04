@@ -39,6 +39,10 @@ public:
     virtual int32_t GetStreamFramesWritten(uint64_t &framesWritten) = 0;
     virtual int32_t GetCurrentTimeStamp(uint64_t &timestamp) = 0;
     virtual int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base);
+    virtual int32_t GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base)
+    {
+        return GetCurrentPosition(framePosition, timestamp, latency, base);
+    }
     virtual int32_t GetLatency(uint64_t &latency) = 0;
     virtual int32_t SetRate(int32_t rate) = 0;
     virtual int32_t SetAudioEffectMode(int32_t effectMode) = 0;

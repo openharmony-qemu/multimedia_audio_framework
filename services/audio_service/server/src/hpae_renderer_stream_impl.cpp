@@ -294,6 +294,49 @@ int32_t HpaeRendererStreamImpl::GetRemoteOffloadCurrentPosition(uint64_t &frameP
     return SUCCESS;
 }
 
+int32_t HpaeRendererStreamImpl::GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
+    uint64_t &latency)
+{
+    CHECK_AND_RETURN_RET(deviceClass_ == DEVICE_CLASS_REMOTE_OFFLOAD, ERR_NOT_SUPPORTED);
+
+    std::shared_ptr<IAudioRenderSink> sink = GetRenderSinkInstance(deviceClass_, deviceNetId_);
+    CHECK_AND_RETURN_RET_LOG(sink != nullptr, ERR_INVALID_OPERATION, "audioRendererSink is null");
+    uint64_t framesUS;
+    int64_t timeSec;
+    int64_t timeNSec;
+    int32_t ret = sink->GetHdiPresentationPosition(framesUS, timeSec, timeNSec);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get position fail");
+
+    uint32_t curLatencyUS = 0;
+    ret = sink->GetHdiLatency(curLatencyUS);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail");
+
+    // Here, latency and sampling count are calculated, and latency is exposed to the client as 0.
+    latency = static_cast<uint64_t>(curLatencyUS) * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+
+    uint64_t frames = framesUS * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+    framePosition = lastHdiFramePosition_ + frames;
+    timestamp = static_cast<uint64_t>(timeNSec + timeSec * AUDIO_NS_PER_SECOND);
+    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetSpeedPosition frame: %{public}" PRIu64, framePosition);
+    return SUCCESS;
+}
+
+int32_t HpaeRendererStreamImpl::GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp,
+    uint64_t &latency, int32_t base)
+{
+    std::shared_lock<std::shared_mutex> lock(latencyMutex_);
+
+    int32_t ret = GetRemoteOffloadSpeedPosition(framePosition, timestamp, latency);
+    CHECK_AND_RETURN_RET(ret == ERR_NOT_SUPPORTED, ret);
+
+    framePosition = lastHdiFramePosition_ + framePosition_ - lastFramePosition_;
+
+    uint64_t latencyUs = 0;
+    GetLatencyInner(timestamp, latencyUs, base);
+    latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
+    return SUCCESS;
+}
+
 int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp,
     uint64_t &latency, int32_t base)
 {
@@ -302,6 +345,8 @@ int32_t HpaeRendererStreamImpl::GetCurrentPosition(uint64_t &framePosition, uint
     GetLatencyInner(timestamp, latencyUs, base);
     latency = latencyUs * static_cast<uint64_t>(processConfig_.streamInfo.samplingRate) / AUDIO_US_PER_S;
     framePosition = framePosition_;
+    AUDIO_DEBUG_LOG("HpaeRendererStreamImpl::GetCurrentPosition Latency info: framePosition: %{public}" PRIu64
+        ", latency %{public}" PRIu64, framePosition, latency);
     return SUCCESS;
 }
 
@@ -395,10 +440,36 @@ void HpaeRendererStreamImpl::RegisterWriteCallback(const std::weak_ptr<IWriteCal
     writeCallback_ = callback;
 }
 
+void HpaeRendererStreamImpl::OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo)
+{
+    if (deviceClass_ != callBackStreamInfo.deviceClass) {
+        uint64_t newFramePosition = callBackStreamInfo.framePosition;
+
+        // from normal to remote offload
+        if (callBackStreamInfo.deviceClass == DEVICE_CLASS_REMOTE_OFFLOAD) {
+            uint64_t duration = newFramePosition > lastFramePosition_ ? newFramePosition - lastFramePosition_ :
+                lastFramePosition_ - newFramePosition;
+            lastHdiFramePosition_ = newFramePosition > lastFramePosition_ ? lastHdiFramePosition_ + duration :
+                (lastHdiFramePosition_ > duration ? lastHdiFramePosition_ - duration : 0);
+        }
+        // Device type switch, replace lastFramePosition_
+        lastFramePosition_ = callBackStreamInfo.framePosition;
+    }
+
+    // If hdiFramePosition has a value, it indicates that the remote offload device has performed a flush.
+    // The value of hdiFramePosition needs to be accumulated into lastHdiFramePosition_
+    if (callBackStreamInfo.hdiFramePosition > 0) {
+        lastHdiFramePosition_ +=
+            // from time (us) to sample
+            callBackStreamInfo.hdiFramePosition * processConfig_.streamInfo.samplingRate / AUDIO_US_PER_S;
+    }
+}
+
 int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackStreamInfo)
 {
     {
         std::unique_lock<std::shared_mutex> lock(latencyMutex_);
+        OnDeviceClassChange(callBackStreamInfo);
         framePosition_ = callBackStreamInfo.framePosition;
         timestamp_ = callBackStreamInfo.timestamp;
         latency_ = callBackStreamInfo.latency;
