@@ -1112,8 +1112,13 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     for (uint32_t i = nSamples; i > 0; --i) {
         int32_t value = *frame++;
         if (value < 0) {
-            value = -value;
+            if (value == INT32_MIN) {
+                value = INT32_MAX;
+            } else {
+                value = -value;
+            }
         }
+
         if (curMaxAmplitude < value) {
             curMaxAmplitude = value;
         }
