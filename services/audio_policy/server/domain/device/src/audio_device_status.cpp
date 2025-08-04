@@ -75,8 +75,10 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
     auto rate_begin = deviceInfo.find("rate=");
     auto rate_end = deviceInfo.find_first_of(" ", rate_begin);
-    moduleInfo.rate = deviceInfo.substr(rate_begin + std::strlen("rate="),
-        rate_end - rate_begin - std::strlen("rate="));
+    if (rate_end > rate_begin) {
+        moduleInfo.rate = deviceInfo.substr(rate_begin + std::strlen("rate="),
+            rate_end - rate_begin - std::strlen("rate="));
+    }
     if (moduleInfo.role == "sink") {
         auto sinkFormat_begin = deviceInfo.find("format=");
         auto sinkFormat_end = deviceInfo.find_first_of(" ", sinkFormat_begin);
