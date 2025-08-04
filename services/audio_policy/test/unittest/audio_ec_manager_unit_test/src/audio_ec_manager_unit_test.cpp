@@ -572,5 +572,79 @@ HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_022, TestSize.Level1)
     }
 }
 
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_023
+* @tc.desc  : Test GetUsbModuleInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_023, TestSize.Level4)
+{
+    AudioModuleInfo moduleInfo;
+    moduleInfo.role = "source";
+    string deviceInfo = "source_rate:1;source_format:AUDIO_FORMAT_PCM_16_BIT";
+    GetUsbModuleInfo(deviceInfo, moduleInfo);
+    EXPECT_EQ(moduleInfo.rate, "1");
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_024
+* @tc.desc  : Test UpdateStreamEcInfo interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_024, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioModuleInfo moduleInfo;
+    SourceType sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    EXPECT_NO_THROW(ecManager.UpdateStreamEcInfo(moduleInfo, sourceType));
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_025
+* @tc.desc  : Test PresetArmIdleInput interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_025, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    ecManager.isEcFeatureEnable_ = false;
+    ecManager.usbSourceModuleInfo_.role = "";
+    const std::string goodAddress{"address=card=2;device=0 role=0"};
+    ecManager.PresetArmIdleInput(goodAddress);
+    EXPECT_TRUE(ecManager.usbSourceModuleInfo_.role.empty());
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_026
+* @tc.desc  : Test CloseUsbArmDevice interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_026, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    AudioDeviceDescriptor device(DEVICE_TYPE_EARPIECE, INPUT_DEVICE);
+    device.macAddress_ = "00:11:22:33:44:55";
+    ecManager.activeArmInputAddr_ = device.macAddress_;
+    EXPECT_NO_THROW(ecManager.CloseUsbArmDevice(device));
+
+    device.deviceRole_ = OUTPUT_DEVICE;
+    ecManager.activeArmOutputAddr_ = device.macAddress_;
+    EXPECT_NO_THROW(ecManager.CloseUsbArmDevice(device));
+}
+
+/**
+* @tc.name  : Test AudioEcManager.
+* @tc.number: AudioEcManager_027
+* @tc.desc  : Test GetTargetSourceTypeAndMatchingFlag interface.
+*/
+HWTEST_F(AudioEcManagerUnitTest, AudioEcManager_027, TestSize.Level4)
+{
+    AudioEcManager& ecManager(AudioEcManager::GetInstance());
+    SourceType source = SOURCE_TYPE_LIVE;
+    SourceType targetSource = SOURCE_TYPE_INVALID;
+    bool useMatchingPropInfo = false;
+    ecManager.GetTargetSourceTypeAndMatchingFlag(source, targetSource, useMatchingPropInfo);
+    EXPECT_EQ(targetSource, SOURCE_TYPE_LIVE);
+}
 } // namespace AudioStandard
 } // namespace OHOS

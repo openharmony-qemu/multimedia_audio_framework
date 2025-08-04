@@ -3600,6 +3600,12 @@ ohos_unittest("audio_ec_manager_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+    sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 }
 
 ohos_unittest("audio_general_manager_unit_test") {
@@ -5443,7 +5449,10 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
+  ]
 
   deps = [
     "../../../frameworks/native/audiodefinitions:audio_definitions",
