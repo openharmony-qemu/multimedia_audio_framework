@@ -2520,14 +2520,12 @@ HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
     EXPECT_EQ(ERROR, ret);
 }
 
-HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    int32_t asrVoiceMuteMode = 0;
-    bool on = true;
-    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
-}
-//  baimiaojie
+/**
+ * @tc.name  : Test SetAsrVoiceMuteMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetAsrVoiceMuteMode_001
+ * @tc.desc  : Test SetAsrVoiceMuteMode interface.
+ */
 HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);

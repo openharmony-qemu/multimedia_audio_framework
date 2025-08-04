@@ -1308,7 +1308,12 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_042, TestSize.Level1
     EXPECT_EQ(NEED_RESTORE, ret);
 }
 
-//   baimiaojie
+/**
+ * @tc.name  : Test ConfigServerBuffer.
+ * @tc.type  : FUNC
+ * @tc.number: ConfigServerBuffer_001.
+ * @tc.desc  : Test ConfigServerBuffer interface.
+ */
 HWTEST_F(CapturerInServerUnitTest, ConfigServerBuffer_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
@@ -1325,6 +1330,12 @@ HWTEST_F(CapturerInServerUnitTest, ConfigServerBuffer_001, TestSize.Level1)
     EXPECT_EQ(result, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test OnStatusUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: OnStatusUpdate_001.
+ * @tc.desc  : Test OnStatusUpdate interface.
+ */
 HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
@@ -1337,6 +1348,12 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_001, TestSize.Level1)
     EXPECT_EQ(capturerInServer_->status_, I_STATUS_RELEASED);
 }
 
+/**
+ * @tc.name  : Test OnStatusUpdate.
+ * @tc.type  : FUNC
+ * @tc.number: OnStatusUpdate_002
+ * @tc.desc  : Test OnStatusUpdate interface.
+ */
 HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
 {
     AudioProcessConfig processConfig;

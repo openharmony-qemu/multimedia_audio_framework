@@ -1285,7 +1285,11 @@ HWTEST(AudioStreamCheckerTest, IsMonitorNoDataFrame_001, TestSize.Level1)
     EXPECT_EQ(ret, false);
 }
 
-//    baimiaojie
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerPara_002
+ */
 HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_002, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1295,6 +1299,11 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_002, TestSize.Level1)
     EXPECT_EQ(checker->checkParaVector_.size(), 0);
 }
 
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerPara_003
+ */
 HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_003, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1304,6 +1313,11 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_003, TestSize.Level1)
     EXPECT_EQ(checker->checkParaVector_.size(), 1);
 }
 
+/**
+ * @tc.name  : Test DeleteCheckerPara API
+ * @tc.type  : FUNC
+ * @tc.number: DeleteCheckerPara_004
+ */
 HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_004, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1312,6 +1326,11 @@ HWTEST(AudioStreamCheckerTest, DeleteCheckerPara_004, TestSize.Level1)
     EXPECT_EQ(checker->checkParaVector_.size(), 0);
 }
 
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_006
+ */
 HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_006, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1324,6 +1343,11 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_006, TestSize.Level1)
     EXPECT_EQ(checker->isKeepCheck_.load(), false);
 }
 
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_007
+ */
 HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_007, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1336,6 +1360,11 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_007, TestSize.Level1)
     EXPECT_NE(checker->isKeepCheck_.load(), true);
 }
 
+/**
+ * @tc.name  : Test OnRemoteAppDied API
+ * @tc.type  : FUNC
+ * @tc.number: OnRemoteAppDied_008
+ */
 HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_008, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1347,6 +1376,11 @@ HWTEST(AudioStreamCheckerTest, OnRemoteAppDied_008, TestSize.Level1)
     EXPECT_EQ(checker->isKeepCheck_.load(), false);
 }
 
+/**
+ * @tc.name  : Test MonitorCheckFrame API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrame_005
+ */
 HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_005, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1356,6 +1390,11 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_005, TestSize.Level0)
     EXPECT_FALSE(checker->monitorSwitch_);
 }
 
+/**
+ * @tc.name  : Test MonitorCheckFrame API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrame_006
+ */
 HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_006, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1371,6 +1410,11 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrame_006, TestSize.Level0)
     EXPECT_TRUE(checker->monitorSwitch_);
 }
 
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_007
+ */
 HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_007, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1383,6 +1427,11 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_007, TestSize.Level0)
     EXPECT_EQ(abnormalFrameNum, 0);
 }
 
+/**
+ * @tc.name  : Test CalculateFrameAfterStandby API
+ * @tc.type  : FUNC
+ * @tc.number: CalculateFrameAfterStandby_008
+ */
 HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_008, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1395,6 +1444,11 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_008, TestSize.Level0)
     EXPECT_NE(abnormalFrameNum, 10);
 }
 
+/**
+ * @tc.name  : Test MonitorCheckFrameSub API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameSub_006
+ */
 HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_006, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1406,6 +1460,11 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_006, TestSize.Level0)
     EXPECT_NE(para.lastStatus, -1); // Assuming lastStatus is updated in the function
 }
 
+/**
+ * @tc.name  : Test MonitorCheckFrameSub API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorCheckFrameSub_007
+ */
 HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_007, TestSize.Level0)
 {
     AudioProcessConfig cfg;
@@ -1418,6 +1477,11 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_007, TestSize.Level0)
     EXPECT_NE(para.lastStatus, -1); // Assuming lastStatus is updated in the function
 }
 
+/**
+ * @tc.name  : Test MonitorOnAllCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_008
+ */
 HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1427,6 +1491,11 @@ HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_008, TestSize.Level1)
     EXPECT_FALSE(checker->monitorSwitch_);
 }
 
+/**
+ * @tc.name  : Test MonitorOnAllCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_009
+ */
 HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_009, TestSize.Level1)
 {
     AudioProcessConfig cfg;
@@ -1442,6 +1511,11 @@ HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_009, TestSize.Level1)
     EXPECT_TRUE(checker->monitorSwitch_);
 }
 
+/**
+ * @tc.name  : Test MonitorOnAllCallback API
+ * @tc.type  : FUNC
+ * @tc.number: MonitorOnAllCallback_0010
+ */
 HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_010, TestSize.Level1)
 {
     AudioProcessConfig cfg;

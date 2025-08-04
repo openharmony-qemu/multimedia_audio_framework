@@ -124,7 +124,12 @@ HWTEST(AudioThreadTaskUnitTest, PauseAsync_002, TestSize.Level1)
     EXPECT_EQ(audioThreadTask->state_, AudioThreadTask::RunningState::PAUSING);
 }
 
-//     baimiaojie
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_002
+* @tc.desc  : Test Start interface.
+*/
 HWTEST(AudioThreadTaskUnitTest, Start_002, TestSize.Level1)
 {
     std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
@@ -133,6 +138,12 @@ HWTEST(AudioThreadTaskUnitTest, Start_002, TestSize.Level1)
     EXPECT_EQ(audioThreadTask->state_, AudioThreadTask::RunningState::STARTED);
 }
 
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_003
+* @tc.desc  : Test Start interface.
+*/
 HWTEST(AudioThreadTaskUnitTest, Start_003, TestSize.Level1)
 {
     std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
@@ -142,6 +153,12 @@ HWTEST(AudioThreadTaskUnitTest, Start_003, TestSize.Level1)
     EXPECT_NE(audioThreadTask->loop_, nullptr);
 }
 
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_004
+* @tc.desc  : Test Start interface.
+*/
 HWTEST(AudioThreadTaskUnitTest, Start_004, TestSize.Level1)
 {
     std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
@@ -152,6 +169,12 @@ HWTEST(AudioThreadTaskUnitTest, Start_004, TestSize.Level1)
     EXPECT_NE(audioThreadTask->loop_, nullptr);
 }
 
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_005
+* @tc.desc  : Test Start interface.
+*/
 HWTEST(AudioThreadTaskUnitTest, Start_005, TestSize.Level1)
 {
     std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
@@ -161,6 +184,12 @@ HWTEST(AudioThreadTaskUnitTest, Start_005, TestSize.Level1)
     EXPECT_NE(audioThreadTask->loop_, nullptr);
 }
 
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_006
+* @tc.desc  : Test Start interface.
+*/
 HWTEST(AudioThreadTaskUnitTest, Start_006, TestSize.Level1)
 {
     std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");

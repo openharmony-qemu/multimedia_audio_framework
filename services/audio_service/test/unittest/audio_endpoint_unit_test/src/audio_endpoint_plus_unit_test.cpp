@@ -1693,7 +1693,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_061, TestSize.Level1)
     EXPECT_EQ(audioEndpointInner->processTmpBufferList_[0].size(), 2);
 }
 
-//  baimiaojie
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_001
+ * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_001, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1705,6 +1710,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_001, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_002
+ * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_002, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1716,6 +1727,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_002, TestSize.Level1)
     EXPECT_TRUE(result);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_003
+ * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_003, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1727,6 +1744,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_003, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_004
+ * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_004, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1738,6 +1761,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_004, TestSize.Level1)
     EXPECT_TRUE(result);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: IsInvalidBuffer_005
+ * @tc.desc  : Test AudioEndpointInner::IsInvalidBuffer()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_005, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1749,6 +1778,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, IsInvalidBuffer_005, TestSize.Level1)
     EXPECT_FALSE(result);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAudioHapticsSync_001
+ * @tc.desc  : Test AudioEndpointInner::CheckAudioHapticsSync()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
@@ -1764,6 +1799,12 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_001, TestSize.Level1)
     EXPECT_EQ(audioEndpointnIner->audioHapticsSyncId_, 0);
 }
 
+/*
+ * @tc.name  : Test AudioEndpointInner API
+ * @tc.type  : FUNC
+ * @tc.number: CheckAudioHapticsSync_002
+ * @tc.desc  : Test AudioEndpointInner::CheckAudioHapticsSync()
+ */
 HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_002, TestSize.Level1)
 {
     AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
