@@ -717,8 +717,7 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateRendererStreamCallback(desc, reason);
                 break;
             default:
                 break;
@@ -747,8 +746,7 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
                 }
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
-                TriggerRecreateRendererStreamCallback(desc->appInfo_.appPid,
-                    desc->sessionId_, desc->routeFlag_);
+                TriggerRecreateRendererStreamCallback(desc, reason);
                 break;
             default:
                 break;
@@ -1580,16 +1578,31 @@ bool AudioCoreService::HasLowLatencyCapability(DeviceType deviceType, bool isRem
     }
 }
 
-void AudioCoreService::TriggerRecreateRendererStreamCallback(int32_t callerPid, int32_t sessionId,
-    uint32_t routeFlag, const AudioStreamDeviceChangeReasonExt::ExtEnum reason)
+void AudioCoreService::TriggerRecreateRendererStreamCallback(shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
 {
-    Trace trace("AudioDeviceCommon::TriggerRecreateRendererStreamCallback");
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr, "streamDesc is null");
+    Trace trace("AudioCoreService::TriggerRecreateRendererStreamCallback");
+    int32_t callerPid = streamDesc->callerPid_;
+    int32_t sessionId = streamDesc->sessionId_;
+    uint32_t routeFlag = streamDesc->routeFlag_;
     AUDIO_INFO_LOG("Trigger recreate renderer stream %{public}d, pid: %{public}d, routeflag: 0x%{public}x",
         sessionId, callerPid, routeFlag);
     if (audioPolicyServerHandler_ != nullptr) {
         audioPolicyServerHandler_->SendRecreateRendererStreamEvent(callerPid, sessionId, routeFlag, reason);
     } else {
         AUDIO_WARNING_LOG("No audio policy server handler");
+    }
+    CHECK_AND_RETURN_LOG(streamDesc->oldDeviceDescs_.size() > 0 && streamDesc->oldDeviceDescs_.front() != nullptr,
+        "oldDeviceDesc is invalid");
+    CHECK_AND_RETURN_LOG(streamDesc->newDeviceDescs_.size() > 0 && streamDesc->newDeviceDescs_.front() != nullptr,
+        "newDeviceDesc is invalid");
+    std::shared_ptr<AudioDeviceDescriptor> oldDeviceDesc = streamDesc->oldDeviceDescs_.front();
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = streamDesc->newDeviceDescs_.front();
+    if (!oldDeviceDesc->IsSameDeviceDesc(newDeviceDesc)) {
+        std::shared_ptr<AudioDeviceDescriptor> callbackDesc = std::make_shared<AudioDeviceDescriptor>(newDeviceDesc);
+        callbackDesc->descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
+        audioPolicyServerHandler_->SendRendererDeviceChangeEvent(callerPid, sessionId, callbackDesc, reason);
     }
 }
 
