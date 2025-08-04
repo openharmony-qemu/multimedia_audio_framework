@@ -542,9 +542,9 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
 {
     CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     CHECK_AND_RETURN_LOG(info != NULL, "info is null");
+    CHECK_AND_RETURN_LOG(result != NULL, "result is null");
     if (n == 0) {
         *result = s->silence;
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         pa_memblock_ref(result->memblock);
         if (result->length > length)
             result->length = length;
@@ -552,7 +552,6 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
         pa_cvolume volume;
 
         *result = info[0].chunk;
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         pa_memblock_ref(result->memblock);
         if (result->length > length)
             result->length = length;
@@ -571,7 +570,6 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
     } else {
         void *ptr;
         CHECK_AND_RETURN_LOG(s->core != NULL, "core is null");
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         result->memblock = pa_memblock_new(s->core->mempool, length);
 
         ptr = pa_memblock_acquire(result->memblock);
