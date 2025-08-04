@@ -2518,6 +2518,6 @@ HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
     uint32_t sessionId = 0;
     int32_t ret = audioServer->GenerateSessionId(sessionId);
     EXPECT_EQ(ERROR, ret);
-}
+}GHJGH
 } // namespace AudioStandard
 } // namespace OHOS
