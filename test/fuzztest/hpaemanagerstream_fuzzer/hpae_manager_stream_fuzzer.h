@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef HPAE_MANAGER_FUZZER_H
-#define HPAE_MANAGER_FUZZER_H
+#ifndef HPAE_MANAGER_STREAM_FUZZER_H
+#define HPAE_MANAGER_STREAM_FUZZER_H
 
 #include "audio_service_hpae_callback.h"
 #include "audio_info.h"
@@ -186,4 +186,4 @@ private:
     std::vector<OHOS::AudioStandard::SinkInfo> sinks_;
 };
 
-#endif // HPAE_MANAGER_FUZZER_H
+#endif // HPAE_MANAGER_STREAM_FUZZER_H
