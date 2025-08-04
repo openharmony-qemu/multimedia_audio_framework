@@ -1367,6 +1367,12 @@ int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timesta
     return SUCCESS;
 }
 
+int32_t RendererInServer::GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+{
+    CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_STOPPED, ERR_ILLEGAL_STATE, "Current status is stopped");
+    return stream_->GetSpeedPosition(framePos, timestamp, latency, base);
+}
+
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);

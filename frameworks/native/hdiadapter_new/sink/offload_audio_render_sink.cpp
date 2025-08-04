@@ -284,7 +284,7 @@ int32_t OffloadAudioRenderSink::GetLatency(uint32_t &latency)
     int64_t timeNanoSec = 0;
     int32_t ret = GetPresentationPosition(frames, timeSec, timeNanoSec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get frames fail");
-    latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_TO_MILLISECOND : 0;
+    latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_PER_MILLISECOND : 0;
     return SUCCESS;
 }
 

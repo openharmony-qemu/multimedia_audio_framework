@@ -85,7 +85,7 @@ public:
 
     void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation) override;
     void OnRequestLatency(uint32_t sessionId, uint64_t &latency) override;
-    void OnRewindAndFlush(uint64_t rewindTime) override;
+    void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0) override;
     void OnNotifyQueue() override;
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
