@@ -231,6 +231,10 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
             newPipeInfo->name_.c_str(), newPipeInfo->pipeAction_);
 
         for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
+            if (streamDescToOldPipeInfo.find(streamDesc->sessionId_) == streamDescToOldPipeInfo.end()) {
+                AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
+                continue;
+            }
             streamDesc->streamAction_ = JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->sessionId_]);
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
                 "streamAction %{public}d", streamDesc->sessionId_,
@@ -240,7 +244,6 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
         }
-
     }
 }
 
