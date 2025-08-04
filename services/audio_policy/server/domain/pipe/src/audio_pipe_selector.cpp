@@ -23,6 +23,8 @@
 #include "audio_policy_utils.h"
 #include <algorithm>
 
+#include <map>
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -169,64 +171,121 @@ void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
     AUDIO_INFO_LOG("DeviceStreamInfo:%{public}s", info.c_str());
 }
 
+void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    CHECK_AND_RETURN_LOG(streamDescs.size() != 0, "streamDescs is empty!");
+    streamDescs[0]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[0]);
+    if (streamDescs.size() == 1) {
+        return;
+    }
+
+    SortStreamDescsByStartTime(streamDescs);
+    for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
+        streamDescs[cmpStreamIdx]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[cmpStreamIdx]);
+        // calculate concurrency in time order
+        for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
+            ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx]);
+        }
+    }
+}
+
+// newPipeInfoList要先从old里面拷贝一份，不包含流
+// oldPipeInfoList里要包含pipe中已有流的信息
+// 这个函数完成之后，所有流应该在对应的pipe中能找到，old和new里面可以找到对应的stream信息且唯一对应
+void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+    std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
+{
+    std::string adapterName{};
+    for (auto &streamDesc : streamDescs) {
+        std::string streamDescAdapterName = GetAdapterNameByStreamDesc(streamDesc);
+        // find if curStream's prefer has already exist
+        auto newPipeIter = std::find_if(newPipeInfoList.begin(), newPipeInfoList.end(),
+            [&](const std::shared_ptr<AudioPipeInfo> &newPipeInfo) {
+                return newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
+                    newPipeInfo->adapterName_ == streamDescAdapterName;
+            });
+
+        // if find
+        if (newPipeIter != newPipeInfoList.end()) {
+            (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
+            (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
+            continue;
+        }
+        // if not find, need open
+        HandlePipeNotExist(newPipeInfoList, streamDesc);
+    }
+}
+
+// 基于已有的old--new对比判断流action和pipe action
+void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+    std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
+{
+    // 遍历newpipelist中的stream
+    for (auto &newPipeInfo : newPipeInfoList) {
+        for (auto &streamDesc : newPipeInfo->streamDescriptors_) {
+            streamDesc->streamAction_ = JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->sessionId_]);
+        }
+        if (newPipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+            continue;
+        }
+        auto oldPipeIter = std::find_if(oldPipeInfoList.begin(), oldPipeInfoList.end(),
+            [&](const std::shared_ptr<AudioPipeInfo> &oldPipeInfo) {
+                return oldPipeInfo->routeFlag_ == newPipeInfo->routeFlag_ &&
+                    oldPipeInfo->adapterName_ == newPipeInfo->adapterName_;
+            });
+        
+        if (AudioPipeInfo::HasSameStreams(newPipeInfo, *oldPipeIter)) {
+            newPipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        } else {
+            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
+        }
+    }
+}
+
+
 std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExecute(
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> selectedPipeInfoList{};
+    std::vector<std::shared_ptr<AudioPipeInfo>> oldPipeInfoList{};
     if (streamDescs.size() == 0) {
-        return selectedPipeInfoList;
+        return oldPipeInfoList;
     }
+    // get all existing pipes and select render/capture pipes
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = AudioPipeManager::GetPipeManager()->GetPipeList();
     for (auto &curPipeInfo : pipeInfoList) {
         if (curPipeInfo->pipeRole_ == static_cast<AudioPipeRole>(streamDescs[0]->audioMode_)) {
-            selectedPipeInfoList.push_back(curPipeInfo);
+            oldPipeInfoList.push_back(curPipeInfo);
         }
     }
 
-    AUDIO_INFO_LOG("Original Pipelist size: %{public}zu for role %{public}d to fetch",
-        selectedPipeInfoList.size(), streamDescs[0]->audioMode_);
-
     // Record current pipe--stream info for later use (Judge stream action)
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToPipeInfo;
-    for (auto &pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : oldPipeInfoList) {
         pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
         for (auto &streamDesc : pipeInfo->streamDescriptors_) {
             streamDescToPipeInfo[streamDesc->sessionId_] = pipeInfo;
         }
     }
 
-    // deep copy to new pipeList
+    // deep copy to newPipeInfoList and clear all streams
     std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
-    for (auto &pipeInfo : selectedPipeInfoList) {
+    for (auto &pipeInfo : oldPipeInfoList) {
         std::shared_ptr<AudioPipeInfo> temp = std::make_shared<AudioPipeInfo>(*pipeInfo);
         temp->streamDescriptors_.clear();
         temp->streamDescMap_.clear();
         newPipeInfoList.push_back(temp);
     }
 
-    SortStreamDescsByStartTime(streamDescs);
-    // traversal each streamDesc
-    for (auto &streamDesc : streamDescs) {
-        std::string adapterName = GetAdapterNameByStreamDesc(streamDesc);
-        ScanPipeListForStreamDesc(newPipeInfoList, streamDesc); // Get route flag and apply concurrency
-        bool isFindPipeInfo = IsPipeExist(newPipeInfoList, adapterName, streamDesc, streamDescToPipeInfo);
-        if (!isFindPipeInfo) {
-            HandlePipeNotExist(newPipeInfoList, streamDesc, streamDescToPipeInfo);
-        }
-    }
-    // Check is pipe update
-    for (auto &pipeInfo : selectedPipeInfoList) {
-        if (pipeInfo->streamDescriptors_.size() == 0) {
-            pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
-        }
-    }
+    DecideFinalRouteFlag(streamDescs);
+    ProcessNewPipeList(oldPipeInfoList, newPipeInfoList, streamDescs);
+    DecidePipesAndStreamAction(oldPipeInfoList, newPipeInfoList, streamDescToPipeInfo);
     return newPipeInfoList;
 }
 
 void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
-    std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToPipeInfo)
+    std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
     AudioPipeInfo pipeInfo = {};
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
@@ -234,38 +293,11 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, pipeInfo);
     pipeInfo.pipeAction_ = PIPE_ACTION_NEW;
     std::shared_ptr<AudioPipeInfo> tempPipeInfo = std::make_shared<AudioPipeInfo>(pipeInfo);
+    tempPipeInfo->streamDescriptors_.push_back(streamDesc);
+    tempPipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
     newPipeInfoList.push_back(tempPipeInfo);
-    streamDesc->streamAction_ = JudgeStreamAction(tempPipeInfo, streamDescToPipeInfo[streamDesc->sessionId_]);
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d",
         tempPipeInfo->ToString().c_str(), streamDesc->sessionId_, streamDesc->streamAction_);
-}
-
-bool AudioPipeSelector::IsPipeExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
-    std::string &adapterName, std::shared_ptr<AudioStreamDescriptor> &streamDesc,
-    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToPipeInfo)
-{
-    bool isFindPipeInfo = false;
-    for (auto &newPipeInfo : newPipeInfoList) {
-        if (newPipeInfo->adapterName_ != adapterName || newPipeInfo->routeFlag_ != streamDesc->routeFlag_) {
-            continue;
-        }
-        newPipeInfo->streamDescriptors_.push_back(streamDesc);
-        if (streamDescToPipeInfo.find(streamDesc->sessionId_) == streamDescToPipeInfo.end()) {
-            AUDIO_INFO_LOG("Cannot find session: %{public}u", streamDesc->sessionId_);
-        } else {
-            streamDesc->streamAction_ =
-                JudgeStreamAction(newPipeInfo, streamDescToPipeInfo[streamDesc->sessionId_]);
-        }
-        newPipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
-        if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
-            newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;
-        }
-        AUDIO_INFO_LOG("[PipeFetchInfo] use existing Pipe %{public}s for stream %{public}u with action %{public}d",
-            newPipeInfo->ToString().c_str(), streamDesc->sessionId_, streamDesc->streamAction_);
-        isFindPipeInfo = true;
-        break;
-    }
-    return isFindPipeInfo;
 }
 
 void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,

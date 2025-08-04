@@ -30,7 +30,6 @@ enum AudioPipeAction {
     PIPE_ACTION_DEFAULT = 0,
     PIPE_ACTION_NEW,
     PIPE_ACTION_UPDATE,
-    PIPE_ACTION_RELOAD,
 };
 
 class AudioPipeInfo {
@@ -54,6 +53,8 @@ public:
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
     std::unordered_map<uint32_t, std::shared_ptr<AudioStreamDescriptor>> streamDescMap_ = {};
+
+    static bool HasSameStreams(std::shared_ptr<AudioPipeInfo> &pipeInfo1, std::shared_ptr<AudioPipeInfo> &pipeInfo2);
 
     AudioPipeInfo();
 
