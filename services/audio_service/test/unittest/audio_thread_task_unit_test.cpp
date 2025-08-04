@@ -123,5 +123,79 @@ HWTEST(AudioThreadTaskUnitTest, PauseAsync_002, TestSize.Level1)
     audioThreadTask->PauseAsync();
     EXPECT_EQ(audioThreadTask->state_, AudioThreadTask::RunningState::PAUSING);
 }
+
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_002
+* @tc.desc  : Test Start interface.
+*/
+HWTEST(AudioThreadTaskUnitTest, Start_002, TestSize.Level1)
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
+    audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
+    audioThreadTask->Start();
+    EXPECT_EQ(audioThreadTask->state_, AudioThreadTask::RunningState::STARTED);
+}
+
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_003
+* @tc.desc  : Test Start interface.
+*/
+HWTEST(AudioThreadTaskUnitTest, Start_003, TestSize.Level1)
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
+    audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
+    audioThreadTask->loop_ = std::make_unique<std::thread>([&] {});
+    audioThreadTask->Start();
+    EXPECT_NE(audioThreadTask->loop_, nullptr);
+}
+
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_004
+* @tc.desc  : Test Start interface.
+*/
+HWTEST(AudioThreadTaskUnitTest, Start_004, TestSize.Level1)
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
+    audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
+    std::thread joinableThread;
+    audioThreadTask->loop_ = std::make_unique<std::thread>(std::move(joinableThread));
+    audioThreadTask->Start();
+    EXPECT_NE(audioThreadTask->loop_, nullptr);
+}
+
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_005
+* @tc.desc  : Test Start interface.
+*/
+HWTEST(AudioThreadTaskUnitTest, Start_005, TestSize.Level1)
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
+    audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
+    audioThreadTask->loop_ = std::make_unique<std::thread>([&] {});
+    audioThreadTask->Start();
+    EXPECT_NE(audioThreadTask->loop_, nullptr);
+}
+
+/**
+* @tc.name  : Test Start API
+* @tc.type  : FUNC
+* @tc.number: Start_006
+* @tc.desc  : Test Start interface.
+*/
+HWTEST(AudioThreadTaskUnitTest, Start_006, TestSize.Level1)
+{
+    std::unique_ptr<AudioThreadTask> audioThreadTask = std::make_unique<AudioThreadTask>("test");
+    audioThreadTask->state_ = AudioThreadTask::RunningState::STOPPED;
+    audioThreadTask->Start();
+    EXPECT_NE(audioThreadTask->loop_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
