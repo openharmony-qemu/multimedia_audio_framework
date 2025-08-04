@@ -76,6 +76,7 @@ public:
         std::shared_ptr<AudioClientTracker> proxyObj;
         AudioPrivacyType privacyType;
         float volume;
+        float duckVolume = 1.0f;
         int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
