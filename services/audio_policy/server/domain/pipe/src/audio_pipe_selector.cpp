@@ -191,7 +191,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
 }
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
-void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
     std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
@@ -204,7 +204,6 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
                 return newPipeInfo->routeFlag_ == streamDesc->routeFlag_ &&
                     newPipeInfo->adapterName_ == streamDescAdapterName;
             });
-
         if (newPipeIter != newPipeInfoList.end()) {
             (*newPipeIter)->streamDescriptors_.push_back(streamDesc);
             (*newPipeIter)->streamDescMap_[streamDesc->sessionId_] = streamDesc;
@@ -218,11 +217,11 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 }
 
 // based on old--new pipeinfo to judge streamAction and pipeAction
-void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
     std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
-    // get each streamDesc in each newPipe to judge action 
+    // get each streamDesc in each newPipe to judge action
     for (auto &newPipeInfo : newPipeInfoList) {
         if (newPipeInfo->pipeAction_ != PIPE_ACTION_NEW) {
             newPipeInfo->pipeAction_ = PIPE_ACTION_UPDATE;

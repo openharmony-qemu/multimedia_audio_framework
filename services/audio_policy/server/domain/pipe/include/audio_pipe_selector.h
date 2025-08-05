@@ -53,10 +53,10 @@ private:
     void HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+    void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
         std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList, 
+    void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
         std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
 
