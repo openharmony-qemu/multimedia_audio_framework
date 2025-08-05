@@ -59,7 +59,6 @@ ohos_fuzztest("AudioStreamFuzzTest") {
     "init:libbegetutil",
     "ipc:ipc_single",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
   ]

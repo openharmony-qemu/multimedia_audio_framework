@@ -23,7 +23,6 @@
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
-constexpr uint32_t MIN_START_NODE_ID = 100;
 class DfxTreeNode {
 public:
     explicit DfxTreeNode(HpaeDfxNodeInfo val) : nodeInfo_(val)

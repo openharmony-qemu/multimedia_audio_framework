@@ -113,7 +113,7 @@ void AudioEndpointInner::ZeroVolumeCheck(const int32_t vol)
         if (zeroVolumeState_ == INACTIVE) {
             zeroVolumeStartTime_ = ClockTime::GetCurNano();
             zeroVolumeState_ = IN_TIMING;
-            AUDIO_INFO_LOG("Begin zero volume, will stop fastSink in 4s.");
+            AUDIO_INFO_LOG("zero volume, will stop fastSink in 4s.");
             return;
         }
 

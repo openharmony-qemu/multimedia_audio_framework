@@ -81,6 +81,7 @@ public:
     std::vector<uint32_t> GetStreamIdsByUid(uint32_t uid, uint32_t routeFlagMask = UINT32_MAX);
     void UpdateOutputStreamDescsByIoHandle(AudioIOHandle id,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &descs);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> GetAllCapturerStreamDescs();
 
 private:
     bool IsSpecialPipe(uint32_t routeFlag);

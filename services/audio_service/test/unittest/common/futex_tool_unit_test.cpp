@@ -21,6 +21,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "futex_tool.h"
+#include "audio_log_utils.h"
 
 using namespace testing::ext;
 
@@ -213,6 +214,61 @@ HWTEST(FutexToolUnitTest, FutexTool_007, TestSize.Level1)
     });
 
     EXPECT_EQ(ret, FUTEX_TIMEOUT);
+}
+
+/**
+ * @tc.name  : Test FutexTool API
+ * @tc.type  : FUNC
+ * @tc.number: FutexTool_008
+ * @tc.desc  : Test FutexTool interface.
+ */
+HWTEST(FutexToolUnitTest, FutexTool_008, TestSize.Level1)
+{
+    std::atomic<uint32_t> futexVar(100);
+
+    auto ret = FutexTool::FutexWait(&futexVar, SHORT_TIMEOUT_IN_NS, [] () {
+        return false;
+    });
+
+    EXPECT_EQ(ret, FUTEX_INVALID_PARAMS);
+}
+
+/**
+ * @tc.name  : Test ProcessVolumeData API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessVolumeData_001
+ * @tc.desc  : Test ProcessVolumeData interface.
+ */
+HWTEST(FutexToolUnitTest, ProcessVolumeData_001, TestSize.Level1)
+{
+    AudioLogUtils audioLogUtils;
+    std::string logTag = "test_log_tag";
+    ChannelVolumes vols;
+    vols.channel = STEREO;
+    vols.volStart[0] = 0;
+    vols.volStart[1] = 0;
+    int64_t count = 10;
+    audioLogUtils.ProcessVolumeData(logTag, vols, count);
+    EXPECT_NE(count, 9);
+}
+
+/**
+ * @tc.name  : Test ProcessVolumeData API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessVolumeData_002
+ * @tc.desc  : Test ProcessVolumeData interface.
+ */
+HWTEST(FutexToolUnitTest, ProcessVolumeData_002, TestSize.Level1)
+{
+    AudioLogUtils audioLogUtils;
+    std::string logTag = "test_log_tag";
+    ChannelVolumes vols;
+    vols.channel = STEREO;
+    vols.volStart[0] = 1;
+    vols.volStart[1] = 1;
+    int64_t count = -10;
+    audioLogUtils.ProcessVolumeData(logTag, vols, count);
+    EXPECT_NE(count, -9);
 }
 } // namespace AudioStandard
 } // namespace OHOS

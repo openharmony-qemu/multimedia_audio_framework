@@ -1866,7 +1866,7 @@ int32_t CapturerInClientInner::GetCallbackLoopTid()
 
 void CapturerInClientInner::ResetCallbackLoopTid()
 {
-    AUDIO_INFO_LOG("Reset callback loop tid to -1");
+    AUDIO_INFO_LOG("to -1");
     callbackLoopTid_ = -1;
 }
 

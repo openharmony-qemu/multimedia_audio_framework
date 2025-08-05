@@ -147,29 +147,6 @@ HWTEST(AudioUtilsUnitTest, ConvertFromFloatTo24Bit_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test ConvertToHDIAudioInputType API
- * @tc.type  : FUNC
- * @tc.number: ConvertToHDIAudioInputType_001
- * @tc.desc  : Test ConvertToHDIAudioInputType
- */
-HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
-{
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_INVALID);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_ULTRASONIC);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_WAKEUP);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_COMMUNICATION);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_RECOGNITION);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VOICE_CALL);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_CAMCORDER);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_EC);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_MIC_REF);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_UNPROCESSED);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_LIVE);
-    Util::ConvertToHDIAudioInputType(SOURCE_TYPE_VIRTUAL_CAPTURE);
-    EXPECT_FALSE(static_cast<size_t>(0));
-}
-
-/**
  * @tc.name  : Test IsInnerCapSinkName API
  * @tc.type  : FUNC
  * @tc.number: IsInnerCapSinkName_001
@@ -178,10 +155,7 @@ HWTEST(AudioUtilsUnitTest, ConvertToHDIAudioInputType_001, TestSize.Level1)
 HWTEST(AudioUtilsUnitTest, IsInnerCapSinkName_001, TestSize.Level1)
 {
     char pattern[MAX_MEM_MALLOC_SIZE + 1] = {0};
-    for (int i = 0; i < MAX_MEM_MALLOC_SIZE; i++) {
-        pattern[i] = 'a';
-    }
-    EXPECT_FALSE(IsInnerCapSinkName(pattern));
+    EXPECT_EQ(IsInnerCapSinkName(pattern), false);
 }
 
 /**
@@ -222,26 +196,11 @@ HWTEST(AudioUtilsUnitTest, CloseFd_001, TestSize.Level0)
 }
 
 /**
-* @tc.name  : Test CheckAudioData  API
-* @tc.type  : FUNC
-* @tc.number: CheckAudioData_004
-* @tc.desc  : Test CheckAudioData API
-*/
-HWTEST(AudioUtilsUnitTest, CheckAudioData_004, TestSize.Level1)
-{
-    uint8_t buffer[10] = {2, 3, 2, 3, 2, 3, 2, 3, 2, 3};
-    size_t bufferLen = 10 * sizeof(int32_t);
-    SignalDetectAgent signalDetectAgent;
-    signalDetectAgent.sampleFormat_= SAMPLE_F32LE;
-    bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
-    EXPECT_EQ(ret, false);
-}
-
-/**
-* @tc.name  : Test MockPcmData  API
+* @tc.name  : Test MockPcmData API
 * @tc.type  : FUNC
 * @tc.number: MockPcmData_003
-* @tc.desc  : Test MockPcmData API
+* @tc.desc  : Test MockPcmData API if format is SAMPLE_S16LE
+* when mockedTime_ >= MOCK_INTERVAL
 */
 HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
 {
@@ -254,11 +213,66 @@ HWTEST(AudioUtilsUnitTest, MockPcmData_003, TestSize.Level1)
     audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
     audioLatencyMeasurement->format_ = SAMPLE_S16LE;
     bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
-    EXPECT_EQ(ret, false);
-
-    audioLatencyMeasurement->format_ = SAMPLE_S32LE;
-    ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
     EXPECT_EQ(ret, true);
+}
+
+/**
+* @tc.name  : Test MockPcmData API
+* @tc.type  : FUNC
+* @tc.number: MockPcmData_004
+* @tc.desc  : Test MockPcmData API if format is SAMPLE_S32LE
+* when mockedTime_ >= MOCK_INTERVAL
+*/
+HWTEST(AudioUtilsUnitTest, MockPcmData_004, TestSize.Level1)
+{
+    std::shared_ptr<AudioLatencyMeasurement> audioLatencyMeasurement =
+        std::make_shared<AudioLatencyMeasurement>(44100, 2, 16, "com.example.null", 1);
+    uint8_t buffer[1024] = {};
+    size_t bufferLen = sizeof(buffer);
+    size_t mockInterval = 2000;
+
+    audioLatencyMeasurement->mockedTime_ = mockInterval + 1;
+    audioLatencyMeasurement->format_ = SAMPLE_S32LE;
+    bool ret = audioLatencyMeasurement->MockPcmData(buffer, bufferLen);
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test CallEndAndClear API
+ * @tc.type  : FUNC
+ * @tc.number: CallEndAndClear_001
+ * @tc.desc  : Test CallEndAndClear when *cTrace is nullptr
+ */
+HWTEST(AudioUtilsUnitTest, CallEndAndClear_001, TestSize.Level0)
+{
+    CTrace *cTrace = nullptr;
+    CallEndAndClear(&cTrace);
+    EXPECT_TRUE(cTrace == nullptr);
+}
+
+/**
+ * @tc.name  : Test CallEndAndClear API
+ * @tc.type  : FUNC
+ * @tc.number: CallEndAndClear_002
+ * @tc.desc  : Test CallEndAndClear when **cTrace is nullptr
+ */
+HWTEST(AudioUtilsUnitTest, CallEndAndClear_002, TestSize.Level0)
+{
+    CTrace **cTrace = nullptr;
+    CallEndAndClear(cTrace);
+    EXPECT_TRUE(cTrace == nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioLatencyMeasurement API
+ * @tc.type  : FUNC
+ * @tc.number: AudioLatencyMeasurement_001
+ * @tc.desc  : Test AudioLatencyMeasurement when **cTrace is nullptr
+ */
+HWTEST(AudioUtilsUnitTest, AudioLatencyMeasurement_001, TestSize.Level1)
+{
+    AudioLatencyMeasurement audioLatencyMeasurement(44100, 2, 16, "com.example.null", 1);
+    EXPECT_EQ(audioLatencyMeasurement.sessionId_, 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

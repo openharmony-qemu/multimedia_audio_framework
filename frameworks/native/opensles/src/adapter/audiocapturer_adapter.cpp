@@ -36,7 +36,7 @@ AudioCapturerAdapter* AudioCapturerAdapter::GetInstance()
 
 shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id)
 {
-    AUDIO_INFO_LOG("AudioCapturerAdapter::GetAudioCapturerById: %{public}lu", id);
+    AUDIO_INFO_LOG("id: %{public}lu", id);
     auto it = captureMap_.find(id);
     if (it == captureMap_.end()) {
         AUDIO_ERR_LOG("GetAudioCapturerById: %{public}lu not found", id);
@@ -47,7 +47,7 @@ shared_ptr<AudioCapturer> AudioCapturerAdapter::GetAudioCapturerById(SLuint32 id
 
 void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 {
-    AUDIO_INFO_LOG("AudioCapturerAdapter::EraseAudioCapturerById: %{public}lu", id);
+    AUDIO_INFO_LOG("id: %{public}lu", id);
     captureMap_.erase(id);
     callbackMap_.erase(id);
 }
@@ -55,7 +55,7 @@ void AudioCapturerAdapter::EraseAudioCapturerById(SLuint32 id)
 SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSource *dataSource,
     SLDataSink *dataSink, AudioStreamType streamType)
 {
-    AUDIO_INFO_LOG("AudioCapturerAdapter::CreateAudioCapturerAdapter");
+    AUDIO_INFO_LOG("in");
     SLDataFormat_PCM *pcmFormat = (SLDataFormat_PCM *)dataSink->pFormat;
     AudioCapturerParams capturerParams;
     ConvertPcmFormat(pcmFormat, &capturerParams);
@@ -80,7 +80,7 @@ SLresult AudioCapturerAdapter::CreateAudioCapturerAdapter(SLuint32 id, SLDataSou
 
 SLresult AudioCapturerAdapter::SetCaptureStateAdapter(SLuint32 id, SLuint32 state)
 {
-    AUDIO_INFO_LOG("AudioCapturerAdapter::SetCaptureStateAdapter state: %{public}lu.", state);
+    AUDIO_INFO_LOG("state: %{public}lu.", state);
     shared_ptr<AudioCapturer> audioCapturer = GetAudioCapturerById(id);
     CHECK_AND_RETURN_RET_LOG(audioCapturer != nullptr, SL_RESULT_RESOURCE_ERROR,
         "invalid id.");

@@ -396,6 +396,48 @@ HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_217, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_218
+ * @tc.desc  : Test OnReceiveEvent.
+ */
+HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_218, TestSize.Level4)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.LOCALE_CHANGED");
+    eventData.SetWant(want);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    int32_t result = audioPolicyServer->CallRingtoneLibrary();
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyServer.
+ * @tc.number: AudioPolicyServer_219
+ * @tc.desc  : Test OnReceiveEvent.
+ */
+HWTEST(AudioPolicyUnitTestSecond, AudioPolicyServer_219, TestSize.Level4)
+{
+    int32_t systemAbilityId = 0;
+    auto audioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId);
+    ASSERT_NE(audioPolicyServer, nullptr);
+
+    EventFwk::CommonEventData eventData;
+    OHOS::EventFwk::Want want;
+    want.SetAction("usual.event.DATA_SHARE_READY");
+    eventData.SetWant(want);
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isInitRingtoneReady_, true);
+    // branch testing
+    audioPolicyServer->OnReceiveEvent(eventData);
+    EXPECT_EQ(audioPolicyServer->isInitRingtoneReady_, true);
+}
+
+/**
 * @tc.name  : IsContinueAddVolTest_001
 * @tc.number: IsContinueAddVolTest_001
 * @tc.desc  : test false case with call once
@@ -491,12 +533,11 @@ HWTEST(AudioPolicyUnitTest, TriggerMuteCheck_002, TestSize.Level1)
     bool runOnCreate = false;
     auto ptrAudioPolicyServer = std::make_shared<AudioPolicyServer>(systemAbilityId, runOnCreate);
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
-    std::shared_ptr<AudioRendererChangeInfo> info = std::shared_ptr<AudioRendererChangeInfo>();
+    std::shared_ptr<AudioRendererChangeInfo> info = std::make_shared<AudioRendererChangeInfo>();
+    EXPECT_NE(info, nullptr);
     info->rendererState = RENDERER_RUNNING;
     AudioStreamCollector::GetAudioStreamCollector().audioRendererChangeInfos_.push_back(info);
     ptrAudioPolicyServer->TriggerMuteCheck();
-    info = std::shared_ptr<AudioRendererChangeInfo>();
-    info->rendererState = RENDERER_RUNNING;
     info->outputDeviceInfo.networkId_ = LOCAL_NETWORK_ID;
     ptrAudioPolicyServer->TriggerMuteCheck();
 }

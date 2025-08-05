@@ -132,6 +132,12 @@ public:
         return 0;
     }
 
+    virtual int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency,
+        int32_t base) override
+    {
+        return 0;
+    }
+
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
@@ -1834,6 +1840,83 @@ HWTEST(CapturerInClientUnitTest, GetFrameCount_001, TestSize.Level1)
     frameCount = 10;
     result = capturerInClientInner->GetFrameCount(frameCount);
     EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test WaitForRunning API
+ * @tc.type  : FUNC
+ * @tc.number: WaitForRunning_001
+ * @tc.desc  : Test WaitForRunning interface.
+ */
+HWTEST(CapturerInClientUnitTest, WaitForRunning_001, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->state_ = RUNNING;
+    bool result = capturerInClientInner->WaitForRunning();
+    EXPECT_TRUE(result);
+}
+
+/**
+ * @tc.name  : Test WaitForRunning API
+ * @tc.type  : FUNC
+ * @tc.number: WaitForRunning_002
+ * @tc.desc  : Test WaitForRunning interface.
+ */
+HWTEST(CapturerInClientUnitTest, WaitForRunning_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->state_ = PAUSED;
+    capturerInClientInner->cbThreadReleased_ = true;
+    bool result = capturerInClientInner->WaitForRunning();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_002
+ * @tc.desc  : Test StopAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, StopAudioStream_002, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->state_ = State::INVALID;
+    bool result = capturerInClientInner->StopAudioStream();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_003
+ * @tc.desc  : Test StopAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, StopAudioStream_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->ipcStream_ = nullptr;
+    bool result = capturerInClientInner->StopAudioStream();
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test StopAudioStream API
+ * @tc.type  : FUNC
+ * @tc.number: StopAudioStream_003
+ * @tc.desc  : Test StopAudioStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
+{
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->cbBuffer_ = std::make_unique<uint8_t[]>(10);
+    capturerInClientInner->cbBufferSize_ = 10;
+    auto ret = capturerInClientInner->FlushCbBuffer();
+    EXPECT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

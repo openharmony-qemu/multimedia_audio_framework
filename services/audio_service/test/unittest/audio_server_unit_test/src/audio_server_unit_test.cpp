@@ -67,12 +67,6 @@ enum PermissionStatus {
     PERMISSION_UNKNOWN = 2,
 };
 
-class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
-public:
-    void OnDataTransferStateChange(const int32_t &callbackId,
-            const AudioRendererDataTransferStateChangeInfo &info) override {}
-};
-
 class WakeUpSourceCallbackTest : public WakeUpSourceCallback {
 public:
     void OnCapturerState(bool isActive) override {}
@@ -482,31 +476,11 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
 
     bool scoExcludeFlag = false;
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        NO_A2DP_DEVICE, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, NO_A2DP_DEVICE, scoExcludeFlag);
     EXPECT_NE(SUCCESS, ret);
 }
 
 #ifdef TEMP_DISABLE
-/**
- * @tc.name  : Test SetAudioScene API
- * @tc.type  : FUNC
- * @tc.number: AudioServerSetAudioScene_002
- * @tc.desc  : Test SetAudioScene interface.
- */
-HWTEST_F(AudioServerUnitTest, AudioServerSetAudioScene_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    bool scoExcludeFlag = false;
-    std::vector<int32_t> activeOutputDevices;
-    activeOutputDevices.push_back(DEVICE_TYPE_ACCESSORY);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_ACCESSORY,
-        NO_A2DP_DEVICE, scoExcludeFlag);
-    EXPECT_EQ(SUCCESS, ret);
-}
 
 /**
  * @tc.name  : Test SetForegroundList API
@@ -542,15 +516,13 @@ HWTEST_F(AudioServerUnitTest, AudioServerSetIORoutes_001, TestSize.Level1)
     std::vector<int32_t> activeOutputDevices;
 
     activeOutputDevices.push_back(DEVICE_TYPE_USB_ARM_HEADSET);
-    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD, scoExcludeFlag);
+    int32_t ret = audioServer->SetAudioScene(AUDIO_SCENE_DEFAULT, A2DP_OFFLOAD, scoExcludeFlag);
 
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
         A2DP_OFFLOAD, deviceName);
     EXPECT_EQ(SUCCESS, ret);
 
-    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, activeOutputDevices, DEVICE_TYPE_USB_ARM_HEADSET,
-        A2DP_OFFLOAD, scoExcludeFlag);
+    ret = audioServer->SetAudioScene(AUDIO_SCENE_INVALID, A2DP_OFFLOAD, scoExcludeFlag);
     activeOutputDevices.clear();
     activeOutputDevices.push_back(DEVICE_TYPE_BLUETOOTH_A2DP);
     ret = audioServer->SetIORoutes(DEVICE_TYPE_USB_ARM_HEADSET, DeviceFlag::ALL_DEVICES_FLAG, deviceTypes,
@@ -1377,11 +1349,11 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
     EXPECT_NE(nullptr, audioServer);
     audioServer->RemoveRendererDataTransferCallback(0);
 
-    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
-        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     int32_t pid = IPCSkeleton::GetCallingPid();
     audioServer->audioDataTransferCbMap_[pid] = callback;
-    AudioRendererDataTransferStateChangeInfo info;
+    AudioRendererDataTransferStateChangeInfo info = {};
     int callbackId = 0;
     audioServer->OnDataTransferStateChange(pid, callbackId, info);
     audioServer->RemoveRendererDataTransferCallback(pid);
@@ -1991,8 +1963,8 @@ HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
     info.badDataRatio[0] = 0;
     info.badDataRatio[1] = 0;
 
-    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
-        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    std::shared_ptr<DataTransferStateChangeCallbackInnerImpl> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     int32_t pid = IPCSkeleton::GetCallingPid();
     info.clientPid = pid;
     audioServer->audioDataTransferCbMap_[pid] = callback;
@@ -2317,7 +2289,7 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSinkPort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t renderId = 0;
-    uint32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
+    int32_t result = audioServer->CreateHdiSinkPort("deviceClass", "idInfo", IAudioSinkAttr(), renderId);
     EXPECT_EQ(result, 0);
 }
 
@@ -2335,8 +2307,8 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_001, TestSize.Level1)
     std::string idInfo = "test";
     IAudioSinkAttr attr;
     uint32_t renderId = 0;
-    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
-    EXPECT_NE(result, HDI_INVALID_ID);
+    int32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -2353,8 +2325,8 @@ HWTEST_F(AudioServerUnitTest, CreateSinkPort_002, TestSize.Level1)
     std::string idInfo = "test";
     IAudioSinkAttr attr;
     uint32_t renderId = 0;
-    uint32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
-    EXPECT_NE(result, HDI_INVALID_ID);
+    int32_t result = audioServer->CreateSinkPort(idBase, idType, idInfo, attr, renderId);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -2372,8 +2344,8 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_001, TestSize.Level1)
     IAudioSourceAttr attr;
     attr.sourceType = 1;
     uint32_t captureId = 0;
-    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
-    EXPECT_NE(result, HDI_INVALID_ID);
+    int32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -2391,8 +2363,8 @@ HWTEST_F(AudioServerUnitTest, CreateSourcePort_002, TestSize.Level1)
     uint32_t captureId = 0;
     IAudioSourceAttr attr;
     attr.sourceType = 100;
-    uint32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
-    EXPECT_NE(result, HDI_INVALID_ID);
+    int32_t result = audioServer->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -2405,8 +2377,8 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     uint32_t captureId = 0;
-    uint32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
-    EXPECT_NE(result, HDI_INVALID_ID);
+    int32_t result = audioServer->CreateHdiSourcePort("deviceClass", "idInfo", IAudioSourceAttr(), captureId);
+    EXPECT_EQ(result, 0);
 }
 
 /**
@@ -2516,6 +2488,50 @@ HWTEST_F(AudioServerUnitTest, RestoreAudioWorkgroupPrio_003, TestSize.Level1)
     std::unordered_map<int32_t, int32_t> threads = {};
     int32_t result = audioServer->RestoreAudioWorkgroupPrio(pid, threads);
     EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name  : Test SetRenderWhitelist API
+ * @tc.type  : FUNC
+ * @tc.number: AudioServerSetRenderWhitelist_001
+ * @tc.desc  : Test SetRenderWhitelist interface.
+ */
+HWTEST_F(AudioServerUnitTest, AudioServerSetRenderWhitelist_001, TestSize.Level2)
+{
+    EXPECT_NE(nullptr, audioServer);
+
+    std::vector<std::string> list;
+    list.push_back("com.test");
+    int32_t ret = audioServer->SetRenderWhitelist(list);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+ * @tc.name  : Test GenerateSessionId API
+ * @tc.type  : FUNC
+ * @tc.number: GenerateSessionId_001
+ * @tc.desc  : Test GenerateSessionId interface.
+ */
+HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    uint32_t sessionId = 0;
+    int32_t ret = audioServer->GenerateSessionId(sessionId);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test SetAsrVoiceMuteMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetAsrVoiceMuteMode_001
+ * @tc.desc  : Test SetAsrVoiceMuteMode interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t asrVoiceMuteMode = 0;
+    bool on = true;
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

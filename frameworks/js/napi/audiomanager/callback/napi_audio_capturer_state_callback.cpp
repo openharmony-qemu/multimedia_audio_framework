@@ -134,7 +134,6 @@ void NapiAudioCapturerStateCallback::SafeJsCallbackCapturerStateWork(
     napi_handle_scope scope = nullptr;
     napi_open_handle_scope(env, &scope);
     CHECK_AND_RETURN_LOG(scope != nullptr, "scope is nullptr");
-    AUDIO_INFO_LOG("SafeJsCallbackCapturerStateWork: safe js callback working.");
     do {
         napi_value jsCallback = nullptr;
         napi_status nstatus = napi_get_reference_value(env, callback, &jsCallback);

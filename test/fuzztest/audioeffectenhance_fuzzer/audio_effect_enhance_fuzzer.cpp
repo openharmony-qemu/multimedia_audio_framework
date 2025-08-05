@@ -21,10 +21,12 @@
 
 #include "audio_effect_log.h"
 #include "audio_effect_chain.h"
+#ifdef SUPPORT_OLD_ENGINE
 #include "audio_effect_chain_adapter.h"
+#include "audio_enhance_chain_adapter.h"
+#endif
 #include "audio_effect_chain_manager.h"
 #include "audio_enhance_chain.h"
-#include "audio_enhance_chain_adapter.h"
 #include "audio_enhance_chain_manager.h"
 #include "chain_pool.h"
 #include "thread_handler.h"
@@ -42,6 +44,18 @@ static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
+const int32_t NUM_2 = 2;
+vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
+
+EffectChainManagerParam DEFAULT_EFFECT_CHAIN_MANAGER_PARAM{
+    3,
+    "SCENE_DEFAULT",
+    {},
+    {{"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_SPEAKER", "EFFECTCHAIN_SPK_MUSIC"},
+        {"SCENE_MOVIE_&_EFFECT_DEFAULT_&_DEVICE_TYPE_BLUETOOTH_A2DP", "EFFECTCHAIN_BT_MUSIC"}},
+    {{"effect1", "property1"}, {"effect4", "property5"}, {"effect1", "property4"}}
+};
 
 /*
 * describe: get data from outside untrusted data(RAW_DATA) which size is according to sizeof(T)
@@ -153,6 +167,7 @@ void AudioEffectChainManagerEnhanceFuzzTest()
 
 void AudioEffectChainAdapterFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     struct BufferAttr bufferAttr;
     char sceneType[] = "SCENE_MUSIC";
     EffectChainManagerProcess(sceneType, &bufferAttr);
@@ -172,6 +187,80 @@ void AudioEffectChainAdapterFuzzTest()
     ConvertChLayoutToPaChMap(channelLayout2, &processCm2);
     EffectChainManagerEffectUpdate();
     EffectChainManagerStreamUsageUpdate();
+#endif
+}
+
+void ConvertChLayoutToPaChMapFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    const char *sceneType = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectChainManagerInitCb(sceneType);
+
+    const uint64_t channelLayout = CH_LAYOUT_MONO;
+    pa_channel_map processCm;
+    ConvertChLayoutToPaChMap(channelLayout, &processCm);
+
+    const uint64_t channelLayout2 = CH_LAYOUT_STEREO;
+    pa_channel_map processCm2;
+    ConvertChLayoutToPaChMap(channelLayout2, &processCm2);
+
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+#endif
+}
+
+void EffectChainManagerDeleteSessionInfoFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    const char *sceneType = "SCENE_MUSIC";
+    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    EffectChainManagerInitCb(sceneType);
+
+    const char *sessionid = "123456";
+    SessionInfoPack pack = {2, "3", "EFFECT_DEFAULT", "true", "1", "1"};
+    EffectChainManagerAddSessionInfo(sceneType, sessionid, pack);
+
+    sceneType = nullptr;
+    // Intentionally test with nullptr for fuzzing
+    EffectChainManagerDeleteSessionInfo(sceneType, sessionid);
+    AudioEffectChainManager::GetInstance()->ResetInfo();
+#endif
+}
+
+void EffectChainManagerReturnEffectChannelInfoFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    const char *sceneType = "test_scene";
+    uint32_t channels = 0;
+    EffectChainManagerReturnEffectChannelInfo(sceneType, &channels, nullptr);
+#endif
+}
+
+void EffectChainManagerQueryHdiSupportedChannelLayoutFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    uint32_t channels = GetData<uint32_t>();
+    uint64_t channelLayout = GetData<uint64_t>();
+    // Intentionally test with nullptr for fuzzing
+    EffectChainManagerQueryHdiSupportedChannelLayout(nullptr, nullptr);
+    EffectChainManagerQueryHdiSupportedChannelLayout(&channels, &channelLayout);
+#endif
+}
+
+void EffectChainManagerSceneCheckFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    EffectChainManagerSceneCheck(nullptr, nullptr);
+#endif
+}
+
+void EffectChainManagerGetSceneCountFuzzTest()
+{
+#ifdef SUPPORT_OLD_ENGINE
+    EffectChainManagerGetSceneCount(nullptr);
+#endif
 }
 
 void AudioEnhanceChainMoreFuzzTest()
@@ -312,6 +401,7 @@ void AudioEnhanceChainManagerMoreFuzzTest()
 
 void AudioEnhanceChainAdapterMoreFuzzTest()
 {
+#ifdef SUPPORT_OLD_ENGINE
     void *data = nullptr;
     uint32_t length = GetData<uint32_t>();
     CopyToEnhanceBufferAdapter(data, length);
@@ -324,6 +414,7 @@ void AudioEnhanceChainAdapterMoreFuzzTest()
 
     uint32_t captureId = GetData<uint32_t>();
     EnhanceChainManagerProcessDefault(captureId, length);
+#endif
 }
 
 using FuzzFunc = decltype(AudioEffectChainEnhanceFuzzTest);
@@ -331,6 +422,12 @@ FuzzFunc *g_fuzzFuncs[] = {
     AudioEffectChainEnhanceFuzzTest,
     AudioEffectChainManagerEnhanceFuzzTest,
     AudioEffectChainAdapterFuzzTest,
+    ConvertChLayoutToPaChMapFuzzTest,
+    EffectChainManagerDeleteSessionInfoFuzzTest,
+    EffectChainManagerReturnEffectChannelInfoFuzzTest,
+    EffectChainManagerQueryHdiSupportedChannelLayoutFuzzTest,
+    EffectChainManagerSceneCheckFuzzTest,
+    EffectChainManagerGetSceneCountFuzzTest,
     AudioEnhanceChainMoreFuzzTest,
     AudioEnhanceChainManagerMoreFuzzTest,
     AudioEnhanceChainAdapterMoreFuzzTest,

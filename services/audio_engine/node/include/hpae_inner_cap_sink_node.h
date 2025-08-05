@@ -28,7 +28,7 @@ namespace HPAE {
 class HpaeInnerCapSinkNode : public OutputNode<HpaePcmBuffer*>, public InputNode<HpaePcmBuffer*> {
 public:
     HpaeInnerCapSinkNode(HpaeNodeInfo& nodeInfo);
-    virtual ~HpaeInnerCapSinkNode() {};
+    virtual ~HpaeInnerCapSinkNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;
     virtual bool ResetAll() override;

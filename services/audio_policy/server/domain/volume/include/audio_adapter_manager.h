@@ -95,6 +95,10 @@ public:
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
 
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
+    bool IsAppRingMuted(int32_t appUid);
+
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
@@ -295,6 +299,9 @@ public:
     void HandleHearingAidVolume(AudioStreamType streamType);
     void RegisterDoNotDisturbStatus();
     void RegisterDoNotDisturbStatusWhiteList();
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
+    void HandleDistributedDeviceVolume();
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -358,7 +365,8 @@ private:
     void SetAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType, float volumeDb);
     void SetAppAudioVolume(int32_t appUid, float volumeDb);
     void SetAppAudioVolume(std::shared_ptr<AudioDeviceDescriptor> &device, int32_t appUid, float volumeDb);
-    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass);
+    void SetOffloadVolume(AudioStreamType streamType, float volumeDb, const std::string &deviceClass,
+        const std::string &networkId = LOCAL_NETWORK_ID);
     int32_t SetStreamMute(std::shared_ptr<AudioDeviceDescriptor> &device, AudioStreamType streamType,
         bool mute, StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE);
@@ -396,6 +404,7 @@ private:
     int32_t IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage);
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
+    bool IsDistributedVolumeType(AudioStreamType streamType);
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -468,6 +477,7 @@ private:
     std::shared_ptr<FixedSizeList<RingerModeAdjustInfo>> saveRingerModeInfo_ =
         std::make_shared<FixedSizeList<RingerModeAdjustInfo>>(MAX_CACHE_AMOUNT);
     bool isDpReConnect_ = false;
+    sptr<IStandardAudioPolicyManagerListener> deviceVolumeBehaviorListener_;
 };
 
 class PolicyCallbackImpl : public AudioServiceAdapterCallback {

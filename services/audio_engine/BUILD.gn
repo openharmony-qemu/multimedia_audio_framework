@@ -230,6 +230,7 @@ ohos_shared_library("audio_engine_manager") {
     "manager/src/hpae_renderer_manager.cpp",
     "manager/src/hpae_signal_process_thread.cpp",
     "manager/src/hpae_soft_link.cpp",
+    "manager/src/i_hpae_capturer_manager.cpp",
     "manager/src/i_hpae_manager.cpp",
     "manager/src/i_hpae_renderer_manager.cpp",
   ]

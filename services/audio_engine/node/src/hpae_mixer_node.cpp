@@ -22,7 +22,7 @@
 #include "audio_utils.h"
 #include "cinttypes"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -40,10 +40,15 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeMixerNode");
-    }
+    SetNodeName("hpaeMixerNode");
+#endif
+}
+
+HpaeMixerNode::~HpaeMixerNode()
+{
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
 #endif
 }
 

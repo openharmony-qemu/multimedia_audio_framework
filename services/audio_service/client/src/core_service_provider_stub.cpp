@@ -74,5 +74,13 @@ int32_t CoreServiceProviderWrapper::GenerateSessionId(uint32_t &sessionId)
     sessionId = coreServiceWorker_->GenerateSessionId();
     return SUCCESS;
 }
+
+int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
+    const AudioProcessConfig &config, int32_t &ret)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    ret = coreServiceWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
+    return SUCCESS;
+}
 } // namespace AudioStandard
 } // namespace OHOS

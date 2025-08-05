@@ -40,7 +40,6 @@ AudioStreamChecker::~AudioStreamChecker()
     AUDIO_INFO_LOG("~AudioStreamChecker(), sessionId = %{public}u, uid = %{public}d",
         streamConfig_.originalSessionId, streamConfig_.appInfo.appUid);
     monitorSwitch_ = false;
-    AudioStreamMonitor::GetInstance().DeleteCheckForMonitor(streamConfig_.originalSessionId);
     isKeepCheck_.store(false);
 }
 
@@ -149,18 +148,18 @@ void AudioStreamChecker::OnRemoteAppDied(const int32_t pid)
 
 void AudioStreamChecker::StopCheckStreamThread()
 {
-    AUDIO_INFO_LOG("Stop check stream thread");
+    AUDIO_INFO_LOG("In");
     isKeepCheck_.store(false);
 }
 
 void AudioStreamChecker::CheckStreamThread()
 {
-    AUDIO_INFO_LOG("CheckStreamThread start...");
+    AUDIO_INFO_LOG("In");
     while (isKeepCheck_.load()) {
         MonitorCheckFrame();
         ClockTime::RelativeSleep(STREAM_CHECK_INTERVAL_TIME);
     }
-    AUDIO_INFO_LOG("CheckStreamThread end...");
+    AUDIO_INFO_LOG("Out");
 }
 
 void AudioStreamChecker::MonitorCheckFrame()
@@ -266,7 +265,7 @@ void AudioStreamChecker::MonitorOnAllCallback(DataTransferStateChangeType type, 
             continue;
         }
         checkParaVector_[index].lastStatus = type;
-        AUDIO_INFO_LOG("MonitorOnAllCallback type = %{public}d", type);
+        AUDIO_INFO_LOG("type = %{public}d", type);
         checkParaVector_[index].lastUpdateTime = ClockTime::GetCurNano();
         CleanRecordData(checkParaVector_[index]);
         AudioRendererDataTransferStateChangeInfo callbackInfo;

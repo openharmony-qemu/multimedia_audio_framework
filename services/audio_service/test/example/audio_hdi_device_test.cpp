@@ -165,6 +165,11 @@ public:
         InitHdiRender();
         StartHdiRender(time);
 
+        int32_t ret = fclose(wavFile);
+        if (ret != 0) {
+            AUDIO_INFO_LOG("Failed to close file!");
+        }
+        wavFile = nullptr;
         return true;
     }
 private:

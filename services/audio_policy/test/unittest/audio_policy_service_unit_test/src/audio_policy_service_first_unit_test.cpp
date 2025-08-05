@@ -647,11 +647,11 @@ HWTEST_F(AudioPolicyServiceUnitTest, SetSourceOutputStreamMute_001, TestSize.Lev
     int32_t uid = getuid();
     bool setMute = false;
     int32_t result = GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(uid, setMute);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 
     setMute = true;
     result = GetServerPtr()->audioPolicyService_.SetSourceOutputStreamMute(uid, setMute);
-    EXPECT_EQ(result, ERROR);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

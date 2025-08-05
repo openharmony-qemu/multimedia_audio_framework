@@ -32,7 +32,6 @@ AudioRunningLock::AudioRunningLock(const std::string &lockName)
 
 int32_t AudioRunningLock::Lock(const int32_t timeoutMs)
 {
-    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(runningLock_ != nullptr, -1, "lock is nullptr");
     Trace lockTrace("AudioRunningLock::Lock");
     std::lock_guard<std::mutex> lock(mutex_);
@@ -52,7 +51,6 @@ int32_t AudioRunningLock::Lock(const int32_t timeoutMs)
 
 int32_t AudioRunningLock::UnLock(void)
 {
-    AUDIO_INFO_LOG("in");
     CHECK_AND_RETURN_RET_LOG(runningLock_ != nullptr, -1, "lock is nullptr");
     Trace unlockTrace("AudioRunningLock::UnLock");
     std::lock_guard<std::mutex> lock(mutex_);
@@ -88,7 +86,7 @@ int32_t AudioRunningLock::UpdateAppsUidToPowerMgr(void)
 
     Trace innerUpdateWorkSourceTrace("AudioRunningLock::runningLock_->UpdateWorkSource");
     int32_t ret = runningLock_->UpdateWorkSource(appsUid);
-    AUDIO_INFO_LOG("update end, uidInfo: %{public}s, size: %{public}zu, ret: %{public}d", appsUidInfo.c_str(),
+    AUDIO_INFO_LOG("uidInfo: %{public}s, size: %{public}zu, ret: %{public}d", appsUidInfo.c_str(),
         appsUid.size(), ret);
     return ret;
 }

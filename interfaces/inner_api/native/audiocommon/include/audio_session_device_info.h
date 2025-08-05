@@ -74,7 +74,7 @@ struct CurrentOutputDeviceChangedEvent : public Parcelable {
 
     static CurrentOutputDeviceChangedEvent *Unmarshalling(Parcel &parcel)
     {
-        auto event = new CurrentOutputDeviceChangedEvent();
+        auto event = new(std::nothrow) CurrentOutputDeviceChangedEvent();
         if (event == nullptr) {
             return nullptr;
         }

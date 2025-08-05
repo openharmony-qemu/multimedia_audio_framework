@@ -115,7 +115,7 @@ struct InterruptEvent : public Parcelable {
 
     static InterruptEvent *Unmarshalling(Parcel &parcel)
     {
-        auto info = new InterruptEvent();
+        auto info = new(std::nothrow) InterruptEvent();
         if (info == nullptr) {
             return nullptr;
         }
@@ -129,16 +129,16 @@ struct InterruptEvent : public Parcelable {
     /**
      * Interrupt event type, begin or end
      */
-    InterruptType eventType;
+    InterruptType eventType = INTERRUPT_TYPE_BEGIN;
     /**
      * Interrupt force type, force or share
      */
-    InterruptForceType forceType;
+    InterruptForceType forceType = INTERRUPT_FORCE;
     /**
      * Interrupt hint type. In force type, the audio state already changed,
      * but in share mode, only provide a hint for application to decide.
      */
-    InterruptHint hintType;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
     /**
      * Should callback to app. Default true;
      * If false, interruptEvent should not callback to app.
@@ -148,10 +148,10 @@ struct InterruptEvent : public Parcelable {
 
 // Used internally only by AudioFramework
 struct InterruptEventInternal : public Parcelable {
-    InterruptType eventType;
-    InterruptForceType forceType;
-    InterruptHint hintType;
-    float duckVolume;
+    InterruptType eventType = INTERRUPT_TYPE_BEGIN;
+    InterruptForceType forceType = INTERRUPT_FORCE;
+    InterruptHint hintType = INTERRUPT_HINT_NONE;
+    float duckVolume = 1.0f;
     bool callbackToApp = true;
 
     InterruptEventInternal() = default;
@@ -176,7 +176,7 @@ struct InterruptEventInternal : public Parcelable {
 
     static InterruptEventInternal *Unmarshalling(Parcel &parcel)
     {
-        auto interupt = new InterruptEventInternal();
+        auto interupt = new(std::nothrow) InterruptEventInternal();
         if (interupt == nullptr) {
             return nullptr;
         }
@@ -390,7 +390,7 @@ public:
 
     static AudioInterrupt *Unmarshalling(Parcel &parcel)
     {
-        auto interrupt = new AudioInterrupt();
+        auto interrupt = new(std::nothrow) AudioInterrupt();
         if (interrupt == nullptr) {
             return nullptr;
         }

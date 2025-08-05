@@ -33,6 +33,7 @@ typedef void(*AppCallbackFunc)(void* pHndl);
 class HpaeOffloadSinkOutputNode : public InputNode<HpaePcmBuffer*> {
 public:
     HpaeOffloadSinkOutputNode(HpaeNodeInfo& nodeInfo);
+    virtual ~HpaeOffloadSinkOutputNode();
     virtual void DoProcess() override;
     virtual bool Reset() override;
     virtual bool ResetAll() override;
@@ -114,6 +115,8 @@ private:
     // first stand for pos(in us), second stand for time
     std::pair<uint64_t, TimePoint> hdiPos_;
     uint32_t suspendCount_ = 0;
+    float speed_ = 1.0f;
+    uint64_t hdiRealPos_ = 0;
 };
 
 }  // namespace HPAE

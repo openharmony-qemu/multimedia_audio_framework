@@ -509,7 +509,7 @@ HWTEST(AudioServerUnitTest, CacheExtraParameters_001, TestSize.Level1)
         {"key2", "value2"}
     };
     EXPECT_FALSE(audioServer->isAudioParameterParsed_.load());
-    EXPECT_FALSE(audioServer->audioExtraParameterCacheVector_.empty());
+    EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
     audioServer->ParseAudioParameter();
     EXPECT_TRUE(audioServer->audioExtraParameterCacheVector_.empty());
 }

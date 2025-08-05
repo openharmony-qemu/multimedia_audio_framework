@@ -22,16 +22,18 @@ namespace HPAE {
 
 enum class SoftLinkMode : int32_t {
     HEARING_AID = 0,
+    OFFLOAD_INNER_CAP = 1,
 };
 
 class IHpaeSoftLink {
 public:
     virtual ~IHpaeSoftLink() = default;
-    static std::shared_ptr<IHpaeSoftLink> CreateSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode);
+    static std::shared_ptr<IHpaeSoftLink> CreateSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode);
     virtual int32_t Init() = 0;
     virtual int32_t Start() = 0;
     virtual int32_t Stop() = 0;
     virtual int32_t Release() = 0;
+    virtual int32_t SetVolume(float volume) = 0;
 };
 } // namespace HPAE
 } // namespace AudioStandard

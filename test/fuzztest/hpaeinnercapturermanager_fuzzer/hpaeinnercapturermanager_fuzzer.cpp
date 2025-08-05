@@ -24,6 +24,7 @@
 #include "audio_info.h"
 #include "hpae_inner_capturer_manager.h"
 #include "i_hpae_renderer_manager.h"
+#include "audio_engine_log.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;

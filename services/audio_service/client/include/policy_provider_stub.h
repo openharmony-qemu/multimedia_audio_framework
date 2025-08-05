@@ -30,7 +30,6 @@ public:
     int32_t GetProcessDeviceInfo(const AudioProcessConfig &config, bool lockFlag,
         AudioDeviceDescriptor &deviceInfo) override;
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer) override;
-    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) override;
     int32_t NotifyCapturerAdded(const AudioCapturerInfo &capturerInfo, const AudioStreamInfo &streamInfo,
         uint32_t sessionId) override;
     int32_t NotifyWakeUpCapturerRemoved() override;
@@ -45,6 +44,8 @@ public:
     int32_t UnloadModernInnerCapSink(int32_t innerCapId) override;
 // #endif
     int32_t ClearAudioFocusBySessionID(int32_t sessionID) override;
+    int32_t CaptureConcurrentCheck(uint32_t sessionID) override;
+    
 private:
     IPolicyProvider *policyWorker_;
 };

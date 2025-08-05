@@ -674,22 +674,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, IsStreamActive_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetWakeUpAudioCapturerFromAudioServer.
- * @tc.number: SetWakeUpAudioCapturerFromAudioServer_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, SetWakeUpAudioCapturerFromAudioServer_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioProcessConfig config;
-    int32_t ret = server->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
-
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test NotifyCapturerAdded.
  * @tc.number: NotifyCapturerAdded_001
  * @tc.desc  : Test AudioPolicyService interfaces.
@@ -997,7 +981,7 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, OnDeviceStatusUpdated_002, TestSize.Le
     auto server = GetServerPtr();
     ASSERT_NE(nullptr, server);
 
-    AudioDeviceDescriptor updatedDesc;
+    AudioDeviceDescriptor updatedDesc = {};
     bool isConnected = false;
 
     server->audioPolicyService_.OnDeviceStatusUpdated(updatedDesc, isConnected);

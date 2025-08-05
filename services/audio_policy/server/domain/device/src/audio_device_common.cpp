@@ -806,7 +806,7 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
         return;
     }
 
-    if (audioConfigManager_.GetUpdateRouteSupport() && !reason.isSetAudioScene()) {
+    if (audioConfigManager_.GetUpdateRouteSupport()) {
         UpdateRoute(oldRendererChangeInfo, outputDevices);
     }
 

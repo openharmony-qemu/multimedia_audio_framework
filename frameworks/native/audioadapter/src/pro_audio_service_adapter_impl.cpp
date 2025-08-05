@@ -241,7 +241,7 @@ int32_t ProAudioServiceAdapterImpl::SetLocalDefaultSink(std::string name)
 int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
     uint32_t sinkInputId, uint32_t sinkIndex, std::string sinkName)
 {
-    AUDIO_INFO_LOG("MoveSinkInputByIndexOrName sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
+    AUDIO_INFO_LOG("sinkInputId %{public}d, sinkIndex %{public}d, sinkName %{public}s",
         sinkInputId,
         sinkIndex,
         sinkName.c_str());
@@ -262,7 +262,6 @@ int32_t ProAudioServiceAdapterImpl::MoveSinkInputByIndexOrName(
         AUDIO_ERR_LOG("MoveSinkInputByIndexOrName timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("MoveSinkInputByIndexOrName leave");
     return SUCCESS;
 }
 
@@ -291,7 +290,6 @@ int32_t ProAudioServiceAdapterImpl::MoveSourceOutputByIndexOrName(
         AUDIO_ERR_LOG("MoveSourceOutputByIndexOrName timeout");
         return ERROR;
     }
-    AUDIO_INFO_LOG("MoveSourceOutputByIndexOrName leave");
     return SUCCESS;
 }
 

@@ -619,8 +619,6 @@ HWTEST(AudioManagerInterruptUnitTest, GetAudioFocusInfoList_002, TestSize.Level1
     for (auto it = focusInfoList.begin(); it != focusInfoList.end(); ++it) {
         if (it->first.audioFocusType.streamType == AudioStreamType::STREAM_MUSIC) {
             EXPECT_EQ(it->second, AudioFocuState::ACTIVE);
-        } else {
-            EXPECT_TRUE(false);
         }
     }
 

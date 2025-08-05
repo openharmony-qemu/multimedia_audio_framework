@@ -35,7 +35,7 @@ CapturerClock::CapturerClock(uint32_t capturerSampleRate)
 bool CapturerClock::GetTimeStampByPosition(uint64_t capturerPos, uint64_t& timestamp)
 {
     std::lock_guard<std::mutex> lock(clockMtx_);
-    CHECK_AND_RETURN_RET_LOG(timestamp_ != 0, false, "timestamp is 0!");
+    CHECK_AND_RETURN_RET(timestamp_ != 0, false);
     CHECK_AND_RETURN_RET_LOG(capturerSampleRate_ != 0, false, "capturerSampleRate_ is 0!");
 
     AUDIO_DEBUG_LOG("capturerPos:%{public}" PRIu64 " position_:%{public}" PRIu64,

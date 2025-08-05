@@ -14,6 +14,9 @@
  */
 
 #include "get_server_util.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -37,6 +40,9 @@ AudioPolicyServer* GetServerUtil::GetServerPtr()
     if (!g_hasServerInit) {
         AUDIO_INFO_LOG("AudioPolicyServiceUnitTest::GetServerPtr  server.OnStart()");
         InitA2dpOffloadManager(&server);
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server.OnStart();
         server.OnDump();
         server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");

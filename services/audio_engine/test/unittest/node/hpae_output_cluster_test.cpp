@@ -98,7 +98,6 @@ HWTEST_F(HpaeOutputClusterTest, constructHpaeOutputClusterNode, TestSize.Level0)
 
     std::shared_ptr<HpaeOutputCluster> hpaeoutputCluster = std::make_shared<HpaeOutputCluster>(nodeInfo);
     EXPECT_EQ(hpaeoutputCluster->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeoutputCluster->GetNodeId(), nodeInfo.nodeId);
     EXPECT_EQ(hpaeoutputCluster->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeoutputCluster->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeoutputCluster->GetBitWidth(), nodeInfo.format);

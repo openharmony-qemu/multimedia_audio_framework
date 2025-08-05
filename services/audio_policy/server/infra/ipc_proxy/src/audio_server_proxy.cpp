@@ -47,8 +47,7 @@ const sptr<IStandardAudioService> AudioServerProxy::GetAudioServerProxy()
     return gsp;
 }
 
-int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, std::vector<DeviceType> activeOutputDevices,
-    DeviceType deviceType, BluetoothOffloadState state)
+int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, BluetoothOffloadState state)
 {
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERR_OPERATION_FAILED, "Service proxy unavailable");
@@ -57,11 +56,7 @@ int32_t AudioServerProxy::SetAudioSceneProxy(AudioScene audioScene, std::vector<
     if (AudioPolicyUtils::GetInstance().GetScoExcluded()) {
         scoExcludeFlag = true;
     }
-    std::vector<int32_t> activeOutputDevicesInt;
-    for (auto &device : activeOutputDevices) {
-        activeOutputDevicesInt.push_back(static_cast<int32_t>(device));
-    }
-    int32_t result = gsp->SetAudioScene(audioScene, activeOutputDevicesInt, deviceType, state, scoExcludeFlag);
+    int32_t result = gsp->SetAudioScene(audioScene, state, scoExcludeFlag);
     IPCSkeleton::SetCallingIdentity(identity);
     return result;
 }
@@ -83,8 +78,10 @@ int64_t AudioServerProxy::GetVolumeDataCount(std::string sinkName)
     const sptr<IStandardAudioService> gsp = GetAudioServerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, 0, "Service proxy unavailable");
 
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
     int64_t volumeDataCount = 0;
     gsp->GetVolumeDataCount(sinkName, volumeDataCount);
+    IPCSkeleton::SetCallingIdentity(identity);
     return volumeDataCount;
 }
 

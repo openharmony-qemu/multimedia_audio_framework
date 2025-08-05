@@ -28,12 +28,19 @@ namespace HPAE {
 HpaeSourceProcessCluster::HpaeSourceProcessCluster(HpaeNodeInfo& nodeInfo)
     : HpaeNode(nodeInfo), captureEffectNode_(std::make_shared<HpaeCaptureEffectNode>(nodeInfo))
 {
+#ifdef ENABLE_HIDUMP_DFX
+    SetNodeName("HpaeSourceProcessCluster");
+#endif
     AUDIO_INFO_LOG("Create scene ProcessCluster, sceneType = %{public}u", nodeInfo.sceneType);
 }
 
 HpaeSourceProcessCluster::~HpaeSourceProcessCluster()
 {
     Reset();
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 void HpaeSourceProcessCluster::DoProcess()

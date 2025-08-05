@@ -66,8 +66,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -83,6 +82,8 @@ public:
     void SetInvalidState(void) override;
 
     void DumpInfo(std::string &dumpString) override;
+
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -104,6 +105,7 @@ private:
     int32_t DoRenderFrame(char &data, uint64_t len, uint64_t &writeLen);
     void UpdateSinkState(bool started);
     bool IsValidState(void);
+    bool IsSinkInited(void) override;
 
     // low latency
     int32_t PrepareMmapBuffer(void);
@@ -123,7 +125,7 @@ private:
     static constexpr int32_t MAX_GET_POSITION_HANDLE_TIME = 10000000; // 10000000us
     static constexpr int32_t MAX_GET_POSITION_WAIT_TIME = 2000000; // 2000000us
     static constexpr int32_t INVALID_FD = -1;
-    static constexpr int64_t STAMP_THRESHOLD_MS = 20;
+    static constexpr int64_t STAMP_THRESHOLD_MS = 40;
     static constexpr int32_t RENDER_FRAME_NUM = -4;
     static constexpr uint32_t RENDER_FRAME_INTERVAL_IN_MICROSECONDS = 10000;
 #ifdef FEATURE_POWER_MANAGER

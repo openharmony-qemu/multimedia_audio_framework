@@ -24,7 +24,6 @@ sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioCapturerInfo;
 interface IPolicyProviderIpc {
     [ipccode 0] void GetProcessDeviceInfo([in] AudioProcessConfig config, [in] boolean lockFlag, [out] AudioDeviceDescriptor deviceInfo);
     void InitSharedVolume([out] sharedptr<AudioSharedMemory> buffer);
-    void SetWakeUpAudioCapturerFromAudioServer([in] AudioProcessConfig config);
     void NotifyCapturerAdded([in] AudioCapturerInfo capturerInfo, [in] AudioStreamInfo streamInfo, [in] unsigned int sessionId);
     void NotifyWakeUpCapturerRemoved();
     void IsAbsVolumeSupported([out] boolean isSupported);
@@ -36,4 +35,5 @@ interface IPolicyProviderIpc {
     void LoadModernInnerCapSink([in] int innerCapId);
     void UnloadModernInnerCapSink([in] int innerCapId);
     void ClearAudioFocusBySessionID([in] int sessionID);
+    [oneway] void CaptureConcurrentCheck([in] unsigned int sessionID);
 }

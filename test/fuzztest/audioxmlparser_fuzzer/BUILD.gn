@@ -1,0 +1,127 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("AudioXmlParserFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audioxmlparser_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_policy/server/include",
+    "../../../frameworks/native/audioutils/include",
+    "../../../services/audio_service/common/include/limiter/",
+    "../../../services/audio_engine/manager/include",
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../services/audio_service/server/include",
+    "../../../services/audio_policy/client/include",
+  ]
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+  configs = [
+    "../../../services/audio_policy:audio_policy_public_config",
+    "../../../services/audio_service:audio_service_config"
+  ]
+
+  sources = [ "audio_xml_parser_fuzzer.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_common",
+    "../../../frameworks/native/audioclock:audio_clock",
+    "../../../services/audio_engine:audio_engine_manager",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_service_static",
+  ]
+
+  external_deps = [
+    "ability_base:want",
+    "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "background_task_mgr:bgtaskmgr_innerkits",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hicollie:libhicollie",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "hitrace:hitrace_meter",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+    "relational_store:native_appdatafwk",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "bluetooth:btframework",
+    "access_token:libaccesstoken_sdk",
+    "c_utils:utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "safwk:system_ability_fwk",
+    "qos_manager:concurrent_task_client",
+  ]
+  if (sonic_enable == true) {
+    external_deps += [ "pulseaudio:sonic" ]
+  }
+  if (accessibility_enable == true) {
+    external_deps += [
+      "accessibility:accessibility_common",
+      "accessibility:accessibilityconfig",
+    ]
+  }
+
+  defines = []
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+  if (audio_framework_feature_dtmf_tone) {
+    defines += [ "FEATURE_DTMF_TONE" ]
+  }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":AudioXmlParserFuzzTest" ]
+}

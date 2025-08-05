@@ -90,6 +90,7 @@ void AudioPerformanceMonitor::DeleteSilenceMonitor(uint32_t sessionId)
 
 void AudioPerformanceMonitor::ReportWriteSlow(AdapterType adapterType, int32_t overtimeMs)
 {
+    std::lock_guard<std::mutex> lock(silenceMapMutex_);
     AUDIO_WARNING_LOG("AdapterType %{public}d, PipeType %{public}d, write time interval %{public}d ms! overTime!",
         adapterType, PIPE_TYPE_MAP[adapterType], overtimeMs);
     AUTO_CTRACE("Fast pipe OVERTIME_EVENT, overtimeMs: %d, pipeType %d, adapterType: %d", overtimeMs,

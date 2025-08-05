@@ -52,7 +52,7 @@ public:
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
 

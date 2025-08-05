@@ -160,8 +160,8 @@ HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothSourceUnitTest_005, TestS
 HWTEST_F(BluetoothAudioCaptureSourceUnitTest, BluetoothSourceUnitTest_006, TestSize.Level1)
 {
     EXPECT_TRUE(source_);
-    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
-    EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
+    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

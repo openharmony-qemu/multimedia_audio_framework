@@ -24,6 +24,7 @@
 #include "hpae_process_cluster.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_output_cluster.h"
+#include "audio_engine_log.h"
 
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
