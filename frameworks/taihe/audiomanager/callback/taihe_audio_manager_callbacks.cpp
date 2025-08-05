@@ -50,9 +50,13 @@ void TaiheAudioManagerCallback::SaveMicrophoneBlockedCallbackReference(std::shar
     AUDIO_INFO_LOG("SaveMicrophoneBlocked callback ref success, list size [%{public}zu]",
         microphoneBlockedCbList_.size());
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 int32_t TaiheAudioManagerCallback::GetMicrophoneBlockedCbListSize()
@@ -157,9 +161,13 @@ void TaiheAudioManagerCallback::SaveRoutingManagerDeviceChangeCbRef(OHOS::AudioS
     AUDIO_INFO_LOG("Save routing device change callback ref success, deviceFlag [%{public}d], list size [%{public}zu]",
         deviceFlag, routingManagerDeviceChangeCbList_.size());
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 int32_t TaiheAudioManagerCallback::GetRoutingManagerDeviceChangeCbListSize()

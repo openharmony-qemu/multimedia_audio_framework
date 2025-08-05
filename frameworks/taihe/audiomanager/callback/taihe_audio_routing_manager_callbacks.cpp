@@ -43,9 +43,13 @@ void TaiheAudioPreferredInputDeviceChangeCallback::SaveCallbackReference(std::sh
     callback_ = std::make_shared<AutoRef>(callback);
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "Memory allocation failed!!");
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioPreferredInputDeviceChangeCallback::OnPreferredInputDeviceUpdated(
@@ -127,9 +131,13 @@ void TaiheAudioPreferredOutputDeviceChangeCallback::SaveCallbackReference(std::s
     callback_ = std::make_shared<AutoRef>(callback);
     CHECK_AND_RETURN_LOG(callback_ != nullptr, "Memory allocation failed!!");
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioPreferredOutputDeviceChangeCallback::OnPreferredOutputDeviceUpdated(

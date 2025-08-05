@@ -94,6 +94,10 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::SaveActiveVolumeTypeChange
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto iter : activeVolumeTypeChangeList_) {
+        if (iter == nullptr) {
+            AUDIO_ERR_LOG("SaveActiveVolumeTypeChangeCallbackReference: iter is null");
+            continue;
+        }
         if (IsSameCallback(callback, iter->cb_)) {
             AUDIO_ERR_LOG("activeVolumeTypeChangeList_ has same callback, nothing to do");
             return;
@@ -108,9 +112,13 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::SaveActiveVolumeTypeChange
     }  else {
         AUDIO_ERR_LOG("Unknown callback type: %{public}s", callbackName.c_str());
     }
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioManagerActiveVolumeTypeChangeCallback::RemoveSelfActiveVolumeTypeChangeCbRef(
@@ -118,6 +126,10 @@ void TaiheAudioManagerActiveVolumeTypeChangeCallback::RemoveSelfActiveVolumeType
 {
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto iter = activeVolumeTypeChangeList_.begin(); iter != activeVolumeTypeChangeList_.end();) {
+        if (*iter == nullptr) {
+            AUDIO_ERR_LOG("RemoveSelfAudioVolumeChangeCbRef: *iter is null");
+            continue;
+        }
         if (IsSameCallback(callback, (*iter)->cb_)) {
             AUDIO_INFO_LOG("find js callback, erase it");
             activeVolumeTypeChangeList_.erase(iter++);

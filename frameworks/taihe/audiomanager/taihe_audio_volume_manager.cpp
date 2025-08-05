@@ -556,9 +556,9 @@ void AudioVolumeManagerImpl::UnregisterSystemVolumeChangeCallback(std::shared_pt
         audioVolMngrImpl->systemVolumeChangeCallbackTaihe_.reset();
         audioVolMngrImpl->systemVolumeChangeCallbackTaihe_ = nullptr;
     } else {
-        int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
+        int32_t result = audioVolMngrImpl->audioSystemMngr_->UnregisterSystemVolumeChangeCallback(
             audioVolMngrImpl->cachedClientId_, nullptr);
-        if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (result != OHOS::AudioStandard::SUCCESS) {
             AUDIO_ERR_LOG("UnregisterSystemVolumeChangeCallback failed");
             return;
         }
@@ -660,9 +660,9 @@ void AudioVolumeManagerImpl::UnregisterStreamVolumeChangeCallback(std::shared_pt
         audioVolMngrImpl->streamVolumeChangeCallbackTaihe_.reset();
         audioVolMngrImpl->streamVolumeChangeCallbackTaihe_ = nullptr;
     } else {
-        int32_t ret = audioVolMngrImpl->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
+        int32_t result = audioVolMngrImpl->audioSystemMngr_->UnregisterStreamVolumeChangeCallback(
             audioVolMngrImpl->cachedClientId_, nullptr);
-        if (ret != OHOS::AudioStandard::SUCCESS) {
+        if (result != OHOS::AudioStandard::SUCCESS) {
             AUDIO_ERR_LOG("UnregisterStreamVolumeChangeCallback failed");
             return;
         }
