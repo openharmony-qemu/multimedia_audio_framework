@@ -57,11 +57,10 @@ void HpaeSignalProcessThread::Run()
         {
             std::unique_lock<std::mutex> lock(mutex_);
             condition_.wait(lock, [this] {
-                auto ptr = streamManager_.lock();
-                return !running_.load() || ptr == nullptr || ptr->IsRunning() ||
-                    ptr->IsMsgProcessing() || recvSignal_.load();
+                return !running_.load() || streamManager_.lock()->IsRunning() ||
+                    streamManager_.lock()->IsMsgProcessing() || recvSignal_.load();
             });
-        } 
+        }
         if (streamManager_.lock()) {
             streamManager_.lock()->HandleMsg();
             streamManager_.lock()->Process();
