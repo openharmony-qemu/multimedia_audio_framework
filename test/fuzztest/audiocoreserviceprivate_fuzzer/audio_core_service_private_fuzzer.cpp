@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 68;
+const uint8_t TESTSIZE = 66;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();

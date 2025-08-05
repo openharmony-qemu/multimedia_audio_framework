@@ -82,8 +82,6 @@ void AudioPolicyManagerOneFuzzTest()
     AudioRingerMode ringMode = GetData<AudioRingerMode>();
     AudioScene scene = GetData<AudioScene>();
     PolicyType policyType = GetData<PolicyType>();
-    int32_t clientUid = GetData<bool>();
-    PolicyType type = GetData<PolicyType>();
 
     AudioPolicyManager::GetInstance().GetAudioPolicyManagerProxy(block);
     AudioPolicyManager::GetInstance().RegisterPolicyCallbackClientFunc(Ap_gsp);
@@ -106,11 +104,6 @@ void AudioPolicyManagerOneFuzzTest()
     AudioPolicyManager::GetInstance().SetAudioScene(scene);
     AudioPolicyManager::GetInstance().SetMicrophoneMute(isMute);
     AudioPolicyManager::GetInstance().SetMicrophoneMuteAudioConfig(isMute);
-    AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
-    AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
-    AudioPolicyManager::GetInstance().IsMicrophoneMute();
-    AudioPolicyManager::GetInstance().GetAudioScene();
-    AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
 }
 
 void AudioPolicyManagerTwoFuzzTest()
@@ -136,8 +129,6 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioCapturerInfo capturerInfo;
     int32_t clientId = GetData<int32_t>();
     std::shared_ptr<AudioFocusInfoChangeCallback> callback;
-    std::string countryCode = "countryCode";
-    int32_t ltonetype = GetData<int32_t>();
 
     AudioPolicyManager::GetInstance().GetSelfAppVolumeLevel(volumeLevel);
     AudioPolicyManager::GetInstance().GetAppVolumeLevel(appUid, volumeLevel);
@@ -158,8 +149,6 @@ void AudioPolicyManagerTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetCallbackCapturerInfo(capturerInfo);
     AudioPolicyManager::GetInstance().RegisterFocusInfoChangeCallback(clientId, callback);
     AudioPolicyManager::GetInstance().UnregisterFocusInfoChangeCallback(clientId);
-    AudioPolicyManager::GetInstance().GetSupportedTones(countryCode);
-    AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, countryCode);
 }
 
 void AudioPolicyManagerThreeFuzzTest()
@@ -230,8 +219,6 @@ void AudioPolicyManagerFourFuzzTest()
     std::shared_ptr<AudioStreamDescriptor> streamDesc;
     uint32_t flag = GetData<uint32_t>();
     uint32_t sessionId = GetData<uint32_t>();
-    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
-    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     std::string networkId = "netWorkId";
 
     AudioPolicyManager::GetInstance().RequestAudioFocus(clientId, audioInterrupt);
@@ -254,8 +241,6 @@ void AudioPolicyManagerFourFuzzTest()
     AudioPolicyManager::GetInstance().GetPreferredInputStreamType(capturerInfo);
     AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag, sessionId, networkId);
     AudioPolicyManager::GetInstance().CreateCapturerClient(streamDesc, flag, sessionId);
-    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
-    AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
 }
 
 void AudioPolicyManagerFiveFuzzTest()
@@ -322,7 +307,6 @@ void AudioPolicyManagerSixFuzzTest()
     std::shared_ptr<AudioSpatializationEnabledChangeForCurrentDeviceCallback> currentDeviceCallback;
     std::shared_ptr<AudioHeadTrackingEnabledChangeCallback> audioHeadTrackingEnabledChangeCallback;
     std::shared_ptr<AudioNnStateChangeCallback> audioNnStateChangeCallback;
-    StreamUsage streamUsage = GetData<StreamUsage>();
 
     AudioPolicyManager::GetInstance().SetDeviceAbsVolumeSupported(macAddress, support);
     AudioPolicyManager::GetInstance().IsAbsVolumeScene();
@@ -349,9 +333,6 @@ void AudioPolicyManagerSixFuzzTest()
     AudioPolicyManager::GetInstance().UnregisterSpatializationEnabledForCurrentDeviceEventListener();
     AudioPolicyManager::GetInstance().UnregisterHeadTrackingEnabledEventListener();
     AudioPolicyManager::GetInstance().UnregisterNnStateEventListener();
-    AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
-    AudioPolicyManager::GetInstance().IsSpatializationSupported();
-    AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
 }
 
 void AudioPolicyManagerSevenFuzzTest()
@@ -434,6 +415,32 @@ void AudioPolicyManagerEightFuzzTest()
     AudioPolicyManager::GetInstance().CheckAndRemoveClientTrackerStub(AUDIO_MODE_PLAYBACK, streamChangeInfo);
     AudioPolicyManager::GetInstance().RemoveClientTrackerStub(sessionId);
     AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, isMuted);
+}
+
+void AudioPolicyManagerNiNeFuzzTest()
+{
+    bool isMute = GetData<bool>();
+    int32_t clientUid = GetData<int32_t>();
+    PolicyType type = GetData<PolicyType>();
+    std::string countryCode = "countryCode";
+    int32_t ltonetype = GetData<int32_t>();
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    StreamUsage streamUsage = GetData<StreamUsage>();
+    std::string address = "address";
+
+    AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
+    AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
+    AudioPolicyManager::GetInstance().IsMicrophoneMute();
+    AudioPolicyManager::GetInstance().GetAudioScene();
+    AudioPolicyManager::GetInstance().GetSystemActiveVolumeType(clientUid);
+    AudioPolicyManager::GetInstance().GetSupportedTones(countryCode);
+    AudioPolicyManager::GetInstance().GetToneConfig(ltonetype, countryCode);
+    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(audioRendererChangeInfos);
+    AudioPolicyManager::GetInstance().GetCurrentCapturerChangeInfos(audioCapturerChangeInfos);
+    AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
+    AudioPolicyManager::GetInstance().IsSpatializationSupported();
+    AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
 }
 
 void AudioPolicyManagerDeviceOneFuzzTest()
@@ -519,7 +526,7 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
 }
 
 
-typedef void (*TestFuncs[10])();
+typedef void (*TestFuncs[11])();
 
 TestFuncs g_testFuncs = {
     AudioPolicyManagerOneFuzzTest,
@@ -530,6 +537,7 @@ TestFuncs g_testFuncs = {
     AudioPolicyManagerSixFuzzTest,
     AudioPolicyManagerSevenFuzzTest,
     AudioPolicyManagerEightFuzzTest,
+    AudioPolicyManagerNiNeFuzzTest,
     AudioPolicyManagerDeviceOneFuzzTest,
     AudioPolicyManagerDeviceTwoFuzzTest,
 };
