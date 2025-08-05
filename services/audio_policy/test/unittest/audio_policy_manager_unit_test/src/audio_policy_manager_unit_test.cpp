@@ -627,6 +627,39 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManager.
+* @tc.number: CreateRenderClient_002.
+* @tc.desc  : Test CreateRendererClient.
+*/
+HWTEST(AudioPolicyManager, CreateRendererClient_002, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(originalSessionId, 0);
+
+    uint32_t oldSessionId = originalSessionId;
+    result = audioPolicyManager->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(originalSessionId, oldSessionId);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
 * @tc.number: CreateRenderClient_001.
 * @tc.desc  : Test CreateRendererClient.
 */
@@ -647,6 +680,38 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_001, TestSize.Level1)
     uint32_t originalSessionId = 123;
     auto result = audioPolicyManager_->CreateCapturerClient(streamDesc, flag, originalSessionId);
     EXPECT_EQ(result,  SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: CreateCapturerClient_002.
+* @tc.desc  : Test CreateCapturerClient.
+*/
+HWTEST(AudioPolicyManager, CreateCapturerClient_002, TestSize.Level1)
+{
+    auto audioPolicyManager = std::make_shared<AudioPolicyManager>();
+    ASSERT_NE(audioPolicyManager, nullptr);
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(streamDesc, nullptr);
+    streamDesc->streamInfo_.format = AudioSampleFormat::SAMPLE_S32LE;
+    streamDesc->streamInfo_.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamDesc->streamInfo_.channels = AudioChannel::STEREO;
+    streamDesc->streamInfo_.encoding = AudioEncodingType::ENCODING_PCM;
+    streamDesc->streamInfo_.channelLayout = AudioChannelLayout::CH_LAYOUT_MONO;
+
+    streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->callerUid_ = getuid();
+    uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    uint32_t originalSessionId = 0;
+    auto result = audioPolicyManager->CreateCapturerClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_NE(originalSessionId, 0);
+
+    uint32_t oldSessionId = originalSessionId;
+    result = audioPolicyManager->CreateCapturerClient(streamDesc, flag, originalSessionId);
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(oldSessionId, originalSessionId);
 }
 
 /**
