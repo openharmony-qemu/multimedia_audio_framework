@@ -41,11 +41,8 @@ void AudioRendererFilterUnmarshallingFuzzTest()
 {
     AudioRendererFilter audioRendererFilter;
     Parcel parcel;
-    [[maybe_unused]]auto micDescShared = audioRendererFilter.Marshalling(parcel);
-    if (audioRendererFilter.Unmarshalling(parcel) == nullptr) {
-        return;
-    }
-    micDescShared = audioRendererFilter.Unmarshalling(parcel);
+    audioRendererFilter.Marshalling(parcel);
+    std::shared_ptr<AudioRendererFilter> filter(AudioRendererFilter::Unmarshalling(parcel));
 }
 
 void AudioCapturerFilterMarshallingFuzzTest()
@@ -59,11 +56,8 @@ void AudioCapturerFilterUnmarshallingFuzzTest()
 {
     AudioCapturerFilter audioCapturerFilter;
     Parcel parcel;
-    [[maybe_unused]]auto micDescShared = audioCapturerFilter.Marshalling(parcel);
-    if (audioCapturerFilter.Unmarshalling(parcel) == nullptr) {
-        return;
-    }
-    micDescShared = audioCapturerFilter.Unmarshalling(parcel);
+    auto micDescShared = audioCapturerFilter.Marshalling(parcel);
+    std::shared_ptr<AudioCapturerFilter> filter(AudioCapturerFilter::Unmarshalling(parcel));
 }
 
 vector<TestFuncs> g_testFuncs = {

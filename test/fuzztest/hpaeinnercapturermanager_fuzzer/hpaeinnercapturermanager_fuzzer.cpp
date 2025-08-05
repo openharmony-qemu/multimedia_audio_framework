@@ -414,7 +414,115 @@ void GetDeviceHDFDumpInfoFuzzTest()
     hpaeInnerCapturerManager->GetDeviceHDFDumpInfo();
 }
 
-typedef void (*TestFuncs[43])();
+void InitSinkInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    bool isConnect = GetData<bool>();
+    hpaeInnerCapturerManager->InitSinkInner(isConnect);
+}
+
+void CreateRendererInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    hpaeInnerCapturerManager->CreateRendererInputSessionInner(streamInfo);
+}
+
+void DeleteRendererInputNodeSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    HpaeNodeInfo nodeInfo;
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeInnerCapturerManager->DeleteRendererInputNodeSession(node);
+}
+
+void DeleteRendererInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    HpaeStreamInfo streamInfo;
+    hpaeInnerCapturerManager->CreateRendererInputSessionInner(streamInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->DeleteRendererInputSessionInner(sessionId);
+}
+
+void DeleteCapturerInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->DeleteCapturerInputSessionInner(sessionId);
+}
+
+void ConnectRendererInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->ConnectRendererInputSessionInner(sessionId);
+}
+
+void ConnectCapturerOutputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->ConnectCapturerOutputSessionInner(sessionId);
+}
+
+void OnDisConnectProcessClusterFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    HpaeProcessorType sceneType = GetData<HpaeProcessorType>();
+    hpaeInnerCapturerManager->OnDisConnectProcessCluster(sceneType);
+}
+
+void DisConnectRendererInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->DisConnectRendererInputSessionInner(sessionId);
+}
+
+void DisConnectCapturerInputSessionInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    auto hpaeInnerCapturerManager = std::make_shared<HpaeInnerCapturerManager>(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    hpaeInnerCapturerManager->DisConnectCapturerInputSessionInner(sessionId);
+}
+
+void SetSessionStateForRendererFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeInnerCapturerManager hpaeInnerCapturerManager(sinkInfo);
+    uint32_t sessionId = 0;
+    HpaeSessionState renderState = GetData<HpaeSessionState>();
+    hpaeInnerCapturerManager.SetSessionStateForRenderer(sessionId, renderState);
+}
+
+void SetSessionStateForCapturerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeInnerCapturerManager hpaeInnerCapturerManager(sinkInfo);
+    uint32_t sessionId = GetData<uint32_t>();
+    HpaeSessionState renderState = GetData<HpaeSessionState>();
+    hpaeInnerCapturerManager.SetSessionStateForCapturer(sessionId, renderState);
+}
+
+void GetSinkInputNodeIdInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeInnerCapturerManager hpaeInnerCapturerManager(sinkInfo);
+    hpaeInnerCapturerManager.GetSinkInputNodeIdInner();
+}
+
+typedef void (*TestFuncs[56])();
 
 TestFuncs g_testFuncs = {
     CreateStreamFuzzTest,
@@ -460,6 +568,19 @@ TestFuncs g_testFuncs = {
     GetThreadNameFuzzTest,
     ReloadRenderManagerFuzzTest,
     GetDeviceHDFDumpInfoFuzzTest,
+    InitSinkInnerFuzzTest,
+    CreateRendererInputSessionInnerFuzzTest,
+    DeleteRendererInputNodeSessionFuzzTest,
+    DeleteRendererInputSessionInnerFuzzTest,
+    DeleteCapturerInputSessionInnerFuzzTest,
+    ConnectRendererInputSessionInnerFuzzTest,
+    ConnectCapturerOutputSessionInnerFuzzTest,
+    OnDisConnectProcessClusterFuzzTest,
+    DisConnectRendererInputSessionInnerFuzzTest,
+    DisConnectCapturerInputSessionInnerFuzzTest,
+    SetSessionStateForRendererFuzzTest,
+    SetSessionStateForCapturerFuzzTest,
+    GetSinkInputNodeIdInnerFuzzTest,
 };
 
 bool FuzzTest(const uint8_t *rawData, size_t size)

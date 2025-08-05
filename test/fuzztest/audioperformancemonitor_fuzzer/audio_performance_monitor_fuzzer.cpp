@@ -27,6 +27,7 @@
 #include "volume_ramp.h"
 #include "audio_speed.h"
 #include "audio_performance_monitor.h"
+#include "audio_performance_monitor_c.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,7 +37,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 8;
+const uint8_t TESTSIZE = 10;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -141,6 +142,22 @@ void ReportEventFuzzTest()
     AudioPerformanceMonitor::GetInstance().ReportEvent(reasonCode, periodMs, pipeType, adapterType, uid);
 }
 
+void RecordPaSilenceStateFuzzTest()
+{
+    uint32_t sessionId = GetData<uint32_t>();
+    bool isSilence = GetData<bool>();
+    PA_PIPE_TYPE paPipeType = GetData<PA_PIPE_TYPE>();
+    uint32_t uid = GetData<uint32_t>();
+    RecordPaSilenceState(sessionId, isSilence, paPipeType, uid);
+}
+
+void StartSilenceMonitorFuzzTest()
+{
+    uint32_t sessionId = GetData<uint32_t>();
+    uint32_t tokenId = GetData<uint32_t>();
+    AudioPerformanceMonitor::GetInstance().StartSilenceMonitor(sessionId, tokenId);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     RecordSilenceStateFuzzTest,
     DeleteSilenceMonitorFuzzTest,
@@ -150,6 +167,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     DumpMonitorInfoFuzzTest,
     JudgeNoiseFuzzTest,
     ReportEventFuzzTest,
+    RecordPaSilenceStateFuzzTest,
+    StartSilenceMonitorFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

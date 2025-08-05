@@ -966,13 +966,12 @@ void AudioInterruptServiceProcessRemoteInterruptFuzzTest(const uint8_t *rawData,
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = pid;
     audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
-    audioInterrupt.streamId = *reinterpret_cast<const uint32_t *>(rawData) + 1;
     audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
     interruptService->zonesMap_.insert({pid, audioInterruptZone});
-    std::set<int32_t> streamIds {audioInterrupt.streamId};
     InterruptEventInternal interruptEvent;
     interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
-    interruptService->ProcessRemoteInterrupt(streamIds, interruptEvent);
+    std::set<int32_t> sessionIds;
+    interruptService->ProcessRemoteInterrupt(sessionIds, interruptEvent);
 }
 
 void AudioInterruptServiceProcessActiveInterruptFuzzTest(const uint8_t *rawData, size_t size)
@@ -990,7 +989,6 @@ void AudioInterruptServiceProcessActiveInterruptFuzzTest(const uint8_t *rawData,
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = zoneId;
     audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
-    audioInterrupt.streamId = *reinterpret_cast<const uint32_t *>(rawData) + 1;
     interruptService->zonesMap_.insert({zoneId, audioInterruptZone});
     audioInterruptZone->audioFocusInfoList.push_back(
         {audioInterrupt, *reinterpret_cast<const AudioFocuState *>(rawData)});
@@ -1058,7 +1056,6 @@ void AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest(const uint8
     AudioInterrupt audioInterrupt;
     audioInterrupt.pid = zoneId;
     audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
-    audioInterrupt.streamId = *reinterpret_cast<const uint32_t *>(rawData) + 1;
     audioInterrupt.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
     AudioFocuState audioFocusState = *reinterpret_cast<const AudioFocuState *>(rawData);
     std::pair<AudioInterrupt, AudioFocuState> audioInterruptPair = std::make_pair(audioInterrupt, audioFocusState);
