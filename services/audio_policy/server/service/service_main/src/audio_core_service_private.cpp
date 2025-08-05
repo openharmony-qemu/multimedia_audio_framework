@@ -1350,6 +1350,8 @@ void AudioCoreService::UpdateOutputRoute(std::shared_ptr<AudioStreamDescriptor> 
     InternalDeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
     AUDIO_INFO_LOG("[PipeExecInfo] Update route streamUsage:%{public}d, devicetype:[%{public}s]",
         streamUsage, streamDesc->GetNewDevicesTypeString().c_str());
+    // for collaboration, the route should be updated
+    UpdateRouteForCollaboration(deviceType);
     if (Util::IsRingerOrAlarmerStreamUsage(streamUsage) && IsRingerOrAlarmerDualDevicesRange(deviceType) &&
         !VolumeUtils::IsPCVolumeEnable()) {
         if (!SelectRingerOrAlarmDevices(streamDesc)) {
@@ -2873,6 +2875,17 @@ void AudioCoreService::WriteCapturerConcurrentEvent(const std::unique_ptr<Concur
 int32_t AudioCoreService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
 {
     return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
+}
+
+void AudioCoreService::UpdateRouteForCollaboration(InternalDeviceType deviceType)
+{
+    if (AudioCollaborativeService::GetAudioCollaborativeService().GetRealCollaborativeState()) {
+        std::vector<std::pair<InternalDeviceType, DeviceFlag>> activeDevices;
+        activeDevices.push_back(make_pair(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG));
+        activeDevices.push_back(make_pair(DEVICE_TYPE_SPEAKER, DeviceFlag::OUTPUT_DEVICES_FLAG));
+        audioActiveDevice_.UpdateActiveDevicesRoute(activeDevices);
+        AUDIO_INFO_LOG("collaboration Update desc [%{public}d] with speaker", deviceType);
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS
