@@ -441,17 +441,17 @@ uint32_t LocalDeviceManager::GetPortId(const std::string &adapterName, enum Audi
     return portId;
 }
 
-static const std::unordered_map<DeviceType, std::tuple<int32_t, const char*>> devicePinMap = {
-    { DEVICE_TYPE_EARPIECE, { PIN_OUT_EARPIECE, "pin_out_earpiece" } },
-    { DEVICE_TYPE_SPEAKER, { PIN_OUT_SPEAKER, "pin_out_speaker" } },
-    { DEVICE_TYPE_WIRED_HEADSET, { PIN_OUT_HEADSET, "pin_out_headset" } },
-    { DEVICE_TYPE_WIRED_HEADPHONES, { PIN_OUT_HEADPHONE, "pin_out_headphone" } },
-    { DEVICE_TYPE_USB_ARM_HEADSET, { PIN_OUT_USB_HEADSET, "pin_out_usb_headset" } },
-    { DEVICE_TYPE_USB_HEADSET, { PIN_OUT_USB_EXT, "pin_out_usb_ext" } },
-    { DEVICE_TYPE_BLUETOOTH_SCO, { PIN_OUT_BLUETOOTH_SCO, "pin_out_bluetooth_sco" } },
-    { DEVICE_TYPE_BLUETOOTH_A2DP, { PIN_OUT_BLUETOOTH_A2DP, "pin_out_bluetooth_a2dp" } },
-    { DEVICE_TYPE_HDMI, { PIN_OUT_HDMI, "pin_out_hdmi" } },
-    { DEVICE_TYPE_NONE, { PIN_NONE, "pin_out_none" } }
+static const std::unordered_map<DeviceType, std::pair<int32_t, const char *>> devicePinMap = {
+    {DEVICE_TYPE_EARPIECE, {PIN_OUT_EARPIECE, "pin_out_earpiece"}},
+    {DEVICE_TYPE_SPEAKER, {PIN_OUT_SPEAKER, "pin_out_speaker"}},
+    {DEVICE_TYPE_WIRED_HEADSET, {PIN_OUT_HEADSET, "pin_out_headset"}},
+    {DEVICE_TYPE_WIRED_HEADPHONES, {PIN_OUT_HEADPHONE, "pin_out_headphone"}},
+    {DEVICE_TYPE_USB_ARM_HEADSET, {PIN_OUT_USB_HEADSET, "pin_out_usb_headset"}},
+    {DEVICE_TYPE_USB_HEADSET, {PIN_OUT_USB_EXT, "pin_out_usb_ext"}},
+    {DEVICE_TYPE_BLUETOOTH_SCO, {PIN_OUT_BLUETOOTH_SCO, "pin_out_bluetooth_sco"}},
+    {DEVICE_TYPE_BLUETOOTH_A2DP, {PIN_OUT_BLUETOOTH_A2DP, "pin_out_bluetooth_a2dp"}},
+    {DEVICE_TYPE_HDMI, {PIN_OUT_HDMI, "pin_out_hdmi"}},
+    {DEVICE_TYPE_NONE, {PIN_NONE, "pin_out_none"}}
 };
 
 int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRouteNode &sink)
@@ -461,13 +461,13 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
         return SUCCESS;
     }
 
-    for (const auto &entry : devicePinMap) {
-        if (entry.deviceType == outputDevice) {
-            sink.ext.device.type = entry.pinType;
-            sink.ext.device.desc = const_cast<char*>(entry.desc);
-            return SUCCESS;
-        }
+    auto it = devicePinMap.find(outputDevice);
+    if (it != devicePinMap.end()) {
+        sink.ext.device.type = it->second.first;
+        sink.ext.device.desc = const_cast<char*>(it->second.second);
+        return SUCCESS;
     }
+ 
     return ERR_NOT_SUPPORTED;
 }
 
