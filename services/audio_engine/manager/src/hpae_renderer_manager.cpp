@@ -279,6 +279,8 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
     };
     SendRequest(request);
     return SUCCESS;
+    //!= 1, != 0,
+    //== 0, == 1
 }
 
 int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)

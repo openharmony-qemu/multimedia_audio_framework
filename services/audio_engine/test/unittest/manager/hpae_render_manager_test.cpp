@@ -20,6 +20,7 @@
 #include "hpae_offload_renderer_manager.h"
 #include "hpae_inner_capturer_manager.h"
 #include "hpae_co_buffer_node.h"
+#include "audio_effect_chain_manager.h"
 #include <thread>
 #include <chrono>
 #include <cstdio>
@@ -992,5 +993,149 @@ HWTEST_F(HpaeRendererManagerTest, StartWithSyncId_001, TestSize.Level0)
     
     EXPECT_EQ(hpaeRendererManager->StartWithSyncId(streamInfo.sessionId, syncId) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
+}
+
+/**
+ * @tc.name: RefreshProcessClusrerByDevice
+ * @tc.type: FUNC
+ * @tc.number: RefreshProcessClusrerByDevice_001
+ * @tc.desc: Test RefreshProcessClusrerByDevice
+ */
+HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 10001;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = true;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
+    EXPECT_EQ(ret == SUCCESS, true);
+}
+
+/**
+ * @tc.name: RefreshProcessClusrerByDevice
+ * @tc.type: FUNC
+ * @tc.number: RefreshProcessClusrerByDevice_002
+ * @tc.desc: Test RefreshProcessClusrerByDevice
+ */
+HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_002, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 10001;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = false;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
+    int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
+    EXPECT_EQ(ret == SUCCESS, true);
+}
+
+/**
+ * @tc.name: RefreshProcessClusrerByDevice
+ * @tc.type: FUNC
+ * @tc.number: RefreshProcessClusrerByDevice_003
+ * @tc.desc: Test RefreshProcessClusrerByDevice
+ */
+HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_003, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 10001;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = true;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
+    EXPECT_EQ(ret == SUCCESS, true);
+}
+
+/**
+ * @tc.name: RefreshProcessClusrerByDevice
+ * @tc.type: FUNC
+ * @tc.number: RefreshProcessClusrerByDevice_004
+ * @tc.desc: Test RefreshProcessClusrerByDevice
+ */
+HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_004, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = 10001;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_NONE;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = false;
+    AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
+    AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
+    int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
+    EXPECT_EQ(ret == SUCCESS, true);
 }
 }  // namespace
