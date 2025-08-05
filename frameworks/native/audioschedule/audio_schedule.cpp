@@ -155,18 +155,17 @@ void OnAddResSchedService(uint32_t audioServerPid)
 
 bool SetEndpointThreadPriority()
 {
-    Trace trace("SetEndpointThreadPriority");
+    bool res = false;
     std::unordered_map<std::string, std::string> payload;
     payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
     payload["pid"] = std::to_string(getpid());
     OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
     int32_t ret = OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_KEY_BACKGROUND);
-    if (ret != 0) {
-        AUDIO_ERR_LOG("set thread qos failed");
-        return false;
+    if (ret == 0) {
+        res = true;
     }
-    AUDIO_INFO_LOG("set thread qos sucess");
-    return true;
+    AUDIO_INFO_LOG("set thread qos %s", ret ? "failed" : "success");
+    return res;
 }
 
 bool ResetEndpointThreadPriority()
