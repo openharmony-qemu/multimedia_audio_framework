@@ -52,6 +52,7 @@ ohos_fuzztest("AudioHpaeCapturerManagerFuzzTest") {
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/audioschedule:audio_schedule",
+    "../../../services/audio_engine:audio_engine_node",
     "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_policy:audio_policy_service",
     "../../../services/audio_service:audio_common",
