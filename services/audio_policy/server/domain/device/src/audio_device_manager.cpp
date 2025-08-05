@@ -743,6 +743,7 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(co
 
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetActiveScoDevice(std::string scoMac, DeviceRole role)
 {
+    std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (auto &dev : connectedDevices_) {
         CHECK_AND_RETURN_RET_LOG(dev != nullptr, make_shared<AudioDeviceDescriptor>(),
             "Device is nullptr");
