@@ -264,6 +264,14 @@ int32_t AudioCoreService::EventEntry::SetDeviceActive(InternalDeviceType deviceT
     return coreService_->SetDeviceActive(deviceType, active, uid);
 }
 
+int32_t AudioCoreService::EventEntry::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("withlock");
+    return coreService_->SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetPreferredOutputDeviceDescriptors(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
