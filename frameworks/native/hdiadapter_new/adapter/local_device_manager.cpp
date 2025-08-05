@@ -441,7 +441,7 @@ uint32_t LocalDeviceManager::GetPortId(const std::string &adapterName, enum Audi
     return portId;
 }
 
-static const std::unordered_map<DeviceType, std::pair<int32_t, const char *>> devicePinMap = {
+static const std::unordered_map<DeviceType, std::pair<AudioPortPin, const char *>> devicePinMap = {
     {DEVICE_TYPE_EARPIECE, {PIN_OUT_EARPIECE, "pin_out_earpiece"}},
     {DEVICE_TYPE_SPEAKER, {PIN_OUT_SPEAKER, "pin_out_speaker"}},
     {DEVICE_TYPE_WIRED_HEADSET, {PIN_OUT_HEADSET, "pin_out_headset"}},
