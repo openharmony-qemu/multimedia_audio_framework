@@ -744,6 +744,8 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(co
 shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetActiveScoDevice(std::string scoMac, DeviceRole role)
 {
     for (auto &dev : connectedDevices_) {
+        CHECK_AND_RETURN_RET_LOG(dev != nullptr, make_shared<AudioDeviceDescriptor>(),
+            "Device is nullptr");
         if (dev->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && dev->macAddress_ == scoMac
             && dev->deviceRole_ == role) {
             return dev;

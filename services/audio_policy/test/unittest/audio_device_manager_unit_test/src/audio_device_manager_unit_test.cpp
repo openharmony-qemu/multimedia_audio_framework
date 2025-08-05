@@ -38,7 +38,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_001, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:55";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DeviceType::DEVICE_TYPE_BLUETOOTH_SCO);
@@ -58,7 +58,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_002, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:66";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -76,7 +76,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_003, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:55";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::INPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -94,7 +94,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_004, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:55";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -112,7 +112,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_005, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:55";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::INPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -130,7 +130,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_006, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:66";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::INPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -148,7 +148,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_007, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:66";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::OUTPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
@@ -166,7 +166,7 @@ HWTEST_F(AudioDeviceManagerUnitTest, AudioDeviceManagerUnitTest_008, TestSize.Le
     desc->macAddress_ = "00:11:22:33:44:55";
     AudioDeviceManager::GetAudioDeviceManager().AddConnectedDevices(desc);
     std::string scoMac = "00:11:22:33:44:66";
-    bool result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
+    auto result = AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac,
         DeviceRole::INPUT_DEVICE);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->macAddress_, "");
