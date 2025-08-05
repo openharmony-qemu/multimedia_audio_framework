@@ -26,6 +26,7 @@
 #include "hpae_capturer_manager.h"
 #include "hpae_source_output_node.h"
 #include "hpaecapturermanager_fuzzer.h"
+#include "audio_engine_log.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 
@@ -308,7 +309,6 @@ void HpaeCapturerManagerFuzzTest1()
     InitSourceInfo(sourceInfo);
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
-    capturerManager->Init();
     WaitForMsgProcessing(capturerManager);
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
@@ -317,10 +317,7 @@ void HpaeCapturerManagerFuzzTest1()
     WaitForMsgProcessing(capturerManager);
     HpaeSourceOutputInfo sourceOutputInfo;
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    
-    std::shared_ptr<ReadDataCb> readDataCb =
-        std::make_shared<ReadDataCb>(g_rootCapturerPath);
-    capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb);
+
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
@@ -351,7 +348,6 @@ void HpaeCapturerManagerFuzzTest3()
     InitFuzzSourceInfo(sourceInfo);
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
-    capturerManager->Init();
     WaitForMsgProcessing(capturerManager);
     capturerManager->IsInit();
     HpaeStreamInfo streamInfo;
@@ -360,10 +356,7 @@ void HpaeCapturerManagerFuzzTest3()
     WaitForMsgProcessing(capturerManager);
     HpaeSourceOutputInfo sourceOutputInfo;
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    
-    std::shared_ptr<ReadDataCb> readDataCb =
-        std::make_shared<ReadDataCb>(g_rootCapturerPath);
-    capturerManager->RegisterReadCallback(streamInfo.sessionId, readDataCb);
+
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
     capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
