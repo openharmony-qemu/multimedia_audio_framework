@@ -29,11 +29,12 @@
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
+#include "qos.h"
+#include "concurrent_task_client.h"
 
 #include "audio_utils.h"
 #include "audio_common_log.h"
-#include "qos.h"
-#include "concurrent_task_client.h"
+
 
 #ifdef __cplusplus
 extern "C" {
