@@ -35,7 +35,6 @@
 #include "audio_utils.h"
 #include "audio_common_log.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
