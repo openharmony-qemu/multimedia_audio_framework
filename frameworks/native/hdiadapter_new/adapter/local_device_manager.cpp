@@ -461,11 +461,6 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
         return SUCCESS;
     }
 
-    if (outputDevice == DEVICE_TYPE_NEARLINK) {
-        HandleNearlinkScene(outputDevice, sink);
-        return SUCCESS;
-    }
-
     for (const auto &entry : devicePinMap) {
         if (entry.deviceType == outputDevice) {
             sink.ext.device.type = entry.pinType;
@@ -473,7 +468,6 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
             return SUCCESS;
         }
     }
-
     return ERR_NOT_SUPPORTED;
 }
 
