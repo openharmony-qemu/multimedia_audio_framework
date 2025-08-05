@@ -221,6 +221,7 @@ void hpaeInnerCapturerManagerFuzzTest1()
     hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
     hpaeInnerCapturerManager->Release(playStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void hpaeInnerCapturerManagerFuzzTest2()
@@ -256,6 +257,7 @@ void hpaeInnerCapturerManagerFuzzTest2()
     hpaeInnerCapturerManager->Release(recordSessionId);
     hpaeInnerCapturerManager->Release(playSessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void hpaeInnerCapturerManagerFuzzTest3()
@@ -290,6 +292,7 @@ void hpaeInnerCapturerManagerFuzzTest3()
     hpaeInnerCapturerManager->Release(recordSessionId);
     hpaeInnerCapturerManager->Release(playSessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
@@ -334,6 +337,7 @@ void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest1()
     hpaeInnerCapturerManager->Release(playSencondStreamInfo.sessionId);
     hpaeInnerCapturerManager->Release(recordStreamInfo.sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
@@ -371,15 +375,16 @@ void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest2()
     hpaeInnerCapturerManager->AddSingleNodeToSinkInner(HpaeSinkInputSencondNode, isConnect);
     bool isSuspend1 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend1);
-    itForMsgProcessing(hpaeInnerCapturerManager);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->AddNodeToSink(HpaeSinkInputSencondNode);
     bool isSuspend2 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend2);
-    itForMsgProcessing(hpaeInnerCapturerManager);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(playSencondNodeInfo.sessionId);
     hpaeInnerCapturerManager->Release(playSencondStreamInfo.sessionId);
     hpaeInnerCapturerManager->Release(recordSessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
@@ -419,15 +424,16 @@ void hpaeInnerCapturerManagerAddNodeToSinkFuzzTest3()
     hpaeInnerCapturerManager->AddSingleNodeToSinkInner(HpaeSinkInputSencondNode, isConnect);
     bool isSuspend1 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend1);
-    itForMsgProcessing(hpaeInnerCapturerManager);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->AddNodeToSink(HpaeSinkInputSencondNode);
     bool isSuspend2 = GetData<bool>();
     hpaeInnerCapturerManager->SuspendStreamManager(isSuspend2);
-    itForMsgProcessing(hpaeInnerCapturerManager);
+    WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->Release(playSencondNodeInfo.sessionId);
     hpaeInnerCapturerManager->Release(playSencondStreamInfo.sessionId);
     hpaeInnerCapturerManager->Release(recordSessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void HpaeInnerCapturerManagerOtherFuzzTest1()
@@ -469,6 +475,7 @@ void HpaeInnerCapturerManagerOtherFuzzTest1()
     bool isMute = GetData<bool>();
     hpaeInnerCapturerManager->SetMute(isMute);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void HpaeInnerCapturerManagerOtherFuzzTest2()
@@ -512,6 +519,7 @@ void HpaeInnerCapturerManagerOtherFuzzTest2()
     bool isMute = GetData<bool>();
     hpaeInnerCapturerManager->SetMute(isMute);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void HpaeInnerCapturerManagerOtherFuzzTest3()
@@ -557,6 +565,7 @@ void HpaeInnerCapturerManagerOtherFuzzTest3()
     bool isMute = GetData<bool>();
     hpaeInnerCapturerManager->SetMute(isMute);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void HpaeInnerCapturerManagerReloadFuzzTest1()
@@ -577,7 +586,6 @@ void HpaeInnerCapturerManagerReloadFuzzTest1()
     hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, true);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
 }
 
 void HpaeInnerCapturerManagerReloadFuzzTest2()
@@ -601,7 +609,6 @@ void HpaeInnerCapturerManagerReloadFuzzTest2()
     hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
 }
 
 void HpaeInnerCapturerManagerReloadFuzzTest3()
@@ -625,7 +632,6 @@ void HpaeInnerCapturerManagerReloadFuzzTest3()
     hpaeInnerCapturerManager->ReloadRenderManager(sinkInfo, isReload);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
     hpaeInnerCapturerManager->DeInit();
-    WaitForMsgProcessing(hpaeInnerCapturerManager);
 }
 
 void MoveStreamFuzzTest()
@@ -637,6 +643,7 @@ void MoveStreamFuzzTest()
     std::string sinkName = "13222";
     hpaeInnerCapturerManager->MoveStream(sessionId, sinkName);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void MoveAllStreamFuzzTest()
@@ -648,6 +655,7 @@ void MoveAllStreamFuzzTest()
     std::string sinkName = "13222";
     hpaeInnerCapturerManager->MoveAllStream(sinkName, sessionId);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void OnNodeStatusUpdateFuzzTest()
@@ -659,6 +667,7 @@ void OnNodeStatusUpdateFuzzTest()
     IOperation operation = IOperation::OPERATION_INVALID;
     hpaeInnerCapturerManager->OnNodeStatusUpdate(sessionId, operation);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 void OnFadeDoneFuzzTest()
@@ -670,6 +679,7 @@ void OnFadeDoneFuzzTest()
     IOperation operation = IOperation::OPERATION_INVALID;
     hpaeInnerCapturerManager->OnFadeDone(sessionId, operation);
     WaitForMsgProcessing(hpaeInnerCapturerManager);
+    hpaeInnerCapturerManager->DeInit();
 }
 
 typedef void (*TestFuncs[16])();

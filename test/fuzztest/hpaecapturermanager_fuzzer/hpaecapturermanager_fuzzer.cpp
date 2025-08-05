@@ -319,9 +319,9 @@ void HpaeCapturerManagerFuzzTest1()
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
 
     StateControlTest(capturerManager, streamInfo, sourceOutputInfo);
-    capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void HpaeCapturerManagerFuzzTest2()
@@ -337,9 +337,9 @@ void HpaeCapturerManagerFuzzTest2()
     HpaeSourceOutputInfo sourceOutputInfo;
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
     StateControlFuzzTest(capturerManager, streamInfo, sourceOutputInfo);
-    capturerManager->DeInit();
     capturerManager->OnNotifyQueue();
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void HpaeCapturerManagerFuzzTest3()
@@ -383,8 +383,8 @@ void HpaeCapturerManagerReloadFuzzTest1()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    capturerManager->DeInit();
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void HpaeCapturerManagerReloadFuzzTest2()
@@ -429,8 +429,8 @@ void HpaeCapturerManagerReloadFuzzTest3()
     capturerManager->ReloadCaptureManager(newSourceInfo);
     WaitForMsgProcessing(capturerManager);
     capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo);
-    capturerManager->DeInit();
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void MoveStreamFuzzTest()
@@ -445,6 +445,7 @@ void MoveStreamFuzzTest()
     std::vector<uint32_t> sessionIds = {GetData<uint32_t>(), GetData<uint32_t>(), GetData<uint32_t>()};
     capturerManager->MoveAllStream(sourceName, sessionIds);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void GetSourceInfoFuzzTest()
@@ -468,6 +469,7 @@ void OnRequestLatencyFuzzTest()
     uint64_t latency = GetData<uint64_t>();
     capturerManager->OnRequestLatency(sessionId, latency);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void AddNodeToSourceFuzzTest1()
@@ -479,6 +481,7 @@ void AddNodeToSourceFuzzTest1()
     HpaeCaptureMoveInfo moveInfo;
     capturerManager->AddNodeToSource(moveInfo);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void AddNodeToSourceFuzzTest2()
@@ -490,6 +493,7 @@ void AddNodeToSourceFuzzTest2()
     HpaeCaptureMoveInfo moveInfo = GetHpaeCaptureMoveInfo();
     capturerManager->AddNodeToSource(moveInfo);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void AddAllNodesToSourceFuzzTest1()
@@ -502,6 +506,7 @@ void AddAllNodesToSourceFuzzTest1()
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void AddAllNodesToSourceFuzzTest2()
@@ -514,6 +519,7 @@ void AddAllNodesToSourceFuzzTest2()
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 void GetDeviceHDFDumpInfoFuzzTest()
@@ -524,6 +530,7 @@ void GetDeviceHDFDumpInfoFuzzTest()
     capturerManager->Init();
     capturerManager->GetDeviceHDFDumpInfo();
     WaitForMsgProcessing(capturerManager);
+    capturerManager->DeInit();
 }
 
 typedef void (*TestFuncs[14])();
