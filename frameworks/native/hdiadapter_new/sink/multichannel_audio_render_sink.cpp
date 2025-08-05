@@ -374,14 +374,10 @@ void MultichannelAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     }
 }
 
-int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
-        ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevices.front());
     if (!openSpeaker_) {
         return SUCCESS;
     }
@@ -394,10 +390,6 @@ int32_t MultichannelAudioRenderSink::SetAudioScene(AudioScene audioScene, std::v
         int32_t ret = audioRender_->SelectScene(audioRender_, &sceneDesc);
         CHECK_AND_RETURN_RET_LOG(ret >= 0, ERR_OPERATION_FAILED, "select scene fail, ret: %{public}d", ret);
         currentAudioScene_ = audioScene;
-    }
-    int32_t ret = UpdateActiveDevice(activeDevices);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     return SUCCESS;
 }
@@ -480,6 +472,11 @@ void MultichannelAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: MchSink\tstarted: " + std::string(started_ ? "true" : "false") + "\thalName: " + halName_ +
         "\tcurrentActiveDevice: " + std::to_string(currentActiveDevice_) + "\n";
+}
+
+void MultichannelAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t MultichannelAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)

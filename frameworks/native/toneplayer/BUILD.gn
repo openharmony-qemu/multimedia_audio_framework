@@ -75,7 +75,6 @@ if (!audio_framework_feature_dtmf_tone) {
       "hilog:libhilog",
       "init:libbegetutil",
       "ipc:ipc_single",
-      "pulseaudio:pulse",
     ]
 
     if (audio_telephony_core_service_enable) {
@@ -117,7 +116,6 @@ if (!audio_framework_feature_dtmf_tone) {
     external_deps = [
       "c_utils:utils",
       "hilog:libhilog",
-      "pulseaudio:pulse",
     ]
 
     part_name = "audio_framework"

@@ -42,6 +42,7 @@ public:
     int32_t GetStreamFramesWritten(uint64_t &framesWritten) override;
     int32_t GetCurrentTimeStamp(uint64_t &timestamp) override;
     int32_t GetCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
+    int32_t GetSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
     int32_t GetLatency(uint64_t &latency) override;
     int32_t SetRate(int32_t rate) override;
     int32_t SetAudioEffectMode(int32_t effectMode) override;
@@ -86,9 +87,9 @@ private:
     int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
-    int32_t GetRemoteOffloadLatency(uint64_t &latency);
-    int32_t GetRemoteOffloadCurrentPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
+    void OnDeviceClassChange(const AudioCallBackStreamInfo &callBackStreamInfo);
+    int32_t GetRemoteOffloadSpeedPosition(uint64_t &framePosition, uint64_t &timestamp, uint64_t &latency);
 
     uint32_t streamIndex_ = static_cast<uint32_t>(-1); // invalid index
     AudioProcessConfig processConfig_;
@@ -116,6 +117,8 @@ private:
     // latency position timeStamp
     std::shared_mutex latencyMutex_;
     uint64_t framePosition_ = 0;
+    uint64_t lastFramePosition_ = 0;
+    uint64_t lastHdiFramePosition_ = 0;
     std::vector<uint64_t> timestamp_ = {Timestamp::Timestampbase::BASESIZE, 0};
     uint64_t latency_ = 0;
     uint64_t framesWritten_ = 0;

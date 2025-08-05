@@ -48,7 +48,7 @@ ohos_unittest("pa_adapter_manager_unit_test") {
   ]
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
-  sources = [ "src/pa_adapter_manager_unit_test.cpp" ]
+  sources = []
 
   deps = [
     "../../../../../frameworks/native/audiocapturer:audio_capturer",
@@ -74,6 +74,14 @@ ohos_unittest("pa_adapter_manager_unit_test") {
   ]
 
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+    sources += [ "src/pa_adapter_manager_unit_test.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (audio_framework_feature_inner_capturer) {
     defines += [ "HAS_FEATURE_INNERCAPTURER" ]
   }

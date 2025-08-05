@@ -85,9 +85,13 @@ int32_t AudioGeneralManager::UnsetAudioDeviceRefinerCallback()
     return AudioPolicyManager::GetInstance().UnsetAudioDeviceRefinerCallback();
 }
 
-void AudioGeneralManager::SaveRemoteInfo(const std::string &networkId, DeviceType deviceType)
+int32_t AudioGeneralManager::SetDeviceVolumeBehavior(const std::string &networkId,
+    DeviceType deviceType, VolumeBehavior volumeBehavior)
 {
-    AudioPolicyManager::GetInstance().SaveRemoteInfo(networkId, deviceType);
+    AUDIO_INFO_LOG("networkId [%{public}s], deviceType [%{public}d], isReady [%{public}d], "\
+        "isVolumeControlDisabled [%{public}d], databaseVolumeName [%{public}s]", networkId.c_str(), deviceType,
+        volumeBehavior.isReady, volumeBehavior.isVolumeControlDisabled, volumeBehavior.databaseVolumeName.c_str());
+    return AudioPolicyManager::GetInstance().SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
 }
 
 int32_t AudioGeneralManager::TriggerFetchDevice(AudioStreamDeviceChangeReasonExt reason)
@@ -154,6 +158,14 @@ int32_t AudioGeneralManager::SetQueryClientTypeCallback(const std::shared_ptr<Au
     AUDIO_INFO_LOG("Entered");
     CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
     return AudioPolicyManager::GetInstance().SetQueryClientTypeCallback(callback);
+}
+
+int32_t AudioGeneralManager::SetQueryDeviceVolumeBehaviorCallback(
+    const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback)
+{
+    AUDIO_INFO_LOG("Entered");
+    CHECK_AND_RETURN_RET_LOG(callback != nullptr, ERR_INVALID_PARAM, "callback is nullptr");
+    return AudioPolicyManager::GetInstance().SetQueryDeviceVolumeBehaviorCallback(callback);
 }
 
 const sptr<IStandardAudioService> AudioGeneralManager::GetAudioGeneralManagerProxy()

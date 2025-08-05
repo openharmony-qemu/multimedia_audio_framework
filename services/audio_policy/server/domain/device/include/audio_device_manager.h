@@ -90,7 +90,8 @@ public:
     int32_t RemoveSelectedDefaultOutputDevice(const uint32_t sessionID);
     shared_ptr<AudioDeviceDescriptor> GetSelectedMediaRenderDevice();
     shared_ptr<AudioDeviceDescriptor> GetSelectedCallRenderDevice();
-    void SaveRemoteInfo(const std::string &networkId, DeviceType deviceType);
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
+    VolumeBehavior GetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType);
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
         const SourceType sourceType, bool isRunning);
     int32_t RemoveSelectedInputDevice(const uint32_t sessionID);

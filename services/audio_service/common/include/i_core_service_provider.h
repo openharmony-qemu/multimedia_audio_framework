@@ -35,6 +35,7 @@ public:
     virtual int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionID, AudioDeviceDescriptor &deviceInfo,
         bool isReloadProcess) = 0;
     virtual uint32_t GenerateSessionId() = 0;
+    virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
 
     virtual ~ICoreServiceProvider() = default;
 };

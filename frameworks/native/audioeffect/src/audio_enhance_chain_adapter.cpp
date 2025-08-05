@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+#ifdef SUPPORT_OLD_ENGINE
 #undef LOG_TAG
 #define LOG_TAG "AudioEnhanceChainAdapter"
 
@@ -197,3 +197,4 @@ int32_t EnhanceChainManagerSendInitCommand()
         ERROR, "null audioEnhanceChainManager");
     return audioEnhanceChainMananger->SendInitCommand();
 }
+#endif // SUPPORT_OLD_ENGINE

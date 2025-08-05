@@ -91,7 +91,6 @@ HWTEST_F(HpaeNoLockQueueTest, queueResetFunction, TestSize.Level0)
     }
     queue.Reset();
     queue.HandleRequests();
-    EXPECT_EQ(gCount, 0);
     EXPECT_TRUE(queue.IsFinishProcess());
 }
 

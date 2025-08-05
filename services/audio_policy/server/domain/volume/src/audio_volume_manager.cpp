@@ -246,7 +246,6 @@ int32_t AudioVolumeManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor devic
 
 int32_t AudioVolumeManager::SetVoiceRingtoneMute(bool isMute)
 {
-    AUDIO_INFO_LOG("Set Voice Ringtone is %{public}d", isMute);
     isVoiceRingtoneMute_ = isMute ? true : false;
     SetVoiceCallVolume(GetSystemVolumeLevel(STREAM_VOICE_CALL));
     return SUCCESS;
@@ -336,6 +335,19 @@ int32_t AudioVolumeManager::IsAppVolumeMute(int32_t appUid, bool owned, bool &is
     return result;
 }
 
+int32_t AudioVolumeManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::SetAppRingMuted");
+    int32_t result = audioPolicyManager_.SetAppRingMuted(appUid, muted);
+    return result;
+}
+
+bool AudioVolumeManager::IsAppRingMuted(int32_t appUid)
+{
+    AUDIO_INFO_LOG("enter AudioVolumeManager::IsAppRingMuted");
+    return audioPolicyManager_.IsAppRingMuted(appUid);
+}
+
 int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 {
     return audioPolicyManager_.GetVolumeAdjustZoneId();
@@ -392,11 +404,11 @@ int32_t AudioVolumeManager::HandleNearlinkDeviceAbsVolume(AudioStreamType stream
     if (result == SUCCESS) {
         auto volumeValue = SleAudioDeviceManager::GetInstance().GetVolumeLevelByVolumeType(streamType,
             audioActiveDevice_.GetCurrentOutputDevice());
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, volumeValue, streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType, volumeValue);
     } else if (result == ERR_UNKNOWN) {
         AUDIO_INFO_LOG("UNKNOWN RESULT set abs safe volume");
-        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice,
-            audioPolicyManager_.GetSafeVolumeLevel(), streamType);
+        return SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(nearlinkDevice, streamType,
+            audioPolicyManager_.GetSafeVolumeLevel());
     }
     return result;
 }
@@ -549,7 +561,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
         if (!isNearlinkDevice) {
             Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
         } else {
-            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+            SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
         }
     } else {
         sVolumeLevel = DealWithSafeVolume(volumeLevel, true);
@@ -557,7 +569,7 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
             if (!isNearlinkDevice) {
                 Bluetooth::AudioA2dpManager::SetDeviceAbsVolume(macAddress, sVolumeLevel);
             } else {
-                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, sVolumeLevel, streamType);
+                SleAudioDeviceManager::GetInstance().SetDeviceAbsVolume(macAddress, streamType, sVolumeLevel);
             }
         }
     }
@@ -1257,7 +1269,6 @@ bool AudioVolumeManager::IsRingerModeMute()
 
 void AudioVolumeManager::SetRingerModeMute(bool flag)
 {
-    AUDIO_INFO_LOG("Set RingerModeMute_: %{public}d", flag);
     ringerModeMute_.store(flag);
 }
 

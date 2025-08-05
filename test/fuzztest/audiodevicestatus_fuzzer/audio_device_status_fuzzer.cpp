@@ -49,7 +49,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 22;
+const uint8_t TESTSIZE = 24;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -244,9 +244,12 @@ void ReloadA2dpOffloadOnDeviceChangedFuzzTest()
     int32_t classTypeCount = static_cast<int32_t>(ClassType::TYPE_INVALID) + 1;
     ClassType classType = static_cast<ClassType>(GetData<uint8_t>() % classTypeCount);
     AudioModuleInfo moduleInfo = {"className", "TEST", "TEST"};
+    moduleInfo.name = "testModule";
     std::list<AudioModuleInfo> audioModuleListData = {};
     audioModuleListData.push_back(moduleInfo);
     audioDeviceStatus.audioConfigManager_.deviceClassInfo_[classType] = audioModuleListData;
+    AudioIOHandle audioIoHandle = GetData<uint32_t>();
+    audioDeviceStatus.audioIOHandleMap_.IOHandles_.insert({moduleInfo.name, audioIoHandle});
     audioDeviceStatus.ReloadA2dpOffloadOnDeviceChanged(deviceType, macAddress, deviceName, streamInfo);
 
     audioDeviceStatus.DeInit();
@@ -403,6 +406,8 @@ void OnPnpDeviceStatusUpdatedFuzzTest()
     desc.deviceName_ = "NONE";
     bool isConnected = GetData<uint32_t>() % NUM_2;
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    audioDeviceStatus.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+    audioDeviceStatus.hasModulesLoaded = GetData<bool>();
     audioDeviceStatus.OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
@@ -421,7 +426,7 @@ void IsConfigurationUpdatedFuzzTest()
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
     AudioStreamInfo streamInfo;
-    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    AudioDeviceStatus audioDeviceStatus;
     audioDeviceStatus.IsConfigurationUpdated(deviceType, streamInfo);
 }
 
@@ -453,8 +458,42 @@ void OnForcedDeviceSelectedFuzzTest()
 
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
     audioDeviceStatus.audioConnectedDevice_.AddConnectedDevice(remoteDeviceDescriptor);
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    if (desc == nullptr) {
+        return;
+    }
+    desc->deviceType_ = devType;
+    desc->macAddress_ = macAddress;
+    desc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDeviceStatus.audioDeviceManager_.connectedDevices_.push_back(desc);
 
     audioDeviceStatus.OnForcedDeviceSelected(devType, macAddress);
+}
+
+void AudioDeviceStatusLoadAccessoryModuleFuzzTest()
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    std::string deviceInfo = "testDeviceInfo";
+    ClassType classType = GetData<ClassType>();
+    AudioModuleInfo moduleInfo;
+    std::list<AudioModuleInfo> moduleInfoList;
+    moduleInfoList.push_back(moduleInfo);
+    audioDeviceStatus.audioConfigManager_.deviceClassInfo_.insert({classType, moduleInfoList});
+
+    audioDeviceStatus.LoadAccessoryModule(deviceInfo);
+}
+
+void AudioDeviceStatusOnDeviceConfigurationChangedFuzzTest()
+{
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+    DeviceType deviceType = GetData<DeviceType>();
+    std::string macAddress = "00:11:22:33:44:55";
+    std::string deviceName = "testDevice";
+    AudioStreamInfo streamInfo;
+    audioDeviceStatus.audioActiveDevice_.SetActiveBtDeviceMac("00:11:22:33:44:50");
+    audioDeviceStatus.audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
+
+    audioDeviceStatus.OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
@@ -480,6 +519,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     IsConfigurationUpdatedFuzzTest,
     OpenPortAndAddDeviceOnServiceConnectedFuzzTest,
     OnForcedDeviceSelectedFuzzTest,
+    AudioDeviceStatusLoadAccessoryModuleFuzzTest,
+    AudioDeviceStatusOnDeviceConfigurationChangedFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

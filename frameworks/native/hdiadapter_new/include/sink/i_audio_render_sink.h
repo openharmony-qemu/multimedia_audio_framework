@@ -73,8 +73,7 @@ public:
     virtual int32_t SetSinkMuteForSwitchDevice(bool mute) SUCCESS_RET
     virtual void SetSpeed(float speed) {}
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
     virtual int32_t GetAudioScene(void) = 0;
 
     virtual int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) = 0;
@@ -93,6 +92,7 @@ public:
     virtual void SetInvalidState(void) {}
 
     virtual void DumpInfo(std::string &dumpString) = 0;
+    virtual bool IsSinkInited(void) NOT_SUPPORT_RET
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
@@ -119,6 +119,18 @@ public:
     virtual int32_t SetDeviceConnectedFlag(bool flag) NOT_SUPPORT_RET
     // for a2dp_offload connection state
     virtual int32_t UpdatePrimaryConnectionState(uint32_t operation) NOT_SUPPORT_RET;
+
+    virtual int32_t GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
+        NOT_SUPPORT_RET;
+    virtual int32_t GetHdiLatency(uint32_t &latency) NOT_SUPPORT_RET;
+    virtual int32_t ForceRefreshPresentationPosition(uint64_t &frames, uint64_t &hdiFrames, int64_t &timeSec,
+        int64_t &timeNanoSec)
+    {
+        hdiFrames = 0;
+        return GetPresentationPosition(frames, timeSec, timeNanoSec);
+    }
+
+    virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
 };
 
 } // namespace AudioStandard

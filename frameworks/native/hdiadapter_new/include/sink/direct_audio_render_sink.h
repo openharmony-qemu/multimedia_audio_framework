@@ -67,8 +67,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -83,6 +82,8 @@ public:
 
     int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> callback) override;
     void DumpInfo(std::string &dumpString) override;
+
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
 private:
     static int32_t DirectRenderCallback(struct IAudioCallback *self, enum AudioCallbackType type, int8_t *reserved,

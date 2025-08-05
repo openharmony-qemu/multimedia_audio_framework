@@ -29,12 +29,13 @@ namespace AudioStandard {
 NapiAudioVolumeKeyEvent::NapiAudioVolumeKeyEvent(napi_env env)
     :env_(env)
 {
-    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Constructor");
+    AUDIO_INFO_LOG("Constructor");
 }
 
 NapiAudioVolumeKeyEvent::~NapiAudioVolumeKeyEvent()
 {
-    AUDIO_INFO_LOG("NapiAudioVolumeKeyEvent::Destructor");
+    AUDIO_INFO_LOG("Destructor");
+    napi_remove_env_cleanup_hook(env_, NapiAudioVolumeKeyEvent::Cleanup, this);
 }
 
 void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
@@ -45,7 +46,7 @@ void NapiAudioVolumeKeyEvent::CreateVolumeTsfn(napi_env env)
     napi_create_string_utf8(env, callbackName.c_str(), callbackName.length(), &cbName);
     napi_add_env_cleanup_hook(env, Cleanup, this);
     napi_create_threadsafe_function(env, nullptr, nullptr, cbName, 0, 1, this,
-        VolumeEventTsfnFinalize, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
+        nullptr, nullptr, SafeJsCallbackVolumeEventWork, &amVolEntTsfn_);
 }
 
 bool NapiAudioVolumeKeyEvent::GetVolumeTsfnFlag()
@@ -130,17 +131,6 @@ void NapiAudioVolumeKeyEvent::SafeJsCallbackVolumeEventWork(napi_env env, napi_v
             request.c_str());
     } while (0);
     napi_close_handle_scope(env, scope);
-}
-
-void NapiAudioVolumeKeyEvent::VolumeEventTsfnFinalize(napi_env env, void *data, void *hint)
-{
-    AUDIO_INFO_LOG("VolumeEventTsfnFinalize: Cleanup is removed.");
-    NapiAudioVolumeKeyEvent *context = reinterpret_cast<NapiAudioVolumeKeyEvent*>(data);
-    napi_remove_env_cleanup_hook(env, NapiAudioVolumeKeyEvent::Cleanup, context);
-    if (context->GetTsfn() != nullptr) {
-        AUDIO_INFO_LOG("VolumeEventTsfnFinalize: context is released.");
-        delete context;
-    }
 }
 
 void NapiAudioVolumeKeyEvent::Cleanup(void *data)

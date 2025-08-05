@@ -38,6 +38,7 @@ struct CaptureEffectAttr {
 class HpaeCaptureEffectNode : public HpaePluginNode {
 public:
     HpaeCaptureEffectNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeCaptureEffectNode();
     virtual bool Reset() override;
     void ConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode, HpaeNodeInfo &nodeInfo) override;
     void DisConnectWithInfo(const std::shared_ptr<OutputNode<HpaePcmBuffer*>> &preNode,

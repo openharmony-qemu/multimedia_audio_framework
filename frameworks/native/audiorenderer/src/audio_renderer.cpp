@@ -660,20 +660,6 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     return InitAudioInterruptCallback();
 }
 
-void AudioRendererPrivate::NotifyRouteInit(uint32_t routeFlag)
-{
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>> changeInfos;
-    AudioPolicyManager::GetInstance().GetCurrentRendererChangeInfos(changeInfos);
-    std::string networkId = LOCAL_NETWORK_ID;
-
-    for (auto &info : changeInfos) {
-        CHECK_AND_CONTINUE(info && info->sessionId == sessionID_);
-        networkId = info->outputDeviceInfo.networkId_;
-        break;
-    }
-    audioStream_->NotifyRouteUpdate(routeFlag, networkId);
-}
-
 int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamParams,
     const AudioStreamType &audioStreamType, IAudioStream::StreamClass &streamClass, uint32_t &flag)
 {
@@ -684,8 +670,9 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     flag = AUDIO_OUTPUT_FLAG_NORMAL;
 
+    std::string networkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
-        streamDesc, flag, audioStreamParams.originalSessionId);
+        streamDesc, flag, audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     AUDIO_INFO_LOG("StreamClientState for Renderer::CreateClient. id %{public}u, flag: %{public}u",
         audioStreamParams.originalSessionId, flag);
@@ -698,8 +685,8 @@ int32_t AudioRendererPrivate::PrepareAudioStream(AudioStreamParams &audioStreamP
         CHECK_AND_RETURN_RET_LOG(audioStream_ != nullptr, ERR_INVALID_PARAM, "SetParams GetPlayBackStream failed.");
         AUDIO_INFO_LOG("IAudioStream::GetStream success");
         isFastRenderer_ = IAudioStream::IsFastStreamClass(streamClass);
+        audioStream_->NotifyRouteUpdate(flag, networkId);
     }
-    NotifyRouteInit(flag);
     return SUCCESS;
 }
 
@@ -713,7 +700,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::ConvertToStreamDesc
     streamDesc->streamInfo_.encoding = static_cast<AudioEncodingType>(audioStreamParams.encoding);
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(audioStreamParams.channelLayout);
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = rendererInfo_;
     streamDesc->appInfo_ = appInfo_;
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
@@ -930,6 +917,7 @@ int32_t AudioRendererPrivate::StartSwitchProcess(RestoreInfo &restoreInfo, IAudi
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+        CHECK_AND_RETURN_RET_LOG(releaseFlag_ == false, SUCCESS, "In renderer release, return");
     }
 
     // Block interrupt calback, avoid pausing wrong stream.
@@ -976,6 +964,7 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         std::unique_lock<std::shared_mutex> lock;
         if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
             lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
+            CHECK_AND_RETURN_RET_LOG(releaseFlag_ == false, SUCCESS, "In renderer release, return");
         }
 
         // Return in advance if there's no need for restore.
@@ -1287,11 +1276,28 @@ bool AudioRendererPrivate::Stop()
     return result;
 }
 
+void AudioRendererPrivate::SetReleaseFlagWithLock(bool releaseFlag)
+{
+    std::unique_lock<std::shared_mutex> lock(rendererMutex_);
+    releaseFlag_ = releaseFlag;
+}
+
+void AudioRendererPrivate::SetReleaseFlagNoLock(bool releaseFlag)
+{
+    releaseFlag_ = releaseFlag;
+}
+
 bool AudioRendererPrivate::Release()
 {
     Trace trace("KeyAction AudioRenderer::Release " + std::to_string(sessionID_));
+
     std::unique_lock<std::shared_mutex> lock;
     if (callbackLoopTid_ != gettid()) { // No need to add lock in callback thread to prevent deadlocks
+        SetReleaseFlagWithLock(true);
+        auto audioStreamInner = GetInnerStream();
+        if (audioStreamInner != nullptr) {
+            audioStreamInner->JoinCallbackLoop();
+        }
         lock = std::unique_lock<std::shared_mutex>(rendererMutex_);
     }
     AUDIO_WARNING_LOG("StreamClientState for Renderer::Release. id: %{public}u", sessionID_);
@@ -1299,6 +1305,7 @@ bool AudioRendererPrivate::Release()
     abortRestore_ = true;
     if (audioStream_ == nullptr) {
         AUDIO_ERR_LOG("audioStream is null");
+        SetReleaseFlagNoLock(false);
         return true;
     }
     bool result = audioStream_->ReleaseAudioStream();
@@ -1316,6 +1323,7 @@ bool AudioRendererPrivate::Release()
     for (auto id : usedSessionId_) {
         AudioPolicyManager::GetInstance().UnregisterDeviceChangeWithInfoCallback(id);
     }
+    SetReleaseFlagNoLock(false);
     lock.unlock();
     RemoveRendererPolicyServiceDiedCallback();
 
@@ -2014,9 +2022,11 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
     audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
     audioStream->SetRenderMode(info.renderMode);
-    callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
+    callbackLoopTid_ = audioStream->GetCallbackLoopTid();
     audioStream->SetAudioEffectMode(info.effectMode);
     audioStream->SetVolume(info.volume);
+    res = audioStream->SetDuckVolume(info.duckVolume);
+    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetDuckVolume failed");
     audioStream->SetUnderflowCount(info.underFlowCount);
 
     if (info.userSettedPreferredFrameSize.has_value()) {
@@ -2209,8 +2219,9 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = GetStreamDescBySwitchInfo(switchInfo, restoreInfo);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(
-        streamDesc, flag, switchInfo.params.originalSessionId);
+        streamDesc, flag, switchInfo.params.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
     bool switchResult = false;
@@ -2233,7 +2244,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
         streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
         streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
-            switchInfo.params.originalSessionId);
+            switchInfo.params.originalSessionId, networkId);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "CreateRendererClient failed");
 
         newAudioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, switchInfo.params,
@@ -2248,6 +2259,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     // Operation of replace audioStream_ must be performed before StartAudioStream.
     // Otherwise GetBufferDesc will return the buffer pointer of oldStream (causing Use-After-Free).
     UpdateRendererAudioStream(newAudioStream);
+    newAudioStream->NotifyRouteUpdate(flag, networkId);
 
     // Start new stream if old stream was in running state.
     // When restoring for audio server died, no need for restart.
@@ -2261,7 +2273,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     }
 
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
-    NotifyRouteInit(flag);
     return switchResult;
 }
 
@@ -2348,7 +2359,7 @@ std::shared_ptr<AudioStreamDescriptor> AudioRendererPrivate::GetStreamDescBySwit
     streamDesc->streamInfo_.channelLayout = static_cast<AudioChannelLayout>(switchInfo.params.channelLayout);
 
     streamDesc->audioMode_ = AUDIO_MODE_PLAYBACK;
-    streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
+    streamDesc->createTimeStamp_ = ClockTime::GetCurNano();
     streamDesc->rendererInfo_ = switchInfo.rendererInfo;
     streamDesc->appInfo_ = AppInfo{switchInfo.appUid, 0, switchInfo.clientPid, 0};
     streamDesc->callerUid_ = static_cast<int32_t>(getuid());
@@ -2906,8 +2917,9 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     // Create stream desc and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
+    std::string networkId = LOCAL_NETWORK_ID;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
-        audioStreamParams.originalSessionId);
+        audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
     AUDIO_INFO_LOG("Create normal renderer, id: %{public}u", audioStreamParams.originalSessionId);
 
@@ -2917,7 +2929,7 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "InitAudioStream failed");
     audioStream_->SetRenderMode(RENDER_MODE_CALLBACK);
     callbackLoopTid_ = audioStream_->GetCallbackLoopTid();
-    NotifyRouteInit(flag);
+    audioStream_->NotifyRouteUpdate(flag, networkId);
     return ret;
 }
 }  // namespace AudioStandard

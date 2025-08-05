@@ -23,7 +23,7 @@
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
 #include "audio_errors.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -70,22 +70,8 @@ HpaeLoudnessGainNode::HpaeLoudnessGainNode(HpaeNodeInfo &nodeInfo) : HpaeNode(no
     }
     AUDIO_INFO_LOG("<log info> dlsym lib %{public}s successful", LOUDNESSGAIN_PATH.c_str());
 
-#ifdef ENABLE_HOOK_PCM
-    inputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeLoudnessGainNodeInput_nodeId_"
-        + std::to_string(GetNodeId()) + "_sessionId_" + std::to_string(GetSessionId()) + "_ch_" +
-        std::to_string(GetChannelCount()) + "_scenType_" + std::to_string(GetSceneType()) + "_rate_" +
-        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-
-    outputPcmDumper_ = std::make_unique<HpaePcmDumper>("HpaeLoudnessGainNodeOut_nodeId_" +
-        std::to_string(GetNodeId()) + "_sessionId_" + std::to_string(GetSessionId()) + "_ch_" +
-        std::to_string(GetChannelCount()) + "_scenType_" + std::to_string(GetSceneType()) + "_rate_" +
-        std::to_string(GetSampleRate()) + "_" + GetTime() + ".pcm");
-#endif
 #ifdef ENABLE_HIDUMP_DFX
-    if (auto callback = GetNodeStatusCallback().lock()) {
-        SetNodeId(callback->OnGetNodeId());
-        SetNodeName("hpaeLoudnessGainNode");
-    }
+    SetNodeName("hpaeLoudnessGainNode");
 #endif
 }
 
@@ -100,23 +86,21 @@ HpaeLoudnessGainNode::~HpaeLoudnessGainNode()
         dlHandle_ = nullptr;
         audioEffectLibHandle_ = nullptr;
     }
+#ifdef ENABLE_HIDUMP_DFX
+    AUDIO_INFO_LOG("NodeId: %{public}u NodeName: %{public}s destructed.",
+        GetNodeId(), GetNodeName().c_str());
+#endif
 }
 
 HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuffer *> &inputs)
 {
     Trace trace("HpaeLoudnessGainNode::SignalProcess");
-    CHECK_AND_RETURN_RET_LOG(!inputs.empty(), nullptr, "inputs is empty");
 
-#ifdef ENABLE_HOOK_PCM
-    if (inputPcmDumper_ != nullptr) {
-        inputPcmDumper_->CheckAndReopenHandle();
-        inputPcmDumper_->Dump((int8_t *)(inputs[0]->GetPcmDataBuffer()),
-            inputs[0]->GetChannelCount() * sizeof(float) * inputs[0]->GetFrameLen());
-    }
-#endif
+    CHECK_AND_RETURN_RET_LOG((!inputs.empty()) && inputs[0], &silenceData_,
+        "NodeId %{public}d, sessionId %{public}d input is empty", GetNodeId(), GetSessionId());
 
+    CHECK_AND_RETURN_RET((!IsFloatValueEqual(loudnessGain_, 0.0f)), inputs[0]);
     CheckUpdateInfo(inputs[0]);
-    CHECK_AND_RETURN_RET(!IsFloatValueEqual(loudnessGain_, 0.0f), inputs[0]);
     if (!dlHandle_ || !audioEffectLibHandle_) {
         float *pcmDataBuffer = inputs[0]->GetPcmDataBuffer();
         uint32_t bufferSize = inputs[0]->GetFrameLen() * inputs[0]->GetChannelCount();
@@ -140,13 +124,7 @@ HpaePcmBuffer *HpaeLoudnessGainNode::SignalProcess(const std::vector<HpaePcmBuff
         CHECK_AND_RETURN_RET_LOG(ret == 0, inputs[0], "loudness algo lib process failed");
     }
 
-#ifdef ENABLE_HOOK_PCM
-    if (outputPcmDumper_ != nullptr) {
-        outputPcmDumper_->CheckAndReopenHandle();
-        outputPcmDumper_->Dump((int8_t *)(loudnessGainOutput_.GetPcmDataBuffer()),
-            loudnessGainOutput_.GetChannelCount() * sizeof(float) * loudnessGainOutput_.GetFrameLen());
-    }
-#endif
+    loudnessGainOutput_.SetBufferState(inputs[0]->GetBufferState());
     return &loudnessGainOutput_;
 }
 
@@ -166,6 +144,8 @@ void HpaeLoudnessGainNode::CheckUpdateInfo(HpaePcmBuffer *input)
     pcmBufferInfo_.channelLayout = input->GetChannelLayout();
     
     loudnessGainOutput_.ReConfig(pcmBufferInfo_);
+    silenceData_.ReConfig(pcmBufferInfo_);
+    silenceData_.SetBufferSilence(true);
     CHECK_AND_RETURN_LOG(handle_, "no handle.");
 
     uint32_t replyData = 0;

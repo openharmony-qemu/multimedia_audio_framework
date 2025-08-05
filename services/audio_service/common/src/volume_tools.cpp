@@ -293,7 +293,7 @@ static void CountU8Volume(const BufferDesc &buffer, AudioChannel channel, Channe
         return;
     }
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
         AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
         return;
     }
@@ -337,7 +337,7 @@ static void CountS16Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
         AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
         return;
     }
@@ -381,7 +381,7 @@ static void CountS24Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
         AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
         return;
     }
@@ -428,7 +428,7 @@ static void CountS32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
         AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
         return;
     }
@@ -478,7 +478,7 @@ static void CountF32Volume(const BufferDesc &buffer, AudioChannel channel, Chann
         return;
     }
     size_t frameSize = buffer.bufLength / byteSizePerFrame;
-    if (frameSize <= MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
+    if (frameSize < MIN_FRAME_SIZE || frameSize >= MAX_FRAME_SIZE) {
         AUDIO_ERR_LOG("invalid frameSize, size is %{public}zu", frameSize);
         return;
     }

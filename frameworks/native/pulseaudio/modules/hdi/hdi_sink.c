@@ -41,6 +41,7 @@
 #include <sys/types.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <math.h>
 
 #include "securec.h"
 
@@ -100,6 +101,7 @@
 #define DEFAULT_BLOCK_USEC 20000
 #define EFFECT_PROCESS_RATE 48000
 #define EFFECT_FRAME_LENGTH_MONO 960 // 48000Hz * 0.02s for 1 channel
+#define EPSILON (1e-6f)
 
 const int64_t LOG_LOOP_THRESHOLD = 50 * 60 * 9; // about 3 min
 const uint64_t DEFAULT_GETLATENCY_LOG_THRESHOLD_MS = 100;
@@ -438,7 +440,7 @@ static void OffloadSetHdiVolume(pa_sink_input *i)
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volumeEnd = GetCurVolume(sessionID, streamType, deviceClass, &volumes);
     float volumeBeg = volumes.volumeHistory;
-    if (volumeBeg != volumeEnd) {
+    if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             sessionID, volumeBeg, volumeEnd);
         SetPreVolume(sessionID, volumeEnd);

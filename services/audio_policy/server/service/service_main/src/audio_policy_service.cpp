@@ -174,7 +174,6 @@ void SafeVolumeEventSubscriber::OnReceiveEvent(const EventFwk::CommonEventData &
         AUDIO_ERR_LOG("eventReceiver_ is nullptr.");
         return;
     }
-    AUDIO_INFO_LOG("receive DATA_SHARE_READY action success.");
     eventReceiver_(eventData);
 }
 
@@ -247,11 +246,6 @@ void AudioPolicyService::RestoreSession(const uint32_t &sessionID, RestoreInfo r
 DistributedRoutingInfo AudioPolicyService::GetDistributedRoutingRoleInfo()
 {
     return distributedRoutingInfo_;
-}
-
-int32_t AudioPolicyService::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    return audioCapturerSession_.SetWakeUpAudioCapturerFromAudioServer(config);
 }
 
 int32_t AudioPolicyService::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
@@ -493,6 +487,11 @@ int32_t AudioPolicyService::SetQueryClientTypeCallback(const sptr<IRemoteObject>
     return SUCCESS;
 }
 
+int32_t AudioPolicyService::SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object)
+{
+    return audioPolicyManager_.SetQueryDeviceVolumeBehaviorCallback(object);
+}
+
 static void UpdateCapturerInfoWhenNoPermission(const shared_ptr<AudioCapturerChangeInfo> &audioCapturerChangeInfos,
     bool hasSystemPermission)
 {
@@ -530,8 +529,6 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
 
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
-    AUDIO_WARNING_LOG("No bt permission");
-
     for (std::shared_ptr<AudioDeviceDescriptor> &desc : deviceDescs) {
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             std::shared_ptr<AudioDeviceDescriptor> copyDesc = std::make_shared<AudioDeviceDescriptor>(desc);
@@ -1212,6 +1209,11 @@ bool AudioPolicyService::IsDevicePlaybackSupported(const AudioProcessConfig &con
 int32_t AudioPolicyService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     return AudioZoneService::GetInstance().ClearAudioFocusBySessionID(sessionID);
+}
+
+int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
+{
+    return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

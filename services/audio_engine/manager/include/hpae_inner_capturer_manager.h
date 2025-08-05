@@ -73,6 +73,7 @@ public:
     int32_t UpdateSpatializationState(
         uint32_t sessionId, bool spatializationEnabled, bool headTrackingEnabled) override;
     int32_t UpdateMaxLength(uint32_t sessionId, uint32_t maxLength) override;
+    void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
     int32_t RefreshProcessClusrerByDevice() override;
@@ -91,6 +92,7 @@ public:
     std::string GetThreadName() override;
     int32_t DumpSinkInfo() override;
     int32_t ReloadRenderManager(const HpaeSinkInfo &sinkInfo, bool isReload = false) override;
+    int32_t SetOffloadPolicy(uint32_t sessionId, int32_t state) override;
     std::string GetDeviceHDFDumpInfo() override;
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain) override;
     void OnDisConnectProcessCluster(HpaeProcessorType sceneType) override;

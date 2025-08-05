@@ -88,7 +88,6 @@ ohos_shared_library("audio_capturer") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
 

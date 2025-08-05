@@ -933,6 +933,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientUid = clientUid_;
 
     info.volume = GetVolume();
+    info.duckVolume = GetDuckVolume();
     info.effectMode = GetAudioEffectMode();
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;
@@ -967,7 +968,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
 
 void FastAudioStream::OnFirstFrameWriting()
 {
-    CHECK_AND_RETURN_LOG(firstFrameWritingCb_!= nullptr, "firstFrameWritingCb_ is null.");
+    CHECK_AND_RETURN(firstFrameWritingCb_!= nullptr);
     uint64_t latency = 0;
     this->GetLatency(latency);
     firstFrameWritingCb_->OnFirstFrameWriting(latency);
@@ -1138,7 +1139,7 @@ DeviceType FastAudioStream::GetDefaultOutputDevice()
 // diffrence from GetAudioPosition only when set speed
 int32_t FastAudioStream::GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base)
 {
-    return GetAudioTime(timestamp, base);
+    return GetAudioTime(timestamp, base) ? SUCCESS : ERR_OPERATION_FAILED;
 }
 
 void FastAudioStream::SetSwitchingStatus(bool isSwitching)
@@ -1228,7 +1229,7 @@ int32_t FastAudioStream::GetCallbackLoopTid()
 
 void FastAudioStream::ResetCallbackLoopTid()
 {
-    AUDIO_INFO_LOG("Reset callback loop tid to -1");
+    AUDIO_INFO_LOG("to -1");
     callbackLoopTid_ = -1;
 }
 

@@ -61,8 +61,7 @@ public:
     void SetAudioBalanceValue(float audioBalance) override;
     int32_t SetSinkMuteForSwitchDevice(bool mute) final;
 
-    int32_t SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-        bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
     int32_t GetAudioScene(void) override;
 
     int32_t UpdateActiveDevice(std::vector<DeviceType> &outputDevices) override;
@@ -77,6 +76,8 @@ public:
 
     void DumpInfo(std::string &dumpString) override;
 
+    void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
+
 private:
     int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,
         uint32_t &byteSizePerFrame, uint32_t &syncInfoSize) override;
@@ -86,7 +87,6 @@ private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     void InitAudioSampleAttr(struct AudioSampleAttributes &param);
     void InitDeviceDesc(struct AudioDeviceDescriptor &deviceDesc);
-    int32_t DoSetOutputRoute(std::vector<DeviceType> &outputDevices);
     int32_t CreateRender(void);
     void UpdateSinkState(bool started);
 

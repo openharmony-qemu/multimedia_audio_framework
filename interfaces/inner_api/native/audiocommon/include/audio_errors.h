@@ -177,6 +177,9 @@ const int32_t ERR_AUDIO_STREAM_REGISTER_REPEAT = BASE_AUDIO_ERR_OFFSET - 38;
 /** pro streams do not support for setting loudness*/
 const int32_t ERR_PRO_STREAM_NOT_SUPPORTED = BASE_AUDIO_ERR_OFFSET - 39;
 
+/** failed to set volume because isVolumeControlDisabled is true */
+const int32_t ERR_SET_VOL_FAILED_BY_VOLUME_CONTROL_DISABLED = BASE_AUDIO_ERR_OFFSET - 40;
+
 /** Unknown error */
 const int32_t  ERR_UNKNOWN = BASE_AUDIO_ERR_OFFSET - 200;
 }  // namespace AudioStandard

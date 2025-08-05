@@ -105,7 +105,7 @@ public:
 
     static AudioRendererChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioRendererChangeInfo();
+        auto info = new(std::nothrow) AudioRendererChangeInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -179,7 +179,7 @@ public:
 
     static AudioCapturerChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioCapturerChangeInfo();
+        auto info = new(std::nothrow) AudioCapturerChangeInfo();
         if (info == nullptr) {
             return nullptr;
         }
@@ -200,7 +200,7 @@ struct AudioStreamChangeInfo : public Parcelable {
 
     static AudioStreamChangeInfo *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamChangeInfo();
+        auto info = new(std::nothrow) AudioStreamChangeInfo();
         if (info == nullptr) {
             return nullptr;
         }

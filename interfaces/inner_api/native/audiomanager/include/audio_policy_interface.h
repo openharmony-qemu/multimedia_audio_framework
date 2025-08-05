@@ -64,7 +64,7 @@ struct DeviceChangeAction : public Parcelable {
 
     static DeviceChangeAction *Unmarshalling(Parcel &parcel)
     {
-        auto info = new DeviceChangeAction();
+        auto info = new(std::nothrow) DeviceChangeAction();
         if (info == nullptr) {
             return nullptr;
         }
@@ -167,6 +167,12 @@ class AudioQueryClientTypeCallback {
 public:
     virtual ~AudioQueryClientTypeCallback() = default;
     virtual bool OnQueryClientType(const std::string &bundleName, uint32_t uid) = 0;
+};
+
+class AudioQueryDeviceVolumeBehaviorCallback {
+public:
+    virtual ~AudioQueryDeviceVolumeBehaviorCallback() = default;
+    virtual VolumeBehavior OnQueryDeviceVolumeBehavior() = 0;
 };
 
 class VolumeKeyEventCallback {

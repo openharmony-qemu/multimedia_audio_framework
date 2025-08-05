@@ -200,8 +200,7 @@ HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_007, TestSize.Level1)
 HWTEST_F(FileAudioRenderSinkUnitTest, FileSinkUnitTest_008, TestSize.Level1)
 {
     EXPECT_TRUE(sink_ && sink_->IsInited());
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
+    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
     ret = sink_->GetAudioScene();
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);

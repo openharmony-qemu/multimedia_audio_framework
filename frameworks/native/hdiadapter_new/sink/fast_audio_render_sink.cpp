@@ -38,7 +38,7 @@ FastAudioRenderSink::~FastAudioRenderSink()
 
 int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
 {
-    AUDIO_INFO_LOG("init with format:%{publci}d", attr.format);
+    AUDIO_INFO_LOG("init with format:%{public}d", attr.format);
     attr_ = attr;
     halName_ = attr_.audioStreamFlag == AUDIO_FLAG_MMAP ? "primary" : "voip";
     int32_t ret = CreateRender();
@@ -46,23 +46,8 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
 
-    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
-    ret = DoSetOutputRoute(devices);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
-    }
     sinkInited_ = true;
     return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
-{
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
-    return ret;
 }
 
 void FastAudioRenderSink::DeInit(void)
@@ -274,7 +259,7 @@ void FastAudioRenderSink::SetAudioParameter(const AudioParamKey key, const std::
     AUDIO_INFO_LOG("key: %{public}d, condition: %{public}s, value: %{public}s", key, condition.c_str(), value.c_str());
     CHECK_AND_RETURN_LOG(audioRender_ != nullptr, "render is nullptr");
     int32_t ret = audioRender_->SetExtraParams(audioRender_, value.c_str());
-    AUDIO_INFO_LOG("FastAudioRenderSink::SetAudioParameter SetExtraParams ret: %{public}d", ret);
+    AUDIO_INFO_LOG("SetExtraParams ret: %{public}d", ret);
 }
 
 std::string FastAudioRenderSink::GetAudioParameter(const AudioParamKey key, const std::string &condition)
@@ -383,8 +368,7 @@ int32_t FastAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t FastAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return SUCCESS;
@@ -444,6 +428,11 @@ int32_t FastAudioRenderSink::UpdateAppsUid(const std::vector<int32_t> &appsUid)
 void FastAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: FastSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void FastAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 int32_t FastAudioRenderSink::GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

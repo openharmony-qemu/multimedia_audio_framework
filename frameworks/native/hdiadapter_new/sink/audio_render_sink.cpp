@@ -469,15 +469,10 @@ int32_t AudioRenderSink::SetDeviceConnectedFlag(bool flag)
     return SUCCESS;
 }
 
-int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
-        ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, currentAudioScene_, activeDevices.front(), scoExcludeFlag);
     if (!openSpeaker_) {
         return SUCCESS;
     }
@@ -510,10 +505,6 @@ int32_t AudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<Device
     if (isRingingToDefaultScene) {
         AUDIO_INFO_LOG("ringing scene to default scene");
         return SUCCESS;
-    }
-    int32_t ret = UpdateActiveDevice(activeDevices);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     return SUCCESS;
 }
@@ -1205,6 +1196,25 @@ int32_t AudioRenderSink::UpdatePrimaryConnectionState(uint32_t operation)
         dataConnectionCV_.notify_all();
     }
     return SUCCESS;
+}
+
+void AudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+    const auto &it = dmDeviceTypeMap_.find(deviceType);
+    bool isDmDeviceTypeUpdated = it == dmDeviceTypeMap_.end() || it->second != dmDeviceType;
+    dmDeviceTypeMap_[deviceType] = dmDeviceType;
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    deviceManager->SetDmDeviceType(dmDeviceType, deviceType);
+
+    CHECK_AND_RETURN(isDmDeviceTypeUpdated);
+    std::vector<DeviceType> outputDevices;
+    outputDevices.push_back(currentActiveDevice_);
+    AUDIO_INFO_LOG("dm deviceType update, need update output port pin");
+    int32_t ret = DoSetOutputRoute(outputDevices);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "DoSetOutputRoute fails");
 }
 
 void AudioRenderSink::WaitForDataLinkConnected()

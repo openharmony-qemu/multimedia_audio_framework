@@ -219,6 +219,7 @@ TEST_F(HpaeSoftLinkTest, testStaticFunc)
     std::shared_ptr<IHpaeSoftLink> softLink1 =
         IHpaeSoftLink::CreateSoftLink(sinkId_, sourceId_, SoftLinkMode::HEARING_AID);
     EXPECT_NE(softLink1, nullptr);
+    softLink1->SetVolume(0.f);
 
     CloseAudioPort(false);
     std::shared_ptr<IHpaeSoftLink> softLink2 =

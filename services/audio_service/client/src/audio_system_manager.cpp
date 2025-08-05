@@ -568,6 +568,13 @@ int32_t AudioSystemManager::SetAppVolumeMuted(int32_t appUid, bool muted, int32_
     CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
     return AudioPolicyManager::GetInstance().SetAppVolumeMuted(appUid, muted, volumeFlag);
 }
+
+int32_t AudioSystemManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "SetAppVolumeMuted: No system permission");
+    return AudioPolicyManager::GetInstance().SetAppRingMuted(appUid, muted);
+}
 // LCOV_EXCL_STOP
 
 int32_t AudioSystemManager::UnsetSelfAppVolumeCallback(
@@ -1313,8 +1320,13 @@ int32_t AudioSystemManager::DeactivatePreemptMode() const
 
 int32_t AudioSystemManager::SetForegroundList(std::vector<std::string> list)
 {
-    AUDIO_WARNING_LOG("Called in %{public}d", getuid());
-    return ERR_INVALID_OPERATION;
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_ILLEGAL_STATE, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gasp->SetForegroundList(list);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
 }
 
 int32_t AudioSystemManager::GetStandbyStatus(uint32_t sessionId, bool &isStandby, int64_t &enterStandbyTime)
@@ -2301,6 +2313,17 @@ int32_t AudioSystemManager::ForceVolumeKeyControlType(AudioVolumeType volumeType
 {
     AUDIO_INFO_LOG("volumeType:%{public}d, duration:%{public}d", volumeType, duration);
     return AudioPolicyManager::GetInstance().ForceVolumeKeyControlType(volumeType, duration);
+}
+
+int32_t AudioSystemManager::SetRenderWhitelist(std::vector<std::string> list)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gasp->SetRenderWhitelist(list);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == 0, ret, "failed: %{public}d", ret);
+    return ret;
 }
 
 AudioSystemManager::WorkgroupPrioRecorder::WorkgroupPrioRecorder(int32_t grpId)

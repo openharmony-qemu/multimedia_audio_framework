@@ -59,7 +59,7 @@ public:
 
     static AudioZoneContext *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioZoneContext();
+        auto info = new(std::nothrow) AudioZoneContext();
         if (info == nullptr) {
             return nullptr;
         }
@@ -122,7 +122,7 @@ public:
 
     static AudioZoneDescriptor *Unmarshalling(Parcel &parcel)
     {
-        auto desc = new AudioZoneDescriptor();
+        auto desc = new(std::nothrow) AudioZoneDescriptor();
         if (desc == nullptr) {
             return nullptr;
         }
@@ -160,7 +160,7 @@ struct AudioZoneStream : public Parcelable {
 
     static AudioZoneStream *Unmarshalling(Parcel &parcel)
     {
-        auto stream = new AudioZoneStream();
+        auto stream = new(std::nothrow) AudioZoneStream();
         if (stream == nullptr) {
             return nullptr;
         }

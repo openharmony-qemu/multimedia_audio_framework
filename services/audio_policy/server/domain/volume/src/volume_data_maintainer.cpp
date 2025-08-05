@@ -179,6 +179,102 @@ bool VolumeDataMaintainer::GetVolumeInternal(DeviceType deviceType, AudioStreamT
     return true;
 }
 
+bool VolumeDataMaintainer::SaveVolumeWithDatabaseVolumeName(const std::string &databaseVolumeName,
+    AudioStreamType streamType, int32_t volumeLevel)
+{
+    AUDIO_INFO_LOG("SaveVolume: databaseVolumeName [%{public}s], streamType [%{public}d], volumeLevel [%{public}d]",
+        databaseVolumeName.c_str(), streamType, volumeLevel);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string volumeKey = GetVolumeKeyForDatabaseVolumeName(databaseVolumeName, streamForVolumeMap);
+    if (volumeKey == "") {
+        AUDIO_ERR_LOG("databaseVolumeName [%{public}s], streamType [%{public}d] is not supported for dataShare",
+            databaseVolumeName.c_str(), streamType);
+        return false;
+    }
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = audioSettingProvider.PutIntValue(volumeKey, volumeLevel, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to save volume to database!");
+        return false;
+    }
+    return true;
+}
+
+bool VolumeDataMaintainer::GetVolumeWithDatabaseVolumeName(const std::string &databaseVolumeName,
+    AudioStreamType streamType)
+{
+    AUDIO_INFO_LOG("GetVolume: databaseVolumeName [%{public}s], streamType [%{public}d]",
+        databaseVolumeName.c_str(), streamType);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string volumeKey = GetVolumeKeyForDatabaseVolumeName(databaseVolumeName, streamForVolumeMap);
+    if (volumeKey == "") {
+        AUDIO_ERR_LOG("databaseVolumeName [%{public}s], streamType [%{public}d] is not supported for dataShare",
+            databaseVolumeName.c_str(), streamType);
+        return false;
+    }
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    int32_t volumeValue = 0;
+    ErrCode ret = audioSettingProvider.GetIntValue(volumeKey, volumeValue, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to get volume from database!");
+        return false;
+    }
+    volumeLevelMap_[streamForVolumeMap] = volumeValue;
+    AUDIO_INFO_LOG("Get Volume: volumeKey [%{public}s], volumeValue [%{public}d]",
+        volumeKey.c_str(), volumeValue);
+    return true;
+}
+
+bool VolumeDataMaintainer::SaveMuteStatusWithDatabaseVolumeName(const std::string &databaseVolumeName,
+    AudioStreamType streamType, bool muteStatus)
+{
+    AUDIO_INFO_LOG("SaveMuteStatus: databaseVolumeName [%{public}s], streamType [%{public}d], muteStatus [%{public}d]",
+        databaseVolumeName.c_str(), streamType, muteStatus);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string muteKey = GetMuteKeyForDatabaseVolumeName(databaseVolumeName, streamForVolumeMap);
+    if (muteKey == "") {
+        AUDIO_ERR_LOG("databaseVolumeName [%{public}s], streamType [%{public}d] is not supported for dataShare",
+            databaseVolumeName.c_str(), streamType);
+        return false;
+    }
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    ErrCode ret = audioSettingProvider.PutBoolValue(muteKey, muteStatus, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to save mute status to database!");
+        return false;
+    }
+    return true;
+}
+
+bool VolumeDataMaintainer::GetMuteStatusWithDatabaseVolumeName(const std::string &databaseVolumeName,
+    AudioStreamType streamType)
+{
+    AUDIO_INFO_LOG("GetMuteStatus: databaseVolumeName [%{public}s], streamType [%{public}d]",
+        databaseVolumeName.c_str(), streamType);
+    std::lock_guard<ffrt::mutex> lock(volumeForDbMutex_);
+    AudioStreamType streamForVolumeMap = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
+    std::string muteKey = GetMuteKeyForDatabaseVolumeName(databaseVolumeName, streamForVolumeMap);
+    if (muteKey == "") {
+        AUDIO_ERR_LOG("databaseVolumeName [%{public}s], streamType [%{public}d] is not supported for dataShare",
+            databaseVolumeName.c_str(), streamType);
+        return false;
+    }
+    AudioSettingProvider& audioSettingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
+    bool muteStatus = false;
+    ErrCode ret = audioSettingProvider.GetBoolValue(muteKey, muteStatus, "system");
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Failed to get mute status from database!");
+        return false;
+    }
+    muteStatusMap_[streamForVolumeMap] = muteStatus;
+    AUDIO_INFO_LOG("GetMuteStatus: muteKey [%{public}s], muteStatus [%{public}d]",
+        muteKey.c_str(), muteStatus);
+    return true;
+}
+
 void VolumeDataMaintainer::SetAppVolume(int32_t appUid, int32_t volumeLevel)
 {
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
@@ -190,6 +286,42 @@ void VolumeDataMaintainer::SetAppVolumeMuted(int32_t appUid, bool muted)
     std::lock_guard<ffrt::mutex> lock(volumeMutex_);
     int ownedAppUid = IPCSkeleton::GetCallingUid();
     appMuteStatusMap_[appUid][ownedAppUid] = muted;
+}
+
+void VolumeDataMaintainer::SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    if (muted) {
+        // Set mute status for the given app and stream type
+        appStreamMuteMap_[appUid][streamType] = true;
+    } else {
+        auto uidIt = appStreamMuteMap_.find(appUid);
+        if (uidIt != appStreamMuteMap_.end()) {
+            // Remove the stream type if mute is false
+            uidIt->second.erase(streamType);
+            // If no more stream types under this appUid, remove the appUid entry
+            if (uidIt->second.empty()) {
+                appStreamMuteMap_.erase(uidIt);
+            }
+        }
+    }
+}
+
+bool VolumeDataMaintainer::IsAppStreamMuted(int32_t appUid, AudioStreamType streamType)
+{
+    std::lock_guard<ffrt::mutex> lock(volumeMutex_);
+    auto uidIt = appStreamMuteMap_.find(appUid);
+    if (uidIt == appStreamMuteMap_.end()) {
+        return false;
+    }
+
+    const auto &streamMap = uidIt->second;
+    auto streamIt = streamMap.find(streamType);
+    if (streamIt == streamMap.end()) {
+        return false;
+    }
+
+    return streamIt->second;
 }
 
 void VolumeDataMaintainer::GetAppMute(int32_t appUid, bool &isMute)
@@ -777,9 +909,11 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             type = "_earpiece";
             return type;
         case DEVICE_TYPE_SPEAKER:
+            type = "_builtin";
+            return type;
         case DEVICE_TYPE_DP:
         case DEVICE_TYPE_HDMI:
-            type = "_builtin";
+            type = "_dp";
             return type;
         case DEVICE_TYPE_BLUETOOTH_A2DP:
         case DEVICE_TYPE_BLUETOOTH_SCO:
@@ -801,6 +935,38 @@ std::string VolumeDataMaintainer::GetDeviceTypeName(DeviceType deviceType)
             AUDIO_ERR_LOG("device %{public}d is not supported for dataShare", deviceType);
             return "";
     }
+}
+
+std::string VolumeDataMaintainer::GetVolumeKeyForDatabaseVolumeName(
+    std::string databaseVolumeName, AudioStreamType streamType)
+{
+    std::string type = "";
+    if (!AUDIO_STREAMTYPE_VOLUME_MAP.count(streamType)) {
+        return "";
+    }
+    type = AUDIO_STREAMTYPE_VOLUME_MAP[streamType];
+    if (type == "") {
+        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamType);
+        return "";
+    }
+
+    return databaseVolumeName + "_" + type;
+}
+
+std::string VolumeDataMaintainer::GetMuteKeyForDatabaseVolumeName(
+    std::string databaseVolumeName, AudioStreamType streamType)
+{
+    std::string type = "";
+    if (!AUDIO_STREAMTYPE_MUTE_STATUS_MAP.count(streamType)) {
+        return "";
+    }
+    type = AUDIO_STREAMTYPE_MUTE_STATUS_MAP[streamType];
+    if (type == "") {
+        AUDIO_ERR_LOG("streamType %{public}d is not supported for datashare", streamType);
+        return "";
+    }
+
+    return databaseVolumeName + "_" + type;
 }
 
 std::string VolumeDataMaintainer::GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,

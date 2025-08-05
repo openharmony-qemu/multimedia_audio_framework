@@ -158,13 +158,6 @@ DeviceType PolicyHandler::GetActiveOutPutDevice()
     return deviceType_;
 }
 
-int32_t PolicyHandler::SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config)
-{
-    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
-    int32_t ret = iPolicyProvider_->SetWakeUpAudioCapturerFromAudioServer(config);
-    return ret;
-}
-
 int32_t PolicyHandler::NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo,
     uint32_t sessionId)
 {
@@ -246,6 +239,12 @@ int32_t PolicyHandler::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr!");
     return iPolicyProvider_->ClearAudioFocusBySessionID(sessionID);
+}
+
+int32_t PolicyHandler::CaptureConcurrentCheck(const uint32_t &sessionID)
+{
+    CHECK_AND_RETURN_RET_LOG(iPolicyProvider_ != nullptr, ERROR, "iPolicyProvider_ is nullptr");
+    return iPolicyProvider_->CaptureConcurrentCheck(sessionID);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -30,6 +30,7 @@
 #include "sink/i_audio_render_sink.h"
 #include "source/i_audio_capture_source.h"
 #include "audio_ring_cache.h"
+#include "audio_stream_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -233,6 +234,9 @@ private:
         const std::shared_ptr<OHAudioBufferBase> &processBuffer);
     void CheckAudioHapticsSync(uint64_t curWritePos);
     bool IsBufferDataInsufficient(int32_t readableDataFrame, uint32_t spanSizeInFrame);
+    bool NeedUseTempBuffer(const RingBufferWrapper &ringBuffer, size_t spanSizeInByte);
+    void PrepareStreamDataBuffer(size_t i, size_t spanSizeInByte,
+        RingBufferWrapper &ringBuffer, AudioStreamData &streamData);
 private:
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
     static constexpr int64_t TWO_MILLISECOND_DURATION = 2000000; // 2ms

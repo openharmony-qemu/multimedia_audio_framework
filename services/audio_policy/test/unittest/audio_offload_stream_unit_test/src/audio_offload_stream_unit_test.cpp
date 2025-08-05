@@ -210,13 +210,15 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_004, TestSize.Level3)
     AudioOffloadStream audioOffloadStream;
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     int64_t activateSessionId = 10;
-    AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = activateSessionId;
-    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
-    streamChangeInfo.audioRendererChangeInfo.createrUID = 2;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+    AudioStreamChangeInfo streamChangeInfo{};
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = activateSessionId;
+    audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    audioRendererChangeInfo.createrUID = 2;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
     audioOffloadStream.isOffloadAvailable_ = true;
 
     audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
@@ -248,9 +250,11 @@ HWTEST_F(AudioOffloadStreamTest, CheckStreamOffloadMode_004, TestSize.Level3)
 HWTEST_F(AudioOffloadStreamTest, MoveToNewPipe_ShouldReturnError_WhenStreamIsIllegal, TestSize.Level3)
 {
     AudioStreamChangeInfo streamChangeInfo;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = 1;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = 1;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
     int32_t ret = audioOffloadStream_->streamCollector_.AddRendererStream(streamChangeInfo);
     EXPECT_EQ(ret, SUCCESS);
     uint32_t sessionId = 1;
@@ -458,11 +462,13 @@ HWTEST_F(AudioOffloadStreamTest, AudioOffloadStreamTest_022, TestSize.Level0)
     AudioOffloadStream audioOffloadStream;
     AudioStreamChangeInfo streamChangeInfo;
     audioOffloadStream.isOffloadAvailable_ = true;
-    streamChangeInfo.audioRendererChangeInfo.clientUID = 1;
-    streamChangeInfo.audioRendererChangeInfo.sessionId = sessionId;
-    streamChangeInfo.audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
-    streamChangeInfo.audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
-    streamChangeInfo.audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
+    auto& audioRendererChangeInfo = streamChangeInfo.audioRendererChangeInfo;
+    audioRendererChangeInfo = {};
+    audioRendererChangeInfo.clientUID = 1;
+    audioRendererChangeInfo.sessionId = sessionId;
+    audioRendererChangeInfo.channelCount = AudioChannel::STEREO;
+    audioRendererChangeInfo.rendererState = RendererState::RENDERER_NEW;
+    audioRendererChangeInfo.rendererInfo.pipeType = PIPE_TYPE_DIRECT_VOIP;
 
     audioOffloadStream.streamCollector_.AddRendererStream(streamChangeInfo);
     audioOffloadStream.audioActiveDevice_.currentActiveDevice_.networkId_ = LOCAL_NETWORK_ID;

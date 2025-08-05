@@ -867,7 +867,7 @@ void AudioPolicyServerHandler::HandleFocusInfoChangeEvent(const AppExecFwk::Inne
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
     CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    AUDIO_INFO_LOG("HandleFocusInfoChangeEvent focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
+    AUDIO_INFO_LOG("focusInfoList :%{public}zu", eventContextObj->focusInfoList.size());
     std::lock_guard<std::mutex> lock(handleMapMutex_);
     for (auto it = audioPolicyClientProxyAPSCbsMap_.begin(); it != audioPolicyClientProxyAPSCbsMap_.end(); ++it) {
         if (clientCallbacksMap_.count(it->first) > 0 &&
@@ -1099,8 +1099,10 @@ void AudioPolicyServerHandler::HandlePreferredOutputDeviceUpdated()
             if (clientCallbacksMap_.count(clientPid) > 0 &&
                 clientCallbacksMap_[clientPid].count(CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE) > 0 &&
                 clientCallbacksMap_[clientPid][CALLBACK_PREFERRED_OUTPUT_DEVICE_CHANGE]) {
-                AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] change to clientPid[%{public}d]",
-                    deviceDescs[0]->deviceType_, clientPid);
+                CHECK_AND_RETURN_LOG(deviceDescs[0] != nullptr, "device is null.");
+                AUDIO_INFO_LOG("Send PreferredOutputDevice deviceType[%{public}d] deviceId[%{public}d]" \
+                    "change to clientPid[%{public}d]",
+                    deviceDescs[0]->deviceType_, deviceDescs[0]->deviceId_, clientPid);
                 it->second->OnPreferredOutputDeviceUpdated(rendererInfo, deviceDescs);
             }
         }
@@ -1286,7 +1288,7 @@ void AudioPolicyServerHandler::HandleCapturerRemovedEvent(const AppExecFwk::Inne
 
 void AudioPolicyServerHandler::HandleWakeupCloseEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
-    AudioCapturerSession::GetInstance().CloseWakeUpAudioCapturer();
+    AudioCoreService::GetCoreService()->GetEventEntry()->CloseWakeUpAudioCapturer();
 }
 
 void AudioPolicyServerHandler::HandleSendRecreateRendererStreamEvent(const AppExecFwk::InnerEvent::Pointer &event)

@@ -3159,5 +3159,23 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_ExitStandByIfNeed
 
     delete ptrBufferInfo;
 }
+
+/**
+ * @tc.name  : Test CallClientHandleCurrent API
+ * @tc.type  : FUNC
+ * @tc.number: CallClientHandleCurrent_001
+ * @tc.desc  : Test CallClientHandleCurrent
+ */
+HWTEST(AudioProcessInClientUnitTest, CallClientHandleCurrent_001, TestSize.Level1)
+{
+    AudioProcessConfig config = InitProcessConfig();
+    AudioService *g_audioServicePtr = AudioService::GetInstance();
+    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
+    bool isVoipMmap = true;
+    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
+    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
+    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
+    ptrAudioProcessInClientInner->CallClientHandleCurrent();
+}
 } // namespace AudioStandard
 } // namespace OHOS

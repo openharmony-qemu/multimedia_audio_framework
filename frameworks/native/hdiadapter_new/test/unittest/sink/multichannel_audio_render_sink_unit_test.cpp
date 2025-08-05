@@ -142,8 +142,7 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_004, Test
 HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_005, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
+    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -557,8 +556,9 @@ HWTEST_F(MultichannelAudioRenderSinkUnitTest, MultichannelSinkUnitTest_027, Test
 
     struct AudioDeviceDescriptor deviceDesc;
 
+    multichannelAudioRenderSink->halName_ = HDI_ID_INFO_USB;
     multichannelAudioRenderSink->InitDeviceDesc(deviceDesc);
-    EXPECT_EQ(deviceDesc.pins, PIN_OUT_SPEAKER);
+    EXPECT_EQ(deviceDesc.pins, PIN_OUT_USB_HEADSET);
 }
 
 /**

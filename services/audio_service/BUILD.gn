@@ -83,6 +83,7 @@ ohos_shared_library("audio_common") {
     "common/src/oh_audio_buffer.cpp",
     "common/src/oh_audio_buffer_base.cpp",
     "common/src/volume_tools.cpp",
+    "common/src/app_bundle_manager.cpp",
   ]
 
   cflags = [
@@ -110,6 +111,8 @@ ohos_shared_library("audio_common") {
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
     "samgr:samgr_proxy",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
   ]
 
   if (sonic_enable == true) {
@@ -256,7 +259,6 @@ ohos_shared_library("audio_client") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "resource_management:global_resmgr",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
@@ -313,6 +315,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
     "../../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../../services/audio_service/test/unittest/audio_endpoint_unit_test",
+    "../../services/audio_service/test/unittest/audio_endpoint_plus_unit_test",
     "../../services/audio_service/test/unittest/audio_server_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
@@ -517,7 +520,6 @@ audio_ohos_library("audio_service") {
     "server/src/audio_resource_service.cpp",
     "server/src/audio_server.cpp",
     "server/src/audio_server_asr.cpp",
-    "server/src/audio_server_dump.cpp",
     "server/src/audio_server_effect.cpp",
     "server/src/audio_server_hpae_dump.cpp",
     "server/src/audio_workgroup.cpp",
@@ -554,16 +556,20 @@ audio_ohos_library("audio_service") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
-    "pulseaudio:pulseaudio",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
-
-  public_external_deps = [ "libxml2:libxml2" ]
-
   defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    sources += [ "server/src/audio_server_dump.cpp" ]
+    external_deps += [
+      "pulseaudio:pulse",
+      "pulseaudio:pulseaudio",
+    ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
+  public_external_deps = [ "libxml2:libxml2" ]
 
   if (audio_framework_feature_offline_effect) {
     public_deps = [
@@ -727,7 +733,6 @@ ohos_executable("audio_hdi_device_test") {
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
-    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"
@@ -754,7 +759,6 @@ ohos_executable("audio_faststream_playback_test") {
     "hilog:libhilog",
     "init:libbegetutil",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
   ]
 
   part_name = "audio_framework"

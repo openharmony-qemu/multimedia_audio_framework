@@ -284,7 +284,7 @@ int32_t OffloadAudioRenderSink::GetLatency(uint32_t &latency)
     int64_t timeNanoSec = 0;
     int32_t ret = GetPresentationPosition(frames, timeSec, timeNanoSec);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get frames fail");
-    latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_TO_MILLISECOND : 0;
+    latency = hdiLatency > frames ? (hdiLatency - frames) / MICROSECOND_PER_MILLISECOND : 0;
     return SUCCESS;
 }
 
@@ -390,8 +390,7 @@ int32_t OffloadAudioRenderSink::SetSinkMuteForSwitchDevice(bool mute)
     return SUCCESS;
 }
 
-int32_t OffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t OffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     AUDIO_INFO_LOG("not support");
     return ERR_NOT_SUPPORTED;
@@ -523,6 +522,11 @@ int32_t OffloadAudioRenderSink::UnLockOffloadRunningLock(void)
 void OffloadAudioRenderSink::DumpInfo(std::string &dumpString)
 {
     dumpString += "type: OffloadSink\tstarted: " + std::string(started_ ? "true" : "false") + "\n";
+}
+
+void OffloadAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 uint32_t OffloadAudioRenderSink::PcmFormatToBit(AudioSampleFormat format)
@@ -820,5 +824,17 @@ void OffloadAudioRenderSink::UpdateSinkState(bool started)
     callback_.OnRenderSinkStateChange(GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_OFFLOAD), started);
 }
 
+void OffloadAudioRenderSink::SetSpeed(float speed)
+{
+    CHECK_AND_RETURN_LOG(speed <= 3.0f && speed >= 0.5f, "speed is invalid"); // 3.0 upper, 0.5 lower
+    uint32_t hdiSpeed = static_cast<uint32_t>(speed * AUDIO_SPEED_BASE);
+    AUDIO_INFO_LOG("speed: %{public}f, hdi speed: %{public}u", speed, hdiSpeed);
+
+    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
+    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
+    CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
+    std::string parameters = "pcm_offload_player_speed=" + std::to_string(hdiSpeed) + ";";
+    deviceManager->SetAudioParameter(attr_.adapterName, NONE, "", parameters);
+}
 } // namespace AudioStandard
 } // namespace OHOS

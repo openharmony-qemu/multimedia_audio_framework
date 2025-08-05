@@ -237,12 +237,13 @@ private:
     std::shared_ptr<IAudioStream> GetInnerStream() const;
     int32_t InitFormatUnsupportedErrorCallback();
     int32_t SetPitch(float pitch);
-    void NotifyRouteInit(uint32_t routeFlag);
     FastStatus GetFastStatusInner();
     void FastStatusChangeCallback(FastStatus status);
     int32_t HandleCreateFastStreamError(AudioStreamParams &audioStreamParams, AudioStreamType audioStreamType);
     int32_t StartSwitchProcess(RestoreInfo &restoreInfo, IAudioStream::StreamClass &targetClass,
         std::string callingFunc);
+    void SetReleaseFlagWithLock(bool releaseFlag);
+    void SetReleaseFlagNoLock(bool releaseFlag);
 
     std::shared_ptr<AudioInterruptCallback> audioInterruptCallback_ = nullptr;
     std::shared_ptr<AudioStreamCallback> audioStreamCallback_ = nullptr;
@@ -290,6 +291,7 @@ private:
 
     AudioLoopThread taskLoop_ = AudioLoopThread("OS_Recreate");
     int32_t audioHapticsSyncId_ = 0;
+    bool releaseFlag_ = false;
 };
 
 class AudioRendererInterruptCallbackImpl : public AudioInterruptCallback {

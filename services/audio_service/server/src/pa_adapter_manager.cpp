@@ -15,7 +15,7 @@
 #ifndef LOG_TAG
 #define LOG_TAG "PaAdapterManager"
 #endif
-
+#ifdef SUPPORT_OLD_ENGINE
 #include "pa_adapter_manager.h"
 #include <sstream>
 #include <atomic>
@@ -385,7 +385,7 @@ int32_t PaAdapterManager::GetDeviceNameForConnect(AudioProcessConfig processConf
     deviceName = "";
     if (processConfig.audioMode == AUDIO_MODE_RECORD) {
         if (processConfig.isWakeupCapturer) {
-            int32_t ret = PolicyHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
+            int32_t ret = CoreServiceHandler::GetInstance().SetWakeUpAudioCapturerFromAudioServer(processConfig);
             if (ret < 0) {
                 AUDIO_ERR_LOG("ErrorCode: %{public}d", ret);
                 return ERROR;
@@ -927,3 +927,4 @@ std::string PaAdapterManager::AppendDeviceName(int32_t innerCapId, AppendType ty
 
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE

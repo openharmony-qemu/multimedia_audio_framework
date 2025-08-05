@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <math.h>
 #include "securec.h"
 
 #include <pulse/rtclock.h>
@@ -66,6 +67,7 @@
 #define SCENE_TYPE_NUM 7
 #define PA_ERR (-1)
 #define MAX_PARTS 10
+#define EPSILON (1e-6f)
 
 #define STREAM_TYPE_MEDIA "1"
 #define STREAM_TYPE_COMMUNICATION "2"
@@ -479,7 +481,7 @@ static void ProcessAudioVolume(pa_sink_input *sinkIn, size_t length, pa_memchunk
         }
         pa_memblock_release(pchunk->memblock);
     }
-    if (volumeBeg != volumeEnd) {
+    if (fabs(volumeBeg - volumeEnd) > EPSILON) {
         AUDIO_INFO_LOG("sessionID:%{public}u, volumeBeg:%{public}f, volumeEnd:%{public}f",
             sessionID, volumeBeg, volumeEnd);
         SetPreVolume(sessionID, volumeEnd);
@@ -540,10 +542,10 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
 {
     CHECK_AND_RETURN_LOG(s != NULL, "s is null");
     CHECK_AND_RETURN_LOG(info != NULL, "info is null");
+    CHECK_AND_RETURN_LOG(result != NULL, "result is null");
     if (n == 0) {
         *result = s->silence;
         pa_memblock_ref(result->memblock);
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         if (result->length > length)
             result->length = length;
     } else if (n == 1) {
@@ -551,7 +553,6 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
 
         *result = info[0].chunk;
         pa_memblock_ref(result->memblock);
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         if (result->length > length)
             result->length = length;
 
@@ -569,7 +570,6 @@ static void SplitSinkRenderMix(pa_sink *s, size_t length, pa_mix_info *info, uns
     } else {
         void *ptr;
         CHECK_AND_RETURN_LOG(s->core != NULL, "core is null");
-        CHECK_AND_RETURN_LOG(result != NULL, "result is null");
         result->memblock = pa_memblock_new(s->core->mempool, length);
 
         ptr = pa_memblock_acquire(result->memblock);

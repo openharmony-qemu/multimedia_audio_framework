@@ -252,13 +252,13 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_002, TestSize.Level1)
 
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
+    audioEndpointInner->deviceInfo_.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     int32_t result = audioEndpointInner->EnableFastInnerCap(1);
     EXPECT_EQ(SUCCESS, result);
 
     result = audioEndpointInner->DisableFastInnerCap();
     EXPECT_EQ(SUCCESS, result);
 
-    audioEndpointInner->deviceInfo_.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     result = audioEndpointInner->DisableFastInnerCap();
     EXPECT_EQ(SUCCESS, result);
 

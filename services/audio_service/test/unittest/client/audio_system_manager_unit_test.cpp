@@ -110,6 +110,20 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMute_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test IsStreamMute API
+ * @tc.type  : FUNC
+ * @tc.number: IsStreamMute_002
+ * @tc.desc  : Test IsStreamMute interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMute_002, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 start");
+    bool result = AudioSystemManager::GetInstance()->IsStreamMute(STREAM_ALL);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsStreamMute_002 result1:%{public}d", result);
+    EXPECT_EQ(result, true);
+}
+
+/**
  * @tc.name  : Test IsStreamActive API
  * @tc.type  : FUNC
  * @tc.number: IsStreamActive_002
@@ -1357,6 +1371,80 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_003, TestSize.Level1)
     EXPECT_EQ(manager.startGroupPermissionMap_[info.pid][info.groupId], info.startAllowed);
     // Check if the recorder is nullptr
     EXPECT_EQ(manager.GetRecorderByGrpId(info.groupId), nullptr);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_002
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_002, TestSize.Level1)
+{
+    StreamUsage streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    EXPECT_NE(audioSystemManager.GetMaxVolumeByUsage(streamUsage), SUCCESS);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_003
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMaxVolumeByUsage_003, TestSize.Level4)
+{
+    StreamUsage streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    EXPECT_EQ(audioSystemManager.GetMaxVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMinVolumeByUsage_002
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_002, TestSize.Level1)
+{
+    StreamUsage  streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    EXPECT_NE(audioSystemManager.GetMinVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetMaxVolumeByUsage API
+ * @tc.number : GetMaxVolumeByUsage_003
+ * @tc.desc   : Test GetMaxVolumeByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, GetMinVolumeByUsage_003, TestSize.Level4)
+{
+    StreamUsage  streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    EXPECT_EQ(audioSystemManager.GetMinVolumeByUsage(streamUsage), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test IsStreamMuteByUsage API
+ * @tc.number : IsStreamMuteByUsage_002
+ * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_002, TestSize.Level1)
+{
+    StreamUsage  streamUsage = STREAM_USAGE_ULTRASONIC;
+    AudioSystemManager audioSystemManager;
+    bool isMute = 0;
+    EXPECT_NE(audioSystemManager.IsStreamMuteByUsage(streamUsage, isMute), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test IsStreamMuteByUsage API
+ * @tc.number : IsStreamMuteByUsage_003
+ * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_003, TestSize.Level4)
+{
+    StreamUsage  streamUsage = static_cast<StreamUsage>(1000);
+    AudioSystemManager audioSystemManager;
+    bool isMute = 0;
+    EXPECT_EQ(audioSystemManager.IsStreamMuteByUsage(streamUsage, isMute), ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

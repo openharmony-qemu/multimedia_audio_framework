@@ -178,6 +178,7 @@ public:
     RouterType routerType_ = ROUTER_TYPE_NONE;
     bool isVrSupported_ = true;
     mutable std::shared_ptr<ClientInfo> clientInfo_ = nullptr;
+    VolumeBehavior volumeBehavior_;
 
 private:
     bool IsOutput()

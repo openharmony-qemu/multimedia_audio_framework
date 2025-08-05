@@ -49,7 +49,7 @@ void BluetoothAudioRenderSinkUnitTest::SetUpTestCase()
 {
     id_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
     hearingAidId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER,
-        HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_DEFAULT, true);
+        HDI_ID_TYPE_BLUETOOTH, HDI_ID_INFO_HEARING_AID, true);
 }
 
 void BluetoothAudioRenderSinkUnitTest::TearDownTestCase()
@@ -156,8 +156,7 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_004, TestSize.L
 HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_005, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
+    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
@@ -210,6 +209,20 @@ HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_008, TestSize.L
     hearingAidSink_->DeInit();
     EXPECT_FALSE(hearingAidSink_->IsInited());
     hearingAidSink_ = nullptr;
+}
+
+/**
+ * @tc.name   : Test BluetoothSink API
+ * @tc.number : BluetoothSinkUnitTest_009
+ * @tc.desc   : Test bluetooth sink IsSinkInited
+ */
+HWTEST_F(BluetoothAudioRenderSinkUnitTest, BluetoothSinkUnitTest_009, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    EXPECT_TRUE(sink_->IsSinkInited());
+    sink_->DeInit();
+    EXPECT_FALSE(sink_->IsInited());
+    EXPECT_FALSE(sink_->IsSinkInited());
 }
 
 } // namespace AudioStandard

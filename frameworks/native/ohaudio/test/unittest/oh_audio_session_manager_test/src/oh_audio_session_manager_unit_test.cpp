@@ -339,5 +339,29 @@ HWTEST(OHAudioSessionManagerUnitTest, OH_AudioSessionManager_ReleaseDevices_002,
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 
+/**
+ * @tc.name  : Test SetAudioSessionCurrentDeviceChangeCallback
+ * @tc.number: SetAudioSessionCurrentDeviceChangeCallback_001
+ * @tc.desc  : Test SetAudioSessionCurrentDeviceChangeCallback with nullptr parameter.
+ */
+HWTEST(OHAudioSessionManagerUnitTest, SetAudioSessionCurrentDeviceChangeCallback_001, TestSize.Level0)
+{
+    OH_AudioCommon_Result result = OHAudioSessionManager::GetInstance()->
+        SetAudioSessionCurrentDeviceChangeCallback(nullptr);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test SetAudioSessionStateChangeCallback
+ * @tc.number: SetAudioSessionStateChangeCallback_001
+ * @tc.desc  : Test SetAudioSessionStateChangeCallback with invalid parameter.
+ */
+HWTEST(OHAudioSessionManagerUnitTest, SetAudioSessionStateChangeCallback_001, TestSize.Level0)
+{
+    OH_AudioCommon_Result result = OHAudioSessionManager::GetInstance()->
+        SetAudioSessionStateChangeCallback(nullptr);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

@@ -55,6 +55,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(audioMode_) &&
         parcel.WriteUint32(audioFlag_) &&
         parcel.WriteUint32(routeFlag_) &&
+        parcel.WriteInt64(createTimeStamp_) &&
         parcel.WriteInt64(startTimeStamp_) &&
         rendererInfo_.Marshalling(parcel) &&
         capturerInfo_.Marshalling(parcel) &&
@@ -72,7 +73,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
 
 AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
 {
-    auto info = new AudioStreamDescriptor();
+    auto info = new(std::nothrow) AudioStreamDescriptor();
     if (info == nullptr) {
         return nullptr;
     }
@@ -81,6 +82,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+    info->createTimeStamp_ = parcel.ReadInt64();
     info->startTimeStamp_ = parcel.ReadInt64();
     info->rendererInfo_.UnmarshallingSelf(parcel);
     info->capturerInfo_.UnmarshallingSelf(parcel);
@@ -164,6 +166,7 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
         streamInfo_.format, streamInfo_.encoding);
 
     AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x\n", audioFlag_, routeFlag_);
+    AppendFormat(dumpString, "    - CreateTimestamp: %" PRId64"\n", createTimeStamp_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,6 +16,8 @@
 #include <gtest/gtest.h>
 #include "tone_player_impl.h"
 #include "audio_renderer_private.h"
+#include "audio_errors.h"
+#include "parameter.h"
 
 using namespace testing::ext;
 namespace OHOS {
@@ -704,13 +706,13 @@ HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_004, TestSize.Level1)
 
     toneplayer->toneState_ = TonePlayerImpl::TONE_INIT;
     toneplayer->isRendererInited_ = true;
-    AppInfo appInfo = {};
-    toneplayer->audioRenderer_ = std::make_shared<AudioRendererPrivate>(
-        AudioStreamType::STREAM_GAME, appInfo, true);
+    toneplayer->currSegment_ = 0;
+
+    toneplayer->InitAudioRenderer();
     EXPECT_NE(toneplayer->audioRenderer_, nullptr);
 
     auto ret = toneplayer->StartTone();
-    EXPECT_EQ(ret, false);
+    EXPECT_EQ(ret, true);
 }
 
 /**
@@ -751,16 +753,607 @@ HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_006, TestSize.Level1)
     rendererInfo.rendererFlags = 0;
     std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
     EXPECT_NE(toneplayer, nullptr);
+    toneplayer->isRendererInited_ = true;
+    toneplayer->currSegment_ = 0;
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
 
     toneplayer->toneState_ = TonePlayerImpl::TONE_INIT;
-    AppInfo appInfo = {};
-    toneplayer->audioRenderer_ = std::make_shared<AudioRendererPrivate>(
-        AudioStreamType::STREAM_GAME, appInfo, true);
+    toneplayer->InitAudioRenderer();
     EXPECT_NE(toneplayer->audioRenderer_, nullptr);
     size_t length = 0;
 
     toneplayer->OnWriteData(length);
     EXPECT_NE(toneplayer, nullptr);
 }
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_007
+ * @tc.desc  : Test ~TonePlayerImpl interface. audioRenderer_ != nullptr
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_007, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    {
+        std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+        EXPECT_NE(toneplayer, nullptr);
+        toneplayer->isRendererInited_ = true;
+        toneplayer->currSegment_ = 0;
+
+        toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+        EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+        toneplayer->toneState_ = TonePlayerImpl::TONE_INIT;
+        toneplayer->InitAudioRenderer();
+        EXPECT_NE(toneplayer->audioRenderer_, nullptr);
+    }
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_008
+ * @tc.desc  : Test GetCurrentSegmentUpdated interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_008, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->currSegment_ = 0;
+    toneplayer->loopCounter_ = 0;
+    toneplayer->toneInfo_->segments[0].loopCnt = 1;
+    toneplayer->toneInfo_->segments[0].loopIndx = 1;
+
+    toneplayer->GetCurrentSegmentUpdated();
+    EXPECT_EQ(toneplayer->currSegment_, 1);
+    EXPECT_EQ(toneplayer->loopCounter_, 1);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_009
+ * @tc.desc  : Test GetCurrentSegmentUpdated interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_009, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->currSegment_ = 1;
+    toneplayer->loopCounter_ = 1;
+    toneplayer->toneInfo_->segments[1].loopCnt = 3;
+    toneplayer->toneInfo_->segments[1].loopIndx = 3;
+
+    toneplayer->GetCurrentSegmentUpdated();
+    EXPECT_EQ(toneplayer->currSegment_, 3);
+    EXPECT_EQ(toneplayer->loopCounter_, 2);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_010
+ * @tc.desc  : Test GetCurrentSegmentUpdated interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_010, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->currSegment_ = 0;
+    toneplayer->loopCounter_ = 3;
+    toneplayer->toneInfo_->segments[0].loopCnt = 1;
+    toneplayer->toneInfo_->segments[0].loopIndx = 1;
+
+    toneplayer->GetCurrentSegmentUpdated();
+    EXPECT_EQ(toneplayer->currSegment_, 1);
+    EXPECT_EQ(toneplayer->loopCounter_, 0);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_011
+ * @tc.desc  : Test GetCurrentSegmentUpdated interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_011, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->currSegment_ = 1;
+    toneplayer->loopCounter_ = 1;
+    toneplayer->toneInfo_->segments[1].loopCnt = 1;
+    toneplayer->toneInfo_->segments[1].loopIndx = 1;
+
+    toneplayer->GetCurrentSegmentUpdated();
+    EXPECT_EQ(toneplayer->currSegment_, 2);
+    EXPECT_EQ(toneplayer->loopCounter_, 0);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_012
+ * @tc.desc  : Test CheckToneContinuity interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_012, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->currSegment_ = 1;
+    toneplayer->loopCounter_ = 1;
+    toneplayer->toneInfo_->segments[1].loopCnt = 1;
+    toneplayer->toneInfo_->segments[1].loopIndx = 1;
+    toneplayer->toneInfo_->segments[2].duration = 1;
+
+    bool ret = toneplayer->CheckToneContinuity();
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->currSegment_, 2);
+    EXPECT_EQ(toneplayer->loopCounter_, 0);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_013
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_013, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STOPPED;
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, false);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_014
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_014, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_RUNNING;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->nextSegSample_ = 8000;
+    toneplayer->currSegment_ = 1;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->needFadeOut_ = false;
+    toneplayer->toneInfo_->segments[1].duration = 1;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->needFadeOut_, true);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_015
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_015, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_RUNNING;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->nextSegSample_ = 8000;
+    toneplayer->currSegment_ = 0;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->needFadeOut_ = false;
+    toneplayer->toneInfo_->segments[0].duration = 0;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->needFadeOut_, true);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_016
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_016, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_RUNNING;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->nextSegSample_ = 8000;
+    toneplayer->currSegment_ = 1;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->needFadeOut_ = false;
+    toneplayer->toneInfo_->segments[1].duration = 0;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->needFadeOut_, true);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_017
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_017, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_RUNNING;
+    toneplayer->totalSample_ = 16000;
+    toneplayer->nextSegSample_ = 8000;
+    toneplayer->currSegment_ = 0;
+    toneplayer->currCount_ = 1;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->toneInfo_->repeatCnt = 2;
+    toneplayer->toneInfo_->repeatSegment = 0;
+    toneplayer->toneInfo_->segments[1].duration = 0;
+    toneplayer->toneInfo_->segments[0].duration = 1;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->sampleCount_, 0);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_018
+ * @tc.desc  : Test ContinueToneplay interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_018, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_RUNNING;
+    toneplayer->totalSample_ = 16000;
+    toneplayer->nextSegSample_ = 8000;
+    toneplayer->currSegment_ = 0;
+    toneplayer->currCount_ = 1;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->toneInfo_->repeatCnt = 2;
+    toneplayer->toneInfo_->repeatSegment = 2;
+    toneplayer->toneInfo_->segments[1].duration = 0;
+    toneplayer->toneInfo_->segments[2].duration = 1;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->ContinueToneplay(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->sampleCount_, 0);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_019
+ * @tc.desc  : Test GetCountryCode interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_019, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    SetParameter("debug.toneplayer.country", "TEST");
+
+
+    std::string ret = toneplayer->GetCountryCode();
+    EXPECT_EQ(ret, "test");
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_020
+ * @tc.desc  : Test CheckToneStarted interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_020, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->toneInfo_->segments[0].duration = 1;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->CheckToneStarted(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->toneState_, TonePlayerImpl::TONE_RUNNING);
+    EXPECT_EQ(toneplayer->sampleCount_, 0);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_021
+ * @tc.desc  : Test CheckToneStarted interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_021, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 1;
+    toneplayer->sampleCount_ = 1;
+    toneplayer->toneInfo_->segments[0].duration = 0;
+
+    uint32_t reqSample = 0;
+    const size_t bufferSize = 1024;
+    int8_t* audioBuffer = new int8_t[bufferSize];
+
+    bool ret = toneplayer->CheckToneStarted(reqSample, audioBuffer);
+    EXPECT_EQ(ret, true);
+    EXPECT_EQ(toneplayer->toneState_, TonePlayerImpl::TONE_RUNNING);
+    EXPECT_EQ(toneplayer->sampleCount_, 1);
+
+    delete[] audioBuffer;
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_022
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_022, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[0].duration = 1;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_023
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_023, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STOPPING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 1;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_024
+ * @tc.desc  : Test AudioToneSequenceGen interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_024, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_INIT;
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+    toneplayer->currSegment_ = 1;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 1;
+    toneplayer->processSize_ = 100;
+
+    BufferDesc bufDesc;
+    const size_t bufferSize = sizeof(int16_t);
+    bufDesc.buffer = new uint8_t[bufferSize];
+    
+    bool ret = toneplayer->AudioToneSequenceGen(bufDesc);
+    EXPECT_EQ(ret, true);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

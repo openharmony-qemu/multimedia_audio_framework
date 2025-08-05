@@ -66,7 +66,7 @@ public:
     virtual int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) = 0;
     virtual float GetMaxAmplitude(void) = 0;
 
-    virtual int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag = false) = 0;
+    virtual int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) = 0;
 
     virtual int32_t UpdateActiveDevice(DeviceType inputDevice) = 0;
     virtual int32_t UpdateSourceType(SourceType sourceType) SUCCESS_RET
@@ -82,6 +82,7 @@ public:
     virtual void DumpInfo(std::string &dumpString) {}
 
     virtual void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) {}
+    virtual bool IsCaptureInvalid(void) NOT_SUPPORT_RET
 
     // mmap extend function
     virtual int32_t GetMmapBufferInfo(int &fd, uint32_t &totalSizeInframe, uint32_t &spanSizeInframe,

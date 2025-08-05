@@ -37,6 +37,7 @@ public:
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;
+    int64_t createTimeStamp_ = 0;
     int64_t startTimeStamp_ = 0;
     AudioRendererInfo rendererInfo_ = {};
     AudioCapturerInfo capturerInfo_ = {};

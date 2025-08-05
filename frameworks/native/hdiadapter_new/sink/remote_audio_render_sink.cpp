@@ -386,15 +386,11 @@ void RemoteAudioRenderSink::SetAudioBalanceValue(float audioBalance)
     AUDIO_INFO_LOG("not support");
 }
 
-int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, std::vector<DeviceType> &activeDevices,
-    bool scoExcludeFlag)
+int32_t RemoteAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(renderInited_.load(), ERR_ILLEGAL_STATE, "not create, invalid state");
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    CHECK_AND_RETURN_RET_LOG(!activeDevices.empty() && activeDevices.size() <= AUDIO_CONCURRENT_ACTIVE_DEVICES_LIMIT,
-        ERR_INVALID_PARAM, "invalid device");
-    AUDIO_INFO_LOG("scene: %{public}d, device: %{public}d", audioScene, activeDevices.front());
 
     int32_t ret = DoSetOutputRoute();
     if (ret != SUCCESS) {
@@ -486,6 +482,11 @@ void RemoteAudioRenderSink::OnAudioParamChange(const std::string &adapterName, c
     }
 
     callback_.OnRenderSinkParamChange(adapterName, key, condition, value);
+}
+
+void RemoteAudioRenderSink::SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType)
+{
+    AUDIO_INFO_LOG("not support");
 }
 
 AudioFormat RemoteAudioRenderSink::ConvertToHdiFormat(AudioSampleFormat format)

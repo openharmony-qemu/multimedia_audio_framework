@@ -16,7 +16,6 @@
 #define LOG_TAG "AudioUtils"
 #endif
 
-#include "v5_0/iaudio_manager.h"
 #include "audio_utils.h"
 #include <cinttypes>
 #include <ctime>
@@ -79,6 +78,7 @@ constexpr size_t FIRST_CHAR = 1;
 constexpr size_t MIN_LEN = 8;
 constexpr size_t HEAD_STR_LEN = 2;
 constexpr size_t TAIL_STR_LEN = 5;
+constexpr size_t VISIBLE_LEN = 3;
 
 const int32_t DATA_INDEX_0 = 0;
 const int32_t DATA_INDEX_1 = 1;
@@ -184,53 +184,6 @@ uint32_t Util::GetSamplePerFrame(const AudioSampleFormat &format)
             break;
     }
     return audioPerSampleLength;
-}
-
-uint32_t Util::ConvertToHDIAudioInputType(const SourceType sourceType)
-{
-    enum AudioInputType hdiAudioInputType;
-    switch (sourceType) {
-        case SOURCE_TYPE_INVALID:
-            hdiAudioInputType = AUDIO_INPUT_DEFAULT_TYPE;
-            break;
-        case SOURCE_TYPE_MIC:
-        case SOURCE_TYPE_PLAYBACK_CAPTURE:
-        case SOURCE_TYPE_ULTRASONIC:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-        case SOURCE_TYPE_WAKEUP:
-            hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-        case SOURCE_TYPE_VOICE_COMMUNICATION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_RECOGNITION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_RECOGNITION_TYPE;
-            break;
-        case SOURCE_TYPE_VOICE_CALL:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_CALL_TYPE;
-            break;
-        case SOURCE_TYPE_CAMCORDER:
-            hdiAudioInputType = AUDIO_INPUT_CAMCORDER_TYPE;
-            break;
-        case SOURCE_TYPE_EC:
-            hdiAudioInputType = AUDIO_INPUT_EC_TYPE;
-            break;
-        case SOURCE_TYPE_MIC_REF:
-            hdiAudioInputType = AUDIO_INPUT_NOISE_REDUCTION_TYPE;
-            break;
-        case SOURCE_TYPE_UNPROCESSED:
-            hdiAudioInputType = AUDIO_INPUT_RAW_TYPE;
-            break;
-        case SOURCE_TYPE_LIVE:
-            hdiAudioInputType = AUDIO_INPUT_LIVE_TYPE;
-            break;
-        default:
-            hdiAudioInputType = AUDIO_INPUT_MIC_TYPE;
-            break;
-    }
-    return static_cast<uint32_t>(hdiAudioInputType);
 }
 
 bool Util::IsScoSupportSource(const SourceType sourceType)
@@ -502,7 +455,6 @@ bool PermissionUtil::VerifyIsSystemApp()
     bool tmp = Security::AccessToken::TokenIdKit::IsSystemAppByFullTokenID(fullTokenId);
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_PRERELEASE_LOGE("Check system app permission reject");
     return false;
 }
 
@@ -538,7 +490,6 @@ bool PermissionUtil::VerifySystemPermission()
     bool tmp = VerifyIsSystemApp();
     CHECK_AND_RETURN_RET(!tmp, true);
 
-    AUDIO_PRERELEASE_LOGE("Check system permission reject");
     return false;
 }
 
@@ -1161,8 +1112,13 @@ float CalculateMaxAmplitudeForPCM32Bit(int32_t *frame, uint64_t nSamples)
     for (uint32_t i = nSamples; i > 0; --i) {
         int32_t value = *frame++;
         if (value < 0) {
-            value = -value;
+            if (value == INT32_MIN) {
+                value = INT32_MAX;
+            } else {
+                value = -value;
+            }
         }
+
         if (curMaxAmplitude < value) {
             curMaxAmplitude = value;
         }
@@ -2028,6 +1984,12 @@ std::string GetEncryptStr(const std::string &src)
     }
 
     return dst;
+}
+
+std::string Hide(const std::string &str)
+{
+    CHECK_AND_RETURN_RET(str.length() >= VISIBLE_LEN + VISIBLE_LEN, "*");
+    return str.substr(0, VISIBLE_LEN) + "*" + str.substr(str.length() - VISIBLE_LEN);
 }
 
 std::string ConvertNetworkId(const std::string &networkId)

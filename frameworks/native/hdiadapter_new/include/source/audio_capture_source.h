@@ -61,7 +61,7 @@ public:
     int32_t GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec) override;
     float GetMaxAmplitude(void) override;
 
-    int32_t SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag = false) override;
+    int32_t SetAudioScene(AudioScene audioScene, bool scoExcludeFlag = false) override;
 
     int32_t UpdateActiveDevice(DeviceType inputDevice) override;
     int32_t UpdateSourceType(SourceType sourceType) override;
@@ -110,6 +110,7 @@ private:
     void DumpData(char *frame, uint64_t &replyBytes);
     void InitRunningLock(void);
     void CheckAcousticEchoCancelerSupported(int32_t sourcetype, int32_t &hdiAudioInputType);
+    bool IsCaptureInvalid(void) override;
 
 private:
     static constexpr uint32_t AUDIO_CHANNELCOUNT = 2;

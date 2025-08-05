@@ -23,7 +23,7 @@
 #include "hpae_resample_node.h"
 #include "hpae_pcm_buffer.h"
 #include "audio_utils.h"
-#include "audio_engine_log.h"
+#include "audio_effect_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

@@ -57,7 +57,6 @@ HWTEST_F(HpaeSourceInputClusterTest, constructHpaeSourceInputClusterNode, TestSi
 
     std::shared_ptr<HpaeSourceInputCluster> hpaeSourceInputCluster = std::make_shared<HpaeSourceInputCluster>(nodeInfo);
     EXPECT_EQ(hpaeSourceInputCluster->GetSampleRate(), nodeInfo.samplingRate);
-    EXPECT_EQ(hpaeSourceInputCluster->GetNodeId(), 0);
     EXPECT_EQ(hpaeSourceInputCluster->GetFrameLen(), nodeInfo.frameLen);
     EXPECT_EQ(hpaeSourceInputCluster->GetChannelCount(), nodeInfo.channels);
     EXPECT_EQ(hpaeSourceInputCluster->GetBitWidth(), nodeInfo.format);

@@ -106,7 +106,6 @@ public:
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetOutputDevice(sptr<AudioRendererFilter> audioRendererFilter);
 
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter);
-    int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 
     int32_t NotifyCapturerAdded(AudioCapturerInfo capturerInfo, AudioStreamInfo streamInfo, uint32_t sessionId);
 
@@ -155,6 +154,8 @@ public:
 
     int32_t SetAvailableDeviceChangeCallback(const int32_t clientId, const AudioDeviceUsage usage,
         const sptr<IRemoteObject> &object, bool hasBTPermission);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
 
     int32_t SetQueryClientTypeCallback(const sptr<IRemoteObject> &object);
 
@@ -246,6 +247,7 @@ public:
 
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
+    int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
 private:
     AudioPolicyService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),

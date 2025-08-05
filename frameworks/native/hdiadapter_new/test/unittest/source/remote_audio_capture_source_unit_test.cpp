@@ -180,7 +180,7 @@ HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_006, TestSize.Le
 HWTEST_F(RemoteAudioCaptureSourceUnitTest, RemoteSourceUnitTest_007, TestSize.Level1)
 {
     EXPECT_TRUE(source_ && source_->IsInited());
-    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT, DEVICE_TYPE_SPEAKER);
+    int32_t ret = source_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
 

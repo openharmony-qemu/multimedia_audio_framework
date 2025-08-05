@@ -86,7 +86,6 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
 {
     std::lock_guard<std::mutex> processListLock(processListMutex_);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, ERROR, "process is nullptr");
-
     bool isFind = false;
     int32_t ret = ERROR;
     auto paired = linkedPairedList_.begin();
@@ -104,6 +103,7 @@ int32_t AudioService::OnProcessRelease(IAudioProcessStream *process, bool isSwit
             }
             if (processConfig.capturerInfo.isLoopback || processConfig.rendererInfo.isLoopback) {
                 SetDecMaxLoopbackStreamCnt(processConfig.audioMode);
+                DisableLoopback();
             }
             if (!isSwitchStream) {
                 AUDIO_INFO_LOG("is not switch stream, remove from mutedSessions_");
@@ -343,6 +343,27 @@ bool AudioService::InForegroundList(uint32_t uid)
     return false;
 }
 
+void AudioService::SaveRenderWhitelist(std::vector<std::string> list)
+{
+    std::lock_guard<std::mutex> lock(renderWhitelistMutex_);
+
+    renderWhitelist_.clear();
+    for (auto &item : list) {
+        AUDIO_INFO_LOG("Add for hap: %{public}s", item.c_str());
+        renderWhitelist_.insert(item);
+    }
+}
+
+bool AudioService::InRenderWhitelist(const std::string bundleName)
+{
+    std::lock_guard<std::mutex> lock(renderWhitelistMutex_);
+    if (renderWhitelist_.find(bundleName) != renderWhitelist_.end()) {
+        AUDIO_INFO_LOG("find hap %{public}s in list!", bundleName.c_str());
+        return true;
+    }
+    return false;
+}
+
 bool AudioService::UpdateForegroundState(uint32_t appTokenId, bool isActive)
 {
     // UpdateForegroundState 200001000 to active
@@ -424,7 +445,11 @@ void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
         return;
     }
     allCapturerMap_.erase(sessionId);
-    muteStateCallbacks_.erase(sessionId);
+    {
+        std::unique_lock<std::mutex> muteStatelock(muteStateMapMutex_);
+        muteStateCallbacks_.erase(sessionId);
+    }
+
     if (!isSwitchStream) {
         RemoveIdFromMuteControlSet(sessionId);
     }
@@ -983,8 +1008,9 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
         deviceInfo, isReloadProcess);
     if (ret == SUCCESS) {
-        AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
-            "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
+        AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
+            " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
+            deviceInfo.a2dpOffloadFlag_);
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {

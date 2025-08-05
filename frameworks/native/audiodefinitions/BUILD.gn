@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("../../../config.gni")
+import("//build/test.gni")
 config("audio_utils_public_config") {
   include_dirs = [ "./include" ]
 
@@ -65,4 +66,42 @@ ohos_shared_library("audio_definitions") {
   subsystem_name = "multimedia"
   innerapi_tags = [ "platformsdk_indirect" ]
   part_name = "audio_framework"
+}
+
+ohos_unittest("audio_definitions_unit_test") {
+  module_out_path = "audio_framework/audio_framework_route/audiodefinitions"
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  include_dirs = [
+    "./include",
+    "../../../frameworks/native/audioutils/include",
+    "../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../services/audio_policy/common/include",
+  ]
+
+  sources = [
+    "test/unittest/audio_stream_descriptor_unit_test.cpp",
+  ]
+
+  deps = [ 
+    ":audio_definitions",
+    "../audioutils:audio_utils"
+  ]
+
+  defines = []
+
+  external_deps = [
+    "googletest:gmock",
+    "googletest:gtest",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
 }

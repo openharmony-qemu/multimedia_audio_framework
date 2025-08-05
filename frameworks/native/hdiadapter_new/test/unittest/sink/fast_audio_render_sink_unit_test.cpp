@@ -144,8 +144,7 @@ HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_004, TestSize.Level1)
 HWTEST_F(FastAudioRenderSinkUnitTest, FastSinkUnitTest_005, TestSize.Level1)
 {
     EXPECT_TRUE(sink_);
-    std::vector<DeviceType> deviceTypes = { DEVICE_TYPE_SPEAKER };
-    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT, deviceTypes);
+    int32_t ret = sink_->SetAudioScene(AUDIO_SCENE_DEFAULT);
     EXPECT_EQ(ret, SUCCESS);
 }
 

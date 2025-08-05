@@ -27,46 +27,10 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-const int32_t SYSTEM_ABILITY_ID = 3009;
-const bool RUN_ON_CREATE = false;
-bool g_isInit = false;
-static AudioPolicyServer g_server(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
-
 void StreamFilterRouterUnitTest::SetUpTestCase(void) {}
 void StreamFilterRouterUnitTest::TearDownTestCase(void) {}
 void StreamFilterRouterUnitTest::SetUp(void) {}
-void StreamFilterRouterUnitTest::TearDown(void)
-{
-    g_server.OnStop();
-    g_isInit = false;
-}
-
-AudioPolicyServer *GetServerPtr()
-{
-    if (!g_isInit) {
-        g_server.OnStart();
-        g_server.OnAddSystemAbility(DISTRIBUTED_KV_DATA_SERVICE_ABILITY_ID, "");
-        g_server.OnAddSystemAbility(DISTRIBUTED_HARDWARE_DEVICEMANAGER_SA_ID, "");
-#ifdef FEATURE_MULTIMODALINPUT_INPUT
-        g_server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
-#endif
-        g_server.OnAddSystemAbility(COMMON_EVENT_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
-        g_server.OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
-        g_server.OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
-        g_server.OnAddSystemAbility(ACCESSIBILITY_MANAGER_SERVICE_ID, "");
-#ifdef USB_ENABLE
-        g_server.OnAddSystemAbility(USB_SYSTEM_ABILITY_ID, "");
-#endif
-        g_server.audioPolicyService_.SetDefaultDeviceLoadFlag(true);
-        g_isInit = true;
-    }
-    return &g_server;
-}
-
+void StreamFilterRouterUnitTest::TearDown(void) {}
 
 /**
  * @tc.name  : Test StreamFilterRouter.
@@ -80,7 +44,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_001, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_NULL;
-    auto server = GetServerPtr();
     int32_t callerPid = IPCSkeleton::GetCallingPid();
     std::cout<<callerPid<<std::endl;
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
@@ -102,7 +65,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_002, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -122,7 +84,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_003, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -146,7 +107,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_004, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -166,7 +126,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_005, TestSize.Level1)
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -186,7 +145,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_006, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_NULL;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -206,7 +164,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_007, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_ALL;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -226,7 +183,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_008, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_PROJECTION;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -250,7 +206,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_009, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = CAST_TYPE_COOPERATION;
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -270,7 +225,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_010, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -291,7 +245,6 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
     SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
     int32_t clientId = 1;
     CastType type = static_cast<CastType>(99);
-    auto server = GetServerPtr();
     auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 
@@ -304,6 +257,5 @@ HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
     result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
     EXPECT_NE(streamFilterRouter_, nullptr);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS

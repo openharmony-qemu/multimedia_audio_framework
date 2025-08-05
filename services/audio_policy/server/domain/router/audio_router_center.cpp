@@ -42,7 +42,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -60,7 +60,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -226,7 +226,9 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
     RouterType routerType = ROUTER_TYPE_NONE;
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
     if (zoneId != 0) {
-        return AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+        vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
+            AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
+        CHECK_AND_RETURN_RET(zoneDescs.size() == 0, zoneDescs);
     }
     if (streamUsage == STREAM_USAGE_ULTRASONIC &&
         AudioStreamCollector::GetAudioStreamCollector().GetRunningStreamUsageNoUltrasonic() == STREAM_USAGE_INVALID) {
@@ -354,7 +356,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(Sour
 {
     for (auto &router : callCaptureRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID, sessionID);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -383,7 +385,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDev
 {
     for (auto &router : voiceMessageRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-        if (desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }

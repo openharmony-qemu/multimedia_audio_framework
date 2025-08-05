@@ -77,6 +77,8 @@
     *AudioWorkgroupCallback*;
     *ImproveAudioWorkgroupPrio*;
     *RestoreAudioWorkgroupPrio*;
+    *SaveRenderWhitelist*;
+    *InRenderWhitelist*;
   local:
     *;
 };

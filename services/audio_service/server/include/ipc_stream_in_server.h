@@ -31,8 +31,8 @@ namespace AudioStandard {
 // in plan extends IStatusCallback
 class StreamListenerHolder : public IStreamListener {
 public:
-    StreamListenerHolder();
-    ~StreamListenerHolder();
+    StreamListenerHolder() = default;
+    ~StreamListenerHolder() = default;
     int32_t RegisterStreamListener(sptr<IIpcStreamListener> listener);
 
     // override IStreamListener
@@ -77,6 +77,8 @@ public:
     int32_t GetAudioTime(uint64_t &framePos, uint64_t &timestamp) override;
 
     int32_t GetAudioPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
+
+    int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override;
 
     int32_t GetLatency(uint64_t &latency) override;
 

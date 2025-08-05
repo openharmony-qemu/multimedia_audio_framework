@@ -332,7 +332,6 @@ void AudioPolicyServiceEnhanceEightFuzzTest()
     GetServerPtr()->audioPolicyService_.audioDeviceCommon_.SwitchActiveA2dpDevice(remote);
 
     AudioProcessConfig config;
-    GetServerPtr()->audioPolicyService_.SetWakeUpAudioCapturerFromAudioServer(config);
     GetServerPtr()->audioPolicyService_.NotifyWakeUpCapturerRemoved();
     GetServerPtr()->audioPolicyService_.IsAbsVolumeSupported();
 

@@ -25,6 +25,7 @@
 #include "hpae_sink_input_node.h"
 #include "hpae_sink_output_node.h"
 #include "audio_effect.h"
+#include "audio_engine_log.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 

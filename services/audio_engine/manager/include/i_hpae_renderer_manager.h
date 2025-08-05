@@ -20,7 +20,6 @@
 #include "i_capturer_stream.h"
 #include "hpae_sink_input_node.h"
 #include "hpae_stream_manager.h"
-#include "audio_engine_log.h"
 #include "hpae_dfx_tree.h"
 #include "hpae_co_buffer_node.h"
 namespace OHOS {
@@ -99,8 +98,6 @@ public:
 
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo);
 
-    virtual uint32_t OnGetNodeId();
-
     virtual void OnNotifyDfxNodeInfoChanged(uint32_t nodeId, const HpaeDfxNodeInfo &nodeInfo)
     {
 #ifdef ENABLE_HIDUMP_DFX
@@ -113,7 +110,6 @@ public:
     virtual std::string GetDeviceHDFDumpInfo() = 0;
 
 private:
-    static std::atomic<uint32_t> nodeIdCounter_;
 #ifdef ENABLE_HIDUMP_DFX
     HpaeDfxTree dfxTree_;
 #endif

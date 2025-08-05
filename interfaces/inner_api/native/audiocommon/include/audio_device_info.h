@@ -370,10 +370,42 @@ enum BluetoothOffloadState {
     A2DP_OFFLOAD = 2,
 };
 
-struct VolumeBehavior {
+struct VolumeBehavior : public Parcelable {
     bool isReady = false;
     bool isVolumeControlDisabled = false;
     std::string databaseVolumeName = "";
+
+    VolumeBehavior(bool isReady_, bool isVolumeControlDisabled_, std::string databaseVolumeName_)
+        : isReady(isReady_), isVolumeControlDisabled(isVolumeControlDisabled_), databaseVolumeName(databaseVolumeName_)
+    {}
+    VolumeBehavior() = default;
+
+    bool Marshalling(Parcel &parcel) const override
+    {
+        return parcel.WriteBool(isReady) &&
+            parcel.WriteBool(isVolumeControlDisabled) &&
+            parcel.WriteString(databaseVolumeName);
+    }
+
+    static VolumeBehavior *Unmarshalling(Parcel &parcel)
+    {
+        auto info = new(std::nothrow) VolumeBehavior();
+        if (info == nullptr) {
+            return nullptr;
+        }
+
+        info->isReady = parcel.ReadBool();
+        info->isVolumeControlDisabled = parcel.ReadBool();
+        info->databaseVolumeName = parcel.ReadString();
+        return info;
+    }
+
+    void UnmarshallingSelf(Parcel &parcel)
+    {
+        isReady = parcel.ReadBool();
+        isVolumeControlDisabled = parcel.ReadBool();
+        databaseVolumeName = parcel.ReadString();
+    }
 };
 
 struct DevicePrivacyInfo {
@@ -416,7 +448,7 @@ public:
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
-        DISTRIBUTED_DEVICE = 1003,
+        DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
         SET_INPUT_DEVICE = 1004
     };
 
@@ -471,6 +503,16 @@ public:
         return reason_ == ExtEnum::SET_DEFAULT_OUTPUT_DEVICE;
     }
 
+    bool IsUnknown() const
+    {
+        return reason_ == ExtEnum::UNKNOWN;
+    }
+
+    bool IsDistributedDeviceUnavailable() const
+    {
+        return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
+    }
+
     bool Marshalling(Parcel &parcel) const override
     {
         return parcel.WriteInt32(static_cast<int32_t>(reason_));
@@ -478,7 +520,7 @@ public:
 
     static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamDeviceChangeReasonExt();
+        auto info = new(std::nothrow) AudioStreamDeviceChangeReasonExt();
         if (info == nullptr) {
             return nullptr;
         }

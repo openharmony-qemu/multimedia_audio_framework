@@ -27,6 +27,7 @@ namespace HPAE {
 class HpaeMixerNode : public HpaePluginNode {
 public:
     HpaeMixerNode(HpaeNodeInfo &nodeInfo);
+    virtual ~HpaeMixerNode();
     virtual bool Reset() override;
     int32_t SetupAudioLimiter();
     int32_t InitAudioLimiter();

@@ -30,6 +30,7 @@
 #include "audio_enhance_chain_manager.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "manager/hdi_monitor.h"
 #include "capturer_clock_manager.h"
 #include "audio_setting_provider.h"
 
@@ -475,12 +476,12 @@ float AudioCaptureSource::GetMaxAmplitude(void)
     return maxAmplitude_;
 }
 
-int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType activeDevice, bool scoExcludeFlag)
+int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(audioScene >= AUDIO_SCENE_DEFAULT && audioScene < AUDIO_SCENE_MAX, ERR_INVALID_PARAM,
         "invalid scene");
-    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, device: %{public}d, scoExcludeFlag: %{public}d",
-        audioScene, currentAudioScene_, activeDevice, scoExcludeFlag);
+    AUDIO_INFO_LOG("scene: %{public}d, current scene : %{public}d, scoExcludeFlag: %{public}d",
+        audioScene, currentAudioScene_, scoExcludeFlag);
 
     if (audioScene != currentAudioScene_ && !scoExcludeFlag) {
         struct AudioSceneDescriptor sceneDesc;
@@ -492,10 +493,6 @@ int32_t AudioCaptureSource::SetAudioScene(AudioScene audioScene, DeviceType acti
     }
     if (audioScene != currentAudioScene_) {
         currentAudioScene_ = audioScene;
-    }
-    int32_t ret = UpdateActiveDeviceWithoutLock(activeDevice);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
     }
     return SUCCESS;
 }
@@ -888,6 +885,17 @@ void AudioCaptureSource::SetAudioRouteInfoForEnhanceChain(void)
 }
 // LCOV_EXCL_STOP
 
+bool AudioCaptureSource::IsCaptureInvalid(void)
+{
+    if (audioCapture_ == nullptr) {
+        AUDIO_ERR_LOG("audioCapture_ is nullptr!");
+        std::string errorMsg = attr_.adapterName + " load adapter fail, ret: " + std::to_string(ERR_NOT_STARTED);
+        HdiMonitor::ReportHdiException(HdiType::LOCAL, ErrorCase::CALL_HDI_FAILED, ERR_NOT_STARTED, errorMsg);
+        return false;
+    }
+    return true;
+}
+
 int32_t AudioCaptureSource::CreateCapture(void)
 {
     Trace trace("AudioCaptureSource::CreateCapture");
@@ -910,7 +918,7 @@ int32_t AudioCaptureSource::CreateCapture(void)
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     void *capture = deviceManager->CreateCapture(adapterNameCase_, &param, &deviceDesc, hdiCaptureId_);
     audioCapture_ = static_cast<struct IAudioCapture *>(capture);
-    CHECK_AND_RETURN_RET(audioCapture_ != nullptr, ERR_NOT_STARTED);
+    CHECK_AND_RETURN_RET(IsCaptureInvalid(), ERR_NOT_STARTED);
 
     AUDIO_INFO_LOG("create capture success, hdiCaptureId: %{public}u, desc: %{public}s", hdiCaptureId_,
         deviceDesc.desc);
@@ -962,6 +970,7 @@ void AudioCaptureSource::InitLatencyMeasurement(void)
 {
     std::lock_guard<std::mutex> lock(signalDetectMutex_);
 
+    CHECK_AND_RETURN(AudioLatencyMeasurement::CheckIfEnabled());
     signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
     CHECK_AND_RETURN_LOG(signalDetectAgent_ != nullptr, "signalDetectAgent is nullptr");
     signalDetectAgent_->sampleFormat_ = attr_.format;

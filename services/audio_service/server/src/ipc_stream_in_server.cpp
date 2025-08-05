@@ -26,16 +26,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-StreamListenerHolder::StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("StreamListenerHolder()");
-}
-
-StreamListenerHolder::~StreamListenerHolder()
-{
-    AUDIO_INFO_LOG("~StreamListenerHolder()");
-}
-
 int32_t StreamListenerHolder::RegisterStreamListener(sptr<IIpcStreamListener> listener)
 {
     std::lock_guard<std::mutex> lock(listenerMutex_);
@@ -160,7 +150,6 @@ int32_t IpcStreamInServer::RegisterStreamListener(const sptr<IRemoteObject>& obj
 
 int32_t IpcStreamInServer::ResolveBuffer(std::shared_ptr<OHAudioBuffer> &buffer)
 {
-    AUDIO_INFO_LOG("Resolve buffer, mode: %{public}d", mode_);
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->ResolveBuffer(buffer);
     }
@@ -197,8 +186,6 @@ int32_t IpcStreamInServer::GetAudioSessionID(uint32_t &sessionId)
 
 int32_t IpcStreamInServer::Start()
 {
-    AUDIO_INFO_LOG("IpcStreamInServer::Start()");
-
     if (mode_ == AUDIO_MODE_PLAYBACK && rendererInServer_ != nullptr) {
         return rendererInServer_->Start();
     }
@@ -314,6 +301,13 @@ int32_t IpcStreamInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timest
         return ERR_OPERATION_FAILED;
     }
     return rendererInServer_->GetAudioPosition(framePos, timestamp, latency, base);
+}
+
+int32_t IpcStreamInServer::GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+{
+    CHECK_AND_RETURN_RET_LOG(rendererInServer_ != nullptr && mode_ == AUDIO_MODE_PLAYBACK, ERR_OPERATION_FAILED,
+        "unsupported mode: %{public}d or renderer obj is nullptr", static_cast<int32_t>(mode_));
+    return rendererInServer_->GetSpeedPosition(framePos, timestamp, latency, base);
 }
 
 int32_t IpcStreamInServer::GetLatency(uint64_t &latency)
