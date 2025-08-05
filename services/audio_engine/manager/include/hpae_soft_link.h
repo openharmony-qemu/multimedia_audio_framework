@@ -14,12 +14,13 @@
  */
 #ifndef HPAE_SOFT_LINK_H
 #define HPAE_SOFT_LINK_H
+#define HDI_INVALID_ID 0xFFFFFFFF
+
 #include "i_hpae_soft_link.h"
 #include "i_capturer_stream.h"
 #include "i_renderer_stream.h"
 #include "hpae_define.h"
 #include "audio_ring_cache.h"
-
 
 namespace OHOS {
 namespace AudioStandard {
@@ -50,7 +51,7 @@ class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
                      public IStreamCallback,
                      public ICapturerStreamCallback {
 public:
-    HpaeSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode);
+    HpaeSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
     static uint32_t GenerateSessionId();
     int32_t Init() override;
@@ -73,8 +74,8 @@ private:
 private:
     static uint32_t g_sessionId;
     inline static std::mutex sessionIdMutex_;
-    int32_t sinkIdx_ = -1;
-    int32_t sourceIdx_ = -1;
+    uint32_t sinkIdx_ = HDI_INVALID_ID;
+    uint32_t sourceIdx_ = HDI_INVALID_ID;
     SoftLinkMode linkMode_ = SoftLinkMode::HEARING_AID;
     HpaeSinkInfo sinkInfo_;
     HpaeSourceInfo sourceInfo_;
