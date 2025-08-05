@@ -155,6 +155,7 @@ void OnAddResSchedService(uint32_t audioServerPid)
 
 bool SetEndpointThreadPriority()
 {
+    Trace trace("SetEndpointThreadPriority");
     bool res = false;
     std::unordered_map<std::string, std::string> payload;
     payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
