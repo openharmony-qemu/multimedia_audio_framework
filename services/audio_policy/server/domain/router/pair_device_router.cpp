@@ -78,7 +78,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
         CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
             "activeScoDevice is nullptr");\
-        AUDIO_WARN_LOG("Has sco device, pair route");
+        AUDIO_WARNING_LOG("Has sco device, pair route");
         return activeScoDevice;
     }
     return make_shared<AudioDeviceDescriptor>();
