@@ -14,7 +14,7 @@
  */
 
 #ifndef HPAE_INNER_CAPTURER_MANAGER_FUZZER_H
-#define HPAE_INNER_CAPTURER_MANAGERFUZZER_H
+#define HPAE_INNER_CAPTURER_MANAGER_FUZZER_H
 
 #include "audio_info.h"
 #include "audio_stream_info.h"
@@ -26,13 +26,14 @@ class WriteFixedDataCb : public IStreamCallback, public std::enable_shared_from_
 public:
     int32_t OnStreamData(AudioCallBackStreamInfo& callBackStremInfo) override;
 
-    explicit WriteFixedDataCb(AudioSampleFormat format) : format_(format)
-    {}
+    explicit WriteFixedDataCb(AudioSampleFormat format)
+    {
+        format_ = format;
+    }
     virtual ~WriteFixedDataCb()
     {}
 
 private:
-    int32_t writeNum_ = 0;
     AudioSampleFormat format_ = SAMPLE_F32LE;
 };
 
