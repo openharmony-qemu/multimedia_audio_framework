@@ -461,7 +461,7 @@ int32_t LocalDeviceManager::SetOutputPortPin(DeviceType outputDevice, AudioRoute
         return SUCCESS;
     }
 
-    for (const auto& entry : devicePinMap) {
+    for (const auto &entry : devicePinMap) {
         if (entry.deviceType == outputDevice) {
             sink.ext.device.type = entry.pinType;
             sink.ext.device.desc = const_cast<char*>(entry.desc);
