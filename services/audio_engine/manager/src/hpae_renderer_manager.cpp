@@ -264,7 +264,7 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
                 AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
             if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
                 CreateProcessClusterInner(nodeInfo, processClusterDecision);
-                CHECK_AND_RETURN_RET_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType), ERROR,
+                CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
                     "could not find processorType %{public}d", nodeInfo.sceneType);
                 sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
                 int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
@@ -281,8 +281,6 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
     };
     SendRequest(request);
     return SUCCESS;
-    //!= 1, != 0,
-    //== 0, == 1
 }
 
 int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
