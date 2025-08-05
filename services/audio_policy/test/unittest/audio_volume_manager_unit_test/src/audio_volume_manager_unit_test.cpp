@@ -1319,5 +1319,28 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_063
+* @tc.desc  : Test Init interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_063, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+
+    bool ret;
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
