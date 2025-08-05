@@ -535,7 +535,7 @@ int32_t AudioAdapterManager::SetSystemVolumeLevel(AudioStreamType streamType, in
     AUDIO_INFO_LOG("streamType: %{public}d, deviceType: %{public}d, volumeLevel:%{public}d",
         streamType, currentActiveDevice_.deviceType_, volumeLevel);
     if (volumeLevel == 0 && !VolumeUtils::IsPCVolumeEnable() &&
-        (streamType == STREAM_VOICE_CALL ||
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
         streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
@@ -920,7 +920,7 @@ int32_t AudioAdapterManager::SetInnerStreamMute(AudioStreamType streamType, bool
 int32_t AudioAdapterManager::IsHandleStreamMute(AudioStreamType streamType, bool mute, StreamUsage streamUsage)
 {
     if (mute && !VolumeUtils::IsPCVolumeEnable() &&
-        (streamType == STREAM_VOICE_CALL ||
+        (streamType == STREAM_VOICE_ASSISTANT || streamType == STREAM_VOICE_CALL ||
         streamType == STREAM_ALARM || streamType == STREAM_ACCESSIBILITY ||
         streamType == STREAM_VOICE_COMMUNICATION)) {
         // these types can not set to mute, but don't return error
