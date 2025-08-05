@@ -267,10 +267,7 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
                 CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
                     "could not find processorType %{public}d", nodeInfo.sceneType);
                 sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
-                int32_t ret = sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
-                if (ret != SUCCESS) {
-                    AUDIO_WARNING_LOG("update audio effect when creating failed, ret = %{public}d", ret);
-                }
+                sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
             } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
                 !sessionNodeMap_[nodeInfo.sessionId].bypass) {
                 DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
