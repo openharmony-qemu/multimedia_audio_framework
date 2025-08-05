@@ -83,19 +83,18 @@ public:
 
     void DumpMonitorInfo(std::string &dumpString);
 
+private:
+    // all public funcs should hold this mutex
+    std::mutex monitorMutex_;
     std::map<uint32_t /*sessionId*/, FrameRecordInfo> silenceDetectMap_{};
     std::map<AdapterType, int64_t /*lastWrittenTimeStamp*/> overTimeDetectMap_{};
 
-private:
     void JudgeNoise(uint32_t index, bool curState, uint32_t uid);
     void ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType, AdapterType adapterType,
         uint32_t uid = 0);
     std::string GetRunningHapNames(AdapterType adapterType);
     int64_t silenceLastReportTime_ = -1;
     int64_t overTimeLastReportTime_ = -1;
-
-    std::mutex silenceMapMutex_;
-    std::mutex overTimeMapMutex_;
 
     std::map<AdapterType, int64_t> MAX_WRITTEN_INTERVAL {
         {ADAPTER_TYPE_PRIMARY, NORMAL_MAX_LASTWRITTEN_TIME * AUDIO_NS_PER_MS},      // 100ms
