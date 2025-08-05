@@ -590,6 +590,16 @@ VolumeEvent TaiheParamUtils::SetValueVolumeEvent(const OHOS::AudioStandard::Volu
     return taiheVolumeEvent;
 }
 
+StreamVolumeEvent TaiheParamUtils::SetValueStreamVolumeEvent(const OHOS::AudioStandard::StreamVolumeEvent &volumeEvent)
+{
+    StreamVolumeEvent taiheStreamVolumeEvent {
+        .streamUsage = TaiheAudioEnum::ToTaiheStreamUsage(volumeEvent.streamUsage),
+        .volume = volumeEvent.volume,
+        .updateUi = volumeEvent.updateUi,
+    };
+    return taiheStreamVolumeEvent;
+}
+
 AudioCapturerChangeInfo TaiheParamUtils::SetAudioCapturerChangeInfoDescriptors(
     const OHOS::AudioStandard::AudioCapturerChangeInfo &changeInfo)
 {

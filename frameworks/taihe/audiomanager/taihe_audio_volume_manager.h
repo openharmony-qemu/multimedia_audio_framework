@@ -18,6 +18,8 @@
 
 #include "audio_system_manager.h"
 #include "taihe_audio_volume_group_manager.h"
+#include "taihe_audio_system_volume_change_callback.h"
+#include "taihe_audio_stream_volume_change_callback.h"
 #include "taihe_audio_volume_key_event.h"
 
 namespace ANI::Audio {
@@ -43,16 +45,28 @@ public:
     void OnVolumeChange(callback_view<void(VolumeEvent const&)> callback);
     void OnAppVolumeChangeForUid(int32_t uid, callback_view<void(VolumeEvent const&)> callback);
     void OnAppVolumeChange(callback_view<void(VolumeEvent const&)> callback);
+    void OnActiveVolumeTypeChange(callback_view<void(AudioVolumeType)> callback);
+    void OnSystemVolumeChange(callback_view<void(VolumeEvent const&)> callback);
+    void OnStreamVolumeChange(StreamUsage streamUsage, callback_view<void(StreamVolumeEvent const&)> callback);
     void OffVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffAppVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
     void OffAppVolumeChangeForUid(optional_view<callback<void(VolumeEvent const&)>> callback);
+    void OffActiveVolumeTypeChange(optional_view<callback<void(AudioVolumeType)>> callback);
+    void OffSystemVolumeChange(optional_view<callback<void(VolumeEvent const&)>> callback);
+    void OffStreamVolumeChange(optional_view<callback<void(StreamVolumeEvent const&)>> callback);
 
 private:
     static void RegisterCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void RegisterSelfAppVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void RegisterActiveVolumeTypeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void RegisterAppVolumeChangeForUidCallback(int32_t appUid, std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void RegisterSystemVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void RegisterStreamVolumeChangeCallback(StreamUsage streamUsage, std::shared_ptr<uintptr_t> &callback,
         const std::string &cbName, AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
@@ -60,18 +74,34 @@ private:
         AudioVolumeManagerImpl *audioVolMngrImpl);
     static void UnregisterSelfAppVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void UnregisterActiveVolumeTypeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void UnregisterSystemVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeManagerImpl *audioVolMngrImpl);
+    static void UnregisterStreamVolumeChangeCallback(std::shared_ptr<uintptr_t> &callback,
+        AudioVolumeManagerImpl *audioVolMngrImpl);
 
     static std::shared_ptr<TaiheAudioVolumeKeyEvent> GetVolumeEventTaiheCallback(std::shared_ptr<uintptr_t> callback,
         AudioVolumeManagerImpl *audioVolMngrImpl);
+    static std::shared_ptr<TaiheAudioSystemVolumeChangeCallback> GetSystemVolumeChangeTaiheCallback(
+        std::shared_ptr<uintptr_t> callback, AudioVolumeManagerImpl *audioVolMngrImpl);
+    static std::shared_ptr<TaiheAudioStreamVolumeChangeCallback> GetStreamVolumeChangeTaiheCallback(
+        std::shared_ptr<uintptr_t> callback, AudioVolumeManagerImpl *audioVolMngrImpl);
 
     OHOS::AudioStandard::AudioSystemManager *audioSystemMngr_;
     int32_t cachedClientId_ = -1;
     std::shared_ptr<OHOS::AudioStandard::VolumeKeyEventCallback> volumeKeyEventCallbackTaihe_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::StreamVolumeChangeCallback> streamVolumeChangeCallbackTaihe_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::SystemVolumeChangeCallback> systemVolumeChangeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerAppVolumeChangeCallback>
         selfAppVolumeChangeCallbackTaihe_ = nullptr;
     std::shared_ptr<OHOS::AudioStandard::AudioManagerAppVolumeChangeCallback>
         appVolumeChangeCallbackForUidTaihe_ = nullptr;
+    std::shared_ptr<OHOS::AudioStandard::AudioManagerActiveVolumeTypeChangeCallback>
+        activeVolumeTypeChangeCallbackTaihe_ = nullptr;
     std::list<std::shared_ptr<TaiheAudioVolumeKeyEvent>> volumeKeyEventCallbackTaiheList_;
+    std::list<std::shared_ptr<TaiheAudioStreamVolumeChangeCallback>> streamVolumeChangeCallbackTaiheList_;
+    std::list<std::shared_ptr<TaiheAudioSystemVolumeChangeCallback>> systemVolumeChangeCallbackTaiheList_;
     std::mutex mutex_;
 };
 } // namespace ANI::Audio

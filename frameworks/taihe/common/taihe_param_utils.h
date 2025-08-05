@@ -72,6 +72,7 @@ public:
     static MicStateChangeEvent SetValueMicStateChange(
         const OHOS::AudioStandard::MicStateChangeEvent &micStateChangeEvent);
     static VolumeEvent SetValueVolumeEvent(const OHOS::AudioStandard::VolumeEvent &volumeEvent);
+    static StreamVolumeEvent SetValueStreamVolumeEvent(const OHOS::AudioStandard::StreamVolumeEvent &volumeEvent);
     static AudioCapturerChangeInfo SetAudioCapturerChangeInfoDescriptors(
         const OHOS::AudioStandard::AudioCapturerChangeInfo &changeInfo);
     static AudioDeviceDescriptor SetDeviceDescriptor(const OHOS::AudioStandard::AudioDeviceDescriptor &deviceInfo);

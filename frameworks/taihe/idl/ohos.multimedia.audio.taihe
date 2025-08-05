@@ -541,11 +541,17 @@ interface AudioVolumeManager {
               this.onVolumeChange(callback as (data: VolumeEvent) => void);
             } else if (type === "appVolumeChange") {
               this.onAppVolumeChange(callback as (data: VolumeEvent) => void);
+            } else if (type === "activeVolumeTypeChange") {
+              this.onActiveVolumeTypeChange(callback as (data: AudioVolumeType) => void);
+            } else if (type === "systemVolumeChange") {
+              this.onSystemVolumeChange(callback as (data: VolumeEvent) => void);
             }
         }
   """)
   OnVolumeChange(callback: (data: VolumeEvent) => void): void;
   OnAppVolumeChange(callback: (data: VolumeEvent) => void): void;
+  OnActiveVolumeTypeChange(callback: (data: AudioVolumeType) => void): void;
+  OnSystemVolumeChange(callback: (data: VolumeEvent) => void): void;
 
   @!sts_inject_into_interface("on(type: string, uid: int, callback: (data: object) => void): void;")
   @!sts_inject_into_class("""on(type: string, uid: int, callback: object): void {
@@ -556,6 +562,15 @@ interface AudioVolumeManager {
   """)
   OnAppVolumeChangeForUid(uid: i32, callback: (data: VolumeEvent) => void): void;
 
+  @!sts_inject_into_interface("on(type: string, streamUsage: StreamUsage, callback: (data: object) => void): void;")
+  @!sts_inject_into_class("""on(type: string, streamUsage: StreamUsage, callback: object): void {
+            if (type === "streamVolumeChange") {
+              this.onStreamVolumeChange(streamUsage, callback as (data: StreamVolumeEvent) => void);
+            }
+        }
+  """)
+  OnStreamVolumeChange(streamUsage: StreamUsage, callback: (data: StreamVolumeEvent) => void): void;
+
   @!sts_inject_into_interface("off(type: string, callback?: (data: object) => void): void;")
   @!sts_inject_into_class("""off(type: string, callback?: object): void {
             if (type === "volumeChange") {
@@ -564,12 +579,21 @@ interface AudioVolumeManager {
               this.offAppVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
             } else if (type === "appVolumeChangeForUid") {
               this.offAppVolumeChangeForUid(callback as ((data: VolumeEvent) => void) | undefined);
+            } else if (type === "activeVolumeTypeChange") {
+              this.offActiveVolumeTypeChange(callback as ((data: AudioVolumeType) => void) | undefined);
+            } else if (type === "systemVolumeChange") {
+              this.offSystemVolumeChange(callback as ((data: VolumeEvent) => void) | undefined);
+            } else if (type === "streamVolumeChange") {
+              this.offStreamVolumeChange(callback as ((data: StreamVolumeEvent) => void) | undefined);
             }
         }
   """)
   OffVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
   OffAppVolumeChangeForUid(callback: Optional<(data: VolumeEvent)=> void>): void;
+  OffActiveVolumeTypeChange(callback: Optional<(data: AudioVolumeType)=> void>): void;
+  OffSystemVolumeChange(callback: Optional<(data: VolumeEvent)=> void>): void;
+  OffStreamVolumeChange(callback: Optional<(data: StreamVolumeEvent)=> void>): void;
 }
 
 interface AudioVolumeGroupManager {
@@ -724,6 +748,12 @@ struct VolumeEvent {
   volumeGroupId: i32;
   networkId: String;
   volumeMode: Optional<AudioVolumeMode>;
+}
+
+struct StreamVolumeEvent {
+  streamUsage: StreamUsage;
+  volume: i32;
+  updateUi: bool;
 }
 
 struct MicStateChangeEvent {

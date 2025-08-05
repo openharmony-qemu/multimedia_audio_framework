@@ -557,6 +557,92 @@ OHOS::AudioStandard::InterruptMode TaiheAudioEnum::GetNativeInterruptMode(int32_
     return result;
 }
 
+OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
+{
+    OHOS::AudioStandard::StreamUsage result = OHOS::AudioStandard::STREAM_USAGE_UNKNOWN;
+
+    switch (streamUsage) {
+        case TaiheAudioEnum::USAGE_UNKNOW:
+            result = OHOS::AudioStandard::STREAM_USAGE_UNKNOWN;
+            break;
+        case TaiheAudioEnum::USAGE_MEDIA:
+            result = OHOS::AudioStandard::STREAM_USAGE_MEDIA;
+            break;
+        case TaiheAudioEnum::USAGE_VOICE_COMMUNICATION:
+            result = OHOS::AudioStandard::STREAM_USAGE_VOICE_COMMUNICATION;
+            break;
+        case TaiheAudioEnum::USAGE_VOICE_ASSISTANT:
+            result = OHOS::AudioStandard::STREAM_USAGE_VOICE_ASSISTANT;
+            break;
+        case TaiheAudioEnum::USAGE_ALARM:
+            result = OHOS::AudioStandard::STREAM_USAGE_ALARM;
+            break;
+        case TaiheAudioEnum::USAGE_VOICE_MESSAGE:
+            result = OHOS::AudioStandard::STREAM_USAGE_VOICE_MESSAGE;
+            break;
+        case TaiheAudioEnum::USAGE_RINGTONE:
+            result = OHOS::AudioStandard::STREAM_USAGE_RINGTONE;
+            break;
+        case TaiheAudioEnum::USAGE_NOTIFICATION:
+            result = OHOS::AudioStandard::STREAM_USAGE_NOTIFICATION;
+            break;
+        case TaiheAudioEnum::USAGE_ACCESSIBILITY:
+            result = OHOS::AudioStandard::STREAM_USAGE_ACCESSIBILITY;
+            break;
+        case TaiheAudioEnum::USAGE_SYSTEM:
+            result = OHOS::AudioStandard::STREAM_USAGE_SYSTEM;
+            break;
+        case TaiheAudioEnum::USAGE_MOVIE:
+            result = OHOS::AudioStandard::STREAM_USAGE_MOVIE;
+            break;
+        default:
+            result = GetNativeStreamUsageFir(streamUsage);
+            break;
+    }
+
+    return result;
+}
+
+OHOS::AudioStandard::StreamUsage TaiheAudioEnum::GetNativeStreamUsageFir(int32_t streamUsage)
+{
+    OHOS::AudioStandard::StreamUsage result = OHOS::AudioStandard::STREAM_USAGE_UNKNOWN;
+
+    switch (streamUsage) {
+        case TaiheAudioEnum::USAGE_GAME:
+            result = OHOS::AudioStandard::STREAM_USAGE_GAME;
+            break;
+        case TaiheAudioEnum::USAGE_AUDIOBOOK:
+            result = OHOS::AudioStandard::STREAM_USAGE_AUDIOBOOK;
+            break;
+        case TaiheAudioEnum::USAGE_NAVIGATION:
+            result = OHOS::AudioStandard::STREAM_USAGE_NAVIGATION;
+            break;
+        case TaiheAudioEnum::USAGE_DTMF:
+            result = OHOS::AudioStandard::STREAM_USAGE_DTMF;
+            break;
+        case TaiheAudioEnum::USAGE_ENFORCED_TONE:
+            result = OHOS::AudioStandard::STREAM_USAGE_ENFORCED_TONE;
+            break;
+        case TaiheAudioEnum::USAGE_ULTRASONIC:
+            result = OHOS::AudioStandard::STREAM_USAGE_ULTRASONIC;
+            break;
+        case TaiheAudioEnum::USAGE_VIDEO_COMMUNICATION:
+            result = OHOS::AudioStandard::STREAM_USAGE_VIDEO_COMMUNICATION;
+            break;
+        case TaiheAudioEnum::USAGE_VOICE_CALL_ASSISTANT:
+            result = OHOS::AudioStandard::STREAM_USAGE_VOICE_CALL_ASSISTANT;
+            break;
+        case TaiheAudioEnum::USAGE_MAX:
+            result = OHOS::AudioStandard::STREAM_USAGE_MAX;
+            break;
+        default:
+            result = OHOS::AudioStandard::STREAM_USAGE_INVALID;
+            break;
+    }
+
+    return result;
+}
+
 AudioVolumeType TaiheAudioEnum::GetJsAudioVolumeType(OHOS::AudioStandard::AudioStreamType volumeType)
 {
     AudioVolumeType result = TaiheAudioEnum::ToTaiheAudioVolumeType(TaiheAudioEnum::MEDIA);

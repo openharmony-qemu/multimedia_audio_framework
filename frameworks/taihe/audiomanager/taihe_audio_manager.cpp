@@ -46,6 +46,11 @@ AudioManagerImpl::~AudioManagerImpl()
 
 void AudioManagerImpl::SetExtraParametersSync(string_view mainKey, map_view<string, string> kvpairs)
 {
+    if (!OHOS::AudioStandard::PermissionUtil::VerifySelfPermission()) {
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_PERMISSION_DENIED, "No system permission");
+        return;
+    }
+
     std::string key = std::string(mainKey);
     std::vector<std::pair<std::string, std::string>> subKvpairs;
     int32_t result = TaiheParamUtils::GetExtraParametersSubKV(subKvpairs, kvpairs);
