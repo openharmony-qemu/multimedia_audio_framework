@@ -54,9 +54,9 @@ public:
     static AudioPolicyManager& GetInstance();
     static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);

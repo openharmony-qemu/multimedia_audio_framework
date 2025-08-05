@@ -950,16 +950,17 @@ void AudioPolicyServer::LoadEffectLibrary()
     audioPolicyService_.LoadEffectLibrary();
 }
 
-int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int deviceType)
 {
-    volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType));
+    volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType),
+                                                        static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int deviceType)
 {
-    volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType));
-    return SUCCESS;
+    volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType),
+                                                        static_cast<DeviceType>(deviceType));
 }
 
 // deprecated since api 9.

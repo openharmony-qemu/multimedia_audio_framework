@@ -88,9 +88,9 @@ public:
     void OnStart() override;
     void OnStop() override;
 
-    int32_t GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel) override;
+    int32_t GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int deviceType = -1) override;
 
-    int32_t GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel) override;
+    int32_t GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int deviceType = -1) override;
 
     int32_t SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel) override;
 

@@ -45,8 +45,8 @@ sequenceable audio_zone_info..OHOS.AudioStandard.AudioZoneStream;
 sequenceable audio_device_info..OHOS.AudioStandard.VolumeBehavior;
 
 interface IAudioPolicy {
-    [ipccode 0] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel);
-    void GetMinVolumeLevel([in] int volumeType, [out] int volumeLevel); // AudioVolumeType volumeType
+    [ipccode 0] void GetMaxVolumeLevel([in] int volumeType, [out] int volumeLevel, [in] int deviceType); // AudioVolumeType volumeType, DeviceType deviceType
+    void GetMinVolumeLevel([in] int volumeType, [out] int volumeLevel, [in] int deviceType); // AudioVolumeType volumeType, DeviceType deviceType
     void SetSystemVolumeLevelLegacy([in] int streamTypeIn, [in] int volumeLevel); // AudioVolumeType volumeType
     void SetSystemVolumeLevel(
         [in] int volumeType, /* volumeType type is AudioVolumeType */

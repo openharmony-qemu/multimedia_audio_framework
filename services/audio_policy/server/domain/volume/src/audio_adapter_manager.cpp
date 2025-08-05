@@ -310,7 +310,7 @@ int32_t AudioAdapterManager::SetAudioStreamRemovedCallback(AudioStreamRemovedCal
 }
 
 // LCOV_EXCL_STOP
-int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
@@ -318,6 +318,18 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
         return appConfigVolume_.maxVolume;
     }
     if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(volumeType)) {
+        DeviceType type = currentActiveDevice_.deviceType_;
+        if (deviceType != DEVICE_TYPE_NONE) {
+            type = deviceType;
+        }
+
+        auto deviceIt = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(type);
+        if (deviceIt != DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.end()) {
+            DeviceVolumeType deviceVolumeType = deviceIt->second;
+            if (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel != -1) {
+                return streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel;
+            }
+        }
         return maxVolumeIndexMap_[volumeType];
     } else if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(STREAM_MUSIC)) {
         AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);
@@ -328,7 +340,7 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
     }
 }
 
-int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
@@ -336,6 +348,18 @@ int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
         return appConfigVolume_.minVolume;
     }
     if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(volumeType)) {
+        DeviceType type = currentActiveDevice_.deviceType_;
+        if (deviceType != DEVICE_TYPE_NONE) {
+            type = deviceType;
+        }
+
+        auto deviceIt = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(type);
+        if (deviceIt != DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.end()) {
+            DeviceVolumeType deviceVolumeType = deviceIt->second;
+            if (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel != -1) {
+                return streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel;
+            }
+        }
         return minVolumeIndexMap_[volumeType];
     } else if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(STREAM_MUSIC)) {
         AUDIO_WARNING_LOG("can't find volumeType:%{public}d and use default STREAM_MUSIC", volumeType);

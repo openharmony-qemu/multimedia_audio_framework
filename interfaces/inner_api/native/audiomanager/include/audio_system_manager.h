@@ -263,6 +263,24 @@ public:
     int32_t GetMinVolume(AudioVolumeType volumeType);
 
     /**
+     * @brief get device max stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns stream and device volume.
+     */
+    int32_t GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType);
+
+    /**
+     * @brief get device min stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns stream and device volume.
+     */
+    int32_t GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType);
+
+    /**
      * @brief set stream mute.
      *
      * @param volumeType audio volume type.

@@ -81,9 +81,9 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
