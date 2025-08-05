@@ -398,7 +398,7 @@ void HpaeRendererManager::DisConnectProcessCluster(
     }
 }
 
-int32_t HpaeRendererManager::DeleteProcessCluster(HpaeProcessCluster sceneType)
+int32_t HpaeRendererManager::DeleteProcessCluster(HpaeProcessorType sceneType)
 {
     if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
         sceneClusterMap_.erase(sceneType);
