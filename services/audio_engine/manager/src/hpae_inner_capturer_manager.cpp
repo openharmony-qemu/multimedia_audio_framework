@@ -597,6 +597,8 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
     auto request = [this, sessionId, operation]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::OnFadeDone: " +
             std::to_string(operation));
+        CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
+            "Fade done,  but session is running");
         DisConnectRendererInputSessionInner(sessionId);
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
         SetSessionStateForRenderer(sessionId, state);
