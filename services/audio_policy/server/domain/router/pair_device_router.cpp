@@ -31,7 +31,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetMediaRenderDevice(StreamU
 {
     if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
-        shared_ptr<AudioDeviceDescriptor> activeScoDevice = 
+        shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::OUTPUT_DEVICE);
         CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
             "activeScoDevice is nullptr");\
@@ -74,7 +74,7 @@ shared_ptr<AudioDeviceDescriptor> PairDeviceRouter::GetRecordCaptureDevice(Sourc
 {
     if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
         std::string scoMac = Bluetooth::AudioHfpManager::GetAudioScoDeviceMac();
-        shared_ptr<AudioDeviceDescriptor> activeScoDevice = 
+        shared_ptr<AudioDeviceDescriptor> activeScoDevice =
             AudioDeviceManager::GetAudioDeviceManager().GetActiveScoDevice(scoMac, DeviceRole::INPUT_DEVICE);
         CHECK_AND_RETURN_RET_LOG(activeScoDevice != nullptr, make_shared<AudioDeviceDescriptor>(),
             "activeScoDevice is nullptr");\

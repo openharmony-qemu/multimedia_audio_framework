@@ -778,7 +778,6 @@ void AudioHfpManager::WriteScoOprFaultEvent()
 std::string AudioHfpManager::GetAudioScoDeviceMac()
 {
     return BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr().c_str();
-
 }
 
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
