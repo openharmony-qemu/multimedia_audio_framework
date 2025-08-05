@@ -741,6 +741,18 @@ shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::FindConnectedDeviceById(co
     return it == connectedDevices_.cend() ? nullptr : *it;
 }
 
+shared_ptr<AudioDeviceDescriptor> AudioDeviceManager::GetActiveScoDevice(std::string scoMac, DeviceRole role)
+{
+    for (auto &dev : connectedDevices_) {
+        if (dev->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO && dev->macAddress_ == scoMac
+            && dev->deviceRole_ == role) {
+            return dev;
+        }
+    }
+    return make_shared<AudioDeviceDescriptor>();
+}
+
+
 // LCOV_EXCL_START
 void AudioDeviceManager::AddAvailableDevicesByUsage(const AudioDeviceUsage usage,
     const DevicePrivacyInfo &deviceInfo, const std::shared_ptr<AudioDeviceDescriptor> &dev,

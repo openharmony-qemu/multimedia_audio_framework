@@ -775,6 +775,12 @@ void AudioHfpManager::WriteScoOprFaultEvent()
     }
 }
 
+std::string AudioHfpManager::GetAudioScoDeviceMac()
+{
+    return BluetoothScoManager::GetInstance().GetAudioScoDevice().GetDeviceAddr().c_str();
+
+}
+
 void AudioHfpListener::OnScoStateChanged(const BluetoothRemoteDevice &device, int state, int reason)
 {
     AUDIO_WARNING_LOG("state:[%{public}d] reason:[%{public}d] device:[%{public}s]",
