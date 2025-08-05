@@ -545,6 +545,17 @@ int32_t AudioCoreService::SetDeviceActive(InternalDeviceType deviceType, bool ac
     return SUCCESS;
 }
 
+int32_t AudioCoreService::SetInputDevice(const DeviceType deviceType, const uint32_t sessionID,
+    const SourceType sourceType, bool isRunning)
+{
+    int32_t ret = audioDeviceManager_.SetInputDevice(deviceType, sessionID, sourceType, isRunning);
+    if (ret == NEED_TO_FETCH) {
+        FetchInputDeviceAndRoute("SetInputDevice");
+        return SUCCESS;
+    }
+    return ret;
+}
+
 std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioCoreService::GetPreferredOutputDeviceDescInner(
     AudioRendererInfo &rendererInfo, std::string networkId)
 {
