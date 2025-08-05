@@ -515,7 +515,8 @@ void AddAllNodesToSourceFuzzTest2()
     InitFuzzSourceInfo(sourceInfo);
     auto capturerManager = std::make_shared<HpaeCapturerManager>(sourceInfo);
     capturerManager->Init();
-    std::vector<HpaeCaptureMoveInfo> moveInfos = {GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo()};
+    std::vector<HpaeCaptureMoveInfo> moveInfos = {GetHpaeCaptureMoveInfo(),
+        GetHpaeCaptureMoveInfo(), GetHpaeCaptureMoveInfo()};
     bool isConnect = GetData<bool>();
     capturerManager->AddAllNodesToSource(moveInfos, isConnect);
     WaitForMsgProcessing(capturerManager);
