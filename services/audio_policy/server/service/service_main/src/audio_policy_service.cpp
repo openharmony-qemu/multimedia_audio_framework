@@ -883,8 +883,7 @@ int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
     int32_t ret = SUCCESS;
     delayValue = 0;
 
-    CHECK_AND_RETURN_RET_LOG(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret,
-        "current output device is not nearlink");
+    CHECK_AND_RETURN_RET(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret);
 
     ret = sleAudioDeviceManager_.GetRenderPosition(curOutputDevice.macAddress_, delayValue);
     return ret;
