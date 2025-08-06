@@ -1918,5 +1918,40 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
     auto ret = capturerInClientInner->FlushCbBuffer();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_002
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level1)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NO_NEED_FOR_RESTORE);
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NEED_RESTORE);
+}
+ 
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_002
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level1)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NEED_RESTORE);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NO_NEED_FOR_RESTORE);
+}
 } // namespace  AudioStandard
 } // namespace OHOS
