@@ -1174,29 +1174,51 @@ void AudioInterruptServiceProcessFocusEntryFuzzTest(const uint8_t *rawData, size
 
 void GetHighestPriorityAudioSceneFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
- 
+    if (interruptService == nullptr) {
+        return;
+    }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
     interruptService->GetHighestPriorityAudioScene(zoneId);
 }
  
 void GetStreamTypePriorityFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
- 
+    if (interruptService == nullptr) {
+        return;
+    }
     AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
     interruptService->GetStreamTypePriority(streamType);
 }
  
 void DeactivatePreemptModeFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     interruptService->DeactivatePreemptMode();
 }
  
 void IsCapturerFocusAvailableFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
  
     uint32_t zoneId = *reinterpret_cast<const uint32_t *>(rawData);
     AudioCapturerInfo capturerInfo;
@@ -1205,14 +1227,26 @@ void IsCapturerFocusAvailableFuzzTest(const uint8_t *rawData, size_t size)
  
 void ClearAudioFocusBySessionIDFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
     interruptService->ClearAudioFocusBySessionID(sessionID);
 }
  
 void DeactivateAudioSessionInFakeFocusModeFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     uint32_t pid = *reinterpret_cast<const int32_t *>(rawData);
     InterruptHint hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     interruptService->DeactivateAudioSessionInFakeFocusMode(pid, hintType);
@@ -1220,7 +1254,13 @@ void DeactivateAudioSessionInFakeFocusModeFuzzTest(const uint8_t *rawData, size_
  
 void DeactivateAudioSessionFakeInterruptFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
 	int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
 	bool isSessionTimeout = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
@@ -1229,7 +1269,13 @@ void DeactivateAudioSessionFakeInterruptFuzzTest(const uint8_t *rawData, size_t 
  
 void AudioSessionInfoDumpFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     std::string dumpString = "";
     if (interruptService == nullptr) {
         return;
@@ -1239,7 +1285,13 @@ void AudioSessionInfoDumpFuzzTest(const uint8_t *rawData, size_t size)
  
 void SetSessionMuteStateFuzzTest(const uint8_t *rawData, size_t size)
 {
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
     bool insert = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
     bool muteFlag = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
@@ -1255,6 +1307,9 @@ void SetLatestMuteStateFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     InterruptEventInternal interruptEvent = {};
     interruptEvent.eventType = *reinterpret_cast<const InterruptType *>(rawData);
     interruptEvent.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
@@ -1270,6 +1325,9 @@ void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     AudioInterrupt currentInterrupt;
 	AudioInterrupt incomingInterrupt;
 	AudioFocusEntry focusEntry;
@@ -1283,6 +1341,9 @@ void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
     AudioInterrupt activeInterrupt;
 	AudioInterrupt incomingInterrupt;
 	incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
