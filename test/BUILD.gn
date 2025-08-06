@@ -163,6 +163,7 @@ group("audio_unit_test") {
       "../services/audio_service/test/unittest:audio_service_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_second_unit_test",
       "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_unit_test",
+      "../services/audio_service/test/unittest/renderer_in_server_unit_test:renderer_in_server_third_unit_test",
     ]
   }
 
