@@ -13,17 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef STREAM_FILTER_ROUTER_UNIT_TEST_H
-#define STREAM_FILTER_ROUTER_UNIT_TEST_H
+#ifndef USER_SELECT_ROUTER_UNIT_TEST_H
+#define USER_SELECT_ROUTER_UNIT_TEST_H
 
 #include "gtest/gtest.h"
-#include "stream_filter_router.h"
 #include "audio_system_manager.h"
+#include "user_select_router.h"
+
 
 namespace OHOS {
 namespace AudioStandard {
 
-class StreamFilterRouterUnitTest : public testing::Test {
+class UserSelectRouterUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -36,4 +37,4 @@ public:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // STREAM_FILTER_ROUTER_UNIT_TEST_H
+#endif // USER_SELECT_ROUTER_UNIT_TEST_H
