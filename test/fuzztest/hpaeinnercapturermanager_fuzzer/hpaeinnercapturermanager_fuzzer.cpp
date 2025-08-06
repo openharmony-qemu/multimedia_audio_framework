@@ -263,7 +263,7 @@ void HpaeInnerCapturerManagerFuzzTest2()
 void HpaeInnerCapturerManagerFuzzTest3()
 {
     HpaeSinkInfo sinkInfo = GetInCapSinkInfo();
-    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo); 
+    auto hpaeInnerCapturerManager = std::make_shared<HPAE::HpaeInnerCapturerManager>(sinkInfo);
     hpaeInnerCapturerManager->GetThreadName();
     HpaeStreamInfo recordStreamInfo = GetInCapRecordFuzzStreamInfo();
     hpaeInnerCapturerManager->CreateStream(recordStreamInfo);

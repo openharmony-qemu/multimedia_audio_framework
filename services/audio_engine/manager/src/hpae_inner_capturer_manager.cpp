@@ -552,7 +552,7 @@ int32_t HpaeInnerCapturerManager::RegisterWriteCallback(uint32_t sessionId,
             sinkInputNodeMap_[sessionId]->RegisterWriteCallback(callback);
         }
     };
-    hpaeNoLockQueue_.PushRequest(request);
+    SendRequestInner(request);
     return SUCCESS;
 }
 
@@ -612,8 +612,7 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
 
 void HpaeInnerCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
-    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId),
-            "no find sessionId in sinkInputNodeMap");
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "no find sessionId in sinkInputNodeMap");
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
         rendererSessionNodeMap_[sessionId].state, operation);
 }
@@ -622,12 +621,11 @@ int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId,
     const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
-        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId),
-            "no find sessionId in sourceOutputNodeMap");
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "no find sessionId in sourceOutputNodeMap");
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);
         sourceOutputNodeMap_[sessionId]->RegisterReadCallback(callback);
     };
-    hpaeNoLockQueue_.PushRequest(request);
+    SendRequestInner(request);
     return SUCCESS;
 }
 
