@@ -104,6 +104,7 @@ public:
     bool ExistsByType(DeviceType devType) const;
     bool ExistsByTypeAndAddress(DeviceType devType, const string &address) const;
     bool ExistSameRemoteDeviceByMacAddress(std::shared_ptr<AudioDeviceDescriptor> desc);
+    shared_ptr<AudioDeviceDescriptor> GetActiveScoDevice(std::string scoMac, DeviceRole role);
 
 private:
     AudioDeviceManager();

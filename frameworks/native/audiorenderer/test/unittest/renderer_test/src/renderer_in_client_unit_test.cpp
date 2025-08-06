@@ -74,6 +74,14 @@ public:
         return 0;
     }
 
+    virtual int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base) override
+    {
+        std::vector<uint64_t> vec;
+        ClockTime::GetAllTimeStamp(vec);
+        timestamp = vec[0];
+        return 0;
+    }
+
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
@@ -1640,6 +1648,68 @@ HWTEST(RendererInClientInnerUnitTest, GetAudioTimestampInfo_001, TestSize.Level0
             static_cast<Timestamp::Timestampbase>(i));
         EXPECT_EQ(timestamp.framePosition, 0); // after flush
     }
+}
+
+/**
+ * @tc.name  : Test RendererInClientInner API
+ * @tc.type  : FUNC
+ * @tc.number: SetSpeed_001
+ * @tc.desc  : Test RendererInClientInner SetSpeed.
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
+{
+    AudioStreamType eStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t appUid = 1;
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(eStreamType, appUid);
+
+    ASSERT_TRUE(ptrRendererInClientInner != nullptr);
+
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+
+    ptrRendererInClientInner->state_ = State::RUNNING;
+
+    ptrRendererInClientInner->isHdiSpeed_ = false;
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    ptrRendererInClientInner->NotifyOffloadSpeed();
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    ptrRendererInClientInner->NotifyOffloadSpeed();
+
+    ptrRendererInClientInner->isHdiSpeed_ = false;
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+
+    int32_t ret = ptrRendererInClientInner->SetSpeed(1.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = ptrRendererInClientInner->SetSpeed(2.0f);
+    EXPECT_EQ(ret, SUCCESS);
+    ptrRendererInClientInner->isHdiSpeed_ = true;
+    float speed = 2.5f;
+    ret = ptrRendererInClientInner->SetSpeed(speed);
+    EXPECT_EQ(ret, SUCCESS);
+    speed = ptrRendererInClientInner->GetSpeed();
+    EXPECT_EQ(speed, 2.5f);
+
+    ptrRendererInClientInner->isHdiSpeed_ = false;
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    ptrRendererInClientInner->NotifyOffloadSpeed();
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    ptrRendererInClientInner->NotifyOffloadSpeed();
+
+    ptrRendererInClientInner->isHdiSpeed_ = false;
+    ptrRendererInClientInner->offloadEnable_ = true;
+    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
+    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
+    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
+    ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
 }
 
 /**

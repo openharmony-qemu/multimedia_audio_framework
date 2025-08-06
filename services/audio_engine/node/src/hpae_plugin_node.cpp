@@ -14,6 +14,7 @@
  */
 #include "hpae_plugin_node.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -44,6 +45,7 @@ void HpaePluginNode::DoProcess()
         tempOut = SignalProcess(preOutputs);
         outputStream_.WriteDataToOutput(tempOut);
     } else {
+        Trace trace("[sceneType:" + std::to_string(GetSceneType()) + "]" + GetNodeName() + "::DoProcess is_silence");
         outputStream_.WriteDataToOutput(&silenceData_);
     }
 }

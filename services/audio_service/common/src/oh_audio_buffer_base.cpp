@@ -252,7 +252,7 @@ AudioSharedMemory *AudioSharedMemory::Unmarshalling(Parcel &parcel)
 
     std::string name = msgParcel.ReadString();
 
-    auto memory = new AudioSharedMemoryImpl(fd, size, name);
+    auto memory = new(std::nothrow) AudioSharedMemoryImpl(fd, size, name);
     if (memory == nullptr) {
         AUDIO_ERR_LOG("not enough memory");
         return nullptr;
@@ -473,7 +473,7 @@ OHAudioBufferBase *OHAudioBufferBase::Unmarshalling(Parcel &parcel)
     if (infoFd != INVALID_FD) {
         CHECK_AND_RETURN_RET_LOG(infoFd > minfd, nullptr, "invalid infoFd: %{public}d", infoFd);
     }
-    auto buffer = new OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
+    auto buffer = new(std::nothrow) OHAudioBufferBase(bufferHolder, totalSizeInFrame, byteSizePerFrame);
     if (buffer == nullptr || buffer->Init(dataFd, infoFd, 0) != SUCCESS || buffer->basicBufferInfo_ == nullptr) {
         AUDIO_ERR_LOG("failed to init.");
         if (buffer != nullptr) delete buffer;

@@ -1646,12 +1646,12 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_073, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test IpcStreamInServer API
+ * @tc.name  : Test ProcessManagerType
  * @tc.type  : FUNC
- * @tc.number: IpcStreamInServer_074
- * @tc.desc  : Test IpcStreamInServer interface when flag is DIRECT_PLAYBACK.
+ * @tc.number: ProcessManagerType_001
+ * @tc.desc  : Test ProcessManagerType interface when flag is DIRECT_PLAYBACK.
  */
-HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_001, TestSize.Level1)
 {
     AudioProcessConfig configRet;
     configRet.rendererInfo.audioFlag = (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT);
@@ -1659,7 +1659,44 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_074, TestSize.Level1)
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
 
     ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
     EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, DIRECT_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test ProcessManagerType
+ * @tc.type  : FUNC
+ * @tc.number: ProcessManagerType_002
+ * @tc.desc  : Test ProcessManagerType interface when encoding is ENCODING_EAC3.
+ */
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    configRet.streamInfo.encoding = ENCODING_EAC3;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, EAC3_PLAYBACK);
+}
+
+/**
+ * @tc.name  : Test ProcessManagerType
+ * @tc.type  : FUNC
+ * @tc.number: ProcessManagerType_003
+ * @tc.desc  : Test ProcessManagerType interface when flag is AUDIO_FLAG_VOIP_DIRECT.
+ */
+HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet;
+    configRet.rendererInfo.rendererFlags = AUDIO_FLAG_VOIP_DIRECT;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    ipcStreamInServerRet.ConfigRenderer();
+    ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
+    EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, VOIP_PLAYBACK);
 }
 }
 }

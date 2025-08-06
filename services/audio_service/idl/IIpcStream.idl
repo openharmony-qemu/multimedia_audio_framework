@@ -35,6 +35,8 @@ interface IIpcStream {
     void GetAudioTime([out] unsigned long framePos, [out] unsigned long timestamp);
     void GetAudioPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
         [in] int base);
+    void GetSpeedPosition([out] unsigned long framePos, [out] unsigned long timestamp, [out] unsigned long latency,
+        [in] int base);
     void GetLatency([out] unsigned long latency);
     void SetRate([in] int rate); // SetRenderRate
     void GetRate([out] int rate); // SetRenderRate

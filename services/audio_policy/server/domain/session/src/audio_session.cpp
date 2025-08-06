@@ -226,6 +226,18 @@ void AudioSession::UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrup
 {
     if (CanCurrentStreamSetDefaultOutputDevice(interrupt)) {
         deviceManager_.UpdateDefaultOutputDeviceWhenStopping(interrupt.streamId);
+
+        CHECK_AND_RETURN_LOG(pipeManager_ != nullptr, "pipeManager_ is nullptr");
+
+        std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor =
+            pipeManager_->GetStreamDescById(interrupt.streamId);
+
+        CHECK_AND_RETURN_LOG(audioStreamDescriptor != nullptr, "cannot find stream desc of id %{public}d",
+            interrupt.streamId);
+
+        deviceManager_.SetDefaultOutputDevice(DEVICE_TYPE_DEFAULT,
+            interrupt.streamId, audioStreamDescriptor->rendererInfo_.streamUsage,
+            audioStreamDescriptor->streamStatus_ == STREAM_STATUS_STARTED);
     }
 }
 

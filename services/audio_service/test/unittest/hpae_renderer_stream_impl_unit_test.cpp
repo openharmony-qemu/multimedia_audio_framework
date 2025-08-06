@@ -567,5 +567,35 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_029, TestSize.Level1)
     int32_t ret = unit->StartWithSyncId(syncId);
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OnDeviceClassChange.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_030
+ * @tc.desc  : Test OnDeviceClassChange.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(unit, nullptr);
+
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000
+    };
+    unit->deviceClass_ = "primary";
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 10000);
+    EXPECT_EQ(unit->lastFramePosition_, 10000);
+
+    info.deviceClass = "offload";
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(unit->lastHdiFramePosition_, 10000);
+    EXPECT_EQ(unit->lastFramePosition_, 10000);
+
+    info.hdiFramePosition = 10000;
+    unit->OnDeviceClassChange(info);
+    EXPECT_GT(unit->lastHdiFramePosition_, 10000);
+}
 }
 }

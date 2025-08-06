@@ -79,7 +79,7 @@ bool MicrophoneDescriptor::Marshalling(Parcel &parcel) const
 
 MicrophoneDescriptor *MicrophoneDescriptor::Unmarshalling(Parcel &parcel)
 {
-    auto microphoneDescriptor = new MicrophoneDescriptor();
+    auto microphoneDescriptor = new(std::nothrow) MicrophoneDescriptor();
     CHECK_AND_RETURN_RET(microphoneDescriptor != nullptr, nullptr);
 
     microphoneDescriptor->micId_ = parcel.ReadInt32();

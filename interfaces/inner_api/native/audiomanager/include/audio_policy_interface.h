@@ -64,7 +64,7 @@ struct DeviceChangeAction : public Parcelable {
 
     static DeviceChangeAction *Unmarshalling(Parcel &parcel)
     {
-        auto info = new DeviceChangeAction();
+        auto info = new(std::nothrow) DeviceChangeAction();
         if (info == nullptr) {
             return nullptr;
         }

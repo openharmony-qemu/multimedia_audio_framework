@@ -79,11 +79,15 @@ ohos_fuzztest("AudioEffectEnhanceFuzzTest") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "relational_store:native_appdatafwk",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [ "pulseaudio:pulse" ]
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   if (sensor_enable == true) {
     external_deps += [ "sensor:sensor_interface_native" ]
   }
@@ -93,7 +97,6 @@ ohos_fuzztest("AudioEffectEnhanceFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
-  defines = []
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }

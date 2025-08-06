@@ -389,7 +389,7 @@ struct VolumeBehavior : public Parcelable {
 
     static VolumeBehavior *Unmarshalling(Parcel &parcel)
     {
-        auto info = new VolumeBehavior();
+        auto info = new(std::nothrow) VolumeBehavior();
         if (info == nullptr) {
             return nullptr;
         }
@@ -448,7 +448,7 @@ public:
         OLD_DEVICE_UNAVALIABLE_EXT = 1000,
         SET_AUDIO_SCENE = 1001,
         SET_DEFAULT_OUTPUT_DEVICE = 1002,
-        DISTRIBUTED_DEVICE = 1003,
+        DISTRIBUTED_DEVICE_UNAVAILABLE = 1003,
         SET_INPUT_DEVICE = 1004
     };
 
@@ -510,7 +510,7 @@ public:
 
     bool IsDistributedDeviceUnavailable() const
     {
-        return reason_ == ExtEnum::DISTRIBUTED_DEVICE;
+        return reason_ == ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
     }
 
     bool Marshalling(Parcel &parcel) const override
@@ -520,7 +520,7 @@ public:
 
     static AudioStreamDeviceChangeReasonExt *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioStreamDeviceChangeReasonExt();
+        auto info = new(std::nothrow) AudioStreamDeviceChangeReasonExt();
         if (info == nullptr) {
             return nullptr;
         }

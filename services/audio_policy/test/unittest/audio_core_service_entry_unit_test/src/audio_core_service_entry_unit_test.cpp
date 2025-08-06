@@ -845,5 +845,26 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_039, TestSize.Level1)
     auto ret = eventEntry->GetSessionDefaultOutputDevice(0, type);
     EXPECT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: AudioCoreService_040
+ * @tc.desc  : Test AudioCoreService::HandlePlaybackStreamInA2dp
+ */
+HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceDescriptor->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+
+    audioCoreService->HandlePlaybackStreamInA2dp(audioStreamDescriptor, false);
+    std::shared_ptr<AudioDeviceDescriptor> temp = audioStreamDescriptor->newDeviceDescs_.front();
+    EXPECT_NE(temp, nullptr);
+    EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
+}
 } // namespace AudioStandard
 } // namespace OHOS

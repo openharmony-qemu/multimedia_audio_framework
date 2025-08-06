@@ -46,7 +46,7 @@ public:
     uint64_t GetFramesWritten();
 
     int32_t GetCurrentPosition(uint64_t &framePosition, std::vector<uint64_t> &timestamp);
-    int32_t RewindHistoryBuffer(uint64_t rewindTime);
+    int32_t RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition = 0);
 
     void SetAppUid(int32_t appUid);
     int32_t GetAppUid();
@@ -55,6 +55,8 @@ public:
     bool GetOffloadEnabled();
     int32_t SetLoudnessGain(float loudnessGain);
     float GetLoudnessGain();
+    void SetSpeed(float speed);
+    float GetSpeed();
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
@@ -76,6 +78,8 @@ private:
     std::unique_ptr<HpaePcmBuffer> historyBuffer_;
     bool offloadEnable_ = false;
     float loudnessGain_ = 0.0f;
+    float speed_ = 1.0f;
+    std::atomic<uint64_t> hdiFramePosition_ = 0;
 };
 
 }  // namespace HPAE

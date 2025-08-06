@@ -181,7 +181,6 @@ int32_t PaRendererStreamImpl::Start()
         std::string sessionIDTemp = std::to_string(streamIndex_);
         audioEffectVolume->SetStreamVolume(sessionIDTemp, clientVolume_);
     }
-    initEffectFlag_ = false;
 
     return SUCCESS;
 }
@@ -222,14 +221,14 @@ int32_t PaRendererStreamImpl::Pause(bool isStandby)
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     palock.Unlock();
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Pause make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -264,14 +263,14 @@ int32_t PaRendererStreamImpl::Flush()
     }
     Trace trace("PaRendererStreamImpl::InitAudioEffectChainDynamic");
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Flush make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -336,14 +335,14 @@ int32_t PaRendererStreamImpl::Stop()
     CHECK_AND_RETURN_RET_LOG(operation != nullptr, ERR_OPERATION_FAILED, "pa_stream_cork operation is null");
     pa_operation_unref(operation);
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Stop make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 
@@ -376,14 +375,14 @@ int32_t PaRendererStreamImpl::Release()
     }
     state_ = RELEASED;
 
-    if (effectMode_ == EFFECT_DEFAULT && initEffectFlag_ == false) {
+    if (effectMode_ == EFFECT_DEFAULT) {
         AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
         if (audioEffectChainManager == nullptr) {
             AUDIO_INFO_LOG("audioEffectChainManager is null");
         } else {
+            AUDIO_INFO_LOG("Release make init effect buffer");
             std::string sessionIDTemp = std::to_string(streamIndex_);
             audioEffectChainManager->InitEffectBuffer(sessionIDTemp);
-            initEffectFlag_ = true;
         }
     }
 

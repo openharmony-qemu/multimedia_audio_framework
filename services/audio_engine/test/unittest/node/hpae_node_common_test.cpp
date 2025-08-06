@@ -30,7 +30,7 @@ constexpr size_t DEFAULT_LEN = 100;
 constexpr size_t DEFAULT_US_TIME = 100000;
 constexpr uint64_t DEFAULT_BUFFER_SIZE = 100;
 constexpr uint64_t DEFAULT_CONVERTER_US_TIME = 520;
-constexpr size_t DEFAULT_FRAME_COUNT = 5;
+constexpr size_t DEFAULT_FRAME_COUNT = 48;
 
 class HpaeNodeCommonTest : public testing::Test {
 public:

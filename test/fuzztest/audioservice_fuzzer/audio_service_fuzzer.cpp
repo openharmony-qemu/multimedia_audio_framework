@@ -30,8 +30,6 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-std::shared_ptr<AudioEndpoint> audioEndpointPtr_;
-sptr<AudioProcessInServer> audioProcess_;
 typedef void (*TestPtr)();
 
 const vector<AudioStreamType> g_testAudioStreamTypes = {
@@ -170,29 +168,13 @@ T GetData()
     return object;
 }
 
-static void CreateFuzzTestPtr()
-{
-    if (audioEndpointPtr_ == nullptr) {
-        AudioProcessConfig config = {};
-        AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-        deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
-        DeviceStreamInfo streamInfo;
-        streamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-        streamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
-        deviceInfo.audioStreamInfo_.push_back(streamInfo);
-        deviceInfo.networkId_ = LOCAL_NETWORK_ID;
-        audioEndpointPtr_ = AudioEndpoint::CreateEndpoint(
-            AudioEndpoint::TYPE_MMAP, GetData<uint64_t>(), config, deviceInfo);
-    }
-    if (audioProcess_ == nullptr) {
-        AudioProcessConfig configProcess = {};
-        audioProcess_ =  AudioProcessInServer::Create(configProcess, AudioService::GetInstance());
-    }
-}
-
 #ifdef HAS_FEATURE_INNERCAPTURER
 void AudioServiceOnProcessReleaseFuzzTest()
 {
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioService == nullptr) {
+        return;
+    }
     static const vector<AudioEncodingType> testAudioEncodingTypes = {
         ENCODING_INVALID,
         ENCODING_PCM,
@@ -207,14 +189,14 @@ void AudioServiceOnProcessReleaseFuzzTest()
     config.streamInfo.samplingRate = g_testAudioSamplingRates[GetData<uint32_t>() % g_testAudioSamplingRates.size()];
     config.streamInfo.format = g_testAudioSampleFormats[GetData<uint32_t>() % g_testAudioSampleFormats.size()];
     config.streamInfo.encoding = testAudioEncodingTypes[GetData<uint32_t>() % testAudioEncodingTypes.size()];
-    auto audioProcess = AudioService::GetInstance()->GetAudioProcess(config);
+    auto audioProcess = audioService->GetAudioProcess(config);
     bool isSwitchStream = GetData<bool>();
-    AudioService::GetInstance()->OnProcessRelease(audioProcess, isSwitchStream);
+    audioService->OnProcessRelease(audioProcess, isSwitchStream);
 }
 
 void AudioServiceCheckInnerCapForRendererFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -231,7 +213,7 @@ void AudioServiceCheckInnerCapForRendererFuzzTest()
 
 void AudioServiceResetAudioEndpointFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -240,46 +222,93 @@ void AudioServiceResetAudioEndpointFuzzTest()
 
 void AudioServiceReLinkProcessToEndpointFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
 
     audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(make_pair(audioProcess_, audioEndpointPtr_));
+    audioService->linkedPairedList_.push_back(make_pair(audioProcess, audioEndpointPtr));
     audioService->ReLinkProcessToEndpoint();
 }
 
 void AudioServiceCheckInnerCapForProcessFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
-    audioService->CheckInnerCapForProcess(audioProcess_, audioEndpointPtr_);
+    audioService->CheckInnerCapForProcess(audioProcess, audioEndpointPtr);
 }
 
 void AudioServiceLinkProcessToEndpointFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
-    audioService->LinkProcessToEndpoint(audioProcess_, audioEndpointPtr_);
+    audioService->LinkProcessToEndpoint(audioProcess, audioEndpointPtr);
 }
 
 void AudioServiceUnlinkProcessToEndpointFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
-    audioService->UnlinkProcessToEndpoint(audioProcess_, audioEndpointPtr_);
+    audioService->UnlinkProcessToEndpoint(audioProcess, audioEndpointPtr);
 }
 
 void AudioServiceGetDeviceInfoForProcessFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioService == nullptr) {
+        return;
+    }
     AudioProcessConfig config = {};
     config.originalSessionId = GetData<uint32_t>() / NUM_2;
     config.privacyType = static_cast<AudioPrivacyType>(GetData<uint32_t>() % NUM_2);
@@ -292,20 +321,31 @@ void AudioServiceGetDeviceInfoForProcessFuzzTest()
 
 void AudioServiceGetMaxAmplitudeFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
     bool isOutputDevice = GetData<bool>();
 
     audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(make_pair(audioProcess_, audioEndpointPtr_));
+    audioService->linkedPairedList_.push_back(make_pair(audioProcess, audioEndpointPtr));
     audioService->GetMaxAmplitude(isOutputDevice);
 }
 
 void AudioServiceGetCapturerBySessionIDFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -318,7 +358,7 @@ void AudioServiceGetCapturerBySessionIDFuzzTest()
 
 void AudioServiceSetOffloadModeFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -332,20 +372,9 @@ void AudioServiceSetOffloadModeFuzzTest()
 
 #endif // HAS_FEATURE_INNERCAPTURER
 
-void AudioServiceReleaseProcessFuzzTest()
-{
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioService == nullptr) {
-        return;
-    }
-    std::string endpointName = "invalid_endpoint";
-    int32_t delayTime = GetData<int32_t>();
-    audioService->ReleaseProcess(endpointName, delayTime);
-}
-
 void AudioServiceGetReleaseDelayTimeFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -361,15 +390,19 @@ void AudioServiceGetReleaseDelayTimeFuzzTest()
 
 void AudioServiceRemoveIdFromMuteControlSetFuzzTest()
 {
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioService == nullptr) {
+        return;
+    }
     uint32_t sessionId = GetData<uint32_t>();
-    AudioService::GetInstance()->RemoveIdFromMuteControlSet(sessionId);
+    audioService->RemoveIdFromMuteControlSet(sessionId);
 }
 
 void AudioServiceCheckRenderSessionMuteStateFuzzTest()
 {
     AudioProcessConfig processConfig;
     uint32_t sessionId = GetData<uint32_t>();
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -388,7 +421,7 @@ void AudioServiceCheckCaptureSessionMuteStateFuzzTest()
 {
     AudioProcessConfig processConfig;
     uint32_t sessionId = GetData<uint32_t>();
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -407,13 +440,13 @@ void AudioServiceCheckFastSessionMuteStateFuzzTest()
 {
     AudioProcessConfig processConfig;
     uint32_t sessionId = GetData<uint32_t>();
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
     audioService->UpdateMuteControlSet(sessionId, true);
 
-    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(processConfig, AudioService::GetInstance());
+    sptr<AudioProcessInServer> audioprocess = AudioProcessInServer::Create(processConfig, audioService.get());
     audioService->CheckFastSessionMuteState(sessionId, audioprocess);
 }
 
@@ -421,7 +454,7 @@ void AudioServiceIsMuteSwitchStreamFuzzTest()
 {
     AudioProcessConfig processConfig;
     uint32_t sessionId = GetData<uint32_t>();
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -431,7 +464,7 @@ void AudioServiceIsMuteSwitchStreamFuzzTest()
 
 void AudioServiceInsertRendererFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -449,7 +482,7 @@ void AudioServiceInsertRendererFuzzTest()
 
 void AudioServiceSaveForegroundListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -466,7 +499,7 @@ void AudioServiceSaveForegroundListFuzzTest()
 
 void AudioServiceMatchForegroundListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -480,7 +513,7 @@ void AudioServiceMatchForegroundListFuzzTest()
 
 void AudioServiceUpdateForegroundStateFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -492,7 +525,7 @@ void AudioServiceUpdateForegroundStateFuzzTest()
 
 void AudioServiceDumpForegroundListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -503,7 +536,7 @@ void AudioServiceDumpForegroundListFuzzTest()
 
 void AudioServiceRemoveRendererFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -525,7 +558,7 @@ void AudioServiceInsertCapturerFuzzTest()
     std::shared_ptr<CapturerInServer> capturerInServer =
         std::make_shared<CapturerInServer>(processConfig, streamListener);
     std::shared_ptr<CapturerInServer> capturer = capturerInServer;
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -534,7 +567,7 @@ void AudioServiceInsertCapturerFuzzTest()
 
 void AudioServiceAddFilteredRenderFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -548,7 +581,7 @@ void AudioServiceAddFilteredRenderFuzzTest()
 
 void AudioServiceShouldBeInnerCapFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -561,7 +594,7 @@ void AudioServiceShouldBeInnerCapFuzzTest()
 
 void AudioServiceCheckDisableFastInnerFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -580,13 +613,13 @@ void AudioServiceFilterAllFastProcessFuzzTest()
         OUTPUT_DEVICE,
         DEVICE_ROLE_MAX,
     };
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
     AudioProcessConfig config = {};
     config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
         GetData<uint64_t>(), clientConfig);
@@ -601,7 +634,7 @@ void AudioServiceFilterAllFastProcessFuzzTest()
 
 void AudioServiceHandleFastCaptureFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -609,7 +642,7 @@ void AudioServiceHandleFastCaptureFuzzTest()
 
     std::set<int32_t> captureIds = {1};
     AudioProcessConfig config = {};
-    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, AudioService::GetInstance());
+    sptr<AudioProcessInServer> audioprocess =  AudioProcessInServer::Create(config, audioService.get());
 
     AudioProcessConfig clientConfig = {};
     std::shared_ptr<AudioEndpointInner> endpoint = std::make_shared<AudioEndpointInner>(AudioEndpoint::TYPE_VOIP_MMAP,
@@ -620,7 +653,7 @@ void AudioServiceHandleFastCaptureFuzzTest()
 
 void AudioServiceOnUpdateInnerCapListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -646,7 +679,7 @@ void AudioServiceOnUpdateInnerCapListFuzzTest()
 
 void AudioServiceEnableDualToneListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -670,7 +703,7 @@ void AudioServiceEnableDualToneListFuzzTest()
 
 void AudioServiceDisableDualToneListFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
     if (audioService == nullptr) {
         return;
     }
@@ -694,34 +727,55 @@ void AudioServiceDisableDualToneListFuzzTest()
 
 void AudioServiceNotifyStreamVolumeChangedFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
     float volume = GetData<float>();
 
-    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr_));
+    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr));
     AudioStreamType streamType = g_testAudioStreamTypes[GetData<uint32_t>() % g_testAudioStreamTypes.size()];
     audioService->NotifyStreamVolumeChanged(streamType, volume);
 }
 
 void AudioServiceDumpFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
-    if (audioProcess_ == nullptr || audioEndpointPtr_ == nullptr || audioService == nullptr) {
+    AudioProcessConfig config = {};
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    DeviceStreamInfo audioStreamInfo = { SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO };
+    deviceInfo.audioStreamInfo_.push_back(audioStreamInfo);
+    deviceInfo.networkId_ = LOCAL_NETWORK_ID;
+    std::shared_ptr<AudioEndpoint> audioEndpointPtr = AudioEndpoint::CreateEndpoint(
+        AudioEndpoint::TYPE_MMAP, 0, config, deviceInfo);
+    AudioProcessConfig configProcess = {};
+    sptr<AudioProcessInServer> audioProcess =  AudioProcessInServer::Create(configProcess,
+        AudioService::GetInstance());
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioProcess == nullptr || audioEndpointPtr == nullptr || audioService == nullptr) {
         return;
     }
     std::string dumpString = "abcdefg";
     AudioPlaybackCaptureConfig playbackCaptureConfig;
-    AudioProcessConfig config = {};
     audioService->workingConfigs_.insert(make_pair(GetData<int32_t>(), playbackCaptureConfig));
     config.audioMode = static_cast<AudioMode>(GetData<uint32_t>() % NUM_2);
     std::shared_ptr<AudioEndpointInner> endpointInner = std::make_shared<AudioEndpointInner>(
         AudioEndpoint::TYPE_VOIP_MMAP, GetData<uint64_t>(), config);
     audioService->linkedPairedList_.clear();
-    audioService->linkedPairedList_.push_back(std::make_pair(audioProcess_, endpointInner));
+    audioService->linkedPairedList_.push_back(std::make_pair(audioProcess, endpointInner));
     audioService->endpointList_.clear();
-    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr_));
+    audioService->endpointList_.insert(make_pair("testendpoint", audioEndpointPtr));
     std::shared_ptr<StreamListenerHolder> streamListenerHolder =
         std::make_shared<StreamListenerHolder>();
     std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
@@ -732,7 +786,10 @@ void AudioServiceDumpFuzzTest()
 
 void AudioServiceGetCreatedAudioStreamMostUidFuzzTest()
 {
-    AudioService *audioService = AudioService::GetInstance();
+    shared_ptr<AudioService> audioService = make_shared<AudioService>();
+    if (audioService == nullptr) {
+        return;
+    }
     int32_t mostAppUid = GetData<int32_t>();
     int32_t mostAppNum = GetData<int32_t>();
     audioService->appUseNumMap_.clear();
@@ -754,7 +811,6 @@ TestPtr g_testPtrs[] = {
     AudioServiceGetCapturerBySessionIDFuzzTest,
     AudioServiceSetOffloadModeFuzzTest,
 #endif
-    AudioServiceReleaseProcessFuzzTest,
     AudioServiceGetReleaseDelayTimeFuzzTest,
     AudioServiceRemoveIdFromMuteControlSetFuzzTest,
     AudioServiceCheckRenderSessionMuteStateFuzzTest,
@@ -810,7 +866,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-    OHOS::AudioStandard::CreateFuzzTestPtr();
     OHOS::AudioStandard::FuzzTest(data, size);
     return 0;
 }

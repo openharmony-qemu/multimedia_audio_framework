@@ -398,5 +398,165 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_009, TestSize.L
     audioPolicyConfigData->SetSupportDeviceAndPipeMap(pipeInfo, deviceInfoMap);
     EXPECT_NE(deviceInfoMap["test"]->supportPipeMap_.size(), 0);
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_010
+* @tc.desc  : Test SetDeviceInfoMap
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_010, TestSize.Level4)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfos;
+    audioPolicyConfigData->SetDeviceInfoMap(deviceInfos, deviceInfoMap);
+    EXPECT_TRUE(deviceInfoMap.empty());
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_011
+* @tc.desc  : Test SetSupportDeviceAndPipeMap
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_011, TestSize.Level4)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    auto pipeInfo = std::make_shared<AdapterPipeInfo>();
+    auto streamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    streamPropInfo->supportDevices_ = { "test_device1" };
+    pipeInfo->streamPropInfos_.push_back(streamPropInfo);
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    deviceInfoMap["test_device1"] = std::make_shared<AdapterDeviceInfo>();
+    deviceInfoMap["test_device2"] = std::make_shared<AdapterDeviceInfo>();
+    audioPolicyConfigData->SetSupportDeviceAndPipeMap(pipeInfo, deviceInfoMap);
+    EXPECT_EQ(pipeInfo->streamPropInfos_.front()->supportDeviceMap_.size(), 1);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_012
+* @tc.desc  : Test Reorganize
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_012, TestSize.Level4)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    audioPolicyConfigData->adapterInfoMap.emplace(
+        AudioAdapterType::TYPE_PRIMARY, std::make_shared<PolicyAdapterInfo>());
+    EXPECT_NO_THROW(audioPolicyConfigData->Reorganize());
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_013
+* @tc.desc  : Test SetVersion
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_013, TestSize.Level4)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    std::string version = "";
+    audioPolicyConfigData->SetVersion(version);
+    EXPECT_EQ(audioPolicyConfigData->version_, STR_INITED);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_014
+* @tc.desc  : Test GetAdapterDeviceInfo
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_014, TestSize.Level4)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    DeviceType type = DEVICE_TYPE_BLUETOOTH_A2DP;
+    DeviceRole role = INPUT_DEVICE;
+    std::string networkId = REMOTE_NETWORK_ID;
+    uint32_t flags = 0;
+    std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(type, role);
+    std::set<std::shared_ptr<AdapterDeviceInfo>> adapterDeviceInfoSet;
+    audioPolicyConfigData->deviceInfoMap.insert({deviceMapKey, adapterDeviceInfoSet});
+    auto deviceSetIt = audioPolicyConfigData->deviceInfoMap.find(deviceMapKey);
+    EXPECT_EQ(deviceSetIt->second.size(), 0);
+    EXPECT_EQ(audioPolicyConfigData->GetAdapterDeviceInfo(type, role, networkId, flags), nullptr);
+    
+    auto adapterDeviceInfo1 = std::make_shared<AdapterDeviceInfo>();
+    adapterDeviceInfoSet.insert(adapterDeviceInfo1);
+    audioPolicyConfigData->deviceInfoMap[deviceMapKey] = adapterDeviceInfoSet;
+    EXPECT_EQ(deviceSetIt->second.size(), 1);
+    EXPECT_EQ(audioPolicyConfigData->GetAdapterDeviceInfo(type, role, networkId, flags), adapterDeviceInfo1);
+
+    auto adapterDeviceInfo2 = std::make_shared<AdapterDeviceInfo>();
+    adapterDeviceInfoSet.insert(adapterDeviceInfo2);
+    audioPolicyConfigData->deviceInfoMap[deviceMapKey] = adapterDeviceInfoSet;
+    EXPECT_EQ(deviceSetIt->second.size(), 2);
+    EXPECT_EQ(audioPolicyConfigData->GetAdapterDeviceInfo(type, role, networkId, flags), nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_015
+* @tc.desc  : Test PolicyAdapterInfo GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_015, TestSize.Level4)
+{
+    auto policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    std::string adapterName = ADAPTER_TYPE_ACCESSORY;
+    EXPECT_EQ(policyAdapterInfo->GetAdapterType(adapterName), AudioAdapterType::TYPE_ACCESSORY);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_016
+* @tc.desc  : Test PolicyAdapterInfo GetPipeInfoByName
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_016, TestSize.Level4)
+{
+    auto policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    policyAdapterInfo->pipeInfos.emplace_back(nullptr);
+    EXPECT_EQ(policyAdapterInfo->GetPipeInfoByName(""), nullptr);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_017
+* @tc.desc  : Test PolicyAdapterInfo GetPipeInfoByName
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_017, TestSize.Level4)
+{
+    auto policyAdapterInfo = std::make_shared<PolicyAdapterInfo>();
+    auto deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->type_ = DEVICE_TYPE_EARPIECE;
+    deviceInfo->role_ = INPUT_DEVICE;
+    policyAdapterInfo->deviceInfos.emplace_back(deviceInfo);
+
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    DeviceRole role = DEVICE_ROLE_NONE;
+    EXPECT_EQ(policyAdapterInfo->GetDeviceInfoByType(deviceType, role), nullptr);
+
+    deviceType = DEVICE_TYPE_EARPIECE;
+    EXPECT_EQ(policyAdapterInfo->GetDeviceInfoByType(deviceType, role), nullptr);
+
+    deviceType = DEVICE_TYPE_NONE;
+    role = INPUT_DEVICE;
+    EXPECT_EQ(policyAdapterInfo->GetDeviceInfoByType(deviceType, role), nullptr);
+
+    deviceType = DEVICE_TYPE_EARPIECE;
+    EXPECT_EQ(policyAdapterInfo->GetDeviceInfoByType(deviceType, role), deviceInfo);
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_018
+* @tc.desc  : Test PipeStreamPropInfo SelfCheck
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.Level4)
+{
+    auto pipeStreamPropInfo = std::make_shared<PipeStreamPropInfo>();
+    auto adapterPipeInfo = std::make_shared<AdapterPipeInfo>();
+    pipeStreamPropInfo->pipeInfo_ = adapterPipeInfo;
+    auto deviceInfo = std::make_shared<AdapterDeviceInfo>();
+    deviceInfo->name_ = "test_device";
+    pipeStreamPropInfo->supportDeviceMap_.insert(std::pair(DEVICE_TYPE_EARPIECE, deviceInfo));
+    pipeStreamPropInfo->supportDevices_ = { "test_device1" };
+    EXPECT_NO_THROW(pipeStreamPropInfo->SelfCheck());
+}
 } // namespace AudioStandard
 } // namespace OHOS

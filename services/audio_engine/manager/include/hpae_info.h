@@ -79,18 +79,18 @@ enum MoveSessionType {
 };
 
 struct HpaeStreamInfo {
-    uint32_t sessionId;
-    size_t frameLen;
-    HpaeNodeType nodeType;
-    AudioStreamType streamType;
+    uint32_t sessionId = 0;
+    size_t frameLen = 0;
+    HpaeNodeType nodeType = HPAE_NODE_TYPE_INVALID;
+    AudioStreamType streamType = STREAM_DEFAULT;
     FadeType fadeType = NONE_FADE;
-    AudioPipeType pipeType;
-    AudioSamplingRate samplingRate;
-    AudioSampleFormat format;
-    AudioChannel channels;
+    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
+    AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
+    AudioSampleFormat format = INVALID_WIDTH;
+    AudioChannel channels = CHANNEL_UNKNOW;
     uint64_t channelLayout = 0ULL;
-    HpaeStreamClassType streamClassType;
-    SourceType sourceType;
+    HpaeStreamClassType streamClassType = HPAE_STREAM_CLASS_TYPE_INVALID;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
     int32_t uid = -1;
     int32_t pid = 0;
     uint32_t tokenId = 0;

@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 14;
+const uint8_t TESTSIZE = 49;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -270,6 +270,362 @@ void OnPnpDeviceStatusUpdatedFuzzTest()
     eventEntry->OnPnpDeviceStatusUpdated(desc, isConnected);
 }
 
+void AudioCoreServiceEventEntryReloadCaptureSessionFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    uint32_t sessionId = 0;
+    constexpr int32_t operationCount = static_cast<int32_t>(SessionOperation::SESSION_OPERATION_RELEASE) + 1;
+    SessionOperation operation = static_cast<SessionOperation>(GetData<uint8_t>() % operationCount);
+    eventEntry->ReloadCaptureSession(sessionId, operation);
+}
+
+void AudioCoreServiceEventEntryLoadSplitModuleFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    std::string splitArgs = "splitArgs";
+    std::string networkId = "networkId";
+    eventEntry->LoadSplitModule(splitArgs, networkId);
+}
+
+void AudioCoreServiceEventEntryOnDeviceConfigurationChangedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    std::string macAddress = "11-22-33-44-55-66";
+    std::string deviceName = "deviceName";
+    AudioStreamInfo streamInfo;
+    eventEntry->OnDeviceConfigurationChanged(deviceType, macAddress, deviceName, streamInfo);
+}
+
+void AudioCoreServiceEventEntryOnForcedDeviceSelectedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    DeviceType devType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    std::string macAddress = "11-22-33-44-55-66";
+    eventEntry->OnForcedDeviceSelected(devType, macAddress);
+}
+
+void AudioCoreServiceEventEntryIsArmUsbDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioDeviceDescriptor deviceDesc;
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    deviceDesc.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    eventEntry->IsArmUsbDevice(deviceDesc);
+}
+
+void AudioCoreServiceEventEntryGetDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    DeviceFlag deviceFlag = DeviceFlag::NONE_DEVICES_FLAG;
+    eventEntry->GetDevices(deviceFlag);
+}
+
+void AudioCoreServiceEventEntrySetDeviceActiveFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    InternalDeviceType deviceType = DEVICE_TYPE_EARPIECE;
+    bool active = true;
+    int32_t uid = GetData<uint32_t>() % NUM_2;
+    eventEntry->SetDeviceActive(deviceType, active, uid);
+}
+
+void AudioCoreServiceEventEntryGetPreferredOutputDeviceDescriptorsFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioRendererInfo rendererInfo;
+    rendererInfo.contentType = CONTENT_TYPE_UNKNOWN;
+    rendererInfo.streamUsage = STREAM_USAGE_MEDIA;
+    std::string networkId = "networkId";
+    eventEntry->GetPreferredOutputDeviceDescriptors(rendererInfo, networkId);
+}
+
+void AudioCoreServiceEventEntryGetPreferredInputDeviceDescriptorsFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_INVALID;
+    std::string networkId = "networkId";
+    eventEntry->GetPreferredInputDeviceDescriptors(capturerInfo, networkId);
+}
+
+void AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    eventEntry->GetActiveBluetoothDevice();
+}
+
+void AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    InternalDeviceType deviceType = DEVICE_TYPE_EARPIECE;
+    bool active = true;
+    std::string address = "11-22-33-44-55-66";
+    int32_t uid = GetData<uint32_t>() % NUM_2;
+    eventEntry->SetCallDeviceActive(deviceType, active, address, uid);
+}
+
+void AudioCoreServiceEventEntryGetAvailableDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioDeviceUsage usage = MEDIA_OUTPUT_DEVICES;
+    eventEntry->GetAvailableDevices(usage);
+}
+
+void AudioCoreServiceEventEntryRegisterTrackerFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t apiVersion = GetData<uint32_t>() % NUM_2;
+    eventEntry->RegisterTracker(mode, streamChangeInfo, object, apiVersion);
+}
+
+void AudioCoreServiceEventEntryUpdateTrackerFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioMode mode = AudioMode::AUDIO_MODE_PLAYBACK;
+    AudioStreamChangeInfo streamChangeInfo;
+    eventEntry->UpdateTracker(mode, streamChangeInfo);
+}
+
+void AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    pid_t uid = 0;
+    pid_t pid = 0;
+    eventEntry->RegisteredTrackerClientDied(uid, pid);
+}
+
+void AudioCoreServiceEventEntryGetAvailableMicrophonesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    eventEntry->GetAvailableMicrophones();
+}
+
+void AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    int32_t sessionId = 0;
+    eventEntry->GetAudioCapturerMicrophoneDescriptors(sessionId);
+}
+
+void AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    std::string macAddress = "11-22-33-44-55-66";
+    std::string deviceName = "deviceName";
+    eventEntry->OnReceiveBluetoothEvent(macAddress, deviceName);
+}
+
+void AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    sptr<AudioRendererFilter> audioRendererFilter = new(std::nothrow) AudioRendererFilter();
+    audioRendererFilter->uid = GetData<uint32_t>() % NUM_2;
+    audioRendererFilter->rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    audioRendererFilter->rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MEDIA;
+    audioRendererFilter->rendererInfo.rendererFlags = 0;
+    audioRendererFilter->streamId = 0;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    selectedDesc.push_back(audioDevDesc);
+    eventEntry->SelectOutputDevice(audioRendererFilter, selectedDesc);
+}
+
+void AudioCoreServiceEventEntrySelectInputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    selectedDesc.push_back(audioDevDesc);
+    sptr<AudioCapturerFilter> audioCapturerFilter = new(std::nothrow) AudioCapturerFilter();
+    audioCapturerFilter->uid = GetData<uint32_t>() % NUM_2;
+    audioCoreService->Init();
+    eventEntry->SelectInputDevice(audioCapturerFilter, selectedDesc);
+}
+
+void AudioCoreServiceEventEntryGetCurrentRendererChangeInfosFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    vector<shared_ptr<AudioRendererChangeInfo>> audioRendererChangeInfos;
+    bool hasBTPermission = true;
+    bool hasSystemPermission = true;
+    eventEntry->GetCurrentRendererChangeInfos(audioRendererChangeInfos, hasBTPermission, hasSystemPermission);
+}
+
+void AudioCoreServiceEventEntryGetCurrentCapturerChangeInfosFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
+    bool hasBTPermission = true;
+    bool hasSystemPermission = true;
+    eventEntry->GetCurrentCapturerChangeInfos(audioCapturerChangeInfos, hasBTPermission, hasSystemPermission);
+}
+
+void AudioCoreServiceEventEntryNotifyRemoteRenderStateFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    std::string networkId = "LocalDevice";
+    std::string condition = "";
+    std::string value = "";
+    eventEntry->NotifyRemoteRenderState(networkId, condition, value);
+}
+
+void AudioCoreServiceEventEntryOnCapturerSessionAddedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    uint64_t sessionID = 0;
+    SessionInfo sessionInfo;
+    sessionInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    sessionInfo.rate = GetData<uint32_t>() % NUM_2;
+    sessionInfo.channels = GetData<uint32_t>() % NUM_2;
+    AudioStreamInfo streamInfo;
+    eventEntry->OnCapturerSessionAdded(sessionID, sessionInfo, streamInfo);
+}
+
+void AudioCoreServiceEventEntryOnCapturerSessionRemovedFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    uint64_t sessionID = 0;
+    eventEntry->OnCapturerSessionRemoved(sessionID);
+}
+
+void AudioCoreServiceEventEntryTriggerFetchDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->Init();
+    eventEntry->TriggerFetchDevice(reason);
+}
+
+void AudioCoreServiceEventEntryGetVolumeGroupInfosFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    eventEntry->GetVolumeGroupInfos();
+}
+
+void AudioCoreServiceEventEntryFetchInputDeviceForTrackFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioStreamChangeInfo streamChangeInfo;
+    eventEntry->FetchInputDeviceForTrack(streamChangeInfo);
+}
+
+void AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+    audioCoreService->Init();
+    eventEntry->ExcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+void AudioCoreServiceEventEntryUnexcludeOutputDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    std::shared_ptr<AudioDeviceDescriptor> audioDevDesc = std::make_shared<AudioDeviceDescriptor>();
+    audioDevDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    audioDevDesc->networkId_ = LOCAL_NETWORK_ID;
+    audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    audioDevDesc->macAddress_ = "00:00:00:00:00:00";
+    audioDeviceDescriptors.push_back(audioDevDesc);
+    audioCoreService->Init();
+    eventEntry->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
+}
+
+void AudioCoreServiceEventEntryGetExcludedDevicesFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioDeviceUsage audioDevUsage = MEDIA_OUTPUT_DEVICES;
+    eventEntry->GetExcludedDevices(audioDevUsage);
+}
+
+void AudioCoreServiceEventEntryGetPreferredOutputStreamTypeFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioRendererInfo rendererInfo;
+    std::string bundleName = "bundleName";
+    eventEntry->GetPreferredOutputStreamType(rendererInfo, bundleName);
+}
+
+void AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    int32_t callerPid = 0;
+    eventEntry->SetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+void AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_USB_HEADSET;
+    int32_t callerPid = 0;
+    eventEntry->GetSessionDefaultOutputDevice(callerPid, deviceType);
+}
+
+void AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    AudioCapturerInfo capturerInfo;
+    capturerInfo.sourceType = SOURCE_TYPE_INVALID;
+    eventEntry->GetPreferredInputStreamType(capturerInfo);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     UpdateSessionOperationFuzzTest,
     OnServiceConnectedFuzzTest,
@@ -285,6 +641,41 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     OnDeviceStatusUpdatedFuzzTest,
     OnMicrophoneBlockedUpdateFuzzTest,
     OnPnpDeviceStatusUpdatedFuzzTest,
+    AudioCoreServiceEventEntryReloadCaptureSessionFuzzTest,
+    AudioCoreServiceEventEntryLoadSplitModuleFuzzTest,
+    AudioCoreServiceEventEntryOnDeviceConfigurationChangedFuzzTest,
+    AudioCoreServiceEventEntryOnForcedDeviceSelectedFuzzTest,
+    AudioCoreServiceEventEntryIsArmUsbDeviceFuzzTest,
+    AudioCoreServiceEventEntryGetDevicesFuzzTest,
+    AudioCoreServiceEventEntrySetDeviceActiveFuzzTest,
+    AudioCoreServiceEventEntryGetPreferredOutputDeviceDescriptorsFuzzTest,
+    AudioCoreServiceEventEntryGetPreferredInputDeviceDescriptorsFuzzTest,
+    AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest,
+    AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest,
+    AudioCoreServiceEventEntryGetAvailableDevicesFuzzTest,
+    AudioCoreServiceEventEntryRegisterTrackerFuzzTest,
+    AudioCoreServiceEventEntryUpdateTrackerFuzzTest,
+    AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest,
+    AudioCoreServiceEventEntryGetAvailableMicrophonesFuzzTest,
+    AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest,
+    AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest,
+    AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest,
+    AudioCoreServiceEventEntrySelectInputDeviceFuzzTest,
+    AudioCoreServiceEventEntryGetCurrentRendererChangeInfosFuzzTest,
+    AudioCoreServiceEventEntryGetCurrentCapturerChangeInfosFuzzTest,
+    AudioCoreServiceEventEntryNotifyRemoteRenderStateFuzzTest,
+    AudioCoreServiceEventEntryOnCapturerSessionAddedFuzzTest,
+    AudioCoreServiceEventEntryOnCapturerSessionRemovedFuzzTest,
+    AudioCoreServiceEventEntryTriggerFetchDeviceFuzzTest,
+    AudioCoreServiceEventEntryGetVolumeGroupInfosFuzzTest,
+    AudioCoreServiceEventEntryFetchInputDeviceForTrackFuzzTest,
+    AudioCoreServiceEventEntryExcludeOutputDevicesFuzzTest,
+    AudioCoreServiceEventEntryUnexcludeOutputDevicesFuzzTest,
+    AudioCoreServiceEventEntryGetExcludedDevicesFuzzTest,
+    AudioCoreServiceEventEntryGetPreferredOutputStreamTypeFuzzTest,
+    AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest,
+    AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest,
+    AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -101,7 +101,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_003, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     bRet = audioDeviceStatus.NoNeedChangeUsbDevice(address);
-    EXPECT_EQ(bRet, false);
+    EXPECT_EQ(bRet, true);
 }
 
 /**
@@ -704,6 +704,22 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_029, TestSize.Level1)
     result = audioDeviceStatus.HandleLocalDeviceConnected(updatedDesc);
 
     EXPECT_EQ(result, ERROR);
+}
+
+/**
+* @tc.name  : Test AudioDeviceStatus.
+* @tc.number: AudioDeviceStatus_070
+* @tc.desc  : Test HandleAccessoryDevice interface.
+*/
+HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_070, TestSize.Level1)
+{
+    DeviceType deviceType = DEVICE_TYPE_NONE;
+    std::string address = "00:11:22:33:44:55";
+    int32_t ret = 0;
+    AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
+
+    ret = audioDeviceStatus.HandleAccessoryDevice(deviceType, address);
+    EXPECT_NE(ret, SUCCESS);
 }
 
 /**

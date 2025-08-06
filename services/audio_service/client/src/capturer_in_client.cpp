@@ -723,7 +723,7 @@ float CapturerInClientInner::GetDuckVolume()
     return ERROR_VOLUME;
 }
 
-int32_t CapturerInClientInner::SetSpeed(float speed, bool force)
+int32_t CapturerInClientInner::SetSpeed(float speed)
 {
     AUDIO_ERR_LOG("SetSpeed is not supported");
     return ERROR;

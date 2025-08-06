@@ -159,6 +159,7 @@ int32_t HpaeOffloadRendererManager::ConnectInputSession()
     outputNodeInfo.sessionId = sinkInputNode_->GetSessionId();
     outputNodeInfo.streamType = sinkInputNode_->GetStreamType();
     sinkOutputNode_->SetNodeInfo(outputNodeInfo);
+    sinkOutputNode_->SetSpeed(sinkInputNode_->GetSpeed());
 
     // single stream manager
     HpaeNodeInfo nodeInfo = sinkOutputNode_->GetNodeInfo();
@@ -607,10 +608,14 @@ int32_t HpaeOffloadRendererManager::SetOffloadRenderCallbackType(uint32_t sessio
 
 void HpaeOffloadRendererManager::SetSpeed(uint32_t sessionId, float speed)
 {
-    CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
-        "SetSpeed not find sessionId %{public}u", sessionId);
-    CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
-    sinkOutputNode_->SetSpeed(speed);
+    auto request = [this, sessionId, speed]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_ && sessionId == sinkInputNode_->GetSessionId(),
+            "SetSpeed not find sessionId %{public}u", sessionId);
+        sinkInputNode_->SetSpeed(speed);
+        CHECK_AND_RETURN_LOG(sinkOutputNode_, "sinkOutputNode is nullptr");
+        sinkOutputNode_->SetSpeed(speed);
+    };
+    SendRequest(request);
 }
 
 std::vector<SinkInput> HpaeOffloadRendererManager::GetAllSinkInputsInfo()
@@ -627,6 +632,11 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
         sessionId);
     sinkInputInfo.nodeInfo = sinkInputNode_->GetNodeInfo();
     sinkInputInfo.rendererSessionInfo = sessionInfo_;
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadRendererManager::RefreshProcessClusrerByDevice()
+{
     return SUCCESS;
 }
 
@@ -653,9 +663,11 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
     latency = sinkOutputNode_->GetLatency();
 }
 
-void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime)
+void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
-    sinkInputNode_->RewindHistoryBuffer(rewindTime);
+    CHECK_AND_RETURN_LOG(sinkInputNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnRewindAndFlush sinkInputNode_ is null");
+    sinkInputNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
 void HpaeOffloadRendererManager::OnNotifyQueue()

@@ -94,7 +94,8 @@ group("audio_policy_unittest_packages") {
     ":stream_filter_router_unit_test",
     ":sle_audio_device_manager_unit_test",
     ":volume_data_maintainer_unit_test",
-    ":audio_ipc_serialization_unit_test"
+    ":audio_ipc_serialization_unit_test",
+    ":audio_device_manager_unit_test",
   ]
 }
 
@@ -156,7 +157,6 @@ ohos_unittest("audio_zone_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -324,9 +324,9 @@ ohos_unittest("audio_zone_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
+    "window_manager:session_manager_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]
@@ -487,7 +487,6 @@ ohos_unittest("audio_interrupt_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -648,7 +647,6 @@ ohos_unittest("audio_interrupt_service_second_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -804,7 +802,6 @@ ohos_unittest("audio_policy_service_first_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1000,7 +997,6 @@ ohos_unittest("audio_policy_service_second_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1193,7 +1189,6 @@ ohos_unittest("audio_policy_service_third_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1389,7 +1384,6 @@ ohos_unittest("audio_policy_service_thirdext_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1604,7 +1598,6 @@ ohos_unittest("audio_pnp_server_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1671,7 +1664,6 @@ ohos_unittest("audio_socket_thread_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -1725,7 +1717,6 @@ ohos_unittest("audio_offload_stream_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -1865,7 +1856,6 @@ ohos_unittest("audio_policy_server_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -2028,7 +2018,6 @@ ohos_unittest("audio_spatialization_service_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -2081,7 +2070,6 @@ ohos_unittest("audio_collaborative_service_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -2137,7 +2125,6 @@ ohos_unittest("stream_filter_router_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2235,7 +2222,6 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2248,6 +2234,72 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
     "../../audio_policy:audio_policy_service_static",
     "../../audio_service:audio_client",
     "../../audio_service:audio_common",
+  ]
+}
+
+ohos_unittest("audio_device_manager_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    "./unittest/audio_device_manager_unit_test/include",
+    "../server/include",
+    "../../../frameworks/native/bluetoothclient",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bluetooth:btframework",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+  ]
+
+  sources = [ "./unittest/audio_device_manager_unit_test/src/audio_device_manager_unit_test.cpp" ]
+
+  deps = [
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+    "../../audio_policy:audio_policy_service_static",
   ]
 }
 
@@ -2308,7 +2360,6 @@ ohos_unittest("audio_router_center_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2410,7 +2461,6 @@ ohos_unittest("privacy_priority_router_unit_test") {
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2517,7 +2567,6 @@ ohos_unittest("audio_affinity_parser_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2583,7 +2632,6 @@ ohos_unittest("audio_global_config_manager_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2714,7 +2762,6 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2796,7 +2843,6 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2865,7 +2911,6 @@ ohos_unittest("audio_effect_service_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -2918,7 +2963,6 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
   ]
 
@@ -3028,7 +3072,6 @@ ohos_unittest("audio_policy_async_action_handler_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3093,7 +3136,6 @@ ohos_unittest("audio_interrupt_service_pro_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3252,7 +3294,6 @@ ohos_unittest("volume_data_maintainer_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3361,7 +3402,6 @@ ohos_unittest("audio_affinity_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3430,7 +3470,6 @@ ohos_unittest("audio_device_common_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3502,7 +3541,6 @@ ohos_unittest("audio_effect_config_parser_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3570,7 +3608,6 @@ ohos_unittest("device_status_listener_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3630,6 +3667,12 @@ ohos_unittest("audio_ec_manager_unit_test") {
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
   ]
+
+    sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
 }
 
 ohos_unittest("audio_general_manager_unit_test") {
@@ -3726,7 +3769,6 @@ ohos_unittest("audio_active_device_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3794,7 +3836,6 @@ ohos_unittest("audio_a2dp_offload_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3860,7 +3901,6 @@ ohos_unittest("audio_a2dp_device_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -3927,7 +3967,6 @@ ohos_unittest("audio_connected_device_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -4062,7 +4101,6 @@ ohos_unittest("audio_adapter_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -4138,7 +4176,6 @@ ohos_unittest("audio_pipe_selector_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -4283,7 +4320,6 @@ ohos_unittest("audio_concurrency_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -4496,7 +4532,6 @@ ohos_unittest("power_state_listener_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -4741,7 +4776,6 @@ ohos_unittest("audio_background_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -5157,7 +5191,6 @@ ohos_unittest("audio_core_service_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -5341,7 +5374,6 @@ ohos_unittest("audio_core_service_utils_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -5484,7 +5516,10 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "-fno-access-control",
   ]
 
-  sources = [ "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_unit_test.cpp",
+    "./unittest/audio_pipe_manager_unit_test/src/audio_pipe_manager_extended_test.cpp",
+  ]
 
   deps = [
     "../../../frameworks/native/audiodefinitions:audio_definitions",
@@ -5536,7 +5571,6 @@ ohos_unittest("audio_pipe_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -5598,7 +5632,6 @@ ohos_unittest("audio_interrupt_dfx_collector_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
@@ -5666,7 +5699,6 @@ ohos_unittest("dfx_msg_manager_unit_test") {
     "os_account:os_account_innerkits",
     "power_manager:power_setting",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
