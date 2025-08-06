@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef HPAE_RENDERER_MANAGER_FUZZER_H
-#define HPAE_RENDERER_MANAGER_FUZZER_H
+#ifndef HPAE_OFFLOAD_RENDERER_MANAGER_FUZZER_H
+#define HPAE_OFFLOAD_RENDERER_MANAGER_FUZZER_H
 
 #include "audio_info.h"
 #include "audio_stream_info.h"
@@ -47,4 +47,4 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // HPAE_RENDERER_MANAGER_FUZZER_H
+#endif // HPAE_OFFLOAD_RENDERER_MANAGER_FUZZER_H
