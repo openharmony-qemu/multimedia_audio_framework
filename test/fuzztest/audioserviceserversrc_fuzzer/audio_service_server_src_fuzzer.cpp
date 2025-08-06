@@ -31,6 +31,7 @@
 #include "audio_process_in_server.h"
 #include "audio_param_parser.h"
 #include "none_mix_engine.h"
+#include "audio_playback_engine.h"
 #include "pro_renderer_stream_impl.h"
 #include "oh_audio_buffer.h"
 using namespace std;
@@ -39,6 +40,7 @@ namespace OHOS {
 namespace AudioStandard {
 constexpr int32_t DEFAULT_STREAM_ID = 10;
 static std::unique_ptr<NoneMixEngine> playbackEngine_ = nullptr;
+static std::unique_ptr<AudioPlaybackEngine> audioPlaybackEngine_ = nullptr;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
@@ -79,6 +81,14 @@ void ReleaseNoneEngine()
     if (playbackEngine_ != nullptr) {
         playbackEngine_->Stop();
         playbackEngine_ = nullptr;
+    }
+}
+
+void ReleaseAudioPlaybackEngine()
+{
+    if (audioPlaybackEngine_ != nullptr) {
+        audioPlaybackEngine_->Stop();
+        audioPlaybackEngine_ = nullptr;
     }
 }
 
@@ -179,7 +189,572 @@ void NoneMixEngineRemoveRendererFuzzTest()
     ReleaseNoneEngine();
 }
 
-typedef void (*TestFuncs[9])();
+void PlaybackEngineInitFuzzTest()
+{
+    if (playbackEngine_ != nullptr) {
+        return;
+    }
+    AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
+    deviceInfo.deviceType_ = DEVICE_TYPE_USB_HEADSET;
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    bool isVoip = GetData<bool>();
+    audioPlaybackEngine_->Init(deviceInfo, isVoip);
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineStartFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->Start();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineStopFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->Stop();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEnginePauseFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->Pause();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineFlushFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->Flush();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineIsPlaybackEngineRunningFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->IsPlaybackEngineRunning();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineGetLatencyFuzzTest()
+{
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->GetLatency();
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineAddRendererFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->InitParams();
+    uint32_t num = GetData<uint32_t>();
+    rendererStream->SetStreamIndex(num);
+    rendererStream->Start();
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->AddRenderer(rendererStream);
+    ReleaseAudioPlaybackEngine();
+}
+
+void PlaybackEngineRemoveRendererFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->InitParams();
+    uint32_t num = GetData<uint32_t>();
+    rendererStream->SetStreamIndex(num);
+    rendererStream->Start();
+    audioPlaybackEngine_ = std::make_unique<AudioPlaybackEngine>();
+    audioPlaybackEngine_->AddRenderer(rendererStream);
+    audioPlaybackEngine_->RemoveRenderer(rendererStream);
+    ReleaseAudioPlaybackEngine();
+}
+
+void ResourceServiceAudioWorkgroupCheckFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    AudioResourceService::GetInstance()->AudioWorkgroupCheck(pid);
+}
+
+void ResourceServiceCreateAudioWorkgroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    sptr<IRemoteObject> remoteObject = nullptr;
+    AudioResourceService::GetInstance()->CreateAudioWorkgroup(pid, remoteObject);
+}
+
+void ResourceServiceReleaseAudioWorkgroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    AudioResourceService::GetInstance()->ReleaseAudioWorkgroup(pid, workgroupId);
+}
+
+void ResourceServiceAddThreadToGroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    int32_t tokenId = GetData<int32_t>();
+    AudioResourceService::GetInstance()->AddThreadToGroup(pid, workgroupId, tokenId);
+}
+
+void ResourceServiceRemoveThreadFromGroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    int32_t tokenId = GetData<int32_t>();
+    AudioResourceService::GetInstance()->RemoveThreadFromGroup(pid, workgroupId, tokenId);
+}
+
+void ResourceServiceStartGroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    uint64_t startTime = GetData<uint64_t>();
+    uint64_t deadlineTime = GetData<uint64_t>();
+    AudioResourceService::GetInstance()->StartGroup(pid, workgroupId, startTime, deadlineTime);
+}
+
+void ResourceServiceStopGroupFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    AudioResourceService::GetInstance()->StopGroup(pid, workgroupId);
+}
+
+void ResourceServiceGetAudioWorkgroupPtrFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t workgroupId = GetData<int32_t>();
+    AudioResourceService::GetInstance()->GetAudioWorkgroupPtr(pid, workgroupId);
+}
+
+void ResourceServiceGetThreadsNumPerProcessFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    AudioResourceService::GetInstance()->GetThreadsNumPerProcess(pid);
+}
+
+void ResourceServiceIsProcessHasSystemPermissionFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    AudioResourceService::GetInstance()->IsProcessHasSystemPermission(pid);
+}
+
+void ResourceServiceRegisterAudioWorkgroupMonitorFuzzTest()
+{
+    int32_t pid = GetData<int32_t>();
+    int32_t groupId = GetData<int32_t>();
+    sptr<IRemoteObject> object = nullptr;
+    AudioResourceService::GetInstance()->RegisterAudioWorkgroupMonitor(pid, groupId, object);
+}
+
+void RenderInServerGetLastAudioDurationFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    renderer->GetLastAudioDuration();
+}
+
+void RenderInServerHandleOperationStartedFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    renderer->HandleOperationStarted();
+}
+
+void RenderInServerStandByCheckFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    renderer->StandByCheck();
+}
+
+void RenderInServerShouldEnableStandByFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    renderer->ShouldEnableStandBy();
+}
+
+void RenderInServerGetStandbyStatusFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	
+    bool isStandby = GetData<bool>();
+    int64_t enterStandbyTime = GetData<int64_t>();
+    renderer->GetStandbyStatus(isStandby, enterStandbyTime);
+}
+
+void RenderInServerWriteMuteDataSysEventFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	
+	BufferDesc desc;
+    desc.buffer = nullptr;
+    desc.bufLength = 0;
+    desc.dataLength =0;
+    renderer->WriteMuteDataSysEvent(desc);
+}
+
+void RenderInServerInnerCaptureEnqueueBufferFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	BufferDesc bufferDesc;
+    bufferDesc.buffer = nullptr;
+    bufferDesc.bufLength = 0;
+    bufferDesc.dataLength =0;
+	CaptureInfo captureInfo;
+	int32_t innerCapId = GetData<int32_t>();
+    renderer->InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
+}
+
+void RenderInServerInnerCaptureOtherStreamFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	BufferDesc bufferDesc;
+    bufferDesc.buffer = nullptr;
+    bufferDesc.bufLength = 0;
+    bufferDesc.dataLength =0;
+	CaptureInfo captureInfo;
+	int32_t innerCapId = GetData<int32_t>();
+    renderer->InnerCaptureOtherStream(bufferDesc, captureInfo, innerCapId);
+}
+
+void RenderInServerOtherStreamEnqueueFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	
+    unsigned char inputData[] = "test";
+	BufferDesc bufferDesc;
+    bufferDesc.buffer = inputData;
+    bufferDesc.bufLength = 0;
+    bufferDesc.dataLength =0;
+    renderer->OtherStreamEnqueue(bufferDesc);
+}
+
+void RenderInServerIsInvalidBufferFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	
+	unsigned char inputData[] = "test";
+	BufferDesc bufferDesc;
+    bufferDesc.buffer = inputData;
+    bufferDesc.bufLength = 0;
+    bufferDesc.dataLength =0;
+    renderer->IsInvalidBuffer(bufferDesc.buffer, bufferDesc.bufLength);
+}
+
+void RenderInServerDualToneStreamInStartFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+	
+    renderer->dualToneStreamInStart();
+}
+
+void RenderInServerRecordStandbyTimeFuzzTest()
+{
+    AudioProcessConfig processConfig;
+    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
+        std::make_shared<StreamListenerHolder>();
+    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
+    std::shared_ptr<RendererInServer> rendererInServer =
+        std::make_shared<RendererInServer>(processConfig, streamListener);
+    std::shared_ptr<RendererInServer> renderer = rendererInServer;
+    bool isStandby = false;
+    bool isStandbyStart = GetData<bool>();
+    renderer->RecordStandbyTime(isStandby, isStandbyStart);
+}
+
+void ProRendererGetStreamFramesWrittenFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    uint64_t framesWritten = GetData<uint64_t>();
+    rendererStream->GetStreamFramesWritten(framesWritten);
+}
+
+void ProRendererGetCurrentTimeStampFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    uint64_t timestamp = GetData<uint64_t>();
+    rendererStream->GetCurrentTimeStamp(timestamp);
+}
+
+void ProRendererGetCurrentPositionFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    uint64_t framePosition = GetData<uint64_t>();
+    uint64_t timestamp = GetData<uint64_t>();
+    uint64_t latency = GetData<uint64_t>();
+    uint32_t base = GetData<uint32_t>();
+    rendererStream->GetCurrentPosition(framePosition, timestamp, latency, base);
+}
+
+void ProRendererGetLatencyFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    uint64_t latency = GetData<uint64_t>();
+    rendererStream->GetLatency(latency);
+}
+
+void ProRendererSetAudioEffectModeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t effectMode = GetData<int32_t>();
+    rendererStream->SetAudioEffectMode(effectMode);
+}
+
+void ProRendererGetAudioEffectModeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t effectMode = GetData<int32_t>();
+    rendererStream->GetAudioEffectMode(effectMode);
+}
+
+void ProRendererSetPrivacyTypeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t privacyType = GetData<int32_t>();
+    rendererStream->SetPrivacyType(privacyType);
+}
+
+void ProRendererGetPrivacyTypeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t privacyType = GetData<int32_t>();
+    rendererStream->GetPrivacyType(privacyType);
+}
+
+void ProRendererSetSpeedFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	float speed = GetData<float>();
+    rendererStream->SetSpeed(speed);
+}
+
+void ProRendererDequeueBufferFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	size_t length = GetData<size_t>();
+    rendererStream->DequeueBuffer(length);
+}
+
+void ProRendererEnqueueBufferFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	BufferDesc bufferDesc;
+    bufferDesc.buffer = nullptr;
+    bufferDesc.bufLength = 0;
+    bufferDesc.dataLength =0;
+    rendererStream->EnqueueBuffer(bufferDesc);
+}
+
+void ProRendererGetMinimumBufferSizeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	size_t minBufferSize = GetData<size_t>();
+    rendererStream->GetMinimumBufferSize(minBufferSize);
+}
+
+void ProRendererGetByteSizePerFrameFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	size_t byteSizePerFrame = GetData<size_t>();
+    rendererStream->GetByteSizePerFrame(byteSizePerFrame);
+}
+
+void ProRendererGetSpanSizePerFrameFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	size_t spanSizeInFrame = GetData<size_t>();
+    rendererStream->GetSpanSizePerFrame(spanSizeInFrame);
+}
+
+void ProRendererAbortCallbackFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	uint32_t abortTimes = GetData<uint32_t>();
+    rendererStream->AbortCallback(abortTimes);
+}
+
+void ProRendererGetStreamIndexFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->GetStreamIndex();
+}
+
+void ProRendererOffloadSetVolumeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	float volume = GetData<float>();
+    rendererStream->OffloadSetVolume(volume);
+}
+
+void ProRendererSetOffloadDataCallbackStateFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t state = GetData<int32_t>();
+    rendererStream->SetOffloadDataCallbackState(state);
+}
+ 
+void ProRendererUpdateSpatializationStateFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	bool spatializationEnabled = GetData<bool>();
+	bool headTrackingEnabled = GetData<bool>();
+    rendererStream->UpdateSpatializationState(spatializationEnabled, headTrackingEnabled);
+}
+
+void ProRendererGetAudioTimeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	uint64_t framePos = GetData<uint64_t>();
+	int64_t sec = GetData<int64_t>();
+	int64_t nanoSec = GetData<int64_t>();
+    rendererStream->GetAudioTime(framePos, sec, nanoSec);
+}
+
+void ProRendererPeekFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t index = GetData<int32_t>();
+    std::vector<char> audioBuffer = {0x01, 0x02, 0x03, 0x04, 0x05};
+    rendererStream->Peek(&audioBuffer, index);
+}
+
+void ProRendererReturnIndexFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t index = GetData<int32_t>();
+    rendererStream->ReturnIndex(index);
+}
+
+void ProRendererSetClientVolumeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	float clientVolume = GetData<float>();
+    rendererStream->SetClientVolume(clientVolume);
+}
+
+void ProRendererSetLoudnessGainFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	float loudnessGain = GetData<float>();
+    rendererStream->SetLoudnessGain(loudnessGain);
+}
+
+void ProRendererUpdateMaxLengthFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	uint32_t maxLength = GetData<uint32_t>();
+    rendererStream->UpdateMaxLength(maxLength);
+}
+
+void ProRendererPopSinkBufferFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+	int32_t index = GetData<int32_t>();
+    std::vector<char> audioBuffer = {0x01, 0x02, 0x03, 0x04, 0x05};
+    rendererStream->PopSinkBuffer(&audioBuffer, index);
+}
+
+void ProRendererGetStreamVolumeFuzzTest()
+{
+    AudioProcessConfig config = InitProcessConfig();
+    std::shared_ptr<ProRendererStreamImpl> rendererStream = std::make_shared<ProRendererStreamImpl>(config, true);
+    rendererStream->GetStreamVolume();
+}
+
+typedef void (*TestFuncs[67])();
 
 TestFuncs g_testFuncs = {
     DeviceFuzzTestSetUp,
@@ -190,6 +765,65 @@ TestFuncs g_testFuncs = {
     NoneMixEngineFlushFuzzTest,
     NoneMixEngineAddRendererFuzzTest,
     NoneMixEngineRemoveRendererFuzzTest,
+    PlaybackEngineInitFuzzTest,
+    PlaybackEngineStartFuzzTest,
+    PlaybackEngineStopFuzzTest,
+    PlaybackEnginePauseFuzzTest,
+    PlaybackEngineFlushFuzzTest,
+    PlaybackEngineIsPlaybackEngineRunningFuzzTest,
+    PlaybackEngineGetLatencyFuzzTest,
+    PlaybackEngineAddRendererFuzzTest,
+    PlaybackEngineRemoveRendererFuzzTest,
+    ResourceServiceAudioWorkgroupCheckFuzzTest,
+    ResourceServiceCreateAudioWorkgroupFuzzTest,
+    ResourceServiceReleaseAudioWorkgroupFuzzTest,
+    ResourceServiceAddThreadToGroupFuzzTest,
+    ResourceServiceRemoveThreadFromGroupFuzzTest,
+    ResourceServiceStartGroupFuzzTest,
+    ResourceServiceStopGroupFuzzTest,
+    ResourceServiceGetAudioWorkgroupPtrFuzzTest,
+    ResourceServiceGetThreadsNumPerProcessFuzzTest,
+    ResourceServiceIsProcessHasSystemPermissionFuzzTest,
+    ResourceServiceRegisterAudioWorkgroupMonitorFuzzTest,
+    RenderInServerGetLastAudioDurationFuzzTest,
+    RenderInServerHandleOperationStartedFuzzTest,
+    RenderInServerStandByCheckFuzzTest,
+    RenderInServerShouldEnableStandByFuzzTest,
+    RenderInServerGetStandbyStatusFuzzTest,
+    RenderInServerWriteMuteDataSysEventFuzzTest,
+    RenderInServerInnerCaptureEnqueueBufferFuzzTest,
+    RenderInServerInnerCaptureOtherStreamFuzzTest,
+    RenderInServerOtherStreamEnqueueFuzzTest,
+    RenderInServerIsInvalidBufferFuzzTest,
+    RenderInServerDualToneStreamInStartFuzzTest,
+    RenderInServerRecordStandbyTimeFuzzTest,
+    ProRendererGetStreamFramesWrittenFuzzTest,
+    ProRendererGetCurrentTimeStampFuzzTest,
+    ProRendererGetCurrentPositionFuzzTest,
+    ProRendererGetLatencyFuzzTest,
+    ProRendererSetAudioEffectModeFuzzTest,
+    ProRendererGetAudioEffectModeFuzzTest,
+    ProRendererSetPrivacyTypeFuzzTest,
+    ProRendererGetPrivacyTypeFuzzTest,
+    ProRendererSetSpeedFuzzTest,
+    ProRendererDequeueBufferFuzzTest,
+    ProRendererEnqueueBufferFuzzTest,
+    ProRendererGetMinimumBufferSizeFuzzTest,
+    ProRendererGetByteSizePerFrameFuzzTest,
+    ProRendererGetSpanSizePerFrameFuzzTest,
+    ProRendererAbortCallbackFuzzTest,
+    ProRendererGetStreamIndexFuzzTest,
+    ProRendererOffloadSetVolumeFuzzTest,
+    ProRendererSetOffloadDataCallbackStateFuzzTest,
+    ProRendererUpdateSpatializationStateFuzzTest,
+    ProRendererGetAudioTimeFuzzTest,
+    ProRendererPeekFuzzTest,
+    ProRendererReturnIndexFuzzTest,
+    ProRendererSetClientVolumeFuzzTest,
+    ProRendererSetLoudnessGainFuzzTest,
+    ProRendererUpdateMaxLengthFuzzTest,
+    ProRendererPopSinkBufferFuzzTest,
+    ProRendererGetStreamVolumeFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
