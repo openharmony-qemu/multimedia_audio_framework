@@ -1190,7 +1190,7 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, Test
 /**
  * @tc.name  : Test WriterRenderStreamStandbySysEvent API
  * @tc.type  : FUNC
- * @tc.number: WriterRenderStreamStandbySysEvent_002
+ * @tc.number: WriterRenderStreamStandbySysEvent_003
  * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
  */
 HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, TestSize.Level1)
