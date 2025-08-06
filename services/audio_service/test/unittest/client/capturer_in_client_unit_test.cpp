@@ -1953,5 +1953,5 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level1)
 
     EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NO_NEED_FOR_RESTORE);
 }
-} // namespace  AudioStandard
+} // namespace AudioStandard
 } // namespace OHOS
