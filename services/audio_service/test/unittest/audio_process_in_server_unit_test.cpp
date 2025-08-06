@@ -1030,7 +1030,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level1)
 /**
  * @tc.name  : Test TurnOnMicIndicator API
  * @tc.type  : FUNC
- * @tc.number: TurnOnMicIndicator_001
+ * @tc.number: TurnOnMicIndicator_002
  * @tc.desc  : Test TurnOnMicIndicator interface.
  */
 HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level1)
@@ -1066,7 +1066,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level1)
 /**
  * @tc.name  : Test TurnOffMicIndicator API
  * @tc.type  : FUNC
- * @tc.number: TurnOffMicIndicator_001
+ * @tc.number: TurnOffMicIndicator_002
  * @tc.desc  : Test TurnOffMicIndicator interface.
  */
 HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level1)
