@@ -155,7 +155,7 @@ int32_t AudioInterruptZoneManager::MigrateAudioInterruptZone(const int32_t zoneI
             ++itFocus;
             continue;
         }
-        if (itFocus->second == ACTIVE) {
+        if (itFocus->second == ACTIVE || itFocus->second == DUCK) {
             service_->ActivateAudioInterruptInternal(toZoneId, itFocus->first, false, updateScene);
         } else {
             ForceStopAudioFocusInZone(zoneId, itFocus->first);
