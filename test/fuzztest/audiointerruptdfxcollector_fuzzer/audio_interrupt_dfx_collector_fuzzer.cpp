@@ -114,7 +114,7 @@ void WriteActionMsgFuzzTest()
 {
     InterruptDfxBuilder dfxBuilder;
     uint8_t infoIndex = GetData<uint32_t>();
-	uint8_t effectIdx = GetData<uint32_t>();
+    uint8_t effectIdx = GetData<uint32_t>();
 	InterruptStage stage = INTERRUPT_STAGE_STOP;
     dfxBuilder.WriteActionMsg(infoIndex, effectIdx, stage);
 }
@@ -122,9 +122,9 @@ void WriteActionMsgFuzzTest()
 void WriteInfoMsgFuzzTest()
 {
     InterruptDfxBuilder dfxBuilder;
-	AudioInterrupt audioInterrupt;
-	AudioSessionStrategy strategy;
-	InterruptRole interruptType = INTERRUPT_ROLE_DEFAULT;
+    AudioInterrupt audioInterrupt;
+    AudioSessionStrategy strategy;
+    InterruptRole interruptType = INTERRUPT_ROLE_DEFAULT;
     dfxBuilder.WriteInfoMsg(audioInterrupt, strategy, interruptType);
 }
 
@@ -161,8 +161,8 @@ void ParseJsonArrayFuzzTest()
 void ParseFirstOfKeyFuzzTest()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-	size_t pos = 0;
-	size_t len = 1;
+    size_t pos = 0;
+    size_t len = 1;
     std::string input = "test";
     settingProvider.ParseFirstOfKey(pos, len, input);
 }
@@ -170,8 +170,8 @@ void ParseFirstOfKeyFuzzTest()
 void ParseSecondOfValueFuzzTest()
 {
     AudioSettingProvider &settingProvider = AudioSettingProvider::GetInstance(AUDIO_POLICY_SERVICE_ID);
-	size_t pos = 0;
-	size_t len = 1;
+    size_t pos = 0;
+    size_t len = 1;
     std::string input = "test";
     settingProvider.ParseSecondOfValue(pos, len, input);
 }
