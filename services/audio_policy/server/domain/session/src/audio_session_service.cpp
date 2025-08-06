@@ -218,6 +218,17 @@ int32_t AudioSessionService::SetAudioSessionScene(int32_t callerPid, AudioSessio
     return sessionMap_[callerPid]->SetAudioSessionScene(scene);
 }
 
+StreamUsage AudioSessionService::GetAudioSessionStreamUsage(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(sessionServiceMutex_);
+    auto session = sessionMap_.find(callerPid);
+    if (session != sessionMap_.end() && sessionMap_[callerPid] != nullptr) {
+        return sessionMap_[callerPid]->GetSessionStreamUsage();
+    }
+
+    return STREAM_USAGE_INVALID;
+}
+
 bool AudioSessionService::IsAudioSessionFocusMode(int32_t callerPid)
 {
     std::lock_guard<std::mutex> lock(sessionServiceMutex_);

@@ -3774,7 +3774,8 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_003, TestSize.Level1)
     audioInterruptService->SetCallbackHandler(GetServerHandlerTest());
     audioInterruptService->SendAudioSessionInterruptEventCallback(interruptEventInternal, movieInterrupt);
 
-    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    int32_t zoneId = -1;
+    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 }
 
@@ -3804,7 +3805,8 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
     movieInterrupt.audioFocusType.isPlay = true;
     movieInterrupt.callbackType = INTERRUPT_EVENT_CALLBACK_DEFAULT;
 
-    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    int32_t zoneId = -1;
+    bool result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
     movieInterrupt.isAudioSessionInterrupt = true;
@@ -3812,15 +3814,15 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
     audioInterruptZone->audioFocusInfoList.emplace_back(movieInterrupt, AudioFocuState{ACTIVE});
     audioInterruptService->zonesMap_[DEFAULT_ZONE_ID] = audioInterruptZone;
 
-    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
     movieInterrupt.isAudioSessionInterrupt = false;
-    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
     audioInterruptService->sessionService_ = nullptr;
-    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_FALSE(result);
 
     audioInterruptService->sessionService_ = sessionService;
@@ -3830,7 +3832,7 @@ HWTEST(AudioInterruptUnitTest, AudioSessionFocusMode_004, TestSize.Level1)
     EXPECT_EQ(SUCCESS, ret);
 
     movieInterrupt.isAudioSessionInterrupt = false;
-    result = audioInterruptService->ShouldBypassAudioSessionFocus(movieInterrupt);
+    result = audioInterruptService->ShouldBypassAudioSessionFocus(zoneId, movieInterrupt);
     EXPECT_TRUE(result);
 }
 
