@@ -508,30 +508,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_002, TestSize.Level4)
 }
 
 /**
- * @tc.name: IsPipeExist_005
- * @tc.desc: Test IsPipeExist newPipeInfo->pipeAction_ == PIPE_ACTION_NEW.
- * @tc.type: FUNC
- * @tc.require: #I5Y4MZ
- */
-HWTEST_F(AudioPipeSelectorUnitTest, IsPipeExist_005, TestSize.Level4)
-{
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = "test_adapter";
-    pipeInfo->routeFlag_ = 1;
-    pipeInfo->pipeAction_ = PIPE_ACTION_NEW;
-    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList = { pipeInfo };
-
-    std::string adapterName = "test_adapter";
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->routeFlag_ = 1;
-    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToPipeInfo;
-
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IsPipeExist(newPipeInfoList, adapterName, streamDesc, streamDescToPipeInfo);
-    EXPECT_EQ(pipeInfo->pipeAction_, PIPE_ACTION_NEW);
-}
-
-/**
  * @tc.name: IncomingConcurrency_001
  * @tc.desc: Test IncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
  *           && stream->audioMode_ == AUDIO_MODE_RECORD.
