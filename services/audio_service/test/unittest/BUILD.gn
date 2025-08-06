@@ -299,6 +299,7 @@ ohos_unittest("audio_service_unit_test") {
     "./common/volume_tools_unit_test.cpp",
     "./server/audio_server_unit_test.cpp",
     "./client/i_audio_stream_unit_test.cpp",
+    "./client/audio_manager_listener_stub_unit_test.cpp",
   ]
 
   if (audio_framework_feature_low_latency) {
@@ -1244,7 +1245,7 @@ ohos_unittest("audio_resource_service_unit_test") {
     "../../../audio_service:audio_client",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     ]
-  external_deps =  [
+  external_deps = [
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",
