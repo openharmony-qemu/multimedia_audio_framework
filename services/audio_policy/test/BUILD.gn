@@ -451,6 +451,15 @@ ohos_unittest("audio_interrupt_service_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -4607,6 +4616,15 @@ ohos_unittest("audio_session_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -4644,6 +4662,15 @@ ohos_unittest("audio_session_service_unit_test") {
     "-Wno-macro-redefined",
     "-fno-access-control",
   ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "bluetooth:btframework",
