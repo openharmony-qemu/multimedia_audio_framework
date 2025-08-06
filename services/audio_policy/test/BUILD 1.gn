@@ -265,18 +265,18 @@ ohos_unittest("user_select_router_unit_test") {
     "./unittest/user_select_router_unit_test/include",
     "../../audio_policy/server/domain/router",
   ]
- 
+
   use_exceptions = true
- 
+
   cflags = [
     "-Wall",
     "-Werror",
     "-Wno-macro-redefined",
   ]
- 
+
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
- 
+
   external_deps = [
     "ability_base:want",
     "ability_runtime:app_manager",
@@ -305,9 +305,9 @@ ohos_unittest("user_select_router_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
- 
+
   sources = [ "./unittest/user_select_router_unit_test/src/user_select_router_unit_test.cpp" ]
- 
+
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
     "../../audio_policy:audio_policy_client",
@@ -315,48 +315,49 @@ ohos_unittest("user_select_router_unit_test") {
     "../../audio_service:audio_client",
     "../../audio_service:audio_common",
   ]
- 
+
   if (accessibility_enable == true) {
     external_deps += [
       "accessibility:accessibility_common",
       "accessibility:accessibilityconfig",
     ]
   }
- 
+
   defines = []
   if (audio_framework_feature_dtmf_tone) {
     defines += [ "FEATURE_DTMF_TONE" ]
   }
- 
+
   if (audio_framework_feature_support_os_account) {
     defines += [ "SUPPORT_USER_ACCOUNT" ]
   }
- 
+
   if (build_variant == "user") {
     defines += [ "AUDIO_BUILD_VARIANT_USER" ]
   } else if (build_variant == "root") {
     defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
   }
- 
+
   if (appgallery_part_enable == true) {
     defines += [ "FEATURE_APPGALLERY" ]
   }
- 
+
   if (bluetooth_part_enable == true) {
     external_deps += [ "bluetooth:btframework" ]
   }
- 
+
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
     external_deps += [ "input:libmmi-client" ]
   }
- 
+
   if (audio_framework_feature_device_manager) {
     defines += [ "FEATURE_DEVICE_MANAGER" ]
     external_deps += [ "device_manager:devicemanagersdk" ]
   }
- 
+
   if (audio_framework_feature_usb_audio) {
     defines += [ "USB_ENABLE" ]
     external_deps += [ "usb_manager:usbsrv_client" ]
   }
+}
