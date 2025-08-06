@@ -800,7 +800,7 @@ private:
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
-    AudioStreamType GetCurrentStreamInFocus(const AudioStreamType streamInFocus);
+    AudioStreamType GetCurrentStreamInFocus();
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;

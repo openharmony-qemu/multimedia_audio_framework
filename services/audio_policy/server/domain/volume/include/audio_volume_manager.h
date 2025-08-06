@@ -257,7 +257,7 @@ private:
     AudioVolumeManager &audioVolumeManager_;
     int32_t duration_ = 0;
     int32_t cbId_ = INVALID_CB_ID;
-    std::mutex mtx_;
+    std::mutex monitorMtx_;
 };
 }
 }
