@@ -169,7 +169,7 @@ HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetRingRenderDevices.
- * @tc.number: GetRingRenderDevices_001
+ * @tc.number: GetRingRenderDevices_002
  * @tc.desc  : GetRingRenderDevices.
  */
 HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_002, TestSize.Level1)
@@ -212,7 +212,7 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetRecordCaptureDevice.
- * @tc.number: GetRecordCaptureDevice_001
+ * @tc.number: GetRecordCaptureDevice_002
  * @tc.desc  : GetRecordCaptureDevice.
  */
 HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
