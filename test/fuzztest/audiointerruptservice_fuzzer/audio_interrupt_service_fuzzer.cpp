@@ -1262,8 +1262,8 @@ void DeactivateAudioSessionFakeInterruptFuzzTest(const uint8_t *rawData, size_t 
         return;
     }
     int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
-	int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
-	bool isSessionTimeout = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    bool isSessionTimeout = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
     interruptService->DeactivateAudioSessionFakeInterrupt(zoneId, callerPid, isSessionTimeout);
 }
  
@@ -1315,7 +1315,7 @@ void SetLatestMuteStateFuzzTest(const uint8_t *rawData, size_t size)
     interruptEvent.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
     interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     interruptEvent.duckVolume = 0;
-	uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
+    uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
     interruptService->SetLatestMuteState(interruptEvent, streamId);
 }
  
@@ -1329,8 +1329,8 @@ void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     AudioInterrupt currentInterrupt;
-	AudioInterrupt incomingInterrupt;
-	AudioFocusEntry focusEntry;
+    AudioInterrupt incomingInterrupt;
+    AudioFocusEntry focusEntry;
     focusEntry.hintType = INTERRUPT_HINT_DUCK;
     interruptService->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
@@ -1345,12 +1345,12 @@ void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)
         return;
     }
     AudioInterrupt activeInterrupt;
-	AudioInterrupt incomingInterrupt;
-	incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
-	incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
     activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
-	activeInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
-	int32_t reason = *reinterpret_cast<const int32_t *>(rawData);
+    activeInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t reason = *reinterpret_cast<const int32_t *>(rawData);
     interruptService->ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt, reason);
 }
  
@@ -1374,7 +1374,8 @@ void ProcessActiveStreamFocusFuzzTest(const uint8_t *rawData, size_t size)
     incomingInterrupt.audioFocusType.isPlay = false;
     AudioFocuState incomingState = MUTED;
     std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = zone->audioFocusInfoList.end();
-    interruptService->ProcessActiveStreamFocus(zone->audioFocusInfoList, incomingInterrupt, incomingState, activeInterrupt);
+    interruptService->ProcessActiveStreamFocus(zone->audioFocusInfoList, incomingInterrupt,
+        incomingState, activeInterrupt);
 }
 
 void CanMixForActiveSessionFuzzTest(const uint8_t *rawData, size_t size)
@@ -1456,7 +1457,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioInterruptServiceFocusEntryContinueFuzzTest,
     OHOS::AudioStandard::AudioInterruptServiceProcessFocusEntryFuzzTest,
     OHOS::AudioStandard::GetHighestPriorityAudioSceneFuzzTest,
-	OHOS::AudioStandard::GetStreamTypePriorityFuzzTest,
+    OHOS::AudioStandard::GetStreamTypePriorityFuzzTest,
 	OHOS::AudioStandard::DeactivatePreemptModeFuzzTest,
     OHOS::AudioStandard::IsCapturerFocusAvailableFuzzTest,
     OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
