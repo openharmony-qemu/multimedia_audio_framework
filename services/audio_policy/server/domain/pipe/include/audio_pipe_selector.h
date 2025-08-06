@@ -56,6 +56,8 @@ private:
     void HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> &streamDescToPipeInfo);
+    bool IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
+        std::shared_ptr<AudioStreamDescriptor> streamDescB);
 
     AudioPolicyConfigManager& configManager_;
 };

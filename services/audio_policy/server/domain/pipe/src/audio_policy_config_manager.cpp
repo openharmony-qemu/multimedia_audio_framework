@@ -715,8 +715,9 @@ std::shared_ptr<PipeStreamPropInfo> AudioPolicyConfigManager::GetDynamicStreamPr
     for (auto &streamProp : info->dynamicStreamPropInfos_) {
         CHECK_AND_CONTINUE(streamProp && streamProp->sampleRate_ >= sampleRate);
         CHECK_AND_RETURN_RET(streamProp->sampleRate_ != sampleRate, streamProp);
-        CHECK_AND_CONTINUE(defaultStreamProp != nullptr &&
-            defaultStreamProp->sampleRate_ < streamProp->sampleRate_);
+        // find min sampleRate bigger than music sampleRate, eg: 44100 -> 48000 when has 32000, 48000, 96000, 192000
+        CHECK_AND_CONTINUE(defaultStreamProp == nullptr || (defaultStreamProp != nullptr &&
+            defaultStreamProp->sampleRate_ > streamProp->sampleRate_));
         defaultStreamProp = streamProp;
     }
     CHECK_AND_RETURN_RET_LOG(defaultStreamProp != nullptr, info->dynamicStreamPropInfos_.back(),
