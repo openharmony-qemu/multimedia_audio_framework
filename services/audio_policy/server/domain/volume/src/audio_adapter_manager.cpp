@@ -1963,6 +1963,10 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     if (!audioModuleInfo.bufferSize.empty()) {
         attr.bufferSize = static_cast<uint32_t>(std::stoul(audioModuleInfo.bufferSize));
     }
+    if (!audioModuleInfo.channelLayout.empty()) {
+        AUDIO_INFO_LOG("use custom channelLayout, %{public}s", audioModuleInfo.channelLayout.c_str());
+        attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
+    }
     attr.isBigEndian = IsBigEndian(audioModuleInfo.format);
     attr.filePath = audioModuleInfo.fileName.c_str();
     attr.deviceNetworkId = audioModuleInfo.networkId.c_str();
