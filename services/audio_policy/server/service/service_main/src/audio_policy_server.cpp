@@ -2049,14 +2049,8 @@ int32_t AudioPolicyServer::SetInputDevice(int32_t deviceType, uint32_t sessionID
         AUDIO_ERR_LOG("SetInputDevice: No system permission");
         return ERR_PERMISSION_DENIED;
     }
-
-    int32_t ret = audioDeviceManager_.SetInputDevice(static_cast<DeviceType>(deviceType), sessionID,
+    return eventEntry_->SetInputDevice(static_cast<DeviceType>(deviceType), sessionID,
         static_cast<SourceType>(sourceType), isRunning);
-    if (ret == NEED_TO_FETCH) {
-        coreService_->FetchInputDeviceAndRoute("SetInputDevice");
-        return SUCCESS;
-    }
-    return ret;
 }
 // LCOV_EXCL_STOP
 
