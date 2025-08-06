@@ -60,7 +60,8 @@ static void SetThreadQosLevelWithTid(int32_t pid, int32_t tid, int32_t setPriori
     if (setPriority == 1) {
         ret = OHOS::QOS::SetQosForOtherThread(OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
         CHECK_AND_RETURN_LOG(ret == 0, "set thread qos failed, ret = %{public}d", ret);
-        AUDIO_INFO_LOG("set qos %{public}d for thread %{public}d success", OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
+        AUDIO_INFO_LOG("set qos %{public}d for thread %{public}d success",
+            OHOS::QOS::QosLevel::QOS_USER_INTERACTIVE, tid);
         return;
     }
 
