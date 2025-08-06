@@ -1458,7 +1458,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioInterruptServiceProcessFocusEntryFuzzTest,
     OHOS::AudioStandard::GetHighestPriorityAudioSceneFuzzTest,
     OHOS::AudioStandard::GetStreamTypePriorityFuzzTest,
-	OHOS::AudioStandard::DeactivatePreemptModeFuzzTest,
+    OHOS::AudioStandard::DeactivatePreemptModeFuzzTest,
     OHOS::AudioStandard::IsCapturerFocusAvailableFuzzTest,
     OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
     OHOS::AudioStandard::DeactivateAudioSessionInFakeFocusModeFuzzTest,
