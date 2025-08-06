@@ -18,6 +18,9 @@
 
 #include "gtest/gtest.h"
 #include "audio_adapter_manager.h"
+#include "audio_interrupt_service.h"
+#include "audio_policy_server_handler.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -28,10 +31,26 @@ public:
     static void SetUpTestCase(void);
     // TearDownTestCase: Called after all test case
     static void TearDownTestCase(void);
-    // SetUp: Called before each test cases
-    void SetUp(void);
-    // TearDown: Called after each test cases
-    void TearDown(void);
+
+    void SetUp() override
+    {
+        std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
+        std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+        AudioZoneService::GetInstance().Init(handler, interruptService);
+        AudioZoneContext context;
+        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+    }
+
+    void TearDown() override
+    {
+        zoneId1_ = 0;
+        zoneId2_ = 0;
+        AudioZoneService::GetInstance().DeInit();
+    }
+
+    int32_t zoneId1_ = 0;
+    int32_t zoneId2_ = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

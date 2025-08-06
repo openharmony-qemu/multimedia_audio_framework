@@ -865,7 +865,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_038, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -886,7 +886,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_039, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = true;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**
@@ -928,7 +928,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_041, Tes
     ptrAudioSpatializationService->headTrackingEnabledReal_ = false;
 
     auto result = ptrAudioSpatializationService->UpdateSpatializationStateReal(outputDeviceChange, preDeviceAddress);
-    EXPECT_NE(result, SUCCESS);
+    EXPECT_EQ(result, SUCCESS);
 }
 
 /**

@@ -478,7 +478,6 @@ bool RendererInClientInner::ProcessSpeed(uint8_t *&buffer, size_t &bufferSize, b
 #ifdef SONIC_ENABLE
     std::lock_guard lockSpeed(speedMutex_);
     if (speedEnable_.load()) {
-        CHECK_AND_RETURN_RET(!isHdiSpeed_.load(), true);
         Trace trace(traceTag_ + " ProcessSpeed" + std::to_string(speed_));
         if (audioSpeed_ == nullptr) {
             AUDIO_ERR_LOG("audioSpeed_ is nullptr, use speed default 1.0");
@@ -599,7 +598,6 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         clientConfig_.streamInfo, traceTag_, volumeDataCount_);
 
     CHECK_AND_RETURN_RET_LOG(ipcStream_ != nullptr, ERR_OPERATION_FAILED, "WriteCacheData failed, null ipcStream_.");
-    ipcStream_->UpdatePosition(); // notiify server update position
     HandleRendererPositionChanges(writtenSize);
 
     return speedCached ? oriBufferSize : writtenSize;
@@ -646,6 +644,8 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
 
     size_t oriBufferSize = bufferSize;
     bool speedCached = false;
+
+    unprocessedFramesBytes_.fetch_add(bufferSize / sizePerFrameInByte_);
     if (!ProcessSpeed(buffer, bufferSize, speedCached)) {
         return bufferSize;
     }
@@ -659,8 +659,6 @@ int32_t RendererInClientInner::WriteInner(uint8_t *buffer, size_t bufferSize)
     if (isBlendSet_) {
         audioBlend_.Process(buffer, bufferSize);
     }
-
-    unprocessedFramesBytes_.fetch_add(oriBufferSize / sizePerFrameInByte_);
     totalBytesWrittenAfterFlush_.fetch_add(bufferSize / sizePerFrameInByte_);
     int32_t result = WriteCacheData(buffer, bufferSize, speedCached, oriBufferSize);
     MonitorMutePlay(false);
@@ -676,6 +674,9 @@ void RendererInClientInner::ResetFramePosition()
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampval, latency,
         Timestamp::Timestampbase::MONOTONIC);
     CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
+    ret = ipcStream_->GetSpeedPosition(lastSpeedFlushReadIndex_, timestampval, latency,
+        Timestamp::Timestampbase::MONOTONIC);
+    CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get speed position failed: %{public}d", ret);
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosAndTimePair_[base].first = 0;
@@ -945,6 +946,47 @@ void RendererInClientInner::FlushSpeedBuffer()
 
     if (audioSpeed_ != nullptr) {
         audioSpeed_->Flush();
+    }
+}
+
+int32_t RendererInClientInner::SetSpeedInner(float speed)
+{
+    // set the speed to 1.0 and the speed has never been turned on, no actual sonic stream is created.
+    if (isEqual(speed, SPEED_NORMAL) && !speedEnable_) {
+        speed_ = speed;
+        return SUCCESS;
+    }
+
+    if (audioSpeed_ == nullptr) {
+        audioSpeed_ = std::make_unique<AudioSpeed>(curStreamParams_.samplingRate, curStreamParams_.format,
+            curStreamParams_.channels);
+        GetBufferSize(bufferSize_);
+        speedBuffer_ = std::make_unique<uint8_t[]>(MAX_SPEED_BUFFER_SIZE);
+    }
+    audioSpeed_->SetSpeed(speed);
+    writtenAtSpeedChange_.store(WrittenFramesWithSpeed{totalBytesWrittenAfterFlush_.load(), speed_});
+    speed_ = speed;
+    speedEnable_ = true;
+    AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
+    return SUCCESS;
+}
+
+void RendererInClientInner::NotifyOffloadSpeed()
+{
+    std::lock_guard lock(speedMutex_);
+    bool curIsHdiSpeed = offloadEnable_ && eStreamType_ == STREAM_MOVIE &&
+        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
+    AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
+    isHdiSpeed_.store(curIsHdiSpeed);
+    if (curIsHdiSpeed) {
+        if (realSpeed_.has_value()) {
+            DoHdiSetSpeed(realSpeed_.value(), true);
+            SetSpeedInner(1.0);
+        }
+    } else {
+        if (realSpeed_.has_value()) {
+            SetSpeedInner(realSpeed_.value());
+        }
     }
 }
 } // namespace AudioStandard

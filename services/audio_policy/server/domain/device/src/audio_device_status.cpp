@@ -41,6 +41,7 @@ const int CALL_RENDER_ID = 1;
 const int CALL_CAPTURE_ID = 2;
 const int RECORD_CAPTURE_ID = 3;
 const uint32_t REHANDLE_DEVICE_RETRY_INTERVAL_IN_MICROSECONDS = 30000;
+const std::string DEFAULT_BUFFER_SIZE_8000 = "320";
 
 const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 
@@ -74,8 +75,10 @@ static void GetDPModuleInfo(AudioModuleInfo &moduleInfo, string deviceInfo)
 {
     auto rate_begin = deviceInfo.find("rate=");
     auto rate_end = deviceInfo.find_first_of(" ", rate_begin);
-    moduleInfo.rate = deviceInfo.substr(rate_begin + std::strlen("rate="),
-        rate_end - rate_begin - std::strlen("rate="));
+    if (rate_end > rate_begin) {
+        moduleInfo.rate = deviceInfo.substr(rate_begin + std::strlen("rate="),
+            rate_end - rate_begin - std::strlen("rate="));
+    }
     if (moduleInfo.role == "sink") {
         auto sinkFormat_begin = deviceInfo.find("format=");
         auto sinkFormat_end = deviceInfo.find_first_of(" ", sinkFormat_begin);
@@ -384,6 +387,13 @@ int32_t AudioDeviceStatus::HandleAccessoryDevice(DeviceType deviceType, const st
     CHECK_AND_RETURN_RET_LOG(rate_end > rate_begin, ERR_OPERATION_FAILED, "get rate failed");
     defaulyAccessoryInfo.replace(rate_begin + std::strlen("rate="),
         rate_end - rate_begin - std::strlen("rate="), sampleRate);
+    if (strncmp(sampleRate, "8000", sizeof("8000")) == 0) { // when double connect samplerate of accessory is 8000
+        auto size_begin = defaulyAccessoryInfo.find("buffer_size=");
+        auto size_end = defaulyAccessoryInfo.find_first_of(" ", size_begin);
+        CHECK_AND_RETURN_RET_LOG(size_end > size_begin, ERR_OPERATION_FAILED, "get size failed");
+        defaulyAccessoryInfo.replace(size_begin + std::strlen("buffer_size="),
+            size_end - size_begin - std::strlen("buffer_size="), DEFAULT_BUFFER_SIZE_8000);
+    }
 
     AUDIO_INFO_LOG("device info from accessory hal is defaulyAccessoryInfo: %{public}s",
         defaulyAccessoryInfo.c_str());
@@ -465,7 +475,7 @@ int32_t AudioDeviceStatus::HandleLocalDeviceDisconnected(const AudioDeviceDescri
             audioIOHandleMap_.ClosePortAndEraseIOHandle(BLUETOOTH_MIC);
         }
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_DP) {
-        audioIOHandleMap_.ClosePortAndEraseIOHandle(DP_SINK);
+        audioIOHandleMap_.ClosePortAndEraseIOHandle(GetModuleNameByType(TYPE_DP));
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.CloseUsbArmDevice(updatedDesc);
     } else if (updatedDesc.deviceType_ == DEVICE_TYPE_ACCESSORY) {
@@ -551,6 +561,12 @@ int32_t AudioDeviceStatus::LoadAccessoryModule(std::string deviceInfo)
             AUDIO_INFO_LOG("[module_load]::load module[%{public}s]", moduleInfo.name.c_str());
             GetDPModuleInfo(moduleInfo, deviceInfo);
             moduleInfo.deviceType = std::to_string(static_cast<int32_t>(DEVICE_TYPE_ACCESSORY));
+            auto size_begin = deviceInfo.find("buffer_size=");
+            auto size_end = deviceInfo.find_first_of(" ", size_begin);
+            CHECK_AND_RETURN_RET_LOG(size_end > size_begin, ERR_OPERATION_FAILED, "get size failed");
+            string bufferSize = deviceInfo.substr(size_begin + std::strlen("buffer_size="),
+                size_end - size_begin - std::strlen("buffer_size"));
+            moduleInfo.bufferSize = bufferSize;
             return audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleInfo.name, moduleInfo);
         }
     }
@@ -807,6 +823,14 @@ DeviceType AudioDeviceStatus::GetDeviceTypeFromPin(AudioPin hdiPin)
     return DeviceType::DEVICE_TYPE_DEFAULT;
 }
 
+string AudioDeviceStatus::GetModuleNameByType(ClassType type)
+{
+    list<AudioModuleInfo> moduleList;
+    bool ret = audioConfigManager_.GetModuleListByType(type, moduleList);
+    CHECK_AND_RETURN_RET_LOG(ret && !moduleList.empty(), "", "Get module info of type[%{public}d] failed", type);
+    return moduleList.front().name;
+}
+
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
@@ -917,7 +941,7 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
         }
     } else {
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
-        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE;
+        reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
             AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
         std::string currentActivePort = REMOTE_CLASS;
@@ -1396,9 +1420,9 @@ void AudioDeviceStatus::HandleOfflineDistributedDevice()
     TriggerDeviceChangedCallback(deviceChangeDescriptor, false);
     TriggerAvailableDeviceChangedCallback(deviceChangeDescriptor, false);
     AUDIO_INFO_LOG("onDeviceStatusUpdated reson:%{public}d",
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("HandleOfflineDistributedDevice",
-        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE);
+        AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("HandleOfflineDistributedDevice");
     for (auto &moduleName : modulesNeedClose) {
         audioIOHandleMap_.ClosePortAndEraseIOHandle(moduleName);

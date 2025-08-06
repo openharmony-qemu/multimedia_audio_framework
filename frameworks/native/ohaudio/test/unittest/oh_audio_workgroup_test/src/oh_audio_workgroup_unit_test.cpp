@@ -83,9 +83,6 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_002, TestSize.Level0)
     int32_t *tokenId = nullptr;
     char *name = nullptr;
 
-    result = OH_AudioManager_GetAudioResourceManager(&audioResourceManager);
-    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
-
     result = OH_AudioResourceManager_CreateWorkgroup(audioResourceManager, name, &group);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 
@@ -93,6 +90,15 @@ HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_002, TestSize.Level0)
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 
     result = OH_AudioWorkgroup_AddCurrentThread(group, tokenId);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+HWTEST(OHAudioWorkgroupUnitTest, TestOHAudioWorkgroup_003, TestSize.Level0)
+{
+    OH_AudioResourceManager **audioResourceManager = nullptr;
+    OH_AudioCommon_Result result;
+
+    result = OH_AudioManager_GetAudioResourceManager(audioResourceManager);
     EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
 }
 } // namespace AudioStandard

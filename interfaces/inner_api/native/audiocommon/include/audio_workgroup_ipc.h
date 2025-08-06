@@ -38,7 +38,7 @@ struct AudioWorkgroupChangeInfoIpc : public Parcelable {
 
     static AudioWorkgroupChangeInfoIpc *Unmarshalling(Parcel &parcel)
     {
-        auto info = new AudioWorkgroupChangeInfoIpc();
+        auto info = new(std::nothrow) AudioWorkgroupChangeInfoIpc();
         if (info == nullptr) {
             return nullptr;
         }

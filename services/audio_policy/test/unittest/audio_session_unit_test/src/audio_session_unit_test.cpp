@@ -41,7 +41,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_001, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
     audioSession->AddStreamInfo(audioInterrupt);
     EXPECT_FALSE(audioSession->IsAudioSessionEmpty());
@@ -61,7 +61,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_002, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 1;
     audioSession->AddStreamInfo(audioInterrupt);
     audioSession->RemoveStreamInfo(0);
@@ -81,7 +81,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_003, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 10;
     audioSession->AddStreamInfo(audioInterrupt);
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
@@ -100,7 +100,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_004, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = 0;
     audioSession->AddStreamInfo(audioInterrupt);
     audioSession->RemoveStreamInfo(audioInterrupt.streamId);
@@ -120,7 +120,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_005, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     uint32_t i = 1;
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = i;
     audioSession->AddStreamInfo(audioInterrupt);
 
@@ -146,7 +146,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_006, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     uint32_t i = 1;
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = i;
 
     audioSession->AddStreamInfo(audioInterrupt);
@@ -167,7 +167,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_007, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     uint32_t streamId = 1;
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = streamId;
     audioInterrupt.audioFocusType.streamType = STREAM_DEFAULT;
 
@@ -189,7 +189,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_008, TestSize.Level1)
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
     uint32_t streamId = 1;
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.streamId = streamId;
     audioInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
 
@@ -233,7 +233,7 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_010, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    AudioInterrupt audioInterrupt;
+    AudioInterrupt audioInterrupt = {};
     audioInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
     EXPECT_TRUE(audioSession->ShouldExcludeStreamType(audioInterrupt));
 
@@ -283,12 +283,12 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_012, TestSize.Level1)
     std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
     auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
-    audioSession->bypassStreamInfoVec_.clear();
+    audioSession->streamsInSession_.clear();
     EXPECT_FALSE(audioSession->IsStreamContainedInCurrentSession(0));
 
     AudioInterrupt incomingInterrupt;
     incomingInterrupt.streamId = 0;
-    audioSession->bypassStreamInfoVec_.push_back(incomingInterrupt);
+    audioSession->streamsInSession_.push_back(incomingInterrupt);
     EXPECT_TRUE(audioSession->IsStreamContainedInCurrentSession(0));
 }
 
@@ -314,6 +314,28 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_013, TestSize.Level1)
     EXPECT_FALSE(audioSession->IsRecommendToStopAudio(eventContextObj));
 }
 
+/**
+* @tc.name  : Test UpdateVoipStreamsDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_014
+* @tc.desc  : Test UpdateVoipStreamsDefaultOutputDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_014, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = nullptr;
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
 
+    AudioInterrupt audioInterrupt = {};
+    audioInterrupt.streamId = 1;
+    audioInterrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    audioSession->streamsInSession_.push_back(audioInterrupt);
+    audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA);
+    int32_t ret = audioSession->Activate(strategy);
+    EXPECT_EQ(ret, SUCCESS);
+    audioSession->SetSessionDefaultOutputDevice(DEVICE_TYPE_DEFAULT);
+    ret = audioSession->Deactivate();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

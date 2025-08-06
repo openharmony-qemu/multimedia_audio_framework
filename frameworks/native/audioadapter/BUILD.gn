@@ -12,8 +12,9 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//foundation/multimedia/audio_framework/config.gni")
 
-ohos_shared_library("pulse_audio_service_adapter") {
+ohos_shared_library("pro_audio_service_adapter") {
   sanitize = {
     cfi = true
     cfi_cross_dso = true
@@ -28,7 +29,6 @@ ohos_shared_library("pulse_audio_service_adapter") {
   sources = [
     "src/audio_service_adapter.cpp",
     "src/pro_audio_service_adapter_impl.cpp",
-    "src/pulse_audio_service_adapter_impl.cpp",
   ]
 
   cflags = [ "-fPIC" ]
@@ -64,9 +64,18 @@ ohos_shared_library("pulse_audio_service_adapter") {
     "ipc:ipc_single",
     "media_foundation:media_monitor_client",
     "media_foundation:media_monitor_common",
-    "pulseaudio:pulse",
     "samgr:samgr_proxy",
   ]
+  defines = []
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+
+    sources += [ "src/pulse_audio_service_adapter_impl.cpp" ]
+
+    defines += [ "SUPPORT_OLD_ENGINE" ]
+  }
   part_name = "audio_framework"
   subsystem_name = "multimedia"
   version_script = "libpulse_audio_service_adapter.versionscript"

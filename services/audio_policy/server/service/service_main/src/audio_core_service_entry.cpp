@@ -74,10 +74,10 @@ void AudioCoreService::EventEntry::RegistCoreService()
 }
 
 int32_t AudioCoreService::EventEntry::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->CreateRendererClient(streamDesc, flag, sessionId);
+    coreService_->CreateRendererClient(streamDesc, flag, sessionId, networkId);
     return SUCCESS;
 }
 
@@ -516,6 +516,20 @@ int32_t AudioCoreService::EventEntry::SetWakeUpAudioCapturerFromAudioServer(cons
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     return coreService_->SetWakeUpAudioCapturerFromAudioServer(config);
+}
+
+int32_t AudioCoreService::EventEntry::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type)
+{
+    CHECK_AND_RETURN_RET_LOG(coreService_, ERR_INVALID_PARAM, "coreService_ is nullptr");
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    AUDIO_INFO_LOG("After wait, isOffloadOpened: %{public}d", coreService_->isOffloadOpened_[type].load());
+    CHECK_AND_RETURN_RET_LOG(!coreService_->isOffloadOpened_[type].load(), ERROR, "offload restart");
+    AUDIO_INFO_LOG("Close hdi port id: %{public}u, index %{public}u", id, paIndex);
+    coreService_->audioPolicyManager_.CloseAudioPort(id, paIndex);
+    CHECK_AND_RETURN_RET_LOG(coreService_->pipeManager_, ERROR, "pipeManager_ is nullptr");
+    coreService_->pipeManager_->RemoveAudioPipeInfo(id);
+    coreService_->audioIOHandleMap_.DelIOHandleInfo(OFFLOAD_PRIMARY_SPEAKER);
+    return SUCCESS;
 }
 }
 }

@@ -1506,8 +1506,8 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadType_001, TestSize.Level1)
     uint32_t streamIndex = 1;
     int32_t offloadType = OFFLOAD_ACTIVE_BACKGROUND;
     AudioVolume::GetInstance()->SetOffloadType(streamIndex, offloadType);
-    int32_t getFadeoutState = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
-    EXPECT_EQ(getFadeoutState, offloadType);
+    int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+    EXPECT_EQ(getOffloadType, offloadType);
 }
 
 /**
@@ -1520,8 +1520,118 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadType_002, TestSize.Level1)
 {
     uint32_t streamIndex = 1;
     AudioVolume::GetInstance()->offloadType_.clear();
-    uint32_t ret = AudioVolume::GetInstance()->GetFadeoutState(streamIndex);
+    uint32_t ret = AudioVolume::GetInstance()->GetOffloadType(streamIndex);
     EXPECT_EQ(ret, OFFLOAD_DEFAULT);
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_001
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_001, TestSize.Level1)
+{
+    bool isMuted = true;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, true);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_002
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_002, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, true);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_003
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_003, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_VOICE_COMMUNICATION;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(appUid, isMuted);
+
+    EXPECT_EQ(result, false);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioVolume
+ * @tc.number: SetAppRingMuted_004
+ * @tc.desc  : Test SetAppRingMuted interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetAppRingMuted_004, TestSize.Level1)
+{
+    bool isMuted = false;
+    int32_t appUid = 123;
+    int32_t anotherAppUid = 456;
+    int32_t sessionId = 10001;
+    int32_t pid = 1;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    AppVolume appVolume(appUid, 1.0f, 0, true);
+    audioVolumeTest->appVolume_.emplace(appUid, appVolume);
+
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolumeTest->streamVolume_.emplace(sessionId, streamVolume);
+
+    bool result = audioVolumeTest->SetAppRingMuted(anotherAppUid, isMuted);
+
+    EXPECT_EQ(result, false);
+
+    audioVolumeTest->appVolume_.clear();
+    audioVolumeTest->streamVolume_.clear();
 }
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 68;
+const uint8_t TESTSIZE = 66;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -505,14 +505,16 @@ void NeedRehandleA2DPDeviceFuzzTest()
 
 void TriggerRecreateRendererStreamCallbackFuzzTest()
 {
-    int32_t callerPid = 0;
-    int32_t sessionId = 0;
-    uint32_t routeFlag = GetData<int32_t>() % NUM_2;
-    AudioStreamDeviceChangeReasonExt::ExtEnum reason = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerPid_ = 0;
+    streamDesc->sessionId_ = 0;
+    streamDesc->routeFlag_ = GetData<int32_t>() % NUM_2;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = GetData<AudioStreamDeviceChangeReasonExt::ExtEnum>();
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
     auto audioCoreService = AudioCoreService::GetCoreService();
     std::shared_ptr<AudioPolicyServerHandler> handler = std::make_shared<AudioPolicyServerHandler>();
     audioCoreService->SetCallbackHandler(handler);
-    audioCoreService->TriggerRecreateRendererStreamCallback(callerPid, sessionId, routeFlag, reason);
+    audioCoreService->TriggerRecreateRendererStreamCallback(streamDesc, reason);
 }
 
 void TriggerRecreateCapturerStreamCallbackFuzzTest()

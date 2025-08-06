@@ -15,7 +15,7 @@
 
 #ifndef AUDIO_EFFECT_CHAIN_ADAPTER_H
 #define AUDIO_EFFECT_CHAIN_ADAPTER_H
-
+#ifdef SUPPORT_OLD_ENGINE
 #include <stdio.h>
 #include <stdint.h>
 #include <pulse/pulseaudio.h>
@@ -67,4 +67,5 @@ int32_t EffectChainManagerQueryHdiSupportedChannelLayout(uint32_t *channels, uin
 #ifdef __cplusplus
 }
 #endif
+#endif // SUPPORT_OLD_ENGINE
 #endif // AUDIO_EFFECT_CHAIN_ADAPTER_H

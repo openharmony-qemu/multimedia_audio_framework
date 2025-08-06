@@ -56,6 +56,10 @@ public:
 
     virtual int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute) = 0;
 
+    virtual int32_t SetAppRingMuted(int32_t appUid, bool muted) = 0;
+
+    virtual bool IsAppRingMuted(int32_t appUid) = 0;
+
     virtual int32_t GetSystemVolumeLevel(AudioStreamType streamType) = 0;
 
     virtual int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel) = 0;

@@ -117,6 +117,14 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_005, TestSize.Leve
 
     audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_EARPIECE, macAddress);
     EXPECT_NE(audioActiveDevice, nullptr);
+
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
+    audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_EARPIECE, macAddress);
+    EXPECT_NE(audioActiveDevice, nullptr);
+
+    audioActiveDevice->HandleActiveBt(DeviceType::DEVICE_TYPE_NEARLINK, macAddress);
+    EXPECT_NE(audioActiveDevice, nullptr);
 }
 
 /**
@@ -142,6 +150,11 @@ HWTEST_F(AudioActiveDeviceUnitTest, AudioActiveDeviceUnitTest_006, TestSize.Leve
     EXPECT_NE(audioActiveDevice, nullptr);
 
     audioActiveDevice->HandleNegtiveBt(DeviceType::DEVICE_TYPE_EARPIECE);
+    EXPECT_NE(audioActiveDevice, nullptr);
+
+    deviceDescriptor.deviceType_ = DEVICE_TYPE_NEARLINK;
+    audioActiveDevice->SetCurrentOutputDevice(deviceDescriptor);
+    audioActiveDevice->HandleNegtiveBt(DeviceType::DEVICE_TYPE_NEARLINK);
     EXPECT_NE(audioActiveDevice, nullptr);
 }
 

@@ -16,6 +16,7 @@
 #ifndef PA_RENDERER_STREAM_IMPL_H
 #define PA_RENDERER_STREAM_IMPL_H
 
+#ifdef SUPPORT_OLD_ENGINE
 #include <pulse/pulseaudio.h>
 #include <mutex>
 #include "i_renderer_stream.h"
@@ -162,4 +163,5 @@ private:
 };
 } // namespace AudioStandard
 } // namespace OHOS
+#endif // SUPPORT_OLD_ENGINE
 #endif // PA_RENDERER_STREAM_IMPL_H

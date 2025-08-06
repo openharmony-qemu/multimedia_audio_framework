@@ -296,26 +296,38 @@ HWTEST_F(DirectPlayBackEngineUnitTest, DirectPlayBackEngine_010, TestSize.Level2
     EXPECT_NE(enginePtr, nullptr);
 
     AudioStreamInfo streamInfo;
+    streamInfo.channels = AudioChannel::STEREO;
+    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    streamInfo.format = SAMPLE_S32LE;
     enginePtr->isInit_ = true;
     enginePtr->renderId_ = HdiAdapterManager::GetInstance().GetId(HDI_ID_BASE_RENDER, HDI_ID_TYPE_EAC3,
         HDI_ID_INFO_DEFAULT, true);
     EXPECT_NE(enginePtr->renderId_, HDI_INVALID_ID);
     auto ret = enginePtr->InitSink(streamInfo);
     EXPECT_NE(ret, SUCCESS);
-    
-    streamInfo.channels = AudioChannel::STEREO;
-    enginePtr->uChannel_ = AudioChannel::STEREO;
-    enginePtr->InitSink(streamInfo);
+
+    enginePtr->uChannel_ = AudioChannel::CHANNEL_UNKNOW;
+    ret = enginePtr->InitSink(streamInfo);
     EXPECT_NE(ret, SUCCESS);
 
-    streamInfo.format = SAMPLE_S32LE;
-    enginePtr->uFormat_ = SAMPLE_S32LE;
+    enginePtr->uChannel_ = AudioChannel::STEREO;
     ret = enginePtr->InitSink(streamInfo);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_NE(ret, SUCCESS);
 
-    streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    enginePtr->format_ = SAMPLE_S16LE;
+    ret = enginePtr->InitSink(streamInfo);
+    EXPECT_NE(ret, SUCCESS);
+
+    enginePtr->format_ = SAMPLE_S32LE;
+    ret = enginePtr->InitSink(streamInfo);
+    EXPECT_NE(ret, SUCCESS);
+
+    enginePtr->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_32000;
+    ret = enginePtr->InitSink(streamInfo);
+    EXPECT_NE(ret, SUCCESS);
+
     enginePtr->uSampleRate_ = AudioSamplingRate::SAMPLE_RATE_48000;
-    enginePtr->InitSink(streamInfo);
+    ret = enginePtr->InitSink(streamInfo);
     EXPECT_EQ(ret, SUCCESS);
 }
 

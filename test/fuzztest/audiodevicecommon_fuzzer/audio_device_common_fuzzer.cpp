@@ -50,7 +50,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 63;
+const uint8_t TESTSIZE = 65;
 static int32_t NUM_2 = 2;
 const int32_t SESSIONID = 12345;
 
@@ -264,6 +264,8 @@ void GetPreferredInputDeviceDescInnerFuzzTest()
     }
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
+    shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+    audioDeviceCommon.Init(audioPolicyServerHandler);
     audioDeviceCommon.OnPreferredInputDeviceUpdated(deviceType, "");
 
     AudioRendererInfo rendererInfo;
@@ -273,7 +275,9 @@ void GetPreferredInputDeviceDescInnerFuzzTest()
     AudioCapturerInfo captureInfo;
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     captureInfo.sourceType = SourceTypeVec[sourceTypeCount];
-    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, "");
+    std::string networkId = "LocalDevice";
+    audioDeviceCommon.GetPreferredInputDeviceDescInner(captureInfo, networkId);
+    audioDeviceCommon.DeInit();
 }
 
 void GetPreferredInputStreamTypeInnerFuzzTest()
@@ -297,6 +301,7 @@ void UpdateDeviceInfoFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     AudioDeviceDescriptor deviceInfo;
+    deviceInfo.deviceType_ = GetData<DeviceType>();
     bool hasBTPermission = GetData<uint32_t>() % NUM_2;
     bool hasSystemPermission = GetData<uint32_t>() % NUM_2;
     BluetoothOffloadState state = NO_A2DP_DEVICE;
@@ -402,12 +407,19 @@ void HandleDeviceChangeForFetchOutputDeviceFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    if (desc == nullptr || DeviceTypeVec.size() == 0) {
+    if (desc == nullptr || DeviceTypeVec.size() == 0 || rendererChangeInfo == nullptr) {
         return;
     }
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    int32_t ret = audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
+    desc->networkId_ = "LocalDevice";
+    desc->macAddress_ = "00:11:22:33:44:55";
+    desc->connectState_ = GetData<ConnectState>();
+    rendererChangeInfo->outputDeviceInfo.deviceType_ = desc->deviceType_;
+    rendererChangeInfo->outputDeviceInfo.networkId_ = desc->networkId_;
+    rendererChangeInfo->outputDeviceInfo.macAddress_ = desc->macAddress_;
+    rendererChangeInfo->outputDeviceInfo.connectState_ = desc->connectState_;
+    audioDeviceCommon.HandleDeviceChangeForFetchOutputDevice(desc, rendererChangeInfo,
         AudioStreamDeviceChangeReason::UNKNOWN);
 }
 
@@ -845,8 +857,11 @@ void GetSpatialDeviceTypeFuzzTest()
     deviceDescriptor.macAddress_ = "F0-FA-C7-8C-46-01";
     uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
     deviceDescriptor.deviceType_ = DeviceTypeVec[deviceTypeCount];
+    shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+    audioDeviceCommon.Init(audioPolicyServerHandler);
     audioDeviceCommon.OnPreferredOutputDeviceUpdated(deviceDescriptor, AudioStreamDeviceChangeReason::UNKNOWN);
     audioDeviceCommon.GetSpatialDeviceType(macAddress);
+    audioDeviceCommon.DeInit();
 }
 
 void IsDeviceConnectedFuzzTest()
@@ -923,7 +938,13 @@ void LoadA2dpModuleFuzzTest()
     std::string sinkName = "";
     uint32_t sourceTypeCount = GetData<uint32_t>() % SourceTypeVec.size();
     SourceType sourceType = SourceTypeVec[sourceTypeCount];
+    ClassType classType = GetData<ClassType>();
+    AudioModuleInfo moduleInfo;
+    std::list<AudioModuleInfo> moduleInfoList;
+    moduleInfoList.push_back(moduleInfo);
+    audioDeviceCommon.audioConfigManager_.deviceClassInfo_.insert({classType, moduleInfoList});
     audioDeviceCommon.LoadA2dpModule(deviceType, audioStreamInfo, networkID, sinkName, sourceType);
+    audioDeviceCommon.audioConfigManager_.deviceClassInfo_.clear();
 }
 
 void ReloadA2dpAudioPortFuzzTest()
@@ -1064,11 +1085,17 @@ void HandleA2dpInputDeviceFetchedFuzzTest()
 void TriggerRecreateCapturerStreamCallbackFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.DeInit();
     std::shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = std::make_shared<AudioCapturerChangeInfo>();
     int32_t streamFlag = GetData<int32_t>();
     AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN;
+    shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler = std::make_shared<AudioPolicyServerHandler>();
+    audioDeviceCommon.Init(audioPolicyServerHandler);
+    bool isDeInit = GetData<bool>();
+    if (isDeInit) {
+        audioDeviceCommon.DeInit();
+    }
     audioDeviceCommon.TriggerRecreateCapturerStreamCallback(capturerChangeInfo, streamFlag, reason);
+    audioDeviceCommon.DeInit();
 }
 
 void HandleScoInputDeviceFetchedFuzzTest()
@@ -1078,6 +1105,56 @@ void HandleScoInputDeviceFetchedFuzzTest()
     std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptorSptr = std::make_shared<AudioDeviceDescriptor>();
     std::vector<std::shared_ptr<AudioCapturerChangeInfo>> captureChangeInfos;
     audioDeviceCommon.HandleScoInputDeviceFetched(audioDeviceDescriptorSptr, captureChangeInfos);
+}
+
+void AudioDeviceCommonOpenRemoteAudioDeviceFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    std::string networkId = "testNetworkId";
+    DeviceRole deviceRole = GetData<DeviceRole>();
+    DeviceType deviceType = GetData<DeviceType>();
+    std::shared_ptr<AudioDeviceDescriptor> remoteDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioDeviceCommon.OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
+}
+
+void AudioDeviceCommonIsSameDeviceFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    AudioDeviceDescriptor deviceDesc;
+    deviceDesc.networkId_ = "testNetworkId";
+    deviceDesc.deviceType_ = GetData<DeviceType>();
+    deviceDesc.macAddress_ = "00:11:22:33:44:55";
+    deviceDesc.connectState_ = GetData<ConnectState>();
+    deviceDesc.deviceRole_ = GetData<DeviceRole>();
+    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+    if (desc == nullptr) {
+        return;
+    }
+    bool isNoClear = GetData<bool>();
+    if (!isNoClear) {
+        desc->networkId_.clear();
+    }
+
+    audioDeviceCommon.IsSameDevice(desc, deviceDesc);
+}
+
+void AudioDeviceCommonDeviceParamsCheckFuzzTest()
+{
+    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
+    audioDeviceCommon.DeInit();
+    DeviceRole targetRole = GetData<DeviceRole>();
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceType_ = GetData<DeviceType>();
+    audioDeviceDescriptor->deviceRole_ = GetData<DeviceRole>();
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
+    audioDeviceDescriptors.push_back(audioDeviceDescriptor);
+
+    audioDeviceCommon.DeviceParamsCheck(targetRole, audioDeviceDescriptors);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
@@ -1143,6 +1220,9 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleA2dpInputDeviceFetchedFuzzTest,
     TriggerRecreateCapturerStreamCallbackFuzzTest,
     HandleScoInputDeviceFetchedFuzzTest,
+    AudioDeviceCommonOpenRemoteAudioDeviceFuzzTest,
+    AudioDeviceCommonIsSameDeviceFuzzTest,
+    AudioDeviceCommonDeviceParamsCheckFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

@@ -445,7 +445,11 @@ void AudioService::RemoveCapturer(uint32_t sessionId, bool isSwitchStream)
         return;
     }
     allCapturerMap_.erase(sessionId);
-    muteStateCallbacks_.erase(sessionId);
+    {
+        std::unique_lock<std::mutex> muteStatelock(muteStateMapMutex_);
+        muteStateCallbacks_.erase(sessionId);
+    }
+
     if (!isSwitchStream) {
         RemoveIdFromMuteControlSet(sessionId);
     }
@@ -1004,8 +1008,9 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
         deviceInfo, isReloadProcess);
     if (ret == SUCCESS) {
-        AUDIO_INFO_LOG("Get DeviceInfo from policy server success, deviceType: %{public}d, "
-            "supportLowLatency: %{public}d", deviceInfo.deviceType_, deviceInfo.isLowLatencyDevice_);
+        AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
+            " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
+            deviceInfo.a2dpOffloadFlag_);
         if (config.rendererInfo.streamUsage == STREAM_USAGE_VOICE_COMMUNICATION ||
             config.rendererInfo.streamUsage == STREAM_USAGE_VIDEO_COMMUNICATION ||
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {

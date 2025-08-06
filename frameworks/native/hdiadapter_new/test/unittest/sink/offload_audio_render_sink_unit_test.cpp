@@ -159,5 +159,19 @@ HWTEST_F(OffloadAudioRenderSinkUnitTest, OffloadSinkUnitTest_006, TestSize.Level
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
 }
 
+/**
+ * @tc.name   : Test OffloadSink API
+ * @tc.number : OffloadSinkUnitTest_007
+ * @tc.desc   : Test offload sink set speed
+ */
+HWTEST_F(OffloadAudioRenderSinkUnitTest, OffloadSinkUnitTest_007, TestSize.Level1)
+{
+    EXPECT_TRUE(sink_);
+    sink_->SetSpeed(0.25f); // test cover
+    sink_->SetSpeed(0.5f);
+    sink_->SetSpeed(1.0f);
+    sink_->SetSpeed(3.0f);
+    sink_->SetSpeed(3.25f);
+}
 } // namespace AudioStandard
 } // namespace OHOS

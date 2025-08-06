@@ -828,5 +828,48 @@ HWTEST(VolumeDataMaintainerUnitTest, GetVolumeWithDatabaseVolumeName_001, TestSi
     ret = volumeDataMaintainerRet->GetVolumeWithDatabaseVolumeName(databaseVolumeName, streamType);
     EXPECT_EQ(ret, false);
 }
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SetAppStreamMuted_001.
+ * @tc.desc  : Test SetAppStreamMuted and IsAppStreamMuted.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SetAppStreamMuted_001, TestSize.Level1)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    ASSERT_NE(nullptr, volumeDataMaintainer);
+    const int32_t appUid = 123;
+    const AudioStreamType streamType = AudioStreamType::STREAM_RING;
+
+    // Test setting mute
+    volumeDataMaintainer->SetAppStreamMuted(appUid, streamType, true);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), true);
+
+    // Test setting unmute
+    volumeDataMaintainer->SetAppStreamMuted(appUid, streamType, false);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), false);
+
+    // Test setting mute repeatedly
+    volumeDataMaintainer->SetAppStreamMuted(appUid, streamType, true);
+    volumeDataMaintainer->SetAppStreamMuted(appUid, streamType, true);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), true);
+
+    // Test setting mute for another app stream
+    const int32_t anotherAppUid = 456;
+    volumeDataMaintainer->SetAppStreamMuted(anotherAppUid, streamType, true);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(anotherAppUid, streamType), true);
+
+    // Test multiple stream types
+    const AudioStreamType anotherStreamType = AudioStreamType::STREAM_VOICE_COMMUNICATION;
+    volumeDataMaintainer->SetAppStreamMuted(appUid, anotherStreamType, true);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, anotherStreamType), true);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), true);
+
+    // Test delete an app entry
+    volumeDataMaintainer->SetAppStreamMuted(appUid, streamType, false);
+    volumeDataMaintainer->SetAppStreamMuted(appUid, anotherStreamType, false);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, streamType), false);
+    EXPECT_EQ(volumeDataMaintainer->IsAppStreamMuted(appUid, anotherStreamType), false);
+}
 } // AudioStandardnamespace
 } // OHOSnamespace

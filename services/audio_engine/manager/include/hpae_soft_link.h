@@ -34,35 +34,47 @@ enum class HpaeSoftLinkState : int32_t {
     RELEASED,
 };
 
+enum HpaeSoftLinkStreamOperation : uint8_t {
+    SOFTLINK_RENDERER_OPERATION = 1 << 0, // bit 0
+    SOFTLINK_CAPTURER_OPERATION = 1 << 1, // bit 1
+};
+
+enum HpaeSoftLinkDeviceOperation : uint8_t {
+    SOFTLINK_SINK_OPERATION = 1 << 0, // bit 0
+    SOFTLINK_SOURCE_OPERATION = 1 << 1, // bit 1
+};
+
 class HpaeSoftLink : public std::enable_shared_from_this<HpaeSoftLink>,
                      public IHpaeSoftLink,
                      public IStreamStatusCallback,
                      public IStreamCallback,
                      public ICapturerStreamCallback {
 public:
-    HpaeSoftLink(int32_t renderIdx, int32_t captureIdx, SoftLinkMode mode);
+    HpaeSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode);
     ~HpaeSoftLink();
     static uint32_t GenerateSessionId();
     int32_t Init() override;
     int32_t Start() override;
     int32_t Stop() override;
     int32_t Release() override;
+    int32_t SetVolume(float volume) override;
     void OnStatusUpdate(IOperation operation, uint32_t streamIndex) override;
     int32_t OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo) override;
     int32_t OnStreamData(AudioCallBackCapturerStreamInfo& callbackStreamInfo) override;
-    void OnDeviceInfoReceived();
+    void OnDeviceInfoReceived(const HpaeSoftLinkDeviceOperation &operation);
 
     // for unit test
     HpaeSoftLinkState GetStreamStateById(uint32_t sessionId);
 private:
-    int32_t GetSinkInfoByIdx();
-    int32_t GetSourceInfoByIdx();
+    int32_t GetDeviceInfo();
     int32_t CreateStream();
+    void FlushRingCache();
     void TransSinkInfoToStreamInfo(HpaeStreamInfo &info, const HpaeStreamClassType &streamClassType);
 private:
-    static std::atomic<uint32_t> g_sessionId;
-    int32_t renderIdx_ = -1;
-    int32_t captureIdx_ = -1;
+    static uint32_t g_sessionId;
+    inline static std::mutex sessionIdMutex_;
+    int32_t sinkIdx_ = -1;
+    int32_t sourceIdx_ = -1;
     SoftLinkMode linkMode_ = SoftLinkMode::HEARING_AID;
     HpaeSinkInfo sinkInfo_;
     HpaeSourceInfo sourceInfo_;
@@ -72,6 +84,8 @@ private:
     std::vector<char> tempBuffer_;
     HpaeSoftLinkState state_ = HpaeSoftLinkState::INVALID;
     std::mutex stateMutex_;
+    uint8_t isStreamOperationFinish_ = 0;
+    uint8_t isDeviceOperationFinish_ = 0;
     std::unordered_map<uint32_t, HpaeSoftLinkState> streamStateMap_;
     std::mutex callbackMutex_;
     std::condition_variable callbackCV_;

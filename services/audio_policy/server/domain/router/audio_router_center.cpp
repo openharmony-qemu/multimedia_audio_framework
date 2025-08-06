@@ -42,7 +42,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchMediaRenderDevice(
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetMediaRenderDevice(streamUsage, clientUID);
-        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -60,7 +60,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallRenderDevice(Strea
             continue;
         }
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallRenderDevice(streamUsage, clientUID);
-        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -356,7 +356,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCallCaptureDevice(Sour
 {
     for (auto &router : callCaptureRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetCallCaptureDevice(sourceType, clientUID, sessionID);
-        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }
@@ -385,7 +385,7 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchVoiceMessageCaptureDev
 {
     for (auto &router : voiceMessageRouters_) {
         shared_ptr<AudioDeviceDescriptor> desc = router->GetRecordCaptureDevice(sourceType, clientUID, sessionID);
-        if (desc && desc->deviceType_ != DEVICE_TYPE_NONE) {
+        if ((desc != nullptr) && (desc->deviceType_ != DEVICE_TYPE_NONE)) {
             routerType = router->GetRouterType();
             return desc;
         }

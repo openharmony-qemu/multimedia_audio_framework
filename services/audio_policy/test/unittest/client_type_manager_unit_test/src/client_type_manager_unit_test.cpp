@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -31,11 +31,11 @@ void ClientTypeManagerUnitTest::SetUp(void) {}
 void ClientTypeManagerUnitTest::TearDown(void) {}
 
 /**
-* @tc.name  : Test VolumeDataMaintainer.
-* @tc.number: VolumeDataMaintainerUnitTest_001.
-* @tc.desc  : Test VolumeDataMaintainer API.
-*/
-HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level1)
+ * @tc.name  : Test ClientTypeManager.
+ * @tc.number: ClientTypeManagerUnitTest_001.
+ * @tc.desc  : Test GetAndSaveClientType API.
+ */
+HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level4)
 {
     auto manager = ClientTypeManager::GetInstance();
     EXPECT_NE(nullptr, manager);
@@ -59,7 +59,5 @@ HWTEST(ClientTypeManagerUnitTest, ClientTypeManagerUnitTest_001, TestSize.Level1
     manager->GetAndSaveClientType(TEST_CLIENT_UID_2, TEST_BUNDLE_NAME);
     manager->GetAndSaveClientType(TEST_CLIENT_UID_3, "");
 }
-
-
 } // AudioStandardnamespace
 } // OHOSnamespace

@@ -83,8 +83,11 @@ void RendererInServerUnitTest::TearDown(void) {}
 void InitAudioProcessConfig(AudioStreamInfo streamInfo, DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET,
     int32_t rendererFlags = AUDIO_FLAG_NORMAL, AudioStreamType streamType = STREAM_DEFAULT)
 {
+    processConfig = {};
     processConfig.streamInfo = streamInfo;
     processConfig.deviceType = deviceType;
+    processConfig.rendererInfo = {};
+    processConfig.capturerInfo = {};
     processConfig.rendererInfo.rendererFlags = rendererFlags;
     processConfig.streamType = streamType;
 }
@@ -1572,7 +1575,7 @@ HWTEST_F(RendererInServerUnitTest, RendererInServerFlush_008, TestSize.Level1)
     rendererInServer->audioServerBuffer_->basicBufferInfo_->basePosInFrame.store(10);
 
     ret = rendererInServer->Flush();
-    EXPECT_EQ(ERR_OPERATION_FAILED, ret);
+    EXPECT_EQ(SUCCESS, ret);
 }
 
 /**

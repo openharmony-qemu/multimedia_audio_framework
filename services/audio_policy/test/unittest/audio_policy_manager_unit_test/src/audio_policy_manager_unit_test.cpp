@@ -620,7 +620,8 @@ HWTEST(AudioPolicyManager, CreateRendererClient_001, TestSize.Level1)
     streamDesc->callerUid_ = getuid();
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     uint32_t originalSessionId = 123;
-    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId);
+    std::string networkId = LOCAL_NETWORK_ID;
+    auto result = audioPolicyManager_->CreateRendererClient(streamDesc, flag, originalSessionId, networkId);
     EXPECT_EQ(result,  SUCCESS);
 }
 
@@ -692,6 +693,7 @@ HWTEST(AudioPolicyManager, GetDirectPlaybackSupport_002, TestSize.Level1)
 HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
     std::string macAddress = "";
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
@@ -710,6 +712,7 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_001, TestSize.Level1)
 HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
 {
     auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
 
     std::string macAddress = "A1:B2:C3:D4:E5:F6";
     AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;

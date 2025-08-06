@@ -270,6 +270,10 @@ HWTEST_F(HpaeInnerCapturerManagerUnitTest, StreamStartPauseFlushChange_001, Test
     EXPECT_EQ(hpaeInnerCapturerManager_->RegisterWriteCallback(playStreamInfo.sessionId, writeInPlayDataCb), SUCCESS);
     EXPECT_EQ(hpaeInnerCapturerManager_->Start(playStreamInfo.sessionId), SUCCESS);
     WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    EXPECT_EQ(hpaeInnerCapturerManager_->SetOffloadPolicy(playStreamInfo.sessionId, 0), SUCCESS);
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
+    hpaeInnerCapturerManager_->SetSpeed(playStreamInfo.sessionId, 2.0f); // 2.0f test
+    WaitForMsgProcessing(hpaeInnerCapturerManager_);
     HpaeSinkInputInfo sinkInputInfo;
 
     EXPECT_EQ(hpaeInnerCapturerManager_->IsRunning(), true);

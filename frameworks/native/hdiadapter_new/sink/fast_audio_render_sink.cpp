@@ -46,23 +46,8 @@ int32_t FastAudioRenderSink::Init(const IAudioSinkAttr &attr)
     ret = PrepareMmapBuffer();
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NOT_STARTED, "prepare mmap buffer fail");
 
-    std::vector<DeviceType> devices {static_cast<DeviceType>(attr_.deviceType)};
-    ret = DoSetOutputRoute(devices);
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update route fail, ret: %{public}d", ret);
-    }
     sinkInited_ = true;
     return SUCCESS;
-}
-
-int32_t FastAudioRenderSink::DoSetOutputRoute(std::vector<DeviceType> &outputDevices)
-{
-    HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
-    std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
-    CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
-    int32_t ret = deviceManager->SetOutputRoute(attr_.adapterName, outputDevices,
-        GenerateUniqueID(AUDIO_HDI_RENDER_ID_BASE, HDI_RENDER_OFFSET_PRIMARY));
-    return ret;
 }
 
 void FastAudioRenderSink::DeInit(void)

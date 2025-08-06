@@ -17,7 +17,7 @@ import("../../../accessibility.gni")
 import("../../../config.gni")
 
 ohos_fuzztest("HpaeSinkInputNodeFuzzTest") {
-  module_out_path = "audio_framework/audio_framework_engine"
+  module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../hpaesinkinputnode_fuzzer"
 
   include_dirs = [
@@ -77,7 +77,6 @@ ohos_fuzztest("HpaeSinkInputNodeFuzzTest") {
     "media_foundation:media_monitor_common",
     "os_account:os_account_innerkits",
     "power_manager:powermgr_client",
-    "pulseaudio:pulse",
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]

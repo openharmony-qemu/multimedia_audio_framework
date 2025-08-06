@@ -933,6 +933,7 @@ void FastAudioStream::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientUid = clientUid_;
 
     info.volume = GetVolume();
+    info.duckVolume = GetDuckVolume();
     info.effectMode = GetAudioEffectMode();
     info.renderMode = renderMode_;
     info.captureMode = captureMode_;

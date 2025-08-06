@@ -76,6 +76,7 @@ public:
     DeviceRole GetDeviceRole(const std::string &role);
     DeviceRole GetDeviceRole(AudioPin pin) const;
     DeviceType GetDeviceType(const std::string &deviceName);
+    std::string GetEncryptAddr(const std::string &addr);
     std::string GetDevicesStr(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &audioDeviceDescriptors);
 
     AudioDeviceUsage GetAudioDeviceUsageByStreamUsage(StreamUsage streamUsage);

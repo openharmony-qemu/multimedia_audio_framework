@@ -45,7 +45,6 @@ ohos_unittest("pro_renderer_stream_impl_unit_test") {
     "googletest:gtest",
     "hicollie:libhicollie",
     "hilog:libhilog",
-    "pulseaudio:pulse",
     "ipc:ipc_single",
   ]
 }

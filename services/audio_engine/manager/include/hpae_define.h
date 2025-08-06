@@ -29,6 +29,7 @@ struct HpaeSessionInfo {
     std::weak_ptr<IStreamStatusCallback> statusCallback;
     int32_t offloadType = OFFLOAD_DEFAULT;
     bool offloadEnable = false;
+    float speed = 1.0f;
     uint64_t startTime; // create time
 };
 

@@ -70,7 +70,7 @@ public:
     bool IsBackGroundApp(void);
 
 private:
-    StreamUsage GetStreamUsageByAudioSessionScene(const AudioSessionScene audioSessionScene);
+    StreamUsage GetStreamUsageInner();
     bool IsLegalDevice(const DeviceType deviceType);
     bool IsCurrentDevicePrivateDevice(const std::shared_ptr<AudioDeviceDescriptor> desc);
     bool IsDeviceContainedInVector(std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices,
@@ -82,7 +82,7 @@ private:
     int32_t EnableDefaultDevice();
     void UpdateSingleVoipStreamDefaultOutputDevice(const AudioInterrupt &interrupt);
     bool IsSessionDefaultDeviceEnabled();
-    bool IsLegalStreamUsage(const StreamUsage &streamUsage);
+    bool IsOutputDeviceConfigurableByStreamUsage(const StreamUsage &streamUsage);
     std::mutex sessionMutex_;
     int32_t callerPid_;
     bool needToFetch_ = false;
@@ -90,7 +90,7 @@ private:
     std::weak_ptr<AudioSessionStateMonitor> audioSessionStateMonitor_;
     AudioSessionScene audioSessionScene_ {AudioSessionScene::INVALID};
     // These are streams included in audiosession focus.
-    std::vector<AudioInterrupt> bypassStreamInfoVec_;
+    std::vector<AudioInterrupt> streamsInSession_;
     uint32_t fakeStreamId_ {0};
     AudioSessionState state_ = AudioSessionState::SESSION_INVALID;
     DeviceType defaultDeviceType_ = DEVICE_TYPE_INVALID;

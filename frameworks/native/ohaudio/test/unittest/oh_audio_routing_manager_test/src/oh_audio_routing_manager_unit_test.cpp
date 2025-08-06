@@ -541,5 +541,70 @@ HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_IsMicBlockDetection
     auto result = OH_AudioRoutingManager_IsMicBlockDetectionSupported(audioRoutingManager, &supported);
     EXPECT_NE(result, AUDIOCOMMON_RESULT_SUCCESS);
 }
+
+/**
+ * @tc.name  : Test OH_AudioManager_GetAudioRoutingManager.
+ * @tc.number: OH_AudioManager_GetAudioRoutingManager_001
+ * @tc.desc  : Test OH_AudioManager_GetAudioRoutingManager.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioManager_GetAudioRoutingManager_001, TestSize.Level0)
+{
+    OH_AudioRoutingManager **audioRoutingManager = nullptr;
+    auto result = OH_AudioManager_GetAudioRoutingManager(audioRoutingManager);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_SUCCESS);
+}
+
+/**
+ * @tc.name  : OH_AudioRoutingManager_GetAvailableDevices
+ * @tc.number: OH_AudioRoutingManager_GetAvailableDevices_005
+ * @tc.desc  : Test OH_AudioRoutingManager_GetAvailableDevices with null audioRoutingManager.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, OH_AudioRoutingManager_GetAvailableDevices_005, TestSize.Level0)
+{
+    OH_AudioRoutingManager *audioRoutingManager = nullptr;
+    OH_AudioDevice_Usage deviceUsage = static_cast<OH_AudioDevice_Usage>(100);
+    OH_AudioStream_Usage streamUsage = static_cast<OH_AudioStream_Usage>(100);
+    OH_AudioStream_SourceType sourceType = AUDIOSTREAM_SOURCE_TYPE_LIVE;
+    OH_AudioDeviceDescriptorArray **audioDeviceDescriptorArray = nullptr;
+    
+    auto result = OH_AudioRoutingManager_GetAvailableDevices(
+        audioRoutingManager, deviceUsage, audioDeviceDescriptorArray);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+
+    result = OH_AudioRoutingManager_GetPreferredOutputDevice(
+        audioRoutingManager, streamUsage, audioDeviceDescriptorArray);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+
+    result = OH_AudioRoutingManager_GetPreferredInputDevice(
+        audioRoutingManager, sourceType, audioDeviceDescriptorArray);
+    EXPECT_EQ(result, AUDIOCOMMON_RESULT_ERROR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test ConvertDesc.
+ * @tc.number: ConvertDesc_001
+ * @tc.desc  : Test ConvertDesc the result is nullptr.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, ConvertDesc_001, TestSize.Level0)
+{
+    OHAudioRoutingManager manager;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc;
+    OH_AudioDeviceDescriptorArray *result = manager.ConvertDesc(desc);
+    EXPECT_EQ(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test ConvertDesc.
+ * @tc.number: ConvertDesc_002
+ * @tc.desc  : Test ConvertDesc the result is nullptr when more than max size.
+ */
+HWTEST(OHAudioRoutingManagerUnitTest, ConvertDesc_002, TestSize.Level0)
+{
+    OHAudioRoutingManager manager;
+    size_t MORETHAN_MAX_VALID_SIZE = 129;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> desc(MORETHAN_MAX_VALID_SIZE);
+    OH_AudioDeviceDescriptorArray *result = manager.ConvertDesc(desc);
+    EXPECT_EQ(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS

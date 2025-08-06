@@ -46,7 +46,6 @@ ohos_unittest("audio_renderer_multi_test") {
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
-    "pulseaudio:pulse",
   ]
 
   resource_config_file =

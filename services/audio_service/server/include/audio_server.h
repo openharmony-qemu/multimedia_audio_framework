@@ -28,7 +28,9 @@
 
 #include "audio_manager_base.h"
 #include "audio_server_death_recipient.h"
+#ifdef SUPPORT_OLD_ENGINE
 #include "audio_server_dump.h"
+#endif
 #include "i_audio_server_hpae_dump.h"
 #include "audio_system_manager.h"
 #include "audio_inner_call.h"

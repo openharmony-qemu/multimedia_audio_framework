@@ -67,6 +67,8 @@ public:
 
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted, int32_t volumeFlag = 0);
 
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     int32_t IsAppVolumeMute(int32_t appUid, bool muted, bool &isMute);
@@ -281,7 +283,7 @@ public:
     int32_t GetPreferredInputStreamType(AudioCapturerInfo &capturerInfo);
 
     int32_t CreateRendererClient(
-        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);
+        std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId);
 
     int32_t CreateCapturerClient(
         std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId);

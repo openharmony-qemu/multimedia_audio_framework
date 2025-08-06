@@ -149,7 +149,7 @@ void AudioCoreService::DumpPipeManager(std::string &dumpString)
 }
 
 int32_t AudioCoreService::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &audioFlag, uint32_t &sessionId, std::string &networkId)
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, ERR_NULL_POINTER, "stream desc is nullptr");
     if (sessionId == 0) {
@@ -200,6 +200,7 @@ int32_t AudioCoreService::CreateRendererClient(
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
     int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
+    networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
     return SUCCESS;
@@ -316,7 +317,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             sinkPortName.c_str(), streamDesc->audioFlag_);
         return;
     }
-    AUDIO_DEBUG_LOG("rendererFlag: %{public}d", streamDesc->rendererInfo_.rendererFlags);
+    HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
             streamDesc->audioFlag_ =
@@ -340,9 +341,7 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
 {
     CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 0 &&
         streamDesc->newDeviceDescs_[0] != nullptr, AUDIO_OUTPUT_FLAG_NORMAL, "Invalid stream desc");
-    if (streamDesc->newDeviceDescs_[0]->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
-    }
+
     if (IsStreamSupportDirect(streamDesc)) {
         return AUDIO_OUTPUT_FLAG_HD;
     }
@@ -497,6 +496,7 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
 {
     audioSceneManager_.SetAudioScenePre(audioScene);
     audioStateManager_.SetAudioSceneOwnerUid(audioScene == 0 ? 0 : uid);
+    AudioScene lastAudioScene = audioSceneManager_.GetLastAudioScene();
     bool isSameScene = audioSceneManager_.IsSameAudioScene();
     int32_t result = audioSceneManager_.SetAudioSceneAfter(audioScene, audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     CHECK_AND_RETURN_RET_LOG(result == SUCCESS, ERR_OPERATION_FAILED, "failed [%{public}d]", result);
@@ -511,6 +511,10 @@ int32_t AudioCoreService::SetAudioScene(AudioScene audioScene, const int32_t uid
         audioVolumeManager_.SetVoiceCallVolume(audioVolumeManager_.GetSystemVolumeLevel(STREAM_VOICE_CALL));
     } else {
         audioVolumeManager_.SetVoiceRingtoneMute(false);
+    }
+    if (lastAudioScene == AUDIO_SCENE_RINGING && audioScene != AUDIO_SCENE_RINGING &&
+        audioVolumeManager_.IsAppRingMuted(uid)) {
+        audioVolumeManager_.SetAppRingMuted(uid, false); // unmute the STREAM_RING for the app.
     }
     audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
         audioActiveDevice_.GetCurrentOutputDevice(), "SetAudioScene");
@@ -1337,8 +1341,7 @@ int32_t AudioCoreService::CaptureConcurrentCheck(uint32_t sessionId)
     }
  
     auto dfxResult = std::make_unique<struct ConcurrentCaptureDfxResult>();
-    WriteCapturerConcurrentMsg(streamDesc, dfxResult);
-    if (dfxResult->existingAppName.size() < CONCURRENT_CAPTURE_DFX_THRESHOLD) {
+    if (!WriteCapturerConcurrentMsg(streamDesc, dfxResult)) {
         return ERR_INVALID_HANDLE;
     }
     LogCapturerConcurrentResult(dfxResult);

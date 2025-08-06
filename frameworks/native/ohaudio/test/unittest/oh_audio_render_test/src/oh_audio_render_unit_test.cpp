@@ -1712,10 +1712,16 @@ HWTEST(OHAudioRenderUnitTest, OH_Audio_Render_WriteDataCallbackAdvanced_003, Tes
 */
 HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level0)
 {
-    OH_AudioRenderer *renderer = nullptr;
-    OH_AudioStream_FastStatus *status = nullptr;
-    OH_AudioStream_Result result = OH_AudioRenderer_GetFastStatus(renderer, status);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *renderer;
+    OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &renderer);
+    result = OH_AudioRenderer_GetFastStatus(nullptr, &status);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetFastStatus(renderer, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetFastStatus(renderer, &status);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -1739,6 +1745,58 @@ HWTEST(OHAudioRenderUnitTest, SetwriteDataCallback_001, TestSize.Level0)
         void* metadata, int32_t metadataSize) -> int32_t { return 0; };
 
     oHAudioRenderer->SetWriteDataCallback(rendererCallbacks, userData, metadataUserData, encodingType);
+}
+
+/**
+* @tc.name  : Test OH_AudioRenderer_GetAudioTimestampInfo
+* @tc.number: OH_AudioRenderer_GetAudioTimestampInfo_001
+* @tc.desc  : Test OH_AudioRenderer_GetAudioTimestampInfo
+*/
+HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetAudioTimestampInfo_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioRenderUnitTest::CreateRenderBuilder();
+    OH_AudioRenderer *renderer;
+    int64_t framePosition = 0;
+    int64_t timestamp = 0;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &renderer);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(nullptr, &framePosition, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, nullptr, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, nullptr);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
+}
+
+/**
+* @tc.name  : Test OHAudioRendererErrorCallback API
+* @tc.number: OHAudioRenderer_036
+* @tc.desc  : Test OHAudioRendererErrorCallback::GetErrorResult()
+*/
+HWTEST(OHAudioRenderUnitTest, OHAudioRenderer_036, TestSize.Level0)
+{
+    OH_AudioRenderer_OnWriteDataCallback onWriteDataCallback;
+    onWriteDataCallback =
+        [](OH_AudioRenderer* renderer, void* userData, void* audioData, int32_t audioDataSize) ->
+        OH_AudioData_Callback_Result { return AUDIO_DATA_CALLBACK_RESULT_VALID; };
+
+    OHAudioRenderer oHAudioRenderer;
+    oHAudioRenderer.writeDataCallbackType_ = WRITE_DATA_CALLBACK_ADVANCED;
+    OH_AudioRenderer* oH_AudioRenderer = (OH_AudioRenderer*)&oHAudioRenderer;
+    EXPECT_NE((OHAudioRenderer*)oH_AudioRenderer, nullptr);
+    void* userData = nullptr;
+    AudioEncodingType encodingType = AudioEncodingType::ENCODING_PCM;
+
+    auto oHAudioRendererModeCallback =
+        std::make_shared<OHAudioRendererModeCallback>(onWriteDataCallback, oH_AudioRenderer, userData, encodingType);
+    EXPECT_NE(oHAudioRendererModeCallback, nullptr);
+
+    oHAudioRendererModeCallback->encodingType_ = ENCODING_AUDIOVIVID;
+    oHAudioRendererModeCallback->writeDataWithMetadataCallback_ = {};
+    oHAudioRendererModeCallback->onWriteDataAdvancedCallback_ = {};
+    size_t length = 0;
+    oHAudioRendererModeCallback->OnWriteData(length);
 }
 } // namespace AudioStandard
 } // namespace OHOS

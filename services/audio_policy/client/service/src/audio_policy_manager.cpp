@@ -328,6 +328,13 @@ int32_t AudioPolicyManager::IsAppVolumeMute(int32_t appUid, bool muted, bool &is
     return gsp->IsAppVolumeMute(appUid, muted, isMute);
 }
 
+int32_t AudioPolicyManager::SetAppRingMuted(int32_t appUid, bool muted)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    return gsp->SetAppRingMuted(appUid, muted);
+}
+
 int32_t AudioPolicyManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
@@ -1460,11 +1467,11 @@ int32_t AudioPolicyManager::GetPreferredInputStreamType(AudioCapturerInfo &captu
 }
 
 int32_t AudioPolicyManager::CreateRendererClient(
-    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId)
+    std::shared_ptr<AudioStreamDescriptor> streamDesc, uint32_t &flag, uint32_t &sessionId, std::string &networkId)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, AUDIO_FLAG_INVALID, "audio policy manager proxy is NULL.");
-    return gsp->CreateRendererClient(streamDesc, flag, sessionId);
+    return gsp->CreateRendererClient(streamDesc, flag, sessionId, networkId);
 }
 
 int32_t AudioPolicyManager::CreateCapturerClient(
@@ -1649,9 +1656,9 @@ float AudioPolicyManager::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
-    float out = -1;
+    float out = -1.0f;
     int32_t ret = gsp->GetSystemVolumeInDb(volumeType, volumeLevel, deviceType, out);
-    return ret == SUCCESS ? out : ERR_INVALID_PARAM;
+    return ret == SUCCESS ? out : static_cast<float>(ERR_INVALID_PARAM);
 }
 
 int32_t AudioPolicyManager::QueryEffectSceneMode(SupportedEffectConfig &supportedEffectConfig)
