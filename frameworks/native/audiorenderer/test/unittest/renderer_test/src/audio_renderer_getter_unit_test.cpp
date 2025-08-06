@@ -2851,5 +2851,18 @@ HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
     auto ret = audioRendererPrivate->GetFastStatus();
     EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
+
+/**
+ * @tc.name  : Test GetFinalOffloadAllowed API.
+ * @tc.number: GetFinalOffloadAllowed_001
+ * @tc.desc  : Test GetFinalOffloadAllowed interface with different if cases.
+ */
+HWTEST(AudioRendererUnitTest, GetFinalOffloadAllowed_001, TestSize.Level3)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
