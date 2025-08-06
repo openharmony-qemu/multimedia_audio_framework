@@ -1021,7 +1021,7 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_001, TestSize.Le
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = true;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = true;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
     int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
@@ -1057,7 +1057,7 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_002, TestSize.Le
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = false;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = false;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = false;
     int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
@@ -1093,7 +1093,7 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_003, TestSize.Le
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = true;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = true;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
     int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
@@ -1129,7 +1129,7 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_004, TestSize.Le
     nodeInfo.effectInfo.effectMode = EFFECT_NONE;
     nodeInfo.sceneType = HPAE_SCENE_MUSIC;
     hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
-    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId].bypass = false;
+    hpaeRendererManager->sessionNodeMap_[nodeInfo.sessionId].bypass = false;
     AudioEffectChainManager::GetInstance()->spkOffloadEnabled_ = true;
     AudioEffectChainManager::GetInstance()->btOffloadEnabled_ = true;
     int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
