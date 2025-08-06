@@ -120,18 +120,18 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
 
-static void WaitForMsgProcessing(std::shared_ptr<RenderManagerType> &hpaeRendererManager)
+static void WaitForMsgProcessing(std::shared_ptr<IHpaeRenderManagerType> &hpaeRendererManager)
 {
     int waitCount = 0;
     const int waitCountThd = 5;
     while (hpaeRendererManager->IsMsgProcessing()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
         waitCount++;
         if (waitCount >= waitCountThd) {
             break;
         }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
+    std::this_thread::sleep_for(std::chrono::milliseconds(40));
 }
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
@@ -443,7 +443,7 @@ void IRendererManagerReloadFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
     
-    rendererManager->ReloadRenderManager(sinkInfo, true)
+    rendererManager->ReloadRenderManager(sinkInfo, true);
     WaitForMsgProcessing(rendererManager);
     rendererManager->IsInit();
 
@@ -502,7 +502,7 @@ Void IRendererManagerStartPuaseStreamFuzzTest()
     HpaeSinkInputInfo sinkInputInfo;
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
 
-    unit32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
     hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
     hpaeRendererManager->Start(sessionId);
 
@@ -519,7 +519,7 @@ Void IRendererManagerStartPuaseStreamFuzzTest()
     hpaeRendererManager->Stop(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
 
-    hpaeRendererManager->DestroyStream(sessionId)
+    hpaeRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
 
     hpaeRendererManager->DeInit();
@@ -539,7 +539,7 @@ void UpdateCollaborativeStateFuzzTest()
     HpaeStreamInfo streamInfo;
     InitRenderStreamInfo(streamInfo);
     std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    unit32_t sessionId = GetData<uint32_t>();
+    uint32_t sessionId = GetData<uint32_t>();
     hpaeRendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
 
     hpaeRendererManager->Start(sessionId);
