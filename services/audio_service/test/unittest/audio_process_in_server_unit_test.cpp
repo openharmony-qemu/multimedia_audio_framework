@@ -995,7 +995,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_038
- * @tc.desc  : Test AudioProcessInServer interface1.
+ * @tc.desc  : Test AudioProcessInServer interface.
  */
 HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
 {
@@ -1007,6 +1007,148 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
     audioProcessInServerRet.audioHapticsSyncId_.store(syncId);
     auto ret = audioProcessInServerRet.GetAudioHapticsSyncId();
     EXPECT_EQ(ret, syncId);
+}
+
+/**
+ * @tc.name  : Test TurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOnMicIndicator_001
+ * @tc.desc  : Test TurnOnMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOnMicIndicator_001
+ * @tc.desc  : Test TurnOnMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = false;
+
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOffMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOffMicIndicator_001
+ * @tc.desc  : Test TurnOffMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = false;
+
+    bool ret = audioProcessInServerRet.TurnOffMicIndicator(capturerState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOffMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOffMicIndicator_001
+ * @tc.desc  : Test TurnOffMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.TurnOffMicIndicator(capturerState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test GetInnerCapState API
+ * @tc.type  : FUNC
+ * @tc.number: GetInnerCapState_001
+ * @tc.desc  : Test GetInnerCapState interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.GetInnerCapState(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetInnerCapState API
+ * @tc.type  : FUNC
+ * @tc.number: GetInnerCapState_002
+ * @tc.desc  : Test GetInnerCapState interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    int32_t innerCapId = 1;
+    audioProcessInServerRet.SetInnerCapState(true, innerCapId);
+
+    bool ret = audioProcessInServerRet.GetInnerCapState(innerCapId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_001
+ * @tc.desc  : Test AddMuteFrameSize interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    int64_t muteFrameCnt = 0;
+    
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_002
+ * @tc.desc  : Test AddMuteFrameSize interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    int64_t muteFrameCnt = -1;
+
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
