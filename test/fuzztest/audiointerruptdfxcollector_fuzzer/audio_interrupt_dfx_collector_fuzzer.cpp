@@ -115,7 +115,7 @@ void WriteActionMsgFuzzTest()
     InterruptDfxBuilder dfxBuilder;
     uint8_t infoIndex = GetData<uint32_t>();
     uint8_t effectIdx = GetData<uint32_t>();
-	InterruptStage stage = INTERRUPT_STAGE_STOP;
+    InterruptStage stage = INTERRUPT_STAGE_STOP;
     dfxBuilder.WriteActionMsg(infoIndex, effectIdx, stage);
 }
 
