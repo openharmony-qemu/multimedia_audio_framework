@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,23 +14,20 @@
  */
 
 #include <gtest/gtest.h>
+#include "iservice_registry.h"
+#include "system_ability_definition.h"
 
-#include "i_audio_stream.h"
-#include <map>
-
-#include "audio_errors.h"
+#include "audio_service.h"
 #include "audio_service_log.h"
-#include "audio_utils.h"
-#include "audio_policy_manager.h"
-#include "capturer_in_client.h"
-#include "renderer_in_client.h"
+#include "audio_errors.h"
+#include "audio_system_manager.h"
 
+#include "audio_manager_listener_stub_impl.h"
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-
-class IAudioStreamUnitTest : public testing::Test {
+class AudioManagerListenerTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -38,84 +35,40 @@ public:
     void TearDown();
 };
 
-const std::vector<AudioSamplingRate> AUDIO_FAST_STREAM_SUPPORTED_SAMPLING_RATES {
-    SAMPLE_RATE_48000,
-};
-
-const std::vector<AudioSampleFormat> AUDIO_FAST_STREAM_SUPPORTED_FORMATS {
-    SAMPLE_S16LE,
-    SAMPLE_S32LE,
-    SAMPLE_F32LE
-};
-
 /**
- * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.name  : Test OnCapturerState API
  * @tc.type  : FUNC
- * @tc.number: GetByteSizePerFrame_001
- * @tc.desc  : Test GetByteSizePerFrame interface.
+ * @tc.number: OnCapturerState_001
+ * @tc.desc  : Test OnCapturerState interface.
  */
-HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_001, TestSize.Level1)
+HWTEST(AudioManagerListenerTest, OnCapturerState_001, TestSize.Level1)
 {
-    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
-    size_t result = 0;
-    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_NE(ret, ERR_INVALID_OPERATION);
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    EXPECT_EQ(audioManagerListenerStub->OnCapturerState(true), SUCCESS);
 }
 
 /**
- * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.name  : Test OnCapturerState API
  * @tc.type  : FUNC
- * @tc.number: GetByteSizePerFrame_002
- * @tc.desc  : Test GetByteSizePerFrame interface.
+ * @tc.number: OnCapturerState_002
+ * @tc.desc  : Test OnCapturerState interface.
  */
-HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_002, TestSize.Level1)
+HWTEST(AudioManagerListenerTest, OnCapturerState_002, TestSize.Level1)
 {
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, 2};
-    size_t result = 0;
-    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    EXPECT_EQ(audioManagerListenerStub->OnCapturerState(false), SUCCESS);
 }
 
 /**
- * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.name  : Test OnWakeupClose API
  * @tc.type  : FUNC
- * @tc.number: GetByteSizePerFrame_003
- * @tc.desc  : Test GetByteSizePerFrame interface.
+ * @tc.number: OnWakeupClose_001
+ * @tc.desc  : Test OnWakeupClose interface.
  */
-HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_003, TestSize.Level1)
+HWTEST(AudioManagerListenerTest, OnWakeupClose_001, TestSize.Level1)
 {
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, -1};
-    size_t result = 0;
-    int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
-    EXPECT_EQ(ret, ERR_INVALID_PARAM);
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupported_001
- * @tc.desc  : Test IsStreamSupported interface.
- */
-HWTEST(IAudioStreamUnitTest, IsStreamSupported_001, TestSize.Level1)
-{
-    int32_t streamFlags = 0;
-    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
-    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_TRUE(result);
-}
-
-/**
- * @tc.name  : Test IsStreamSupported API
- * @tc.type  : FUNC
- * @tc.number: IsStreamSupported_002
- * @tc.desc  : Test IsStreamSupported interface.
- */
-HWTEST(IAudioStreamUnitTest, IsStreamSupported_002, TestSize.Level1)
-{
-    int32_t streamFlags = STREAM_FLAG_FAST;
-    AudioStreamParams params = {SAMPLE_RATE_48000, SAMPLE_S16LE, 2};
-    bool result = IAudioStream::IsStreamSupported(streamFlags, params);
-    EXPECT_FALSE(result);
+    auto audioManagerListenerStub = std::make_unique<AudioManagerListenerStubImpl>();
+    EXPECT_EQ(audioManagerListenerStub->OnWakeupClose(), SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS
