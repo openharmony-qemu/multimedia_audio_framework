@@ -194,43 +194,6 @@ void HpaeRendererManagerConstructFuzzTest()
     HpaeRendererManager rendererManager(sinkInfo);
 }
 
-void HpaeRendererManagerCreateStreamFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    HpaeStreamInfo streamInfo;
-    InitRenderStreamInfo(streamInfo);
-    rendererManager->CreateStream(streamInfo);
-}
-
-void HpaeRendererManagerDestroyStreamFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    rendererManager->DestroyStream(sessionId);
-}
-
-void HpaeRendererManagerStartFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    rendererManager->Start(sessionId);
-}
-
-void HpaeRendererManagerPauseFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    rendererManager->Pause(sessionId);
-}
-
 void HpaeRendererManagerFlushFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -247,15 +210,6 @@ void HpaeRendererManagerDrainFuzzTest()
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager->Drain(sessionId);
-}
-
-void HpaeRendererManagerStopFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    rendererManager->Stop(sessionId);
 }
 
 void HpaeRendererManagerReleaseFuzzTest()
@@ -322,39 +276,6 @@ void HpaeRendererManagerHandleMsgFuzzTest()
     rendererManager->HandleMsg();
 }
 
-void HpaeRendererManagerInitFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->Init();
-}
-
-void HpaeRendererManagerDeInitFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    bool isMoveDefault = false;
-    rendererManager->DeInit(isMoveDefault);
-}
-
-void HpaeRendererManagerIsInitFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->IsInit();
-}
-
-void HpaeRendererManagerIsRunningFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    rendererManager->IsRunning();
-}
-
 void HpaeRendererManagerIsMsgProcessingFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -410,21 +331,6 @@ void HpaeRendererManagerGetAudioEffectModeFuzzTest()
     int32_t effectMode = GetData<int32_t>();
     rendererManager->GetAudioEffectMode(sessionId, effectMode);
 }
-
-// void initFuzzTest()
-// {
-//     std::shared_ptr<HPAE::HpaeManager> hpaeManager_ = std::make_shared<HPAE::HpaeManager>();
-//     hpaeManager_->Init();
-//     hpaeManager_->IsInit();
-//     WaitForMsgProcessing(hpaeManager_);
-//     hpaeManager_->IsRunning();
-//     hpaeManager_->DeInit();
-//     hpaeManager_->IsInit();
-//     WaitForMsgProcessing(hpaeManager_);
-//     hpaeManager_->IsRunning();
-//     hpaeManager_->DeInit();
-//     hpaeManager_ = nullptr;
-// }
 
 void IRendererManagerReloadFuzzTest()
 {
@@ -490,7 +396,7 @@ void IRendererManagerCreateDestoryStreamFuzzTest()
     WaitForMsgProcessing(hpaeRendererManager);
 }
 
-Void IRendererManagerStartPuaseStreamFuzzTest()
+void IRendererManagerStartPuaseStreamFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
@@ -566,13 +472,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     UploadDumpSinkInfoFuzzTest,
     OnNotifyDfxNodeInfoFuzzTest,
     HpaeRendererManagerConstructFuzzTest,
-    //HpaeRendererManagerCreateStreamFuzzTest,
-    //HpaeRendererManagerDestroyStreamFuzzTest,
-    //HpaeRendererManagerStartFuzzTest,
-    //HpaeRendererManagerPauseFuzzTest,
     HpaeRendererManagerFlushFuzzTest,
     HpaeRendererManagerDrainFuzzTest,
-    //HpaeRendererManagerStopFuzzTest,
     HpaeRendererManagerReleaseFuzzTest,
     HpaeRendererManagerMoveStreamFuzzTest,
     HpaeRendererManagerMoveAllStreamFuzzTest,
@@ -580,10 +481,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeRendererManagerSetMuteFuzzTest,
     HpaeRendererManagerProcessFuzzTest,
     HpaeRendererManagerHandleMsgFuzzTest,
-    //HpaeRendererManagerInitFuzzTest,
-    //HpaeRendererManagerDeInitFuzzTest,
-    //HpaeRendererManagerIsInitFuzzTest,
-    //HpaeRendererManagerIsRunningFuzzTest,
     HpaeRendererManagerIsMsgProcessingFuzzTest,
     HpaeRendererManagerDeactivateThreadFuzzTest,
     HpaeRendererManagerSetClientVolumeFuzzTest,
