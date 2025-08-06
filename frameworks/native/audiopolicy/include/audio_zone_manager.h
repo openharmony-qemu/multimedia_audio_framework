@@ -74,6 +74,8 @@ public:
 
     virtual const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId) = 0;
 
+    virtual int32_t GetAudioZoneByName(std::string name) = 0;
+
     virtual int32_t BindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices) = 0;
 
@@ -95,8 +97,12 @@ public:
 
     virtual int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
 
+    virtual int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) = 0;
+
     virtual int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream) = 0;
     
+    virtual int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams) = 0;
+
     virtual void SetZoneDeviceVisible(bool visible) = 0;
 
     virtual int32_t RegisterSystemVolumeProxy(int32_t zoneId,

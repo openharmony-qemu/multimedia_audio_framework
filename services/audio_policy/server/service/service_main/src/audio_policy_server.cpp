@@ -4032,6 +4032,14 @@ int32_t AudioPolicyServer::GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZon
     return SUCCESS;
 }
 
+int32_t AudioPolicyServer::GetAudioZoneByName(const std::string &name, int32_t &zoneId)
+{
+    CHECK_AND_RETURN_RET_LOG(!name.empty(), ERR_INVALID_PARAM, "audio zone name is empty");
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    zoneId = AudioZoneService::GetInstance().GetAudioZoneByName(name);
+    return SUCCESS;
+}
+
 int32_t AudioPolicyServer::BindDeviceToAudioZone(int32_t zoneId,
     const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices)
 {
@@ -4087,10 +4095,22 @@ int32_t AudioPolicyServer::AddStreamToAudioZone(int32_t zoneId, const AudioZoneS
     return AudioZoneService::GetInstance().AddStreamToAudioZone(zoneId, stream);
 }
 
+int32_t AudioPolicyServer::AddStreamsToAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().AddStreamsToAudioZone(zoneId, streams);
+}
+
 int32_t AudioPolicyServer::RemoveStreamFromAudioZone(int32_t zoneId, const AudioZoneStream &stream)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
     return AudioZoneService::GetInstance().RemoveStreamFromAudioZone(zoneId, stream);
+}
+
+int32_t AudioPolicyServer::RemoveStreamsFromAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
+    return AudioZoneService::GetInstance().RemoveStreamsFromAudioZone(zoneId, streams);
 }
 
 int32_t AudioPolicyServer::SetZoneDeviceVisible(bool visible)
