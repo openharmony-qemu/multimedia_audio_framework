@@ -31,7 +31,7 @@ void UserSelectRouterUnitTest::SetUpTestCase(void) {}
 void UserSelectRouterUnitTest::TearDownTestCase(void) {}
 void UserSelectRouterUnitTest::SetUp(void) {}
 void UserSelectRouterUnitTest::TearDown(void) {}
-STREAM_USAGE_MEDIA
+
 /**
  * @tc.name  : Test GetMediaRenderDevice.
  * @tc.number: GetMediaRenderDevice_001
@@ -55,6 +55,19 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level1)
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
     auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_VOICE_RINGTONE, clientUID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_003
+ * @tc.desc  : GetMediaRenderDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level1)
+{
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_MEDIA, clientUID);
     EXPECT_NE(result, nullptr);
 }
 

@@ -319,6 +319,7 @@ config("audio_service_config") {
     "../../services/audio_service/test/unittest/audio_server_unit_test",
     "../../services/audio_service/test/unittest/pro_renderer_stream_impl_unit_test",
     "../../test/fuzztest/*",
+    "../../services/audio_service/test/unittest:audio_process_in_client_unit_test",
   ]
 
   include_dirs = [
