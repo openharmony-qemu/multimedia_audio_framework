@@ -1918,5 +1918,5 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
     auto ret = capturerInClientInner->FlushCbBuffer();
     EXPECT_EQ(ret, SUCCESS);
 }
-} // namespace AudioStandard
+} // namespace  AudioStandard
 } // namespace OHOS

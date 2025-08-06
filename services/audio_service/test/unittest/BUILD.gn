@@ -1244,7 +1244,7 @@ ohos_unittest("audio_resource_service_unit_test") {
     "../../../audio_service:audio_client",
     "../../../../frameworks/native/audioschedule:audio_schedule",
     ]
-  external_deps = [
+  external_deps =  [
     "c_utils:utils",
     "eventhandler:libeventhandler",
     "frame_aware_sched:rtg_interface",

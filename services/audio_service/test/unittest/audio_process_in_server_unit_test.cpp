@@ -995,7 +995,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_037, TestSize.Level1)
  * @tc.name  : Test AudioProcessInServer API
  * @tc.type  : FUNC
  * @tc.number: AudioProcessInServer_038
- * @tc.desc  : Test AudioProcessInServer interface.
+ * @tc.desc  : Test AudioProcessInServer interface1.
  */
 HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
 {
