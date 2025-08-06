@@ -3523,8 +3523,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (streamType == STREAM_MUSIC) {
         int32_t result = audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
-        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result,
-            "Set volume failed, macAddress: %{public}s", macAddress.c_str());
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Set volume failed");
 
         VolumeEvent volumeEvent = VolumeEvent(streamType, volume, updateUi);
 
