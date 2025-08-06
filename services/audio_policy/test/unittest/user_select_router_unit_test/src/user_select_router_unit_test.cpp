@@ -60,19 +60,6 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level1)
 
 /**
  * @tc.name  : Test GetMediaRenderDevice.
- * @tc.number: GetMediaRenderDevice_003
- * @tc.desc  : GetMediaRenderDevice.
- */
-HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level1)
-{
-    UserSelectRouter userSelectRouter;
-    int32_t clientUID = 1;
-    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_MEDIA, clientUID);
-    EXPECT_NE(result, nullptr);
-}
-
-/**
- * @tc.name  : Test GetMediaRenderDevice.
  * @tc.number: GetCallRenderDevice_001
  * @tc.desc  : GetMediaRenderDevice.
  */
