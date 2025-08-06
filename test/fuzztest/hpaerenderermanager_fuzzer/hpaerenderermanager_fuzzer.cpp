@@ -120,7 +120,7 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
 
-static void WaitForMsgProcessing(std::shared_ptr<IHpaeRenderManagerType> &hpaeRendererManager)
+void WaitForMsgProcessing(std::shared_ptr<IHpaeRenderManager> &hpaeRendererManager)
 {
     int waitCount = 0;
     const int waitCountThd = 5;
@@ -466,7 +466,7 @@ void IRendererManagerCreateDestoryStreamFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
-    auto hpaerendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    auto hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     hpaeRendererManager->Init();
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->IsInit();
@@ -494,7 +494,7 @@ Void IRendererManagerStartPuaseStreamFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
-    auto hpaerendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    auto hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     hpaeRendererManager->Init();
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->IsInit();
@@ -530,7 +530,7 @@ void UpdateCollaborativeStateFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
-    auto hpaerendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    auto hpaeRendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     hpaeRendererManager->Init();
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->IsInit();
