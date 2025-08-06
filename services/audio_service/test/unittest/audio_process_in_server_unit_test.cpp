@@ -1150,5 +1150,77 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
     audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
     EXPECT_NE(audioProcessInServerRet, nullptr);
 }
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_001
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 0;
+
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_002
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 1;
+
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_002
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 1;
+
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+}
+
+/**
+ * @tc.name  : Test WriteDumpFile API
+ * @tc.type  : FUNC
+ * @tc.number: WriteDumpFile_001
+ * @tc.desc  : Test WriteDumpFile interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteDumpFile_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    void *buffer = new char[100];
+    size_t bufferSize = 100;
+
+    audioProcessInServerRet->WriteDumpFile(buffer, bufferSize);
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
