@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "stream_filter_router_unit_test.h"
+#include "user_select_router_unit_test.h"
 #include "audio_errors.h"
 #include "audio_policy_log.h"
 #include "audio_policy_server.h"
@@ -27,235 +27,202 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 
-void StreamFilterRouterUnitTest::SetUpTestCase(void) {}
-void StreamFilterRouterUnitTest::TearDownTestCase(void) {}
-void StreamFilterRouterUnitTest::SetUp(void) {}
-void StreamFilterRouterUnitTest::TearDown(void) {}
-
+void UserSelectRouterUnitTest::SetUpTestCase(void) {}
+void UserSelectRouterUnitTest::TearDownTestCase(void) {}
+void UserSelectRouterUnitTest::SetUp(void) {}
+void UserSelectRouterUnitTest::TearDown(void) {}
+STREAM_USAGE_MEDIA
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_001
- * @tc.desc  : Test GetCallRenderDevice And GetMediaRenderDevice.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_001
+ * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_NULL;
-    int32_t callerPid = IPCSkeleton::GetCallingPid();
-    std::cout<<callerPid<<std::endl;
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_RINGTONE, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_002
- * @tc.desc  : Test GetCallRenderDevice And GetMediaRenderDevice.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_002
+ * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_ALL;
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_VOICE_RINGTONE, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_003
- * @tc.desc  : Test GetCallRenderDevice And GetMediaRenderDevice.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetMediaRenderDevice_003
+ * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_003, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_PROJECTION;
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    streamUsage = STREAM_USAGE_MUSIC;
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    auto result = userSelectRouter.GetMediaRenderDevice(STREAM_USAGE_MEDIA, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_004
- * @tc.desc  : Test GetCallRenderDevice And GetMediaRenderDevice.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetCallRenderDevice_001
+ * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_004, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_001, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_COOPERATION;
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    int32_t clientUID = 1;
+    auto result = userSelectRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_005
- * @tc.desc  : Test GetCallRenderDevice And GetMediaRenderDevice.
+ * @tc.name  : Test GetCallRenderDevic.
+ * @tc.number: GetCallRenderDevice_002
+ * @tc.desc  : GetCallRenderDevic.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_005, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_002, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    int32_t clientId = 1;
-    CastType type = static_cast<CastType>(99);
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    int32_t clientUID = 1;
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    preferredDevice->deviceId_ = 0;
+    auto result = userSelectRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_006
- * @tc.desc  : Test GetCallCaptureDevice And GetRecordCaptureDevice.
+ * @tc.name  : Test GetMediaRenderDevice.
+ * @tc.number: GetCallRenderDevice_003
+ * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_006, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_003, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_NULL;
-    auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    int32_t clientUID = 1;
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    preferredDevice->deviceId_ = 1;
+    auto result = userSelectRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_007
- * @tc.desc  : Test GetCallCaptureDevice And GetRecordCaptureDevice.
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_001
+ * @tc.desc  : GetCallCaptureDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_007, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_ALL;
-    auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    preferredDevice->deviceId_ = 1;
+    auto result = userSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_008
- * @tc.desc  : Test GetCallCaptureDevice And GetRecordCaptureDevice.
+ * @tc.name  : Test GetCallCaptureDevice.
+ * @tc.number: GetCallCaptureDevice_001
+ * @tc.desc  : GetCallCaptureDevice.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_008, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_002, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_PROJECTION;
-    auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    sourceType = SOURCE_TYPE_MIC;
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto preferredDevice = std::make_shared<AudioDeviceDescriptor>();
+    preferredDevice->deviceId_ = 0;
+    auto result = userSelectRouter.GetCallCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_009
- * @tc.desc  : Test GetCallCaptureDevice And GetRecordCaptureDevice.
+ * @tc.name  : Test GetRingRenderDevices.
+ * @tc.number: GetRingRenderDevices_001
+ * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_009, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_001, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = CAST_TYPE_COOPERATION;
-    auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs = userSelectRouter.GetRingRenderDevices(STREAM_USAGE_RINGTONE,
+        clientUID);
+    EXPECT_EQ(descs.size(), 1);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_010
- * @tc.desc  : Test GetCallCaptureDevice And GetRecordCaptureDevice.
+ * @tc.name  : Test GetRingRenderDevices.
+ * @tc.number: GetRingRenderDevices_001
+ * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_010, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_002, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = static_cast<CastType>(99);
-    auto result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs = userSelectRouter.GetRingRenderDevices(STREAM_USAGE_VOICE_RINGTONE,
+        clientUID);
+    EXPECT_EQ(descs.size(), 1);
 }
 
 /**
- * @tc.name  : Test StreamFilterRouter.
- * @tc.number: StreamFilterRouter_011
- * @tc.desc  : Test routingInfo.descriptor equals nullptr.
+ * @tc.name  : Test GetRingRenderDevices.
+ * @tc.number: GetRingRenderDevices_003
+ * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(StreamFilterRouterUnitTest, StreamFilterRouter_011, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_003, TestSize.Level1)
 {
-    auto streamFilterRouter_ = std::make_shared<StreamFilterRouter>();
-    std::shared_ptr<AudioDeviceDescriptor> deviceDescriptor = nullptr;
-    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
-    SourceType sourceType = SOURCE_TYPE_VOICE_CALL;
-    int32_t clientId = 1;
-    CastType type = static_cast<CastType>(99);
-    auto result = streamFilterRouter_->GetCallRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+    UserSelectRouter userSelectRouter;
+    int32_t clientUID = 1;
+    vector<shared_ptr<AudioDeviceDescriptor>> descs = userSelectRouter.GetRingRenderDevices(STREAM_USAGE_ALARM,
+        clientUID);
+    EXPECT_EQ(descs.size(), 1);
+}
 
-    result = streamFilterRouter_->GetMediaRenderDevice(streamUsage, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+/**
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_001
+ * @tc.desc  : GetRecordCaptureDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level1)
+{
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
 
-    result = streamFilterRouter_->GetCallCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
-
-    result = streamFilterRouter_->GetRecordCaptureDevice(sourceType, clientId);
-    EXPECT_NE(streamFilterRouter_, nullptr);
+/**
+ * @tc.name  : Test GetRecordCaptureDevice.
+ * @tc.number: GetRecordCaptureDevice_001
+ * @tc.desc  : GetRecordCaptureDevice.
+ */
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
+{
+    UserSelectRouter userSelectRouter;
+    SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 678;
+    auto result = userSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
