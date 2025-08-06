@@ -169,6 +169,9 @@ AudioIOHandle AudioIOHandleMap::GetSourceIOHandle(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_ACCESSORY:
             ioHandle = IOHandles_[ACCESSORY_SOURCE];
             break;
+        case DeviceType::DEVICE_TYPE_AI_SOURCE:
+            ioHandle = IOHandles_[PRIMARY_AI_MIC];
+            break;
         default:
             ioHandle = IOHandles_[PRIMARY_MIC];
             break;

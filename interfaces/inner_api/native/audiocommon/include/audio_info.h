@@ -85,6 +85,7 @@ const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SET
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
+const char* CAPTURE_VOICE_CALL_PERMISSION = "ohos.permission.CAPTURE_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
@@ -665,6 +666,7 @@ public:
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
+    std::string hdiSourceType = "";
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -686,7 +688,8 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
+            parcel.WriteString(hdiSourceType);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -702,6 +705,7 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
+        hdiSourceType = parcel.ReadString();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)
@@ -1890,6 +1894,20 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
+};
+
+struct AudioSourceStrategyType {
+    AudioSourceStrategyType() = default;
+    std::string hdiSource = "AUDIO_INPUT_MIC_TYPE";
+    std::string adapterName = "primary";
+    std::string pipeName = "primary_input";
+    std::string audioFlag = "AUDIO_INPUT_FLAG_NORMAL";
+    uint32_t priority = 0;
+
+    AudioSourceStrategyType(const std::string &hdiSource, const std::string &adapterName, const std::string &pipeName,
+        const std::string &audioFlag, const uint32_t priority)
+        : hdiSource(hdiSource), adapterName(adapterName), pipeName(pipeName), audioFlag(audioFlag), priority(priority)
+    {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

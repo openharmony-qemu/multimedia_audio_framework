@@ -85,7 +85,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE),
-    std::string(ACCESSORY_SOURCE)
+    std::string(ACCESSORY_SOURCE),
+    std::string(PRIMARY_AI_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -899,6 +900,16 @@ uint32_t AudioCoreService::GenerateSessionId()
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
+void AudioCoreService::GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState)
+{
+    return audioPolicyManager_.GetVoiceTranscriptionMuteState(sessionId, muteState);
+}
+
+void AudioCoreService::RemoveVoiceTranscriptionMuteState(uint32_t sessionId)
+{
+    return audioPolicyManager_.RemoveVoiceTranscriptionMuteState(sessionId);
+}
+
 void AudioCoreService::AddSessionId(const uint32_t sessionId)
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
@@ -1171,7 +1182,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
 
     // MoveSourceOuputByIndexName
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
-        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
+        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front(), streamDesc->routeFlag_)
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
@@ -1197,7 +1208,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 
     // MoveSourceOuputByIndexName
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
-        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
+        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front(), streamDesc->routeFlag_)
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
@@ -1214,13 +1225,18 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 }
 
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
-    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(LOCAL_NETWORK_ID == localDeviceDescriptor->networkId_, ERR_INVALID_OPERATION,
         "failed: not a local device.");
 
+    AUDIO_INFO_LOG("routeFlag is %{public}d", routeFlag);
+    DeviceType tempDeviceType = localDeviceDescriptor->deviceType_;
+    if (routeFlag == AUDIO_INPUT_FLAG_AI) {
+        tempDeviceType = DeviceType::DEVICE_TYPE_AI_SOURCE;
+    }
     uint32_t sourceId = -1; // invalid source id, use source name instead.
-    std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_);
+    std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(tempDeviceType);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
@@ -1658,8 +1674,10 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
 
-        if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
-            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) {
+        AUDIO_INFO_LOG("routeFlag:%{public}d", pipeInfo->routeFlag_);
+        if ((audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
+            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI)) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }

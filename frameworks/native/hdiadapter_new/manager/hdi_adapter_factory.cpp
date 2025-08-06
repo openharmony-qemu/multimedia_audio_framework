@@ -110,11 +110,13 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
     CHECK_AND_RETURN_RET(idHandler.CheckId(captureId, HDI_ID_BASE_CAPTURE), nullptr);
     uint32_t type = idHandler.ParseType(captureId);
     std::string info = idHandler.ParseInfo(captureId);
+    AUDIO_INFO_LOG("HdiIdType: %{public}u, info: %{public}s", type, info.c_str());
 
     std::shared_ptr<IAudioCaptureSource> source = nullptr;
     switch (type) {
         case HDI_ID_TYPE_PRIMARY:
         case HDI_ID_TYPE_ACCESSORY:
+        case HDI_ID_TYPE_VOICE_TRANSCRIPTION:
             source = CreatePrimaryCaptureSource(captureId, info);
             break;
         case HDI_ID_TYPE_BLUETOOTH:

@@ -19,6 +19,7 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_device_type.h"
 #include "audio_effect.h"
+#include "v5_0/iaudio_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -372,6 +373,34 @@ void PipeStreamPropInfo::SelfCheck()
                 pipeInfoPtr->name_.c_str(), deviceName.c_str());
         }
     }
+}
+
+AudioSourceStrategyData& AudioSourceStrategyData::GetInstance()
+{
+    static AudioSourceStrategyData instance;
+    return instance;
+}
+
+void AudioSourceStrategyData::SetSourceStrategyMap(std::shared_ptr<std::map<SourceType,
+    AudioSourceStrategyType>> newMap)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    sourceStrategyMap_ = newMap;
+}
+
+std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> AudioSourceStrategyData::GetSourceStrategyMap() const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return sourceStrategyMap_;
+}
+
+uint32_t AudioSourceStrategyData::MappingAudioFlag(const std::string& key) const
+{
+    auto it = audioFlagMap_.find(key);
+    if (it != audioFlagMap_.end()) {
+        return it->second;
+    }
+    return AUDIO_FLAG_NONE;
 }
 
 }

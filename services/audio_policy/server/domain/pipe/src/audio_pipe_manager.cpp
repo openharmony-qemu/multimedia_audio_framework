@@ -167,7 +167,9 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
     AUDIO_INFO_LOG("Flag %{public}d", routeFlag);
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
-        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD)) {
+        (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
+        (routeFlag & AUDIO_INPUT_FLAG_AI) ||
+        (routeFlag & AUDIO_INPUT_FLAG_NORMAL)) {
         return true;
     }
     return false;
@@ -540,6 +542,26 @@ std::vector<std::shared_ptr<AudioStreamDescriptor>> AudioPipeManager::GetAllCapt
         }
     }
     return streamDescs;
+}
+
+std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindPipeBySessionId(
+    const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId)
+{
+    for (const auto &pipe : pipeList) {
+        if (!pipe) {
+            continue;
+        }
+
+        for (const auto &stream : pipe->streamDescriptors_) {
+            if (!stream) {
+                continue;
+            }
+            if (stream->sessionId_ == sessionId) {
+                return pipe;
+            }
+        }
+    }
+    return nullptr;
 }
 } // namespace AudioStandard
 } // namespace OHOS

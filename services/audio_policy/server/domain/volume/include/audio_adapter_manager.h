@@ -301,6 +301,8 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
+    void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState);
+    void RemoveVoiceTranscriptionMuteState(uint32_t sessionId);
 
 private:
     friend class PolicyCallbackImpl;

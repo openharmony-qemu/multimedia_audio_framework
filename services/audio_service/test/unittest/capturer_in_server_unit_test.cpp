@@ -14,13 +14,16 @@
  */
 
 #include "gtest/gtest.h"
+#include <gmock/gmock.h>
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "pa_capturer_stream_impl.h"
 #include "pa_adapter_manager.h"
 #include "capturer_in_server.h"
+#include "core_service_handler_mock_interface.h"
 
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1364,6 +1367,84 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
     capturerInServer_->OnStatusUpdate(static_cast<IOperation>(999));
 
     EXPECT_NE(capturerInServer_->status_, I_STATUS_INVALID);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_043.
+ * @tc.desc  : Test GetAudioTime interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_043, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    BufferDesc dstBuffer = { nullptr, 1024 };
+    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_CALL, dstBuffer);
+    EXPECT_EQ(dstBuffer.buffer, nullptr);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_044.
+ * @tc.desc  : Test GetAudioTime interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_044, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
+    memset_s(dstBuffer.buffer, 1024, 1, 1024);
+    auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
+    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceTranscriptionMuteState(100001, _))
+        .Times(1)
+        .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
+            muteState = true;
+            return SUCCESS;
+        }));
+    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
+    for (int32_t i = 0; i < 1024; i++) {
+        EXPECT_EQ(dstBuffer.buffer[i], 0);
+    }
+
+    delete[] dstBuffer.buffer;
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
+ * @tc.number: CapturerInServerUnitTest_045.
+ * @tc.desc  : Test GetAudioTime interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_045, TestSize.Level1)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    ASSERT_TRUE(capturerInServer_ != nullptr);
+
+    BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
+    memset_s(dstBuffer.buffer, 1024, 1, 1024);
+    auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
+    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceTranscriptionMuteState(100001, _))
+        .Times(1)
+        .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
+            muteState = false;
+            return SUCCESS;
+        }));
+    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
+    for (int32_t i = 0; i < 1024; i++) {
+        EXPECT_EQ(dstBuffer.buffer[i], 1);
+    }
+
+    delete[] dstBuffer.buffer;
 }
 } // namespace AudioStandard
 } // namespace OHOS

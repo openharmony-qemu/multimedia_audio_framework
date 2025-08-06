@@ -71,6 +71,7 @@ enum class AsrNoiseSuppressionMode {
      * @since 19
      */
     ASR_WHISPER_MODE = 6,
+    VOICE_TRANSCRIPTION = 7,
 };
 
 /**

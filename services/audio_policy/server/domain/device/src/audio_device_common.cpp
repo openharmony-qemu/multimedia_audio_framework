@@ -88,7 +88,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
+    std::string(FILE_SOURCE),
+    std::string(PRIMARY_AI_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)

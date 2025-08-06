@@ -104,6 +104,9 @@ uint32_t IdHandler::GetCaptureIdByDeviceClass(const std::string &deviceClass, co
         if (info == HDI_ID_INFO_EC || info == HDI_ID_INFO_MIC_REF) {
             return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, info);
         }
+        if (sourceType == SOURCE_TYPE_VOICE_TRANSCRIPTION) {
+            return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_VOICE_TRANSCRIPTION, HDI_ID_INFO_DEFAULT);
+        }
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_DEFAULT);
     } else if (deviceClass == "usb") {
         return GetId(HDI_ID_BASE_CAPTURE, HDI_ID_TYPE_PRIMARY, HDI_ID_INFO_USB);

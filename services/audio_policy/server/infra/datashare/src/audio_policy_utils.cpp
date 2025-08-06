@@ -47,6 +47,7 @@ static const char* AUDIO_SERVICE_PKG = "audio_manager_service";
 std::map<std::string, ClassType> AudioPolicyUtils::portStrToEnum = {
     {PRIMARY_SPEAKER, TYPE_PRIMARY},
     {PRIMARY_MIC, TYPE_PRIMARY},
+    {PRIMARY_AI_MIC, TYPE_PRIMARY},
     {PRIMARY_WAKEUP_MIC, TYPE_PRIMARY},
     {BLUETOOTH_SPEAKER, TYPE_A2DP},
     {BLUETOOTH_MIC, TYPE_A2DP},
@@ -349,6 +350,9 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
         case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
             break;
+        case InternalDeviceType::DEVICE_TYPE_AI_SOURCE:
+            portName = PRIMARY_AI_MIC;
+            break;
         default:
             portName = PORT_NONE;
             break;
@@ -386,7 +390,8 @@ std::string AudioPolicyUtils::GetInputDeviceClassBySourcePortName(std::string so
         {PRIMARY_WAKEUP, PRIMARY_CLASS},
         {FILE_SOURCE, FILE_CLASS},
         {BLUETOOTH_MIC, A2DP_CLASS},
-        {PORT_NONE, INVALID_CLASS}
+        {PORT_NONE, INVALID_CLASS},
+        {PRIMARY_AI_MIC, PRIMARY_CLASS}
     };
     std::string deviceClass = INVALID_CLASS;
     if (sourcePortStrToClassStrMap_.count(sourcePortName) > 0) {
@@ -589,6 +594,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
         case DeviceType::DEVICE_TYPE_ACCESSORY:
+        case DeviceType::DEVICE_TYPE_AI_SOURCE:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -647,6 +653,8 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         devType = DEVICE_TYPE_FILE_SINK;
     } else if (deviceName == "file_source") {
         devType = DEVICE_TYPE_FILE_SOURCE;
+    } else if (deviceName == "Built_in_ai_source") {
+        devType = DEVICE_TYPE_AI_SOURCE;
     }
     return devType;
 }

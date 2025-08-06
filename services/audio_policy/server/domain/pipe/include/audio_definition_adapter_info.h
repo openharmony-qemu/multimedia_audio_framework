@@ -242,6 +242,24 @@ private:
     std::string version_ = STR_INITED;
 };
 
+class AudioSourceStrategyData {
+public:
+    static AudioSourceStrategyData& GetInstance();
+    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> GetSourceStrategyMap() const;
+    void SetSourceStrategyMap(std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> newMap);
+    uint32_t MappingAudioFlag(const std::string& key) const;
+private:
+    AudioSourceStrategyData() = default;
+    AudioSourceStrategyData(const AudioSourceStrategyData&) = delete;
+    AudioSourceStrategyData& operator=(const AudioSourceStrategyData&) = delete;
+    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap_ =
+        std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
+    const std::unordered_map<std::string, AudioFlag> audioFlagMap_ = {
+        {"AUDIO_INPUT_FLAG_AI", AUDIO_INPUT_FLAG_AI}
+    };
+    mutable std::mutex mutex_;
+};
+
 } // namespace AudioStandard
 } // namespace OHOS
 

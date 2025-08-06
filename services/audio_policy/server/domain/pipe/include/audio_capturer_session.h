@@ -98,10 +98,18 @@ private:
     void SetInputDeviceTypeForReload(const AudioDeviceDescriptor &inputDevice);
     const AudioDeviceDescriptor& GetInputDeviceTypeForReload();
     bool IsVoipDeviceChanged(const AudioDeviceDescriptor &inputDevcie, const AudioDeviceDescriptor &outputDevice);
-    bool FindRunningNormalSession(uint32_t sessionId, AudioCapturerChangeInfo &runingSessionInfo);
+    bool FindRunningNormalSession(uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo);
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
+    bool IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> pipe);
+    bool CheckAIinputPipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+        uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool CheckNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+        uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> stream);
+    bool CompareAIxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
+        uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;

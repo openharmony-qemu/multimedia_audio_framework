@@ -2379,6 +2379,10 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
         if (type == HDI_ID_TYPE_BLUETOOTH) {
             return info == HDI_ID_INFO_DEFAULT;
         }
+
+        if (type == HDI_ID_TYPE_VOICE_TRANSCRIPTION) {
+            return info == HDI_ID_INFO_DEFAULT;
+        }
         return false;
     };
     std::function<std::shared_ptr<IAudioSourceCallback>(uint32_t)> callbackGenerator = [this](uint32_t captureId) ->

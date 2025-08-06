@@ -36,6 +36,8 @@ public:
         bool isReloadProcess) = 0;
     virtual uint32_t GenerateSessionId() = 0;
     virtual int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config) = 0;
+    virtual void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState) = 0;
+    virtual void RemoveVoiceTranscriptionMuteState(uint32_t sessionId) = 0;
 
     virtual ~ICoreServiceProvider() = default;
 };

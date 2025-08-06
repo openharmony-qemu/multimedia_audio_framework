@@ -1486,6 +1486,11 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
             if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_VOIP) {
                 idInfo = HDI_ID_INFO_VOIP;
             }
+            return;
+        }
+
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_AI) {
+            idType = HDI_ID_TYPE_VOICE_TRANSCRIPTION;
         }
     }
 }
@@ -3290,6 +3295,16 @@ void AudioAdapterManager::HandleHearingAidVolume(AudioStreamType streamType)
             SetSystemVolumeLevel(streamType, defaultVolume);
         }
     }
+}
+
+void AudioAdapterManager::GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState)
+{
+    return AudioPolicyService::GetAudioPolicyService().GetVoiceTranscriptionMuteState(sessionId, muteState);
+}
+
+void AudioAdapterManager::RemoveVoiceTranscriptionMuteState(uint32_t sessionId)
+{
+    return AudioPolicyService::GetAudioPolicyService().RemoveVoiceTranscriptionMuteState(sessionId);
 }
 
 // LCOV_EXCL_STOP

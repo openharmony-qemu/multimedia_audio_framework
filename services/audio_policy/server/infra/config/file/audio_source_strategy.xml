@@ -1,0 +1,7 @@
+<audio_source_strategy version = "1.0">
+    <audio_source_config>
+        <config source="SOURCE_TYPE_VOICE_TRANSCRIPTION" hdiSource="AUDIO_INPUT_VOICE_TRANSCRIPTION">
+            <item adapter="primary" pipe="primary_input_AI" audioFlag="AUDIO_INPUT_FLAG_AI" priority="1"/>
+        </config>
+    </audio_source_config>
+</audio_source_strategy>

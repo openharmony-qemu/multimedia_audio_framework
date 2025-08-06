@@ -1627,6 +1627,7 @@ AudioPin AudioSystemManager::GetPinValueFromType(DeviceType deviceType, DeviceRo
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_MIC:
         case OHOS::AudioStandard::DEVICE_TYPE_WAKEUP:
+        case OHOS::AudioStandard::DEVICE_TYPE_AI_SOURCE:
             pin = AUDIO_PIN_IN_MIC;
             break;
         case OHOS::AudioStandard::DEVICE_TYPE_WIRED_HEADSET:

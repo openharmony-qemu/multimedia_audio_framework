@@ -19,6 +19,7 @@
 #include "core_service_provider_stub.h"
 #include "audio_service_log.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -81,6 +82,19 @@ int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
     ret = coreServiceWorker_->SetWakeUpAudioCapturerFromAudioServer(config);
     return SUCCESS;
+}
+
+int32_t CoreServiceProviderWrapper::GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState)
+{
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->GetVoiceTranscriptionMuteState(sessionId, muteState);
+}
+
+int32_t CoreServiceProviderWrapper::RemoveVoiceTranscriptionMuteState(uint32_t sessionId)
+{
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), AUDIO_PERMISSION_DENIED, "only audio is allowed");
+    CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
+    return coreServiceWorker_->RemoveVoiceTranscriptionMuteState(sessionId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

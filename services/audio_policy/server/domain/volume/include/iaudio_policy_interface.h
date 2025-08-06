@@ -244,6 +244,8 @@ public:
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
+    virtual void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState) = 0;
+    virtual void RemoveVoiceTranscriptionMuteState(uint32_t sessionId) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
