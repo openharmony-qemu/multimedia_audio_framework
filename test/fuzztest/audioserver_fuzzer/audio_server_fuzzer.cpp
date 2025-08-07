@@ -1224,7 +1224,7 @@ void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
     static const vector<string> testPairs = {
         "unprocess_audio_effect",
         "test"
-    }
+    };
     std::vector<std::pair<std::string, std::string>> params;
     uint32_t id = *reinterpret_cast<const uint32_t*>(size) % g_testKeys.size();
     std::pair<std::string, std::string> param = std::make_pair(g_testKeys[id], g_testKeys[id]);
@@ -1295,7 +1295,7 @@ void AudioServerSetIORoutesFuzzTest(const uint8_t *rawData, size_t size)
         NO_A2DP_DEVICE,
         A2DP_NOT_OFFLOAD,
         A2DP_OFFLOAD
-    }
+    };
     BluetoothOffloadState a2dpOffloadFlag = testBluetoothOffloadStates[index % testBluetoothOffloadStates.size()];
     std::string deviceName = "test_deviceName";
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -1819,6 +1819,16 @@ void AudioServerAddThreadToGroupFuzzTest(const uint8_t *rawData, size_t size)
     audioServerPtr->AddThreadToGroup(pid, workgroupId, tokenId);
 }
 
+void AudioServerForceStopAudioStreamFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t audioType = *reinterpret_cast<const int32_t*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->ForceStopAudioStream(audioType);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1938,6 +1948,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerCreateAudioWorkgroupFuzzTest,
     OHOS::AudioStandard::AudioServerReleaseAudioWorkgroupFuzzTest,
     OHOS::AudioStandard::AudioServerAddThreadToGroupFuzzTest,
+    OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest
 };
 
 /* Fuzzer entry point */
