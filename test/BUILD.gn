@@ -151,6 +151,7 @@ group("audio_unit_test") {
         "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
+        "../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
       ]
     }
   }
