@@ -60,14 +60,14 @@ extern "C" {
         uint32_t numChannels; /** Number of channels */
         uint32_t filterLength; /** Number of taps of anti-aliasing/imaging filter */
         uint32_t bufferSize; /** Number of buffer samples for each channel */
-        int32_t quoSamplerateRatio; /** Quotient of (input sampling frequency)/(output sampling frequency) */
-        int32_t remSamplerateRatio; /** remainder of (input sampling frequency)/(output sampling frequency) */
+        uint32_t quoSamplerateRatio; /** Quotient of (input sampling frequency)/(output sampling frequency) */
+        uint32_t remSamplerateRatio; /** remainder of (input sampling frequency)/(output sampling frequency) */
         float cutoff; /** Normalized cutoff frequency of anti-aliasing/imaging filter */
         float coshParameter; /** Parameter of cosh window for adjusting side-lobe decay of filter */
         int32_t isInitialized; /** If the state is initialized, isInitialized=1. */
         int32_t isStarted; /** Once the resampler has processed, isStarted = 1. */
 
-        int32_t  inputIndex; /** Index of the input to be processed. */
+        uint32_t inputIndex; /** Index of the input to be processed. */
         uint32_t subfilterNum; /** What number of polyphase subfilters to use. */
         uint32_t magicSamples; /** Used for variable sampling frequency (don't need this?) */
 
