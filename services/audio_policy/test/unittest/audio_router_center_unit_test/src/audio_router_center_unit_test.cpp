@@ -140,17 +140,17 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test FetchRingTenderDevices.
- * @tc.number: FetchRingTenderDevices_001
- * @tc.desc  : Test FetchRingTenderDevices interface.
+ * @tc.name  : Test FetchRingRenderDevices.
+ * @tc.number: FetchRingRenderDevices_001
+ * @tc.desc  : Test FetchRingRenderDevices interface.
  */
-HWTEST(AudioRouterCenterUnitTest, FetchRingTenderDevices_001, TestSize.Level1)
+HWTEST(AudioRouterCenterUnitTest, FetchRingRenderDevices_001, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
     StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
     int32_t clientUID = 1000;
     RouterType routerType;
-    auto result = audioRouterCenter.FetchRingTenderDevices(streamUsage, clientUID, routerType);
+    auto result = audioRouterCenter.FetchRingRenderDevices(streamUsage, clientUID, routerType);
     EXPECT_EQ(result.front()->deviceType_, DEVICE_TYPE_NONE);
 }
 
