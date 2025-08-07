@@ -357,6 +357,10 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    if (zoneId == 0) {
+        AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
+        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice);
+    }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 
