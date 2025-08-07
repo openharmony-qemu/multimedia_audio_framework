@@ -509,7 +509,7 @@ void AudioPolicyConfigManager::GetTargetSourceTypeAndMatchingFlag(SourceType sou
         case SOURCE_TYPE_CAMCORDER:
             break;
         case SOURCE_TYPE_UNPROCESSED:
-            useMatchingPropInfo = true;
+            useMatchingPropInfo = AudioEcManager::GetInstance().GetEcFeatureEnable() ? false : true;
             break;
         default:
             break;
