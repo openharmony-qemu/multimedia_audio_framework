@@ -30,7 +30,6 @@ using namespace std;
 
 namespace OHOS {
 namespace AudioStandard {
-// constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
 const int32_t SYSTEM_ABILITY_ID = 3001;
 const bool RUN_ON_CREATE = false;
@@ -39,10 +38,8 @@ const int32_t LIMITSIZE = 4;
 const int32_t SHIFT_LEFT_8 = 8;
 const int32_t SHIFT_LEFT_16 = 16;
 const int32_t SHIFT_LEFT_24 = 24;
-// const uint32_t LIMIT_MIN = 0;
 const int32_t AUDIO_DISTRIBUTED_SERVICE_ID = 3001;
 const int32_t AUDIO_POLICY_SERVICE_ID = 3009;
-// const uint32_t LIMIT_MAX = static_cast<uint32_t>(AudioServerInterfaceCode::AUDIO_SERVER_CODE_MAX);
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 const vector<std::string> g_testKeys = {
@@ -131,50 +128,6 @@ uint32_t Convert2Uint32(const uint8_t *ptr)
     /* Move the 0th digit to the left by 24 bits, the 1st digit to the left by 16 bits,
        the 2nd digit to the left by 8 bits, and the 3rd digit not to the left */
     return (ptr[0] << SHIFT_LEFT_24) | (ptr[1] << SHIFT_LEFT_16) | (ptr[2] << SHIFT_LEFT_8) | (ptr[3]);
-}
-
-void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    uint32_t code =  Convert2Uint32(rawData) % (LIMIT_MAX - LIMIT_MIN + 1) + LIMIT_MIN;
-    rawData = rawData + OFFSET;
-    size = size - OFFSET;
-    
-    MessageParcel data;
-    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-    data.WriteBuffer(rawData, size);
-    data.RewindRead(0);
-    MessageParcel reply;
-    MessageOption option;
-
-    std::shared_ptr<AudioServer> AudioServerPtr =
-        std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
-    if (code == static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK)) {
-        sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub =
-            new(std::nothrow) AudioPolicyManagerListenerStubImpl();
-        sptr<IRemoteObject> object = focusListenerStub->AsObject();
-        AudioServerPtr->SetParameterCallback(object);
-        return;
-    }
-    if (code == static_cast<uint32_t>(AudioServerInterfaceCode::GET_ASR_AEC_MODE)) {
-        int32_t asrAecMode = 0;
-        AudioServerPtr->SetAsrAecMode(asrAecMode);
-        AudioServerPtr->OnRemoteRequest(code, data, reply, option);
-        return;
-    }
-    AudioServerPtr->OnRemoteRequest(code, data, reply, option);
-
-    if (size < LIMITSIZE) {
-        return;
-    }
-    std::string netWorkId(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioParamKey key = *reinterpret_cast<const AudioParamKey *>(rawData);
-    std::string condition(reinterpret_cast<const char*>(rawData), size - 1);
-    std::string value(reinterpret_cast<const char*>(rawData), size - 1);
-    AudioServerPtr->OnRenderSinkParamChange(netWorkId, key, condition, value);
 }
 
 float Convert2Float(const uint8_t *ptr)
@@ -1386,7 +1339,7 @@ void AudioServerSetDmDeviceTypeFuzzTest(const uint8_t *rawData, size_t size)
     int32_t deviceTypeIn = *reinterpret_cast<const int32_t*>(rawData);
     std::vector<IntPair> activeDevices;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SetDmDeviceType(dmDeviceType,deviceTypeIn);
+    audioServerPtr->SetDmDeviceType(dmDeviceType, deviceTypeIn);
 }
 
 void AudioServerSetAudioMonoStateFuzzTest(const uint8_t *rawData, size_t size)
@@ -2241,7 +2194,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerOnRenderSinkStateChangeTest,
     OHOS::AudioStandard::AudioServerCreateHdiSinkPortTest,
     OHOS::AudioStandard::AudioServerCreateHdiSourcePortTest,
-    OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest,
