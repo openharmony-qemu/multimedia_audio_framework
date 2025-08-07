@@ -87,7 +87,7 @@ public:
  * @tc.number: GetPredictNextHandleTime_001
  * @tc.desc  : Test GetPredictNextHandleTime
  */
-HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_001, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_001, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -111,7 +111,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_001, TestSize.Leve
  * @tc.number: GetPredictNextHandleTime_002
  * @tc.desc  : Test GetPredictNextHandleTime
  */
-HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_002, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_002, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -135,7 +135,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_002, TestSize.Leve
  * @tc.number: ProcessCallbackFucIndependentg_001
  * @tc.desc  : Test ProcessCallbackFucIndependent
  */
-HWTEST(AudioProcessInClientUnitTest, ProcessCallbackFucIndependent_001, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, ProcessCallbackFucIndependent_001, TestSize.Level2)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -155,7 +155,7 @@ HWTEST(AudioProcessInClientUnitTest, ProcessCallbackFucIndependent_001, TestSize
  * @tc.number: GetPredictNextHandleTime_003
  * @tc.desc  : Test GetPredictNextHandleTime
  */
-HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_003, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_003, TestSize.Level2)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -179,7 +179,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_003, TestSize.Leve
  * @tc.number: GetPredictNextHandleTime_004
  * @tc.desc  : Test GetPredictNextHandleTime
  */
-HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_004, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_004, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -203,7 +203,7 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_004, TestSize.Leve
  * @tc.number: GetPredictNextHandleTime_005
  * @tc.desc  : Test GetPredictNextHandleTime
  */
-HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_005, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_005, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
@@ -249,7 +249,7 @@ HWTEST(AudioProcessInClientUnitTest, ReadFromProcessClient_001, TestSize.Level1)
  * @tc.number: CopyWithVolume_001
  * @tc.desc  : Test AudioProcessInClientInner::CopyWithVolume
  */
-HWTEST(AudioProcessInClientUnitTest, CopyWithVolume_001, TestSize.Level1)
+HWTEST(AudioProcessInClientUnitTest, CopyWithVolume_001, TestSize.Level4)
 {
     AudioProcessConfig config = InitProcessConfig();
     AudioService *g_audioServicePtr = AudioService::GetInstance();
