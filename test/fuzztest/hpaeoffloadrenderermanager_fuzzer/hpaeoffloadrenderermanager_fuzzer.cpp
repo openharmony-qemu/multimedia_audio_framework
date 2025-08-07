@@ -644,6 +644,9 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
     hpaeRendererManager->UpdateCollaborativeState(false);
     WaitForMsgProcessing(hpaeRendererManager);
+
+    hpaeRendererManager->DeInit();
+    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 typedef void (*TestFuncs)();
