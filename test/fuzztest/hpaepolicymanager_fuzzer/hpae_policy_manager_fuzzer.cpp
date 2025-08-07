@@ -47,7 +47,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 15;
+const uint8_t TESTSIZE = 22;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -239,6 +239,65 @@ void UpdateExtraSceneTypeFuzzTest()
     hpaePolicyManager.GetInstance().UpdateExtraSceneType(mainkey, subkey, extraSceneType);
 }
 
+void InitAudioEffectChainManagerFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    std::vector<EffectChain> effectChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+    EffectChainManagerParam effectChainManagerParam;
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> effectLibraryList;
+    hpaePolicyManager.GetInstance().InitAudioEffectChainManager(effectChains,
+        effectChainManagerParam, effectLibraryList);
+}
+
+void SetOutputDeviceSinkFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    int32_t device = GetData<int32_t>();
+    std::string sinkName = "abc";
+    hpaePolicyManager.GetInstance().SetOutputDeviceSink(device, sinkName);
+}
+
+void SetAbsVolumeStateToEffectFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    bool absVolumeState = GetData<bool>();
+    hpaePolicyManager.GetInstance().SetAbsVolumeStateToEffect(absVolumeState);
+}
+
+void InitHdiStateFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    hpaePolicyManager.GetInstance().InitHdiState();
+}
+
+void UpdateParamExtraFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    std::string mainkey = "device_status";
+    std::string subkey = "update_audio_effect_type";
+    std::string value = "test";
+    hpaePolicyManager.GetInstance().UpdateParamExtra(mainkey, subkey, value);
+}
+
+void InitAudioEnhanceChainManagerFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    std::vector<EffectChain> enhanceChains = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
+    EffectChainManagerParam managerParam;
+    std::vector<std::shared_ptr<AudioEffectLibEntry>> enhanceLibraryList;
+    hpaePolicyManager.GetInstance().InitAudioEnhanceChainManager(enhanceChains, managerParam, enhanceLibraryList);
+}
+
+void SetAudioParameterFuzzTest()
+{
+    HPAE::HpaePolicyManager hpaePolicyManager;
+    std::string adapterName = "abc";
+    AudioParamKey key = GetData<AudioParamKey>();
+    std::string condition = "123456";
+    std::string value = "123456";
+    hpaePolicyManager.GetInstance().SetAudioParameter(adapterName, key, condition, value);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     UpdateSpatializationStateFuzzTest,
     UpdateSpatialDeviceTypeFuzzTest,
@@ -255,6 +314,13 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SetAudioEnhancePropertyFuzzTest,
     GetAudioEnhancePropertyFuzzTest,
     UpdateExtraSceneTypeFuzzTest,
+    InitAudioEffectChainManagerFuzzTest,
+    SetOutputDeviceSinkFuzzTest,
+    SetAbsVolumeStateToEffectFuzzTest,
+    InitHdiStateFuzzTest,
+    UpdateParamExtraFuzzTest,
+    InitAudioEnhanceChainManagerFuzzTest,
+    SetAudioParameterFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
