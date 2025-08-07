@@ -30,7 +30,6 @@ namespace OHOS {
 namespace AudioStandard {
 
 const uint64_t TEST_POSITION = 20000;
-const uint64_t TEST_TIMESTAMP_NS = 20000;
 static constexpr int32_t AVS3METADATA_SIZE = 19824;
 
 class RendererInClientUnitTest : public testing::Test {
@@ -1589,19 +1588,37 @@ HWTEST(RendererInClientInnerUnitTest, GetFastStatus_001, TestSize.Level1)
  */
 HWTEST(RendererInClientInnerUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
 {
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+
     // prepare object
     auto testRendererInClientObj =
         std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_MUSIC, getpid());
     ASSERT_TRUE(testRendererInClientObj != nullptr);
+    AudioStreamParams curStreamParams = { .samplingRate = SAMPLE_RATE_48000 };
+    testRendererInClientObj->curStreamParams_ = curStreamParams;
  
     // start test
     std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
-        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, timestampCurrent[0]}
     };
-    testRendererInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
-    EXPECT_EQ(testRendererInClientObj->lastFramePosAndTimePair_, testLastFramePosAndTimePair);
-    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
-    EXPECT_EQ(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
+    std::vector<std::pair<uint64_t, uint64_t>> testlastFramePosAndTimePairWithSpeed = {
+        Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, timestampCurrent[0]}
+    };
+
+    sleep(1);
+
+    testRendererInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testlastFramePosAndTimePairWithSpeed);
+
+    EXPECT_GT(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION);
+    EXPECT_GT(testRendererInClientObj->lastSwitchPosition_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION);
+
+    EXPECT_GT(
+        testRendererInClientObj->lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::MONOTONIC], TEST_POSITION
+    );
+    EXPECT_GT(
+        testRendererInClientObj->lastSwitchPositionWithSpeed_[Timestamp::Timestampbase::BOOTTIME], TEST_POSITION
+    );
 }
 
 /**
