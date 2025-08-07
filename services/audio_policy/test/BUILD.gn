@@ -1161,6 +1161,15 @@ ohos_unittest("audio_policy_service_third_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -1707,6 +1716,15 @@ ohos_unittest("audio_offload_stream_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
@@ -1839,6 +1857,15 @@ ohos_unittest("audio_policy_server_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "ability_base:want",
@@ -2211,6 +2238,15 @@ ohos_unittest("sle_audio_device_manager_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "ability_base:want",
@@ -2733,6 +2769,15 @@ ohos_unittest("audio_stream_collector_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -2814,6 +2859,15 @@ ohos_unittest("audio_stream_collector_pro_unit_test") {
     cflags += [ "-DSONIC_ENABLE" ]
   }
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -2882,6 +2936,15 @@ ohos_unittest("audio_effect_service_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "ability_base:session_info",
     "ability_base:want",
@@ -2948,6 +3011,15 @@ ohos_unittest("audio_policy_server_handler_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "ability_base:want",
@@ -4914,6 +4986,15 @@ ohos_unittest("audio_strategy_router_parser_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   configs = [ "${audio_framework_root}/services/audio_service/idl:audio_service_sa_idl_config" ]
 
   external_deps = [
@@ -5073,6 +5154,15 @@ ohos_unittest("audio_core_service_entry_unit_test") {
     "-fno-access-control",
   ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -5180,6 +5270,15 @@ ohos_unittest("audio_core_service_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "ability_base:session_info",
