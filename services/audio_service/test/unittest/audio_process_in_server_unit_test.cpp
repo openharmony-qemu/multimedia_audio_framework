@@ -1015,7 +1015,7 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
  * @tc.number: TurnOnMicIndicator_001
  * @tc.desc  : Test TurnOnMicIndicator interface.
  */
-HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1033,7 +1033,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level1)
  * @tc.number: TurnOnMicIndicator_002
  * @tc.desc  : Test TurnOnMicIndicator interface.
  */
-HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1051,7 +1051,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level1)
  * @tc.number: TurnOffMicIndicator_001
  * @tc.desc  : Test TurnOffMicIndicator interface.
  */
-HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1069,7 +1069,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level1)
  * @tc.number: TurnOffMicIndicator_002
  * @tc.desc  : Test TurnOffMicIndicator interface.
  */
-HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1087,7 +1087,7 @@ HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level1)
  * @tc.number: GetInnerCapState_001
  * @tc.desc  : Test GetInnerCapState interface.
  */
-HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_001, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1105,7 +1105,7 @@ HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_001, TestSize.Level1)
  * @tc.number: GetInnerCapState_002
  * @tc.desc  : Test GetInnerCapState interface.
  */
-HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level2)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1123,7 +1123,7 @@ HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level1)
  * @tc.number: AddMuteFrameSize_001
  * @tc.desc  : Test AddMuteFrameSize interface.
  */
-HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level3)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1140,7 +1140,7 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level1)
  * @tc.number: AddMuteFrameSize_002
  * @tc.desc  : Test AddMuteFrameSize interface.
  */
-HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level3)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1157,7 +1157,7 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
  * @tc.number: WriterRenderStreamStandbySysEvent_001
  * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
  */
-HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1175,7 +1175,7 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, Test
  * @tc.number: WriterRenderStreamStandbySysEvent_002
  * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
  */
-HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1193,7 +1193,7 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, Test
  * @tc.number: WriterRenderStreamStandbySysEvent_003
  * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
  */
-HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
@@ -1211,7 +1211,7 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, Test
  * @tc.number: WriteDumpFile_001
  * @tc.desc  : Test WriteDumpFile interface.
  */
-HWTEST(AudioProcessInServerUnitTest, WriteDumpFile_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, WriteDumpFile_001, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
