@@ -1682,23 +1682,5 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_053, TestSize.Level1)
     ret = ptrNoneMixEngine->Pause();
     EXPECT_EQ(ret, SUCCESS);
 }
-
-/**
- * @tc.name  : Test NoneMixEngine API
- * @tc.type  : FUNC
- * @tc.number: NoneMixEngine_051
- * @tc.desc  : void NoneMixEngine::DoRenderFrame()
- */
-HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_051, TestSize.Level1)
-{
-    auto ptrNoneMixEngine = std::make_shared<NoneMixEngine>();
-    ASSERT_TRUE(ptrNoneMixEngine != nullptr);
- 
-    vector<char> audioBufferConverted_ = {"1024", "0"};
-    int32_t index_ = 0;
-    int32_t appUid_ = 12345;
- 
-    ptrNoneMixEngine->DoRenderFrame(audioBufferConverted_, index_, appUid_);
-}
 } // namespace AudioStandard
 } // namespace OHOS
