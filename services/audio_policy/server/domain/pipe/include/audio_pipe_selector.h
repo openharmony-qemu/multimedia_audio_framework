@@ -55,8 +55,7 @@ private:
     void DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
-    void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
-        std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+    void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
 
     AudioPolicyConfigManager& configManager_;

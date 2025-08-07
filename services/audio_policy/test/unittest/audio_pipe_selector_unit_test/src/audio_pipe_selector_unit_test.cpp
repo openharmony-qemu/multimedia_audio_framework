@@ -16,6 +16,7 @@
 #include "audio_pipe_selector_unit_test.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_descriptor.h"
+#include "audio_stream_enum.h"
 
 using namespace testing::ext;
 
@@ -683,14 +684,14 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecideFinalRouteFlag_001, TestSize.Level1)
     audioPipeSelector->DecideFinalRouteFlag(streamDescs);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
-    streamDesc1->routeFlag_ = AUDIO_FLAG_NONE;
+    streamDesc1->routeFlag_ = AUDIO_FLAG_MAX;
     streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
     streamDesc1->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     streamDesc1->sessionId_ = 100001;
     streamDesc1->newDeviceDescs_.push_back(std::make_shared<AudioDeviceDescriptor>());
     streamDescs.push_back(streamDesc1);
     audioPipeSelector->DecideFinalRouteFlag(streamDescs);
-    EXPECT_NE(streamDescs[0]->routeFlag_ != AUDIO_FLAG_NONE);
+    EXPECT_EQ(streamDescs[0]->routeFlag_, AUDIO_FLAG_NONE);
 }
 
 /**
@@ -700,6 +701,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecideFinalRouteFlag_001, TestSize.Level1)
  */
 HWTEST_F(AudioPipeSelectorUnitTest, DecideFinalRouteFlag_002, TestSize.Level1)
 {
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
@@ -719,7 +721,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecideFinalRouteFlag_002, TestSize.Level1)
     streamDesc2->createTimeStamp_ = 2;
     streamDescs.push_back(streamDesc2);
     audioPipeSelector->DecideFinalRouteFlag(streamDescs);
-    EXPECT_NE(streamDescs[1]->routeFlag_ != AUDIO_OUTPUT_FLAG_FAST);
+    EXPECT_NE(streamDescs[1]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
 }
 
 /**
@@ -729,6 +731,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecideFinalRouteFlag_002, TestSize.Level1)
  */
 HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_001, TestSize.Level1)
 {
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
@@ -752,6 +755,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_001, TestSize.Level1)
  */
 HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
 {
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescs;
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
@@ -769,7 +773,6 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
     newPipeInfoList.push_back(pipe1);
 
     std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
-    pipe2->adapterName_ = "primary";
     pipe2->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     newPipeInfoList.push_back(pipe2);
 
@@ -784,6 +787,7 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessNewPipeList_002, TestSize.Level1)
  */
 HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Level1)
 {
+    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     std::shared_ptr<AudioStreamDescriptor> streamDesc1 = std::make_shared<AudioStreamDescriptor>();
     streamDesc1->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
     streamDesc1->audioMode_ = AUDIO_MODE_PLAYBACK;
@@ -810,19 +814,19 @@ HWTEST_F(AudioPipeSelectorUnitTest, DecidePipesAndStreamAction_001, TestSize.Lev
     newPipeInfoList.push_back(pipe1);
 
     std::shared_ptr<AudioPipeInfo> pipe2 = std::make_shared<AudioPipeInfo>();
-    pipe2->adapterName_ = "empty_pipe";
     pipe2->routeFlag_ = 1;
     newPipeInfoList.push_back(pipe2);
 
     std::shared_ptr<AudioPipeInfo> pipe3 = std::make_shared<AudioPipeInfo>();
-    pipe3->adapterName_ = "_pipe";
+    pipe3->adapterName_ = "test_pipe";
     pipe3->routeFlag_ = 1;
-    pipe3->streamDescMap_[100003] = streamDesc2;
+    pipe3->streamDescMap_[100002] = streamDesc2;
     pipe3->streamDescriptors_.push_back(streamDesc2);
     newPipeInfoList.push_back(pipe3);
 
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo{};
     streamDescToOldPipeInfo[100001] = pipe1;
+    streamDescToOldPipeInfo[100002] = pipe2;
 
     audioPipeSelector->DecidePipesAndStreamAction(newPipeInfoList, streamDescToOldPipeInfo);
     EXPECT_TRUE(newPipeInfoList[0]->streamDescriptors_[0]->streamAction_ == AUDIO_STREAM_ACTION_DEFAULT);

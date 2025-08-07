@@ -277,7 +277,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
 
     DecideFinalRouteFlag(streamDescs);
     ProcessNewPipeList(newPipeInfoList, streamDescs);
-    DecidePipesAndStreamAction(oldPipeInfoList, newPipeInfoList, streamDescToPipeInfo);
+    DecidePipesAndStreamAction(newPipeInfoList, streamDescToPipeInfo);
 
     // check is pipe update
     for (auto &pipeInfo : oldPipeInfoList) {
