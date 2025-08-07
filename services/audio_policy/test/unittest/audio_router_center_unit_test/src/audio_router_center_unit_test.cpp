@@ -138,6 +138,37 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_006, TestSize.Level1)
     type = SOURCE_TYPE_INVALID;
     EXPECT_FALSE(audioRouterCenter.IsConfigRouterStrategy(type));
 }
+
+/**
+ * @tc.name  : Test FetchRingTenderDevices.
+ * @tc.number: FetchRingTenderDevices_001
+ * @tc.desc  : Test FetchRingTenderDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchRingTenderDevices_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 1000;
+    RouterType routerType;
+    auto result = audioRouterCenter.FetchRingTenderDevices(streamUsage, clientUID, routerType);
+    EXPECT_EQ(result.front()->deviceType_, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test FetchVoiceMessageCaptureDevice.
+ * @tc.number: FetchVoiceMessageCaptureDevice_001
+ * @tc.desc  : Test FetchVoiceMessageCaptureDevice interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    SourceType sourceType = SOURCE_TYPE_MIC;
+    int32_t clientUID = 1000;
+    RouterType routerType;
+    uint32_t sessionID = 123;
+    auto result = audioRouterCenter.FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
+    EXPECT_NE(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  

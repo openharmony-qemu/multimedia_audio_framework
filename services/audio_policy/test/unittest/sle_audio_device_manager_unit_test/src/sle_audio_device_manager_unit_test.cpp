@@ -1219,5 +1219,64 @@ HWTEST(SleAudioDeviceManagerUnitTest, GetVolumeLevelByVolumeType_003, TestSize.L
     EXPECT_EQ(ret, -1);
 }
 
+/**
+ * @tc.name  : Test SetDeviceAbsVolume.
+ * @tc.number: SetDeviceAbsVolume_005
+ * @tc.desc  : Test SleAudioDeviceManager::SetDeviceAbsVolume.
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback = nullptr;
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string device = "1234567890";
+    AudioStreamType streamType1 = STREAM_MUSIC;
+    AudioStreamType streamType2 = STREAM_RING;
+    int32_t volume = 4;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.mediaVolume_ = 4;
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+
+    int32_t ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType1, volume);
+    EXPECT_EQ(ret, ERROR);
+    ret = sleAudioDeviceManager_->SetDeviceAbsVolume(device, streamType2, volume);
+    EXPECT_EQ(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetNearlinkDeviceVolumeLevel
+ * @tc.number: SetNearlinkDeviceVolumeLevel_003
+ * @tc.desc  : Test SleAudioDeviceManager::SetNearlinkDeviceVolumeLevel
+ */
+HWTEST(SleAudioDeviceManagerUnitTest, SetNearlinkDeviceVolumeLevel_003, TestSize.Level1)
+{
+    std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
+        std::make_shared<SleAudioDeviceManager>();
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
+    sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
+
+    std::string device = "1234567890";
+    AudioStreamType streamType = STREAM_RING;
+    int32_t volumeLevel = 4;
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.macAddress_ = "1234567890";
+    deviceDesc.mediaVolume_ = 4;
+    deviceDesc.callVolume_ = 4;
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+
+    sleAudioDeviceManager_->AddNearlinkDevice(deviceDesc);
+
+    int32_t ret =  sleAudioDeviceManager_->SetNearlinkDeviceVolumeLevel(device, streamType, volumeLevel);
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
