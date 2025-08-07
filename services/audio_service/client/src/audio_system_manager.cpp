@@ -2015,48 +2015,136 @@ int32_t AudioSystemManager::NotifyProcessBackgroundState(const int32_t uid, cons
 
 int32_t AudioSystemManager::GetMaxVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetMaxVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::GetMinVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetMinVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetMinVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::GetVolumeByUsage(StreamUsage streamUsage)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("GetVolumeByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     return AudioPolicyManager::GetInstance().GetVolumeLevelByUsage(streamUsage);
 }
 
 int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &isMute)
 {
-    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
-        ERR_INVALID_PARAM, "Invalid streamUsage");
-
-    if (streamUsage == STREAM_USAGE_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_USAGE_ULTRASONIC No system permission");
+    AUDIO_INFO_LOG("IsStreamMuteByUsage for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
     }
     isMute = AudioPolicyManager::GetInstance().GetStreamMuteByUsage(streamUsage);
     return SUCCESS;
@@ -2064,24 +2152,58 @@ int32_t AudioSystemManager::IsStreamMuteByUsage(StreamUsage streamUsage, bool &i
 
 float AudioSystemManager::GetVolumeInDbByStream(StreamUsage streamUsage, int32_t volumeLevel, DeviceType deviceType)
 {
-    AUDIO_INFO_LOG("enter AudioSystemManager::GetVolumeInDbByStream");
+    AUDIO_INFO_LOG("GetVolumeInDbByStream for streamUsage [%{public}d]", streamUsage);
+    switch (streamUsage) {
+        case STREAM_USAGE_UNKNOWN:
+        case STREAM_USAGE_MUSIC:
+        case STREAM_USAGE_VOICE_COMMUNICATION:
+        case STREAM_USAGE_VOICE_ASSISTANT:
+        case STREAM_USAGE_ALARM:
+        case STREAM_USAGE_VOICE_MESSAGE:
+        case STREAM_USAGE_RINGTONE:
+        case STREAM_USAGE_NOTIFICATION:
+        case STREAM_USAGE_ACCESSIBILITY:
+        case STREAM_USAGE_MOVIE:
+        case STREAM_USAGE_GAME:
+        case STREAM_USAGE_AUDIOBOOK:
+        case STREAM_USAGE_NAVIGATION:
+        case STREAM_USAGE_VIDEO_COMMUNICATION:
+            break;
+        case STREAM_USAGE_SYSTEM:
+        case STREAM_USAGE_DTMF:
+        case STREAM_USAGE_ENFORCED_TONE:
+        case STREAM_USAGE_ULTRASONIC: {
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("streamUsage=%{public}d not supported", streamUsage);
+            return ERR_NOT_SUPPORTED;
+    }
     return AudioPolicyManager::GetInstance().GetVolumeInDbByStream(streamUsage, volumeLevel, deviceType);
 }
 
 std::vector<AudioVolumeType> AudioSystemManager::GetSupportedAudioVolumeTypes()
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetSupportedAudioVolumeTypes");
     return AudioPolicyManager::GetInstance().GetSupportedAudioVolumeTypes();
 }
 
 AudioVolumeType AudioSystemManager::GetAudioVolumeTypeByStreamUsage(StreamUsage streamUsage)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, STREAM_DEFAULT, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetAudioVolumeTypeByStreamUsage");
     return AudioPolicyManager::GetInstance().GetAudioVolumeTypeByStreamUsage(streamUsage);
 }
 
 std::vector<StreamUsage> AudioSystemManager::GetStreamUsagesByVolumeType(AudioVolumeType audioVolumeType)
 {
+    bool ret = PermissionUtil::VerifySelfPermission();
+    CHECK_AND_RETURN_RET_LOG(ret, {}, "No system App");
     AUDIO_INFO_LOG("enter AudioSystemManager::GetStreamUsagesByVolumeType");
     return AudioPolicyManager::GetInstance().GetStreamUsagesByVolumeType(audioVolumeType);
 }

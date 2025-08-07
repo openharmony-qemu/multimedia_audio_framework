@@ -4882,11 +4882,15 @@ int32_t AudioPolicyServer::GetVolumeInDbByStream(int32_t streamUsageIn, int32_t 
     int32_t deviceType, float &ret)
 {
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
+    CHECK_AND_RETURN_RET_LOG(streamUsage >= STREAM_USAGE_UNKNOWN && streamUsage <= STREAM_USAGE_MAX,
+        ERR_INVALID_PARAM, "GetVolumeInDbByStream: Invalid streamUsage");
     return GetSystemVolumeInDb(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage), volumeLevel, deviceType, ret);
 }
 
 int32_t AudioPolicyServer::GetSupportedAudioVolumeTypes(std::vector<int32_t> &ret)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+
     std::vector<AudioVolumeType> out = VolumeUtils::GetSupportedAudioVolumeTypes();
     ret.clear();
     for (auto &item : out) {
@@ -4897,6 +4901,8 @@ int32_t AudioPolicyServer::GetSupportedAudioVolumeTypes(std::vector<int32_t> &re
 
 int32_t AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(int32_t streamUsageIn, int32_t &ret)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+
     StreamUsage streamUsage = static_cast<StreamUsage>(streamUsageIn);
     ret = static_cast<int32_t>(VolumeUtils::GetVolumeTypeFromStreamUsage(streamUsage));
     return SUCCESS;
@@ -4904,6 +4910,8 @@ int32_t AudioPolicyServer::GetAudioVolumeTypeByStreamUsage(int32_t streamUsageIn
 
 int32_t AudioPolicyServer::GetStreamUsagesByVolumeType(int32_t audioVolumeTypeIn, std::vector<int32_t> &ret)
 {
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "No system permission");
+
     AudioVolumeType audioVolumeType = static_cast<AudioVolumeType>(audioVolumeTypeIn);
     std::vector<StreamUsage> out = VolumeUtils::GetStreamUsagesByVolumeType(audioVolumeType);
 
