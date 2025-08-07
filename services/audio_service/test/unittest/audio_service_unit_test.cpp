@@ -3002,10 +3002,10 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 /**
  * @tc.name  : Test GetDeviceInfoForProcess API
  * @tc.type  : FUNC
- * @tc.number: GetDeviceInfoForProcess_001,
+ * @tc.number: GetDeviceInfoForProcess_002,
  * @tc.desc  : Test GetDeviceInfoForProcess interface.
  */
-HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
 {
     AudioProcessConfig config = {};
     config.originalSessionId = 1;
@@ -3026,10 +3026,10 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
 /**
  * @tc.name  : Test GetDeviceInfoForProcess API
  * @tc.type  : FUNC
- * @tc.number: GetDeviceInfoForProcess_002,
+ * @tc.number: GetDeviceInfoForProcess_003,
  * @tc.desc  : Test GetDeviceInfoForProcess interface.
  */
-HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
+HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
 {
     AudioProcessConfig config = {};
     config.originalSessionId = 1;
