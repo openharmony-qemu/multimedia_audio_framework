@@ -31,6 +31,9 @@
 #include "audio_workgroup.h"
 #include "rtg_interface.h"
 #include "concurrent_task_client.h"
+#include "audio_resource_service.h"
+#include "audio_endpoint.h"
+
 
 using namespace testing::ext;
 
