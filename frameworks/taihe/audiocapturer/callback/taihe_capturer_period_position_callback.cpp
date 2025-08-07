@@ -45,9 +45,13 @@ void TaiheCapturerPeriodPositionCallback::SaveCallbackReference(const std::strin
         capturerPeriodPositionCallback_ = generatedCallback;
     };
     SaveCallbackReferenceInner(callbackName, callback, successed);
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheCapturerPeriodPositionCallback::RemoveCallbackReference(const std::string &callbackName,
