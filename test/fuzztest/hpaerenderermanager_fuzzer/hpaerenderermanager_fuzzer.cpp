@@ -123,16 +123,11 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 
 void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
-    int waitCount = 0;
-    const int waitCountThd = 5;
+
     while (hpaeRendererManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
-        waitCount++;
-        if (waitCount >= waitCountThd) {
-            break;
-        }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
