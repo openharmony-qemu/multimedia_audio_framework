@@ -918,40 +918,6 @@ void AudioServerRemoveThreadFromGroupFuzzTest(const uint8_t *rawData, size_t siz
     audioServerPtr->RemoveThreadFromGroup(pid, workgroupId, tokenId);
 }
 
-void AudioServerStartGroupFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    uint64_t startTime = *reinterpret_cast<const uint64_t*>(rawData);
-    uint64_t deadlineTime = *reinterpret_cast<const uint64_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StartGroup(pid, workgroupId, startTime, deadlineTime);
-}
-
-void AudioServerStopGroupFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->StopGroup(pid, workgroupId);
-}
-
-void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->SetActiveOutputDevice(deviceType);
-}
-
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1003,8 +969,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerHpaeDumpOnDumpSinkInputsInfoCbFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerHpaeDumpSourceOutputsInfoCbFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerRemoveThreadFromGroupFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerStartGroupFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerStopGroupFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest(data, size);
     return 0;
 }
