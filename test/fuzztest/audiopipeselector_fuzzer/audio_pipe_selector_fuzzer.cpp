@@ -75,24 +75,6 @@ uint32_t GetArrLength(T& arr)
     return sizeof(arr) / sizeof(arr[0]);
 }
 
-void IsPipeExistFuzzTest()
-{
-    std::vector<std::shared_ptr<AudioPipeInfo>> newPipeInfoList;
-    uint8_t randomNum = GetData<uint8_t>();
-    std::vector<std::string> testStrings = {"test_adapter", "different_adapter"};
-    std::string adapterName(testStrings[randomNum % testStrings.size()]);
-    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
-    streamDesc->routeFlag_ = 1;
-    streamDesc->sessionId_ = IDNUM;
-    std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToPipeInfo;
-    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
-    pipeInfo->adapterName_ = adapterName;
-    pipeInfo->routeFlag_ = 1;
-    newPipeInfoList.push_back(pipeInfo);
-    auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IsPipeExist(newPipeInfoList, adapterName, streamDesc, streamDescToPipeInfo);
-}
-
 void GetPipeTypeFuzzTest()
 {
     AudioMode selectedAudioMode = static_cast<AudioMode>(GetData<int32_t>() % AUDIO_MODE_COUNT);
@@ -201,7 +183,6 @@ void FetchPipesAndExecuteFuzzTest()
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
-    IsPipeExistFuzzTest,
     GetPipeTypeFuzzTest,
     GetAdapterNameByStreamDescFuzzTest,
     ConvertStreamDescToPipeInfoFuzzTest,
