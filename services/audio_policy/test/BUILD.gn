@@ -2410,7 +2410,10 @@ ohos_unittest("audio_router_center_unit_test") {
     "samgr:samgr_proxy",
   ]
 
-  sources = [ "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp" ]
+  sources = [
+    "./unittest/audio_router_center_unit_test/src/audio_router_center_unit_test.cpp",
+    "./unittest/audio_router_center_unit_test/src/default_router_unit_test.cpp",
+  ]
 
   deps = [
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
