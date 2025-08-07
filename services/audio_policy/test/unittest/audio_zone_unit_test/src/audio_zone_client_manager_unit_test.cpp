@@ -61,10 +61,10 @@ HWTEST_F(AudioZoneClientManagerUnitTest, AudioZoneClientManager_001, TestSize.Le
  */
 HWTEST_F(AudioZoneClientManagerUnitTest, UnRegisterAudioZoneClient_001, TestSize.Level1)
 {
-    pid_t clientPid = 1000;;
-    AudioZoneClientManager::GetInsTance().UnRegisterAudioZoneClient(clientPid);
-    EXPECT_TRUE(AudioZoneClientManager::GetInsTance().clients_.find(clientPid) ==
-        AudioZoneClientManager::GetInsTance().clients_.end());
+    pid_t clientPid = 1000;
+    AudioZoneClientManager::GetInstance().UnRegisterAudioZoneClient(clientPid);
+    EXPECT_TRUE(AudioZoneClientManager::GetInstance().clients_.find(clientPid) ==
+        AudioZoneClientManager::GetInstance().clients_.end());
 }
 } // namespace AudioStandard
 } // namespace OHOS
