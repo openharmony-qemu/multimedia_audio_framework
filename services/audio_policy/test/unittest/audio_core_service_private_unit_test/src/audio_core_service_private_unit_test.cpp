@@ -1404,13 +1404,32 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2
 }
 
 /**
- * @tc.name : Test AudioCoreService.
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_075
- * @tc.desc : Test AudioCoreService::
+ * @tc.desc  : Test AudioCoreService::ProcessOutputPipeNew()
  */
-HWTEST(AudioCoreServicePrivateTest, , TestSize.Level2)
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_075, TestSize.Level1)
 {
-
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+ 
+    std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+    std::shared_ptr<AudioStreamDescriptor> audioStreamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    audioStreamDescriptor->streamAction_ = AUDIO_STREAM_ACTION_MOVE;
+    audioStreamDescriptor->streamStatus_ = STREAM_STATUS_STARTED;
+    audioStreamDescriptor->appInfo_.appUid = AUDIO_ID;
+    pipeInfo->streamDescriptors_.push_back(audioStreamDescriptor);
+    uint32_t flag = 0;
+    AudioStreamDeviceChangeReasonExt::ExtEnum extEnum = AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN;
+    AudioStreamDeviceChangeReasonExt reason(extEnum);
+    audioCoreService->pipeManager_ = std::make_shared<AudioPipeManager>();
+ 
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    audioStreamDescriptor->newDeviceDescs_.push_back(audioDeviceDescriptor);
+    audioStreamDescriptor->oldDeviceDescs_.push_back(audioDeviceDescriptor);
+ 
+    audioCoreService->ProcessOutputPipeNew(pipeInfo, flag, reason);
+    EXPECT_NE(audioCoreService->pipeManager_, nullptr);
 }
 
 /**
