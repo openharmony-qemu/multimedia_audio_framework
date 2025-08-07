@@ -635,7 +635,7 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     return SUCCESS;
 }
 
-int32_t HpaeOffloadRendererManager::RefreshProcessClusrerByDevice()
+int32_t HpaeOffloadRendererManager::RefreshProcessClusterByDevice()
 {
     return SUCCESS;
 }

@@ -254,7 +254,7 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
-int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
+int32_t HpaeRendererManager::RefreshProcessClusterByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
@@ -377,7 +377,7 @@ void HpaeRendererManager::DisConnectProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) +
-        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sessionId));
+        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sceneType));
     if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
