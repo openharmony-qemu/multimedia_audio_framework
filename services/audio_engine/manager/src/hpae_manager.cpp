@@ -247,6 +247,7 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
     if (isReload) {
         sinkIdSinkNameMap_.erase(sinkNameSinkIdMap_[audioModuleInfo.name]);
         uint32_t sinkSourceIndex = static_cast<uint32_t>(sinkSourceIndex_.load());
+        sinkInfo.sinkId = sinkSourceIndex;
         sinkSourceIndex_.fetch_add(1);
         sinkIdSinkNameMap_[sinkSourceIndex] = audioModuleInfo.name;
         sinkNameSinkIdMap_[audioModuleInfo.name] = sinkSourceIndex;
