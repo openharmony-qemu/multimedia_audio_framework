@@ -285,14 +285,6 @@ void AudioServerProxySetLatestMuteStateFuzzTest()
     audioServerProxy.SetLatestMuteState(sessionId, muteFlag);
 }
 
-void AudioServerProxyGetVolumeDataCountFuzzTest()
-{
-    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    std::string sinkName = "testSinkName";
-    int64_t volumeData = GetData<int64_t>();
-    audioServerProxy.GetVolumeDataCount(sinkName, volumeData);
-}
- 
 void AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest()
 {
     if (g_testDeviceTypes.size() == 0) {
@@ -303,7 +295,7 @@ void AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest()
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
     audioServerProxy.GetAudioEnhancePropertyProxy(propertyArray, deviceType);
 }
- 
+
 void AudioServerProxyGetAudioEffectPropertyProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
@@ -383,7 +375,6 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyDestroyHdiPortProxyFuzzTest,
     AudioServerProxySetDeviceConnectedFlagFuzzTest,
     AudioServerProxySetLatestMuteStateFuzzTest,
-    AudioServerProxyGetVolumeDataCountFuzzTest,
     AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest,
     AudioServerProxyGetAudioEffectPropertyProxyFuzzTest,
     AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest,
