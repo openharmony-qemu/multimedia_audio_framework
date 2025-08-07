@@ -349,6 +349,8 @@ int32_t HpaeCapturerManager::Pause(uint32_t sessionId)
             "Pause not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_PAUSED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+            HPAE_SESSION_PAUSED, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -428,6 +430,8 @@ int32_t HpaeCapturerManager::Stop(uint32_t sessionId)
             "Stop not find sessionId %{public}u", sessionId);
         DisConnectOutputSession(sessionId);
         SetSessionState(sessionId, HPAE_SESSION_STOPPED);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+            HPAE_SESSION_STOPPED, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
