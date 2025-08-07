@@ -453,6 +453,8 @@ public:
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc) override;
 
+    int32_t GetAudioZoneByName(const std::string &name, int32_t &zoneId) override;
+
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
 
@@ -471,7 +473,11 @@ public:
 
     int32_t AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
 
+    int32_t AddStreamsToAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
+
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
+
+    int32_t RemoveStreamsFromAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
