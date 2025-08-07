@@ -20,7 +20,7 @@
 #include "default_router.h"
 #include "app_select_router.h"
 #include "pair_device_router.h"
-#include "cocklpit_phone_router.h"
+#include "cockpit_phone_router.h"
 
 #include <thread>
 #include <memory>
