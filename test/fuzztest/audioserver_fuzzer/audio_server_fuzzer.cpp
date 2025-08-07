@@ -27,7 +27,6 @@
 #include "audio_info.h"
 #include "hpae_info.h"
 using namespace std;
-
 namespace OHOS {
 namespace AudioStandard {
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IStandardAudioService";
@@ -141,14 +140,12 @@ void AudioServerOffloadSetVolumeFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     float volume = Convert2Float(rawData);
     data.WriteFloat(volume);
     MessageParcel reply;
     MessageOption option;
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::OFFLOAD_SET_VOLUME),
         data, reply, option);
@@ -159,14 +156,12 @@ void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sizeMs = *reinterpret_cast<const uint32_t*>(rawData);
     data.WriteUint32(sizeMs);
     MessageParcel reply;
     MessageOption option;
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED),
         data, reply, option);
@@ -177,14 +172,12 @@ void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t s
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
     data.WriteInt32(deviceType);
     MessageParcel reply;
     MessageOption option;
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT),
         data, reply, option);
@@ -195,12 +188,10 @@ void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     std::string sessionId(reinterpret_cast<const char*>(rawData), size);
     data.WriteString(sessionId);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -213,14 +204,12 @@ void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     std::string timestamp(reinterpret_cast<const char*>(rawData), size - 1);
     bool isRenderer = *reinterpret_cast<const bool*>(rawData);
     data.WriteString(timestamp);
     data.WriteBool(isRenderer);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -253,10 +242,8 @@ void AudioServerResetAudioEndpointTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -269,10 +256,8 @@ void AudioServerCreatePlaybackCapturerManagerTest(const uint8_t *rawData, size_t
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
-   
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -292,7 +277,6 @@ void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
     std::string sinkName(reinterpret_cast<const char*>(rawData), size - 1);
     data.WriteInt32(deviceType);
     data.WriteString(sinkName);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -1321,8 +1305,6 @@ void AudioServerUpdateActiveDevicesRouteFuzzTest(const uint8_t *rawData, size_t 
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t type = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t flag = *reinterpret_cast<const int32_t*>(rawData);
     std::vector<IntPair> activeDevices;
     int32_t a2dpOffloadFlag = *reinterpret_cast<const int32_t*>(rawData);
     std::string deviceName = "test_deviceName";
@@ -1431,15 +1413,6 @@ void AudioServerSendCreateErrorInfoFuzzTest(const uint8_t *rawData, size_t size)
     int32_t errorCode = *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SendCreateErrorInfo(config, errorCode);
-}
-
-void AudioServerCheckMaxRendererInstancesFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->CheckMaxRendererInstances();
 }
 
 void AudioServerCheckMaxRendererInstancesFuzzTest(const uint8_t *rawData, size_t size)
@@ -1753,7 +1726,6 @@ void AudioServerCreateSourcePortFuzzTest(const uint8_t *rawData, size_t size)
     audioServerPtr->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
 }
 
-
 void AudioServerDestroyHdiPortFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -1773,7 +1745,6 @@ void AudioServerSetDeviceConnectedFlagFuzzTest(const uint8_t *rawData, size_t si
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetDeviceConnectedFlag(flag);
 }
-
 
 void AudioServerSetBtHdiInvalidStateFuzzTest(const uint8_t *rawData, size_t size)
 {
@@ -1827,6 +1798,40 @@ void AudioServerForceStopAudioStreamFuzzTest(const uint8_t *rawData, size_t size
     int32_t audioType = *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->ForceStopAudioStream(audioType);
+}
+
+void AudioServerStartGroupFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    uint64_t startTime = *reinterpret_cast<const uint64_t*>(rawData);
+    uint64_t deadlineTime = *reinterpret_cast<const uint64_t*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->StartGroup(pid, workgroupId, startTime, deadlineTime);
+}
+
+void AudioServerStopGroupFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t pid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t workgroupId = *reinterpret_cast<const int32_t*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->StopGroup(pid, workgroupId);
+}
+
+void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->SetActiveOutputDevice(deviceType);
 }
 
 } // namespace AudioStandard
@@ -1887,7 +1892,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerSetVoiceVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateFuzzTest,
     OHOS::AudioStandard::AudioServerSetAudioBalanceValueFuzzTest,
-    
     OHOS::AudioStandard::AudioServerRemoveRendererDataTransferCallbackFuzzTest,
     OHOS::AudioStandard::AudioServerRegisterDataTransferCallbackFuzzTest,
     OHOS::AudioStandard::AudioServerRegisterDataTransferMonitorParamFuzzTest,
@@ -1948,9 +1952,11 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerCreateAudioWorkgroupFuzzTest,
     OHOS::AudioStandard::AudioServerReleaseAudioWorkgroupFuzzTest,
     OHOS::AudioStandard::AudioServerAddThreadToGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest
+    OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest,
+    OHOS::AudioStandard::AudioServerStartGroupFuzzTest,
+    OHOS::AudioStandard::AudioServerStopGroupFuzzTest,
+    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest
 };
-
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
