@@ -1925,7 +1925,7 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
  * @tc.number: FetchDeviceForSplitStream_002
  * @tc.desc  : Test FetchDeviceForSplitStream interface.
  */
-HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level1)
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level2)
 {
     int32_t clientUid = 0;
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
@@ -1942,7 +1942,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level1)
  * @tc.number: FetchDeviceForSplitStream_002
  * @tc.desc  : Test FetchDeviceForSplitStream interface.
  */
-HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level1)
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
 {
     int32_t clientUid = 0;
     std::shared_ptr<CapturerInClientInner> capturerInClientInner =
