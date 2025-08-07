@@ -43,7 +43,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 10;
+const uint8_t TESTSIZE = 15;
 
 typedef void (*TestFuncs)();
 
@@ -171,6 +171,50 @@ void UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest()
     AudioStateManager::GetAudioStateManager().UpdatePreferredRecordCaptureDeviceConnectState(state);
 }
 
+void SetAndGetPreferredRingRenderDeviceFuzzTest()
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    if (desc == nullptr) {
+        return;
+    }
+    AudioStateManager::GetAudioStateManager().SetPreferredRingRenderDevice(desc);
+    AudioStateManager::GetAudioStateManager().GetPreferredRingRenderDevice();
+}
+
+void SetAndGetPreferredToneRenderDeviceFuzzTest()
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    AudioStateManager::GetAudioStateManager().SetPreferredToneRenderDevice(desc);
+    AudioStateManager::GetAudioStateManager().GetPreferredToneRenderDevice();
+}
+
+void SetAudioClientInfoMgrCallbackFuzzTest()
+{
+    sptr<IStandardAudioPolicyManagerListener> desc = sptr<IStandardAudioPolicyManagerListener>();
+    AudioStateManager::GetAudioStateManager().SetAudioClientInfoMgrCallback(desc);
+}
+
+void SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest()
+{
+    sptr<IStandardAudioPolicyManagerListener> desc = sptr<IStandardAudioPolicyManagerListener>();
+    AudioStateManager::GetAudioStateManager().SetAudioClientInfoMgrCallback(desc);
+    shared_ptr<AudioDeviceDescriptor> desc_ = std::make_shared<AudioDeviceDescriptor>();
+    int32_t uid = GetData<int32_t>();
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc_, uid);
+}
+
+void SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest()
+{
+    shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
+    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
+    desc->deviceType_ = DeviceTypeVec[deviceTypeCount];
+    int32_t uid = GetData<int32_t>();
+    AudioStateManager::GetAudioStateManager().SetAudioSceneOwnerUid(uid);
+    AudioStateManager::GetAudioStateManager().SetPreferredCallRenderDevice(desc, 1);
+    AudioStateManager::GetAudioStateManager().GetPreferredCallRenderDevice();
+}
+
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     SetPreferredMediaRenderDeviceFuzzTest,
     SetAndGetRecordCaptureDeviceFuzzTest,
@@ -182,6 +226,11 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     UpdatePreferredCallRenderDeviceConnectStateFuzzTest,
     UpdatePreferredCallCaptureDeviceConnectStateFuzzTest,
     UpdatePreferredRecordCaptureDeviceConnectStateFuzzTest,
+    SetAndGetPreferredRingRenderDeviceFuzzTest,
+    SetAndGetPreferredToneRenderDeviceFuzzTest,
+    SetAudioClientInfoMgrCallbackFuzzTest,
+    SetPreferredCallRenderDeviceAudioClinetInfoMgrCallbackHasValueFuzzTest,
+    SetAndGetPreferredCallRenderDeviceTypeNotEqTypeNoneFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -1083,23 +1083,35 @@ void SetAbsVolumeStateToEffectFuzzTest()
     std::string scene = "SCENE_MUSIC";
     auto headTracker = std::make_shared<HeadTracker>();
     std::shared_ptr<AudioEffectChain> audioEffectChain = std::make_shared<AudioEffectChain>(scene, headTracker);
-    if (audioEffectChain == nullptr) {
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChain == nullptr || audioEffectChainManager == nullptr) {
         return;
     }
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
-    AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_.insert({"1", nullptr});
+    audioEffectChainManager->sceneTypeToEffectChainMap_.insert({scene, audioEffectChain});
+    audioEffectChainManager->sceneTypeToEffectChainMap_.insert({"1", nullptr});
     bool absVolumeState = GetData<bool>();
-    AudioEffectChainManager::GetInstance()->SetAbsVolumeStateToEffect(absVolumeState);
-    AudioEffectChainManager::GetInstance()->EffectDspAbsVolumeStateUpdate(absVolumeState);
-    AudioEffectChainManager::GetInstance()->EffectApAbsVolumeStateUpdate(absVolumeState);
+    audioEffectChainManager->SetAbsVolumeStateToEffect(absVolumeState);
+    audioEffectChainManager->EffectDspAbsVolumeStateUpdate(absVolumeState);
+    audioEffectChainManager->EffectApAbsVolumeStateUpdate(absVolumeState);
 }
 
 void ReleaseAudioEffectChainDynamicInnerFuzzTest()
 {
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
-        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
-    std::string sceneType = "SCENE_MOVIE";
-    AudioEffectChainManager::GetInstance()->ReleaseAudioEffectChainDynamicInner(sceneType);
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->ResetInfo();
+    std::string sceneType = "test";
+    std::string deviceKey = sceneType + "_&_" + audioEffectChainManager->GetDeviceTypeName();
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        audioEffectChainManager->CreateAudioEffectChain(sceneType, GetData<bool>());
+
+    audioEffectChainManager->sceneTypeToEffectChainMap_[deviceKey] = audioEffectChain;
+    audioEffectChainManager->sceneTypeToEffectChainCountMap_[deviceKey] = GetData<int32_t>();
+
+    audioEffectChainManager->isInitialized_ = GetData<bool>();
+    audioEffectChainManager->ReleaseAudioEffectChainDynamicInner(sceneType);
 }
 
 void EnhanceChainManagerGetAlgoConfigFuzzTest()
@@ -1111,15 +1123,19 @@ void EnhanceChainManagerGetAlgoConfigFuzzTest()
 
 void QueryEffectChannelInfoInnerFuzzTest()
 {
-    AudioEffectChainManager::GetInstance()->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
         DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
     std::string sceneType = "SCENE_MOVIE";
     uint32_t channels = GetData<uint32_t>();
     uint64_t channelLayout = GetData<uint64_t>();
-    AudioEffectChainManager::GetInstance()->QueryEffectChannelInfoInner(sceneType, channels, channelLayout);
+    audioEffectChainManager->QueryEffectChannelInfoInner(sceneType, channels, channelLayout);
 }
 
-typedef void (*TestFuncs[56])();
+typedef void (*TestFuncs[55])();
 
 TestFuncs g_testFuncs = {
     EffectChainManagerInitCbFuzzTest,
