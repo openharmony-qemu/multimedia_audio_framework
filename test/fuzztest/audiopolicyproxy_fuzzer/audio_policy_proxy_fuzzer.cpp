@@ -369,7 +369,7 @@ void AudioPolicyProxyThreeFuzzTest()
     audioPolicyProxy->SetSpatializationEnabled(enable);
     audioPolicyProxy->IsHeadTrackingEnabled(ret);
     audioPolicyProxy->IsHeadTrackingEnabled(address, ret);
-    audioPolicyProxy->SetHeadTrackingEnabled(enabel);
+    audioPolicyProxy->SetHeadTrackingEnabled(enable);
     audioPolicyProxy->IsSpatializationSupported(ret);
     audioPolicyProxy->IsSpatializationSupportedForDevice(address, ret);
     AudioSpatialDeviceState audioSpatialDeviceState = {
