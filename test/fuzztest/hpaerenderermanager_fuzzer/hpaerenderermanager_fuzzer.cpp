@@ -167,8 +167,11 @@ void UploadDumpSinkInfoFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     std::shared_ptr<IHpaeRendererManager> rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     string deviceName = "";
     rendererManager->UploadDumpSinkInfo(deviceName);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void OnNotifyDfxNodeInfoFuzzTest()
@@ -176,10 +179,13 @@ void OnNotifyDfxNodeInfoFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     bool isConnect = false;
     uint32_t preNodeId = GetData<uint32_t>();
     HpaeDfxNodeInfo nodeInfo = {};
     rendererManager->OnNotifyDfxNodeInfo(isConnect, preNodeId, nodeInfo);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerConstructFuzzTest()
@@ -194,8 +200,10 @@ void HpaeRendererManagerFlushFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager->Flush(sessionId);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerDrainFuzzTest()
@@ -203,8 +211,10 @@ void HpaeRendererManagerDrainFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager->Drain(sessionId);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerReleaseFuzzTest()
@@ -212,8 +222,10 @@ void HpaeRendererManagerReleaseFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     rendererManager->Release(sessionId);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerMoveStreamFuzzTest()
@@ -221,9 +233,12 @@ void HpaeRendererManagerMoveStreamFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     string sinkName = "";
     rendererManager->MoveStream(sessionId, sinkName);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerMoveAllStreamFuzzTest()
@@ -231,10 +246,13 @@ void HpaeRendererManagerMoveAllStreamFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     string sinkName = "";
     vector<uint32_t> sessionIds;
     MoveSessionType moveSessionType = MOVE_ALL;
     rendererManager->MoveAllStream(sinkName, sessionIds, moveSessionType);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSuspendStreamManagerFuzzTest()
@@ -242,8 +260,11 @@ void HpaeRendererManagerSuspendStreamManagerFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     bool isSuspend = false;
     rendererManager->SuspendStreamManager(isSuspend);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSetMuteFuzzTest()
@@ -251,8 +272,11 @@ void HpaeRendererManagerSetMuteFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     bool isMute = false;
     rendererManager->SetMute(isMute);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerProcessFuzzTest()
@@ -260,7 +284,10 @@ void HpaeRendererManagerProcessFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     rendererManager->Process();
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerHandleMsgFuzzTest()
@@ -268,7 +295,10 @@ void HpaeRendererManagerHandleMsgFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     rendererManager->HandleMsg();
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerIsMsgProcessingFuzzTest()
@@ -276,7 +306,10 @@ void HpaeRendererManagerIsMsgProcessingFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     rendererManager->IsMsgProcessing();
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerDeactivateThreadFuzzTest()
@@ -284,7 +317,10 @@ void HpaeRendererManagerDeactivateThreadFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     rendererManager->DeactivateThread();
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSetClientVolumeFuzzTest()
@@ -292,9 +328,12 @@ void HpaeRendererManagerSetClientVolumeFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     float volume = GetData<float>();
     rendererManager->SetClientVolume(sessionId, volume);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSetRateFuzzTest()
@@ -302,9 +341,12 @@ void HpaeRendererManagerSetRateFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     int32_t rate = GetData<int32_t>();
     rendererManager->SetRate(sessionId, rate);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerSetAudioEffectModeFuzzTest()
@@ -312,9 +354,12 @@ void HpaeRendererManagerSetAudioEffectModeFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     int32_t effectMode = GetData<int32_t>();
     rendererManager->SetAudioEffectMode(sessionId, effectMode);
+    WaitForMsgProcessing(hpaeRendererManager);
+    rendererManager->DeInit();
 }
 
 void HpaeRendererManagerGetAudioEffectModeFuzzTest()
@@ -322,9 +367,11 @@ void HpaeRendererManagerGetAudioEffectModeFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
+    rendererManager->Init();
     uint32_t sessionId = GetData<uint32_t>();
     int32_t effectMode = GetData<int32_t>();
     rendererManager->GetAudioEffectMode(sessionId, effectMode);
+    rendererManager->DeInit();
 }
 
 void IRendererManagerReloadFuzzTest()
@@ -388,7 +435,6 @@ void IRendererManagerCreateDestoryStreamFuzzTest()
     WaitForMsgProcessing(hpaeRendererManager);
     hpaeRendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
     hpaeRendererManager->DeInit();
-    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 void IRendererManagerStartPuaseStreamFuzzTest()
@@ -422,9 +468,7 @@ void IRendererManagerStartPuaseStreamFuzzTest()
 
     hpaeRendererManager->DestroyStream(sessionId);
     WaitForMsgProcessing(hpaeRendererManager);
-
     hpaeRendererManager->DeInit();
-    WaitForMsgProcessing(hpaeRendererManager);
 }
 
 void UpdateCollaborativeStateFuzzTest()
@@ -459,6 +503,7 @@ void UpdateCollaborativeStateFuzzTest()
     hpaeRendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
     hpaeRendererManager->UpdateCollaborativeState(false);
     WaitForMsgProcessing(hpaeRendererManager);
+    hpaeRendererManager->DeInit();
 }
 
 typedef void (*TestFuncs)();
