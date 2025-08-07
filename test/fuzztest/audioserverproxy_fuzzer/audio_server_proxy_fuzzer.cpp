@@ -354,7 +354,7 @@ void AudioServerProxySetActiveOutputDeviceProxyFuzzTest()
 void AudioServerProxyForceStopAudioStreamProxyFuzzTest()
 {
     AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
-    StopAudioType audioType= STOP_RENDER;
+    StopAudioType audioType = STOP_RENDER;
     audioServerProxy.ForceStopAudioStreamProxy(audioType);
 }
 
