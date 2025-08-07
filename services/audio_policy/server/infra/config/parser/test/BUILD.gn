@@ -93,6 +93,15 @@ ohos_unittest("audio_concurrency_parser_unit_test") {
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   external_deps = [
     "bluetooth:btframework",
     "c_utils:utils",
@@ -137,6 +146,15 @@ ohos_unittest("audio_tone_parser_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
 
   external_deps = [
     "bluetooth:btframework",
