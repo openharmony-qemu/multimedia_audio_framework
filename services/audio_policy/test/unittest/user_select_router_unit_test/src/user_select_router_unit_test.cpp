@@ -37,7 +37,7 @@ void UserSelectRouterUnitTest::TearDown(void) {}
  * @tc.number: GetMediaRenderDevice_001
  * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -50,7 +50,7 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_001, TestSize.Level1)
  * @tc.number: GetMediaRenderDevice_002
  * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -63,7 +63,7 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_002, TestSize.Level1)
  * @tc.number: GetMediaRenderDevice_003
  * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -76,7 +76,7 @@ HWTEST(UserSelectRouterUnitTest, GetMediaRenderDevice_003, TestSize.Level1)
  * @tc.number: GetCallRenderDevice_001
  * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_001, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
@@ -90,7 +90,7 @@ HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_001, TestSize.Level1)
  * @tc.number: GetCallRenderDevice_002
  * @tc.desc  : GetCallRenderDevic.
  */
-HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_002, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
@@ -106,7 +106,7 @@ HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_002, TestSize.Level1)
  * @tc.number: GetCallRenderDevice_003
  * @tc.desc  : GetMediaRenderDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_003, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_003, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     StreamUsage streamUsage = StreamUsage::STREAM_USAGE_VOICE_MESSAGE;
@@ -122,7 +122,7 @@ HWTEST(UserSelectRouterUnitTest, GetCallRenderDevice_003, TestSize.Level1)
  * @tc.number: GetCallCaptureDevice_001
  * @tc.desc  : GetCallCaptureDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
@@ -140,7 +140,7 @@ HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_001, TestSize.Level1)
  * @tc.number: GetCallCaptureDevice_001
  * @tc.desc  : GetCallCaptureDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_002, TestSize.Level4)
 {
     UserSelectRouter userSelectRouter;
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
@@ -158,7 +158,7 @@ HWTEST(UserSelectRouterUnitTest, GetCallCaptureDevice_002, TestSize.Level1)
  * @tc.number: GetRingRenderDevices_001
  * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_001, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -172,7 +172,7 @@ HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_001, TestSize.Level1)
  * @tc.number: GetRingRenderDevices_002
  * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_002, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -186,7 +186,7 @@ HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_002, TestSize.Level1)
  * @tc.number: GetRingRenderDevices_003
  * @tc.desc  : GetRingRenderDevices.
  */
-HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_003, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_003, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     int32_t clientUID = 1;
@@ -200,7 +200,7 @@ HWTEST(UserSelectRouterUnitTest, GetRingRenderDevices_003, TestSize.Level1)
  * @tc.number: GetRecordCaptureDevice_001
  * @tc.desc  : GetRecordCaptureDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
 {
     UserSelectRouter userSelectRouter;
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_RECOGNITION;
@@ -215,7 +215,7 @@ HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_001, TestSize.Level1)
  * @tc.number: GetRecordCaptureDevice_002
  * @tc.desc  : GetRecordCaptureDevice.
  */
-HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
+HWTEST(UserSelectRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level3)
 {
     UserSelectRouter userSelectRouter;
     SourceType sourceType = SourceType::SOURCE_TYPE_VOICE_TRANSCRIPTION;
