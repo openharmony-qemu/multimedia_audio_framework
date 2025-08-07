@@ -503,8 +503,6 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
     // hdi fallback, dont modify
     SetBufferSizeWhileRenderFrame();
 #ifdef ENABLE_HOOK_PCM
-    AUDIO_DEBUG_LOG("HpaeOffloadSinkOutputNode: name %{public}s, RenderFrame interval: %{public}" PRIu64 " ms",
-        sinkOutAttr_.adapterName.c_str(), interval);
     if (outputPcmDumper_) {
         outputPcmDumper_->Dump((int8_t *)renderFrameData, renderFrameData_.size());
     }
