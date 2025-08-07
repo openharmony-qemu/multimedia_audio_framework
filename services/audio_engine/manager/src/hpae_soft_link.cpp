@@ -38,7 +38,7 @@ static constexpr uint32_t MS_PER_SECOND = 1000;
 static constexpr uint32_t DEFAULT_RING_BUFFER_NUM = 4;
 static constexpr int32_t MAX_OVERFLOW_UNDERRUN_COUNT = 50; // 1s
 uint32_t HpaeSoftLink::g_sessionId = FIRST_SESSIONID; // begin at 90000
-std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode)
+std::shared_ptr<IHpaeSoftLink> IHpaeSoftLink::CreateSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode)
 {
     std::shared_ptr<IHpaeSoftLink> softLink = std::make_shared<HpaeSoftLink>(sinkIdx, sourceIdx, mode);
     CHECK_AND_RETURN_RET_LOG(softLink != nullptr, nullptr, "new HpaeSoftLink failed");
@@ -58,7 +58,7 @@ uint32_t HpaeSoftLink::GenerateSessionId()
     return sessionId;
 }
 
-HpaeSoftLink::HpaeSoftLink(int32_t sinkIdx, int32_t sourceIdx, SoftLinkMode mode)
+HpaeSoftLink::HpaeSoftLink(uint32_t sinkIdx, uint32_t sourceIdx, SoftLinkMode mode)
     : sinkIdx_(sinkIdx), sourceIdx_(sourceIdx), linkMode_(mode), state_(HpaeSoftLinkState::NEW)
 {
     sinkInfo_.sinkId = sinkIdx;
@@ -77,12 +77,13 @@ int32_t HpaeSoftLink::Init()
     AUDIO_INFO_LOG("init in");
     CHECK_AND_RETURN_RET_LOG(state_ != HpaeSoftLinkState::PREPARED, SUCCESS, "softlink already inited");
     CHECK_AND_RETURN_RET_LOG(state_ == HpaeSoftLinkState::NEW, ERR_ILLEGAL_STATE, "init error state");
-    CHECK_AND_RETURN_RET_LOG(sinkIdx_ >= 0 && sourceIdx_ >= 0, ERR_INVALID_PARAM, "invalid sinkIdx or capturerIdx");
+    CHECK_AND_RETURN_RET_LOG(sinkIdx_ != HDI_INVALID_ID && sourceIdx_ != HDI_INVALID_ID, ERR_INVALID_PARAM,
+        "invalid sinkIdx or capturerIdx");
 
     int32_t ret = GetDeviceInfo();
     CHECK_AND_RETURN_RET(ret == SUCCESS, ERR_OPERATION_FAILED);
 
-    size_t frameBytes = sinkInfo_.channels * GetSizeFromFormat(sinkInfo_.format) *
+    size_t frameBytes = sinkInfo_.channels * static_cast<size_t>(GetSizeFromFormat(sinkInfo_.format)) *
         DEFAULT_FRAME_LEN_MS * sinkInfo_.samplingRate / MS_PER_SECOND;
     size_t size = DEFAULT_RING_BUFFER_NUM * frameBytes;
     bufferQueue_ = AudioRingCache::Create(size);
@@ -318,8 +319,9 @@ int32_t HpaeSoftLink::OnStreamData(AudioCallBackStreamInfo& callbackStreamInfo)
 static void CopyRightToLeft(uint8_t *data, size_t size, const AudioSampleFormat &format)
 {
     CHECK_AND_RETURN_LOG(data != nullptr && size > 0, "error param");
-    const uint8_t bytesPerSample = GetSizeFromFormat(format);
+    const size_t bytesPerSample = static_cast<size_t>(GetSizeFromFormat(format));
     const size_t frameSize = bytesPerSample * 2;
+    CHECK_AND_RETURN_LOG(size > frameSize, "invalid data size");
     uint8_t *left = nullptr;
     uint8_t *right = nullptr;
     for (size_t i = 0; i < size - frameSize + 1; i += frameSize) {

@@ -55,7 +55,6 @@ std::vector<std::string> SplitAndTrim(const std::string& str)
     while (std::getline(ss, token, ',')) {
         std::string trimmedToken = Trim(token);
         if (!trimmedToken.empty()) {
-            AUDIO_DEBUG_LOG("Trim string : %{public}s", trimmedToken.c_str());
             result.push_back(trimmedToken);
         }
     }

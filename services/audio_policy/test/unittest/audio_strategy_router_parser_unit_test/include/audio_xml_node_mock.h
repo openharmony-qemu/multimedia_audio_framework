@@ -24,21 +24,21 @@ namespace AudioStandard {
 class MockAudioXmlNode : public AudioXmlNode {
 public:
     MockAudioXmlNode() = default;
-    ~MockAudioXmlNode() = default;
-    MOCK_METHOD(std::shared_ptr<AudioXmlNode>, GetChildrenNode, (), ());
-    MOCK_METHOD(std::shared_ptr<AudioXmlNode>, GetCopyNode, (), ());
-    MOCK_METHOD(int32_t, Config, (const char *fileName, const char *encoding, int32_t options), ());
-    MOCK_METHOD(void, MoveToNext, (), ());
-    MOCK_METHOD(void, MoveToChildren, (), ());
-    MOCK_METHOD(bool, IsNodeValid, (), ());
-    MOCK_METHOD(bool, HasProp, (const char *propName), ());
-    MOCK_METHOD(int32_t, GetProp, (const char *propName, std::string &result), ());
-    MOCK_METHOD(int32_t, GetContent, (std::string &result), ());
-    MOCK_METHOD(std::string, GetName, (), ());
-    MOCK_METHOD(bool, CompareName, (const char *propName), ());
-    MOCK_METHOD(bool, IsElementNode, (), ());
-    MOCK_METHOD(void, FreeDoc, (), ());
-    MOCK_METHOD(void, FreeProp, (char *propName), ());
+    virtual ~MockAudioXmlNode() override = default;
+    MOCK_METHOD(std::shared_ptr<AudioXmlNode>, GetChildrenNode, (), (override));
+    MOCK_METHOD(std::shared_ptr<AudioXmlNode>, GetCopyNode, (), (override));
+    MOCK_METHOD(int32_t, Config, (const char *fileName, const char *encoding, int32_t options), (override));
+    MOCK_METHOD(void, MoveToNext, (), (override));
+    MOCK_METHOD(void, MoveToChildren, (), (override));
+    MOCK_METHOD(bool, IsNodeValid, (), (override));
+    MOCK_METHOD(bool, HasProp, (const char *propName), (override));
+    MOCK_METHOD(int32_t, GetProp, (const char *propName, std::string &result), (override));
+    MOCK_METHOD(int32_t, GetContent, (std::string &result), (override));
+    MOCK_METHOD(std::string, GetName, (), (override));
+    MOCK_METHOD(bool, CompareName, (const char *propName), (override));
+    MOCK_METHOD(bool, IsElementNode, (), (override));
+    MOCK_METHOD(void, FreeDoc, (), (override));
+    MOCK_METHOD(void, FreeProp, (char *propName), (override));
 };
 }  // namespace AudioStandard
 }  // namespace OHOS

@@ -52,12 +52,13 @@ private:
     AudioPipeType GetPipeType(uint32_t flag, AudioMode audioMode);
     void HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+    bool IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
+        std::shared_ptr<AudioStreamDescriptor> streamDescB);
     void DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
-
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard

@@ -528,6 +528,7 @@ int32_t HpaeOffloadRendererManager::RegisterWriteCallback(
     uint32_t sessionId, const std::weak_ptr<IStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
+        CHECK_AND_RETURN_LOG(sinkInputNode_ != nullptr, "SinkInputNode is nullptr");
         CHECK_AND_RETURN_LOG(sessionId == sinkInputNode_->GetSessionId(),
             "RegisterWriteCallback not find sessionId %{public}u",
             sessionId);
@@ -632,6 +633,11 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
         sessionId);
     sinkInputInfo.nodeInfo = sinkInputNode_->GetNodeInfo();
     sinkInputInfo.rendererSessionInfo = sessionInfo_;
+    return SUCCESS;
+}
+
+int32_t HpaeOffloadRendererManager::RefreshProcessClusrerByDevice()
+{
     return SUCCESS;
 }
 

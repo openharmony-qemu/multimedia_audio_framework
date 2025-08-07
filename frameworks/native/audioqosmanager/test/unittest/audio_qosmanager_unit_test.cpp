@@ -15,9 +15,17 @@
 
 #include "audio_qosmanager.h"
 #include <gtest/gtest.h>
+ #include <chrono>
+ #include <thread>
 
 using namespace testing::ext;
 using namespace std;
+
+namespace {
+static constexpr int32_t WAIT_FOR_SET_QOS_TIME_MS = 500; // 500ms
+static constexpr int32_t SET_PRIORITY_1 = 1;
+static constexpr int32_t SET_PRIORITY_4 = 4;
+}
 
 class AudioQosmanagerUnitTest : public ::testing::Test {
 public:
@@ -34,6 +42,12 @@ public:
  */
 HWTEST_F(AudioQosmanagerUnitTest, SetThreadQosLevelAsync_001, TestSize.Level4)
 {
-    SetThreadQosLevelAsync();
+    SetThreadQosLevelAsync(SET_PRIORITY_1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_SET_QOS_TIME_MS));
+    ResetThreadQosLevel();
+    EXPECT_TRUE(gettid());
+    SetThreadQosLevelAsync(SET_PRIORITY_4);
+    std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_FOR_SET_QOS_TIME_MS));
+    ResetThreadQosLevel();
     EXPECT_TRUE(gettid());
 }

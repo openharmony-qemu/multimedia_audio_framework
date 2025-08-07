@@ -26,8 +26,15 @@ void AudioStrategyRouterParserUnitTest::SetUp(void)
     audioStrategyRouterParser_ = std::make_shared<AudioStrategyRouterParser>();
     ASSERT_TRUE(audioStrategyRouterParser_ != nullptr);
 
-    mockAudioXmlNode_ = std::make_shared<MockAudioXmlNode>();
+    mockAudioXmlNode_ = std::make_shared<testing::NiceMock<MockAudioXmlNode>>();
     ASSERT_TRUE(mockAudioXmlNode_ != nullptr);
+
+    ON_CALL(*mockAudioXmlNode_, IsNodeValid()).WillByDefault(Return(false));
+    ON_CALL(*mockAudioXmlNode_, IsElementNode()).WillByDefault(Return(true));
+    ON_CALL(*mockAudioXmlNode_, CompareName(_)).WillByDefault(Return(false));
+    ON_CALL(*mockAudioXmlNode_, GetProp(_, _)).WillByDefault(Return(0));
+    ON_CALL(*mockAudioXmlNode_, GetCopyNode()).WillByDefault(Return(mockAudioXmlNode_));
+    ON_CALL(*mockAudioXmlNode_, GetChildrenNode()).WillByDefault(Return(mockAudioXmlNode_));
 }
 void AudioStrategyRouterParserUnitTest::TearDown(void)
 {

@@ -125,11 +125,11 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             needUpdateActiveDevice = !isUpdateActiveDevice;
             sessionId = streamDesc->sessionId_;
         }
-
         // started stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
             MuteSinkPortForSwitchDevice(streamDesc, reason);
         }
+        UpdatePlaybackStreamFlag(streamDesc, false);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
     std::shared_ptr<AudioDeviceDescriptor> descPtr =
@@ -618,7 +618,7 @@ int32_t AudioCoreService::LoadSplitModule(const std::string &splitArgs, const st
         OUTPUT_DEVICE, DEVICE_TYPE_SPEAKER);
     moudleInfo.lib = "libmodule-split-stream-sink.z.so";
     moudleInfo.extra = splitArgs;
-    moudleInfo.needEmptyChunk = false;
+    moudleInfo.needEmptyChunk = true;
 
     int32_t openRet = audioIOHandleMap_.OpenPortAndInsertIOHandle(moduleName, moudleInfo);
     if (openRet != 0) {
@@ -1055,15 +1055,12 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
 
     SleepForSwitchDevice(streamDesc, reason);
 
-    AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(newDeviceDesc->deviceType_);
-
     CHECK_AND_RETURN_LOG(IsNewDevicePlaybackSupported(streamDesc), "new device not support playback");
 
     auto ret = (newDeviceDesc->networkId_ == LOCAL_NETWORK_ID)
         ? MoveToLocalOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc)
         : MoveToRemoteOutputDevice(targetSinkInputs, pipeInfo, newDeviceDesc);
     if (ret != SUCCESS) {
-        AudioPolicyUtils::GetInstance().UpdateEffectDefaultSink(oldDeviceType);
         AUDIO_ERR_LOG("Move sink input %{public}d to device %{public}d failed!",
             streamDesc->sessionId_, newDeviceDesc->deviceType_);
         audioIOHandleMap_.NotifyUnmutePort();

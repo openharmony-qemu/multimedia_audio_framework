@@ -47,43 +47,6 @@ static bool IsRemoteOffloadNeedRecreate(std::shared_ptr<AudioPipeInfo> newPipe, 
         (newPipe->moduleInfo_.bufferSize != oldPipe->moduleInfo_.bufferSize);
 }
 
-static bool IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
-    std::shared_ptr<AudioStreamDescriptor> streamDescB)
-{
-    CHECK_AND_RETURN_RET(streamDescA != nullptr && streamDescB != nullptr, true);
-
-    auto findFunc = [](const std::shared_ptr<AudioPipeInfo> &info, std::shared_ptr<AudioStreamDescriptor> streamDesc,
-        std::string &adapterName) -> bool {
-        CHECK_AND_RETURN_RET(info != nullptr && streamDesc != nullptr, false);
-        for (auto item : info->streamDescriptors_) {
-            CHECK_AND_CONTINUE(item && item->sessionId_ == streamDesc->sessionId_);
-            adapterName = info->adapterName_;
-            return true;
-        }
-        return false;
-    };
-
-    std::string adapterNameA = "";
-    std::string adapterNameB = "";
-    auto pipeManager = AudioPipeManager::GetPipeManager();
-    CHECK_AND_RETURN_RET_LOG(pipeManager != nullptr, true, "pipeManager is nullptr");
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfoList = pipeManager->GetPipeList();
-    auto item = std::find_if(pipeInfoList.begin(), pipeInfoList.end(), [findFunc, streamDescA, &adapterNameA]
-        (const auto &info) {
-        return findFunc(info, streamDescA, adapterNameA);
-    });
-    CHECK_AND_RETURN_RET(item != pipeInfoList.end(), true);
-    item = std::find_if(pipeInfoList.begin(), pipeInfoList.end(), [findFunc, streamDescB, &adapterNameB]
-        (const auto &info) {
-        return findFunc(info, streamDescB, adapterNameB);
-    });
-    CHECK_AND_RETURN_RET(item != pipeInfoList.end(), true);
-    // just check remote
-    CHECK_AND_RETURN_RET(adapterNameA == "remote" || adapterNameB == "remote", true);
-    AUDIO_INFO_LOG("adapterNameA: %{public}s, adapterNameB: %{public}s", adapterNameA.c_str(), adapterNameB.c_str());
-    return adapterNameA == adapterNameB;
-}
-
 AudioPipeSelector::AudioPipeSelector() : configManager_(AudioPolicyConfigManager::GetInstance())
 {
 }
@@ -366,6 +329,34 @@ void AudioPipeSelector::IncomingConcurrency(std::shared_ptr<AudioStreamDescripto
         cmpStream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u", cmpStream->sessionId_, stream->sessionId_);
     }
+}
+
+bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> streamDescA,
+    std::shared_ptr<AudioStreamDescriptor> streamDescB)
+{
+    CHECK_AND_RETURN_RET(streamDescA != nullptr && streamDescB != nullptr && streamDescA->newDeviceDescs_.size() != 0 &&
+        streamDescB->newDeviceDescs_.size() != 0, true);
+    bool hasRemote = false;
+    for (auto deviceDescA : streamDescA->newDeviceDescs_) {
+        CHECK_AND_CONTINUE(deviceDescA != nullptr);
+        AudioPipeType pipeTypeA = GetPipeType(streamDescA->routeFlag_, streamDescA->audioMode_);
+        bool isRemoteA = deviceDescA->networkId_ != LOCAL_NETWORK_ID;
+        hasRemote = isRemoteA ? true : hasRemote;
+        std::string portNameA = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescA->deviceType_, pipeTypeA);
+
+        for (auto deviceDescB : streamDescB->newDeviceDescs_) {
+            CHECK_AND_CONTINUE(deviceDescB != nullptr);
+            AudioPipeType pipeTypeB = GetPipeType(streamDescB->routeFlag_, streamDescB->audioMode_);
+            bool isRemoteB = deviceDescB->networkId_ != LOCAL_NETWORK_ID;
+            hasRemote = isRemoteB ? true : hasRemote;
+            std::string portNameB = AudioPolicyUtils::GetInstance().GetSinkPortName(deviceDescB->deviceType_,
+                pipeTypeB);
+            CHECK_AND_RETURN_RET(!(isRemoteA == isRemoteB && portNameA == portNameB), true);
+        }
+    }
+    CHECK_AND_RETURN_RET(hasRemote, true);
+    AUDIO_INFO_LOG("diff adapter, not need concurrency");
+    return false;
 }
 
 bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
