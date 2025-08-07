@@ -23,8 +23,6 @@
 #include "audio_policy_utils.h"
 #include <algorithm>
 
-#include <map>
-
 namespace OHOS {
 namespace AudioStandard {
 
@@ -191,8 +189,7 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
 }
 
 // add streamDescs to prefer newPipe based on final routeFlag, create newPipe if needed
-void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
-    std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
     std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     std::string adapterName{};
@@ -217,8 +214,7 @@ void AudioPipeSelector::ProcessNewPipeList(std::vector<std::shared_ptr<AudioPipe
 }
 
 // based on old--new pipeinfo to judge streamAction and pipeAction
-void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &oldPipeInfoList,
-    std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
+void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
     std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo)
 {
     // get each streamDesc in each newPipe to judge action
@@ -280,7 +276,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipesAndExec
     }
 
     DecideFinalRouteFlag(streamDescs);
-    ProcessNewPipeList(oldPipeInfoList, newPipeInfoList, streamDescs);
+    ProcessNewPipeList(newPipeInfoList, streamDescs);
     DecidePipesAndStreamAction(oldPipeInfoList, newPipeInfoList, streamDescToPipeInfo);
 
     // check is pipe update
