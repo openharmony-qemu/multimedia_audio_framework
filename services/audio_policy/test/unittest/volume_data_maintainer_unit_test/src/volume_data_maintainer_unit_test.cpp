@@ -17,6 +17,7 @@
 
 #include "system_ability_definition.h"
 #include "audio_errors.h"
+#include "audio_utils.h"
 
 using namespace testing::ext;
 
@@ -366,6 +367,23 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_017, TestSize.
 }
 
 /**
+* @tc.name  : Test VolumeDataMaintainer.
+* @tc.number: VolumeDataMaintainerUnitTest_018.
+* @tc.desc  : Test VolumeDataMaintainer API.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainerUnitTest_018, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    bool isMuteRet1 = true;
+    auto ret = volumeDataMaintainerRet->SaveMicMuteState(isMuteRet1);
+    EXPECT_EQ(ret, false);
+
+    bool isMuteRet2 = true;
+    ret = volumeDataMaintainerRet->GetMicMuteState(isMuteRet2);
+    EXPECT_EQ(ret, false);
+}
+
+/**
 * @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is empty.
 * @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_001.
 * @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns empty string.
@@ -391,6 +409,55 @@ HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal
     DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
     AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
     bool muteStatus = true;
+    bool result = volumeDataMaintainer->SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is valid.
+* @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_003.
+* @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns valid string and save succeeds.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal_003, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamType streamType = AudioStreamType::STREAM_MUSIC;
+    bool muteStatus = true;
+    VolumeUtils::SetPCVolumeEnable(true);
+    bool result = volumeDataMaintainer->SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_TRUE(result);
+}
+
+/**
+* @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is valid.
+* @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_004.
+* @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns valid string and save succeeds.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal_004, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    bool muteStatus = true;
+    VolumeUtils::SetPCVolumeEnable(true);
+    bool result = volumeDataMaintainer->SaveMuteStatusInternal(deviceType, streamType, muteStatus);
+    EXPECT_TRUE(result);
+}
+
+
+/**
+* @tc.name  : Test VolumeDataMaintainer SaveMuteStatusInternal when muteKey is valid.
+* @tc.number: VolumeDataMaintainer_SaveMuteStatusInternal_005.
+* @tc.desc  : Test VolumeDataMaintainer API when GetMuteKeyForDataShare returns valid string and save succeeds.
+*/
+HWTEST(VolumeDataMaintainerUnitTest, VolumeDataMaintainer_SaveMuteStatusInternal_005, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioStreamType streamType = AudioStreamType::STREAM_VOICE_ASSISTANT;
+    bool muteStatus = true;
+    VolumeUtils::SetPCVolumeEnable(true);
     bool result = volumeDataMaintainer->SaveMuteStatusInternal(deviceType, streamType, muteStatus);
     EXPECT_TRUE(result);
 }
@@ -501,6 +568,51 @@ HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_002, TestSize.Level
     std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
     DeviceType deviceType = DEVICE_TYPE_WIRED_HEADSET;
     AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeValue = volumeDataMaintainer->GetDeviceVolumeInternal(deviceType, streamType);
+    EXPECT_EQ(volumeValue, 0);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetDeviceVolumeInternal when GetIntValue fails.
+ * @tc.number: GetDeviceVolumeInternal_003
+ * @tc.desc  : Test VolumeDataMaintainer API when GetIntValue returns failure.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_003, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamType streamType = STREAM_MUSIC;
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t volumeValue = volumeDataMaintainer->GetDeviceVolumeInternal(deviceType, streamType);
+    EXPECT_EQ(volumeValue, 0);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetDeviceVolumeInternal when GetIntValue fails.
+ * @tc.number: GetDeviceVolumeInternal_004
+ * @tc.desc  : Test VolumeDataMaintainer API when GetIntValue returns failure.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_004, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_SCO;
+    AudioStreamType streamType = STREAM_VOICE_ASSISTANT;
+    VolumeUtils::SetPCVolumeEnable(true);
+    int32_t volumeValue = volumeDataMaintainer->GetDeviceVolumeInternal(deviceType, streamType);
+    EXPECT_EQ(volumeValue, 0);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer GetDeviceVolumeInternal when GetIntValue fails.
+ * @tc.number: GetDeviceVolumeInternal_005
+ * @tc.desc  : Test VolumeDataMaintainer API when GetIntValue returns failure.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, GetDeviceVolumeInternal_005, TestSize.Level3)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainer = std::make_shared<VolumeDataMaintainer>();
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioStreamType streamType = STREAM_VOICE_ASSISTANT;
+    VolumeUtils::SetPCVolumeEnable(true);
     int32_t volumeValue = volumeDataMaintainer->GetDeviceVolumeInternal(deviceType, streamType);
     EXPECT_EQ(volumeValue, 0);
 }
@@ -719,6 +831,22 @@ HWTEST(VolumeDataMaintainerUnitTest, SaveMuteStatusWithDatabaseVolumeName_003, T
 
     mute = false;
     ret = volumeDataMaintainerRet->SaveMuteStatusWithDatabaseVolumeName(databaseVolumeName, streamType, mute);
+    EXPECT_EQ(ret, false);
+}
+
+/**
+ * @tc.name  : Test VolumeDataMaintainer.
+ * @tc.number: SaveMuteStatusWithDatabaseVolumeName_004.
+ * @tc.desc  : Test SaveMuteStatusWithDatabaseVolumeName API.
+ */
+HWTEST(VolumeDataMaintainerUnitTest, SaveMuteStatusWithDatabaseVolumeName_004, TestSize.Level4)
+{
+    std::shared_ptr<VolumeDataMaintainer> volumeDataMaintainerRet = std::make_shared<VolumeDataMaintainer>();
+    std::string databaseVolumeName = "TestName";
+    AudioStreamType streamType = STREAM_DEFAULT;
+    bool mute = true;
+    VolumeUtils::SetPCVolumeEnable(false);
+    auto ret = volumeDataMaintainerRet->SaveMuteStatusWithDatabaseVolumeName(databaseVolumeName, streamType, mute);
     EXPECT_EQ(ret, false);
 }
 
