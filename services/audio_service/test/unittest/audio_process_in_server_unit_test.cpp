@@ -1129,9 +1129,9 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level1)
     AudioService *releaseCallbackRet = AudioService::GetInstance();
     auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
     int64_t muteFrameCnt = 0;
-    
-    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
+
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
 }
 
 /**
@@ -1147,8 +1147,8 @@ HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level1)
     auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
     int64_t muteFrameCnt = -1;
 
-    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
 }
 
 /**
@@ -1165,8 +1165,8 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, Test
     uint32_t sessionId = 1;
     int32_t standby = 0;
 
-    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
 }
 
 /**
@@ -1183,8 +1183,8 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, Test
     uint32_t sessionId = 1;
     int32_t standby = 1;
 
-    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
 }
 
 /**
@@ -1201,8 +1201,8 @@ HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, Test
     uint32_t sessionId = 1;
     int32_t standby = 1;
 
-    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
 }
 
 /**
@@ -1219,8 +1219,8 @@ HWTEST(AudioProcessInServerUnitTest, WriteDumpFile_001, TestSize.Level1)
     void *buffer = new char[100];
     size_t bufferSize = 100;
 
-    audioProcessInServerRet->WriteDumpFile(buffer, bufferSize);
     EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriteDumpFile(buffer, bufferSize);
 }
 } // namespace AudioStandard
 } // namespace OHOS
