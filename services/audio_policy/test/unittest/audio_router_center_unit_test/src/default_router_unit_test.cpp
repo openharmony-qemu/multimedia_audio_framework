@@ -20,7 +20,7 @@
 #include "default_router.h"
 #include "app_select_router.h"
 #include "pair_device_router.h"
-#include "coclpit_phone_router.h"
+#include "cocklpit_phone_router.h"
 
 #include <thread>
 #include <memory>
@@ -56,7 +56,7 @@ HWTEST(AudioRouterCenterUnitTest, GetCallRenderDevice_001, TestSize.Level4)
     int32_t clientUID = 1000;
     DefaultRouter defaultRouter;
     auto result = defaultRouter.GetCallRenderDevice(streamUsage, clientUID);
-    EXPECT_EQ(actualDevice->deviceType_, DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_EQ(result->deviceType_, DeviceType::DEVICE_TYPE_NONE);
 }
 
 /**
@@ -100,7 +100,7 @@ HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
     int32_t clientUID = 1000;
     uint32_t sessionID = 123;
     AppSelectRouter appSelectRouter;
-    std::shared_ptr<AudioDeviceDescriptor> actualDevice =
+    shared_ptr<AudioDeviceDescriptor> actualDevice =
         appSelectRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
     EXPECT_NE(actualDevice, nullptr);
 
@@ -112,7 +112,7 @@ HWTEST(AudioRouterCenterUnitTest, GetRecordCaptureDevice_001, TestSize.Level4)
 /**
  * @tc.name  : Test PairDeviceRouter_GetCallCaptureDevice.
  * @tc.number: PairDeviceRouter_GetCallCaptureDevice_001
- * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevicee interface.
+ * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_001, TestSize.Level4)
 {
@@ -134,7 +134,7 @@ HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_001, Tes
 /**
  * @tc.name  : Test PairDeviceRouter_GetCallCaptureDevice.
  * @tc.number: PairDeviceRouter_GetCallCaptureDevice_002
- * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevicee interface.
+ * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_002, TestSize.Level4)
 {
@@ -152,7 +152,7 @@ HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_002, Tes
 /**
  * @tc.name  : Test PairDeviceRouter_GetCallCaptureDevice.
  * @tc.number: PairDeviceRouter_GetCallCaptureDevice_003
- * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevicee interface.
+ * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_003, TestSize.Level4)
 {
@@ -171,7 +171,7 @@ HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_003, Tes
 /**
  * @tc.name  : Test PairDeviceRouter_GetCallCaptureDevice.
  * @tc.number: PairDeviceRouter_GetCallCaptureDevice_004
- * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevicee interface.
+ * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_004, TestSize.Level4)
 {
@@ -190,7 +190,7 @@ HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_004, Tes
 /**
  * @tc.name  : Test PairDeviceRouter_GetCallCaptureDevice.
  * @tc.number: PairDeviceRouter_GetCallCaptureDevice_005
- * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevicee interface.
+ * @tc.desc  : Test PairDeviceRouter_GetCallCaptureDevice interface.
  */
 HWTEST(AudioRouterCenterUnitTest, PairDeviceRouter_GetCallCaptureDevice_005, TestSize.Level4)
 {
@@ -216,9 +216,9 @@ HWTEST(AudioRouterCenterUnitTest, CockpitPhoneRouter_GetRingRenderDevices_001, T
     StreamUsage streamUsage = STREAM_USAGE_ALARM;
     int32_t clientUID = 1000;
     CockpitPhoneRouter cockpitPhoneRouter;
-    std::vector<shared_ptr<AudioDeviceDescriptor>> desc =
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs =
         cockpitPhoneRouter.GetRingRenderDevices(streamUsage, clientUID);
-    EXPECT_TRUE(desc.empty());
+    EXPECT_TRUE(descs.empty());
 }
 } // namespace AudioStandard
 } // namespace OHOS
