@@ -1228,7 +1228,8 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetDeviceAbsVolume_005, TestSize.Level1)
 {
     std::shared_ptr<SleAudioDeviceManager> sleAudioDeviceManager_ =
         std::make_shared<SleAudioDeviceManager>();
-    sptr<IStandardSleAudioOperationCallbackTest> callback = nullptr;
+    sptr<IStandardSleAudioOperationCallbackTest> callback =
+        new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
 
     std::string device = "1234567890";
