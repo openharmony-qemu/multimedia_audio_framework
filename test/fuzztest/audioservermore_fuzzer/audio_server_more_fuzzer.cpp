@@ -952,17 +952,6 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
 
-void AudioServerForceStopAudioStreamFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    int32_t audioType = *reinterpret_cast<const int32_t*>(rawData);
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->ForceStopAudioStream(audioType);
-}
-
-
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -972,7 +961,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     if (size < OHOS::AudioStandard::THRESHOLD) {
         return 0;
     }
-
     OHOS::AudioStandard::FuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetSpatializationSceneTypeTest(data, size);
     OHOS::AudioStandard::AudioServerUpdateSpatialDeviceTypeTest(data, size);
@@ -996,7 +984,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerSetAsrVoiceControlModeFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetAsrVoiceMuteModeFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerIsWhisperingFuzzTest(data, size);
-
     OHOS::AudioStandard::AudioServerHpaeDumpServerDataDumpFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerHpaeDumpGetDeviceSinkInfoFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerHpaeDumpPlaybackSinkDumpFuzzTest(data, size);
@@ -1019,6 +1006,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
     OHOS::AudioStandard::AudioServerStartGroupFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerStopGroupFuzzTest(data, size);
     OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest(data, size);
-    OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest(data, size);
     return 0;
 }
