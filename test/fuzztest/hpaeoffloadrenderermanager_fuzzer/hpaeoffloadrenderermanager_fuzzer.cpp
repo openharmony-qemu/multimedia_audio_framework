@@ -120,16 +120,10 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
     nodeInfo.sourceBufferType = HPAE_SOURCE_BUFFER_TYPE_MIC;
 }
 
-void WaitForMsgProcessing(std::shared_ptr<IHpaeRenderManager> &hpaeRendererManager)
+void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
-    int waitCount = 0;
-    const int waitCountThd = 5;
     while (hpaeRendererManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(20));
-        waitCount++;
-        if (waitCount >= waitCountThd) {
-            break;
-        }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(40));
 }
