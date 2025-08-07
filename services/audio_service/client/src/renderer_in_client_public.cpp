@@ -372,6 +372,8 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         uint64_t timestampNS = timestampCurrent[base];
 
+        // Calculate the number of samples at the switching point based on the current time
+        // before scaling to one times speed, for RendererInClientInner::GetAudioPosition
         uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
         uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
         uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
@@ -381,6 +383,7 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
         lastFramePosAndTimePair_[base].first = newPositionUS;
         lastFramePosAndTimePair_[base].second = timestampNS;
 
+        // after scaling to one times speed, for RendererInClientInner::GetAudioTimestampInfo
         uint64_t lastTimeWithSpeedNS = lastFramePosAndTimePairWithSpeed[base].second;
         uint64_t durationWithSpeedNS =
             timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
