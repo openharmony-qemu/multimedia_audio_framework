@@ -172,6 +172,8 @@ public:
 
 class PolicyAdapterInfo {
 public:
+    PolicyAdapterInfo();
+    ~PolicyAdapterInfo();
     void SelfCheck();
 
     static AudioAdapterType GetAdapterType(const std::string &adapterName);
