@@ -54,7 +54,8 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "offload";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
 constexpr uint8_t TESTSIZE = 42;
-
+constexpr int32_t TEST_SLEEP_TIME_20 = 20;
+constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
@@ -123,9 +124,9 @@ static void InitNodeInfo(HpaeNodeInfo &nodeInfo)
 void WaitForMsgProcessing(std::shared_ptr<IHpaeRendererManager> &hpaeRendererManager)
 {
     while (hpaeRendererManager->IsMsgProcessing()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(40));
+    std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_40));
 }
 
 int32_t WriteFixedDataCb::OnStreamData(AudioCallBackStreamInfo& callBackStremInfo)
