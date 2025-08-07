@@ -1817,7 +1817,7 @@ HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
     std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
         Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
     };
-    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testLastFramePosAndTimePair);
     Timestamp testTimestamp;
     testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);

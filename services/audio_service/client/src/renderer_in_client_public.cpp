@@ -377,7 +377,7 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
         uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
         uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
         uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
-        uint64_t newPositionUS = 
+        uint64_t newPositionUS =
             lastFramePosAndTimePair[base].first + durationUS * curStreamParams_.samplingRate / AUDIO_US_PER_S;
         lastSwitchPosition_[base] = newPositionUS;
         lastFramePosAndTimePair_[base].first = newPositionUS;
