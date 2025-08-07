@@ -51,7 +51,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioSafeNotificationImpl_002, TestSize.Lev
     audioVolumeManager.activeSafeTimeBt_ = 10;
     audioVolumeManager.activeSafeTime_ = 10000;
     audioVolumeManager.CheckWiredActiveMusicTime(safeVolume);
-    EXPECT_EQ(audioVolumeManager.startSafeTimeBT_, 0);
+    EXPECT_EQ(audioVolumeManager.startSafeTimeBt_, 0);
 }
 
 /**
