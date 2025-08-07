@@ -624,7 +624,8 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
 void HpaeInnerCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
     CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "no find sessionId in sinkInputNodeMap");
-    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
+    TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+        rendererSessionNodeMap_[sessionId].state, operation);
 }
 
 int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId,
