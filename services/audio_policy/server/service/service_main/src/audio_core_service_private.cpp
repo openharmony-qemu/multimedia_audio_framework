@@ -125,6 +125,10 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             needUpdateActiveDevice = !isUpdateActiveDevice;
             sessionId = streamDesc->sessionId_;
         }
+        // started stream need to mute when switch device
+        if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
+            MuteSinkPortForSwitchDevice(streamDesc, reason);
+        }
         UpdatePlaybackStreamFlag(streamDesc, false);
     }
     AudioDeviceDescriptor audioDeviceDescriptor = audioActiveDevice_.GetCurrentOutputDevice();
@@ -1049,8 +1053,13 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
             streamDesc->sessionId_, callbackDesc, reason);
     }
 
-    // started stream need to mute when switch device
-    MuteSinkPortForSwitchDevice(streamDesc, reason);
+    // Mute(MuteSinkPortForSwitchDevice) is not effective before new port opened (OpenNewAudioPortAndRoute),
+    // But anco application need more time(1S) to STOP after receive 'KEYCODE_MEDIA_PAUSE' event,
+    // So, once the audio stream switches from the old sinkport to the new sinkport before the application STOP,
+    // there will be audio leakage. So try Mute again for anco.
+    if (streamDesc->appInfo_.appUid == AUDIO_ID) {
+        MuteSinkPortForSwitchDevice(streamDesc, reason);
+    }
 
     SleepForSwitchDevice(streamDesc, reason);
 

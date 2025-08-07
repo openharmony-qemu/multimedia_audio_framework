@@ -1404,6 +1404,16 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_074, TestSize.Level2
 }
 
 /**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_075
+ * @tc.desc : Test AudioCoreService::
+ */
+HWTEST(AudioCoreServicePrivateTest, , TestSize.Level2)
+{
+
+}
+
+/**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_100
  * @tc.desc  : Test AudioCoreService::ProcessOutputPipeUpdate()
