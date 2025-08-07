@@ -211,7 +211,8 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
-    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
@@ -439,6 +440,7 @@ private:
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
     std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
+    std::vector<uint64_t> lastSwitchPositionWithSpeed_ = {0, 0};
 
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
