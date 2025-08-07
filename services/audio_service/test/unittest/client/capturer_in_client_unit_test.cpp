@@ -1939,7 +1939,7 @@ HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level2)
 /**
  * @tc.name  : Test FetchDeviceForSplitStream API
  * @tc.type  : FUNC
- * @tc.number: FetchDeviceForSplitStream_002
+ * @tc.number: FetchDeviceForSplitStream_003
  * @tc.desc  : Test FetchDeviceForSplitStream interface.
  */
 HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
