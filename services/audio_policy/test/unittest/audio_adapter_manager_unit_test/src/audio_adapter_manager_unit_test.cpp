@@ -503,6 +503,69 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_002, TestSize.Level4)
     EXPECT_EQ(audioAdapterManager->GetStreamMute(streamType), mute);
 }
 
+/**
+ * @tc.name: Test SetSleVoliceStatusFlag
+ * @tc.desc: SetSleVoliceStatusFlag_001
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetSleVoliceStatusFlag_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioStreamType streamType = STREAM_MUSIC;
+    audioAdapterManager->SetSleVoiceStatusFlag(false);
+    int32_t ret = audioAdapterManager->SetVolumeDb(streamType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetSleVoliceStatusFlag
+ * @tc.desc: SetSleVoliceStatusFlag_002
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetSleVoliceStatusFlag_002, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    audioAdapterManager->SetSleVoiceStatusFlag(false);
+    int32_t ret = audioAdapterManager->SetVolumeDb(streamType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetSleVoliceStatusFlag
+ * @tc.desc: SetSleVoliceStatusFlag_003
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetSleVoliceStatusFlag_003, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioStreamType streamType = STREAM_MUSIC;
+    audioAdapterManager->SetSleVoiceStatusFlag(true);
+    int32_t ret = audioAdapterManager->SetVolumeDb(streamType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name: Test SetSleVoliceStatusFlag
+ * @tc.desc: SetSleVoliceStatusFlag_004
+ * @tc.type: FUNC
+ * @tc.require: #ICDC94
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetSleVoliceStatusFlag_004, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->currentActiveDevice_.deviceType_ = DEVICE_TYPE_NEARLINK;
+    AudioStreamType streamType = STREAM_VOICE_CALL;
+    audioAdapterManager->SetSleVoiceStatusFlag(true);
+    int32_t ret = audioAdapterManager->SetVolumeDb(streamType);
+    EXPECT_EQ(ret, SUCCESS);
+}
 
 } // namespace AudioStandard
 } // namespace OHOS

@@ -733,7 +733,7 @@ void AudioAdapterManager::SetAudioVolume(AudioStreamType streamType, float volum
         return;
     }
     if (GetActiveDevice() == DEVICE_TYPE_NEARLINK) {
-        if (volumeType == STREAM_MUSIC) {
+        if (volumeType == STREAM_MUSIC && !isSleVoiceStatus_.load()) {
             isMuted = IsAbsVolumeMute();
             volumeDb = isMuted ? 0.0f : 0.63957f; //  0.63957 = -4dB
         } else if (volumeType == STREAM_VOICE_CALL) {
@@ -1227,6 +1227,12 @@ bool AudioAdapterManager::IsDistributedVolumeType(AudioStreamType streamType)
     AudioVolumeType volumeType = VolumeUtils::GetVolumeTypeFromStreamType(streamType);
     bool ret = std::count(DISTRIBUTED_VOLUME_TYPE_LIST.begin(), DISTRIBUTED_VOLUME_TYPE_LIST.end(), volumeType) != 0;
     return ret;
+}
+
+void AudioAdapterManager::SetSleVoiceStatusFlag(bool isSleVoiceStatus)
+{
+    isSleVoiceStatus_ = isSleVoiceStatus;
+    AUDIO_INFO_LOG("SetSleVoiceStatusFlag: %{public}d", isSleVoiceStatus);
 }
 
 void AudioAdapterManager::SetVolumeForSwitchDevice(AudioDeviceDescriptor deviceDescriptor)

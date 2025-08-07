@@ -302,6 +302,8 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
 
+    void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -458,6 +460,7 @@ private:
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
+    std::atomic<bool> isSleVoiceStatus_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
