@@ -113,7 +113,7 @@ void HpaeOffloadSinkOutputNode::DoProcess()
     int32_t ret = ProcessRenderFrame();
     // if renderframe faild, sleep and return directly
     // if renderframe full, unlock the powerlock
-    static uint32_t retryCount = 1;
+    retryCount_ = 1;
     if (ret == OFFLOAD_FULL) {
         if (hdiPolicyState_ == OFFLOAD_INACTIVE_BACKGROUND || GetStreamType() == STREAM_MOVIE) {
             RunningLock(false);
@@ -121,13 +121,13 @@ void HpaeOffloadSinkOutputNode::DoProcess()
         isHdiFull_.store(true);
         return;
     } else if (ret != SUCCESS) {
-        usleep(std::min(retryCount, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
-        if (retryCount < ERR_RETRY_COUNT) {
-            retryCount++;
+        usleep(std::min(retryCount_, FRAME_TIME_IN_MS) * TIME_US_PER_MS);
+        if (retryCount_ < ERR_RETRY_COUNT) {
+            retryCount_++;
         }
         return;
     }
-    retryCount = 1;
+    retryCount_ = 1;
     return;
 }
 
@@ -466,7 +466,8 @@ int32_t HpaeOffloadSinkOutputNode::ProcessRenderFrame()
         return OFFLOAD_WRITE_FAILED;
     }
     uint64_t writeLen = 0;
-    char *renderFrameData = (char *)renderFrameData_.data();
+    renderFrameDataTemp_ = renderFrameData_;
+    char *renderFrameData = (char *)renderFrameDataTemp_.data();
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer timer;
     timer.Start();
