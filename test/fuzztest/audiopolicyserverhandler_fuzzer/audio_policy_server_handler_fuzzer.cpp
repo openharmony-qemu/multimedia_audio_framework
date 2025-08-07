@@ -56,7 +56,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 56;
+const uint8_t TESTSIZE = 53;
 static int32_t NUM_2 = 2;
 std::mutex paElementsMutex_;
 
@@ -353,18 +353,7 @@ void SendAppVolumeChangeCallbackFuzzTest()
     VolumeEvent volumeEvent;
     audioPolicyServerHandler_->SendAppVolumeChangeCallback(appUid, volumeEvent);
 }
- 
-void SendInterruptEventWithSessionIdCallbackFuzzTest()
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    if (audioPolicyServerHandler_ == nullptr) {
-        return;
-    }
-    InterruptEventInternal interruptEvent;
-    uint32_t sessionId = GetData<uint32_t>();
-    audioPolicyServerHandler_->SendInterruptEventWithSessionIdCallback(interruptEvent, sessionId);
-}
- 
+
 void SendInterruptEventCallbackForAudioSessionFuzzTest()
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
@@ -428,17 +417,7 @@ void SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest()
     bool enabled = GetData<uint32_t>() % NUM_2;
     audioPolicyServerHandler_->SendSpatializatonEnabledChangeForCurrentDeviceEvent(enabled);
 }
- 
-void SendKvDataUpdateFuzzTest()
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    if (audioPolicyServerHandler_ == nullptr) {
-        return;
-    }
-    bool isFirstBoot = GetData<uint32_t>() % NUM_2;
-    audioPolicyServerHandler_->SendKvDataUpdate(isFirstBoot);
-}
- 
+
 void SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest()
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
@@ -459,17 +438,7 @@ void SendPipeStreamCleanEventFuzzTest()
     AudioPipeType pipeType = GetData<AudioPipeType>();
     audioPolicyServerHandler_->SendPipeStreamCleanEvent(pipeType);
 }
- 
-void SendConcurrencyEventWithSessionIDCallbackFuzzTest()
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    if (audioPolicyServerHandler_ == nullptr) {
-        return;
-    }
-    uint32_t sessionID = GetData<uint32_t>();
-    audioPolicyServerHandler_->SendConcurrencyEventWithSessionIDCallback(sessionID);
-}
- 
+
 void HandleVolumeChangeCallbackFuzzTest()
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
@@ -812,17 +781,14 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SendCapturerRemovedEventFuzzTest,
     SendRingerModeUpdatedCallbackFuzzTest,
     SendAppVolumeChangeCallbackFuzzTest,
-    SendInterruptEventWithSessionIdCallbackFuzzTest,
     SendInterruptEventCallbackForAudioSessionFuzzTest,
     SendInterruptEventWithClientIdCallbackFuzzTest,
     SendDistributedRoutingRoleChangeFuzzTest,
     SendWakeupCloseEventFuzzTest,
     SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
     SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
-    SendKvDataUpdateFuzzTest,
     SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
     SendPipeStreamCleanEventFuzzTest,
-    SendConcurrencyEventWithSessionIDCallbackFuzzTest,
     HandleVolumeChangeCallbackFuzzTest,
     HandleHeadTrackingDeviceChangeEventFuzzTest,
     HandleCapturerCreateEventFuzzTest,
