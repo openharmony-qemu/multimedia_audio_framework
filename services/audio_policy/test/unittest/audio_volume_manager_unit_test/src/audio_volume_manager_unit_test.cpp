@@ -1173,6 +1173,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_053, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1188,6 +1189,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_054, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1203,6 +1205,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
