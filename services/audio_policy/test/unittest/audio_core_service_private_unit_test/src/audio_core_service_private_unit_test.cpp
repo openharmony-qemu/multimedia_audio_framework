@@ -1103,6 +1103,42 @@ HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_060, TestSize.Level1
 
 /**
  * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_GetRealPid
+ * @tc.desc : Test AudioCoreService::GetRealPid
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->callerUid_ = 1013;
+    streamDesc->callerPid_ = 1013;
+    streamDesc->appInfo_.appPid = 1013;
+
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    int32_t result = audioCoreService->GetRealPid(streamDesc);
+
+    EXPECT_EQ(result, 1013);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
+ * @tc.number: AudioCoreServicePrivate_GetRealPid_02
+ * @tc.desc : Test AudioCoreService::GetRealPid
+ */
+HWTEST(AudioCoreServicePrivateTest, AudioCoreServicePrivate_GetRealPid_02, TestSize.Level1)
+{
+    auto streamDesc = std::make_shared<AudioStreamDescriptor>();
+    auto audioCoreService = AudioCoreService::GetCoreService();
+
+    streamDesc->callerPid_ = 0;
+
+    int32_t result = audioCoreService->GetRealPid(streamDesc);
+
+    EXPECT_EQ(result, 0);
+}
+
+/**
+ * @tc.name : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_061
  * @tc.desc : Test AudioCoreService::UpdateRendererInfoWhenNoPermission
  */

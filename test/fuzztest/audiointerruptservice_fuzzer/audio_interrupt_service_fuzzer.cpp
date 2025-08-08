@@ -702,7 +702,7 @@ void AudioInterruptServiceHandleAppStreamTypeFuzzTest(const uint8_t *rawData, si
     audioInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
     bool isNull = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
     CreateAudioSessionService(interruptService, !isNull, audioInterrupt.pid);
-    interruptService->HandleAppStreamType(audioInterrupt);
+    interruptService->HandleAppStreamType(0, audioInterrupt);
 }
 
 void AudioInterruptServiceActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)

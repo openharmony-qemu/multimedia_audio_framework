@@ -770,6 +770,36 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType);
 }
 
+int32_t AudioSystemManager::GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType)
+{
+    if (volumeType == STREAM_ALL) {
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+    }
+
+    return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType, deviceType);
+}
+
+int32_t AudioSystemManager::GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType)
+{
+    if (volumeType == STREAM_ALL) {
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+    }
+
+    return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType, deviceType);
+}
+
 int32_t AudioSystemManager::SetMute(AudioVolumeType volumeType, bool mute, const DeviceType &deviceType) const
 {
     AUDIO_INFO_LOG("SetStreamMute for volumeType [%{public}d], mute [%{public}d]", volumeType, mute);

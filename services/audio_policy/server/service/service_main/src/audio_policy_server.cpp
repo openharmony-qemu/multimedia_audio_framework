@@ -729,6 +729,23 @@ bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t v
     return result;
 }
 
+bool AudioPolicyServer::IsRingerModeValid(AudioRingerMode ringMode)
+{
+    bool result = false;
+    switch (ringMode) {
+        case RINGER_MODE_SILENT:
+        case RINGER_MODE_VIBRATE:
+        case RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            AUDIO_ERR_LOG("IsRingerModeValid: ringMode[%{public}d] is not supported", ringMode);
+            break;
+    }
+    return result;
+}
+
 void AudioPolicyServer::SubscribeOsAccountChangeEvents()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
@@ -941,15 +958,17 @@ void AudioPolicyServer::LoadEffectLibrary()
     audioPolicyService_.LoadEffectLibrary();
 }
 
-int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
-    volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType));
+    volumeLevel = audioVolumeManager_.GetMaxVolumeLevel(static_cast<AudioVolumeType>(volumeType),
+                                                        static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel)
+int32_t AudioPolicyServer::GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType)
 {
-    volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType));
+    volumeLevel = audioVolumeManager_.GetMinVolumeLevel(static_cast<AudioVolumeType>(volumeType),
+                                                        static_cast<DeviceType>(deviceType));
     return SUCCESS;
 }
 
@@ -2072,6 +2091,13 @@ int32_t AudioPolicyServer::GetActiveInputDevice(int32_t &deviceType)
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetRingerModeLegacy(int32_t ringMode)
 {
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    AudioRingerMode ringModeIn = static_cast<AudioRingerMode>(ringMode);
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d, pid : %{public}d", ringModeIn, pid);
+    if (!IsRingerModeValid(ringModeIn)) {
+        AUDIO_ERR_LOG("The ringerMode is an invalid parameter.");
+        return ERR_INVALID_PARAM;
+    }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetRingerModeInner(static_cast<AudioRingerMode>(ringMode));
 }
@@ -2079,8 +2105,13 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(int32_t ringMode)
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetRingerMode(int32_t ringModeIn)
 {
+    pid_t pid = IPCSkeleton::GetCallingPid();
     AudioRingerMode ringMode = static_cast<AudioRingerMode>(ringModeIn);
-    AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d, pid : %{public}d", ringMode, pid);
+    if (!IsRingerModeValid(ringMode)) {
+        AUDIO_ERR_LOG("The ringerMode is an invalid parameter.");
+        return ERR_INVALID_PARAM;
+    }
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
@@ -2553,9 +2584,10 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
             audioInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
         }
     }
-
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
-        audioInterrupt.streamUsage);
+    StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(audioInterrupt.pid);
+    streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
+        interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) ? streamUsage : audioInterrupt.streamUsage;
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage);
     int32_t ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
         isUpdatedAudioStrategy);
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
@@ -3510,6 +3542,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
 
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     if (streamType == STREAM_MUSIC) {
+        audioPolicyManager_.SetSleVoiceStatusFlag(false);
         int32_t result = audioVolumeManager_.SetNearlinkDeviceVolume(macAddress, streamType, volume);
         CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "Set volume failed");
 
@@ -3520,6 +3553,7 @@ int32_t AudioPolicyServer::SetNearlinkDeviceVolume(const std::string &macAddress
             audioPolicyServerHandler_->SendVolumeKeyEventCallback(volumeEvent);
         }
     } else {
+        audioPolicyManager_.SetSleVoiceStatusFlag(true);
         return SetSystemVolumeLevelWithDeviceInternal(streamType, volume, updateUi, DEVICE_TYPE_NEARLINK);
     }
 
@@ -4622,7 +4656,8 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     }
 
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, true);
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
 
@@ -4648,7 +4683,8 @@ int32_t AudioPolicyServer::DeactivateAudioSession()
         return ERR_UNKNOWN;
     }
     int32_t callerPid = IPCSkeleton::GetCallingPid();
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(IPCSkeleton::GetCallingUid());
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioSessionZoneid(
+        IPCSkeleton::GetCallingUid(), callerPid, false);
     AUDIO_INFO_LOG("deactivate audio session for pid %{public}d, zoneId %{public}d", callerPid, zoneId);
     return interruptService_->DeactivateAudioSession(zoneId, callerPid);
 }

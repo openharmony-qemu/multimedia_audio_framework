@@ -54,9 +54,9 @@ public:
     static AudioPolicyManager& GetInstance();
     static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
@@ -233,6 +233,10 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t RegisterAudioPolicyServerDiedCb(std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> &callback);
+
+    static void AudioSessionManagerCallback();
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
 
@@ -712,6 +716,9 @@ private:
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
+
+    static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
+    static std::mutex serverDiedSessionManagerCbkMutex_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

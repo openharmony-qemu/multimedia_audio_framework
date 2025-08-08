@@ -88,6 +88,52 @@ HWTEST(AudioSystemManagerUnitTest, GetMinVolume_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetDeviceMaxVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMaxVolume_001
+ * @tc.desc  : Test GetDeviceMaxVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 start");
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result1:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result2:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result3:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMaxVolume_001 result4:%{public}d", result);
+    EXPECT_GT(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMinVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMinVolume_001
+ * @tc.desc  : Test GetDeviceMinVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1)
+{
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 start");
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result1:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result2:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_SPEAKER);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result3:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
+    EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
  * @tc.name  : Test IsStreamMute API
  * @tc.type  : FUNC
  * @tc.number: IsStreamMute_001

@@ -196,7 +196,21 @@ void AudioVolumeParser::ParseDeviceVolumeInfos(std::shared_ptr<AudioXmlNode> cur
             std::shared_ptr<DeviceVolumeInfo> deviceVolInfo = std::make_shared<DeviceVolumeInfo>();
             deviceVolInfo->deviceType = audioDeviceMap_[pValueStr];
             AUDIO_DEBUG_LOG("deviceVolInfo->deviceType %{public}d;", deviceVolInfo->deviceType);
-            int32_t result = curNode->GetProp("defaultidx", pValueStr);
+            int32_t result = curNode->GetProp("minidx", pValueStr);
+            if (result == SUCCESS) {
+                StringConverter<int32_t>(pValueStr, deviceVolInfo->minLevel);
+                AUDIO_DEBUG_LOG("minidx: %{public}d", deviceVolInfo->minLevel);
+            } else {
+                AUDIO_DEBUG_LOG("The minidx attribute is not configured or minidx parameter is invalid");
+            }
+            result = curNode->GetProp("maxidx", pValueStr);
+            if (result == SUCCESS) {
+                StringConverter<int32_t>(pValueStr, deviceVolInfo->maxLevel);
+                AUDIO_DEBUG_LOG("maxidx: %{public}d", deviceVolInfo->maxLevel);
+            } else {
+                AUDIO_DEBUG_LOG("The maxidx attribute is not configured or maxidx parameter is invalid");
+            }
+            result = curNode->GetProp("defaultidx", pValueStr);
             if (result == SUCCESS) {
                 StringConverter<int32_t>(pValueStr, deviceVolInfo->defaultLevel);
                 AUDIO_DEBUG_LOG("defaultidx: %{public}d", deviceVolInfo->defaultLevel);
