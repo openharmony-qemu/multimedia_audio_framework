@@ -745,6 +745,7 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
