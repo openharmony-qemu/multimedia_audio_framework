@@ -613,7 +613,7 @@ void AudioServerSetAsrAecModeFuzzTest(const uint8_t *rawData, size_t size)
     }
     int32_t asrAecMode =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->SetAsrAecMode(asrAecMode);
+    audioServerPtr->SetAsrAecMode(asrAecMode);
 }
 
 void AudioServerGetAsrAecModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -623,7 +623,7 @@ void AudioServerGetAsrAecModeFuzzTest(const uint8_t *rawData, size_t size)
     }
     int32_t asrAecMode =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->GetAsrAecMode(asrAecMode);
+    audioServerPtr->GetAsrAecMode(asrAecMode);
 }
 
 void AudioServerGetAsrNoiseSuppressionModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -633,7 +633,7 @@ void AudioServerGetAsrNoiseSuppressionModeFuzzTest(const uint8_t *rawData, size_
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
+    audioServerPtr->GetAsrNoiseSuppressionMode(asrNoiseSuppressionMode);
 }
 
 void AudioServerSetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -643,7 +643,7 @@ void AudioServerSetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->SetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
+    audioServerPtr->SetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
 }
 
 void AudioServerGetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -653,7 +653,7 @@ void AudioServerGetAsrWhisperDetectionModeFuzzTest(const uint8_t *rawData, size_
     }
     int32_t asrNoiseSuppressionMode =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->GetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
+    audioServerPtr->GetAsrWhisperDetectionMode(asrNoiseSuppressionMode);
 }
 
 void AudioServerSetAsrVoiceSuppressionControlModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -679,12 +679,12 @@ void AudioServerSetAsrVoiceSuppressionControlModeFuzzTest(const uint8_t *rawData
         PARAM_KEY_LOWPOWER,
     };
     uint32_t keyId = *reinterpret_cast<const uint32_t*>(rawData) % audioParamKey.size();
-    AudioParamKey paramKey = static_cast<AudioParamKey>(audioParamKey[KeyId]);
+    AudioParamKey paramKey = static_cast<AudioParamKey>(audioParamKey[keyId]);
     AsrVoiceControlMode asrVoiceControlMode = AsrVoiceControlMode::AUDIO_SUPPRESSION_OPPOSITE;
     bool on = *reinterpret_cast<const bool*>(rawData);
     int32_t modifyVolume = *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlMode, on, modifyVolume);
+    audioServerPtr->SetAsrVoiceSuppressionControlMode(paramKey, asrVoiceControlMode, on, modifyVolume);
 }
 
 void AudioServerSetAsrVoiceControlModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -695,7 +695,7 @@ void AudioServerSetAsrVoiceControlModeFuzzTest(const uint8_t *rawData, size_t si
     int32_t asrVoiceControlMode =  *reinterpret_cast<const int32_t*>(rawData);
     bool on = *reinterpret_cast<const bool*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->SetAsrVoiceControlMode(asrVoiceControlMode, on);
+    audioServerPtr->SetAsrVoiceControlMode(asrVoiceControlMode, on);
 }
 
 void AudioServerSetAsrVoiceMuteModeFuzzTest(const uint8_t *rawData, size_t size)
@@ -706,7 +706,7 @@ void AudioServerSetAsrVoiceMuteModeFuzzTest(const uint8_t *rawData, size_t size)
     int32_t asrVoiceControlMode =  *reinterpret_cast<const int32_t*>(rawData);
     bool on = *reinterpret_cast<const bool*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->SetAsrVoiceMuteMode(asrVoiceControlMode, on);
+    audioServerPtr->SetAsrVoiceMuteMode(asrVoiceControlMode, on);
 }
 
 void AudioServerIsWhisperingFuzzTest(const uint8_t *rawData, size_t size)
@@ -716,7 +716,7 @@ void AudioServerIsWhisperingFuzzTest(const uint8_t *rawData, size_t size)
     }
     int32_t whisperRes =  *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->IsWhispering(whisperRes);
+    audioServerPtr->IsWhispering(whisperRes);
 }
 
 void AudioServerHpaeDumpServerDataDumpFuzzTest(const uint8_t *rawData, size_t size)
