@@ -234,6 +234,10 @@ public:
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
+    int32_t RegisterAudioPolicyServerDiedCb(std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> &callback);
+
+    static void AudioSessionManagerCallback();
+
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
 
     int32_t DeactivateAudioSession();
@@ -712,6 +716,9 @@ private:
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
+
+    static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
+    static std::mutex serverDiedSessionManagerCbkMutex_;
 };
 } // namespce AudioStandard
 } // namespace OHOS
