@@ -1436,7 +1436,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_002, TestSize.Level1)
 
 /**
  * @tc.name   : Test IsStreamMuteByUsage API
- * @tc.number : IsStreamMuteByUsage_003 
+ * @tc.number : IsStreamMuteByUsage_003
  * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
  */
 HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_003, TestSize.Level4)
@@ -1445,6 +1445,145 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_003, TestSize.Level4)
     AudioSystemManager audioSystemManager;
     bool isMute = 0;
     EXPECT_EQ(audioSystemManager.IsStreamMuteByUsage(streamUsage, isMute), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_001
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_MUSIC;
+    EXPECT_NE(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MEDIA);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_002
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
+}
+
+/**
+ * @tc.name   : Test GetStreamType API
+ * @tc.number : GetStreamType_003
+ * @tc.desc   : Test GetStreamType interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetStreamType_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    ContentType contentType = CONTENT_TYPE_MUSIC;
+    StreamUsage streamUsage = STREAM_USAGE_AUDIOBOOK;
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
+}
+
+/**
+ * @tc.name   : Test GetAudioScene API
+ * @tc.number : GetAudioScene_001
+ * @tc.desc   : Test GetAudioScene interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_DEFAULT);
+    int result = audioSystemManager.GetAudioScene();
+    EXPECT_EQ(result, AUDIO_SCENE_DEFAULT);
+}
+
+/**
+ * @tc.name   : Test GetAudioScene API
+ * @tc.number : GetAudioScene_002
+ * @tc.desc   : Test GetAudioScene interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetAudioScene_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_VOICE_RINGING);
+    int result = audioSystemManager.GetAudioScene();
+    EXPECT_NE(result, AUDIO_SCENE_INVALID);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_001
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_INVALID);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_002
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_MIC);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_002
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType), 1);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_003
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_ALL, volumeLevel, deviceType), 1);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_001
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_001, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_MUSIC; 
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_002
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_ULTRASONIC; 
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
 }
 } // namespace AudioStandard
 } // namespace OHOS
