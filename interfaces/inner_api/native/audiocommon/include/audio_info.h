@@ -1567,6 +1567,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioSessionManagerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioSessionManagerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 20
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11

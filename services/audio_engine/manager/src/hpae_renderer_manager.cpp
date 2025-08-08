@@ -176,7 +176,6 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
             AUDIO_INFO_LOG("processCluster is null, create a new processCluster");
             sceneClusterMap_[nodeInfo.sceneType] = std::make_shared<HpaeProcessCluster>(nodeInfo, sinkInfo_);
-            
             break;
         case CREATE_NEW_PROCESSCLUSTER:
             CHECK_AND_RETURN(!SafeGetMap(sceneClusterMap_, nodeInfo.sceneType));
@@ -210,9 +209,7 @@ void HpaeRendererManager::CreateProcessClusterInner(HpaeNodeInfo &nodeInfo, int3
         default:
             break;
     }
-    if (processClusterDecision == USE_NONE_PROCESSCLUSTER) {
-        sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-    }
+    sessionNodeMap_[nodeInfo.sessionId].bypass = (processClusterDecision == USE_NONE_PROCESSCLUSTER) ? true : false;
     return;
 }
 
@@ -255,6 +252,32 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
             return HPAE_SCENE_EFFECT_NONE;
     }
     return nodeInfo.sceneType;
+}
+
+int32_t HpaeRendererManager::RefreshProcessClusterByDevice()
+{
+    auto request = [this]() {
+        for (const auto &it : sinkInputNodeMap_) {
+            HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
+            std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
+            int32_t processClusterDecision =
+                AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+            if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                CreateProcessClusterInner(nodeInfo, processClusterDecision);
+                CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+                    "could not find processorType %{public}d", nodeInfo.sceneType);
+                sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
+                sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
+            } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
+                !sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
+                DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
+                sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+            }
+        }
+    };
+    SendRequest(request);
+    return SUCCESS;
 }
 
 int32_t HpaeRendererManager::CreateStream(const HpaeStreamInfo &streamInfo)
@@ -303,7 +326,7 @@ int32_t HpaeRendererManager::DeleteConnectInputProcessor(
     HpaeNodeInfo nodeInfo = sinkInputNode->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
-        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+        DisConnectProcessCluster(nodeInfo, sceneType, sessionId);
     }
     return SUCCESS;
 }
@@ -332,7 +355,7 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
-        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+        DisConnectProcessCluster(nodeInfo, sceneType, sessionId);
         if (sceneClusterMap_[sceneType]->GetPreOutNum() == 0) {
             sceneClusterMap_[sceneType]->DisConnectMixerNode();
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
@@ -344,24 +367,17 @@ int32_t HpaeRendererManager::DeleteInputSessionForMove(uint32_t sessionId)
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
     }
-    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-        sceneClusterMap_.erase(sceneType);
-        sceneTypeToProcessClusterCountMap_.erase(sceneType);
-    }
-    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-    }
+    DeleteProcessCluster(sceneType);
     sinkInputNodeMap_.erase(sessionId);
     sessionNodeMap_.erase(sessionId);
     return SUCCESS;
 }
 
-void HpaeRendererManager::DeleteProcessCluster(
+void HpaeRendererManager::DisConnectProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) +
-        "]HpaeRendererManager::DeleteProcessCluster sceneType:" + std::to_string(sessionId));
+        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sceneType));
     if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
@@ -377,6 +393,19 @@ void HpaeRendererManager::DeleteProcessCluster(
             nodeInfo.sceneType, sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType],
             sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT]);
     }
+}
+
+int32_t HpaeRendererManager::DeleteProcessCluster(HpaeProcessorType sceneType)
+{
+    if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
+        sceneClusterMap_.erase(sceneType);
+        sceneTypeToProcessClusterCountMap_.erase(sceneType);
+    }
+    if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
+        sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
+        sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
+    }
+    return SUCCESS;
 }
 
 bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
@@ -493,8 +522,10 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
         HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
+        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
         SetSessionState(sessionId, state);
         inputNode->SetState(state);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
         // todo: do fade out
     }
     DeleteInputSessionForMove(sessionId);
@@ -578,15 +609,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
         }
-
-        if (sceneTypeToProcessClusterCountMap_[sceneType] == 0) {
-            sceneClusterMap_.erase(sceneType);
-            sceneTypeToProcessClusterCountMap_.erase(sceneType);
-        }
-        if (sceneTypeToProcessClusterCountMap_[HPAE_SCENE_DEFAULT] == 0) {
-            sceneClusterMap_.erase(HPAE_SCENE_DEFAULT);
-            sceneTypeToProcessClusterCountMap_.erase(HPAE_SCENE_DEFAULT);
-        }
+        DeleteProcessCluster(sceneType);
     };
     SendRequest(request);
 }
@@ -1078,6 +1101,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequest(request);
 }
@@ -1144,6 +1168,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionState(sessionId, state);
             sinkInputNodeMap_[sessionId]->SetState(state);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
         }
         return false;
     }
@@ -1271,7 +1296,7 @@ void HpaeRendererManager::ReConnectNodeForCollaboration(uint32_t sessionId)
     HpaeNodeInfo nodeInfo = sinkInputNodeMap_[sessionId]->GetNodeInfo();
     HpaeProcessorType sceneType = GetProcessorType(sessionId);
     if (SafeGetMap(sceneClusterMap_, sceneType)) {
-        DeleteProcessCluster(nodeInfo, sceneType, sessionId);
+        DisConnectProcessCluster(nodeInfo, sceneType, sessionId);
     }
     AUDIO_INFO_LOG("AddSingleNodeToSink sessionId %{public}u", sessionId);
     AddSingleNodeToSink(sinkInputNodeMap_[sessionId]);
@@ -1308,7 +1333,6 @@ void HpaeRendererManager::DisableCollaboration()
     for (auto& key : sinkInputNodeMapKeys) {
         ReConnectNodeForCollaboration(key);
     }
-    hpaeCoBufferNode_.reset();
 }
 
 int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)

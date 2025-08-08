@@ -115,7 +115,6 @@ int32_t RendererInClientInner::OnOperationHandled(Operation operation, int64_t r
         }
         offloadEnable_ = static_cast<bool>(result);
         rendererInfo_.pipeType = offloadEnable_ ? PIPE_TYPE_OFFLOAD : PIPE_TYPE_NORMAL_OUT;
-        NotifyOffloadSpeed();
         return SUCCESS;
     } else if (operation == DATA_LINK_CONNECTING) {
         UpdateDataLinkState(false, false);
@@ -362,11 +361,39 @@ bool RendererInClientInner::GetAudioTime(Timestamp &timestamp, Timestamp::Timest
 }
 
 void RendererInClientInner::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
+    std::vector<uint64_t> timestampCurrent = {0};
+    ClockTime::GetAllTimeStamp(timestampCurrent);
+
     lastFramePosAndTimePair_ = lastFramePosAndTimePair;
+    lastFramePosAndTimePairWithSpeed_ = lastFramePosAndTimePairWithSpeed;
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
-        lastSwitchPosition_[base] = lastFramePosAndTimePair[base].first;
+        uint64_t timestampNS = timestampCurrent[base];
+
+        // Calculate the number of samples at the switching point based on the current time
+        // before scaling to one times speed, for RendererInClientInner::GetAudioPosition
+        uint64_t lastTimeNS = lastFramePosAndTimePair[base].second;
+        uint64_t durationNS = timestampNS > lastTimeNS && lastTimeNS > 0 ? timestampNS - lastTimeNS : 0;
+        uint64_t durationUS = durationNS / AUDIO_US_PER_MS;
+        uint64_t newPositionUS =
+            lastFramePosAndTimePair[base].first + durationUS * curStreamParams_.samplingRate / AUDIO_US_PER_S;
+        lastSwitchPosition_[base] = newPositionUS;
+        lastFramePosAndTimePair_[base].first = newPositionUS;
+        lastFramePosAndTimePair_[base].second = timestampNS;
+
+        // after scaling to one times speed, for RendererInClientInner::GetAudioTimestampInfo
+        uint64_t lastTimeWithSpeedNS = lastFramePosAndTimePairWithSpeed[base].second;
+        uint64_t durationWithSpeedNS =
+            timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
+        uint64_t durationWithSpeedUS = durationWithSpeedNS / AUDIO_US_PER_MS;
+        float speed = realSpeed_.has_value() ? realSpeed_.value() : 1;
+        uint64_t newPositionWithSpeedUS = lastFramePosAndTimePairWithSpeed[base].first +
+            durationWithSpeedUS * curStreamParams_.samplingRate * speed / AUDIO_US_PER_S;
+        lastSwitchPositionWithSpeed_[base] = newPositionWithSpeedUS;
+        lastFramePosAndTimePairWithSpeed_[base].first = newPositionWithSpeedUS;
+        lastFramePosAndTimePairWithSpeed_[base].second = timestampNS;
     }
 }
 
@@ -379,11 +406,11 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
     uint64_t readIdx = 0;
     uint64_t timestampVal = 0;
     uint64_t latency = 0;
-    int32_t ret = ipcStream_->GetAudioPosition(readIdx, timestampVal, latency, base);
+    int32_t ret = ipcStream_->GetSpeedPosition(readIdx, timestampVal, latency, base);
 
-    uint64_t framePosition = lastSwitchPosition_[base] +
-        (readIdx > lastFlushReadIndex_ ? readIdx - lastFlushReadIndex_ : 0);
+    uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
+    framePosition += lastSwitchPosition_[base];
 
     // reset the timestamp
     if (lastFramePosAndTimePair_[base].first < framePosition || lastFramePosAndTimePair_[base].second == 0) {
@@ -393,9 +420,10 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
         framePosition = lastFramePosAndTimePair_[base].first;
         timestampVal = lastFramePosAndTimePair_[base].second;
     }
-    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64 ", lastFlushReadIndex_ %{public}" PRIu64
+    AUDIO_DEBUG_LOG("[CLIENT]Latency info: framePosition: %{public}" PRIu64
+        ", lastSpeedFlushReadIndex_ %{public}" PRIu64
         ", timestamp %{public}" PRIu64 ", Sinklatency %{public}" PRIu64 ", lastSwitchPosition_ %{public}" PRIu64,
-        framePosition, lastFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
+        framePosition, lastSpeedFlushReadIndex_, timestampVal, latency, lastSwitchPosition_[base]);
 
     timestamp.framePosition = framePosition;
     timestamp.time.tv_sec = static_cast<time_t>(timestampVal / AUDIO_NS_PER_SECOND);
@@ -1465,6 +1493,7 @@ void RendererInClientInner::GetSwitchInfo(IAudioStream::SwitchInfo& info)
     info.streamTrackerRegistered = streamTrackerRegistered_;
     info.defaultOutputDevice = defaultOutputDevice_;
     info.lastFramePosAndTimePair = lastFramePosAndTimePair_;
+    info.lastFramePosAndTimePairWithSpeed = lastFramePosAndTimePairWithSpeed_;
     GetStreamSwitchInfo(info);
 
     {
@@ -1486,6 +1515,7 @@ void RendererInClientInner::GetStreamSwitchInfo(IAudioStream::SwitchInfo& info)
     info.clientPid = clientPid_;
     info.clientUid = clientUid_;
     info.volume = clientVolume_;
+    info.duckVolume = duckVolume_;
     info.silentModeAndMixWithOthers = silentModeAndMixWithOthers_;
 
     info.frameMarkPosition = static_cast<uint64_t>(rendererMarkPosition_);
@@ -1838,6 +1868,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
+    framePosition += lastSwitchPositionWithSpeed_[base];
 
     // reset the timestamp
     if (lastFramePosAndTimePairWithSpeed_[base].first < framePosition ||

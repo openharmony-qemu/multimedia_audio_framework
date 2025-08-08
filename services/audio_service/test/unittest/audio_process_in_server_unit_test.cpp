@@ -1008,5 +1008,219 @@ HWTEST(AudioProcessInServerUnitTest, AudioProcessInServer_038, TestSize.Level1)
     auto ret = audioProcessInServerRet.GetAudioHapticsSyncId();
     EXPECT_EQ(ret, syncId);
 }
+
+/**
+ * @tc.name  : Test TurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOnMicIndicator_001
+ * @tc.desc  : Test TurnOnMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOnMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOnMicIndicator_002
+ * @tc.desc  : Test TurnOnMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOnMicIndicator_002, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = false;
+
+    bool ret = audioProcessInServerRet.TurnOnMicIndicator(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOffMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOffMicIndicator_001
+ * @tc.desc  : Test TurnOffMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = false;
+
+    bool ret = audioProcessInServerRet.TurnOffMicIndicator(capturerState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test TurnOffMicIndicator API
+ * @tc.type  : FUNC
+ * @tc.number: TurnOffMicIndicator_002
+ * @tc.desc  : Test TurnOffMicIndicator interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, TurnOffMicIndicator_002, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.TurnOffMicIndicator(capturerState);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test GetInnerCapState API
+ * @tc.type  : FUNC
+ * @tc.number: GetInnerCapState_001
+ * @tc.desc  : Test GetInnerCapState interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_001, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    CapturerState capturerState = CapturerState::CAPTURER_PREPARED;
+    audioProcessInServerRet.isMicIndicatorOn_ = true;
+
+    bool ret = audioProcessInServerRet.GetInnerCapState(capturerState);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name  : Test GetInnerCapState API
+ * @tc.type  : FUNC
+ * @tc.number: GetInnerCapState_002
+ * @tc.desc  : Test GetInnerCapState interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level2)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    int32_t innerCapId = 1;
+    audioProcessInServerRet.SetInnerCapState(true, innerCapId);
+
+    bool ret = audioProcessInServerRet.GetInnerCapState(innerCapId);
+    EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_001
+ * @tc.desc  : Test AddMuteFrameSize interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_001, TestSize.Level3)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    int64_t muteFrameCnt = 0;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
+}
+
+/**
+ * @tc.name  : Test AddMuteFrameSize API
+ * @tc.type  : FUNC
+ * @tc.number: AddMuteFrameSize_002
+ * @tc.desc  : Test AddMuteFrameSize interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, AddMuteFrameSize_002, TestSize.Level3)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    int64_t muteFrameCnt = -1;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->AddMuteFrameSize(muteFrameCnt);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_001
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 0;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_002
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_002, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 1;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+}
+
+/**
+ * @tc.name  : Test WriterRenderStreamStandbySysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: WriterRenderStreamStandbySysEvent_003
+ * @tc.desc  : Test WriterRenderStreamStandbySysEvent interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriterRenderStreamStandbySysEvent_003, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    uint32_t sessionId = 1;
+    int32_t standby = 1;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriterRenderStreamStandbySysEvent(sessionId, standby);
+}
+
+/**
+ * @tc.name  : Test WriteDumpFile API
+ * @tc.type  : FUNC
+ * @tc.number: WriteDumpFile_001
+ * @tc.desc  : Test WriteDumpFile interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, WriteDumpFile_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    auto audioProcessInServerRet = std::make_shared<AudioProcessInServer>(configRet, releaseCallbackRet);
+    void *buffer = new char[100];
+    size_t bufferSize = 100;
+
+    EXPECT_NE(audioProcessInServerRet, nullptr);
+    audioProcessInServerRet->WriteDumpFile(buffer, bufferSize);
+}
 } // namespace AudioStandard
 } // namespace OHOS

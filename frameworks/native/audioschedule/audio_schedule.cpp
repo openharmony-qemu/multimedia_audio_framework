@@ -24,15 +24,13 @@
 #include <cstring>
 #include <unordered_map>
 #include <set>
-#include <pthread.h>
-#include <sched.h>
-#include <thread>
-#include "parameter.h"
 
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
 #include "res_sched_client.h"
 #endif
+#include "qos.h"
+#include "concurrent_task_client.h"
 
 #include "audio_utils.h"
 #include "audio_common_log.h"
@@ -47,14 +45,11 @@ using namespace OHOS::AudioStandard;
 const uint32_t AUDIO_QOS_LEVEL = 7;
 const int32_t DEFAULT_QOS_LEVEL = -1;
 const uint32_t REPORTDATA_TIMEOUT = 8;
-const int32_t HIGH_LEVEL_THREAD_PRIORITY = 4;
-const int32_t AUDIO_DEFAULT_PRIORITY = 1;
-const int32_t MAX_RETRY_TIMES = 5;
-const int32_t WAIT_TIME_FOR_UNSCHEDULE_MS = 5;
 static std::mutex g_rssMutex;
 static std::set<uint32_t> g_tidToReport = {};
 constexpr uint32_t g_type = OHOS::ResourceSchedule::ResType::RES_TYPE_THREAD_QOS_CHANGE;
 constexpr int64_t g_value = 0;
+constexpr int32_t AUDIO_PROC_QOS_TABLE = 7;
 
 void ConfigPayload(pid_t pid, pid_t tid, const char *bundleName, int32_t qosLevel,
     std::unordered_map<std::string, std::string> &mapPayload)
@@ -161,31 +156,17 @@ void OnAddResSchedService(uint32_t audioServerPid)
 bool SetEndpointThreadPriority()
 {
     Trace trace("SetEndpointThreadPriority");
-    int32_t perfdomain = GetIntParameter("const.multimedia.audio_setPriority", AUDIO_DEFAULT_PRIORITY);
-    AUDIO_INFO_LOG("perfdomain = %{public}d", perfdomain);
-    struct sched_param param = {0};
-    // add to perfdomain
-    if (perfdomain > AUDIO_DEFAULT_PRIORITY) {
-        ScheduleReportData(getpid(), gettid(), "audio_server");
-        int32_t policy = 0;
-        int32_t cnt = 0;
-        while ((pthread_getschedparam(pthread_self(), &policy, &param) == 0) && (cnt++ < MAX_RETRY_TIMES)) {
-            if (policy == SCHED_RR || policy == SCHED_FIFO) {
-                break;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(WAIT_TIME_FOR_UNSCHEDULE_MS));
-        }
-        AUDIO_INFO_LOG("RETRY_TIMES = %{public}d", cnt);
+    bool res = false;
+    std::unordered_map<std::string, std::string> payload;
+    payload["groupId"] = std::to_string(AUDIO_PROC_QOS_TABLE);
+    payload["pid"] = std::to_string(getpid());
+    OHOS::ConcurrentTask::ConcurrentTaskClient::GetInstance().RequestAuth(payload);
+    int32_t ret = OHOS::QOS::SetThreadQos(OHOS::QOS::QosLevel::QOS_KEY_BACKGROUND);
+    if (ret == 0) {
+        res = true;
     }
-    // priority 50 + 4 = 54
-    param.sched_priority = HIGH_LEVEL_THREAD_PRIORITY;
-    auto res = sched_setscheduler(0, SCHED_FIFO | SCHED_RESET_ON_FORK, &param);
-    if (res != 0) {
-        AUDIO_ERR_LOG("Set thread 50 + %{public}d priority fail : %{public}d", param.sched_priority, res);
-        return false;
-    }
-    AUDIO_INFO_LOG("Set thread 50 + %{public}d priority success", param.sched_priority);
-    return true;
+    AUDIO_INFO_LOG("set thread qos %s", ret ? "failed" : "success");
+    return res;
 }
 
 bool ResetEndpointThreadPriority()

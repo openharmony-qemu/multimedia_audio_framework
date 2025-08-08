@@ -614,6 +614,16 @@ group("audio_policy_test_packages") {
     ":audio_dump_test",
     ":audio_policy_test",
     "test:audio_policy_unittest_packages",
+    "client/stub:audio_zone_client_unit_test",
+    "server/infra/config/parser/test:audio_policy_config_parser_unittest_packages",
+    "server/domain/device/test:audio_device_status_extended_test",
+    "server/domain/effect/test:audio_spatialization_service_extended_test",
+    "server/service/service_main/test:audio_policy_dump_unit_test",
+    "server/service/service_main/test:audio_policy_server_extended_test",
+    "server/service/service_main/test:audio_policy_service_ext_unit_test",
+    "server/service/service_main/test:device_init_callback_unit_test",
+    "server/infra/state_monitor/test:audio_policy_state_monitor_unittest_packages",
+    "server/common/test:audio_policy_server_common_unittest_packages",
   ]
 }
 

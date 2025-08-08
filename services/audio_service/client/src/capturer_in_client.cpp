@@ -631,9 +631,11 @@ bool CapturerInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 }
 
 void CapturerInClientInner::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
     (void)lastFramePosAndTimePair;
+    (void)lastFramePosAndTimePairWithSpeed;
     AUDIO_INFO_LOG("capturer stream not support timestamp re-set when stream switching");
 }
 

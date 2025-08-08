@@ -233,6 +233,7 @@ int32_t RemoteOffloadAudioRenderSink::Flush(void)
             }
         }
         isFlushing_.store(false);
+        FlushResetPosition();
         if (isNeedRestart_) {
             isNeedRestart_ = false;
             Start();
@@ -345,17 +346,72 @@ int32_t RemoteOffloadAudioRenderSink::GetVolume(float &left, float &right)
     return SUCCESS;
 }
 
-int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
+int32_t RemoteOffloadAudioRenderSink::GetHdiLatency(uint32_t &latency)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
     Trace trace("RemoteOffloadAudioRenderSink::GetLatency");
+
+    if (hdiLatencyUS_ == 0) {
+        int32_t result = GetLatencyInner();
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetLatencyInner failed");
+    }
+
+    latency = hdiLatencyUS_;
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetHdiLatency hdiLatencyUS_ %{public}u", hdiLatencyUS_);
+    return SUCCESS;
+}
+
+int32_t RemoteOffloadAudioRenderSink::GetLatencyInner()
+{
+    Trace trace("RemoteOffloadAudioRenderSink::GetLatencyInner");
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
 
-    uint32_t hdiLatency;
-    int32_t ret = audioRender_->GetLatency(hdiLatency);
+    uint32_t hdiLatencyMS;
+    int32_t ret = audioRender_->GetLatency(hdiLatencyMS);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "get latency fail, ret: %{public}d", ret);
-    latency = hdiLatency;
+
+    hdiLatencyUS_ = hdiLatencyMS * MICROSECOND_PER_MILLISECOND;
     return SUCCESS;
+}
+
+int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+
+    // calc sample count (after scaling to one times speed) first
+    int32_t ret = SUCCESS;
+
+    ret = lastHdiOriginFramesUS_ > 0 ? EstimateRenderPosition() : GetRenderPositionInner();
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetOriginLatency lastHdiOriginFramesUS_: %{public}" PRIu64,
+        lastHdiOriginFramesUS_);
+
+    // then get origin latency, because when calc sample count, record latency Deque
+    if (hdiLatencyUS_ == 0) {
+        int32_t result = GetLatencyInner();
+        CHECK_AND_RETURN_RET_LOG(result == SUCCESS, result, "GetLatencyInner failed");
+    }
+
+    uint32_t realLatencyUS = 0;
+    uint32_t originLatencyUS = 0;
+    for (const auto &rl : realLatencyDeque_) {
+        if (realLatencyUS + rl.first <= hdiLatencyUS_) {
+            realLatencyUS += rl.first;
+            originLatencyUS += rl.first * rl.second;
+        } else {
+            uint32_t remainingLength = hdiLatencyUS_ - realLatencyUS;
+            realLatencyUS += remainingLength;
+            originLatencyUS += remainingLength * rl.second;
+            break;
+        }
+    }
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetLatency originLatencyUS: %{public}u", originLatencyUS);
+
+    uint64_t positionUS = lastHdiOriginFramesUS_ > originLatencyUS ? lastHdiOriginFramesUS_ - originLatencyUS : 0;
+    uint64_t renderFrameUS =
+        renderPos_ * SECOND_TO_MICROSECOND / (attr_.sampleRate * GetFormatByteSize(attr_.format) * attr_.channel);
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetOriginLatency renderFrameUS: %{public}" PRIu64, renderFrameUS);
+    latency = renderFrameUS > positionUS ? (renderFrameUS - positionUS) / MICROSECOND_PER_MILLISECOND : 0;
+    return ret;
 }
 
 int32_t RemoteOffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
@@ -364,10 +420,73 @@ int32_t RemoteOffloadAudioRenderSink::GetTransactionId(uint64_t &transactionId)
     return ERR_NOT_SUPPORTED;
 }
 
-int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
+int32_t RemoteOffloadAudioRenderSink::GetHdiPresentationPosition(uint64_t &frames, int64_t &timeSec,
+    int64_t &timeNanoSec)
 {
     std::lock_guard<std::mutex> lock(sinkMutex_);
-    Trace trace("RemoteOffloadAudioRenderSink::GetPresentationPosition");
+
+    // If the sample data is not zero, it means that after obtaining the sample count,
+    // the latest sample data can be inferred.
+    int32_t ret = lastHdiFramesUS_ > 0 ? EstimateRenderPosition() : GetRenderPositionInner();
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED,
+        "RemoteOffloadAudioRenderSink::GetHdiPresentationPosition fail, ret: %{public}d", ret);
+    frames = lastHdiFramesUS_;
+    timeSec = lastHdiTimeSec_;
+    timeNanoSec = lastHdiTimeNanoSec_;
+    return SUCCESS;
+}
+
+int32_t RemoteOffloadAudioRenderSink::ForceRefreshPresentationPosition(uint64_t &frames, uint64_t &hdiFrames,
+    int64_t &timeSec, int64_t &timeNanoSec)
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+
+    int32_t ret = GetRenderPositionInner();
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::ForceRefreshPresentationPosition ret: %{public}d", ret);
+    frames = lastHdiOriginFramesUS_;
+    hdiFrames = lastHdiFramesUS_;
+    timeSec = lastHdiTimeSec_;
+    timeNanoSec = lastHdiTimeNanoSec_;
+    return ret;
+}
+
+int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec)
+{
+    AUDIO_INFO_LOG("not support");
+    return ERR_NOT_SUPPORTED;
+}
+
+int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
+{
+    // The sample count can be inferred based on the time interval
+    // between the current time and the last occurrence.
+    int64_t now = ClockTime::GetCurNano();
+    int64_t durationNS = now - lastSystemTimeNS_;
+    int64_t durationUS = durationNS / NANOSECOND_TO_MICROSECOND;
+
+    uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
+    uint64_t renderFrameUS =
+        renderPos_ * SECOND_TO_MICROSECOND / (attr_.sampleRate * GetFormatByteSize(attr_.format) * attr_.channel);
+    if (originFrameUS > renderFrameUS) {
+        AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
+            ", originFrameUS: %{public}" PRIu64 " No need to estimate", renderFrameUS, originFrameUS);
+        return SUCCESS;
+    }
+
+    lastHdiFramesUS_ += durationUS;
+    lastHdiOriginFramesUS_ += durationUS * speed_;
+    lastSystemTimeNS_ = now;
+    lastHdiTimeNS_ += durationNS;
+
+    lastHdiTimeSec_ = lastHdiTimeNS_ / AUDIO_NS_PER_SECOND;
+    lastHdiTimeNanoSec_ = lastHdiTimeNS_ % AUDIO_NS_PER_SECOND;
+
+    AddHdiLatency(durationUS);
+    return SUCCESS;
+}
+
+int32_t RemoteOffloadAudioRenderSink::GetRenderPositionInner()
+{
     CHECK_AND_RETURN_RET_LOG(audioRender_ != nullptr, ERR_INVALID_HANDLE, "render is nullptr");
     CHECK_AND_RETURN_RET_LOG(!isFlushing_.load(), ERR_OPERATION_FAILED, "during flushing");
 
@@ -382,15 +501,24 @@ int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, 
     CHECK_AND_RETURN_RET_LOG(tmpFrames <= UINT64_MAX / SECOND_TO_MICROSECOND, ERR_OPERATION_FAILED,
         "frames overflow, tmpFrames: %{public}" PRIu64, tmpFrames);
     CHECK_AND_RETURN_RET_LOG(attr_.sampleRate != 0, ERR_OPERATION_FAILED, "invalid sample rate");
-    frames = tmpFrames * SECOND_TO_MICROSECOND / attr_.sampleRate;
-    timeSec = stamp.tvSec;
-    timeNanoSec = stamp.tvNSec;
+    uint64_t frames = tmpFrames * SECOND_TO_MICROSECOND / attr_.sampleRate;
+    int64_t timeSec = stamp.tvSec;
+    int64_t timeNanoSec = stamp.tvNSec;
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetRenderPositionInner framesUS: [%{public}" PRIu64
+        "],[tmpFrames: %{public}" PRIu64 "]", frames, tmpFrames);
 
+    CheckHdiTime(timeSec, timeNanoSec);
+    CalcHdiPosition(frames, timeSec, timeNanoSec);
+    return ret;
+}
+
+void RemoteOffloadAudioRenderSink::CheckHdiTime(int64_t &timeSec, int64_t &timeNanoSec)
+{
     // check hdi timestamp out of range 40 * 1000 * 1000 ns
     struct timespec curStamp;
     if (clock_gettime(CLOCK_MONOTONIC, &curStamp) >= 0) {
         int64_t curNs = curStamp.tv_sec * AUDIO_NS_PER_SECOND + curStamp.tv_nsec;
-        int64_t hdiNs = stamp.tvSec * AUDIO_NS_PER_SECOND + stamp.tvNSec;
+        int64_t hdiNs = timeSec * AUDIO_NS_PER_SECOND + timeNanoSec;
         int64_t outNs = 40 * 1000 * 1000; // 40 * 1000 * 1000 ns
         if (curNs <= hdiNs || curNs > hdiNs + outNs) {
             AUDIO_PRERELEASE_LOGW("HDI time is not in the range, hdi: %{public}" PRId64 ", cur: %{public}" PRId64,
@@ -399,7 +527,101 @@ int32_t RemoteOffloadAudioRenderSink::GetPresentationPosition(uint64_t &frames, 
             timeNanoSec = curStamp.tv_nsec;
         }
     }
-    return ret;
+}
+
+void RemoteOffloadAudioRenderSink::FlushResetPosition()
+{
+    std::lock_guard<std::mutex> lock(sinkMutex_);
+
+    // If the previous sampling time is null, it indicates that a reset has already been performed; return directly.
+    if (lastHdiOriginFramesUS_ == 0) {
+        return;
+    }
+
+    // Calculate the latest sampling time during flush operations
+    // += previous sampling time + (current system time - previous system sampling time) * rate / 1000
+    // after scaling to one times speed
+    lastHdiOriginFlushFramesUS_ += lastHdiOriginFramesUS_ +
+        (ClockTime::GetCurNano() - lastSystemTimeNS_) * speed_ / NANOSECOND_TO_MICROSECOND;
+    // before scaling to one times speed
+    lastHdiFlushFramesUS_ += lastHdiFramesUS_ +
+        (ClockTime::GetCurNano() - lastSystemTimeNS_) / NANOSECOND_TO_MICROSECOND;
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::FlushResetPosition lastHdiOriginFlushFramesUS_: [%{public}" PRIu64
+        "], lastHdiFlushFramesUS_: [%{public}" PRIu64 "]", lastHdiOriginFlushFramesUS_, lastHdiFlushFramesUS_);
+
+    lastHdiFramesUS_ = 0;
+    lastHdiOriginFramesUS_ = 0;
+    realLatencyDeque_.clear();
+    realLatencyTotalUS_ = 0;
+}
+
+void RemoteOffloadAudioRenderSink::CalcHdiPosition(uint64_t frames, int64_t timeSec, int64_t timeNanoSec)
+{
+    // If the current sampling time is earlier than the previous inferred sampling time.
+    // It indicates that the inference has an error and needs correction.
+    if (frames < lastHdiOriginFramesUS_) {
+        auto duration = (lastHdiOriginFramesUS_ - frames) / speed_;
+        lastHdiFramesUS_ = lastHdiFramesUS_ > duration ? lastHdiFramesUS_ - duration : 0;
+        RemoveHdiLatency(duration);
+    } else {
+        auto duration = (frames - lastHdiOriginFramesUS_) / speed_;
+        lastHdiFramesUS_ += duration;
+        AddHdiLatency(duration);
+    }
+
+    lastHdiOriginFramesUS_ = frames;
+    lastSystemTimeNS_ = ClockTime::GetCurNano();
+    lastHdiTimeNS_ = timeNanoSec + timeSec * AUDIO_NS_PER_SECOND;
+    lastHdiTimeSec_ = timeSec;
+    lastHdiTimeNanoSec_ = timeNanoSec;
+}
+
+void RemoteOffloadAudioRenderSink::RemoveHdiLatency(uint32_t duration)
+{
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency duration: %{public}u", duration);
+    if (realLatencyTotalUS_ <= duration) {
+        realLatencyTotalUS_ = 0;
+        realLatencyDeque_.clear();
+        return;
+    }
+
+    while (duration > 0) {
+        if (duration >= realLatencyDeque_.front().first) {
+            duration -= realLatencyDeque_.front().first;
+            realLatencyTotalUS_ -= realLatencyDeque_.front().first;
+            realLatencyDeque_.pop_front();
+        } else {
+            realLatencyDeque_.front().first -= duration;
+            realLatencyTotalUS_ -= duration;
+            duration = 0;
+        }
+    }
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::RemoveHdiLatency realLatencyTotalUS_: %{public}u",
+        realLatencyTotalUS_);
+}
+
+void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
+{
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency duration: %{public}u, speed: %{public}f",
+        duration, speed_);
+    realLatencyTotalUS_ += duration;
+    realLatencyDeque_.push_front({duration, speed_});
+
+    uint32_t maxDequeLengthUS = 1000000;
+    // If the total length exceeds 1,000,000 microseconds.
+    // clear the end of the queue to ensure the maximum length remains at 1,000,000 microseconds.
+    while (realLatencyTotalUS_ > maxDequeLengthUS) {
+        if (realLatencyTotalUS_ - realLatencyDeque_.back().first >= maxDequeLengthUS) {
+            realLatencyTotalUS_ -= realLatencyDeque_.back().first;
+            realLatencyDeque_.pop_back();
+        } else {
+            int excess = realLatencyTotalUS_ - maxDequeLengthUS;
+            realLatencyDeque_.back().first -= excess;
+            realLatencyTotalUS_ -= excess;
+        }
+    }
+    AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::AddHdiLatency realLatencyTotalUS_: %{public}u",
+        realLatencyTotalUS_);
 }
 
 float RemoteOffloadAudioRenderSink::GetMaxAmplitude(void)
@@ -454,6 +676,14 @@ void RemoteOffloadAudioRenderSink::SetSpeed(float speed)
     AUDIO_INFO_LOG("speed: %{public}f", speed);
     int32_t ret = audioRender_->SetRenderSpeed(speed);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "set speed fail, ret: %{public}d", ret);
+
+    // Every time the speed is set, the sampling count needs to be refreshed for two reasons:
+    // 1. For easier calculation, avoiding the need to consider multiple segments with different speeds
+    // 2. When setting the speed, the underlying system will wake up, eliminating concerns about power consumption
+    ret = GetRenderPositionInner();
+    AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::SetSpeed ret: %{public}d", ret);
+
+    speed_ = speed;
 }
 
 int32_t RemoteOffloadAudioRenderSink::SetAudioScene(AudioScene audioScene, bool scoExcludeFlag)

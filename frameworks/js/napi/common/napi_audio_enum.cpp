@@ -38,60 +38,6 @@ constexpr int32_t DEFAULT_VOLUME_INTERRUPT_ID = 1;
 napi_ref NapiAudioEnum::sConstructor_ = nullptr;
 unique_ptr<AudioParameters> NapiAudioEnum::sAudioParameters_ = nullptr;
 
-napi_ref NapiAudioEnum::audioChannel_ = nullptr;
-napi_ref NapiAudioEnum::samplingRate_ = nullptr;
-napi_ref NapiAudioEnum::encodingType_ = nullptr;
-napi_ref NapiAudioEnum::contentType_ = nullptr;
-napi_ref NapiAudioEnum::streamUsage_ = nullptr;
-napi_ref NapiAudioEnum::audioVolumeMode_ = nullptr;
-napi_ref NapiAudioEnum::deviceRole_ = nullptr;
-napi_ref NapiAudioEnum::deviceType_ = nullptr;
-napi_ref NapiAudioEnum::sourceType_ = nullptr;
-napi_ref NapiAudioEnum::volumeAdjustType_ = nullptr;
-napi_ref NapiAudioEnum::channelBlendMode_ = nullptr;
-napi_ref NapiAudioEnum::audioRendererRate_ = nullptr;
-napi_ref NapiAudioEnum::interruptEventType_ = nullptr;
-napi_ref NapiAudioEnum::interruptForceType_ = nullptr;
-napi_ref NapiAudioEnum::interruptHintType_ = nullptr;
-napi_ref NapiAudioEnum::audioState_ = nullptr;
-napi_ref NapiAudioEnum::sampleFormat_ = nullptr;
-napi_ref NapiAudioEnum::audioEffectMode_ = nullptr;
-napi_ref NapiAudioEnum::audioPrivacyType_ = nullptr;
-napi_ref NapiAudioEnum::audioVolumeTypeRef_ = nullptr;
-napi_ref NapiAudioEnum::deviceFlagRef_ = nullptr;
-napi_ref NapiAudioEnum::activeDeviceTypeRef_ = nullptr;
-napi_ref NapiAudioEnum::audioRingModeRef_ = nullptr;
-napi_ref NapiAudioEnum::deviceChangeType_ = nullptr;
-napi_ref NapiAudioEnum::interruptActionType_ = nullptr;
-napi_ref NapiAudioEnum::audioScene_ = nullptr;
-napi_ref NapiAudioEnum::interruptMode_ = nullptr;
-napi_ref NapiAudioEnum::focusType_ = nullptr;
-napi_ref NapiAudioEnum::connectTypeRef_ = nullptr;
-napi_ref NapiAudioEnum::audioErrors_ = nullptr;
-napi_ref NapiAudioEnum::communicationDeviceType_ = nullptr;
-napi_ref NapiAudioEnum::interruptRequestType_ = nullptr;
-napi_ref NapiAudioEnum::interruptRequestResultType_ = nullptr;
-napi_ref NapiAudioEnum::toneType_ = nullptr;
-napi_ref NapiAudioEnum::audioDviceUsage_ = nullptr;
-napi_ref NapiAudioEnum::audioSpatialDeivceType_ = nullptr;
-napi_ref NapiAudioEnum::audioChannelLayout_ = nullptr;
-napi_ref NapiAudioEnum::audioStreamDeviceChangeReason_ = nullptr;
-napi_ref NapiAudioEnum::spatializationSceneType_ = nullptr;
-napi_ref NapiAudioEnum::asrNoiseSuppressionMode_ = nullptr;
-napi_ref NapiAudioEnum::asrAecMode_ = nullptr;
-napi_ref NapiAudioEnum::asrWhisperDetectionMode_ = nullptr;
-napi_ref NapiAudioEnum::asrVoiceControlMode_ = nullptr;
-napi_ref NapiAudioEnum::asrVoiceMuteMode_ = nullptr;
-napi_ref NapiAudioEnum::audioDataCallbackResult_ = nullptr;
-napi_ref NapiAudioEnum::concurrencyMode_ = nullptr;
-napi_ref NapiAudioEnum::reason_ = nullptr;
-napi_ref NapiAudioEnum::policyType_ = nullptr;
-napi_ref NapiAudioEnum::audioLoopbackMode_ = nullptr;
-napi_ref NapiAudioEnum::audioLoopbackStatus_ = nullptr;
-napi_ref NapiAudioEnum::audioSessionScene_ = nullptr;
-napi_ref NapiAudioEnum::audioSessionStateChangeHint_ = nullptr;
-napi_ref NapiAudioEnum::outputDeviceChangeRecommendedAction_ = nullptr;
-
 static const std::string NAPI_AUDIO_ENUM_CLASS_NAME = "AudioEnum";
 
 const std::map<std::string, int32_t> NapiAudioEnum::audioChannelMap = {
@@ -604,66 +550,46 @@ void NapiAudioEnum::Destructor(napi_env env, void *nativeObject, void *finalizeH
     }
 }
 
-napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<std::string, int32_t> &map,
-    napi_ref &ref)
+napi_value NapiAudioEnum::CreateEnumObject(const napi_env &env, const std::map<std::string, int32_t> &map)
 {
-    std::string propName;
-    napi_value result = nullptr;
-    napi_status status = napi_create_object(env, &result);
+    napi_value enumObject = nullptr;
+    napi_status status = napi_create_object(env, &enumObject);
     if (status != napi_ok) {
         goto error;
     }
-
     for (const auto &iter : map) {
-        propName = iter.first;
-        status = NapiParamUtils::SetValueInt32(env, propName, iter.second, result);
-        CHECK_AND_BREAK_LOG(status == napi_ok, "Failed to add named prop!");
-        propName.clear();
+        napi_value prop = nullptr;
+        if (napi_create_int32(env, iter.second, &prop) == napi_ok) {
+            napi_set_named_property(env, enumObject, (iter.first).c_str(), prop);
+        }
     }
-    if (status != napi_ok) {
-        goto error;
-    }
-    status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &ref);
-    if (status != napi_ok) {
-        goto error;
-    }
-    return result;
+    return enumObject;
 
 error:
     AUDIO_ERR_LOG("create Enum Object failed");
-    napi_get_undefined(env, &result);
-    return result;
+    napi_get_undefined(env, &enumObject);
+    return enumObject;
 }
 
-napi_value NapiAudioEnum::CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &map,
-    napi_ref &ref)
+napi_value NapiAudioEnum::CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &map)
 {
-    std::string propName;
-    napi_value result = nullptr;
-    napi_status status = napi_create_object(env, &result);
+    napi_value enumObject = nullptr;
+    napi_status status = napi_create_object(env, &enumObject);
     if (status != napi_ok) {
         goto error;
     }
-
     for (const auto &iter : map) {
-        propName = iter.first;
-        status = NapiParamUtils::SetValueInt64(env, propName, iter.second, result);
-        CHECK_AND_BREAK_LOG(status == napi_ok, "Failed to add named prop!");
-        propName.clear();
+        napi_value prop = nullptr;
+        if (napi_create_int64(env, iter.second, &prop) == napi_ok) {
+            napi_set_named_property(env, enumObject, (iter.first).c_str(), prop);
+        }
     }
-    if (status != napi_ok) {
-        goto error;
-    }
-    status = napi_create_reference(env, result, REFERENCE_CREATION_COUNT, &ref);
-    if (status != napi_ok) {
-        goto error;
-    }
-    return result;
+    return enumObject;
 
 error:
     AUDIO_ERR_LOG("create Enum Object failed");
-    napi_get_undefined(env, &result);
-    return result;
+    napi_get_undefined(env, &enumObject);
+    return enumObject;
 }
 
 napi_value NapiAudioEnum::CreateLocalNetworkIdObject(napi_env env)
@@ -691,21 +617,20 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
 {
     napi_property_descriptor static_prop[] = {
         DECLARE_NAPI_PROPERTY("AudioSpatialDeviceType", CreateEnumObject(env,
-            audioSpatialDeivceTypeMap, audioSpatialDeivceType_)),
+            audioSpatialDeivceTypeMap)),
         DECLARE_NAPI_PROPERTY("AudioChannelLayout", CreateEnumInt64Object(env,
-            audioChannelLayoutMap, audioChannelLayout_)),
+            audioChannelLayoutMap)),
         DECLARE_NAPI_PROPERTY("AudioStreamDeviceChangeReason",
-            CreateEnumObject(env, audioDeviceChangeReasonMap, audioStreamDeviceChangeReason_)),
+            CreateEnumObject(env, audioDeviceChangeReasonMap)),
         DECLARE_NAPI_PROPERTY("AudioSpatializationSceneType", CreateEnumObject(env,
-            spatializationSceneTypeMap, spatializationSceneType_)),
-        DECLARE_NAPI_PROPERTY("AsrNoiseSuppressionMode", CreateEnumObject(env, asrNoiseSuppressionModeMap,
-            asrNoiseSuppressionMode_)),
-        DECLARE_NAPI_PROPERTY("AsrAecMode", CreateEnumObject(env, asrAecModeMap, asrAecMode_)),
+            spatializationSceneTypeMap)),
+        DECLARE_NAPI_PROPERTY("AsrNoiseSuppressionMode", CreateEnumObject(env, asrNoiseSuppressionModeMap)),
+        DECLARE_NAPI_PROPERTY("AsrAecMode", CreateEnumObject(env, asrAecModeMap)),
         DECLARE_NAPI_PROPERTY("AsrWhisperDetectionMode", CreateEnumObject(env,
-            asrWhisperDetectionModeMap, asrWhisperDetectionMode_)),
+            asrWhisperDetectionModeMap)),
         DECLARE_NAPI_PROPERTY("AsrVoiceControlMode", CreateEnumObject(env,
-            asrVoiceControlModeMap, asrVoiceControlMode_)),
-        DECLARE_NAPI_PROPERTY("AsrVoiceMuteMode", CreateEnumObject(env, asrVoiceMuteModeMap, asrVoiceMuteMode_)),
+            asrVoiceControlModeMap)),
+        DECLARE_NAPI_PROPERTY("AsrVoiceMuteMode", CreateEnumObject(env, asrVoiceMuteModeMap)),
     };
     napi_status status =
         napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
@@ -715,62 +640,62 @@ napi_status NapiAudioEnum::InitAudioExternEnum(napi_env env, napi_value exports)
 napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
 {
     napi_property_descriptor static_prop[] = {
-        DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap, audioChannel_)),
-        DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap, samplingRate_)),
-        DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap, encodingType_)),
-        DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap, contentType_)),
-        DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap, streamUsage_)),
-        DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap, audioVolumeMode_)),
-        DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap, deviceRole_)),
-        DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap, deviceType_)),
-        DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap, sourceType_)),
-        DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateEnumObject(env, volumeAdjustTypeMap, volumeAdjustType_)),
-        DECLARE_NAPI_PROPERTY("ChannelBlendMode", CreateEnumObject(env, channelBlendModeMap, channelBlendMode_)),
-        DECLARE_NAPI_PROPERTY("AudioRendererRate", CreateEnumObject(env, rendererRateMap, audioRendererRate_)),
-        DECLARE_NAPI_PROPERTY("InterruptType", CreateEnumObject(env, interruptEventTypeMap, interruptEventType_)),
-        DECLARE_NAPI_PROPERTY("InterruptForceType", CreateEnumObject(env, interruptForceTypeMap, interruptForceType_)),
-        DECLARE_NAPI_PROPERTY("InterruptHint", CreateEnumObject(env, interruptHintTypeMap, interruptHintType_)),
-        DECLARE_NAPI_PROPERTY("AudioState", CreateEnumObject(env, audioStateMap, audioState_)),
-        DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateEnumObject(env, audioSampleFormatMap, sampleFormat_)),
-        DECLARE_NAPI_PROPERTY("AudioEffectMode", CreateEnumObject(env, effectModeMap, audioEffectMode_)),
-        DECLARE_NAPI_PROPERTY("AudioPrivacyType", CreateEnumObject(env, audioPrivacyTypeMap, audioPrivacyType_)),
-        DECLARE_NAPI_PROPERTY("AudioVolumeType", CreateEnumObject(env, audioVolumeTypeMap, audioVolumeTypeRef_)),
-        DECLARE_NAPI_PROPERTY("DeviceFlag", CreateEnumObject(env, deviceFlagMap, deviceFlagRef_)),
-        DECLARE_NAPI_PROPERTY("ActiveDeviceType", CreateEnumObject(env, activeDeviceTypeMap, activeDeviceTypeRef_)),
-        DECLARE_NAPI_PROPERTY("ConnectType", CreateEnumObject(env, connectTypeMap, connectTypeRef_)),
-        DECLARE_NAPI_PROPERTY("AudioRingMode", CreateEnumObject(env, audioRingModeMap, audioRingModeRef_)),
-        DECLARE_NAPI_PROPERTY("AudioScene", CreateEnumObject(env, audioSceneMap, audioScene_)),
-        DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateEnumObject(env, deviceChangeTypeMap, deviceChangeType_)),
+        DECLARE_NAPI_PROPERTY("AudioChannel", CreateEnumObject(env, audioChannelMap)),
+        DECLARE_NAPI_PROPERTY("AudioSamplingRate", CreateEnumObject(env, samplingRateMap)),
+        DECLARE_NAPI_PROPERTY("AudioEncodingType", CreateEnumObject(env, encodingTypeMap)),
+        DECLARE_NAPI_PROPERTY("ContentType", CreateEnumObject(env, contentTypeMap)),
+        DECLARE_NAPI_PROPERTY("StreamUsage", CreateEnumObject(env, streamUsageMap)),
+        DECLARE_NAPI_PROPERTY("AudioVolumeMode", CreateEnumObject(env, audioVolumeModeMap)),
+        DECLARE_NAPI_PROPERTY("DeviceRole", CreateEnumObject(env, deviceRoleMap)),
+        DECLARE_NAPI_PROPERTY("DeviceType", CreateEnumObject(env, deviceTypeMap)),
+        DECLARE_NAPI_PROPERTY("SourceType", CreateEnumObject(env, sourceTypeMap)),
+        DECLARE_NAPI_PROPERTY("VolumeAdjustType", CreateEnumObject(env, volumeAdjustTypeMap)),
+        DECLARE_NAPI_PROPERTY("ChannelBlendMode", CreateEnumObject(env, channelBlendModeMap)),
+        DECLARE_NAPI_PROPERTY("AudioRendererRate", CreateEnumObject(env, rendererRateMap)),
+        DECLARE_NAPI_PROPERTY("InterruptType", CreateEnumObject(env, interruptEventTypeMap)),
+        DECLARE_NAPI_PROPERTY("InterruptForceType", CreateEnumObject(env, interruptForceTypeMap)),
+        DECLARE_NAPI_PROPERTY("InterruptHint", CreateEnumObject(env, interruptHintTypeMap)),
+        DECLARE_NAPI_PROPERTY("AudioState", CreateEnumObject(env, audioStateMap)),
+        DECLARE_NAPI_PROPERTY("AudioSampleFormat", CreateEnumObject(env, audioSampleFormatMap)),
+        DECLARE_NAPI_PROPERTY("AudioEffectMode", CreateEnumObject(env, effectModeMap)),
+        DECLARE_NAPI_PROPERTY("AudioPrivacyType", CreateEnumObject(env, audioPrivacyTypeMap)),
+        DECLARE_NAPI_PROPERTY("AudioVolumeType", CreateEnumObject(env, audioVolumeTypeMap)),
+        DECLARE_NAPI_PROPERTY("DeviceFlag", CreateEnumObject(env, deviceFlagMap)),
+        DECLARE_NAPI_PROPERTY("ActiveDeviceType", CreateEnumObject(env, activeDeviceTypeMap)),
+        DECLARE_NAPI_PROPERTY("ConnectType", CreateEnumObject(env, connectTypeMap)),
+        DECLARE_NAPI_PROPERTY("AudioRingMode", CreateEnumObject(env, audioRingModeMap)),
+        DECLARE_NAPI_PROPERTY("AudioScene", CreateEnumObject(env, audioSceneMap)),
+        DECLARE_NAPI_PROPERTY("DeviceChangeType", CreateEnumObject(env, deviceChangeTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptActionType",
-            CreateEnumObject(env, interruptActionTypeMap, interruptActionType_)),
-        DECLARE_NAPI_PROPERTY("InterruptMode", CreateEnumObject(env, interruptModeMap, interruptMode_)),
-        DECLARE_NAPI_PROPERTY("FocusType", CreateEnumObject(env, focusTypeMap, focusType_)),
+            CreateEnumObject(env, interruptActionTypeMap)),
+        DECLARE_NAPI_PROPERTY("InterruptMode", CreateEnumObject(env, interruptModeMap)),
+        DECLARE_NAPI_PROPERTY("FocusType", CreateEnumObject(env, focusTypeMap)),
         DECLARE_NAPI_PROPERTY("LOCAL_NETWORK_ID", CreateLocalNetworkIdObject(env)),
         DECLARE_NAPI_PROPERTY("DEFAULT_VOLUME_GROUP_ID", CreateDefaultVolumeGroupIdObject(env)),
         DECLARE_NAPI_PROPERTY("DEFAULT_INTERRUPT_GROUP_ID", CreateDefaultInterruptIdObject(env)),
-        DECLARE_NAPI_PROPERTY("AudioErrors", CreateEnumObject(env, audioErrorsMap, audioErrors_)),
+        DECLARE_NAPI_PROPERTY("AudioErrors", CreateEnumObject(env, audioErrorsMap)),
         DECLARE_NAPI_PROPERTY("CommunicationDeviceType",
-            CreateEnumObject(env, communicationDeviceTypeMap, communicationDeviceType_)),
+            CreateEnumObject(env, communicationDeviceTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptRequestType",
-            CreateEnumObject(env, interruptRequestTypeMap, interruptRequestType_)),
+            CreateEnumObject(env, interruptRequestTypeMap)),
         DECLARE_NAPI_PROPERTY("InterruptRequestResultType",
-            CreateEnumObject(env, interruptRequestResultTypeMap, interruptRequestResultType_)),
-        DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap, toneType_)),
-        DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap, audioDviceUsage_)),
+            CreateEnumObject(env, interruptRequestResultTypeMap)),
+        DECLARE_NAPI_PROPERTY("ToneType", CreateEnumObject(env, toneTypeMap)),
+        DECLARE_NAPI_PROPERTY("DeviceUsage", CreateEnumObject(env, audioDeviceUsageMap)),
         DECLARE_NAPI_PROPERTY("AudioDataCallbackResult",
-            CreateEnumObject(env, audioDataCallbackResultMap, audioDataCallbackResult_)),
+            CreateEnumObject(env, audioDataCallbackResultMap)),
         DECLARE_NAPI_PROPERTY("AudioConcurrencyMode",
-            CreateEnumObject(env, concurrencyModeMap, concurrencyMode_)),
-        DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap, reason_)),
-        DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap, policyType_)),
-        DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap, audioLoopbackMode_)),
+            CreateEnumObject(env, concurrencyModeMap)),
+        DECLARE_NAPI_PROPERTY("AudioSessionDeactivatedReason", CreateEnumObject(env, reasonMap)),
+        DECLARE_NAPI_PROPERTY("PolicyType", CreateEnumObject(env, policyTypeMap)),
+        DECLARE_NAPI_PROPERTY("AudioLoopbackMode", CreateEnumObject(env, audioLoopbackModeMap)),
         DECLARE_NAPI_PROPERTY("AudioLoopbackStatus",
-            CreateEnumObject(env, audioLoopbackStatusMap, audioLoopbackStatus_)),
-        DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap, audioSessionScene_)),
+            CreateEnumObject(env, audioLoopbackStatusMap)),
+        DECLARE_NAPI_PROPERTY("AudioSessionScene", CreateEnumObject(env, audioSessionSceneMap)),
         DECLARE_NAPI_PROPERTY("AudioSessionStateChangeHint",
-            CreateEnumObject(env, audioSessionStateChangeHintMap, audioSessionStateChangeHint_)),
+            CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
-            CreateEnumObject(env, outputDeviceChangeRecommendedActionMap, outputDeviceChangeRecommendedAction_)),
+            CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }
@@ -1392,8 +1317,8 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_UNKNOWN:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
-        case StreamUsage::STREAM_USAGE_MEDIA:
-            result = NapiAudioEnum::USAGE_MEDIA;
+        case StreamUsage::STREAM_USAGE_MUSIC:
+            result = NapiAudioEnum::USAGE_MUSIC;
             break;
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
@@ -1461,7 +1386,7 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
         default:
-            result = NapiAudioEnum::USAGE_MEDIA;
+            result = NapiAudioEnum::USAGE_UNKNOW;
             break;
     }
     return result;
@@ -1665,10 +1590,10 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::NOTIFICATION:
-            result = STREAM_NOTIFICATION;
+            result = STREAM_RING;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = STREAM_NAVIGATION;
+            result = STREAM_MUSIC;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
@@ -1690,8 +1615,8 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
         case NapiAudioEnum::USAGE_UNKNOW:
             result = STREAM_USAGE_UNKNOWN;
             break;
-        case NapiAudioEnum::USAGE_MEDIA:
-            result = STREAM_USAGE_MEDIA;
+        case NapiAudioEnum::USAGE_MUSIC:
+            result = STREAM_USAGE_MUSIC;
             break;
         case NapiAudioEnum::USAGE_VOICE_COMMUNICATION:
             result = STREAM_USAGE_VOICE_COMMUNICATION;

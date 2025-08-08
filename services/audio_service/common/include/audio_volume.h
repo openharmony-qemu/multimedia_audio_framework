@@ -62,6 +62,7 @@ public:
     void SetSystemVolume(SystemVolume &systemVolume);
     void SetAppVolume(AppVolume &appVolume);
     void SetAppVolumeMute(int32_t appUid, bool muted);
+    bool SetAppRingMuted(int32_t appUid, bool isMuted);
     void SetSystemVolume(int32_t volumeType, const std::string &deviceClass, float volume, int32_t volumeLevel);
     void SetSystemVolumeMute(int32_t volumeType, const std::string &deviceClass, bool isMuted);
 

@@ -189,6 +189,7 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_007, TestS
 
     audioCollaborativeServicePtr_->isCollaborativeStateEnabled_ = true;
     EXPECT_EQ(audioCollaborativeServicePtr_->UpdateCollaborativeStateReal(), SUCCESS);
+    EXPECT_EQ(audioCollaborativeServicePtr_->GetRealCollaborativeState(), true);
 }
 } // AudioStandard
 } // OHOS

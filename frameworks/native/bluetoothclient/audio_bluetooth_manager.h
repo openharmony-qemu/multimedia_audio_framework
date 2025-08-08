@@ -148,6 +148,7 @@ public:
     static void DeleteVirtualCallStream(int32_t streamId);
     static bool IsVirtualCall();
     static bool IsAudioScoStateConnect();
+    static std::string GetAudioScoDeviceMac();
 
 private:
     static ScoCategory JudgeScoCategory();

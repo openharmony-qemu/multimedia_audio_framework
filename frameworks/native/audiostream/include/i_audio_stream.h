@@ -76,6 +76,7 @@ public:
         std::shared_ptr<AudioClientTracker> proxyObj;
         AudioPrivacyType privacyType;
         float volume;
+        float duckVolume = 1.0f;
         int32_t rendererFlags = AUDIO_FLAG_NORMAL;
 
         bool streamTrackerRegistered = false;
@@ -105,6 +106,9 @@ public:
 
         std::optional<pid_t> lastCallStartByUserTid = std::nullopt;
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair = {
+            Timestamp::Timestampbase::BASESIZE, {0, 0}
+        };
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed = {
             Timestamp::Timestampbase::BASESIZE, {0, 0}
         };
     };
@@ -314,7 +318,8 @@ public:
 
     virtual RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) = 0;
 
-    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) = 0;
+    virtual void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) = 0;
 
     virtual void FetchDeviceForSplitStream() = 0;
 

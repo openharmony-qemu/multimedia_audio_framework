@@ -79,8 +79,8 @@ public:
     bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
     void DeInit(void);
     void InitKVStore();
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);
@@ -90,6 +90,8 @@ public:
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+    bool IsAppRingMuted(int32_t appUid);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel);
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
     int32_t GetVolumeAdjustZoneId();
@@ -255,7 +257,7 @@ private:
     AudioVolumeManager &audioVolumeManager_;
     int32_t duration_ = 0;
     int32_t cbId_ = INVALID_CB_ID;
-    std::mutex mtx_;
+    std::mutex monitorMtx_;
 };
 }
 }

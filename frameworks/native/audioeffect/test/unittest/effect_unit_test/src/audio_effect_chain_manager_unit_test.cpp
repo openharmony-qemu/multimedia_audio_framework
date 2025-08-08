@@ -2922,9 +2922,8 @@ HWTEST(AudioEffectChainManagerUnitTest, ConfigureAudioEffectChain_001, TestSize.
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
     std::string effectMode = "EFFECT_MODE_NORMAL";
-    std::string resultSceneType;
-    AudioEffectChainManager::GetInstance()->ConfigureAudioEffectChain(audioEffectChain, effectMode, resultSceneType);
-    EXPECT_NE(sceneType, resultSceneType);
+    AudioEffectChainManager::GetInstance()->ConfigureAudioEffectChain(audioEffectChain, effectMode);
+    EXPECT_NE(audioEffectChain, nullptr);
 }
 
 /**

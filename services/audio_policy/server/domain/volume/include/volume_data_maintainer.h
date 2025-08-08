@@ -94,6 +94,8 @@ public:
     void GetAppMute(int32_t appUid, bool &isMute);
     void GetAppMuteOwned(int32_t appUid, bool &isMute);
     void SetAppVolumeMuted(int32_t appUid, bool muted);
+    void SetAppStreamMuted(int32_t appUid, AudioStreamType streamType, bool muted);
+    bool IsAppStreamMuted(int32_t appUid, AudioStreamType streamType);
     int32_t GetStreamVolume(AudioStreamType streamType);
     int32_t GetDeviceVolume(DeviceType deviceType, AudioStreamType streamType);
     int32_t GetAppVolume(int32_t appUid);
@@ -158,6 +160,9 @@ private:
     std::unordered_map<AudioStreamType, int32_t> volumeLevelMap_; // save system volume map
     std::unordered_map<int32_t, int32_t> appVolumeLevelMap_; // save App volume map
     std::unordered_map<int32_t, std::unordered_map<int32_t, bool>> appMuteStatusMap_; // save App volume Mutestatus map
+
+    // Stores the mute status of audio streams used by the app.
+    std::unordered_map<int32_t, std::unordered_map<AudioStreamType, bool>> appStreamMuteMap_;
     bool isSettingsCloneHaveStarted_ = false;
 };
 } // namespace AudioStandard

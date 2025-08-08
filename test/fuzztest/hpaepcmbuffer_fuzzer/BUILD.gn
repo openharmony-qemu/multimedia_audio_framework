@@ -47,6 +47,8 @@ ohos_fuzztest("HpaePcmBufferFuzzTest") {
     "../../../frameworks/native/audioadapter/src/audio_service_adapter.cpp",
     "../../../services/audio_engine/buffer/hpae_pcm_buffer.cpp",
     "../../../services/audio_engine/buffer/hpae_pcm_buffer.h",
+    "../../../services/audio_engine/buffer/hpae_pcm_process.cpp",
+    "../../../services/audio_engine/simd/simd_utils.cpp",
   ]
 
   deps = [

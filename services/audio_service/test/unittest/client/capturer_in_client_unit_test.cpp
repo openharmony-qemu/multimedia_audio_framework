@@ -132,6 +132,12 @@ public:
         return 0;
     }
 
+    virtual int32_t GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency,
+        int32_t base) override
+    {
+        return 0;
+    }
+
     virtual int32_t GetLatency(uint64_t &latency) override { return 0; }
 
     virtual int32_t SetRate(int32_t rate) override { return 0; } // SetRenderRate
@@ -1811,7 +1817,7 @@ HWTEST(CapturerInClientUnitTest, SetSwitchInfoTimestamp_001, TestSize.Level1)
     std::vector<std::pair<uint64_t, uint64_t>> testLastFramePosAndTimePair = {
         Timestamp::Timestampbase::BASESIZE, {TEST_POSITION, TEST_TIMESTAMP_NS}
     };
-    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair);
+    testCapturerInClientObj->SetSwitchInfoTimestamp(testLastFramePosAndTimePair, testLastFramePosAndTimePair);
     Timestamp testTimestamp;
     testCapturerInClientObj->GetAudioPosition(testTimestamp, Timestamp::Timestampbase::MONOTONIC);
     EXPECT_NE(testTimestamp.framePosition, TEST_POSITION);
@@ -1911,6 +1917,41 @@ HWTEST(CapturerInClientUnitTest, FlushCbBuffer_003, TestSize.Level1)
     capturerInClientInner->cbBufferSize_ = 10;
     auto ret = capturerInClientInner->FlushCbBuffer();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_002
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_002, TestSize.Level2)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NO_NEED_FOR_RESTORE);
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NEED_RESTORE);
+}
+ 
+/**
+ * @tc.name  : Test FetchDeviceForSplitStream API
+ * @tc.type  : FUNC
+ * @tc.number: FetchDeviceForSplitStream_003
+ * @tc.desc  : Test FetchDeviceForSplitStream interface.
+ */
+HWTEST(CapturerInClientUnitTest, FetchDeviceForSplitStream_003, TestSize.Level2)
+{
+    int32_t clientUid = 0;
+    std::shared_ptr<CapturerInClientInner> capturerInClientInner =
+        std::make_shared<CapturerInClientInner>(STREAM_MUSIC, getpid());
+    capturerInClientInner->SetRestoreStatus(NEED_RESTORE);
+    capturerInClientInner->audioStreamTracker_ = nullptr;
+    capturerInClientInner->FetchDeviceForSplitStream();
+
+    EXPECT_NE(capturerInClientInner->CheckRestoreStatus(), NO_NEED_FOR_RESTORE);
 }
 } // namespace AudioStandard
 } // namespace OHOS

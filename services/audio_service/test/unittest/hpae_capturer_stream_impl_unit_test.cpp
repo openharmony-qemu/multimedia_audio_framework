@@ -314,5 +314,60 @@ HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_013, TestSize.Level1)
     capturerStreamImplRet->DequeueBuffer(length);
     EXPECT_EQ(capturerStreamImplRet != nullptr, true);
 }
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_014
+ * @tc.desc  : Test HpaeCapturerStreamImpl interface.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_014, TestSize.Level1)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    AudioCallBackCapturerStreamInfo info;
+    info.timestamp = 123456789;
+    info.latency = 100;
+    info.framesRead = 44100;
+    info.outputData = nullptr;
+    info.requestDataLen = 44100 * sizeof(int16_t);
+
+    auto ret = capturerStreamImplRet->OnStreamData(info);
+    EXPECT_EQ(ret, SUCCESS);
+
+    capturerStreamImplRet->readCallback_.reset();
+    ret = capturerStreamImplRet->OnStreamData(info);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_016
+ * @tc.desc  : Test HpaeCapturerStreamImpl interface.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_016, TestSize.Level2)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+
+    auto ret = capturerStreamImplRet->DropBuffer();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test HpaeCapturerStreamImpl API
+ * @tc.type  : FUNC
+ * @tc.number: HpaeCapturerStream_017
+ * @tc.desc  : Test HpaeCapturerStreamImpl interface.
+ */
+HWTEST_F(HpaeCapturerStreamUnitTest, HpaeCapturerStream_017, TestSize.Level2)
+{
+    auto capturerStreamImplRet = CreateHpaeCapturerStreamImpl();
+    size_t minBufferSize = 10;
+    int32_t abortTimes = 0;
+
+    capturerStreamImplRet->AbortCallback(abortTimes);
+    auto ret = capturerStreamImplRet->GetMinimumBufferSize(minBufferSize);
+    EXPECT_EQ(ret, SUCCESS);
+}
 }
 }

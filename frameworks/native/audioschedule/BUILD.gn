@@ -50,6 +50,8 @@ ohos_shared_library("audio_schedule") {
     "ipc:ipc_single",
     "samgr:samgr_proxy",
     "init:libbegetutil",
+    "qos_manager:concurrent_task_client",
+    "qos_manager:qos"
   ]
 
   if (ressche_enable == true) {

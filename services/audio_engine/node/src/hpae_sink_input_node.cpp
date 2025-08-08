@@ -93,6 +93,7 @@ void HpaeSinkInputNode::CheckAndDestroyHistoryBuffer()
 int32_t HpaeSinkInputNode::GetDataFromSharedBuffer()
 {
     streamInfo_ = {.framesWritten = framesWritten_,
+        .hdiFramePosition = hdiFramePosition_.exchange(0),
         .latency = streamInfo_.latency,
         .inputData = interleveData_.data(),
         .requestDataLen = interleveData_.size(),
@@ -273,9 +274,10 @@ int32_t HpaeSinkInputNode::GetCurrentPosition(uint64_t &framePosition, std::vect
     return SUCCESS;
 }
 
-int32_t HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime)
+int32_t HpaeSinkInputNode::RewindHistoryBuffer(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
     CHECK_AND_RETURN_RET_LOG(historyBuffer_, ERROR, "historyBuffer_ is nullptr");
+    hdiFramePosition_.store(hdiFramePosition);
     AUDIO_INFO_LOG("HpaeSinkInputNode::rewind %{public}zu frames", ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
     return historyBuffer_->RewindBuffer(ConvertUsToFrameCount(rewindTime, GetNodeInfo()));
 }

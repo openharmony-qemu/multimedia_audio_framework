@@ -163,9 +163,6 @@ bool AudioRouterCenter::IsMediaFollowCallStrategy(AudioScene audioScene)
         HasScoDevice()) {
         return true;
     }
-    if (AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
-        return true;
-    }
     return false;
 }
 
@@ -224,7 +221,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioRouterCenter::FetchOutp
 {
     vector<shared_ptr<AudioDeviceDescriptor>> descs;
     RouterType routerType = ROUTER_TYPE_NONE;
-    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, streamUsage);
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(clientUID, STREAM_USAGE_INVALID);
     if (zoneId != 0) {
         vector<shared_ptr<AudioDeviceDescriptor>> zoneDescs =
             AudioZoneService::GetInstance().FetchOutputDevices(zoneId, streamUsage, clientUID, routerType);
@@ -295,19 +292,19 @@ shared_ptr<AudioDeviceDescriptor> AudioRouterCenter::FetchCapturerInputDevice(So
     bool hasSystemPermission = PermissionUtil::VerifySystemPermission();
     AudioScene audioScene = AudioSceneManager::GetInstance().GetAudioScene(hasSystemPermission);
     if (capturerConfigMap_[sourceType] == "RecordCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        if (audioScene != AUDIO_SCENE_DEFAULT) {
             return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "CallCaptureRouters") {
-        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        if (audioScene != AUDIO_SCENE_DEFAULT) {
             return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             return FetchRecordCaptureDevice(sourceType, clientUID, routerType, sessionID);
         }
     } else if (capturerConfigMap_[sourceType] == "VoiceMessages") {
-        if (audioScene != AUDIO_SCENE_DEFAULT || AudioDeviceManager::GetAudioDeviceManager().GetScoState()) {
+        if (audioScene != AUDIO_SCENE_DEFAULT) {
             return FetchCallCaptureDevice(sourceType, clientUID, routerType, sessionID);
         } else {
             return FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);

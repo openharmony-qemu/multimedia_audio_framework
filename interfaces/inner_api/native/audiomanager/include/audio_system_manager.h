@@ -166,6 +166,15 @@ public:
      */
     int32_t SetAppVolumeMuted(const int32_t appUid, const bool muted, const int32_t flag = 0);
 
+    /**
+     * @brief Set the mute state of the VoIP ringtone for the specified app.
+     * @param appUid The UID fo the app.
+     * @param muted Set to true to mute the VoIP ringtone, false to unmute.
+     * @return Returns {@link SUCCESS} if the app ringtone is set successfully; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
     int32_t SetAdjustVolumeForZone(int32_t zoneId);
 
     /**
@@ -252,6 +261,24 @@ public:
      * @since 8
      */
     int32_t GetMinVolume(AudioVolumeType volumeType);
+
+    /**
+     * @brief get device max stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns the maxinum stream volume.
+     */
+    int32_t GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType);
+
+    /**
+     * @brief get device min stream volume.
+     *
+     * @param volumeType audio volume type.
+     * @param deviceType device type.
+     * @return Returns the mininum stream volume.
+     */
+    int32_t GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType);
 
     /**
      * @brief set stream mute.
