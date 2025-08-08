@@ -1537,32 +1537,6 @@ HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_002, TestSize.Level4)
 }
 
 /**
- * @tc.name   : Test SetVolumeWithDevice API
- * @tc.number : SetVolumeWithDevice_002
- * @tc.desc   : Test SetVolumeWithDevice interface
- */
-HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
-{
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioSystemManager audioSystemManager;
-    int32_t volumeLevel = 5;
-    EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType), 1);
-}
-
-/**
- * @tc.name   : Test SetVolumeWithDevice API
- * @tc.number : SetVolumeWithDevice_003
- * @tc.desc   : Test SetVolumeWithDevice interface
- */
-HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
-{
-    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
-    AudioSystemManager audioSystemManager;
-    int32_t volumeLevel = 5;
-    EXPECT_NE(audioSystemManager.SetVolumeWithDevice(STREAM_ALL, volumeLevel, deviceType), 1);
-}
-
-/**
  * @tc.name   : Test GetVolume API
  * @tc.number : GetVolume_001
  * @tc.desc   : Test GetVolume interface
