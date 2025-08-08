@@ -1150,8 +1150,6 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
@@ -1266,8 +1264,6 @@ int32_t AudioCoreService::MoveToRemoteInputDevice(std::vector<SourceOutput> sour
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
