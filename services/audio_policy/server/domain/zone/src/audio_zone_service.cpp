@@ -81,6 +81,13 @@ int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZo
 
 void AudioZoneService::ReleaseAudioZone(int32_t zoneId)
 {
+    if (interruptService_ != nullptr) {
+        std::vector<int32_t> sessionUidList = interruptService_->GetAudioSessionUidList(zoneId);
+        for (auto uid : sessionUidList) {
+            RemoveUidFromAudioZone(zoneId, uid);
+        }
+    }
+
     std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
@@ -344,6 +351,23 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     return FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+}
+
+int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate)
+{
+    int32_t zoneId;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        zoneId = FindAudioZoneByKey(callerUid, "", "", StreamUsage::STREAM_USAGE_INVALID);
+        CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
+        StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+        if (streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
+            return zoneId;
+        }
+        zoneId = FindAudioZoneByKey(INVALID_ZONEID, "", "", streamUsage);
+    }
+    isActivate ? AddUidToAudioZone(zoneId, callerUid) : RemoveUidFromAudioZone(zoneId, callerUid);
+    return zoneId;
 }
 
 int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)

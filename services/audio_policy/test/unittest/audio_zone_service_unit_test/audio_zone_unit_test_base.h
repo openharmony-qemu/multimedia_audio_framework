@@ -24,6 +24,7 @@
 #include "audio_policy_server_handler.h"
 #include "audio_zone_service.h"
 #include "audio_interrupt_service.h"
+#include "audio_session_service.h"
 #include "i_audio_zone_event_dispatcher.h"
 
 namespace OHOS {

@@ -32,6 +32,7 @@
 #include "audio_bundle_manager.h"
 #include "istandard_audio_service.h"
 #include "session_manager_lite.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -176,11 +177,25 @@ void AudioInterruptService::OnSessionTimeout(const int32_t pid)
     HandleSessionTimeOutEvent(pid);
 }
 
+int32_t AudioInterruptService::GetAudioSessionZoneidByPid(const int32_t pid)
+{
+    for (const auto &zonePair : zonesMap_) {
+        CHECK_AND_CONTINUE(zonePair.second != nullptr);
+        for (const auto &audioFocusPair : zonePair.second->audioFocusInfoList) {
+            if ((audioFocusPair.first.pid == pid) && (audioFocusPair.first.isAudioSessionInterrupt)) {
+                return zonePair.second->zoneId;
+            }
+        }
+    }
+    return ZONEID_INVALID;
+}
+
 void AudioInterruptService::HandleSessionTimeOutEvent(const int32_t pid)
 {
-    if (sessionService_ != nullptr && HasAudioSessionFakeInterrupt(ZONEID_DEFAULT, pid)) {
+    int32_t zoneId = GetAudioSessionZoneidByPid(pid);
+    if (sessionService_ != nullptr && zoneId != ZONEID_INVALID) {
         // If there is a fake interrupt, it needs to be deactivated.
-        DeactivateAudioSessionFakeInterrupt(ZONEID_DEFAULT, pid, true);
+        DeactivateAudioSessionFakeInterrupt(zoneId, pid, true);
         if (handler_ != nullptr) {
             // duckVolume = -1.0f, means timeout stop
             InterruptEventInternal interruptEvent {INTERRUPT_TYPE_BEGIN, INTERRUPT_FORCE, INTERRUPT_HINT_STOP, -1.0f};
@@ -828,7 +843,7 @@ bool AudioInterruptService::AudioInterruptIsActiveInFocusList(const int32_t zone
     return false;
 }
 
-void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
+void AudioInterruptService::HandleAppStreamType(const int32_t zoneId, AudioInterrupt &audioInterrupt)
 {
     // In audio session mode, the focus policy is uniformly managed by the session and not handled separately here.
     if (sessionService_ != nullptr && sessionService_->IsAudioSessionFocusMode(audioInterrupt.pid)) {
@@ -837,7 +852,7 @@ void AudioInterruptService::HandleAppStreamType(AudioInterrupt &audioInterrupt)
         return;
     }
 
-    if (HasAudioSessionFakeInterrupt(ZONEID_DEFAULT, audioInterrupt.pid)) {
+    if (HasAudioSessionFakeInterrupt(zoneId, audioInterrupt.pid)) {
         return;
     }
 
@@ -892,12 +907,12 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
     const AudioInterrupt &audioInterrupt, const bool isUpdatedAudioStrategy, bool &updateScene)
 {
     AudioInterrupt currAudioInterrupt = audioInterrupt;
-    HandleAppStreamType(currAudioInterrupt);
+    HandleAppStreamType(zoneId, currAudioInterrupt);
     AudioStreamType streamType = currAudioInterrupt.audioFocusType.streamType;
     uint32_t incomingStreamId = currAudioInterrupt.streamId;
-    AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
+    AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d zoneId: %{public}d"\
         "usage: %{public}d source: %{public}d",
-        incomingStreamId, currAudioInterrupt.pid, streamType,
+        incomingStreamId, currAudioInterrupt.pid, streamType, zoneId,
         currAudioInterrupt.streamUsage, (currAudioInterrupt.audioFocusType).sourceType);
 
     if (AudioInterruptIsActiveInFocusList(zoneId, incomingStreamId) && !isUpdatedAudioStrategy) {
@@ -911,7 +926,7 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
         return SUCCESS;
     }
 
-    if (ShouldBypassAudioSessionFocus(audioInterrupt)) {
+    if (ShouldBypassAudioSessionFocus(zoneId, audioInterrupt)) {
         TryHandleStreamCallbackInSession(zoneId, audioInterrupt);
         SendActiveVolumeTypeChangeEvent(zoneId);
         updateScene = true;
@@ -1005,7 +1020,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
     std::unique_lock<std::mutex> lock(mutex_);
 
     AudioInterrupt currAudioInterrupt = audioInterrupt;
-    HandleAppStreamType(currAudioInterrupt);
+    HandleAppStreamType(zoneId, currAudioInterrupt);
     AUDIO_INFO_LOG("streamId: %{public}u pid: %{public}d streamType: %{public}d "\
         "usage: %{public}d source: %{public}d",
         currAudioInterrupt.streamId, currAudioInterrupt.pid, (currAudioInterrupt.audioFocusType).streamType,
@@ -1475,6 +1490,32 @@ std::set<int32_t> AudioInterruptService::GetStreamIdsForAudioSessionByDeviceType
     }
 
     return streamIds;
+}
+
+std::vector<int32_t> AudioInterruptService::GetAudioSessionUidList(int32_t zoneId)
+{
+    std::vector<int32_t> uidList;
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("start to find audio session uid in zone %{public}d", zoneId);
+    auto itZone = zonesMap_.find(zoneId);
+    CHECK_AND_RETURN_RET_LOG((itZone != zonesMap_.end()) && (itZone->second != nullptr),
+        uidList, "cannot find zoneid in zonesMap");
+
+    auto audioFocusInfoList = itZone->second->audioFocusInfoList;
+    for (const auto &iter : audioFocusInfoList) {
+        if (iter.first.isAudioSessionInterrupt) {
+            AUDIO_INFO_LOG("find uid : %{public}d", iter.first.uid);
+            uidList.push_back(iter.first.uid);
+        }
+    }
+    return uidList;
+}
+
+StreamUsage AudioInterruptService::GetAudioSessionStreamUsage(int32_t callerPid)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    CHECK_AND_RETURN_RET_LOG(sessionService_ != nullptr, STREAM_USAGE_INVALID, "sessionService_ is nullptr!");
+    return sessionService_->GetAudioSessionStreamUsage(callerPid);
 }
 
 void AudioInterruptService::ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent)
@@ -1963,7 +2004,7 @@ int32_t AudioInterruptService::HandleExistStreamsForSession(
     return SUCCESS;
 }
 
-bool AudioInterruptService::ShouldBypassAudioSessionFocus(const AudioInterrupt &incomingInterrupt)
+bool AudioInterruptService::ShouldBypassAudioSessionFocus(const int32_t zoneId, const AudioInterrupt &incomingInterrupt)
 {
     AUDIO_INFO_LOG("incomingInterrupt info: pid = %{public}d, isAudioSessionInterrupt = %{public}d,"
                    "streamId = %{public}u, streamType = %{public}d",
@@ -1971,7 +2012,7 @@ bool AudioInterruptService::ShouldBypassAudioSessionFocus(const AudioInterrupt &
                    incomingInterrupt.isAudioSessionInterrupt,
                    incomingInterrupt.streamId,
                    incomingInterrupt.audioFocusType.streamType);
-    if (!HasAudioSessionFakeInterrupt(ZONEID_DEFAULT, incomingInterrupt.pid)) {
+    if (!HasAudioSessionFakeInterrupt(zoneId, incomingInterrupt.pid)) {
         return false;
     }
 

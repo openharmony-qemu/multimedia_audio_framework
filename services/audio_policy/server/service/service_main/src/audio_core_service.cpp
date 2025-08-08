@@ -1209,8 +1209,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     for (auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+        if (audioSessionService_ != nullptr) {
+            streamUsage = audioSessionService_->GetAudioSessionStreamUsage(GetRealPid(streamDesc));
+        }
+        streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+            streamDesc->rendererInfo_.streamUsage;
         streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc),
+            audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);

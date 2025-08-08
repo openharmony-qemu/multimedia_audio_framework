@@ -1757,6 +1757,15 @@ int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> stre
     return streamDesc->callerUid_;
 }
 
+int32_t AudioCoreService::GetRealPid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, -1, "Stream desc is nullptr");
+    if (streamDesc->callerUid_ == MEDIA_SERVICE_UID) {
+        return streamDesc->appInfo_.appPid;
+    }
+    return streamDesc->callerPid_;
+}
+
 void AudioCoreService::UpdateRendererInfoWhenNoPermission(
     const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos, bool hasSystemPermission)
 {
