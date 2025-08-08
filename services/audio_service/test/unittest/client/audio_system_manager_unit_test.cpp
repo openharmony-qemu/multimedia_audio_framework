@@ -1544,7 +1544,7 @@ HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_002, TestSize.Level4)
 HWTEST(AudioSystemManagerUnitTest, GetVolume_001, TestSize.Level4)
 {
     AudioSystemManager audioSystemManager;
-    AudioVolumeType volumeType = STREAM_MUSIC; 
+    AudioVolumeType volumeType = STREAM_MUSIC;
     EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_NOT_SUPPORTED);
 }
 
@@ -1556,7 +1556,7 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_001, TestSize.Level4)
 HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
 {
     AudioSystemManager audioSystemManager;
-    AudioVolumeType volumeType = STREAM_ULTRASONIC; 
+    AudioVolumeType volumeType = STREAM_ULTRASONIC;
     EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
 }
 } // namespace AudioStandard
