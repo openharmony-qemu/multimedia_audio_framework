@@ -267,7 +267,7 @@ public:
      *
      * @param volumeType audio volume type.
      * @param deviceType device type.
-     * @return Returns stream and device volume.
+     * @return Returns the maxinum stream volume.
      */
     int32_t GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType);
 
@@ -276,7 +276,7 @@ public:
      *
      * @param volumeType audio volume type.
      * @param deviceType device type.
-     * @return Returns stream and device volume.
+     * @return Returns the mininum stream volume.
      */
     int32_t GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType);
 

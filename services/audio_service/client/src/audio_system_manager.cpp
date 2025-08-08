@@ -773,13 +773,13 @@ int32_t AudioSystemManager::GetMinVolume(AudioVolumeType volumeType)
 int32_t AudioSystemManager::GetDeviceMaxVolume(AudioVolumeType volumeType, DeviceType deviceType)
 {
     if (volumeType == STREAM_ALL) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
     }
 
     return AudioPolicyManager::GetInstance().GetMaxVolumeLevel(volumeType, deviceType);
@@ -788,13 +788,13 @@ int32_t AudioSystemManager::GetDeviceMaxVolume(AudioVolumeType volumeType, Devic
 int32_t AudioSystemManager::GetDeviceMinVolume(AudioVolumeType volumeType, DeviceType deviceType)
 {
     if (volumeType == STREAM_ALL) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+        bool ret1 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret1, ERR_PERMISSION_DENIED, "No system permission");
     }
 
     if (volumeType == STREAM_ULTRASONIC) {
-        bool ret = PermissionUtil::VerifySelfPermission();
-        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
+        bool ret2 = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret2, ERR_PERMISSION_DENIED, "STREAM_ULTRASONIC No system permission");
     }
 
     return AudioPolicyManager::GetInstance().GetMinVolumeLevel(volumeType, deviceType);
