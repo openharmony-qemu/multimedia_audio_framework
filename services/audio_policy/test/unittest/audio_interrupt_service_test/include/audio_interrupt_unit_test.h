@@ -56,6 +56,9 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+
+private:
+    std::shared_ptr<AudioInterruptService> audioInterruptService_ = nullptr;
 };
 } // namespace AudioStandard
 } // namespace OHOS

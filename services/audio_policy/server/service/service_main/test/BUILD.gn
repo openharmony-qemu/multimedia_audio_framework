@@ -576,9 +576,6 @@ ohos_unittest("audio_policy_dump_unit_test") {
     "accessibility:accessibilityconfig",
   ]
 
-  cflags += [ "--coverage" ]
-  ldflags = [ "--coverage" ]
-
   sources = [
     "./unittest/audio_policy_dump_unit_test/src/audio_policy_dump_unit_test.cpp",
     "../../../../../audio_policy/server/service/service_main/src/audio_policy_dump.cpp"
