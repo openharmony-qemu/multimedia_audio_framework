@@ -729,6 +729,23 @@ bool AudioPolicyServer::IsVolumeLevelValid(AudioStreamType streamType, int32_t v
     return result;
 }
 
+bool AudioPolicyServer::IsRingerModeValid(AudioRingerMode ringMode)
+{
+    bool result = false;
+    switch (ringMode) {
+        case RINGER_MODE_SILENT:
+        case RINGER_MODE_VIBRATE:
+        case RINGER_MODE_NORMAL:
+            result = true;
+            break;
+        default:
+            result = false;
+            AUDIO_ERR_LOG("IsRingerModeValid: ringMode[%{public}d] is not supported", ringMode);
+            break;
+    }
+    return result;
+}
+
 void AudioPolicyServer::SubscribeOsAccountChangeEvents()
 {
     AUDIO_INFO_LOG("OnAddSystemAbility os_account service start");
@@ -2074,6 +2091,13 @@ int32_t AudioPolicyServer::GetActiveInputDevice(int32_t &deviceType)
 // deprecated since api 9.
 int32_t AudioPolicyServer::SetRingerModeLegacy(int32_t ringMode)
 {
+    pid_t pid = IPCSkeleton::GetCallingPid();
+    AudioRingerMode ringModeIn = static_cast<AudioRingerMode>(ringMode);
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d, pid : %{public}d", ringModeIn, pid);
+    if (!IsRingerModeValid(ringModeIn)) {
+        AUDIO_ERR_LOG("The ringerMode is an invalid parameter.");
+        return ERR_INVALID_PARAM;
+    }
     std::lock_guard<std::mutex> lock(systemVolumeMutex_);
     return SetRingerModeInner(static_cast<AudioRingerMode>(ringMode));
 }
@@ -2081,8 +2105,13 @@ int32_t AudioPolicyServer::SetRingerModeLegacy(int32_t ringMode)
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::SetRingerMode(int32_t ringModeIn)
 {
+    pid_t pid = IPCSkeleton::GetCallingPid();
     AudioRingerMode ringMode = static_cast<AudioRingerMode>(ringModeIn);
-    AUDIO_INFO_LOG("Set ringer mode to %{public}d", ringMode);
+    AUDIO_INFO_LOG("Set ringer mode to %{public}d, pid : %{public}d", ringMode, pid);
+    if (!IsRingerModeValid(ringMode)) {
+        AUDIO_ERR_LOG("The ringerMode is an invalid parameter.");
+        return ERR_INVALID_PARAM;
+    }
     if (!PermissionUtil::VerifySystemPermission()) {
         AUDIO_ERR_LOG("No system permission");
         return ERR_PERMISSION_DENIED;
