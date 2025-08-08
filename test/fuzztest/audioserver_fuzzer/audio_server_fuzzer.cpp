@@ -1491,14 +1491,14 @@ void AudioServerPermissionCheckerFuzzTest(const uint8_t *rawData, size_t size)
     audioServerPtr->PermissionChecker(config);
 }
 
-void AudioServerCheckPlayBackPermissionFuzzTest(const uint8_t *rawData, size_t size)
+void AudioServerCheckPlaybackPermissionFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
     AudioProcessConfig config;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->CheckPlayBackPermission(config);
+    audioServerPtr->CheckPlaybackPermission(config);
 }
 
 void AudioServerCheckInnerRecorderPermissionFuzzTest(const uint8_t *rawData, size_t size)
@@ -1567,8 +1567,9 @@ void AudioServerGetMaxAmplitudeFuzzTest(const uint8_t *rawData, size_t size)
     bool isOutputDevice = *reinterpret_cast<const bool*>(rawData);
     std::string deviceClass = "test_deviceClass";
     float maxAmplitude = *reinterpret_cast<const float*>(rawData);
+    int32_t sourceType = *reinterpret_cast<const int32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetMaxAmplitude(isOutputDevice, deviceClass, maxAmplitude);
+    audioServerPtr->GetMaxAmplitude(isOutputDevice, deviceClass, sourceType, maxAmplitude);
 }
 
 void AudioServerGetVolumeDataCountFuzzTest(const uint8_t *rawData, size_t size)
@@ -1924,7 +1925,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerCreateAudioProcessFuzzTest,
     OHOS::AudioStandard::AudioServerCreateAudioProcessInnerFuzzTest,
     OHOS::AudioStandard::AudioServerPermissionCheckerFuzzTest,
-    OHOS::AudioStandard::AudioServerCheckPlayBackPermissionFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckPlaybackPermissionFuzzTest,
     OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionFuzzTest,
     OHOS::AudioStandard::AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest,
     OHOS::AudioStandard::AudioServerSetForegroundListFuzzTest,
