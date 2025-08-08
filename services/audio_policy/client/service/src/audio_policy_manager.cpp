@@ -280,23 +280,23 @@ void AudioPolicyManager::RegisterServerDiedCallBack(AudioServerDiedCallBack func
     serverDiedCbks_.emplace_back(func);
 }
 
-int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioPolicyManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
     int32_t volumeLevel = -1;
-    gsp->GetMaxVolumeLevel(volumeType, volumeLevel);
+    gsp->GetMaxVolumeLevel(volumeType, volumeLevel, deviceType);
     return volumeLevel;
 }
 
-int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioPolicyManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
     int32_t volumeLevel = -1;
-    gsp->GetMinVolumeLevel(volumeType, volumeLevel);
+    gsp->GetMinVolumeLevel(volumeType, volumeLevel, deviceType);
     return volumeLevel;
 }
 
