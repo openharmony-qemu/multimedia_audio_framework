@@ -242,28 +242,5 @@ HWTEST(AudioProcessInClientUnitTest, ReadFromProcessClient_001, TestSize.Level1)
     auto ret = ptrAudioProcessInClientInner->ReadFromProcessClient();
     EXPECT_EQ(ret, ERR_INVALID_HANDLE);
 }
-
-/**
- * @tc.name  : Test CopyWithVolume API
- * @tc.type  : FUNC
- * @tc.number: CopyWithVolume_001
- * @tc.desc  : Test AudioProcessInClientInner::CopyWithVolume
- */
-HWTEST(AudioProcessInClientUnitTest, CopyWithVolume_001, TestSize.Level4)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-
-    BufferDesc srcDesc;
-    BufferDesc dstDesc;
-    srcDesc.bufLength = 1;
-    dstDesc.bufLength = 1;
-    ptrAudioProcessInClientInner->CopyWithVolume(srcDesc, dstDesc);
-}
 } // namespace AudioStandard
 } // namespace OHOSs

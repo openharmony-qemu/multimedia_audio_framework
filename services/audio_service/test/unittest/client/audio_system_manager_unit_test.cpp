@@ -1436,7 +1436,7 @@ HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_002, TestSize.Level1)
 
 /**
  * @tc.name   : Test IsStreamMuteByUsage API
- * @tc.number : IsStreamMuteByUsage_003
+ * @tc.number : IsStreamMuteByUsage_003 
  * @tc.desc   : Test IsStreamMuteByUsage interface createAudioWorkgroup
  */
 HWTEST(AudioSystemManagerUnitTest, IsStreamMuteByUsage_003, TestSize.Level4)
