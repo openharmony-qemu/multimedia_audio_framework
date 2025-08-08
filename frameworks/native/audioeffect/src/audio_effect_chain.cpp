@@ -268,9 +268,11 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
 {
     int32_t ret;
     int32_t replyData = 0;
+    int32_t latencyData = 0;
     currSceneType_ = currSceneType;
     AudioEffectTransInfo cmdInfo = {sizeof(AudioEffectConfig), &ioBufferConfig_};
     AudioEffectTransInfo replyInfo = {sizeof(int32_t), &replyData};
+    AudioEffectTransInfo latencyInfo = {sizeof(int32_t), &latencyData};
 
     ret = (*handle)->command(handle, EFFECT_CMD_INIT, &cmdInfo, &replyInfo);
     CHECK_AND_RETURN_LOG(CheckHandleAndRelease(handle, libHandle, ret) == SUCCESS,
@@ -297,7 +299,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
         preIoBufferConfig_ = ioBufferConfig_;
     }
     cmdInfo = {sizeof(AudioEffectConfig), &preIoBufferConfig_};
-    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &replyInfo);
+    ret = (*handle)->command(handle, EFFECT_CMD_SET_CONFIG, &cmdInfo, &latencyInfo);
     CHECK_AND_RETURN_LOG(CheckHandleAndRelease(handle, libHandle, ret) == SUCCESS,
         "[%{public}s] with mode [%{public}s], %{public}s effect EFFECT_CMD_SET_CONFIG fail",
         sceneType_.c_str(), effectMode_.c_str(), effectName.c_str());
@@ -313,7 +315,7 @@ void AudioEffectChain::AddEffectHandle(AudioEffectHandle handle, AudioEffectLibr
     standByEffectHandles_.emplace_back(handle);
     effectNames_.emplace_back(effectName);
     libHandles_.emplace_back(libHandle);
-    latency_ += static_cast<uint32_t>(replyData);
+    latency_ += static_cast<uint32_t>(latencyData);
 }
 
 int32_t AudioEffectChain::UpdateEffectParam()
