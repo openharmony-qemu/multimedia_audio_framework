@@ -150,6 +150,34 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test EnableChangeReport.
+ * @tc.number: EnableChangeReport_001
+ * @tc.desc  : Test EnableChangeReport interface.
+ */
+HWTEST_F(AudioZoneUnitTest, EnableChangeReport_001, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    pid_t clientPid = 1;
+    bool enable = true;
+    EXPECT_EQ(zone->EnableChangeReport(clientPid, enable), 0);
+}
+
+/**
+ * @tc.name  : Test EnableChangeReport.
+ * @tc.number: EnableChangeReport_002
+ * @tc.desc  : Test EnableChangeReport interface.
+ */
+HWTEST_F(AudioZoneUnitTest, EnableChangeReport_002, TestSize.Level1)
+{
+    ClearZone();
+    auto zone = CreateZone("TestZone");
+    pid_t clientPid = 1;
+    bool enable = false;
+    EXPECT_EQ(zone->EnableChangeReport(clientPid, enable), 0);
+}
+
+/**
  * @tc.name  : Test AudioZone.
  * @tc.number: AudioZone_005
  * @tc.desc  : Test release audio zone
@@ -199,6 +227,5 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
     EXPECT_EQ(ret, zoneId);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
 }
-
 } // namespace AudioStandard
 } // namespace OHOS
