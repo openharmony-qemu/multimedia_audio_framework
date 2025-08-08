@@ -67,6 +67,7 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 {
     if (!FindKeyInMap(pid)) {
         AppState appState;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     }
     std::lock_guard<std::mutex> lock(appStatesMapMutex_);
@@ -99,6 +100,7 @@ void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.isBack = isBack;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     } else {
         bool notifyMute = false;
@@ -133,6 +135,7 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.hasBackTask = hasBackgroundTask;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     } else {
         std::lock_guard<std::mutex> lock(appStatesMapMutex_);
@@ -153,6 +156,7 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.hasSession = hasSession;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     } else {
         std::lock_guard<std::mutex> lock(appStatesMapMutex_);
@@ -169,9 +173,12 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
 
 void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const int32_t pid)
 {
-    bool isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-    AppState &appState = appStatesMap_[pid];
-    bool needMute = !appState.hasSession && appState.isBack && !isSystem;
+    auto it = appStatesMap_.find(pid);
+    AppState &appState = (it != appStatesMap_.end()) ? it->second : appStatesMap_[pid];
+    if (it == appStatesMap_.end()) {
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    }
+    bool needMute = !appState.hasSession && appState.isBack && !appState.isSystem;
     bool notifyMute = false;
     streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
     if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
