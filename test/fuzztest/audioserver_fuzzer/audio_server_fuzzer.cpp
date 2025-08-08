@@ -1721,7 +1721,7 @@ void AudioServerCreateSourcePortFuzzTest(const uint8_t *rawData, size_t size)
     uint32_t idBase = *reinterpret_cast<const uint32_t*>(rawData);
     uint32_t idType = *reinterpret_cast<const uint32_t*>(rawData);
     std::string idInfo = "test_idInfo";
-    IAudioSinkAttr attr;
+    IAudioSourceAttr attr;
     uint32_t captureId = *reinterpret_cast<const uint32_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->CreateSourcePort(idBase, idType, idInfo, attr, captureId);
@@ -1945,7 +1945,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerReleaseCaptureLimitFuzzTest,
     OHOS::AudioStandard::AudioServerLoadHdiAdapterFuzzTest,
     OHOS::AudioStandard::AudioServerUnloadHdiAdapterFuzzTest,
-    OHOS::AudioStandard::AudioServerCreateSinkPortFuzzTest，
+    OHOS::AudioStandard::AudioServerCreateSinkPortFuzzTest,
     OHOS::AudioStandard::AudioServerCreateSourcePortFuzzTest,
     OHOS::AudioStandard::AudioServerDestroyHdiPortFuzzTest,
     OHOS::AudioStandard::AudioServerSetDeviceConnectedFlagFuzzTest,
