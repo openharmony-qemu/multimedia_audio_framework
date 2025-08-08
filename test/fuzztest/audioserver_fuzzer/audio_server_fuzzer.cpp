@@ -1860,6 +1860,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerOnRenderSinkStateChangeTest,
     OHOS::AudioStandard::AudioServerCreateHdiSinkPortTest,
     OHOS::AudioStandard::AudioServerCreateHdiSourcePortTest,
+    OHOS::AudioStandard::AudioServerFuzzTest,
     OHOS::AudioStandard::AudioServerOffloadSetVolumeFuzzTest,
     OHOS::AudioStandard::AudioServerNotifyStreamVolumeChangedFuzzTest,
     OHOS::AudioStandard::AudioServerResetRouteForDisconnectFuzzTest,
