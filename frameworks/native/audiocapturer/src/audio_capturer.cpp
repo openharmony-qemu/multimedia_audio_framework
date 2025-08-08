@@ -130,22 +130,46 @@ std::unique_ptr<AudioCapturer> AudioCapturer::Create(const AudioCapturerOptions 
     return std::make_unique<SharedCapturerWrapper>(tempSharedPtr);
 }
 
+void AudioCapturerPrivate::HandleSetCapturerInfoByOptions(const AudioCapturerOptions &capturerOptions,
+    const AppInfo &appInfo)
+{
+    capturerInfo_.sourceType = capturerOptions.capturerInfo.sourceType;
+    capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
+    capturerInfo_.originalFlag = ((capturerOptions.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
+        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
+        AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
+    capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
+    capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
+    capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
+    capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
+    // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
+    filterConfig_ = capturerOptions.playbackCaptureConfig;
+    strategy_ = capturerOptions.strategy;
+}
+
 // LCOV_EXCL_START
 std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturerOptions &capturerOptions,
     const AppInfo &appInfo)
 {
     Trace trace("KeyAction AudioCapturer::Create");
     auto sourceType = capturerOptions.capturerInfo.sourceType;
-    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
+
+    if (sourceType < SOURCE_TYPE_MIC || sourceType > SOURCE_TYPE_MAX || sourceType == SOURCE_TYPE_VIRTUAL_CAPTURE ||
+        sourceType == AUDIO_SOURCE_TYPE_INVALID_5) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
-        AUDIO_ERR_LOG("Invalid source type %{public}d!", sourceType);
+        AUDIO_ERR_LOG("Invalid sourceType %{public}d!", sourceType);
         return nullptr;
     }
     if (sourceType == SOURCE_TYPE_ULTRASONIC && getuid() != UID_MSDP_SA) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_INVALID_PARAM);
+        AUDIO_ERR_LOG("Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
+        return nullptr;
     }
-    CHECK_AND_RETURN_RET_LOG(sourceType != SOURCE_TYPE_ULTRASONIC || getuid() == UID_MSDP_SA, nullptr,
-        "Create failed: SOURCE_TYPE_ULTRASONIC can only be used by MSDP");
+    
+    AUDIO_INFO_LOG("StreamClientState for Capturer::CreateCapturer sourceType:%{public}d, capturerFlags:%{public}d, "
+        "AppInfo:[%{public}d] [%{public}s] [%{public}s], ", sourceType, capturerOptions.capturerInfo.capturerFlags,
+        appInfo.appUid, appInfo.appTokenId == 0 ? "T" : "F", appInfo.appFullTokenId == 0 ? "T" : "F");
+
     AudioStreamType audioStreamType = FindStreamTypeBySourceType(sourceType);
     AudioCapturerParams params;
     params.audioSampleFormat = capturerOptions.streamInfo.format;
@@ -159,21 +183,9 @@ std::shared_ptr<AudioCapturer> AudioCapturer::CreateCapturer(const AudioCapturer
     if (capturer == nullptr) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         AUDIO_ERR_LOG("Failed to create capturer object");
-        return capturer;
+        return nullptr;
     }
-    AUDIO_INFO_LOG("Capturer sourceType: %{public}d, uid: %{public}d", sourceType, appInfo.appUid);
-    // InitPlaybackCapturer will be replaced by UpdatePlaybackCaptureConfig.
-    capturer->capturerInfo_.sourceType = sourceType;
-    capturer->capturerInfo_.capturerFlags = capturerOptions.capturerInfo.capturerFlags;
-    capturer->capturerInfo_.originalFlag = ((sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) &&
-        (capturerOptions.capturerInfo.capturerFlags == AUDIO_FLAG_MMAP)) ?
-        AUDIO_FLAG_NORMAL : capturerOptions.capturerInfo.capturerFlags;
-    capturer->capturerInfo_.samplingRate = capturerOptions.streamInfo.samplingRate;
-    capturer->capturerInfo_.recorderType = capturerOptions.capturerInfo.recorderType;
-    capturer->capturerInfo_.isLoopback = capturerOptions.capturerInfo.isLoopback;
-    capturer->capturerInfo_.loopbackMode = capturerOptions.capturerInfo.loopbackMode;
-    capturer->filterConfig_ = capturerOptions.playbackCaptureConfig;
-    capturer->strategy_ = capturerOptions.strategy;
+    capturer->HandleSetCapturerInfoByOptions(capturerOptions, appInfo);
     if (capturer->SetParams(params) != SUCCESS) {
         AudioCapturer::SendCapturerCreateError(sourceType, ERR_OPERATION_FAILED);
         capturer = nullptr;
@@ -291,7 +303,7 @@ int32_t AudioCapturerPrivate::SetParams(const AudioCapturerParams params)
     uint32_t flag = AUDIO_INPUT_FLAG_NORMAL;
     int32_t ret = AudioPolicyManager::GetInstance().CreateCapturerClient(
         streamDesc, flag, audioStreamParams.originalSessionId);
-    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateCapturerClient failed");
     AUDIO_INFO_LOG("StreamClientState for Capturer::CreateClient. id %{public}u, flag :%{public}u",
         audioStreamParams.originalSessionId, flag);
 
