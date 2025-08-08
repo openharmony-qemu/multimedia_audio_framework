@@ -107,7 +107,7 @@ void UnmarshallingFuzzTest()
     }
     Parcel parcel;
     streamDesc->Marshalling(parcel);
-    streamDesc->Unmarshalling(parcel);
+    std::shared_ptr<AudioStreamDescriptor> filter(AudioStreamDescriptor::Unmarshalling(parcel));
 }
 
 void WriteDeviceDescVectorToParcelFuzzTest()

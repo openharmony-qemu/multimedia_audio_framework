@@ -36,6 +36,7 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 const size_t TESTSIZE = 1024;
+const uint32_t TESTFRAME = 1;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 template<class T>
@@ -130,6 +131,7 @@ void ReConfigFuzzTest()
 void GetFrameDataFuzzTest1()
 {
     PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.isMultiFrames = GetData<bool>();
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
     HpaePcmBuffer frameData = HpaePcmBuffer(pcmBufferInfo);
     hpaePcmBuffer->GetFrameData(frameData);
@@ -138,6 +140,7 @@ void GetFrameDataFuzzTest1()
 void GetFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.isMultiFrames = GetData<bool>();
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
     std::vector<float> frameData(TESTSIZE, 0.0f);
     hpaePcmBuffer->GetFrameData(frameData);
@@ -146,6 +149,7 @@ void GetFrameDataFuzzTest2()
 void PushFrameDataFuzzTest1()
 {
     PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.isMultiFrames = GetData<bool>();
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
     HpaePcmBuffer frameData = HpaePcmBuffer(pcmBufferInfo);
     hpaePcmBuffer->PushFrameData(frameData);
@@ -154,6 +158,7 @@ void PushFrameDataFuzzTest1()
 void PushFrameDataFuzzTest2()
 {
     PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.isMultiFrames = GetData<bool>();
     auto hpaePcmBuffer = std::make_shared<HpaePcmBuffer>(pcmBufferInfo);
     std::vector<float> frameData(TESTSIZE, 0.0f);
     hpaePcmBuffer->PushFrameData(frameData);
@@ -293,7 +298,24 @@ void SetSplitStreamTypeFuzzTest()
     hpaePcmBuffer->SetSplitStreamType(type);
 }
 
-typedef void (*TestFuncs[31])();
+void HpaePcmBufferOperator()
+{
+    PcmBufferInfo pcmBufferInfo;
+    pcmBufferInfo.frames = TESTFRAME;
+    pcmBufferInfo.isMultiFrames = GetData<bool>();
+    HpaePcmBuffer srcHpaePcmBuffer(pcmBufferInfo);
+    HpaePcmBuffer dstHpaePcmBuffer(pcmBufferInfo);
+    std::vector<float> vec(TESTFRAME);
+    std::vector<std::vector<float>> dstVec(TESTFRAME);
+    srcHpaePcmBuffer = dstVec;
+    dstHpaePcmBuffer = vec;
+    srcHpaePcmBuffer = dstHpaePcmBuffer;
+    srcHpaePcmBuffer += dstHpaePcmBuffer;
+    srcHpaePcmBuffer -= dstHpaePcmBuffer;
+    srcHpaePcmBuffer *= dstHpaePcmBuffer;
+}
+
+typedef void (*TestFuncs[32])();
 
 TestFuncs g_testFuncs = {
     GetPcmBufferInfoFuzzTest,
@@ -327,6 +349,7 @@ TestFuncs g_testFuncs = {
     SetSourceBufferTypeFuzzTest,
     GetSplitStreamTypeFuzzTest,
     SetSplitStreamTypeFuzzTest,
+    HpaePcmBufferOperator,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

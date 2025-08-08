@@ -53,7 +53,7 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "offload";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
-constexpr uint8_t TESTSIZE = 42;
+constexpr uint8_t TESTSIZE = 51;
 constexpr int32_t TEST_SLEEP_TIME_20 = 20;
 constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
@@ -188,6 +188,164 @@ void HpaeOffloadRendererManagerConstructFuzzTest()
     HpaeSinkInfo sinkInfo;
     InitHpaeSinkInfo(sinkInfo);
     HpaeOffloadRendererManager offloadRendererManager(sinkInfo);
+}
+
+void HpaeOffloadRendererManagerCreateInputSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    HpaeStreamInfo streamInfo;
+    offloadRendererManager->CreateInputSession(streamInfo);
+}
+
+void HpaeOffloadRendererManagerDeleteInputSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    if (offloadRendererManager->sinkInputNode_ == nullptr) {
+        return;
+    }
+    offloadRendererManager->DeleteInputSession();
+}
+
+void HpaeOffloadRendererManagerAddSingleNodeToSinkFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    std::shared_ptr<HpaeSinkInputNode> node = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    if (node == nullptr) {
+        return;
+    }
+    bool isConnect = GetData<bool>();
+    offloadRendererManager->AddSingleNodeToSink(node, isConnect);
+}
+
+void HpaeOffloadRendererManagerConnectInputSessionFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    offloadRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    if (offloadRendererManager->sinkInputNode_ == nullptr) {
+        return;
+    }
+    if (offloadRendererManager->sinkOutputNode_ == nullptr) {
+        return;
+    }
+    offloadRendererManager->ConnectInputSession();
+    offloadRendererManager->sinkInputNode_->state_ = HPAE_SESSION_RUNNING;
+    offloadRendererManager->ConnectInputSession();
+    offloadRendererManager->DisConnectInputSession();
+}
+
+void HpaeOffloadRendererManagerInitSinkInnerFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    bool isReload = GetData<bool>();
+    offloadRendererManager->InitSinkInner(isReload);
+}
+
+void HpaeOffloadRendererManagerUpdateAppsUidFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    offloadRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    if (offloadRendererManager->sinkInputNode_ == nullptr) {
+        return;
+    }
+    if (offloadRendererManager->sinkOutputNode_ == nullptr) {
+        return;
+    }
+    int32_t uid = GetData<int32_t>();
+    offloadRendererManager->appsUid_.push_back(uid);
+    if (offloadRendererManager->appsUid_.empty()) {
+        return;
+    }
+    offloadRendererManager->UpdateAppsUid();
+}
+
+void HpaeOffloadRendererManagerOnRequestLatencyFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->sinkOutputNode_ = std::make_unique<HpaeOffloadSinkOutputNode>(nodeInfo);
+    if (offloadRendererManager->sinkOutputNode_ == nullptr) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    uint64_t latency = GetData<uint64_t>();
+    offloadRendererManager->OnRequestLatency(sessionId, latency);
+}
+
+void HpaeOffloadRendererManagerOnRewindAndFlushFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->sinkInputNode_ = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    if (offloadRendererManager->sinkInputNode_ == nullptr) {
+        return;
+    }
+    uint64_t rewindTime = GetData<uint64_t>();
+    offloadRendererManager->OnRewindAndFlush(rewindTime);
+}
+
+void HpaeOffloadRendererManagerGetNodeInputFormatInfoFuzzTest()
+{
+    HpaeSinkInfo sinkInfo;
+    HpaeNodeInfo nodeInfo;
+    InitHpaeSinkInfo(sinkInfo);
+    auto offloadRendererManager = std::make_shared<HpaeOffloadRendererManager>(sinkInfo);
+    if (offloadRendererManager == nullptr) {
+        return;
+    }
+    offloadRendererManager->loudnessGainNode_ = std::make_shared<HpaeLoudnessGainNode>(nodeInfo);
+    if (offloadRendererManager->loudnessGainNode_ == nullptr) {
+        return;
+    }
+    uint32_t sessionId = GetData<uint32_t>();
+    AudioBasicFormat basicFormat;
+    offloadRendererManager->GetNodeInputFormatInfo(sessionId, basicFormat);  //10
 }
 
 void HpaeOffloadRendererManagerFlushFuzzTest()
@@ -652,6 +810,15 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     UploadDumpSinkInfoFuzzTest,
     OnNotifyDfxNodeInfoFuzzTest,
     HpaeOffloadRendererManagerConstructFuzzTest,
+    HpaeOffloadRendererManagerCreateInputSessionFuzzTest,
+    HpaeOffloadRendererManagerDeleteInputSessionFuzzTest,
+    HpaeOffloadRendererManagerAddSingleNodeToSinkFuzzTest,
+    HpaeOffloadRendererManagerConnectInputSessionFuzzTest,
+    HpaeOffloadRendererManagerInitSinkInnerFuzzTest,
+    HpaeOffloadRendererManagerUpdateAppsUidFuzzTest,
+    HpaeOffloadRendererManagerOnRequestLatencyFuzzTest,
+    HpaeOffloadRendererManagerOnRewindAndFlushFuzzTest,
+    HpaeOffloadRendererManagerGetNodeInputFormatInfoFuzzTest,
     HpaeOffloadRendererManagerFlushFuzzTest,
     HpaeOffloadRendererManagerDrainFuzzTest,
     HpaeOffloadRendererManagerReleaseFuzzTest,
