@@ -14,6 +14,7 @@
 */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include "audio_service_log.h"
 #include "audio_errors.h"
