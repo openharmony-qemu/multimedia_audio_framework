@@ -16,8 +16,10 @@
 #include <fstream>
 #include <securec.h>
 
+#include "hpae_format_convert.h"
 #include "hpae_mixer_node.h"
 #include "hpae_node_common.h"
+#include "hpae_pcm_dumper.h"
 #include "hpae_process_cluster.h"
 #include "hpae_sink_input_node.h"
 #include "../fuzz_utils.h"
@@ -516,6 +518,66 @@ void HpaeRenderEffectNodeIsByPassEffectZeroVolumeFuzzTest()
     hpaeRenderEffectNode->IsByPassEffectZeroVolume(&hpaePcmBuffer);
 }
 
+void ConvertToFloatFuzzTest()
+{
+    AudioSampleFormat format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    float dst[1] = {0};
+    if (format == SAMPLE_U8) {
+        uint8_t src[1] = {g_fuzzUtils.GetData<uint8_t>()};
+        ConvertToFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S16LE) {
+        int16_t src[1] = {g_fuzzUtils.GetData<int16_t>()};
+        ConvertToFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S24LE) {
+        uint8_t src[1] = {g_fuzzUtils.GetData<uint8_t>()};
+        ConvertToFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S32LE) {
+        int32_t src[1] = {g_fuzzUtils.GetData<int32_t>()};
+        ConvertToFloat(format, 1, src, dst);
+    } else {
+        float src[1] = {g_fuzzUtils.GetData<float>()};
+        ConvertToFloat(format, 1, src, dst);
+    }
+}
+
+void ConvertFromFloatFuzzTest()
+{
+    AudioSampleFormat format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    float src[1] = {g_fuzzUtils.GetData<float>()};
+    if (format == SAMPLE_U8) {
+        uint8_t dst[1] = {0};
+        ConvertFromFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S16LE) {
+        int16_t dst[1] = {0};
+        ConvertFromFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S24LE) {
+        uint8_t dst[1] = {0};
+        ConvertFromFloat(format, 1, src, dst);
+    } else if (format == SAMPLE_S32LE) {
+        int32_t dst[1] = {0};
+        ConvertFromFloat(format, 1, src, dst);
+    } else {
+        float dst[1] = {0};
+        ConvertFromFloat(format, 1, src, dst);
+    }
+}
+
+void HpaePcmDumperDumpFuzzTest()
+{
+    std::string testFilePath = "/test/test.txt";
+    HpaePcmDumper dumper(testFilePath);
+    int8_t buffer[] = {0, g_fuzzUtils.GetData<int8_t>()};
+    int32_t length = sizeof(buffer) / sizeof(buffer[0]);
+    dumper.Dump(buffer, length);
+}
+
+void HpaePcmDumperCheckAndReopenHandleFuzzTest()
+{
+    std::string testFilePath = "/test/test.txt";
+    HpaePcmDumper dumper(testFilePath);
+    dumper.CheckAndReopenHandle();
+}
+
 vector<TestPtr> g_testPtrs = {
     HpaeMixerNodeSignalProcessFuzzTest,
     HpaeMixerNodeCheckUpdateInfoFuzzTest,
@@ -551,6 +613,10 @@ vector<TestPtr> g_testPtrs = {
     HpaeRenderEffectNodeReconfigOutputBufferFuzzTest,
     HpaeRenderEffectNodeGetExpectedInputChannelInfoFuzzTest,
     HpaeRenderEffectNodeIsByPassEffectZeroVolumeFuzzTest,
+    ConvertToFloatFuzzTest,
+    ConvertFromFloatFuzzTest,
+    HpaePcmDumperDumpFuzzTest,
+    HpaePcmDumperCheckAndReopenHandleFuzzTest,
 };
 
 } // namespace AudioStandard
