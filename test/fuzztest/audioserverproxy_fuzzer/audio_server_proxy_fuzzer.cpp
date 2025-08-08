@@ -285,6 +285,71 @@ void AudioServerProxySetLatestMuteStateFuzzTest()
     audioServerProxy.SetLatestMuteState(sessionId, muteFlag);
 }
 
+void AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest()
+{
+    if (g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    AudioEnhancePropertyArray propertyArray;
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    audioServerProxy.GetAudioEnhancePropertyProxy(propertyArray, deviceType);
+}
+
+void AudioServerProxyGetAudioEffectPropertyProxyFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    AudioEffectPropertyArrayV3 propertyArrayV3;
+    audioServerProxy.GetAudioEffectPropertyProxy(propertyArrayV3);
+}
+ 
+void AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    audioServerProxy.IsAcousticEchoCancelerSupported(sourceType);
+}
+ 
+void AudioServerProxySetKaraokeParametersFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    std::string parameters = "testParameters";
+    audioServerProxy.SetKaraokeParameters(parameters);
+}
+ 
+void AudioServerProxyIsAudioLoopbackSupportedFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    AudioLoopbackMode mode = LOOPBACK_HARDWARE;
+    audioServerProxy.IsAudioLoopbackSupported(mode);
+}
+ 
+void AudioServerProxySetSessionMuteStateFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    uint32_t sessionId = GetData<uint32_t>();
+    bool insert = GetData<bool>();
+    bool muteFlag = GetData<bool>();
+    audioServerProxy.SetSessionMuteState(sessionId, insert, muteFlag);
+}
+ 
+void AudioServerProxySetActiveOutputDeviceProxyFuzzTest()
+{
+    if (g_testDeviceTypes.size() == 0) {
+        return;
+    }
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    DeviceType deviceType = g_testDeviceTypes[GetData<uint32_t>() % g_testDeviceTypes.size()];
+    audioServerProxy.SetActiveOutputDeviceProxy(deviceType);
+}
+ 
+void AudioServerProxyForceStopAudioStreamProxyFuzzTest()
+{
+    AudioServerProxy &audioServerProxy = AudioServerProxy::GetInstance();
+    StopAudioType audioType = STOP_RENDER;
+    audioServerProxy.ForceStopAudioStreamProxy(audioType);
+}
+
 TestPtr g_testPtrs[] = {
     AudioServerProxyGetEffectOffloadEnabledProxyFuzzTest,
     AudioServerProxyUpdateDualToneStateProxyFuzzTest,
@@ -310,6 +375,14 @@ TestPtr g_testPtrs[] = {
     AudioServerProxyDestroyHdiPortProxyFuzzTest,
     AudioServerProxySetDeviceConnectedFlagFuzzTest,
     AudioServerProxySetLatestMuteStateFuzzTest,
+    AudioServerProxyGetAudioEnhancePropertyProxyFuzzTest,
+    AudioServerProxyGetAudioEffectPropertyProxyFuzzTest,
+    AudioServerProxyIsAcousticEchoCancelerSupportedFuzzTest,
+    AudioServerProxySetKaraokeParametersFuzzTest,
+    AudioServerProxyIsAudioLoopbackSupportedFuzzTest,
+    AudioServerProxySetSessionMuteStateFuzzTest,
+    AudioServerProxySetActiveOutputDeviceProxyFuzzTest,
+    AudioServerProxyForceStopAudioStreamProxyFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

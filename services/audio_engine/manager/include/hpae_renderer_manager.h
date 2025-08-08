@@ -76,7 +76,7 @@ public:
     void SetSpeed(uint32_t sessionId, float speed) override;
     std::vector<SinkInput> GetAllSinkInputsInfo() override;
     int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) override;
-    int32_t RefreshProcessClusrerByDevice() override;
+    int32_t RefreshProcessClusterByDevice() override;
     HpaeSinkInfo GetSinkInfo() override;
 
     int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) override;

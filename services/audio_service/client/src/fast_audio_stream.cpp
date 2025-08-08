@@ -288,9 +288,11 @@ bool FastAudioStream::GetAudioTime(Timestamp &timestamp, Timestamp::Timestampbas
 }
 
 void FastAudioStream::SetSwitchInfoTimestamp(
-    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair)
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+    std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed)
 {
     (void)lastFramePosAndTimePair;
+    (void)lastFramePosAndTimePairWithSpeed;
     AUDIO_INFO_LOG("fast stream not support timestamp re-set when stream switching");
 }
 

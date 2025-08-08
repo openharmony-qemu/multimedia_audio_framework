@@ -310,13 +310,32 @@ int32_t AudioAdapterManager::SetAudioStreamRemovedCallback(AudioStreamRemovedCal
 }
 
 // LCOV_EXCL_STOP
-int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
     if (volumeType == STREAM_APP) {
         return appConfigVolume_.maxVolume;
     }
+
+    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
+        DeviceType type = currentActiveDevice_.deviceType_;
+        if (deviceType != DEVICE_TYPE_NONE) {
+            type = deviceType;
+        }
+        auto deviceIt = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(type);
+        if (deviceIt != DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.end()) {
+            DeviceVolumeType deviceVolumeType = deviceIt->second;
+            if ((streamVolumeInfos_[volumeType] != nullptr) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+                streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel != -1)) {
+                return streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel;
+            }
+        }
+    }
+
     if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(volumeType)) {
         return maxVolumeIndexMap_[volumeType];
     } else if (maxVolumeIndexMap_.end() != maxVolumeIndexMap_.find(STREAM_MUSIC)) {
@@ -328,13 +347,32 @@ int32_t AudioAdapterManager::GetMaxVolumeLevel(AudioVolumeType volumeType)
     }
 }
 
-int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType)
+int32_t AudioAdapterManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType)
 {
     CHECK_AND_RETURN_RET_LOG(volumeType >= STREAM_VOICE_CALL && volumeType <= STREAM_TYPE_MAX,
         ERR_INVALID_PARAM, "Invalid stream type");
     if (volumeType == STREAM_APP) {
         return appConfigVolume_.minVolume;
     }
+
+    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
+        DeviceType type = currentActiveDevice_.deviceType_;
+        if (deviceType != DEVICE_TYPE_NONE) {
+            type = deviceType;
+        }
+        auto deviceIt = DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.find(type);
+        if (deviceIt != DEVICE_TYPE_TO_DEVICE_VOLUME_TYPE_MAP.end()) {
+            DeviceVolumeType deviceVolumeType = deviceIt->second;
+            if ((streamVolumeInfos_[volumeType] != nullptr) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+                streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr) &&
+                (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel != -1)) {
+                return streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel;
+            }
+        }
+    }
+
     if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(volumeType)) {
         return minVolumeIndexMap_[volumeType];
     } else if (minVolumeIndexMap_.end() != minVolumeIndexMap_.find(STREAM_MUSIC)) {
@@ -1962,6 +2000,10 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
     }
     if (!audioModuleInfo.bufferSize.empty()) {
         attr.bufferSize = static_cast<uint32_t>(std::stoul(audioModuleInfo.bufferSize));
+    }
+    if (!audioModuleInfo.channelLayout.empty()) {
+        AUDIO_INFO_LOG("use custom channelLayout, %{public}s", audioModuleInfo.channelLayout.c_str());
+        attr.channelLayout = static_cast<uint64_t>(std::stoul(audioModuleInfo.channelLayout));
     }
     attr.isBigEndian = IsBigEndian(audioModuleInfo.format);
     attr.filePath = audioModuleInfo.fileName.c_str();

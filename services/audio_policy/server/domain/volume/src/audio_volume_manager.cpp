@@ -122,20 +122,20 @@ void AudioVolumeManager::DeInit(void)
     audioPolicyServerHandler_ = nullptr;
 }
 
-int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMaxVolumeLevel(volumeType, deviceType);
 }
 
-int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMinVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMinVolumeLevel(volumeType, deviceType);
 }
 
 bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol)
@@ -357,6 +357,10 @@ int32_t AudioVolumeManager::GetVolumeAdjustZoneId()
 
 int32_t AudioVolumeManager::SetAdjustVolumeForZone(int32_t zoneId)
 {
+    if (zoneId == 0) {
+        AudioDeviceDescriptor currentActiveDevice = audioActiveDevice_.GetCurrentOutputDevice();
+        audioPolicyManager_.SetVolumeForSwitchDevice(currentActiveDevice);
+    }
     return audioPolicyManager_.SetAdjustVolumeForZone(zoneId);
 }
 
