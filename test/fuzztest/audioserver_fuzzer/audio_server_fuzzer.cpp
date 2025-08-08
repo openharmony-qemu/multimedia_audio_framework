@@ -199,7 +199,8 @@ void AudioServerNotifyStreamVolumeChangedFuzzTest(const uint8_t *rawData, size_t
     MessageParcel reply;
     MessageOption option;
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_STREAM_VOLUME_CHANGED), 
+    data, reply, option);
 }
 
 void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t size)
@@ -214,7 +215,8 @@ void AudioServerResetRouteForDisconnectFuzzTest(const uint8_t *rawData, size_t s
     MessageParcel reply;
     MessageOption option;
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_ROUTE_FOR_DISCONNECT), 
+    data, reply, option);
 }
 
 void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
@@ -229,7 +231,8 @@ void AudioServerGetEffectLatencyTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_EFFECT_LATENCY), 
+    data, reply, option);
 }
 
 void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
@@ -246,7 +249,8 @@ void AudioServerUpdateLatencyTimestampTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::UPDATE_LATENCY_TIMESTAMP), 
+    data, reply, option);
 }
 
 void AudioServerGetMaxAmplitudeTest(const uint8_t *rawData, size_t size)
@@ -263,7 +267,8 @@ void AudioServerGetMaxAmplitudeTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::GET_MAX_AMPLITUDE), 
+    data, reply, option);
 }
 
 void AudioServerResetAudioEndpointTest(const uint8_t *rawData, size_t size)
@@ -276,7 +281,8 @@ void AudioServerResetAudioEndpointTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::RESET_AUDIO_ENDPOINT), 
+    data, reply, option);
 }
 
 void AudioServerCreatePlaybackCapturerManagerTest(const uint8_t *rawData, size_t size)
@@ -289,7 +295,8 @@ void AudioServerCreatePlaybackCapturerManagerTest(const uint8_t *rawData, size_t
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CREATE_PLAYBACK_CAPTURER_MANAGER), 
+    data, reply, option);
 }
 
 void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
@@ -307,7 +314,8 @@ void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_OUTPUT_DEVICE_SINK), 
+    data, reply, option);
 }
 
 void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
@@ -324,7 +332,8 @@ void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_AUDIO_MONO_STATE), 
+    data, reply, option);
 }
 
 void AudioServerSetVoiceVolumeTest(const uint8_t *rawData, size_t size)
@@ -339,7 +348,8 @@ void AudioServerSetVoiceVolumeTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::SET_VOICE_VOLUME), 
+    data, reply, option);
 }
 
 void AudioServerCheckRemoteDeviceStateTest(const uint8_t *rawData, size_t size)
@@ -358,7 +368,8 @@ void AudioServerCheckRemoteDeviceStateTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::CHECK_REMOTE_DEVICE_STATE), 
+    data, reply, option);
 }
 
 void AudioServerNotifyDeviceInfoTest(const uint8_t *rawData, size_t size)
@@ -375,7 +386,8 @@ void AudioServerNotifyDeviceInfoTest(const uint8_t *rawData, size_t size)
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
-    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO), data, reply, option);
+    AudioServerPtr->OnRemoteRequest(static_cast<uint32_t>(AudioServerInterfaceCode::NOTIFY_DEVICE_INFO), 
+    data, reply, option);
 }
 
 void AudioServerGetAudioParameterTest(const uint8_t *rawData, size_t size)
