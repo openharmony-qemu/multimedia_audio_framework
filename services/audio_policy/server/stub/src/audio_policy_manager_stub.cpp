@@ -833,6 +833,7 @@ void AudioPolicyManagerStub::GetRendererChangeInfosInternal(MessageParcel &data,
     for (const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo: audioRendererChangeInfos) {
         CHECK_AND_CONTINUE_LOG(rendererChangeInfo != nullptr,
             "AudioPolicyManagerStub:Renderer change info null, something wrong!!");
+        rendererChangeInfo->outputDeviceInfo.descriptorType_ = AudioDeviceDescriptor::DEVICE_INFO;
         rendererChangeInfo->Marshalling(reply);
     }
 }
