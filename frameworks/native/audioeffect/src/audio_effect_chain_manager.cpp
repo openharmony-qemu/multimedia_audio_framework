@@ -906,10 +906,10 @@ void AudioEffectChainManager::RecoverAllChains()
         for (int32_t k = 0; k < item.second; ++k) {
             CreateAudioEffectChainDynamicInner(item.first);
         }
-        UpdateDefaultAudioEffectInner();
-        UpdateStreamUsageInner();
         UpdateMultichannelConfigInner(item.first);
     }
+    UpdateDefaultAudioEffectInner();
+    UpdateStreamUsageInner();
 }
 
 uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
