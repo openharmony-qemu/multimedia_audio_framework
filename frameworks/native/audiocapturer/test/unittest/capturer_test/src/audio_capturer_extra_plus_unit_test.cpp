@@ -80,6 +80,7 @@ public:
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     bool ReleaseAudioStream(bool releaseRunner, bool isSwitchStream) override { return true; }
+    float GetDuckVolume() override { return 0.2; }
 
     State state_ = State::RUNNING;
 };
