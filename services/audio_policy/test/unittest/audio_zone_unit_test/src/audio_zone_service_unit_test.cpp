@@ -95,6 +95,32 @@ HWTEST_F(AudioZoneServiceUnitTest, CheckDeviceInAudioZone_001, TestSize.Level1)
     audioZone->RemoveDeviceDescriptor(deviceDescList);
     EXPECT_EQ(AudioZoneService::GetInstance().CheckDeviceInAudioZone(deviceDesc), false);
 }
+
+/**
+ * @tc.name  : Test AudioZoneServiceUnitTest.
+ * @tc.number: AudioZoneService_DegreeTest_001
+ * @tc.desc  : Test SetSystemVolumeDegree interface.
+ */
+HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_DegreeTest_001, TestSize.Level1)
+{
+    AudioZoneContext context;
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volumeDegree = 10;
+    int32_t zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeDegree(0, volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeDegree(zoneId1, volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(0, volumeType), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, volumeType), 0);
+
+    auto zone = AudioZoneService::GetInstance().FindZone(zoneId1);
+    ASSERT_NE(zone, nullptr);
+    int32_t clientPid = 1;
+    zone->EnableSystemVolumeProxy(clientPid, true);
+    EXPECT_NE(AudioZoneService::GetInstance().SetSystemVolumeDegree(zoneId1, volumeType, volumeDegree, 0), 0);
+    EXPECT_NE(AudioZoneService::GetInstance().GetSystemVolumeDegree(zoneId1, volumeType), volumeDegree);
+
+    AudioZoneService::GetInstance().ReleaseAudioZone(zoneId1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  

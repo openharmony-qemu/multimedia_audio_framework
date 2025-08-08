@@ -294,6 +294,9 @@ interface IAudioPolicy {
     void SetAppConcurrencyMode([in] int appUid, [in] int mode);
     void SetAppSilentOnDisplay([in] int displayId);
     void IsIntelligentNoiseReductionEnabledForCurrentDevice([in] int sourceType, [out] boolean ret);
+    void SetSystemVolumeDegree([in] int volumeType, [in] int volumeDegree, [in] int volumeFlag, [in] int uid);
+    void GetSystemVolumeDegree([in] int volumeType, [in] int uid, [out] int volumeDegree);
+    void GetMinVolumeDegree([in] int volumeType, [in] int deviceType, [out] int volumeDegree);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
     void GetAudioZoneByName([in] String name, [out] int zoneId);

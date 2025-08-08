@@ -74,6 +74,51 @@ int32_t AudioPolicyClientStubImpl::OnVolumeKeyEvent(const VolumeEvent &volumeEve
     return SUCCESS;
 }
 
+int32_t AudioPolicyClientStubImpl::AddVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    volumeDegreeCallbackList_.push_back(cb);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyClientStubImpl::RemoveVolumeDegreeCallback(const std::shared_ptr<VolumeKeyEventCallback> &cb)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    if (cb == nullptr) {
+        volumeDegreeCallbackList_.clear();
+        return SUCCESS;
+    }
+    auto it = find_if(volumeDegreeCallbackList_.begin(), volumeDegreeCallbackList_.end(),
+        [&cb](const std::weak_ptr<VolumeKeyEventCallback>& elem) {
+            return elem.lock() == cb;
+        });
+    if (it != volumeDegreeCallbackList_.end()) {
+        volumeDegreeCallbackList_.erase(it);
+    }
+    return SUCCESS;
+}
+
+size_t AudioPolicyClientStubImpl::GetVolumeDegreeCallbackSize() const
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    return volumeDegreeCallbackList_.size();
+}
+
+int32_t AudioPolicyClientStubImpl::OnVolumeDegreeEvent(const VolumeEvent &volumeEvent)
+{
+    std::lock_guard<std::mutex> lockCbMap(volumeDegreeEventMutex_);
+    for (auto it = volumeDegreeCallbackList_.begin(); it != volumeDegreeCallbackList_.end();) {
+        std::shared_ptr<VolumeKeyEventCallback> volumeKeyEventCallback = (*it).lock();
+        if (volumeKeyEventCallback != nullptr) {
+            volumeKeyEventCallback->OnVolumeDegreeEvent(volumeEvent);
+            ++it;
+        } else {
+            it = volumeDegreeCallbackList_.erase(it);
+        }
+    }
+    return SUCCESS;
+}
+
 int32_t AudioPolicyClientStubImpl::AddSystemVolumeChangeCallback(const std::shared_ptr<SystemVolumeChangeCallback> &cb)
 {
     std::lock_guard<std::mutex> lockCbMap(systemVolumeChangeMutex_);

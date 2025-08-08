@@ -87,7 +87,8 @@ public:
     int32_t GetSystemVolumeLevel(AudioStreamType streamType, int32_t zoneId = 0);
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
     int32_t GetSystemVolumeLevelNoMuteState(AudioStreamType streamType);
-    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
+    int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0,
+        bool syncVolDegree = true);
     int32_t SetAppVolumeMuted(int32_t appUid, bool muted);
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
     int32_t SetAppRingMuted(int32_t appUid, bool muted);
@@ -139,6 +140,9 @@ public:
     bool IsNeedForceControlVolumeType();
     AudioVolumeType GetForceControlVolumeType();
     void SendLoudVolumeMode(LoudVolumeHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
+    int32_t SetSystemVolumeDegreeToDb(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId);
+    int32_t GetSystemVolumeDegree(AudioStreamType streamType, int32_t zoneId = 0);
+    int32_t GetMinVolumeDegree(AudioVolumeType volumeType, DeviceType deviceType) const;
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -182,6 +186,9 @@ private:
     void CancelSafeVolumeNotificationWhenSwitchDevice();
     void CheckReduceOtherActiveVolume(AudioStreamType streamType, int32_t volumeLevel);
 private:
+    int32_t SetSystemVolumeLevelInner(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId);
+    int32_t SetSystemVolumeDegreeByLevel(AudioStreamType streamType, int32_t volumeLevel, int32_t zoneId = 0);
+    int32_t SetSystemVolumeDegreeToDbInner(AudioStreamType streamType, int32_t volumeDegree, int32_t zoneId = 0);
     std::shared_ptr<AudioSharedMemory> policyVolumeMap_ = nullptr;
     volatile Volume *volumeVector_ = nullptr;
     volatile bool *sharedAbsVolumeScene_ = nullptr;

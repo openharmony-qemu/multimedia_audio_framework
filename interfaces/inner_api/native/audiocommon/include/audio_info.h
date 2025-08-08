@@ -350,6 +350,7 @@ enum CallbackChange : int32_t {
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -407,6 +408,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
     CALLBACK_AUDIO_SESSION_INPUT_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -415,6 +417,7 @@ static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<s
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
+    int32_t volumeDegree = -1;
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -429,6 +432,7 @@ struct VolumeEvent : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
+            && parcel.WriteInt32(volumeDegree)
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
@@ -439,6 +443,7 @@ struct VolumeEvent : public Parcelable {
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
+        volumeDegree = parcel.ReadInt32();
         updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
@@ -1441,6 +1446,7 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
+    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {

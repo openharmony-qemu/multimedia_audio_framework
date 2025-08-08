@@ -151,6 +151,14 @@ public:
     // open for speical need
     int32_t LoadVolumeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
         AudioStreamType streamType);
+    int32_t LoadVolumeDegreeFromDb(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType);
+    int32_t SaveVolumeDegreeToDb(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t volumeDegree);
+    int32_t LoadVolumeDegreeFromMap(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType);
+    void SaveVolumeDegreeToMap(std::shared_ptr<AudioDeviceDescriptor> device,
+        AudioStreamType streamType, int32_t volumeDegree);
 
 private:
     static std::string GetVolumeKeyForDataShare(DeviceType deviceType, AudioStreamType streamType,
@@ -185,6 +193,8 @@ private:
 
     // Stores the mute status of audio streams used by the app.
     std::unordered_map<int32_t, std::unordered_map<AudioStreamType, bool>> appStreamMuteMap_;
+    std::unordered_map<std::string,
+        std::unordered_map<AudioStreamType, int32_t>> volumeDegreeMap_;
     bool isSettingsCloneHaveStarted_ = false;
     std::unordered_map<DeviceType, std::unordered_map<AudioStreamType, int32_t>> deviceTypeToSystemVolumeForEffectMap_;
 };

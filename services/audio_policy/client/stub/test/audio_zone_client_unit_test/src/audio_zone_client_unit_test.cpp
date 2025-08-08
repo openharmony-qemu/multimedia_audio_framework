@@ -55,6 +55,10 @@ public:
     void SetSystemVolume(const AudioVolumeType volumeType, const int32_t volumeLevel) override {}
 
     int32_t GetSystemVolume(AudioVolumeType volumeType) override {return 0;}
+
+    void SetSystemVolumeDegree(AudioVolumeType volumeType, int32_t volumeDegree) override {}
+
+    int32_t GetSystemVolumeDegree(AudioVolumeType volumeType) override { return 0;}
 };
 
 class AudioZoneInterruptCallbackStub : public AudioZoneInterruptCallback {
@@ -157,6 +161,36 @@ HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_005, TestSize.Level4)
     audioZoneClient->audioZoneCallback_ = callback;
     audioZoneClient->Restore();
     EXPECT_NE(nullptr, audioZoneClient->audioZoneCallback_);
+}
+
+/**
+* @tc.name  : Test AudiZoneClientUnitTest.
+* @tc.number: AudiZoneClientUnitTest_DegreeTest_001
+* @tc.desc  : Test SetSystemVolumeDegree interface.
+*/
+HWTEST_F(AudiZoneClientUnitTest, AudiZoneClientUnitTest_DegreeTest_001, TestSize.Level4)
+{
+    auto audioZoneClient = std::make_shared<AudioZoneClient>();
+    ASSERT_NE(audioZoneClient, nullptr);
+
+    AudioVolumeType volumeType = STREAM_MUSIC;
+    int32_t volumeDegree = 10;
+    int32_t outVolumeDegree = -1;
+    pid_t pid = 106;
+
+    int32_t zoneId1 = 1;
+    int32_t zoneId2 = 2;
+    auto callback = std::make_shared<AudioZoneVolumeProxyStub>();
+    audioZoneClient->audioZoneVolumeProxyMap_[zoneId1] = callback;
+    audioZoneClient->audioZoneVolumeProxyMap_[zoneId2] = nullptr;
+
+    EXPECT_EQ(audioZoneClient->SetSystemVolumeDegree(0, volumeType, volumeDegree, 0), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioZoneClient->SetSystemVolumeDegree(zoneId2, volumeType, volumeDegree, 0), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioZoneClient->SetSystemVolumeDegree(zoneId1, volumeType, volumeDegree, 0), 0);
+
+    EXPECT_EQ(audioZoneClient->GetSystemVolumeDegree(0, volumeType, outVolumeDegree), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioZoneClient->GetSystemVolumeDegree(zoneId2, volumeType, outVolumeDegree), ERR_OPERATION_FAILED);
+    EXPECT_EQ(audioZoneClient->GetSystemVolumeDegree(zoneId1, volumeType, outVolumeDegree), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS
