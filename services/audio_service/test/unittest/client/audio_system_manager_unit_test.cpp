@@ -1457,7 +1457,7 @@ HWTEST(AudioSystemManagerUnitTest, GetStreamType_001, TestSize.Level4)
     AudioSystemManager audioSystemManager;
     ContentType contentType = CONTENT_TYPE_MUSIC;
     StreamUsage streamUsage = STREAM_USAGE_MUSIC;
-    EXPECT_NE(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MEDIA);
+    EXPECT_EQ(audioSystemManager.GetStreamType(contentType, streamUsage), STREAM_MUSIC);
 }
 
 /**
