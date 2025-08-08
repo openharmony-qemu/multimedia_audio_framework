@@ -116,7 +116,7 @@ public:
 class MockFastAudioStream : public FastAudioStream {
 public:
     using FastAudioStream::FastAudioStream;
-    MOCK_METHOD(float, GetDuckVolume, (override));
+    MOCK_METHOD(float, GetDuckVolume, (),  (override));
 }
 
 /**
