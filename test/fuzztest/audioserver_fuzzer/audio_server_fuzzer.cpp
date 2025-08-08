@@ -131,17 +131,14 @@ void AudioServerFuzzTest(const uint8_t *rawData, size_t size)
     uint32_t code =  Convert2Uint32(rawData) % (LIMIT_MAX - LIMIT_MIN + 1) + LIMIT_MIN;
     rawData = rawData + OFFSET;
     size = size - OFFSET;
-    
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     data.WriteBuffer(rawData, size);
     data.RewindRead(0);
     MessageParcel reply;
     MessageOption option;
-
     std::shared_ptr<AudioServer> AudioServerPtr =
         std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-
     if (code == static_cast<uint32_t>(AudioServerInterfaceCode::SET_PARAMETER_CALLBACK)) {
         sptr<AudioPolicyManagerListenerStubImpl> focusListenerStub =
             new(std::nothrow) AudioPolicyManagerListenerStubImpl();
@@ -304,7 +301,6 @@ void AudioServerSetOutputDeviceSinkTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
@@ -323,12 +319,10 @@ void AudioServerSetAudioMonoStateTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     bool audioMono = *reinterpret_cast<const bool*>(rawData);
     data.WriteBool(audioMono);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -400,7 +394,6 @@ void AudioServerGetAudioParameterTest(const uint8_t *rawData, size_t size)
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     std::string key(reinterpret_cast<const char*>(rawData), size - 1);
     data.WriteString(key);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -420,7 +413,6 @@ void AudioServerSetAudioParameterTest(const uint8_t *rawData, size_t size)
     std::string value(reinterpret_cast<const char*>(rawData), size - 1);
     data.WriteString(key);
     data.WriteString(value);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -438,7 +430,6 @@ void AudioServerSetMicrophoneMuteTest(const uint8_t *rawData, size_t size)
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     bool isMute = *reinterpret_cast<const bool*>(rawData);
     data.WriteBool(isMute);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -451,12 +442,10 @@ void AudioServerSetAudioBalanceValueTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     float audioBalance = *reinterpret_cast<const float*>(rawData);
     data.WriteFloat(audioBalance);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -469,12 +458,10 @@ void AudioServerSetAudioSceneTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     AudioScene audioScene = *reinterpret_cast<const AudioScene*>(rawData);
     data.WriteInt32(static_cast<int32_t>(audioScene));
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -487,7 +474,6 @@ void AudioServerSetOffloadModeTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
@@ -496,7 +482,6 @@ void AudioServerSetOffloadModeTest(const uint8_t *rawData, size_t size)
     data.WriteUint32(sessionId);
     data.WriteInt32(state);
     data.WriteBool(isAppBack);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -509,12 +494,10 @@ void AudioServerUnsetOffloadTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sessionId = *reinterpret_cast<const uint32_t*>(rawData);
     data.WriteUint32(sessionId);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -527,12 +510,10 @@ void AudioServerCheckHibernateStateTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     bool hibernate = *reinterpret_cast<const bool*>(rawData);
     data.WriteBool(hibernate);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
@@ -545,13 +526,11 @@ void AudioServerSetSessionMuteStateTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
     MessageParcel data;
     data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
     uint32_t sessionId = 10;
     data.WriteInt32(sessionId);
     data.WriteBool(true);
-
     std::shared_ptr<AudioServer> AudioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     MessageParcel reply;
     MessageOption option;
