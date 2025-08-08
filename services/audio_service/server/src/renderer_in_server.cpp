@@ -2088,6 +2088,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
     if (restoreStatus == NEED_RESTORE) {
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
+    audioServerBuffer_->WakeFutex();
     return restoreStatus;
 }
 
