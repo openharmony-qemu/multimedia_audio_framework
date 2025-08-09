@@ -616,6 +616,7 @@ group("audio_policy_test_packages") {
     "test:audio_policy_unittest_packages",
     "client/stub:audio_zone_client_unit_test",
     "server/infra/config/parser/test:audio_policy_config_parser_unittest_packages",
+    "server/domain/device:audio_device_common_unit_next_test",
     "server/domain/device/test:audio_device_status_extended_test",
     "server/domain/effect/test:audio_spatialization_service_extended_test",
     "server/service/service_main/test:audio_policy_dump_unit_test",

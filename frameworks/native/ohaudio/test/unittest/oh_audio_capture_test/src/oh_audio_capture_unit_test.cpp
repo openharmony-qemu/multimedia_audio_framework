@@ -19,6 +19,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+FILE* g_file = nullptr;
+
 void OHAudioCaptureUnitTest::SetUpTestCase(void) { }
 
 void OHAudioCaptureUnitTest::TearDownTestCase(void) { }
@@ -26,6 +29,45 @@ void OHAudioCaptureUnitTest::TearDownTestCase(void) { }
 void OHAudioCaptureUnitTest::SetUp(void) { }
 
 void OHAudioCaptureUnitTest::TearDown(void) { }
+
+static int32_t AudioCapturerOnReadData(OH_AudioCapturer* capturer,
+    void* userData,
+    void* buffer,
+    int32_t bufferLen)
+{
+    printf("Get callback buffer, bufferLen:%d  \n", bufferLen);
+    size_t count = 1;
+    if (fwrite(buffer, bufferLen, count, g_file) != count) {
+        printf("buffer fwrite err");
+    }
+
+    return 0;
+}
+
+static int32_t AudioErrCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioStream_Result error)
+{
+    printf("recv err : code %d \n", error);
+    return 0;
+}
+
+static int32_t AudioInterruptCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioInterrupt_ForceType type,
+    OH_AudioInterrupt_Hint hint)
+{
+    printf("recv interrupt event : type: %d hint: %d \n", type, hint);
+    return 0;
+}
+
+static int32_t AudioEventCallback(OH_AudioCapturer* renderer,
+    void* userData,
+    OH_AudioStream_Event event)
+{
+    printf("recv event : event: %d \n", event);
+    return 0;
+}
 
 void InitializeCapturerOptions(AudioCapturerOptions &capturerOptions)
 {
@@ -1535,5 +1577,324 @@ HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_003, TestSize.Level
         &framePosition, &timestamp);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Start API via normal state.
+* @tc.number: OH_AudioCapturer_Start_001
+* @tc.desc  : Test OH_AudioCapturer_Start interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Start_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioCapturer_Start(audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    result = OH_AudioCapturer_Pause(audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    result = OH_AudioCapturer_Stop(audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_SetInputDevice API via normal state.
+* @tc.number: OH_AudioCapturer_SetInputDevice_002
+* @tc.desc  : Test OH_AudioCapturer_SetInputDevice interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_SetInputDevice_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    result = OH_AudioCapturer_SetInputDevice(audioCapturer, AUDIO_DEVICE_TYPE_EARPIECE);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetFastStatus API via normal state.
+* @tc.number: OH_AudioCapturer_GetFastStatus_002
+* @tc.desc  : Test OH_AudioCapturer_GetFastStatus interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetFastStatus_002, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_NORMAL;
+    result = OH_AudioCapturer_GetFastStatus(audioCapturer, &status);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_Flush API via normal state.
+* @tc.number: OH_AudioCapturer_Flush_003
+* @tc.desc  : Test OH_AudioCapturer_Flush interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_Flush_003, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer_Start(audioCapturer);
+    result = OH_AudioCapturer_Flush(audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioCapturer_Stop(audioCapturer);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test OH_AudioCapturer_GetTimestamp API via normal state.
+* @tc.number: OH_AudioCapturer_GetTimestamp_004
+* @tc.desc  : Test OH_AudioCapturer_GetTimestamp interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, OH_AudioCapturer_GetTimestamp_004, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+    OH_AudioCapturer* audioCapturer;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer_Start(audioCapturer);
+    int64_t framePosition = 0;
+    int64_t timestamp = 0;
+    OH_AudioCapturer_GetTimestamp(audioCapturer, CLOCK_MONOTONIC, &framePosition, &timestamp);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioCapturer_Stop(audioCapturer);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test SetCapturerCallback API via register all callback.
+* @tc.number: SetCapturerCallback_001
+* @tc.desc  : Test SetCapturerCallback interface.Returns SUCCESS.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetCapturerCallback_001, TestSize.Level0)
+{
+    OH_AudioStreamBuilder* builder = OHAudioCaptureUnitTest::CreateCapturerBuilder();
+    OH_AudioStreamBuilder_SetSamplingRate(builder, AudioSamplingRate::SAMPLE_RATE_48000);
+    OH_AudioStreamBuilder_SetChannelCount(builder, AudioChannel::STEREO);
+
+    OH_AudioCapturer_Callbacks callbacks;
+    callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
+    callbacks.OH_AudioCapturer_OnError = AudioErrCallback;
+    callbacks.OH_AudioCapturer_OnInterruptEvent = AudioInterruptCallback;
+    callbacks.OH_AudioCapturer_OnStreamEvent = AudioEventCallback;
+    OH_AudioStream_Result result = OH_AudioStreamBuilder_SetCapturerCallback(builder, callbacks, nullptr);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+
+    OH_AudioCapturer* audioCapturer;
+    result = OH_AudioStreamBuilder_GenerateCapturer(builder, &audioCapturer);
+    EXPECT_TRUE(result == AUDIOSTREAM_SUCCESS);
+    OH_AudioCapturer_Start(audioCapturer);
+    OH_AudioCapturer_Stop(audioCapturer);
+
+    OH_AudioCapturer_Release(audioCapturer);
+    OH_AudioStreamBuilder_Destroy(builder);
+}
+
+/**
+* @tc.name  : Test SetReadDataCallback API.
+* @tc.number: SetReadDataCallback_001
+* @tc.desc  : Test SetReadDataCallback interface. When readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
+              capturerCallbacks.onReadDataCallback != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetReadDataCallback_001, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->readDataCallbackType_ = READ_DATA_CALLBACK_WITH_RESULT;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onReadDataCallback = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onReadDataCallback = [](OH_AudioCapturer* capturer, void* userData,
+        void* buffer, int32_t length) ->void { return; };
+    oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetReadDataCallback API.
+* @tc.number: SetReadDataCallback_002
+* @tc.desc  : Test SetReadDataCallback interface. When readDataCallbackType_ == READ_DATA_CALLBACK_WITH_RESULT &&
+              capturerCallbacks.onReadDataCallback != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetReadDataCallback_002, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->readDataCallbackType_ = READ_DATA_CALLBACK_WITHOUT_RESULT;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.callbacks.OH_AudioCapturer_OnReadData = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.callbacks.OH_AudioCapturer_OnReadData = AudioCapturerOnReadData;
+    oHAudioCapturer->SetReadDataCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetStreamEventCallback API.
+* @tc.number: SetStreamEventCallback_001
+* @tc.desc  : Test SetStreamEventCallback interface. When streamEventCallbackType_ == STREAM_EVENT_CALLBACK_SEPERATED &&
+              capturerCallbacks.onDeviceChangeCallback != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetStreamEventCallback_001, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->streamEventCallbackType_ = STREAM_EVENT_CALLBACK_SEPERATED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onDeviceChangeCallback = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onDeviceChangeCallback = [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioDeviceDescriptorArray* deviceArray) ->void { return; };
+    oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
+
+    oHAudioCapturer->streamEventCallbackType_ = STREAM_EVENT_CALLBACK_COMBINED;
+    oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onDeviceChangeCallback = nullptr;
+    oHAudioCapturer->SetStreamEventCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetInterruptCallback API.
+* @tc.number: SetInterruptCallback_001
+* @tc.desc  : Test SetInterruptCallback interface. When interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_SEPERATED &&
+              capturerCallbacks.onInterruptEventCallback != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetInterruptCallback_001, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_SEPERATED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onInterruptEventCallback = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onReadDataCallback = [](OH_AudioCapturer* capturer, void* userData,
+        void* buffer, int32_t length) ->void { return; };
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetInterruptCallback API.
+* @tc.number: SetInterruptCallback_002
+* @tc.desc  : Test SetInterruptCallback interface. When interruptCallbackType_ == INTERRUPT_EVENT_CALLBACK_COMBINED &&
+              capturerCallbacks.callbacks.OH_AudioCapturer_OnInterruptEvent != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetInterruptCallback_002, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_COMBINED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onInterruptEventCallback = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onReadDataCallback = [](OH_AudioCapturer* capturer, void* userData,
+        void* buffer, int32_t length) ->void { return; };
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+
+    oHAudioCapturer->interruptCallbackType_ = INTERRUPT_EVENT_CALLBACK_DEFAULT;
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onInterruptEventCallback = nullptr;
+    oHAudioCapturer->SetInterruptCallback(capturerCallbacks, userData);
+}
+
+/**
+* @tc.name  : Test SetErrorCallback API.
+* @tc.number: SetErrorCallback_001
+* @tc.desc  : Test SetErrorCallback interface. When errorCallbackType_ == ERROR_CALLBACK_SEPERATED &&
+              capturerCallbacks.onErrorCallback != nullptr.
+*/
+HWTEST(OHAudioCaptureUnitTest, SetErrorCallback_001, TestSize.Level4)
+{
+    std::shared_ptr<OHAudioCapturer> oHAudioCapturer = std::make_shared<OHAudioCapturer>();
+    EXPECT_NE(oHAudioCapturer, nullptr);
+    AudioCapturerOptions capturerOptions;
+    InitializeCapturerOptions(capturerOptions);
+    oHAudioCapturer->audioCapturer_ = AudioCapturer::Create(capturerOptions);
+    EXPECT_NE(oHAudioCapturer->audioCapturer_, nullptr);
+
+    oHAudioCapturer->errorCallbackType_ = ERROR_CALLBACK_SEPERATED;
+    CapturerCallback capturerCallbacks;
+    capturerCallbacks.onErrorCallback = nullptr;
+    void* userData = nullptr;
+    oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onErrorCallback = [](OH_AudioCapturer* capturer, void* userData,
+        OH_AudioStream_Result error) ->void { return; };
+    oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
+
+    oHAudioCapturer->errorCallbackType_ = ERROR_CALLBACK_COMBINED;
+    oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
+
+    capturerCallbacks.onErrorCallback = nullptr;
+    oHAudioCapturer->SetErrorCallback(capturerCallbacks, userData);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
