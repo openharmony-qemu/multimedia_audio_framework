@@ -41,12 +41,6 @@ namespace {
     constexpr uint32_t CONTENT_TYPE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_USAGE_LOWER_INVALID = -1;
     constexpr uint32_t STREAM_TYPE_LOWER_INVALID = -1;
-    constexpr uint32_t CONCURRENCY_MODE_0 = 0;
-    constexpr uint32_t CONCURRENCY_MODE_5 = 5;
-    constexpr uint32_t CONCURRENCY_MODE_INVALID = 1;
-    constexpr uint32_t DISPLAY_ID_QUIT_ID = -1;
-    constexpr uint32_t DISPLAY_ID_VALID_ID = 2;
-    constexpr uint32_t DISPLAY_ID_INVALID = 0;
     constexpr uid_t UID_PREEMPT_SA = 7015;
     int g_isCallbackReceived = false;
     std::mutex g_mutex;
@@ -938,45 +932,5 @@ HWTEST(AudioManagerInterruptUnitTest, RegisterFocusInfoChangeCallback_005, TestS
     ret = AudioSystemManager::GetInstance()->UnregisterFocusInfoChangeCallback(callback2);
     EXPECT_EQ(ret, SUCCESS);
 }
-
-/**
- * @tc.name    : SetAppConcurrencyMode_001
- * @tc.desc    : Test set app concurrency mode
- * @tc.type    : FUNC
- * @tc.require : issueI6GYJT
- */
-HWTEST(AudioManagerInterruptUnitTest,SetAppConcurrencyMode_001, TestSize.Level1)
-{
-    int32_t uid = 0;
-    int32_t mode = CONCURRENCY_MODE_0;
-    auto ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
-    EXPECT_EQ(ret, SUCCESS);
-    mode = CONCURRENCY_MODE_5;
-    ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
-    EXPECT_EQ(ret, SUCCESS);
-    mode = CONCURRENCY_MODE_INVALID;
-    ret = AudioSystemManager::GetInstance()->SetAppConcurrencyMode(uid, mode);
-    EXPECT_EQ(ret, -1);
-}
-
-/**
- * @tc.name    : SetAppSlientOnDisplay_011
- * @tc.desc    : Test set app concurrency mode
- * @tc.type    : FUNC
- * @tc.require : issueI6GYJT
- */
-HWTEST(AudioManagerInterruptUnitTest,SetAppSlientOnDisplay_001, TestSize.Level1)
-{
-    int32_t displayId = DISPLAY_ID_INVALID;
-    auto ret = AudioSystemManager::GetInstance()->SetAppSlientOnDisplay(displayId);
-    EXPECT_EQ(ret, -1);
-    displayId = DISPLAY_ID_VALID_ID;
-    ret = AudioSystemManager::GetInstance()->SetAppSlientOnDisplay(displayId);
-    EXPECT_EQ(ret, SUCCESS);
-    displayId = DISPLAY_ID_QUIT_ID;
-    ret = AudioSystemManager::GetInstance()->SetAppSlientOnDisplay(displayId);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
 }
 }

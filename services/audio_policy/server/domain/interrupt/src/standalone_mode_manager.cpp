@@ -158,13 +158,13 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
     OHOS::Rosen::WindowInfoOption windowInfoOption = {};
     windowInfoOption.displayId = displayId_;
     std::vector<sptr<OHOS::Rosen::WindowInfo>> ogInfos = {};
-    auto ret = OHOS::Rosen::WindowInfoManager::GetInstance().ListWindowIfo(windowInfoOption, ogInfos);
+    auto ret = OHOS::Rosen::WindowManager::GetInstance().ListWindowInfo(windowInfoOption, ogInfos);
     AUDIO_INFO_LOG("ListWindowIfo size is %{public}d, ret = %{public}d",
-        ogInfos.size(), ret);
+        static_cast<int>(togInfos.size()), ret);
     for (auto &iter : ogInfos) {
         if (iter->windowMetaInfo.bundleName == bundleName) {
             AUDIO_INFO_LOG("Exist Standalone App On Virtual Screen ownerUid"
-                " = %{public}d, bundleName = %{public}s", ownerUid, bundleName.c_str());
+                " = %{public}d, bundleName = %{public}s", appUid, bundleName.c_str());
             return true;
         }
     }
