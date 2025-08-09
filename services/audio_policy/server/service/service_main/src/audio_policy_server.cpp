@@ -40,6 +40,7 @@
 #include "audio_bundle_manager.h"
 #include "audio_server_proxy.h"
 #include "audio_policy_client_holder.h"
+#include "standalone_mode_manager.h"
 
 using OHOS::Security::AccessToken::PrivacyKit;
 using OHOS::Security::AccessToken::TokenIdKit;
@@ -238,7 +239,7 @@ void AudioPolicyServer::OnStart()
     interruptService_->SetCallbackHandler(audioPolicyServerHandler_);
 
     AudioZoneService::GetInstance().Init(audioPolicyServerHandler_, interruptService_);
-
+    StandaloneModeManager::GetInstance().InIt(interruptService_);
     if (audioPolicyManager_.SetAudioStreamRemovedCallback(this)) {
         AUDIO_ERR_LOG("SetAudioStreamRemovedCallback failed");
     }
@@ -2588,8 +2589,14 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     streamUsage = ((streamUsage != StreamUsage::STREAM_USAGE_INVALID) &&
         interruptService_->IsAudioSessionActivated(audioInterrupt.pid)) ? streamUsage : audioInterrupt.streamUsage;
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage);
-    int32_t ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
+    int32_t ret = -1;
+    if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
+        false, zoneId, audioInterrupt.sessionId)) {
+        ret = SUCCESS;
+    } else {
+        ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
         isUpdatedAudioStrategy);
+    }
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",
             AudioStreamDeviceChangeReasonExt::ExtEnum::SET_DEFAULT_OUTPUT_DEVICE);
@@ -2618,6 +2625,8 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
     if (interruptService_ != nullptr) {
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
             audioInterrupt.streamUsage);
+        StandaloneModeManager::GetInstance().EraseDeactivateAudioSessionId(audioInterrupt.uid,
+            zoneId, audioInterrupt.sessionId);
         return AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
@@ -3116,6 +3125,7 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
 
@@ -4683,7 +4693,9 @@ int32_t AudioPolicyServer::ActivateAudioSession(int32_t strategyIn)
     AUDIO_INFO_LOG("activate audio session with concurrencyMode %{public}d for pid %{public}d, zoneId %{public}d",
         static_cast<int32_t>(strategy.concurrencyMode), callerPid, zoneId);
 
-    int32_t ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy);
+    bool isStandalone = StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(
+        IPCSkeleton::GetCallingUid(), true);
+    int32_t ret = interruptService_->ActivateAudioSession(zoneId, callerPid, strategy, isStandalone);
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(callerPid)) &&
         (eventEntry_ != nullptr)) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioSession",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,20 +16,51 @@
 #ifndef ST_STANDALONE_MODE_MANAGER_H
 #define ST_STANDALONE_MODE_MANAGER_H
 
+#include <string>
+#include <unordered_map>
+#include <unordered_set>
+#include "andui_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
 static constexpr int32_t INVALID_ID = INT_MIN;
 
+class AudioInterruptService;
 class StandaloneModeManager {
 public:
-
-    int32_t SetAppConcurrencyMode(const int32_t ownerPid, const int32_t appUid, const int32_t mode);
-    int32_t SetAppSlientOnDisplay(const int32_t displayId);
+    static StandaloneModeManager &GetInstance();
+    void InIt(std::shared_ptr<AudioInterruptService> interruptService);
+    void CleanAllStandaloneInfo();
+    bool CheckAndRecordStandaloneApp(const int32_t appUid, const bool isOnlyRecordUid = true,
+        const int32_t zoneId = -1, const int32_t sessionId = -1);
+    int32_t SetAppSlientOnDisplay(const int32_t ownerPid, const int32_t displayId);
+    int32_t SetAppConcurrencyMode(const int32_t ownerPid,
+        const int32_t appUid, const int32_t mode);
+    void EraseDeactivateAudioSessionId(const int32_t &appUid,
+        const int32_t &zoneId, const int32_t &sessionId)
+    void ResumeAllStandaloneApp(const int32_t appPid)
 
 private:
+    StandaloneModeManager() = default;
+    ~StandaloneModeManager();
+    StandaloneModeManager(const StandaloneModeManager&) = delete;
+    StandaloneModeManager &operator = (const StandaloneModeManager&) = delete;
 
+    void RemoveExistingFocus(const int32_t appUid);
+    bool CheckOwnerPidPermissions(const int32_t ownerPid);
+    void ExitStandaloneAndResumeFocus(const int32_t appUid);
+    bool CheckAppOnVirtualScreenByUid(const int32_t appUid);
+    void RecordStandaloneAppSessionIdInfo(const int32_t appUid,
+    const bool isOnlyRecordUid = true, const int32_t zoneId = -1, const int32_t sessionId = -1);
+
+    std::mutex mutex_;
+    std::shared_ptr<AudioInterruptService> interruptService_;
+    int32_t ownerPid_ = INVALID_ID;
+    int32_t displayId_ = INVALID_ID;
+    bool isSetlientDisplay_ = false;
+    std::unordered_map<int32_t, std::unordered_map<int32_t,
+        std::unordered_set<int32_t>>>activedZoneSessionsMap_ = {}; //{appUid {zoneId {sessionId}}}
 };
 } // namespace AudioStandard
 } // namespace OHOS
