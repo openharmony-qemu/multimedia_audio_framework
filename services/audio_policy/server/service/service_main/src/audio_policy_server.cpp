@@ -2598,6 +2598,21 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     return ret;
 }
 
+int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
+{
+    if (interruptService_ != nullptr) {
+        return AudioZoneService::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingUid(), appUid, mode);
+    }
+    return ERR_UNKNOWN;
+}
+
+int32_t AudioPolicyServer::SetAppSlientOnDisplay(const int32_t displayId)
+{
+    if (interruptService_ != nullptr) {
+        return AudioZoneService::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingUid(), displayId);
+    }
+    return ERR_UNKNOWN;
+}
 int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneID)
 {
     if (interruptService_ != nullptr) {
@@ -3116,6 +3131,13 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
+    if (interruptService_ != nullptr) {
+        int32_t ret = AudioZoneService::GetInstance().SetAppConcurrencyMode(pid, uid, 0);
+        if (ret == SUCCESS)  {
+            ret = audioVolumeManager_.SetAppVolumeMuted(uid, false);
+            AUDIO_ERR_LOG("Fail to set App Volume mute");
+        }
+    }
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");

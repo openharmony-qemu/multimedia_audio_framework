@@ -242,6 +242,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/zone/src/audio_zone_client_manager.cpp",
     "server/domain/zone/src/audio_zone_interrupt_reporter.cpp",
     "server/domain/zone/src/audio_zone_service.cpp",
+    "server/domain/zone/src/standalone_mode_manager.cpp",
     "server/infra/appclient/src/app_state_listener.cpp",
     "server/infra/appclient/src/audio_background_manager.cpp",
     "server/infra/appclient/src/audio_bundle_manager.cpp",
@@ -376,6 +377,7 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
+    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

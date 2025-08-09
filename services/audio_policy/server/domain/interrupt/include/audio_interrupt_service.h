@@ -64,7 +64,8 @@ public:
     void OnSessionTimeout(const int32_t pid) override;
 
     // interfaces for AudioSessionService
-    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone = fasle);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -124,6 +125,12 @@ public:
     void ProcessRemoteInterrupt(std::set<int32_t> streamIds, InterruptEventInternal interruptEvent);
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
+
+    void RemoveExistingFocus(const int32_t appUid,
+        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSession);
+    void ResumeFocusByStreamId(const int32_t streamId,
+        const InterruptEventInternal interruptEventResume);
+
 
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
@@ -325,6 +332,10 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void EraseDeactivateStandaloneAudioSessionId(const int32_t &uid,
+        const int32_t &zoneId, const int32_t &sessionId);
+    void RemoveExistingFocus(const int32_t &appUid);
+    void ResumeStandalone(const int32_t &appUid);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;
@@ -356,6 +367,10 @@ private:
     AudioStreamType defaultVolumeType_ = STREAM_MUSIC;
 
     std::mutex audioServerProxyMutex_;
+    bool locked_ = false;
+    std::pair<int32_t, int32_t> standaloneAppUid_ = {-1, -1}; //{ownerId, Uid}
+    std::unordered_map<int32_t, std::unordered<int32_t, 
+        std::unordered_set<int32_t>>> standaloneApp_; //{Uid, {zoneId, {sessionId}}}
 };
 } // namespace AudioStandard
 } // namespace OHOS

@@ -293,7 +293,8 @@ interface IAudioPolicy {
     void SetDefaultOutputDevice([in] int deviceType /* deviceType */);
     void ForceVolumeKeyControlType([in] int volumeType, [in] int duration, [out] int ret);
     void SetQueryDeviceVolumeBehaviorCallback([in] IRemoteObject object);
-
+    void SetAppConcurrencyMode([in] int32_t appUid, [in] int32_t mode);
+    void SetAppSlientOnDisplay([in] int32_t displayId);
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
 }
 

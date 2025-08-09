@@ -1137,6 +1137,37 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(
     return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
+int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
+{
+    AudioConcurrencyMode audioConcurrencyMode = static_cast<AudioConcurrencyMode>(mode);
+    CHECK_AND_RETURN_RET_LOG((audioConcurrencyMode == AudioConcurrencyMode::DEFAULT ||
+        audioConcurrencyMode == AudioConcurrencyMode::STANDALONE), -1, "mode is illegal parameters");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+    return gsp->SetAppConcurrencyMode(appUid, mode);
+}
+
+int32_t AudioPolicyManager::SetAppSlientOnDisplay(const int32_t displayId)
+{
+    CHECK_AND_RETURN_RET_LOG((displayId > 0 || displayId == -1), -1,
+        "mode is illegal parameters");
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+    if (!isAudioPolicyClientRegisted_) {
+        int32_t ret = RegisterPolicyCallbackClientFunc(gsp);
+        if (ret != SUCCESS) {
+            return ret;
+        }
+    }
+    return gsp->SetAppSlientOnDisplay(displayId);
+}
+
 int32_t AudioPolicyManager::DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID)
 {
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();

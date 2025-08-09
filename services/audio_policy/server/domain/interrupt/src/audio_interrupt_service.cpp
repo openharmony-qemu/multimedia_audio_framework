@@ -33,6 +33,7 @@
 #include "istandard_audio_service.h"
 #include "session_manager_lite.h"
 #include "audio_zone_service.h"
+#include "standalone_mode_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -217,8 +218,8 @@ void AudioInterruptService::HandleSessionTimeOutEvent(const int32_t pid)
     }
 }
 
-int32_t AudioInterruptService::ActivateAudioSession(
-    const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy)
+int32_t AudioInterruptService::ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+    const AudioSessionStrategy &strategy, const bool isStandalone)
 {
     AudioXCollie audioXCollie("AudioInterruptService::ActivateAudioSession", INTERRUPT_SERVICE_TIMEOUT,
         [](void *) {
@@ -242,6 +243,10 @@ int32_t AudioInterruptService::ActivateAudioSession(
 
     if (sessionService_->IsAudioSessionFocusMode(callerPid)) {
         AUDIO_INFO_LOG("Enter audio session focus mode, pid = %{public}d", callerPid);
+        if (isStandalone) {
+            AUDIO_INFO_LOG("Current audio session focus mode is Standalone and return");
+            return SUCCESS;
+        }
         bool updateScene = false;
         result = ProcessFocusEntryForAudioSession(zoneId, callerPid, updateScene);
         if (result != SUCCESS || !updateScene) {
@@ -2651,6 +2656,41 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     }
 
     handler_->SendAudioFocusInfoChangeCallback(callbackCategory, audioInterrupt, audioFocusInfoList);
+}
+
+void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
+        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSession)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (zonesMap_.empty()) {
+        AUDIO_ERR_LOG("zonesMap is empty");
+        return;
+    }
+
+    for (auto itZone : zonesMap_) {
+        auto audioFocusIofoList = itZone.second->audioFocusIofoList;
+        for (auto iter = audioFocusIofoList.begin(); iter != audioFocusIofoList.end();) {
+            if (iter->first.uid != appUid) {
+                iter++;
+                continue;
+            }
+            AUDIO_INFO_LOG("itZone = %{public}d, SessionId = %{public}d",
+            itZone.frist, iter->first.SessionId);
+            iter = audioFocusIofoList.erase(iter);
+        }
+        zonesMap_[itZone.frist]->audioFocusIofoList = audioFocusIofoList;
+        ResumeAudioFocusList(itZone.frist, false);
+    }
+}
+
+void AudioInterruptService::ResumeFocusByStreamId(const int32_t streamId,
+        const InterruptEventInternal interruptEventResume)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    AUDIO_INFO_LOG("Remove Focus By StreamId = %{public}d", streamId);
+    if (interruptClients_.find(streamId) != interruptClients_.end() && handler_ != nullptr) {
+        handler_->SendInterruptEventWithStreamIdCallback(interruptEventResume, streamId);
+    }
 }
 
 // LCOV_EXCL_START
