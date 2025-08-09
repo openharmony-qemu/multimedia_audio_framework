@@ -31,7 +31,6 @@ class StandaloneModeManager {
 public:
     static StandaloneModeManager &GetInstance();
     void InIt(std::shared_ptr<AudioInterruptService> interruptService);
-    void CleanAllStandaloneInfo();
     bool CheckAndRecordStandaloneApp(const int32_t appUid, const bool isOnlyRecordUid = true,
         const int32_t zoneId = -1, const int32_t sessionId = -1);
     int32_t SetAppSlientOnDisplay(const int32_t ownerPid, const int32_t displayId);
@@ -47,6 +46,7 @@ private:
     StandaloneModeManager(const StandaloneModeManager&) = delete;
     StandaloneModeManager &operator = (const StandaloneModeManager&) = delete;
 
+    void CleanAllStandaloneInfo();
     void RemoveExistingFocus(const int32_t appUid);
     bool CheckOwnerPidPermissions(const int32_t ownerPid);
     void ExitStandaloneAndResumeFocus(const int32_t appUid);
