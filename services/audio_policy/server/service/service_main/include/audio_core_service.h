@@ -469,6 +469,7 @@ private:
     void CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId);
     void CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc);
     void ClearRingMuteWhenCallStart(bool pre, bool after);
+    void CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc);
     void UpdateRemoteOffloadModuleName(std::shared_ptr<AudioPipeInfo> pipeInfo, std::string &moduleName);
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);

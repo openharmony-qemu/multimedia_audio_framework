@@ -415,6 +415,16 @@ void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDevice
     OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
 }
 
+void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    std::string networkId = desc->networkId_;
+    DeviceRole deviceRole = desc->deviceRole_;
+    CHECK_AND_RETURN(networkId != LOCAL_NETWORK_ID);
+    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
+    CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
@@ -437,6 +447,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         }
     }
 
+    CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
@@ -456,6 +467,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
+
+    CheckForRemoteDeviceState(streamDesc->newDeviceDescs_.front());
     return SUCCESS;
 }
 
