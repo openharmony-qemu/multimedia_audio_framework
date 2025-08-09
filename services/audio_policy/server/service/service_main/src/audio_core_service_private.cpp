@@ -2182,8 +2182,8 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
 
     if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        CHECK_AND_RETURN_LOG(!streamCollector_.IsStreamActive(AudioVolumeType::STREAM_RING),
-            "ring still on active, dont over ring dual");
+        CHECK_AND_RETURN_LOG(!AudioCoreServiceUtils::IsAlarmOnActive(streamUsage,
+            streamCollector_.IsStreamActive(AudioVolumeType::STREAM_ALARM)), "alarm still on active");
         AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
         isRingDualToneOnPrimarySpeaker_ = false;
         // Add delay between end of double ringtone and device switch.
