@@ -3125,7 +3125,6 @@ void AudioPolicyServer::RegisteredTrackerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredTrackerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
-    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
     std::lock_guard<std::mutex> lock(clientDiedListenerStateMutex_);
     eventEntry_->RegisteredTrackerClientDied(uid, pid);
 
@@ -3141,13 +3140,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     AUDIO_INFO_LOG("RegisteredStreamListenerClient died: remove entry, pid %{public}d uid %{public}d", pid, uid);
     audioAffinityManager_.DelSelectCapturerDevice(uid);
     audioAffinityManager_.DelSelectRendererDevice(uid);
-    if (interruptService_ != nullptr) {
-        int32_t ret = AudioZoneService::GetInstance().SetAppConcurrencyMode(pid, uid, 0);
-        if (ret == SUCCESS)  {
-            ret = audioVolumeManager_.SetAppVolumeMuted(uid, false);
-            AUDIO_ERR_LOG("Fail to set App Volume mute");
-        }
-    }
+    StandaloneModeManager::GetInstance().ResumeAllStandaloneApp(pid);
     if (pid == lastMicMuteSettingPid_) {
         // The last app with the non-persistent microphone setting died, restore the default non-persistent value
         AUDIO_INFO_LOG("Cliet died and reset non-persist mute state");
