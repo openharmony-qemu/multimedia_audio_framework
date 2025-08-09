@@ -1008,6 +1008,12 @@ void OHAudioBufferBase::SetTimeStampInfo(uint64_t position, uint64_t timeStamp)
     basicBufferInfo_->timeStamp.store(timeStamp);
 }
 
+RestoreStatus OHAudioBufferBase::GetRestoreStatus()
+{
+    CHECK_AND_RETURN_RET_LOG(basicBufferInfo_ != nullptr, RESTORE_ERROR, "basicBufferInfo_ is nullptr");
+    return basicBufferInfo_->restoreStatus.load();
+}
+
 // Compare and swap restore status. If current restore status is NEED_RESTORE, turn it into RESTORING
 // to avoid multiple restore.
 RestoreStatus OHAudioBufferBase::CheckRestoreStatus()
@@ -1076,6 +1082,11 @@ void OHAudioBufferBase::WakeFutexIfNeed()
     if (basicBufferInfo_) {
         FutexTool::FutexWake(&(basicBufferInfo_->futexObj));
     }
+}
+
+void OHAudioBufferBase::WakeFutex()
+{
+    WakeFutexIfNeed();
 }
 } // namespace AudioStandard
 } // namespace OHOS
