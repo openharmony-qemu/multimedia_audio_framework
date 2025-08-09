@@ -1788,8 +1788,10 @@ int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 
 int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessionID)
 {
-    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
-        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID: %{public}s", sessionID.c_str());
+    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end() ||
+        sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE") {
+        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID or sceneMode is EFFECT_NONE: %{public}s",
+            sessionID.c_str());
         return SUCCESS;
     }
     std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;
