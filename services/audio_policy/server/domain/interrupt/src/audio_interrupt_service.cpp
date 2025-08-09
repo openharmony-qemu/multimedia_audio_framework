@@ -2668,19 +2668,23 @@ void AudioInterruptService::RemoveExistingFocus(
     }
 
     for (auto itZone : zonesMap_) {
+        bool isNeedRefresh = false;
         auto audioFocusInfoList = itZone.second->audioFocusInfoList;
         for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
             if (iter->first.uid != appUid) {
                 iter++;
                 continue;
             }
-            AUDIO_INFO_LOG("itZone = %{public}d, SessionId = %{public}d",
-                itZone.first, iter->first.sessionId);
-            uidActivedSessions[appUid].insert(iter->first.sessionId);
+            AUDIO_INFO_LOG("itZone = %{public}d, streamId = %{public}d",
+                itZone.first, iter->first.streamId);
+            uidActivedSessions[appUid].insert(iter->first.streamId);
             iter = audioFocusInfoList.erase(iter);
+            isNeedRefresh = true;
         }
-        zonesMap_[itZone.first]->audioFocusInfoList = audioFocusInfoList;
-        ResumeAudioFocusList(itZone.first, false);
+        if (isNeedRefresh) {
+            zonesMap_[itZone.first]->audioFocusInfoList = audioFocusInfoList;
+            ResumeAudioFocusList(itZone.first, false);
+        }
     }
 }
 
