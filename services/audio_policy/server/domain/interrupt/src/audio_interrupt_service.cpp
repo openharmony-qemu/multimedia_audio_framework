@@ -257,7 +257,7 @@ int32_t AudioInterruptService::ActivateAudioSession(
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
         return SUCCESS;
     }
 
@@ -886,7 +886,7 @@ int32_t AudioInterruptService::ActivateAudioInterrupt(
     // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
     // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
     return SUCCESS;
 }
 
@@ -1033,7 +1033,7 @@ int32_t AudioInterruptService::DeactivateAudioInterrupt(const int32_t zoneId, co
         // If there is an event of (interrupt + set scene), ActivateAudioInterrupt and DeactivateAudioInterrupt may
         // experience deadlocks, due to mutex_ and deviceStatusUpdateSharedMutex_ waiting for each other
         lock.unlock();
-        UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT);
+        UpdateAudioSceneFromInterrupt(targetAudioScene, DEACTIVATE_AUDIO_INTERRUPT, zoneId);
     }
 
     return SUCCESS;
@@ -1107,7 +1107,7 @@ int32_t AudioInterruptService::ReleaseAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
     return SUCCESS;
 }
 
@@ -1120,7 +1120,7 @@ int32_t AudioInterruptService::MigrateAudioInterruptZone(const int32_t zoneId, G
     }
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
     return SUCCESS;
 }
 
@@ -1134,7 +1134,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
     return SUCCESS;
 }
 
@@ -1148,7 +1148,7 @@ int32_t AudioInterruptService::InjectInterruptToAudioZone(const int32_t zoneId,
 
     AudioScene targetAudioScene = GetHighestPriorityAudioScene(zoneId);
     lock.unlock();
-    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT);
+    UpdateAudioSceneFromInterrupt(targetAudioScene, ACTIVATE_AUDIO_INTERRUPT, zoneId);
     return SUCCESS;
 }
 
