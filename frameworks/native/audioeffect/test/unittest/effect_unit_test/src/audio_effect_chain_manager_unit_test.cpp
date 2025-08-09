@@ -2545,16 +2545,17 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
     SessionEffectInfo NONE_INFO = DEFAULT_INFO;
     NONE_INFO.sceneMode = "EFFECT_NONE";
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1 + 1, NONE_INFO);
+    std::string sessionID2 = "123457";
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, NONE_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID1);
     EXPECT_EQ(SUCCESS, result);
-    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID1 + 1);
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
     EXPECT_EQ(SUCCESS, result);
 
-    string sessionID2 = "111111";
-    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
-    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID2, DEFAULT_INFO);
-    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID2);
+    string sessionID3 = "111111";
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID3);
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID3, DEFAULT_INFO);
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID3);
     EXPECT_EQ(SUCCESS, result);
 }
 
