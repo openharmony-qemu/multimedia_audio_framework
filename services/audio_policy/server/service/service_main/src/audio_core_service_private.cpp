@@ -42,6 +42,7 @@ const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
+const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -1857,6 +1858,10 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     }
     if (!streamDesc->rendererInfo_.isOffloadAllowed) {
         AUDIO_INFO_LOG("normal stream because renderInfo not support offload.");
+        return false;
+    }
+    if (GetRealUid(streamDesc) == AUDIO_EXT_UID) {
+        AUDIO_INFO_LOG("the extra uid not support offload.");
         return false;
     }
     if (streamDesc->streamInfo_.channels > STEREO &&
