@@ -203,7 +203,7 @@ void StandaloneModeManager::RecordStandaloneAppSessionIdInfo(const int32_t appUi
     activedZoneSessionsMap_[appUid][zoneId].insert(sessionId);
 }
 
-void StandaloneModeManager::EraseDeactivateAudioSessionId(const int32_t &appUid,
+void StandaloneModeManager::EraseDeactivateAudioStream(const int32_t &appUid,
     const int32_t &zoneId, const int32_t &sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);

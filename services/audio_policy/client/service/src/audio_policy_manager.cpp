@@ -1137,7 +1137,7 @@ int32_t AudioPolicyManager::ActivateAudioInterrupt(
     return gsp->ActivateAudioInterrupt(audioInterrupt, zoneID, isUpdatedAudioStrategy);
 }
 
-int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
+int32_t AudioPolicyManager::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     AudioConcurrencyMode audioConcurrencyMode = static_cast<AudioConcurrencyMode>(mode);
     CHECK_AND_RETURN_RET_LOG((audioConcurrencyMode == AudioConcurrencyMode::DEFAULT ||

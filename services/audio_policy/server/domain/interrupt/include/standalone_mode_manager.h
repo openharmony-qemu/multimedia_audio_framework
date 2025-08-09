@@ -37,7 +37,7 @@ public:
     int32_t SetAppSlientOnDisplay(const int32_t ownerPid, const int32_t displayId);
     int32_t SetAppConcurrencyMode(const int32_t ownerPid,
         const int32_t appUid, const int32_t mode);
-    void EraseDeactivateAudioSessionId(const int32_t &appUid,
+    void EraseDeactivateAudioStream(const int32_t &appUid,
         const int32_t &zoneId, const int32_t &sessionId);
     void ResumeAllStandaloneApp(const int32_t appPid);
 
@@ -51,8 +51,8 @@ private:
     bool CheckOwnerPidPermissions(const int32_t ownerPid);
     void ExitStandaloneAndResumeFocus(const int32_t appUid);
     bool CheckAppOnVirtualScreenByUid(const int32_t appUid);
-    void RecordStandaloneAppSessionIdInfo(const int32_t appUid,
-    const bool isOnlyRecordUid = true, const int32_t zoneId = -1, const int32_t sessionId = -1);
+    void RecordStandaloneAppSessionIdInfo(const int32_t appUid,const bool isOnlyRecordUid = true,
+        const int32_t zoneId = -1, const int32_t sessionId = -1);
 
     std::mutex mutex_;
     std::shared_ptr<AudioInterruptService> interruptService_;
