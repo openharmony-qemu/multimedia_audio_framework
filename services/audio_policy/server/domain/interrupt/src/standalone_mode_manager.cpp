@@ -136,7 +136,6 @@ int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
     AudioConcurrencyMode concurrencyMode = static_cast<AudioConcurrencyMode>(mode);
     switch (concurrencyMode) {
     case AudioConcurrencyMode::STANDALONE:
-        isSetSlientDisplay_ = true;
         RecordStandaloneAppSessionIdInfo(appUid);
         RemoveExistingFocus(appUid);
         break;

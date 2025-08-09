@@ -2592,7 +2592,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     int32_t ret = -1;
     if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
         false, zoneId, audioInterrupt.sessionId)) {
-        ret = SUCCESS;
+        return SUCCESS;
     } else {
         ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
             isUpdatedAudioStrategy);

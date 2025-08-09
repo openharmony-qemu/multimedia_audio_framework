@@ -2675,7 +2675,7 @@ void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
                 continue;
             }
             AUDIO_INFO_LOG("itZone = %{public}d, SessionId = %{public}d",
-            itZone.frist, iter->first.SessionId);
+            itZone.first, iter->first.sessionId);
             uidActivedSessions[appUid].insert(iter->first.sessionId);
             iter = audioFocusInfoList.erase(iter);
         }
