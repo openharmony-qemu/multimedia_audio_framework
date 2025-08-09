@@ -51,7 +51,7 @@ private:
     bool CheckOwnerPidPermissions(const int32_t ownerPid);
     void ExitStandaloneAndResumeFocus(const int32_t appUid);
     bool CheckAppOnVirtualScreenByUid(const int32_t appUid);
-    void RecordStandaloneAppSessionIdInfo(const int32_t appUid,const bool isOnlyRecordUid = true,
+    void RecordStandaloneAppSessionIdInfo(const int32_t appUid, const bool isOnlyRecordUid = true,
         const int32_t zoneId = -1, const int32_t sessionId = -1);
 
     std::mutex mutex_;

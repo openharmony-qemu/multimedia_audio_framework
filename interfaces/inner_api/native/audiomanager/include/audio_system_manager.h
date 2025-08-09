@@ -845,7 +845,7 @@ public:
      * @brief Set App Concurrency Mode
      *
      * @param appUid app Uid
-     * @param mode concurrency Mode 
+     * @param mode concurrency Mode
      * @return Returns {@link SUCCESS} if seting is successful; returns an error code
      * defined in {@link audio_errors.h} otherwise.
      * @since 20

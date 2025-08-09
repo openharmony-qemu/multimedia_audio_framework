@@ -135,15 +135,15 @@ int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
     }
     AudioConcurrencyMode concurrencyMode = static_cast<AudioConcurrencyMode>(mode);
     switch (concurrencyMode) {
-    case AudioConcurrencyMode::STANDALONE:
-        RecordStandaloneAppSessionIdInfo(appUid);
-        RemoveExistingFocus(appUid);
-        break;
-    case AudioConcurrencyMode::DEFAULT:
-        ExitStandaloneAndResumeFocus(appUid);
-        break;
-    default:
-        break;
+        case AudioConcurrencyMode::STANDALONE:
+            RecordStandaloneAppSessionIdInfo(appUid);
+            RemoveExistingFocus(appUid);
+            break;
+        case AudioConcurrencyMode::DEFAULT:
+            ExitStandaloneAndResumeFocus(appUid);
+            break;
+        default:
+            break;
     }
     return SUCCESS;
 }
@@ -160,7 +160,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
     std::vector<sptr<OHOS::Rosen::WindowInfo>> ogInfos = {};
     auto ret = OHOS::Rosen::WindowManager::GetInstance().ListWindowInfo(windowInfoOption, ogInfos);
     AUDIO_INFO_LOG("ListWindowIfo size is %{public}d, ret = %{public}d",
-        static_cast<int>(togInfos.size()), ret);
+        static_cast<int>(ogInfos.size()), ret);
     for (auto &iter : ogInfos) {
         if (iter->windowMetaInfo.bundleName == bundleName) {
             AUDIO_INFO_LOG("Exist Standalone App On Virtual Screen ownerUid"

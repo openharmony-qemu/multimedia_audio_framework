@@ -2658,8 +2658,8 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
     handler_->SendAudioFocusInfoChangeCallback(callbackCategory, audioInterrupt, audioFocusInfoList);
 }
 
-void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
-        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions)
+void AudioInterruptService::RemoveExistingFocus(
+    const int32_t appUid, std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (zonesMap_.empty()) {
@@ -2675,7 +2675,7 @@ void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
                 continue;
             }
             AUDIO_INFO_LOG("itZone = %{public}d, SessionId = %{public}d",
-            itZone.first, iter->first.sessionId);
+                itZone.first, iter->first.sessionId);
             uidActivedSessions[appUid].insert(iter->first.sessionId);
             iter = audioFocusInfoList.erase(iter);
         }
@@ -2684,8 +2684,8 @@ void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
     }
 }
 
-void AudioInterruptService::ResumeFocusByStreamId(const int32_t streamId,
-        const InterruptEventInternal interruptEventResume)
+void AudioInterruptService::ResumeFocusByStreamId(
+    const int32_t streamId, const InterruptEventInternal interruptEventResume)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     AUDIO_INFO_LOG("Remove Focus By StreamId = %{public}d", streamId);
