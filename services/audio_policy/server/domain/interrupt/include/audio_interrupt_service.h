@@ -130,8 +130,6 @@ public:
         std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions);
     void ResumeFocusByStreamId(const int32_t streamId,
         const InterruptEventInternal interruptEventResume);
-
-
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr int32_t ZONEID_INVALID = -1;
