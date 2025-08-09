@@ -2659,7 +2659,7 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
 }
 
 void AudioInterruptService::RemoveExistingFocus(
-    const int32_t appUid, std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions)
+    const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (zonesMap_.empty()) {
@@ -2677,7 +2677,7 @@ void AudioInterruptService::RemoveExistingFocus(
             }
             AUDIO_INFO_LOG("itZone = %{public}d, streamId = %{public}d",
                 itZone.first, iter->first.streamId);
-            uidActivedSessions[appUid].insert(iter->first.streamId);
+            uidActivedSessions.insert(iter->first.streamId);
             iter = audioFocusInfoList.erase(iter);
             isNeedRefresh = true;
         }

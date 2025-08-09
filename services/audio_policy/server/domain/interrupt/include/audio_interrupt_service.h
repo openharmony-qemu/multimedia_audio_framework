@@ -127,7 +127,7 @@ public:
     void RegisterDefaultVolumeTypeListener();
 
     void RemoveExistingFocus(
-        const int32_t appUid, std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions);
+        const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
     void ResumeFocusByStreamId(
         const int32_t streamId, const InterruptEventInternal interruptEventResume);
 private:

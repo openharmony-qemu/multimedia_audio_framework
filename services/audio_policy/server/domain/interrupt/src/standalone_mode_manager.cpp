@@ -79,13 +79,11 @@ void StandaloneModeManager::ExitStandaloneAndResumeFocus(const int32_t appUid)
         return;
     }
 
-    auto uidActivedSessions = activedZoneSessionsMap_[appUid];
-    for (auto [_, standaloneAppSessionsList] : uidActivedSessions) {
-        for (auto &sessionId : standaloneAppSessionsList) {
-            InterruptEventInternal interruptEventResume {INTERRUPT_TYPE_BEGIN,
-                INTERRUPT_SHARE, INTERRUPT_HINT_EXIT_STANDALONE, 1.0f};
-            interruptService_->ResumeFocusByStreamId(sessionId, interruptEventResume);
-        }
+    auto standaloneAppSessionsList = activedZoneSessionsMap_[appUid];
+    for (auto &sessionId : standaloneAppSessionsList) {
+        InterruptEventInternal interruptEventResume {INTERRUPT_TYPE_BEGIN,
+            INTERRUPT_SHARE, INTERRUPT_HINT_EXIT_STANDALONE, 1.0f};
+        interruptService_->ResumeFocusByStreamId(sessionId, interruptEventResume);
     }
     activedZoneSessionsMap_.erase(appUid);
 }
@@ -119,9 +117,13 @@ void StandaloneModeManager::RemoveExistingFocus(const int32_t appUid)
     if (interruptService_ == nullptr) {
         return;
     }
-    std::unordered_map<int32_t, std::unordered_set<int32_t>> uidActivedSessions = {};
+    std::unordered_set<int32_t> uidActivedSessions = {};
     interruptService_->RemoveExistingFocus(appUid, uidActivedSessions);
-    activedZoneSessionsMap_[appUid] = uidActivedSessions;
+    if (!uidActivedSessions.empty()) {
+        for (auto sessionId : uidActivedSessions) {
+            activedZoneSessionsMap_[appUid].insert(sessionId);
+        }
+    }
 }
 
 int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
@@ -172,7 +174,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
 }
 
 bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
-    const bool isOnlyRecordUid, const int32_t zoneId, const int32_t sessionId)
+    const bool isOnlyRecordUid, const int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (ownerPid_ == INVALID_ID && !isSetSlientDisplay_) {
@@ -180,11 +182,11 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
         return false;
     }
     if (activedZoneSessionsMap_.find(appUid) != activedZoneSessionsMap_.end()) {
-        RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, zoneId, sessionId);
+        RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, sessionId);
         return true;
     }
     if (isSetSlientDisplay_ && CheckAppOnVirtualScreenByUid(appUid)) {
-        RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, zoneId, sessionId);
+        RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, sessionId);
         AudioVolume::GetInstance()->SetAppVolumeMute(appUid, true);
         return true;
     }
@@ -192,28 +194,27 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
 }
 
 void StandaloneModeManager::RecordStandaloneAppSessionIdInfo(const int32_t appUid,
-    const bool isOnlyRecordUid, const int32_t zoneId, const int32_t sessionId)
+    const bool isOnlyRecordUid, const int32_t sessionId)
 {
     if (isOnlyRecordUid) {
-        std::unordered_map<int32_t, std::unordered_set<int32_t>> sessionIdInfoMap = {};
+        std::unordered_set<int32_t> sessionIdInfoMap = {};
         activedZoneSessionsMap_[appUid] = std::move(sessionIdInfoMap);
         return;
     }
-    activedZoneSessionsMap_[appUid][zoneId].insert(sessionId);
+    activedZoneSessionsMap_[appUid].insert(sessionId);
 }
 
 void StandaloneModeManager::EraseDeactivateAudioStream(const int32_t &appUid,
-    const int32_t &zoneId, const int32_t &sessionId)
+    const int32_t &sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (activedZoneSessionsMap_.find(appUid) == activedZoneSessionsMap_.end() ||
-        activedZoneSessionsMap_[appUid].find(zoneId) == activedZoneSessionsMap_[appUid].end()) {
+    if (activedZoneSessionsMap_.find(appUid) == activedZoneSessionsMap_.end()) {
             return;
     }
-    if (activedZoneSessionsMap_[appUid][zoneId].empty()) {
+    if (activedZoneSessionsMap_[appUid].empty()) {
         return;
     }
-    activedZoneSessionsMap_[appUid][zoneId].erase(sessionId);
+    activedZoneSessionsMap_[appUid].erase(sessionId);
 }
 
 } // namespace AudioStandard

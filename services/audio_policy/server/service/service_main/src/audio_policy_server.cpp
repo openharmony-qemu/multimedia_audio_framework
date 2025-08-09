@@ -2591,7 +2591,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
     int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid, streamUsage);
     int32_t ret = -1;
     if (StandaloneModeManager::GetInstance().CheckAndRecordStandaloneApp(audioInterrupt.uid,
-        false, zoneId, audioInterrupt.streamId)) {
+        false, audioInterrupt.streamId)) {
         return SUCCESS;
     } else {
         ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
@@ -2626,7 +2626,7 @@ int32_t AudioPolicyServer::DeactivateAudioInterrupt(const AudioInterrupt &audioI
         int32_t zoneId = AudioZoneService::GetInstance().FindAudioZone(audioInterrupt.uid,
             audioInterrupt.streamUsage);
         StandaloneModeManager::GetInstance().EraseDeactivateAudioStream(audioInterrupt.uid,
-            zoneId, audioInterrupt.streamId);
+            audioInterrupt.streamId);
         return AudioZoneService::GetInstance().DeactivateAudioInterrupt(zoneId, audioInterrupt);
     }
     return ERR_UNKNOWN;
