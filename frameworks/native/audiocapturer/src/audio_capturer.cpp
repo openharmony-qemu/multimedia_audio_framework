@@ -1497,7 +1497,7 @@ bool AudioCapturerPrivate::FinishOldStream(IAudioStream::StreamClass targetClass
         // stop old stream
         switchResult = audioStream_->StopAudioStream();
         if (restoreInfo.restoreReason != SERVER_DIED) {
-            CHECK_AND_RETURN_RET_LOG(switchResult, false, "StopAudioStream failed.");
+            JUDGE_AND_ERR_LOG(!switchResult, "StopAudioStream failed.");
         }
     }
     // switch new stream
