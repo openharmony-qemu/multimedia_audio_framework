@@ -2659,7 +2659,7 @@ void AudioInterruptService::SendFocusChangeEvent(const int32_t zoneId, int32_t c
 }
 
 void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
-        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSession)
+        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     if (zonesMap_.empty()) {
@@ -2668,18 +2668,19 @@ void AudioInterruptService::RemoveExistingFocus(const int32_t appUid,
     }
 
     for (auto itZone : zonesMap_) {
-        auto audioFocusIofoList = itZone.second->audioFocusIofoList;
-        for (auto iter = audioFocusIofoList.begin(); iter != audioFocusIofoList.end();) {
+        auto audioFocusInfoList = itZone.second->audioFocusInfoList;
+        for (auto iter = audioFocusInfoList.begin(); iter != audioFocusInfoList.end();) {
             if (iter->first.uid != appUid) {
                 iter++;
                 continue;
             }
             AUDIO_INFO_LOG("itZone = %{public}d, SessionId = %{public}d",
             itZone.frist, iter->first.SessionId);
-            iter = audioFocusIofoList.erase(iter);
+            uidActivedSessions[appUid].insert(iter->first.sessionId);
+            iter = audioFocusInfoList.erase(iter);
         }
-        zonesMap_[itZone.frist]->audioFocusIofoList = audioFocusIofoList;
-        ResumeAudioFocusList(itZone.frist, false);
+        zonesMap_[itZone.first]->audioFocusInfoList = audioFocusInfoList;
+        ResumeAudioFocusList(itZone.first, false);
     }
 }
 

@@ -65,7 +65,7 @@ public:
 
     // interfaces for AudioSessionService
     int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
-        const AudioSessionStrategy &strategy, const bool isStandalone = fasle);
+        const AudioSessionStrategy &strategy, const bool isStandalone = false);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -127,7 +127,7 @@ public:
     void RegisterDefaultVolumeTypeListener();
 
     void RemoveExistingFocus(const int32_t appUid,
-        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSession);
+        std::unordered_map<int32_t, std::unordered_set<int32_t>> &uidActivedSessions);
     void ResumeFocusByStreamId(const int32_t streamId,
         const InterruptEventInternal interruptEventResume);
 

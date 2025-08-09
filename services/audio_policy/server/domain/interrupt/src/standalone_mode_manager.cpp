@@ -52,8 +52,9 @@ int32_t StandaloneModeManager::SetAppSlientOnDisplay(const int32_t ownerPid, con
     if (!CheckOwnerPidPermissions(ownerPid)) {
         return -1;
     }
-    isSetlientDisplay_ = displayId > 0 ? true : false;
-    displayId_ = isSetlientDisplay_ ? displayId : INVALID_ID;
+    isSetSlientDisplay_ = displayId > 0 ? true : false;
+    displayId_ = isSetSlientDisplay_ ? displayId : INVALID_ID;
+    return 0;
 }
 
 bool StandaloneModeManager::CheckOwnerPidPermissions(const int32_t ownerPid)
@@ -65,6 +66,7 @@ bool StandaloneModeManager::CheckOwnerPidPermissions(const int32_t ownerPid)
         AUDIO_ERR_LOG("Access Not Allowed");
         return false;
     }
+    return true;
 }
 
 void StandaloneModeManager::ExitStandaloneAndResumeFocus(const int32_t appUid)
@@ -97,7 +99,7 @@ void StandaloneModeManager::ResumeAllStandaloneApp(const int32_t appPid)
     AUDIO_INFO_LOG("Begin Resume All Standalone App");
     if (!activedZoneSessionsMap_.empty()) {
         for (auto &[appUid, _] : activedZoneSessionsMap_) {
-            ExistStandaloneAndResumeFocus(appUid);
+            ExitStandaloneAndResumeFocus(appUid);
             AudioVolume::GetInstance()->SetAppVolumeMute(appUid, false);
         }
     }
@@ -108,7 +110,7 @@ void StandaloneModeManager::CleanAllStandaloneInfo()
 {
     ownerPid_ = INVALID_ID;
     displayId_ = INVALID_ID;
-    isSetlientDisplay_ = false;
+    isSetSlientDisplay_ = false;
     activedZoneSessionsMap_.clear();
 }
 
@@ -117,9 +119,9 @@ void StandaloneModeManager::RemoveExistingFocus(const int32_t appUid)
     if (interruptService_ == nullptr) {
         return;
     }
-    std::unordered_map<int32_t, std::unordered_set<int32_t>> uidActivedSession = {};
-    interruptService_->RemoveExistingFocus(appUid, uidActivedSession);
-    activedZoneSessionsMap_[appUid] = uidActivedSession;
+    std::unordered_map<int32_t, std::unordered_set<int32_t>> uidActivedSessions = {};
+    interruptService_->RemoveExistingFocus(appUid, uidActivedSessions);
+    activedZoneSessionsMap_[appUid] = uidActivedSessions;
 }
 
 int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
@@ -133,13 +135,14 @@ int32_t StandaloneModeManager::SetAppConcurrencyMode(const int32_t ownerPid,
     }
     AudioConcurrencyMode concurrencyMode = static_cast<AudioConcurrencyMode>(mode);
     switch (concurrencyMode) {
-    case AudioConcurrencyMode::
-        isSetlientDisplay_ = true;
+    case AudioConcurrencyMode::STANDALONE:
+        isSetSlientDisplay_ = true;
         RecordStandaloneAppSessionIdInfo(appUid);
         RemoveExistingFocus(appUid);
-    case AudioConcurrencyMode::
-        locked_ = false;
+        break;
+    case AudioConcurrencyMode::DEFAULT:
         ExitStandaloneAndResumeFocus(appUid);
+        break;
     default:
         break;
     }
@@ -154,7 +157,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
         return false;
     }
     OHOS::Rosen::WindowInfoOption windowInfoOption = {};
-    windowInfoOption.dispalyId = displayId_;
+    windowInfoOption.displayId = displayId_;
     std::vector<sptr<OHOS::Rosen::WindowInfo>> ogInfos = {};
     auto ret = OHOS::Rosen::WindowInfoManager::GetInstance().ListWindowIfo(windowInfoOption, ogInfos);
     AUDIO_INFO_LOG("ListWindowIfo size is %{public}d, ret = %{public}d",
@@ -173,7 +176,7 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
     const bool isOnlyRecordUid, const int32_t zoneId, const int32_t sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (ownerUid_ == INVALID_ID && !isSetlientDisplay_) {
+    if (ownerPid_ == INVALID_ID && !isSetSlientDisplay_) {
         AUDIO_ERR_LOG("Standalone Mode Not Activation");
         return false;
     }
@@ -181,7 +184,7 @@ bool StandaloneModeManager::CheckAndRecordStandaloneApp(const int32_t appUid,
         RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, zoneId, sessionId);
         return true;
     }
-    if (isSetlientDisplay_ && CheckAppOnVirtualScreenByUid(appUid)) {
+    if (isSetSlientDisplay_ && CheckAppOnVirtualScreenByUid(appUid)) {
         RecordStandaloneAppSessionIdInfo(appUid, isOnlyRecordUid, zoneId, sessionId);
         AudioVolume::GetInstance()->SetAppVolumeMute(appUid, true);
         return true;
@@ -204,8 +207,8 @@ void StandaloneModeManager::EraseDeactivateAudioSessionId(const int32_t &appUid,
     const int32_t &zoneId, const int32_t &sessionId)
 {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (activedZoneSessionsMap_.find(appUid) == activedZoneSessionsMap_.end(appUid) ||
-        activedZoneSessionsMap_[appUid].find(zoneId) == activedZoneSessionsMap_[appUid].end(zoneId)) {
+    if (activedZoneSessionsMap_.find(appUid) == activedZoneSessionsMap_.end() ||
+        activedZoneSessionsMap_[appUid].find(zoneId) == activedZoneSessionsMap_[appUid].end()) {
             return;
     }
     if (activedZoneSessionsMap_[appUid][zoneId].empty()) {

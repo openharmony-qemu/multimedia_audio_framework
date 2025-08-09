@@ -19,7 +19,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include "andui_info.h"
+#include "audio_info.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -38,8 +38,8 @@ public:
     int32_t SetAppConcurrencyMode(const int32_t ownerPid,
         const int32_t appUid, const int32_t mode);
     void EraseDeactivateAudioSessionId(const int32_t &appUid,
-        const int32_t &zoneId, const int32_t &sessionId)
-    void ResumeAllStandaloneApp(const int32_t appPid)
+        const int32_t &zoneId, const int32_t &sessionId);
+    void ResumeAllStandaloneApp(const int32_t appPid);
 
 private:
     StandaloneModeManager() = default;
@@ -58,7 +58,7 @@ private:
     std::shared_ptr<AudioInterruptService> interruptService_;
     int32_t ownerPid_ = INVALID_ID;
     int32_t displayId_ = INVALID_ID;
-    bool isSetlientDisplay_ = false;
+    bool isSetSlientDisplay_ = false;
     std::unordered_map<int32_t, std::unordered_map<int32_t,
         std::unordered_set<int32_t>>>activedZoneSessionsMap_ = {}; //{appUid {zoneId {sessionId}}}
 };

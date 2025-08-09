@@ -2595,7 +2595,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
         ret = SUCCESS;
     } else {
         ret = AudioZoneService::GetInstance().ActivateAudioInterrupt(zoneId, audioInterrupt,
-        isUpdatedAudioStrategy);
+            isUpdatedAudioStrategy);
     }
     if ((ret == SUCCESS) && (interruptService_->IsSessionNeedToFetchOutputDevice(IPCSkeleton::GetCallingPid()))) {
         eventEntry_->FetchOutputDeviceAndRoute("ActivateAudioInterrupt",

@@ -1662,7 +1662,7 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
     std::unique_lock<std::mutex> lock(mutex_);
 
     if (interruptEvent.hintType == InterruptHint::INTERRUPT_HINT_EXIT_STANDALONE) {
-        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_, 0, false);
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
         CHECK_AND_RETURN_LOG(ret == 0, "resume ActivateAudioInterrupt Failed");
         return;
     }
