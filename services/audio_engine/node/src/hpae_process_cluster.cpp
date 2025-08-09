@@ -220,8 +220,16 @@ void HpaeProcessCluster::DisConnectMixerNode()
 {
     if (renderEffectNode_) {
         renderEffectNode_->DisConnect(mixerNode_);
+        renderEffectNode_->InitEffectBufferFromDisConnect();
         AUDIO_INFO_LOG("Process DisConnect mixerNode_");
     }
+}
+
+void HpaeProcessCluster::InitEffectBuffer(const uint32_t sessionId)
+{
+    CHECK_AND_RETURN_LOG(renderEffectNode_ != nullptr, "renderEffectNode is nullptr");
+    renderEffectNode_->InitEffectBuffer(sessionId);
+    AUDIO_INFO_LOG("begin InitEffectBuffer sessionId: %{public}u", sessionId);
 }
 
 int32_t HpaeProcessCluster::GetNodeInputFormatInfo(uint32_t sessionId, AudioBasicFormat &basicFormat)

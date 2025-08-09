@@ -51,6 +51,7 @@ public:
     int32_t SetupAudioLimiter();
     int32_t SetLoudnessGain(uint32_t sessionId, float loudnessGain);
     void DisConnectMixerNode();
+    void InitEffectBuffer(const uint32_t sessionId);
 private:
     void ConnectMixerNode();
     void CreateGainNode(uint32_t sessionId, const HpaeNodeInfo &preNodeInfo);

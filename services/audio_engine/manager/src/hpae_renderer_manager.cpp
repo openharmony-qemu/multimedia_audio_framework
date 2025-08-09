@@ -652,6 +652,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
+            "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
     };
     SendRequest(request);
     return SUCCESS;
