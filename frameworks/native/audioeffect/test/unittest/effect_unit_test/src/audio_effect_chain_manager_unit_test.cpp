@@ -2543,7 +2543,12 @@ HWTEST(AudioEffectChainManagerUnitTest, InitEffectBuffer_001, TestSize.Level1)
     AudioEffectChainManager::GetInstance()->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
     AudioEffectChainManager::GetInstance()->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
     AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1, DEFAULT_INFO);
+    SessionEffectInfo NONE_INFO = DEFAULT_INFO;
+    NONE_INFO.sceneMode = "EFFECT_NONE";
+    AudioEffectChainManager::GetInstance()->SessionInfoMapAdd(sessionID1 + 1, NONE_INFO);
     int32_t result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID1);
+    EXPECT_EQ(SUCCESS, result);
+    result = AudioEffectChainManager::GetInstance()->InitEffectBuffer(sessionID1 + 1);
     EXPECT_EQ(SUCCESS, result);
 
     string sessionID2 = "111111";
