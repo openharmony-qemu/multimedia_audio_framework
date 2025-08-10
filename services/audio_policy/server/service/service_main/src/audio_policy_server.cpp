@@ -2608,7 +2608,7 @@ int32_t AudioPolicyServer::ActivateAudioInterrupt(
 int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int32_t mode)
 {
     if (interruptService_ != nullptr) {
-        return StandaloneModeManager::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingUid(), appUid, mode);
+        return StandaloneModeManager::GetInstance().SetAppConcurrencyMode(IPCSkeleton::GetCallingPid(), appUid, mode);
     }
     return ERR_UNKNOWN;
 }
@@ -2616,7 +2616,7 @@ int32_t AudioPolicyServer::SetAppConcurrencyMode(const int32_t appUid, const int
 int32_t AudioPolicyServer::SetAppSlientOnDisplay(const int32_t displayId)
 {
     if (interruptService_ != nullptr) {
-        return StandaloneModeManager::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingUid(), displayId);
+        return StandaloneModeManager::GetInstance().SetAppSlientOnDisplay(IPCSkeleton::GetCallingPid(), displayId);
     }
     return ERR_UNKNOWN;
 }
