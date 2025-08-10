@@ -203,6 +203,7 @@ audio_ohos_library("audio_policy_service") {
     "server/domain/interrupt/src/audio_interrupt_service.cpp",
     "server/domain/interrupt/src/audio_interrupt_service_ext.cpp",
     "server/domain/interrupt/src/audio_interrupt_zone.cpp",
+    "server/domain/interrupt/src/standalone_mode_manager.cpp",
     "server/domain/interrupt/src/power_state_listener.cpp",
     "server/domain/pipe/src/audio_a2dp_offload_flag.cpp",
     "server/domain/pipe/src/audio_a2dp_offload_manager.cpp",
@@ -376,6 +377,7 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
+    "window_manager:libwm",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

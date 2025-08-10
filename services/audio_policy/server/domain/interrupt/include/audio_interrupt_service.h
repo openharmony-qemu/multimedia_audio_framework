@@ -64,7 +64,8 @@ public:
     void OnSessionTimeout(const int32_t pid) override;
 
     // interfaces for AudioSessionService
-    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid, const AudioSessionStrategy &strategy);
+    int32_t ActivateAudioSession(const int32_t zoneId, const int32_t callerPid,
+        const AudioSessionStrategy &strategy, const bool isStandalone = false);
     bool IsSessionNeedToFetchOutputDevice(const int32_t callerPid);
     int32_t DeactivateAudioSession(const int32_t zoneId, const int32_t callerPid);
     bool IsAudioSessionActivated(const int32_t callerPid);
@@ -125,6 +126,10 @@ public:
     int32_t SetQueryBundleNameListCallback(const sptr<IRemoteObject> &object);
     void RegisterDefaultVolumeTypeListener();
 
+    void RemoveExistingFocus(
+        const int32_t appUid, std::unordered_set<int32_t> &uidActivedSessions);
+    void ResumeFocusByStreamId(
+        const int32_t streamId, const InterruptEventInternal interruptEventResume);
 private:
     static constexpr int32_t ZONEID_DEFAULT = 0;
     static constexpr int32_t ZONEID_INVALID = -1;

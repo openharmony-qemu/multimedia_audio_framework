@@ -842,6 +842,27 @@ public:
     int32_t ActivateAudioInterrupt(AudioInterrupt &audioInterrupt);
 
     /**
+     * @brief Set App Concurrency Mode
+     *
+     * @param appUid app Uid
+     * @param mode concurrency Mode
+     * @return Returns {@link SUCCESS} if seting is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode);
+
+    /**
+     * @brief Set App Slient On Display
+     *
+     * @param displayId app slient On display id
+     * @return Returns {@link SUCCESS} if seting is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     * @since 20
+     */
+    int32_t SetAppSlientOnDisplay(const int32_t displayId);
+
+    /**
      * @brief Deactivactivate audio Interrupt
      *
      * @param audioInterrupt audioInterrupt
