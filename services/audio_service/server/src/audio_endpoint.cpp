@@ -72,17 +72,32 @@ std::string AudioEndpoint::GenerateEndpointKey(AudioDeviceDescriptor &deviceInfo
 }
 
 std::shared_ptr<AudioEndpoint> AudioEndpoint::CreateEndpoint(EndpointType type, uint64_t id,
-    const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo)
+    const AudioProcessConfig &clientConfig, const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     std::shared_ptr<AudioEndpoint> audioEndpoint = nullptr;
     audioEndpoint = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "Create AudioEndpoint failed.");
 
-    if (!audioEndpoint->Config(deviceInfo)) {
+    if (!audioEndpoint->Config(deviceInfo, streamInfo)) {
         AUDIO_ERR_LOG("Config AudioEndpoint failed!");
         audioEndpoint = nullptr;
     }
     return audioEndpoint;
+}
+
+AudioDeviceDescriptor &AudioEndpoint::GetDeviceInfo()
+{
+    return deviceInfo_;
+}
+
+DeviceRole AudioEndpoint::GetDeviceRole()
+{
+    return deviceInfo_.deviceRole_;
+}
+
+AudioStreamInfo &AudioEndpoint::GetAudioStreamInfo()
+{
+    return dstStreamInfo_;
 }
 
 AudioEndpointInner::AudioEndpointInner(EndpointType type, uint64_t id,
@@ -522,18 +537,12 @@ void AudioEndpointInner::StartThread(const IAudioSinkAttr &attr)
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpHdiName_, &dumpHdi_);
 }
 
-bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo)
+bool AudioEndpointInner::Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("Role %{public}d, format %{public}d", deviceInfo.deviceRole_,
-        deviceInfo.GetDeviceStreamInfo().format);
+        streamInfo.format);
     deviceInfo_ = deviceInfo;
-    DeviceStreamInfo audioStreamInfo = deviceInfo_.GetDeviceStreamInfo();
-    bool res = audioStreamInfo.CheckParams();
-    CHECK_AND_RETURN_RET_LOG(res, false, "samplingRate or channels size is 0");
-
-    dstStreamInfo_ = { *audioStreamInfo.samplingRate.rbegin(), audioStreamInfo.encoding, audioStreamInfo.format,
-        *audioStreamInfo.GetChannels().rbegin() };
-    dstStreamInfo_.channelLayout = *audioStreamInfo.channelLayout.rbegin();
+    dstStreamInfo_ = streamInfo;
 
     if (deviceInfo.deviceRole_ == INPUT_DEVICE) {
         return ConfigInputPoint(deviceInfo);

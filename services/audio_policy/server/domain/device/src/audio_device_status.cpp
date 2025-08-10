@@ -885,23 +885,23 @@ int32_t AudioDeviceStatus::ActivateNewDevice(std::string networkId, DeviceType d
             "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
         CHECK_AND_RETURN_RET_LOG(paIndex != OPEN_PORT_FAILURE, ERR_OPERATION_FAILED,
             "OpenAudioPort failed paId[%{public}u]", paIndex);
-        std::shared_ptr<AudioPipeInfo> pipeInfo_ = std::make_shared<AudioPipeInfo>();
-        pipeInfo_->id_ = ioHandle;
-        pipeInfo_->paIndex_ = paIndex;
+        std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+        pipeInfo->id_ = ioHandle;
+        pipeInfo->paIndex_ = paIndex;
         if (moduleInfo.role == "sink") {
-            pipeInfo_->name_ = "distributed_output";
-            pipeInfo_->pipeRole_ = PIPE_ROLE_OUTPUT;
-            pipeInfo_->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+            pipeInfo->name_ = "distributed_output";
+            pipeInfo->pipeRole_ = PIPE_ROLE_OUTPUT;
+            pipeInfo->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
         } else {
-            pipeInfo_->name_ = "distributed_input";
-            pipeInfo_->pipeRole_ = PIPE_ROLE_INPUT;
-            pipeInfo_->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+            pipeInfo->name_ = "distributed_input";
+            pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+            pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
         }
-        pipeInfo_->adapterName_ = moduleInfo.adapterName;
-        pipeInfo_->moduleInfo_ = moduleInfo;
-        pipeInfo_->pipeAction_ = PIPE_ACTION_DEFAULT;
-
-        AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo_);
+        pipeInfo->adapterName_ = moduleInfo.adapterName;
+        pipeInfo->moduleInfo_ = moduleInfo;
+        pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+        pipeInfo->InitAudioStreamInfo();
+        AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
         audioIOHandleMap_.AddIOHandleInfo(moduleName, ioHandle);
     }
     return SUCCESS;
@@ -1469,6 +1469,7 @@ int32_t AudioDeviceStatus::RestoreNewA2dpPort(std::vector<std::shared_ptr<AudioS
     pipeInfo->adapterName_ = "a2dp";
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
     return SUCCESS;

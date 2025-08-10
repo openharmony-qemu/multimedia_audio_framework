@@ -216,7 +216,8 @@ HWTEST_F(AudioCoreServiceUnitTest, GetProcessDeviceInfoBySessionId_001, TestSize
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest GetProcessDeviceInfoBySessionId_001 start");
     uint32_t sessionID = 100001; // sessionId
     AudioDeviceDescriptor deviceDesc;
-    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc);
+    AudioStreamInfo info;
+    auto result = GetServerPtr()->eventEntry_->GetProcessDeviceInfoBySessionId(sessionID, deviceDesc, info);
     EXPECT_EQ(result, SUCCESS);
 }
 

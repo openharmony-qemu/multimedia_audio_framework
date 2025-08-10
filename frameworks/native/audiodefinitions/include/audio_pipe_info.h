@@ -47,6 +47,8 @@ public:
     std::string adapterName_ = "";
 
     AudioModuleInfo moduleInfo_ = {};
+    AudioStreamInfo audioStreamInfo_ = {};
+    void InitAudioStreamInfo();
 
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
 

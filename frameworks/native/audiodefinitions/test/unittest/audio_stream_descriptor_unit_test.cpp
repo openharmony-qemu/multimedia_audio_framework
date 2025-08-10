@@ -14,6 +14,7 @@
  */
 
 #include "audio_stream_descriptor.h"
+#include "audio_pipe_info.h"
 
 #include <cinttypes>
 #include "audio_common_log.h"
@@ -35,6 +36,32 @@ public:
     virtual void SetUp(){};
     virtual void TearDown(){};
 };
+
+class AudioPipeInfoUnitTest : public ::testing::Test {
+public:
+    static void SetUpTestCase(){};
+    static void TearDownTestCase(){};
+    virtual void SetUp(){};
+    virtual void TearDown(){};
+};
+
+/**
+ * @tc.name   : Test InitAudioStreamInfo
+ * @tc.number : InitAudioStreamInfo_001
+ * @tc.desc   : Test InitAudioStreamInfo
+ */
+HWTEST_F(AudioPipeInfoUnitTest, InitAudioStreamInfo_001, TestSize.Level1)
+{
+    AudioPipeInfo info;
+    info.InitAudioStreamInfo();
+    EXPECT_EQ(info.audioStreamInfo_.format, AudioSampleFormat::INVALID_WIDTH);
+
+    info.moduleInfo_.rate = "48000";
+    info.moduleInfo_.channels = "2";
+    info.moduleInfo_.format = "s16";
+    info.InitAudioStreamInfo();
+    EXPECT_NE(info.audioStreamInfo_.format, AudioSampleFormat::INVALID_WIDTH);
+}
 
 /**
  * @tc.name   : Test WriteDeviceDescVectorToParcel

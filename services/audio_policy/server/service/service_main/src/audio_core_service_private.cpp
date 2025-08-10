@@ -488,6 +488,7 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             pipeInfo->adapterName_ = "a2dp";
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+            pipeInfo->InitAudioStreamInfo();
             pipeManager_->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
         } else {
@@ -551,6 +552,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     pipeInfo->adapterName_ = "a2dp";
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     pipeManager_->AddAudioPipeInfo(pipeInfo);
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
@@ -887,10 +889,11 @@ std::string AudioCoreService::GetAdapterNameBySessionId(uint32_t sessionId)
     return adapterName;
 }
 
-int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
-    deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId));
+    deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
     return SUCCESS;
 }
 
@@ -2748,6 +2751,7 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
             pipeInfo->adapterName_ = "hearing_aid";
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+            pipeInfo->InitAudioStreamInfo();
             pipeManager_->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAid.", pipeInfo->id_);
         }

@@ -57,10 +57,11 @@ void AudioProcessInServerUnitTest::TearDown(void)
     // input testcase teardown step，teardown invoked after each testcases
 }
 
-DeviceStreamInfo g_audioStreamInfo = {
+AudioStreamInfo g_audioStreamInfo = {
     SAMPLE_RATE_48000,
     ENCODING_PCM,
     SAMPLE_S16LE,
+    STEREO,
     CH_LAYOUT_STEREO
 };
 

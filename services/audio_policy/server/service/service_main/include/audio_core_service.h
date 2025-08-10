@@ -93,7 +93,7 @@ public:
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-            bool isReloadProcess = false) override;
+            AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
@@ -204,7 +204,8 @@ private:
     int32_t SetDefaultOutputDevice(
         const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+        AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
