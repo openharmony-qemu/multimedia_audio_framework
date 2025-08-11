@@ -1069,5 +1069,42 @@ HWTEST_F(AudioStreamCollectorUnitTest, HandleStartStreamMuteState_004, TestSize.
     collector.HandleStartStreamMuteState(uid, pid, false, false);
     EXPECT_FALSE(rendererChangeInfo2->backMute);
 }
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: ExistStreamForPipe_001
+* @tc.desc  : Test ExistStreamForPipe.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, ExistStreamForPipe_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioPipeType pipeType = AudioPipeType::PIPE_TYPE_UNKNOWN;
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->clientUID = 2001;
+    rendererChangeInfo->rendererInfo.pipeType = AudioPipeType::PIPE_TYPE_MULTICHANNEL;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+    bool result = collector.ExistStreamForPipe(pipeType);
+    EXPECT_FALSE(result);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: IsTransparentCapture_002
+* @tc.desc  : Test IsTransparentCapture.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, IsTransparentCapture_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+
+    uint32_t clientUid = 5000 - 10;
+    bool ret = collector.IsTransparentCapture(clientUid);
+    EXPECT_EQ(false, ret);
+
+    clientUid = 5000;
+    ret = collector.IsTransparentCapture(clientUid);
+    EXPECT_EQ(true, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
