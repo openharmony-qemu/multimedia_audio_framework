@@ -461,8 +461,8 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     // The sample count can be inferred based on the time interval
     // between the current time and the last occurrence.
     int64_t now = ClockTime::GetCurNano();
-    int64_t durationNS = now - lastSystemTimeNS_;
-    uint64_t durationUS = durationNS / NANOSECOND_TO_MICROSECOND;
+    int64_t durationNS = now > lastSystemTimeNS_ ? now - lastSystemTimeNS_ : 0;
+    uint64_t durationUS = static_cast<uint64_t>(durationNS) / NANOSECOND_TO_MICROSECOND;
 
     uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
     uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
