@@ -139,7 +139,6 @@ AudioModuleInfo GetSinkAudioModeInfo(std::string name = "Speaker_File")
 
 void WaitForMsgProcessing(std::shared_ptr<HPAE::HpaeManager> &hpaeManager)
 {
-    int waitCount = 0;
     while (hpaeManager->IsMsgProcessing()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(TEST_SLEEP_TIME_20));
     }
@@ -292,6 +291,8 @@ void HpaeManagerGetSinkAndSourceInfoTest()
     });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerGetSinkAndSourceInfoTest2()
@@ -338,6 +339,8 @@ void HpaeManagerGetSinkAndSourceInfoTest2()
     });
     hpaeManager_->CloseAudioPort(portId);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectLiveTest()
@@ -354,6 +357,9 @@ void HpaeManagerEffectLiveTest()
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back({"live_effect_enable", "NRON"});
     hpaeManager_->SetEffectLiveParameter(params);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerEffectTest()
@@ -389,6 +395,8 @@ void HpaeManagerEffectTest()
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     hpaeManager_->CloseOutAudioPort("Speaker_File1");
     hpaeManager_->CloseOutAudioPort("Speaker_File");
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -432,6 +440,8 @@ void HpaeManagerEffectTest2()
     
     hpaeManager_->UpdateExtraSceneType("123", "456", "789");
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void GetAllSinksFuzzTest()
@@ -474,6 +484,8 @@ void GetAllSinksFuzzTest()
     HpaeDeviceInfo devicesInfo_;
     hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void GetAllSinksFuzzTest2()
@@ -513,6 +525,8 @@ void GetAllSinksFuzzTest2()
 
     HpaeDeviceInfo devicesInfo_;
     hpaeManager_->DumpAllAvailableDevice(devicesInfo_);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 

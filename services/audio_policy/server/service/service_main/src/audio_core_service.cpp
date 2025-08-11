@@ -398,11 +398,10 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
 
     auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
     if (strategyIt != sourceStrategyMap->end()) {
-        streamDesc->audioFlag_ =
-            (AudioFlag)AudioSourceStrategyData::GetInstance().MappingAudioFlag(strategyIt->second.audioFlag);
+        streamDesc->audioFlag_ = strategyIt->second.audioFlag;
         streamDesc->capturerInfo_.hdiSourceType = strategyIt->second.hdiSource;
-        AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}s, hdisource: %{public}s",
-            streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag.c_str(),
+        AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u, hdisource: %{public}s",
+            streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag,
             strategyIt->second.hdiSource.c_str());
     }
     return;
@@ -430,6 +429,16 @@ void AudioCoreService::CheckAndSetCurrentInputDevice(std::shared_ptr<AudioDevice
     OnPreferredInputDeviceUpdated(audioActiveDevice_.GetCurrentInputDeviceType(), "");
 }
 
+void AudioCoreService::CheckForRemoteDeviceState(std::shared_ptr<AudioDeviceDescriptor> desc)
+{
+    CHECK_AND_RETURN_LOG(desc != nullptr, "desc is null");
+    std::string networkId = desc->networkId_;
+    DeviceRole deviceRole = desc->deviceRole_;
+    CHECK_AND_RETURN(networkId != LOCAL_NETWORK_ID);
+    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
+    CHECK_AND_RETURN_LOG(res == SUCCESS, "remote device state is invalid!");
+}
+
 int32_t AudioCoreService::StartClient(uint32_t sessionId)
 {
     if (pipeManager_->IsModemCommunicationIdExist(sessionId)) {
@@ -452,6 +461,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
         }
     }
 
+    CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
@@ -471,6 +481,8 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
     streamDesc->startTimeStamp_ = ClockTime::GetCurNano();
     sleAudioDeviceManager_.UpdateSleStreamTypeCount(streamDesc);
+
+    CheckForRemoteDeviceState(streamDesc->newDeviceDescs_.front());
     return SUCCESS;
 }
 
@@ -728,9 +740,8 @@ std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::GetActiveBluetoothDevic
     std::vector<shared_ptr<AudioDeviceDescriptor>> activeDeviceDescriptors;
 
     for (const auto &desc : audioPrivacyDeviceDescriptors) {
-        if (desc->exceptionFlag_ || !desc->isEnable_ ||
-            (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO &&
-            (desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded())) ||
+        if (desc->deviceType_ != DEVICE_TYPE_BLUETOOTH_SCO || desc->exceptionFlag_ || !desc->isEnable_ ||
+            desc->connectState_ == SUSPEND_CONNECTED || AudioPolicyUtils::GetInstance().GetScoExcluded() ||
             audioStateManager_.IsExcludedDevice(AudioDeviceUsage::CALL_OUTPUT_DEVICES, desc)) {
             continue;
         }
@@ -1224,8 +1235,14 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
     for (auto &streamDesc : outputStreamDescs) {
         CHECK_AND_CONTINUE_LOG(streamDesc != nullptr, "Stream desc is nullptr");
         streamDesc->oldDeviceDescs_ = streamDesc->newDeviceDescs_;
+        StreamUsage streamUsage = StreamUsage::STREAM_USAGE_INVALID;
+        if (audioSessionService_ != nullptr) {
+            streamUsage = audioSessionService_->GetAudioSessionStreamUsage(GetRealPid(streamDesc));
+        }
+        streamUsage = (streamUsage != StreamUsage::STREAM_USAGE_INVALID) ? streamUsage :
+            streamDesc->rendererInfo_.streamUsage;
         streamDesc->newDeviceDescs_ =
-            audioRouterCenter_.FetchOutputDevices(streamDesc->rendererInfo_.streamUsage, GetRealUid(streamDesc),
+            audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);

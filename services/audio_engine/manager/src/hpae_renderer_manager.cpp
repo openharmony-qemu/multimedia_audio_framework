@@ -254,7 +254,7 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
-int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
+int32_t HpaeRendererManager::RefreshProcessClusterByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
@@ -377,7 +377,7 @@ void HpaeRendererManager::DisConnectProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) +
-        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sessionId));
+        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sceneType));
     if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
@@ -522,8 +522,10 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     HpaeSessionState inputState = inputNode->GetState();
     if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
         HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
+        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
         SetSessionState(sessionId, state);
         inputNode->SetState(state);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
         // todo: do fade out
     }
     DeleteInputSessionForMove(sessionId);
@@ -650,6 +652,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
+            "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
     };
     SendRequest(request);
     return SUCCESS;
@@ -1092,8 +1098,6 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
 {
     auto request = [this, sessionId, operation]() {
         Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::OnFadeDone: " + std::to_string(operation));
-        CHECK_AND_RETURN_LOG(sinkInputNodeMap_[sessionId]->GetState() != HPAE_SESSION_RUNNING,
-            "Fade done,  but session is running");
         AUDIO_INFO_LOG("Fade done, call back at RendererManager");
         DisConnectInputSession(sessionId);
         HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
@@ -1101,6 +1105,7 @@ void HpaeRendererManager::OnFadeDone(uint32_t sessionId, IOperation operation)
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequest(request);
 }
@@ -1167,6 +1172,7 @@ bool HpaeRendererManager::SetSessionFade(uint32_t sessionId, IOperation operatio
             HpaeSessionState state = operation == OPERATION_STOPPED ? HPAE_SESSION_STOPPED : HPAE_SESSION_PAUSED;
             SetSessionState(sessionId, state);
             sinkInputNodeMap_[sessionId]->SetState(state);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
         }
         return false;
     }

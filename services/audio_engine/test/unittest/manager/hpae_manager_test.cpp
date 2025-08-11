@@ -24,6 +24,7 @@
 #include "audio_errors.h"
 #include "hpae_audio_service_dump_callback_unit_test.h"
 #include "hpae_manager_unit_test.h"
+#include "hpae_manager.h"
 
 using namespace OHOS;
 using namespace AudioStandard;

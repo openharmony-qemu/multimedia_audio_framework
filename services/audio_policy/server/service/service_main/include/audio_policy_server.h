@@ -88,9 +88,9 @@ public:
     void OnStart() override;
     void OnStop() override;
 
-    int32_t GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel) override;
+    int32_t GetMaxVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType = -1) override;
 
-    int32_t GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel) override;
+    int32_t GetMinVolumeLevel(int32_t volumeType, int32_t &volumeLevel, int32_t deviceType = -1) override;
 
     int32_t SetSystemVolumeLevelLegacy(int32_t streamTypeIn, int32_t volumeLevel) override;
 
@@ -237,6 +237,10 @@ public:
 
     int32_t ActivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId,
         bool isUpdatedAudioStrategy) override;
+
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0) override;
+
+    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1) override;
 
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, int32_t zoneId) override;
 
@@ -453,6 +457,8 @@ public:
 
     int32_t GetAudioZone(int32_t zoneId, std::shared_ptr<AudioZoneDescriptor> &desc) override;
 
+    int32_t GetAudioZoneByName(const std::string &name, int32_t &zoneId) override;
+
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &devices) override;
 
@@ -471,7 +477,11 @@ public:
 
     int32_t AddStreamToAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
 
+    int32_t AddStreamsToAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
+
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, const AudioZoneStream &stream) override;
+
+    int32_t RemoveStreamsFromAudioZone(int32_t zoneId, const std::vector<AudioZoneStream> &streams) override;
 
     int32_t SetZoneDeviceVisible(bool visible) override;
 
@@ -740,6 +750,7 @@ private:
     bool GetStreamMuteInternal(AudioStreamType streamType, int32_t zoneId = 0);
     bool IsVolumeTypeValid(AudioStreamType streamType);
     bool IsVolumeLevelValid(AudioStreamType streamType, int32_t volumeLevel);
+    bool IsRingerModeValid(AudioRingerMode ringMode);
     bool CheckCanMuteVolumeTypeByStep(AudioVolumeType volumeType, int32_t volumeLevel);
 
     // Permission and privacy
@@ -801,7 +812,7 @@ private:
     void UpdateDefaultOutputDeviceWhenStarting(const uint32_t sessionID);
     void UpdateDefaultOutputDeviceWhenStopping(const uint32_t sessionID);
     void ChangeVolumeOnVoiceAssistant(AudioStreamType &streamInFocus);
-    AudioStreamType GetCurrentStreamInFocus(const AudioStreamType streamInFocus);
+    AudioStreamType GetCurrentStreamInFocus();
 
     AudioEffectService &audioEffectService_;
     AudioAffinityManager &audioAffinityManager_;

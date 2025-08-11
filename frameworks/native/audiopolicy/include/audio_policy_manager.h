@@ -54,9 +54,9 @@ public:
     static AudioPolicyManager& GetInstance();
     static const sptr<IAudioPolicy> GetAudioPolicyManagerProxy(bool block = true);
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
@@ -209,6 +209,10 @@ public:
     int32_t ActivateAudioInterrupt(
         AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0);
+
+    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1);
+
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivatePreemptMode(void);
@@ -233,6 +237,10 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t RegisterAudioPolicyServerDiedCb(std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> &callback);
+
+    static void AudioSessionManagerCallback();
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
 
@@ -486,6 +494,8 @@ public:
 
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
 
+    int32_t GetAudioZoneByName(std::string name);
+
     int32_t BindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
 
@@ -504,7 +514,11 @@ public:
 
     int32_t AddStreamToAudioZone(int32_t zoneId, AudioZoneStream stream);
 
+    int32_t AddStreamsToAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
+
     int32_t RemoveStreamFromAudioZone(int32_t zoneId, AudioZoneStream stream);
+
+    int32_t RemoveStreamsFromAudioZone(int32_t zoneId, std::vector<AudioZoneStream> streams);
 
     void SetZoneDeviceVisible(bool visible);
 
@@ -706,6 +720,9 @@ private:
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
+
+    static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
+    static std::mutex serverDiedSessionManagerCbkMutex_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

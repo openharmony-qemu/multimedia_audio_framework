@@ -106,12 +106,20 @@ void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest()
     audioCollaborativeService.UpdateCollaborativeStateReal();
 }
 
+void AudioCollaborativeServiceIsCollaborativePlaybackSupportedSimpleFuzzTest()
+{
+    AudioCollaborativeService &audioCollaborativeService = AudioCollaborativeService::GetAudioCollaborativeService();
+    audioCollaborativeService.isCollaborativePlaybackSupported_ = g_fuzzUtils.GetData<bool>();
+    bool result = audioCollaborativeService.IsCollaborativePlaybackSupported();
+}
+
 vector<TestPtr> g_testPtrs = {
     AudioCollaborativeServiceIsCollaborativePlaybackSupportedFuzzTest,
     AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest,
     AudioCollaborativeServiceSetCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest,
     AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest,
+    AudioCollaborativeServiceIsCollaborativePlaybackSupportedSimpleFuzzTest,
 };
 
 } // namespace AudioStandard

@@ -21,6 +21,7 @@
 #include "audio_info.h"
 #include "audio_policy_log.h"
 #include "audio_xml_parser.h"
+#include "audio_definition_adapter_info.h"
 
 namespace OHOS {
 namespace AudioStandard {

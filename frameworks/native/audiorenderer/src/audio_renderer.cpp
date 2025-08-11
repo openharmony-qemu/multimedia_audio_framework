@@ -58,6 +58,8 @@ constexpr int32_t START_TIME_OUT_SECONDS = 15;
 static constexpr uint32_t BLOCK_INTERRUPT_CALLBACK_IN_MS = 300; // 300ms
 static constexpr float MIN_LOUDNESS_GAIN = -90.0;
 static constexpr float MAX_LOUDNESS_GAIN = 24.0;
+static constexpr int32_t UID_MEDIA = 1013;
+
 static const std::map<AudioStreamType, StreamUsage> STREAM_TYPE_USAGE_MAP = {
     {STREAM_MUSIC, STREAM_USAGE_MUSIC},
     {STREAM_VOICE_CALL, STREAM_USAGE_VOICE_COMMUNICATION},
@@ -319,7 +321,7 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.streamUsage = rendererOptions.rendererInfo.streamUsage;
     rendererInfo_.isSatellite = rendererOptions.rendererInfo.isSatellite;
     /* Set isOffloadAllowed during renderer creation when setOffloadAllowed is disabled. */
-    rendererInfo_.isOffloadAllowed = rendererOptions.rendererInfo.isOffloadAllowed;
+    rendererInfo_.isOffloadAllowed = GetFinalOffloadAllowed(rendererOptions.rendererInfo.isOffloadAllowed);
     rendererInfo_.playerType = rendererOptions.rendererInfo.playerType;
     rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
@@ -331,6 +333,19 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     privacyType_ = rendererOptions.privacyType;
     strategy_ = rendererOptions.strategy;
     originalStrategy_ = rendererOptions.strategy;
+}
+
+bool AudioRendererPrivate::GetFinalOffloadAllowed(bool originalAllowed)
+{
+    if (getuid() == UID_MEDIA) {
+        // Boot animation use avplayer, do not get bundle name to avoid increasing boot duration.
+        std::string bundleName = AudioSystemManager::GetInstance()->GetSelfBundleName(appInfo_.appUid);
+        if (bundleName == "mockNotOffloadHap") {
+            AUDIO_INFO_LOG("Force set offload allowed to false for this stream");
+            return false;
+        }
+    }
+    return originalAllowed;
 }
 
 std::shared_ptr<AudioRenderer> AudioRenderer::CreateRenderer(const AudioRendererOptions &rendererOptions,
@@ -1646,6 +1661,11 @@ void AudioRendererInterruptCallbackImpl::OnInterrupt(const InterruptEventInterna
 {
     std::unique_lock<std::mutex> lock(mutex_);
 
+    if (interruptEvent.hintType == InterruptHint::INTERRUPT_HINT_EXIT_STANDALONE) {
+        int32_t ret = AudioPolicyManager::GetInstance().ActivateAudioInterrupt(audioInterrupt_);
+        CHECK_AND_RETURN_LOG(ret == 0, "resume ActivateAudioInterrupt Failed");
+        return;
+    }
     if (switching_) {
         AUDIO_INFO_LOG("Wait for SwitchStream");
         bool res = switchStreamCv_.wait_for(lock, std::chrono::milliseconds(BLOCK_INTERRUPT_CALLBACK_IN_MS),
@@ -2068,7 +2088,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetRendererWriteCallback(info.rendererWriteCallback);
 
     audioStream->SetRendererFirstFrameWritingCallback(info.rendererFirstFrameWritingCallback);
-    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair);
+    audioStream->SetSwitchInfoTimestamp(info.lastFramePosAndTimePair, info.lastFramePosAndTimePairWithSpeed);
     return true;
 }
 

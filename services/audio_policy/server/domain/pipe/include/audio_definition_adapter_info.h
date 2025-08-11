@@ -242,6 +242,20 @@ private:
     std::string version_ = STR_INITED;
 };
 
+struct AudioSourceStrategyType {
+    AudioSourceStrategyType() = default;
+    std::string hdiSource = "AUDIO_INPUT_MIC_TYPE";
+    std::string adapterName = "primary";
+    std::string pipeName = "primary_input";
+    std::string audioFlag = "AUDIO_INPUT_FLAG_NORMAL";
+    uint32_t priority = 0;
+
+    AudioSourceStrategyType(const std::string &hdiSource, const std::string &adapterName, const std::string &pipeName,
+        const std::string &audioFlag, const uint32_t priority)
+        : hdiSource(hdiSource), adapterName(adapterName), pipeName(pipeName), audioFlag(audioFlag), priority(priority)
+    {}
+};
+
 class AudioSourceStrategyData {
 public:
     static AudioSourceStrategyData& GetInstance();
@@ -254,9 +268,6 @@ private:
     AudioSourceStrategyData& operator=(const AudioSourceStrategyData&) = delete;
     std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap_ =
         std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
-    const std::unordered_map<std::string, AudioFlag> audioFlagMap_ = {
-        {"AUDIO_INPUT_FLAG_AI", AUDIO_INPUT_FLAG_AI}
-    };
     mutable std::mutex mutex_;
 };
 

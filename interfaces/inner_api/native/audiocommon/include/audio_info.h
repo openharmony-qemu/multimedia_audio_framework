@@ -1571,6 +1571,17 @@ public:
     virtual void OnAudioPolicyServiceDied() = 0;
 };
 
+class AudioSessionManagerPolicyServiceDiedCallback {
+public:
+    virtual ~AudioSessionManagerPolicyServiceDiedCallback() = default;
+
+    /**
+     * Called when audio policy service died.
+     * @since 20
+     */
+    virtual void OnAudioPolicyServiceDied() = 0;
+};
+
 /**
  * Describes three-dimensional value.
  * @since 11
@@ -1894,20 +1905,6 @@ enum BoostTriggerMethod : uint32_t {
     METHOD_START = 0,
     METHOD_WRITE_OR_READ,
     METHOD_MAX
-};
-
-struct AudioSourceStrategyType {
-    AudioSourceStrategyType() = default;
-    std::string hdiSource = "AUDIO_INPUT_MIC_TYPE";
-    std::string adapterName = "primary";
-    std::string pipeName = "primary_input";
-    std::string audioFlag = "AUDIO_INPUT_FLAG_NORMAL";
-    uint32_t priority = 0;
-
-    AudioSourceStrategyType(const std::string &hdiSource, const std::string &adapterName, const std::string &pipeName,
-        const std::string &audioFlag, const uint32_t priority)
-        : hdiSource(hdiSource), adapterName(adapterName), pipeName(pipeName), audioFlag(audioFlag), priority(priority)
-    {}
 };
 } // namespace AudioStandard
 } // namespace OHOS

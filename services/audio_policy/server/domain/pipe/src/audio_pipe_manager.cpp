@@ -168,8 +168,7 @@ bool AudioPipeManager::IsSpecialPipe(uint32_t routeFlag)
     if ((routeFlag & AUDIO_OUTPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_INPUT_FLAG_FAST) ||
         (routeFlag & AUDIO_OUTPUT_FLAG_COMPRESS_OFFLOAD) ||
-        (routeFlag & AUDIO_INPUT_FLAG_AI) ||
-        (routeFlag & AUDIO_INPUT_FLAG_NORMAL)) {
+        (routeFlag & AUDIO_INPUT_FLAG_AI) {
         return true;
     }
     return false;

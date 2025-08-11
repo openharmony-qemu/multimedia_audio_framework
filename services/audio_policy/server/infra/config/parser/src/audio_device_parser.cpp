@@ -40,6 +40,7 @@ static std::map<std::string, DeviceType> deviceTypeMap_ = {
     {"DEVICE_TYPE_NEARLINK", DEVICE_TYPE_NEARLINK},
     {"DEVICE_TYPE_NEARLINK_IN", DEVICE_TYPE_NEARLINK_IN},
     {"DEVICE_TYPE_HEARING_AID", DEVICE_TYPE_HEARING_AID},
+    {"DEVICE_TYPE_REMOTE_DAUDIO", DEVICE_TYPE_REMOTE_DAUDIO},
 };
 }
 bool AudioDeviceParser::LoadConfiguration()

@@ -519,7 +519,6 @@ int32_t LocalDeviceManager::SetInputPortPin(DeviceType inputDevice, AudioRouteNo
         case DEVICE_TYPE_EARPIECE:
         case DEVICE_TYPE_SPEAKER:
         case DEVICE_TYPE_BLUETOOTH_A2DP_IN:
-        case DEVICE_TYPE_AI_SOURCE:
             source.ext.device.type = PIN_IN_MIC;
             source.ext.device.desc = (char *)"pin_in_mic";
             break;

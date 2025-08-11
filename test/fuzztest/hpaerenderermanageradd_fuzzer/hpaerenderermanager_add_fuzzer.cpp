@@ -53,7 +53,7 @@ static std::string g_rootCapturerPath = "/data/source_file_io_48000_2_s16le.pcm"
 const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
-constexpr uint8_t TESTSIZE = 27;
+constexpr uint8_t TESTSIZE = 22;
 
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
@@ -166,16 +166,6 @@ void HpaeRendererManagerGetPrivacyTypeFuzzTest()
     rendererManager->GetPrivacyType(sessionId, privacyType);
 }
 
-void HpaeRendererManagerRegisterWriteCallbackFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    std::shared_ptr<WriteFixedDataCb> writeIncDataCb = std::make_shared<WriteFixedDataCb>(SAMPLE_S16LE);
-    rendererManager->RegisterWriteCallback(sessionId, writeIncDataCb);
-}
-
 void HpaeRendererManagerGetWritableSizeFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -212,16 +202,6 @@ void HpaeRendererManagerGetAllSinkInputsInfoFuzzTest()
     InitHpaeSinkInfo(sinkInfo);
     auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
     rendererManager->GetAllSinkInputsInfo();
-}
-
-void HpaeRendererManagerGetSinkInputInfoFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    HpaeSinkInputInfo sinkInputInfo;
-    rendererManager->GetSinkInputInfo(sessionId, sinkInputInfo);
 }
 
 void HpaeRendererManagerGetSinkInfoFuzzTest()
@@ -321,27 +301,6 @@ void HpaeRendererManagerDumpSinkInfoFuzzTest()
     rendererManager->DumpSinkInfo();
 }
 
-void HpaeRendererManagerReloadRenderManagerFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    HpaeSinkInfo newSinkInfo;
-    InitHpaeSinkInfo(newSinkInfo);
-    newSinkInfo.samplingRate = SAMPLE_RATE_16000;
-    rendererManager->ReloadRenderManager(newSinkInfo);
-}
-
-void HpaeRendererManagerSetOffloadPolicyFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t state = GetData<int32_t>();
-    rendererManager->SetOffloadPolicy(sessionId, state);
-}
-
 void HpaeRendererManagerGetDeviceHDFDumpInfoFuzzTest()
 {
     HpaeSinkInfo sinkInfo;
@@ -367,15 +326,6 @@ void HpaeRendererManagerSetLoudnessGainFuzzTest()
     uint32_t sessionId = GetData<uint32_t>();
     float loudnessGain = GetData<float>();
     rendererManager->SetLoudnessGain(sessionId, loudnessGain);
-}
-
-void HpaeRendererManagerUpdateCollaborativeStateFuzzTest()
-{
-    HpaeSinkInfo sinkInfo;
-    InitHpaeSinkInfo(sinkInfo);
-    auto rendererManager = IHpaeRendererManager::CreateRendererManager(sinkInfo);
-    bool isCollaborationEnabled = false;
-    rendererManager->UpdateCollaborativeState(isCollaborationEnabled);
 }
 
 void HpaeRendererManagerConnectCoBufferNodeFuzzTest()
@@ -416,12 +366,10 @@ typedef void (*TestFuncs)();
 TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeRendererManagerSetPrivacyTypeFuzzTest,
     HpaeRendererManagerGetPrivacyTypeFuzzTest,
-    HpaeRendererManagerRegisterWriteCallbackFuzzTest,
     HpaeRendererManagerGetWritableSizeFuzzTest,
     HpaeRendererManagerUpdateSpatializationStateFuzzTest,
     HpaeRendererManagerUpdateMaxLengthFuzzTest,
     HpaeRendererManagerGetAllSinkInputsInfoFuzzTest,
-    HpaeRendererManagerGetSinkInputInfoFuzzTest,
     HpaeRendererManagerGetSinkInfoFuzzTest,
     HpaeRendererManagerAddNodeToSinkFuzzTest,
     HpaeRendererManagerAddAllNodesToSinkFuzzTest,
@@ -432,12 +380,9 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HpaeRendererManagerOnNotifyQueueFuzzTest,
     HpaeRendererManagerGetThreadNameFuzzTest,
     HpaeRendererManagerDumpSinkInfoFuzzTest,
-    HpaeRendererManagerReloadRenderManagerFuzzTest,
-    HpaeRendererManagerSetOffloadPolicyFuzzTest,
     HpaeRendererManagerGetDeviceHDFDumpInfoFuzzTest,
     HpaeRendererManagerOnDisConnectProcessClusterFuzzTest,
     HpaeRendererManagerSetLoudnessGainFuzzTest,
-    HpaeRendererManagerUpdateCollaborativeStateFuzzTest,
     HpaeRendererManagerConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerDisConnectCoBufferNodeFuzzTest,
     HpaeRendererManagerStartWithSyncIdFuzzTest,

@@ -233,6 +233,8 @@ void HpaeRenderStreamManagerFuzzTest()
 
     hpaeManager_->GetAllSinkInputs();
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerFuzzTest2()
@@ -260,6 +262,8 @@ void HpaeRenderStreamManagerFuzzTest2()
     hpaeManager_->Release(streamClassType, sessionId);
 
     hpaeManager_->GetAllSinkInputs();
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -303,6 +307,8 @@ void HpaeRenderStreamManagerFuzzTest3()
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerFuzzTest4()
@@ -343,6 +349,8 @@ void HpaeRenderStreamManagerFuzzTest4()
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
     WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerFuzzTest()
@@ -364,6 +372,8 @@ void HpaeCaptureStreamManagerFuzzTest()
     hpaeManager_->SetSourceOutputMute(fuzzPortId, mute);
     hpaeManager_->GetAllSourceOutputs();
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -391,6 +401,8 @@ void HpaeCaptureStreamManagerFuzzTest2()
     hpaeManager_->GetAllSourceOutputs();
 
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -424,6 +436,8 @@ void HpaeCaptureStreamManagerFuzzTest3()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest()
@@ -469,6 +483,8 @@ void HpaeRenderStreamManagerMoveFuzzTest()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeRenderStreamManagerMoveFuzzTest2()
@@ -522,6 +538,8 @@ void HpaeRenderStreamManagerMoveFuzzTest2()
 
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest()
@@ -560,6 +578,8 @@ void HpaeCaptureStreamManagerMoveTest()
     hpaeManager_->Release(streamInfo.streamClassType, streamInfo.sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamInfo.streamClassType, streamInfo.sessionId, sessionInfo);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeCaptureStreamManagerMoveTest2()
@@ -602,6 +622,8 @@ void HpaeCaptureStreamManagerMoveTest2()
     hpaeManager_->Release(streamClassType, sessionId);
     WaitForMsgProcessing(hpaeManager_);
     hpaeManager_->GetSessionInfo(streamClassType, sessionId, sessionInfo);
+    hpaeManager_->DeInit();
+    WaitForMsgProcessing(hpaeManager_);
 }
 
 void HpaeManagerDumpStreamInfoTest()
@@ -645,6 +667,8 @@ void HpaeManagerDumpStreamInfoTest()
     hpaeManager_->ShouldNotSkipProcess(HPAE_STREAM_CLASS_TYPE_INVALID, TEST_STREAM_SESSION_ID);
     hpaeManager_->CloseAudioPort(sinkPortId);
     hpaeManager_->CloseAudioPort(sourcePortId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 
@@ -692,6 +716,8 @@ void HpaeManagerDumpStreamInfoTest2()
 
     hpaeManager_->CloseAudioPort(sinkPortId);
     hpaeManager_->CloseAudioPort(sourcePortId);
+    WaitForMsgProcessing(hpaeManager_);
+    hpaeManager_->DeInit();
     WaitForMsgProcessing(hpaeManager_);
 }
 

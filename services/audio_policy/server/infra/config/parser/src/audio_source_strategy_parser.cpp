@@ -153,12 +153,20 @@ void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNod
         return;
     }
 
+    AudioFlag audioFlag;
+    auto it = AudioDefinitionPolicyUtils::flagStrToEnum.find(audioFlag);
+    if (it != AudioDefinitionPolicyUtils::flagStrToEnum.end()) {
+        audioFlag = it->second;
+    } else {
+        return;
+    }
+
     SourceType sourceType = sourceTypeIt->second;
     sourceStrategyMap->emplace(sourceType,
-        AudioSourceStrategyType(hdiSource, adapterStr, pipeStr, audioFlagStr, priority));
+        AudioSourceStrategyType(hdiSource, adapterStr, pipeStr, audioFlag, priority));
     AUDIO_INFO_LOG("sourceType: %{public}d, source: %{public}s, hdiSource: %{public}s, adapterStr: %{public}s, "
-        "pipeStr: %{public}s, audioFlagStr: %{public}s, priority: %{public}d",
-        sourceType, source.c_str(), hdiSource.c_str(), adapterStr.c_str(), pipeStr.c_str(), audioFlagStr.c_str(),
+        "pipeStr: %{public}s, audioFlag: %{public}u, priority: %{public}d",
+        sourceType, source.c_str(), hdiSource.c_str(), adapterStr.c_str(), pipeStr.c_str(), audioFlag,
         priority);
 }
 } // namespace AudioStandard

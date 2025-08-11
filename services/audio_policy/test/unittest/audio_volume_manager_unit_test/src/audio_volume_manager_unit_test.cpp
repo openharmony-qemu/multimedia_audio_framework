@@ -1173,6 +1173,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_053, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1188,6 +1189,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_054, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1203,6 +1205,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_055, TestSize.Level1)
     want.SetAction(action);
     eventData.SetWant(want);
     AudioVolumeManager::GetInstance().OnReceiveEvent(eventData);
+    EXPECT_EQ(AudioVolumeManager::GetInstance().safeStatusBt_, SAFE_INACTIVE);
 }
 
 /**
@@ -1318,6 +1321,44 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_063
+* @tc.desc  : Test Init interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_063, TestSize.Level1)
+{
+    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    ASSERT_TRUE(audioVolumeManager != nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+
+    bool ret;
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    ret = audioVolumeManager->Init(nullptr);
+    EXPECT_EQ(ret, true);
+    EXPECT_NE(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+    audioVolumeManager->DeInit();
+    EXPECT_EQ(audioVolumeManager->forceControlVolumeTypeMonitor_, nullptr);
+}
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManager_064
+* @tc.desc  : Test SetAdjustVolumeForZone
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_064, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t zoneId = 0;
+    auto ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_EQ(ret, SUCCESS);
+    zoneId = 1;
+    ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_NE(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

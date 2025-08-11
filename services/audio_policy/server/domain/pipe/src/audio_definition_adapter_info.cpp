@@ -394,14 +394,5 @@ std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> AudioSourceStrate
     return sourceStrategyMap_;
 }
 
-uint32_t AudioSourceStrategyData::MappingAudioFlag(const std::string& key) const
-{
-    auto it = audioFlagMap_.find(key);
-    if (it != audioFlagMap_.end()) {
-        return it->second;
-    }
-    return AUDIO_FLAG_NONE;
-}
-
 }
 }

@@ -570,7 +570,7 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioSourceStrategyData_01, TestSize.
         std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
     sourceStrategyMapinput->emplace(
         SOURCE_TYPE_MIC,
-        AudioSourceStrategyType("AUDIO_INPUT_MIC_TYPE", "primary", "primary_input", "AUDIO_INPUT_FLAG_NORMAL", 1)
+        AudioSourceStrategyType("AUDIO_INPUT_MIC_TYPE", "primary", "primary_input", AUDIO_INPUT_FLAG_NORMAL, 1)
     );
     auto &instance = AudioSourceStrategyData::GetInstance();
     instance.SetSourceStrategyMap(sourceStrategyMapinput);
@@ -579,12 +579,9 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioSourceStrategyData_01, TestSize.
         EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].hdiSource, "AUDIO_INPUT_MIC_TYPE");
         EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].adapterName, "primary");
         EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].pipeName, "primary_input");
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].audioFlag, "AUDIO_INPUT_FLAG_NORMAL");
+        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].audioFlag, AUDIO_INPUT_FLAG_NORMAL);
         EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].priority, 1);
     }
-
-    auto audioFlag = (AudioFlag)instance.MappingAudioFlag("AUDIO_INPUT_FLAG_AI");
-    EXPECT_EQ(audioFlag, AUDIO_INPUT_FLAG_AI);
 }
 } // namespace AudioStandard
 } // namespace OHOS

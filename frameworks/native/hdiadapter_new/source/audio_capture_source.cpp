@@ -626,8 +626,9 @@ AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceTy
 
 enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType)
 {
-    if (MappingAudioInputType(hdiSourceType)!= AUDIO_INPUT_DEFAULT_TYPE) {
-        return MappingAudioInputType(hdiSourceType);
+    AudioInputType hdiSource = MappingAudioInputType(hdiSourceType);
+    if (hdiSource!= AUDIO_INPUT_DEFAULT_TYPE) {
+        return hdiSource;
     }
 
     enum AudioInputType hdiAudioInputType;
@@ -831,7 +832,10 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.format = ConvertToHdiFormat(attr_.format);
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
-    param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    param.channelLayout = attr_.channelLayout;
+    if (param.channelLayout == CH_LAYOUT_UNKNOWN) {
+        param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
+    }
     param.silenceThreshold = attr_.bufferSize;
     param.frameSize = param.format * param.channelCount;
     if (param.frameSize != 0) {

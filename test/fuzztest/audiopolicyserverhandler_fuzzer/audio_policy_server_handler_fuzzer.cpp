@@ -56,7 +56,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 16;
+const uint8_t TESTSIZE = 50;
 static int32_t NUM_2 = 2;
 std::mutex paElementsMutex_;
 
@@ -333,6 +333,399 @@ void SendCapturerRemovedEventFuzzTest()
     audioPolicyServerHandler_->SendCapturerRemovedEvent(sessionId, isSync);
 }
 
+void SendRingerModeUpdatedCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AudioRingerMode ringMode = GetData<AudioRingerMode>();
+    audioPolicyServerHandler_->SendRingerModeUpdatedCallback(ringMode);
+}
+ 
+void SendAppVolumeChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t appUid = GetData<int32_t>();
+    VolumeEvent volumeEvent;
+    audioPolicyServerHandler_->SendAppVolumeChangeCallback(appUid, volumeEvent);
+}
+
+void SendInterruptEventCallbackForAudioSessionFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEvent;
+    AudioInterrupt audioInterrupt;
+    audioPolicyServerHandler_->SendInterruptEventCallbackForAudioSession(interruptEvent, audioInterrupt);
+}
+ 
+void SendInterruptEventWithClientIdCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEvent;
+    int32_t clientPid = GetData<int32_t>();
+    audioPolicyServerHandler_->SendInterruptEventWithClientIdCallback(interruptEvent, clientPid);
+}
+ 
+void SendDistributedRoutingRoleChangeFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> descriptor;
+    CastType type = GetData<CastType>();
+    audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, type);
+}
+ 
+void SendWakeupCloseEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    bool isSync = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendWakeupCloseEvent(isSync);
+}
+ 
+void SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    bool enabled = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendSpatializatonEnabledChangeForAnyDeviceEvent(selectedAudioDevice, enabled);
+}
+ 
+void SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    bool enabled = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendSpatializatonEnabledChangeForCurrentDeviceEvent(enabled);
+}
+
+void SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    std::shared_ptr<AudioDeviceDescriptor> selectedAudioDevice;
+    bool enabled = GetData<uint32_t>() % NUM_2;
+    audioPolicyServerHandler_->SendHeadTrackingEnabledChangeForAnyDeviceEvent(selectedAudioDevice, enabled);
+}
+ 
+void SendPipeStreamCleanEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AudioPipeType pipeType = GetData<AudioPipeType>();
+    audioPolicyServerHandler_->SendPipeStreamCleanEvent(pipeType);
+}
+
+void HandleVolumeChangeCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    VolumeEvent volumeEvent;
+    std::shared_ptr<AudioPolicyClientHolder> audioPolicyClient = nullptr;
+    audioPolicyServerHandler_->HandleVolumeChangeCallback(clientId, audioPolicyClient, volumeEvent);
+}
+ 
+void HandleHeadTrackingDeviceChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleHeadTrackingDeviceChangeEvent(event);
+}
+ 
+void HandleCapturerCreateEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleCapturerCreateEvent(event);
+}
+ 
+void HandleCapturerRemovedEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleCapturerRemovedEvent(event);
+}
+ 
+void HandleSpatializatonEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleSpatializatonEnabledChangeForAnyDeviceEvent(event);
+}
+ 
+void HandleSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleSpatializatonEnabledChangeForCurrentDeviceEvent(event);
+}
+
+void HandleHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleHeadTrackingEnabledChangeForAnyDeviceEvent(event);
+}
+ 
+void HandlePipeStreamCleanEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandlePipeStreamCleanEvent(event);
+}
+
+void HandleAudioZoneEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAudioZoneEvent(event);
+}
+ 
+void RemoveDistributedRoutingRoleChangeCbsMapFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    int32_t clientId = GetData<int32_t>();
+    audioPolicyServerHandler_->RemoveDistributedRoutingRoleChangeCbsMap(clientId);
+}
+ 
+void HandleAudioSessionDeactiveCallbackFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAudioSessionDeactiveCallback(event);
+}
+ 
+void HandleRequestCateGoryEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleRequestCateGoryEvent(event);
+}
+ 
+void HandleAbandonCateGoryEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAbandonCateGoryEvent(event);
+}
+ 
+void HandleFocusInfoChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleFocusInfoChangeEvent(event);
+}
+ 
+void HandleActiveVolumeTypeChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleActiveVolumeTypeChangeEvent(event);
+}
+ 
+void HandleAppVolumeChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleAppVolumeChangeEvent(event);
+}
+ 
+void HandleRingerModeUpdatedEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleRingerModeUpdatedEvent(event);
+}
+ 
+void HandleMicStateUpdatedEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleMicStateUpdatedEvent(event);
+}
+ 
+void HandleMicStateUpdatedEventWithClientIdFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleMicStateUpdatedEventWithClientId(event);
+}
+ 
+void HandleInterruptEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleInterruptEvent(event);
+}
+
+void HandleInterruptEventForAudioSessionFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleInterruptEventForAudioSession(event);
+}
+ 
+void HandleInterruptEventWithClientIdFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleInterruptEventWithClientId(event);
+}
+ 
+void HandleDistributedRoutingRoleChangeEventFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
+    audioPolicyServerHandler_->HandleDistributedRoutingRoleChangeEvent(event);
+}
+ 
+void HandleVolumeKeyEventToRssWhenAccountsChangeFuzzTest()
+{
+    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
+    if (audioPolicyServerHandler_ == nullptr) {
+        return;
+    }
+    AppExecFwk::InnerEvent::Pointer event =
+        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
+    std::shared_ptr<AudioPolicyServerHandler::EventContextObj> eventContextObj =
+        event->GetSharedObject<AudioPolicyServerHandler::EventContextObj>();
+    audioPolicyServerHandler_->HandleVolumeKeyEventToRssWhenAccountsChange(eventContextObj);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     AddAudioPolicyClientProxyMapFuzzTest,
     RemoveAudioPolicyClientProxyMapFuzzTest,
@@ -350,6 +743,40 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SendRendererDeviceChangeEventFuzzTest,
     SendCapturerCreateEventFuzzTest,
     SendCapturerRemovedEventFuzzTest,
+    SendRingerModeUpdatedCallbackFuzzTest,
+    SendAppVolumeChangeCallbackFuzzTest,
+    SendInterruptEventCallbackForAudioSessionFuzzTest,
+    SendInterruptEventWithClientIdCallbackFuzzTest,
+    SendDistributedRoutingRoleChangeFuzzTest,
+    SendWakeupCloseEventFuzzTest,
+    SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
+    SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
+    SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
+    SendPipeStreamCleanEventFuzzTest,
+    HandleVolumeChangeCallbackFuzzTest,
+    HandleHeadTrackingDeviceChangeEventFuzzTest,
+    HandleCapturerCreateEventFuzzTest,
+    HandleCapturerRemovedEventFuzzTest,
+    HandleSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
+    HandleSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
+    HandleHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
+    HandlePipeStreamCleanEventFuzzTest,
+    HandleAudioZoneEventFuzzTest,
+    RemoveDistributedRoutingRoleChangeCbsMapFuzzTest,
+    HandleAudioSessionDeactiveCallbackFuzzTest,
+    HandleRequestCateGoryEventFuzzTest,
+    HandleAbandonCateGoryEventFuzzTest,
+    HandleFocusInfoChangeEventFuzzTest,
+    HandleActiveVolumeTypeChangeEventFuzzTest,
+    HandleAppVolumeChangeEventFuzzTest,
+    HandleRingerModeUpdatedEventFuzzTest,
+    HandleMicStateUpdatedEventFuzzTest,
+    HandleMicStateUpdatedEventWithClientIdFuzzTest,
+    HandleInterruptEventFuzzTest,
+    HandleInterruptEventForAudioSessionFuzzTest,
+    HandleInterruptEventWithClientIdFuzzTest,
+    HandleDistributedRoutingRoleChangeEventFuzzTest,
+    HandleVolumeKeyEventToRssWhenAccountsChangeFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)

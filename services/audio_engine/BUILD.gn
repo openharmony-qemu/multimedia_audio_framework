@@ -217,6 +217,7 @@ ohos_shared_library("audio_engine_manager") {
     "../audio_policy/common/include",
     "../audio_policy/server/infra/datashare/include",
     "../../frameworks/native/audioeffect/include",
+    "../../frameworks/native/audioqosmanager/include",
     "../../frameworks/native/audioschedule/include",
   ]
 
@@ -239,6 +240,7 @@ ohos_shared_library("audio_engine_manager") {
     ":audio_engine_node",
     ":audio_engine_utils",
     "../../frameworks/native/audioeffect:audio_effect",
+    "../../frameworks/native/audioqosmanager:audio_qosmanager",
     "../../frameworks/native/audioschedule:audio_schedule",
     "../../frameworks/native/audioutils:audio_utils",
     "../../frameworks/native/hdiadapter_new:hdiadapter_new",
@@ -252,6 +254,7 @@ ohos_shared_library("audio_engine_manager") {
     "data_share:datashare_common",
     "data_share:datashare_consumer",
     "hilog:libhilog",
+    "init:libbegetutil",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]

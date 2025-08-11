@@ -233,6 +233,10 @@ public:
     bool GetStopFlag() const;
 
     FutexCode WaitFor(int64_t timeoutInNs, const OnIndexChange &pred);
+
+    void WakeFutex();
+
+    RestoreStatus GetRestoreStatus();
 private:
     int32_t SizeCheck();
 

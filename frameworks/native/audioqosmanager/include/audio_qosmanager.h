@@ -16,12 +16,14 @@
 #ifndef AUDIO_QOSMANAGER_H
 #define AUDIO_QOSMANAGER_H
 
+#include <cstdint>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 void SetThreadQosLevel(void);
-void SetThreadQosLevelAsync(void);
+void SetThreadQosLevelAsync(int32_t setPriority);
 void ResetThreadQosLevel(void);
 
 #ifdef __cplusplus

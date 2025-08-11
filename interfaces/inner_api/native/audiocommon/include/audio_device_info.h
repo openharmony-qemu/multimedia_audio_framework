@@ -195,10 +195,6 @@ enum DeviceType {
      */
     DEVICE_TYPE_FILE_SOURCE = 51,
     /**
-     * Indicates a AI source device
-     */
-    DEVICE_TYPE_AI_SOURCE = 52,
-    /**
      * Indicates any headset/headphone for disconnect
      */
     DEVICE_TYPE_EXTERN_CABLE = 100,
@@ -227,7 +223,6 @@ inline const std::unordered_set<DeviceType> INPUT_DEVICE_TYPE_SET = {
     DeviceType::DEVICE_TYPE_FILE_SOURCE,
     DeviceType::DEVICE_TYPE_ACCESSORY,
     DeviceType::DEVICE_TYPE_NEARLINK_IN,
-    DeviceType::DEVICE_TYPE_AI_SOURCE,
 };
 
 inline bool IsInputDevice(DeviceType deviceType, DeviceRole deviceRole = DEVICE_ROLE_NONE)

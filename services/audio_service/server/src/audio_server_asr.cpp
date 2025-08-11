@@ -56,8 +56,7 @@ static const std::map<std::string, AsrNoiseSuppressionMode> NS_MODE_MAP = {
     {"FAR_FIELD", AsrNoiseSuppressionMode::FAR_FIELD},
     {"FULL_DUPLEX_STANDARD", AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD},
     {"FULL_DUPLEX_NEAR_FIELD", AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD},
-    {"ASR_WHISPER_MODE", AsrNoiseSuppressionMode::ASR_WHISPER_MODE},
-    {"VOICE_TRANSCRIPTION", AsrNoiseSuppressionMode::VOICE_TRANSCRIPTION}
+    {"ASR_WHISPER_MODE", AsrNoiseSuppressionMode::ASR_WHISPER_MODE}
 };
 
 static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = {
@@ -67,8 +66,7 @@ static const std::map<AsrNoiseSuppressionMode, std::string> NS_MODE_MAP_VERSE = 
     {AsrNoiseSuppressionMode::FAR_FIELD, "FAR_FIELD"},
     {AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD, "FULL_DUPLEX_STANDARD"},
     {AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD, "FULL_DUPLEX_NEAR_FIELD"},
-    {AsrNoiseSuppressionMode::ASR_WHISPER_MODE, "ASR_WHISPER_MODE"},
-    {AsrNoiseSuppressionMode::VOICE_TRANSCRIPTION, "VOICE_TRANSCRIPTION"}
+    {AsrNoiseSuppressionMode::ASR_WHISPER_MODE, "ASR_WHISPER_MODE"}
 };
 
 static const std::map<std::string, AsrWhisperDetectionMode> WHISPER_DETECTION_MODE_MAP = {

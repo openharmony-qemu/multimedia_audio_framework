@@ -26,6 +26,8 @@ struct VolumePoint {
 
 struct DeviceVolumeInfo {
     DeviceVolumeType deviceType;
+    int32_t minLevel = -1;
+    int32_t maxLevel = -1;
     int32_t defaultLevel = -1;
     std::vector<VolumePoint> volumePoints;
 };

@@ -402,6 +402,20 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     return true;
 }
 
+bool RendererInClientInner::IsRestoreNeeded()
+{
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
+
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
@@ -411,6 +425,11 @@ void RendererInClientInner::WaitForBufferNeedWrite()
             if (state_ != RUNNING) {
                 return true;
             }
+
+            if (IsRestoreNeeded()) {
+                return true;
+            }
+
             return CheckBufferNeedWrite();
         });
     if (futexRes != SUCCESS) {

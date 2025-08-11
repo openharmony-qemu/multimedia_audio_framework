@@ -107,9 +107,10 @@ private:
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool CheckNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
-    bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> stream);
+    bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
     bool CompareAIxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
+    bool IsRemainingSourceIndependent();
 private:
     IAudioPolicyInterface& audioPolicyManager_;
     AudioRouterCenter& audioRouterCenter_;

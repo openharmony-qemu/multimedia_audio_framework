@@ -239,6 +239,10 @@ static void SetAudioSceneForAllSource(AudioScene audioScene)
     if (primarySource != nullptr && primarySource->IsInited()) {
         primarySource->SetAudioScene(audioScene);
     }
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->SetAudioScene(audioScene);
+    }
 #ifdef SUPPORT_LOW_LATENCY
     std::shared_ptr<IAudioCaptureSource> fastSource = GetSourceByProp(HDI_ID_TYPE_FAST, HDI_ID_INFO_DEFAULT, true);
     if (fastSource != nullptr && fastSource->IsInited()) {
@@ -284,6 +288,10 @@ static void UpdateDeviceForAllSource(std::shared_ptr<IAudioCaptureSource> &sourc
         fastVoipSource->UpdateActiveDevice(type);
     }
 #endif
+    std::shared_ptr<IAudioCaptureSource> aiSource = GetSourceByProp(HDI_ID_TYPE_AI, HDI_ID_INFO_DEFAULT);
+    if (aiSource != nullptr && aiSource->IsInited()) {
+        aiSource->UpdateActiveDevice(type);
+    }
 }
 
 // std::vector<StringPair> -> std::vector<std::pair<std::string, std::string>>
@@ -1310,7 +1318,7 @@ int32_t AudioServer::SetIORoutes(std::vector<std::pair<DeviceType, DeviceFlag>> 
     for (auto activeDevice : activeDevices) {
         deviceTypes.push_back(activeDevice.first);
     }
-    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}d, flag: %{public}d",
+    AUDIO_INFO_LOG("SetIORoutes 1st deviceType: %{public}d, deviceSize : %{public}zu, flag: %{public}d",
         type, deviceTypes.size(), flag);
     int32_t ret = SetIORoutes(type, flag, deviceTypes, a2dpOffloadFlag, deviceName);
     return ret;
@@ -2380,7 +2388,7 @@ void AudioServer::RegisterAudioCapturerSourceCallback()
             return info == HDI_ID_INFO_DEFAULT;
         }
 
-        if (type == HDI_ID_TYPE_VOICE_TRANSCRIPTION) {
+        if (type == HDI_ID_TYPE_AI) {
             return info == HDI_ID_INFO_DEFAULT;
         }
         return false;

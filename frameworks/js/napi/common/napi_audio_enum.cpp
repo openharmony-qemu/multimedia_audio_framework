@@ -450,8 +450,7 @@ const std::map<std::string, int32_t> NapiAudioEnum::asrNoiseSuppressionModeMap =
     {"FAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FAR_FIELD)},
     {"FULL_DUPLEX_STANDARD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_STANDARD)},
     {"FULL_DUPLEX_NEAR_FIELD", static_cast<int32_t>(AsrNoiseSuppressionMode::FULL_DUPLEX_NEAR_FIELD)},
-    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)},
-    {"VOICE_TRANSCRIPTION", static_cast<int32_t>(AsrNoiseSuppressionMode::VOICE_TRANSCRIPTION)},
+    {"ASR_WHISPER_MODE", static_cast<int32_t>(AsrNoiseSuppressionMode::ASR_WHISPER_MODE)}
 };
 
 const std::map<std::string, int32_t> NapiAudioEnum::asrAecModeMap = {
@@ -1318,8 +1317,8 @@ int32_t NapiAudioEnum::GetJsStreamUsage(StreamUsage streamUsage)
         case StreamUsage::STREAM_USAGE_UNKNOWN:
             result = NapiAudioEnum::USAGE_UNKNOW;
             break;
-        case StreamUsage::STREAM_USAGE_MEDIA:
-            result = NapiAudioEnum::USAGE_MEDIA;
+        case StreamUsage::STREAM_USAGE_MUSIC:
+            result = NapiAudioEnum::USAGE_MUSIC;
             break;
         case StreamUsage::STREAM_USAGE_VOICE_COMMUNICATION:
             result = NapiAudioEnum::USAGE_VOICE_COMMUNICATION;
@@ -1387,7 +1386,7 @@ int32_t NapiAudioEnum::GetJsStreamUsageFir(StreamUsage streamUsage)
             result = NapiAudioEnum::USAGE_VOICE_CALL_ASSISTANT;
             break;
         default:
-            result = NapiAudioEnum::USAGE_MEDIA;
+            result = NapiAudioEnum::USAGE_UNKNOW;
             break;
     }
     return result;
@@ -1591,10 +1590,10 @@ AudioVolumeType NapiAudioEnum::GetNativeAudioVolumeType(int32_t volumeType)
             result = STREAM_SYSTEM;
             break;
         case NapiAudioEnum::NOTIFICATION:
-            result = STREAM_NOTIFICATION;
+            result = STREAM_RING;
             break;
         case NapiAudioEnum::NAVIGATION:
-            result = STREAM_NAVIGATION;
+            result = STREAM_MUSIC;
             break;
         case NapiAudioEnum::ALL:
             result = STREAM_ALL;
@@ -1616,8 +1615,8 @@ StreamUsage NapiAudioEnum::GetNativeStreamUsage(int32_t streamUsage)
         case NapiAudioEnum::USAGE_UNKNOW:
             result = STREAM_USAGE_UNKNOWN;
             break;
-        case NapiAudioEnum::USAGE_MEDIA:
-            result = STREAM_USAGE_MEDIA;
+        case NapiAudioEnum::USAGE_MUSIC:
+            result = STREAM_USAGE_MUSIC;
             break;
         case NapiAudioEnum::USAGE_VOICE_COMMUNICATION:
             result = STREAM_USAGE_VOICE_COMMUNICATION;

@@ -269,7 +269,7 @@ bool AudioCapturerSession::CheckNormalInputPipes(const std::vector<std::shared_p
     return hasSession;
 }
 
-bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> stream)
+bool AudioCapturerSession::IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream)
 {
     return sessionWithNormalSourceType_.find(stream->sessionId_) != sessionWithNormalSourceType_.end() &&
            stream->streamStatus_ == STREAM_STATUS_STARTED &&
@@ -329,7 +329,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
         case SESSION_OPERATION_STOP:
             if (findRunningSessionRet && (targetSession.sourceType == audioEcManager_.GetSourceOpened())) {
                 needReload = true;
-                targetSessionId = runningSessionInfo.sessionId_;
+                targetSessionId = static_cast<uint32_t>(runningSessionInfo.sessionId);
                 targetSession = sessionWithNormalSourceType_[targetSessionId];
             }
             break;
@@ -375,6 +375,29 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     return SUCCESS;
 }
 
+void AudioCapturerSession::IsRemainingSourceIndependent()
+{
+    for (auto it = sessionWithNormalSourceType_.begin(); it !=sessionWithNormalSourceType_.end(); it++) {
+        auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+        if (sourceStrategyMapget == nullptr) {
+            return false;
+        }
+
+        SourceType sourceType = it->second.sourceType;
+        auto smapIt = sourceStrategyMapget->find(sourceType);
+        if (smapIt == sourceStrategyMapget->end()) {
+            AUDIO_INFO_LOG("not find sourceType:%{public}"d, sourceType);
+            return false;
+        }
+
+        if (smapIt->second.pipeName != "primary_input_AI") {
+            AUDIO_INFO_LOG("invalid pipeName:%{public}"s, smapIt->second.pipeName.c_str());
+            return false;
+        }
+    }
+    return true;
+}
+
 void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
@@ -392,6 +415,9 @@ void AudioCapturerSession::OnCapturerSessionRemoved(uint64_t sessionID)
             audioEcManager_.ResetAudioEcInfo();
         }
         sessionWithNormalSourceType_.erase(sessionID);
+        if (!sessionWithNormalSourceType_.empty() && !IsRemainingSourceIndependent()) {
+            return;
+        }
         // close source when all capturer sessions removed
         audioEcManager_.CloseNormalSource();
         return;

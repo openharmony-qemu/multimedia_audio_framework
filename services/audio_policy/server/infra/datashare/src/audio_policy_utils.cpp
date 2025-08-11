@@ -327,13 +327,18 @@ std::string AudioPolicyUtils::GetSinkName(std::shared_ptr<AudioDeviceDescriptor>
     }
 }
 
-std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
+std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType, uint32_t routeFlag)
 {
     std::string portName = PORT_NONE;
     switch (deviceType) {
         case InternalDeviceType::DEVICE_TYPE_MIC:
         case InternalDeviceType::DEVICE_TYPE_NEARLINK_IN:
-            portName = PRIMARY_MIC;
+            if (routeFlag == AUDIO_INPUT_FLAG_AI) {
+                portName = PRIMARY_AI_MIC;
+                AUDIO_INFO_LOG("use PRIMARY_AI_IC for devicetype: %{public}d", deviceType);
+            } else {
+                portName = PRIMARY_MIC;
+            }
             break;
         case InternalDeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
             portName = USB_MIC;
@@ -349,9 +354,6 @@ std::string AudioPolicyUtils::GetSourcePortName(DeviceType deviceType)
             break;
         case InternalDeviceType::DEVICE_TYPE_ACCESSORY:
             portName = ACCESSORY_SOURCE;
-            break;
-        case InternalDeviceType::DEVICE_TYPE_AI_SOURCE:
-            portName = PRIMARY_AI_MIC;
             break;
         default:
             portName = PORT_NONE;
@@ -594,7 +596,6 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(DeviceType deviceType) const
         case DeviceType::DEVICE_TYPE_MIC:
         case DeviceType::DEVICE_TYPE_WAKEUP:
         case DeviceType::DEVICE_TYPE_ACCESSORY:
-        case DeviceType::DEVICE_TYPE_AI_SOURCE:
             return DeviceRole::INPUT_DEVICE;
         default:
             return DeviceRole::DEVICE_ROLE_NONE;
@@ -643,7 +644,7 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
     DeviceType devType = DeviceType::DEVICE_TYPE_NONE;
     if (deviceName == "Speaker") {
         devType = DeviceType::DEVICE_TYPE_SPEAKER;
-    } else if (deviceName == "Built_in_mic") {
+    } else if (deviceName == "Built_in_mic" || deviceName == "Built_in_ai_source") {
         devType = DeviceType::DEVICE_TYPE_MIC;
     } else if (deviceName == "Built_in_wakeup") {
         devType = DeviceType::DEVICE_TYPE_WAKEUP;
@@ -653,8 +654,6 @@ DeviceType AudioPolicyUtils::GetDeviceType(const std::string &deviceName)
         devType = DEVICE_TYPE_FILE_SINK;
     } else if (deviceName == "file_source") {
         devType = DEVICE_TYPE_FILE_SOURCE;
-    } else if (deviceName == "Built_in_ai_source") {
-        devType = DEVICE_TYPE_AI_SOURCE;
     }
     return devType;
 }

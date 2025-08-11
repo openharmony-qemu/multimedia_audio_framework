@@ -151,6 +151,7 @@ group("audio_unit_test") {
         "../services/audio_service/test/unittest:audio_process_in_client_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_plus_unit_test",
         "../services/audio_service/test/unittest/audio_endpoint_unit_test:audio_endpoint_unit_test",
+        "../services/audio_service/test/unittest:audio_process_in_client_second_unit_test",
       ]
     }
   }
@@ -245,7 +246,7 @@ group("audio_fuzz_test") {
     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyserverhandler_fuzzer:fuzztest",
 
-    # "fuzztest/audiopolicyservice_fuzzer:fuzztest",
+    "fuzztest/audiopolicyservice_fuzzer:fuzztest",
     # "fuzztest/audiopolicyserviceenhance_fuzzer:fuzztest",
     # "fuzztest/audiopolicyservicemore_fuzzer:fuzztest",
     # "fuzztest/audiopolicyservicespatialization_fuzzer:fuzztest",
@@ -265,6 +266,7 @@ group("audio_fuzz_test") {
     "fuzztest/audioservicecommonenhance_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrc_fuzzer:fuzztest",
     "fuzztest/audioserviceserversrcenhance_fuzzer:fuzztest",
+    "fuzztest/audioservicestub_fuzzer:fuzztest",
     "fuzztest/audiosessionservice_fuzzer:fuzztest",
     "fuzztest/audiosocketthread_fuzzer:fuzztest",
     "fuzztest/audiospatializationservice_fuzzer:fuzztest",
@@ -281,6 +283,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
+    "fuzztest/capturermanager_fuzzer:fuzztest",
     "fuzztest/coreserviceproviderstub_fuzzer:fuzztest",
     "fuzztest/devicestatuslistener_fuzzer:fuzztest",
     "fuzztest/dfxmsgmanager_fuzzer:fuzztest",
@@ -292,7 +295,10 @@ group("audio_fuzz_test") {
     "fuzztest/hpaecapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaeengine_fuzzer:fuzztest",
     "fuzztest/hpaeinnercapturermanager_fuzzer:fuzztest",
+    "fuzztest/hpaemanager_fuzzer:fuzztest",
+    "fuzztest/hpaemanagerimpl_fuzzer:fuzztest",
     "fuzztest/hpaemanagerstream_fuzzer:fuzztest",
+    "fuzztest/hpaemixernode_fuzzer:fuzztest",
     "fuzztest/hpaemanagercontrol_fuzzer:fuzztest",
     "fuzztest/hpaenolockqueue_fuzzer:fuzztest",
     "fuzztest/hpaeoffloadrenderermanager_fuzzer:fuzztest",
@@ -306,6 +312,8 @@ group("audio_fuzz_test") {
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
     "fuzztest/hpaesinkinputnode_fuzzer:fuzztest",
+    "fuzztest/hpaesinkoutputnode_fuzzer:fuzztest",
+    "fuzztest/hpaesoftlink_fuzzer:fuzztest",
     "fuzztest/hpaesourceinputcluster_fuzzer:fuzztest",
     "fuzztest/hpaesourceinputnode_fuzzer:fuzztest",
     "fuzztest/hpaesourceoutputnode_fuzzer:fuzztest",

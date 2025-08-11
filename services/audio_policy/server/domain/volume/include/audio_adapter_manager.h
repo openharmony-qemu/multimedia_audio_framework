@@ -81,9 +81,9 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
@@ -304,6 +304,8 @@ public:
     void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState);
     void RemoveVoiceTranscriptionMuteState(uint32_t sessionId);
 
+    void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -407,6 +409,7 @@ private:
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
     bool IsDistributedVolumeType(AudioStreamType streamType);
+    void SetHdiSourceTypeToAudioSourceAttr(IAudioSoureAttr &attr, int32_t sourceType) const;
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
@@ -460,6 +463,7 @@ private:
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
+    std::atomic<bool> isSleVoiceStatus_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;
