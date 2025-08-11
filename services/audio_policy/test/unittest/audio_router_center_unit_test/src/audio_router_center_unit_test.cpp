@@ -200,13 +200,14 @@ public:
         return callCaptureRet_;
     }
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override {
-        return {};
+        static const std::vector emptyVector;
+        return emptyVector;
     }
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override {
         return recordCaptureRet_;
     }
     std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override {
-        return nullptr;
+        return std::shared_ptr();
     }
     RouterType GetRouterType() override {
         return routerType_;
@@ -228,6 +229,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_desc_nullptr, TestSize.
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+    EXPECT_EQ(center.routerType_, ROUTER_TYPE_DEFAULT);
 }
  
 /**
