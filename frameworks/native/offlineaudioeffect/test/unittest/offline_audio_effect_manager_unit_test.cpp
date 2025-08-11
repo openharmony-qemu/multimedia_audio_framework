@@ -48,7 +48,7 @@ public:
     MOCK_METHOD(int32_t, ConfigureOfflineEffectChain, (const AudioStreamInfo& inInfo, const AudioStreamInfo& outInfo));
     MOCK_METHOD(int32_t, SetParamOfflineEffectChain, (const std::vector<uint8_t>& param));
     MOCK_METHOD(int32_t, PrepareOfflineEffectChain, (shared_ptr<AudioSharedMemory>& inBuffer,
-                                                  shared_ptr<AudioSharedMemory outBuffer>);
+                                                  shared_ptr<AudioSharedMemory outBuffer>));
     MOCK_METHOD(int32_t, ProcessOfflineEffectChain, (uint32_t inSize, uint32_t outSize));
     MOCK_METHOD(int32_t, ReleaseOfflineEffectChain, ());
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, ());
