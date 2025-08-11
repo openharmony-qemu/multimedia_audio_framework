@@ -1,0 +1,17 @@
+diff a/frameworks/native/offlineaudioeffect/BUILD.gn b/frameworks/native/offlineaudioeffect/BUILD.gn	(rejected hunks)
+@@ -19,6 +19,7 @@ config("offline_audio_effect_config") {
+   include_dirs = [
+     "include",
+     "../../../interfaces/inner_api/native/offlineaudioeffect/include",
++    "../../../interfaces/inner_api/native/audioutils/include",
+   ]
+ 
+   cflags = [
+@@ -86,6 +87,7 @@ if (!audio_framework_feature_offline_effect) {
+       "include",
+       "../../../interfaces/inner_api/native/audiocommon/include",
+       "../../../services/audio_service/common/include",
++      "../../../interfaces/inner_api/native/audioutils/include",
+     ]
+ 
+     sources = [ "src/offline_audio_effect_server_chain.cpp" ]
