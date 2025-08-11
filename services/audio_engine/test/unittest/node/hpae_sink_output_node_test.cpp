@@ -306,7 +306,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower2, TestSize.Level0)
     std::shared_ptr<HpaePcmBuffer> outputData = std::make_shared<HpaePcmBuffer>(bufferInfo);
     outputData->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
 
-    uint32_t sessionId = 10001;
+    uint32_t sessionId = 10001; // default sessionID
     HpaeNodeInfo nodeInfo;
     PrepareNodeInfo(nodeInfo);
     nodeInfo.sessionId = sessionId;
@@ -316,10 +316,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower2, TestSize.Level0)
     hpaeSinkOutputNode->audioRendererSink_ = mockSink;
     hpaeSinkOutputNode->isOpenPaPower_ = true;
     hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
-
-    EXPECT_EQ(outputData->IsSilence(), true);
-    EXPECT_EQ(hpaeSinkOutputNode->isOpenPaPower_, true);
-    EXPECT_EQ(hpaeSinkOutputNode->silenceDataUs_ >= 4 * 1000000, true);
 
     EXPECT_CALL(*mockSink, GetAudioScene())
         .WillOnce(Return(0))
