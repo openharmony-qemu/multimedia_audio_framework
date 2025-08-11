@@ -1341,8 +1341,8 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_WARNING_LOG("SetLoudnessGain only for hpae renderer stream");
-    return ERROR;
+    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
+    return SUCCESS;
 }
 
 void PaRendererStreamImpl::UpdatePaTimingInfo()
