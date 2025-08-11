@@ -364,7 +364,7 @@ int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t call
         if (streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
             return zoneId;
         }
-        zoneId = FindAudioZoneByKey(INVALID_ZONEID, "", "", streamUsage);
+        zoneId = FindAudioZoneByKey(INVALID_UID, "", "", streamUsage);
     }
     isActivate ? AddUidToAudioZone(zoneId, callerUid) : RemoveUidFromAudioZone(zoneId, callerUid);
     return zoneId;
@@ -374,7 +374,7 @@ int32_t AudioZoneService::FindAudioZone(int32_t uid, StreamUsage usage)
 {
     std::lock_guard<std::mutex> lock(zoneMutex_);
     int32_t zoneId = FindAudioZoneByKey(uid, "", "", StreamUsage::STREAM_USAGE_INVALID);
-    return zoneId != 0 ? zoneId : FindAudioZoneByKey(INVALID_ZONEID, "", "", usage);
+    return zoneId != 0 ? zoneId : FindAudioZoneByKey(INVALID_UID, "", "", usage);
 }
 
 int32_t AudioZoneService::FindAudioZoneByKey(int32_t uid, const std::string &deviceTag,
