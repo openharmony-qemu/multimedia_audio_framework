@@ -135,16 +135,6 @@
             },
             {
               "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_ipc",
-              "header": {
-                "header_files": [
-                  "audio_policy_ipc_interface_code.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/services/audio_policy/common/include"
-              }
-            },
-            {
-              "type": "none",
               "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_foundation",
               "header": {
                 "header_files": [
