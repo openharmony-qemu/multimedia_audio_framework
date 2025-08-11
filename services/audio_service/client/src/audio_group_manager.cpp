@@ -58,6 +58,7 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         case STREAM_VOICE_CALL:
         case STREAM_VOICE_COMMUNICATION:
         case STREAM_RING:
+        case STREAM_NOTIFICATION:
         case STREAM_MUSIC:
         case STREAM_ALARM:
         case STREAM_SYSTEM:
@@ -73,6 +74,11 @@ int32_t AudioGroupManager::SetVolume(AudioVolumeType volumeType, int32_t volume,
         default:
             AUDIO_ERR_LOG("SetVolume: volumeType[%{public}d] is not supported", volumeType);
             return ERR_NOT_SUPPORTED;
+    }
+
+    if (volumeType == STREAM_NOTIFICATION) {
+        return AudioPolicyManager::GetInstance().SetSystemNotificationVolumeLevel(
+            volumeType, volume, false, volumeFlag, uid);
     }
 
     /* Call Audio Policy SetSystemVolumeLevel */
@@ -119,6 +125,10 @@ int32_t AudioGroupManager::GetVolume(AudioVolumeType volumeType, int32_t uid)
         default:
             AUDIO_ERR_LOG("GetVolume volumeType=%{public}d not supported", volumeType);
             return ERR_NOT_SUPPORTED;
+    }
+
+    if (volumeType == STREAM_NOTIFICATION) {
+        return AudioPolicyManager::GetInstance().GetSystemNotificationVolumeLevel(volumeType, uid);
     }
 
     return AudioPolicyManager::GetInstance().GetSystemVolumeLevel(volumeType, uid);

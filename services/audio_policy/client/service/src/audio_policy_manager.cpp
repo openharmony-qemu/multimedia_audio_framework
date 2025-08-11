@@ -354,6 +354,19 @@ int32_t AudioPolicyManager::SetSystemVolumeLevel(AudioVolumeType volumeType, int
     return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
 }
 
+int32_t AudioPolicyManager::SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel,
+    bool isLegacy, int32_t volumeFlag, int32_t uid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    volumeType = STREAM_RING;
+    if (isLegacy) {
+        return gsp->SetSystemVolumeLevelLegacy(volumeType, volumeLevel);
+    }
+    return gsp->SetSystemVolumeLevel(volumeType, volumeLevel, volumeFlag, uid);
+}
+
 int32_t AudioPolicyManager::SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel,
     DeviceType deviceType, int32_t volumeFlag)
 {
@@ -490,6 +503,17 @@ int32_t AudioPolicyManager::GetSystemVolumeLevel(AudioVolumeType volumeType, int
     const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
 
+    int32_t volumeLevel = -1;
+    gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel);
+    return volumeLevel;
+}
+
+int32_t AudioPolicyManager::GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid)
+{
+    const sptr<IAudioPolicy> gsp = GetAudioPolicyManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gsp != nullptr, -1, "audio policy manager proxy is NULL.");
+
+    volumeType = STREAM_RING;
     int32_t volumeLevel = -1;
     gsp->GetSystemVolumeLevel(volumeType, uid, volumeLevel);
     return volumeLevel;
