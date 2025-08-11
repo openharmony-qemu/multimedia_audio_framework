@@ -45,7 +45,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 17;
+const uint8_t TESTSIZE = 20;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -358,6 +358,34 @@ void AudioActiveDeviceIsDeviceInVectorFuzzTest()
     audioActiveDevice->IsDeviceInVector(desc, descs);
 }
 
+void AudioDeviceDescriptorSetClientInfoFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo =
+        std::make_shared<AudioDeviceDescriptor::ClientInfo>();
+    deviceDescriptor.GetDeviceCategory();
+    deviceDescriptor.SetClientInfo(clientInfo);
+}
+
+void AudioDeviceDescriptorFixApiCompatibilityFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    int apiVersion = GetData<int>();
+    DeviceRole deviceRole = GetData<DeviceRole>();
+    DeviceType deviceType = GetData<DeviceType>();
+    int32_t deviceId = GetData<int32_t>();
+    DeviceStreamInfo streamInfo;
+    std::list<DeviceStreamInfo> streamInfos;
+    streamInfos.push_back(streamInfo);
+    deviceDescriptor.FixApiCompatibility(apiVersion, deviceRole, deviceType, deviceId, streamInfos);
+}
+
+void AudioDeviceDescriptorGetKeyFuzzTest()
+{
+    AudioDeviceDescriptor deviceDescriptor;
+    deviceDescriptor.GetKey();
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     GetActiveA2dpDeviceStreamInfoFuzzTest,
     GetMaxAmplitudeFuzzTest,
@@ -376,6 +404,9 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioActiveDeviceSetDeviceActiveFuzzTest,
     AudioActiveDeviceSetCallDeviceActiveFuzzTest,
     AudioActiveDeviceIsDeviceInVectorFuzzTest,
+    AudioDeviceDescriptorSetClientInfoFuzzTest,
+    AudioDeviceDescriptorFixApiCompatibilityFuzzTest,
+    AudioDeviceDescriptorGetKeyFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)
