@@ -374,7 +374,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_117, TestSize.Level1)
  */
 HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_118, TestSize.Level1)
 {
-    auto audioVolumeManager = std::make_shared<AudioVolumeManager>();
+    auto audioVolumeManager = std::make_shared<ForceControlVolumeTypeMonitor>();
     EXPECT_NE(audioVolumeManager, nullptr);
 
     EXPECT_NO_THROW(audioVolumeManager->SetTimer(-1, nullptr));
