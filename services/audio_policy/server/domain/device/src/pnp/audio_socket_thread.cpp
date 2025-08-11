@@ -155,17 +155,25 @@ int32_t AudioSocketThread::SetAudioAnahsEventValue(AudioEvent *audioEvent, struc
     return ERROR;
 }
 
-static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent, uint32_t h2wTypeLast)
+void AudioSocketThread::SetAudioPnpUevent(AudioEvent *audioEvent, char switchState)
 {
-    switch (audioPnpUevent->switchState[0]) {
+    if (audioEvent == nullptr) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return;
+    }
+    static uint32_t h2wTypeLast = PNP_DEVICE_HEADSET;
+    switch (switchState) {
         case REMOVE_AUDIO_DEVICE:
             audioEvent->eventType = PNP_EVENT_DEVICE_REMOVE;
             audioEvent->deviceType = h2wTypeLast;
             break;
         case ADD_DEVICE_HEADSET:
-        case ADD_DEVICE_HEADSET_WITHOUT_MIC:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
             audioEvent->deviceType = PNP_DEVICE_HEADSET;
+            break;
+        case ADD_DEVICE_HEADSET_WITHOUT_MIC:
+            audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
+            audioEvent->deviceType = PNP_DEVICE_HEADPHONE;
             break;
         case ADD_DEVICE_ADAPTER:
             audioEvent->eventType = PNP_EVENT_DEVICE_ADD;
@@ -176,18 +184,21 @@ static void SetAudioPnpUevent(AudioEvent *audioEvent, struct AudioPnpUevent *aud
             audioEvent->deviceType = PNP_DEVICE_UNKNOWN;
             break;
     }
+    h2wTypeLast = audioEvent->deviceType;
 }
 
 int32_t AudioSocketThread::SetAudioPnpServerEventValue(AudioEvent *audioEvent, struct AudioPnpUevent *audioPnpUevent)
 {
+    if (audioEvent == nullptr) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return ERROR;
+    }
     if (strncmp(audioPnpUevent->subSystem, UEVENT_SUBSYSTEM_SWITCH, strlen(UEVENT_SUBSYSTEM_SWITCH)) == 0) {
-        static uint32_t h2wTypeLast = PNP_DEVICE_HEADSET;
         if (strncmp(audioPnpUevent->switchName, UEVENT_SWITCH_NAME_H2W, strlen(UEVENT_SWITCH_NAME_H2W)) != 0) {
             AUDIO_ERR_LOG("the switch name of 'h2w' not found!");
             return ERROR;
         }
-        SetAudioPnpUevent(audioEvent, audioPnpUevent, h2wTypeLast);
-        h2wTypeLast = audioEvent->deviceType;
+        AudioSocketThread::SetAudioPnpUevent(audioEvent, audioPnpUevent->switchState[0]);
         audioEvent->name = audioPnpUevent->name;
         audioEvent->address = audioPnpUevent->devName;
     } else {
@@ -477,6 +488,10 @@ bool AudioSocketThread::AudioPnpUeventParse(const char *msg, const ssize_t strLe
 
 int32_t AudioSocketThread::DetectAnalogHeadsetState(AudioEvent *audioEvent)
 {
+    if (audioEvent == nullptr) {
+        AUDIO_ERR_LOG("audioEvent is null!");
+        return ERROR;
+    }
     int8_t state = 0;
     FILE *fp = fopen(SWITCH_STATE_PATH, "r");
     if (fp == NULL) {
@@ -491,13 +506,7 @@ int32_t AudioSocketThread::DetectAnalogHeadsetState(AudioEvent *audioEvent)
         return ERROR;
     }
 
-    if (state == '0') {
-        audioEvent->eventType = AUDIO_DEVICE_REMOVE;
-        audioEvent->deviceType = AUDIO_HEADSET;
-    } else {
-        audioEvent->eventType = AUDIO_DEVICE_ADD;
-        audioEvent->deviceType = AUDIO_HEADSET;
-    }
+    AudioSocketThread::SetAudioPnpUevent(audioEvent, state);
 
     fclose(fp);
     return SUCCESS;

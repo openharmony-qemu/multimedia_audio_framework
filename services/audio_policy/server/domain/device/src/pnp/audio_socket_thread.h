@@ -37,6 +37,7 @@ public:
     static void UpdateDeviceState(AudioEvent audioEvent);
     static int32_t DetectAnalogHeadsetState(AudioEvent *audioEvent);
     static int32_t DetectDPState(AudioEvent *audioEvent);
+    static void SetAudioPnpUevent(AudioEvent *audioEvent, char switchState);
     static AudioEvent audioSocketEvent_;
 
 private:
