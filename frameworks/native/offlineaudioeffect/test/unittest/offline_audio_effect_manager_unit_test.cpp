@@ -16,7 +16,7 @@
 #include <iostream>
 #include <thread>
 #include <gtest/gtest.h>
-
+#include <gmock/gmock.h>
 #include "audio_errors.h"
 #include "offline_audio_effect_manager.h"
 #include "offline_audio_effect_server_chain.h"
