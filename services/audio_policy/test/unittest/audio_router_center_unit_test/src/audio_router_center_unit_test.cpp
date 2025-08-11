@@ -473,4 +473,3 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_vali
 }
 } // namespace AudioStandard
 } // namespace OHOS
- 
