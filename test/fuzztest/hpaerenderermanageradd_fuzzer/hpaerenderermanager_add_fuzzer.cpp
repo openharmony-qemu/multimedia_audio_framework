@@ -54,7 +54,8 @@ const char* DEFAULT_TEST_DEVICE_CLASS = "file_io";
 const char* DEFAULT_TEST_DEVICE_NETWORKID = "LocalDevice";
 constexpr size_t THRESHOLD = 10;
 constexpr uint8_t TESTSIZE = 22;
-
+constexpr int32_t TEST_SLEEP_TIME_20 = 20;
+constexpr int32_t TEST_SLEEP_TIME_40 = 40;
 constexpr int32_t FRAME_LENGTH_960 = 960;
 constexpr int32_t TEST_STREAM_SESSION_ID = 123456;
 constexpr int32_t DEFAULT_NODE_ID = 1;
