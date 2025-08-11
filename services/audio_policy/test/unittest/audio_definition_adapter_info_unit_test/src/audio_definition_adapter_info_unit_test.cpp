@@ -564,7 +564,7 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
 * @tc.number: AudioPolicyConfigData_019
 * @tc.desc  : Test GetAdapterType
 */
-HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_021, TestSize.Level1)
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_019, TestSize.Level1)
 {
     auto policyAdapter = std::make_shared<AdapterDeviceInfo>();
     EXPECT_NE(policyAdapter, nullptr);
