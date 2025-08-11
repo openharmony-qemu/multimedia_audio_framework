@@ -558,5 +558,36 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
     pipeStreamPropInfo->supportDevices_ = { "test_device1" };
     EXPECT_NO_THROW(pipeStreamPropInfo->SelfCheck());
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: SetDeviceInfoMap_001
+* @tc.desc  : Test SetDeviceInfoMap
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, SetDeviceInfoMap_001, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    
+    std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfo;
+    std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
+    deviceInfoMap["test"] = std::make_shared<AdapterDeviceInfo>();
+    EXPECT_NO_THROW(audioPolicyConfigData->SetDeviceInfoMap(deviceInfo, deviceInfoMap));
+
+}
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: SetVersion_001
+* @tc.desc  : Test SSetVersion
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, SetVersion_001, TestSize.Level1)
+{
+    auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
+    EXPECT_NE(audioPolicyConfigData, nullptr);
+    
+    std::string version = "";
+    EXPECT_NO_THROW(audioPolicyConfigData->SetVersion(version));
+}
 } // namespace AudioStandard
 } // namespace OHOS
