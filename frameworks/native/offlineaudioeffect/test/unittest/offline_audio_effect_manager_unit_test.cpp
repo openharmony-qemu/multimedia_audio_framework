@@ -47,8 +47,7 @@ public:
     MOCK_METHOD(int32_t, CreateOfflineEffectChain, (const std::string &chainName));
     MOCK_METHOD(int32_t, ConfigureOfflineEffectChain, (const AudioStreamInfo& inInfo, const AudioStreamInfo& outInfo));
     MOCK_METHOD(int32_t, SetParamOfflineEffectChain, (const std::vector<uint8_t>& param));
-    MOCK_METHOD(int32_t, PrepareOfflineEffectChain, (shared_ptr<AudioSharedMemory>& inBuffer, 
-        shared_ptr<AudioSharedMemory>& outBuffer));
+    MOCK_METHOD(int32_t, PrepareOfflineEffectChain, (shared_ptr<AudioSharedMemory>& inBuffer, shared_ptr<AudioSharedMemory>& outBuffer));
     MOCK_METHOD(int32_t, ProcessOfflineEffectChain, (uint32_t inSize, uint32_t outSize));
     MOCK_METHOD(int32_t, ReleaseOfflineEffectChain, ());
     MOCK_METHOD(sptr<IRemoteObject>, AsObject, ());
@@ -107,52 +106,63 @@ unique_ptr<OfflineAudioEffectChain> OfflineAudioEffectManager::CreateOfflineAudi
 }
   
 int32_t EffectProcess(struct IEffectControl *self, const struct AudioEffectBuffer* input,
-    struct AudioEffectBuffer* output) {
+    struct AudioEffectBuffer* output) 
+{
     return SUCCESS;
 }
 
 int32_t SendCommand(struct IEffectControl *self, uint32_t cmdId, const int8_t* cmdData, uint32_t cmdDataLen,
-    int8_t* replyData, uint32_t* replyDataLen) {
+    int8_t* replyData, uint32_t* replyDataLen)
+{
     return SUCCESS;
 }
 
-int32_t GetEffectDescriptor(struct IEffectControl *self, struct EffectControllerDescriptor* desc) {
+int32_t GetEffectDescriptor(struct IEffectControl *self, struct EffectControllerDescriptor* desc)
+{
     return SUCCESS;
 }
 
 int32_t EffectReverse(struct IEffectControl *self, const struct AudioEffectBuffer* input,
-    struct AudioEffectBuffer* output) {
+    struct AudioEffectBuffer* output)
+{
     return SUCCESS;
 }
 
-int32_t GetVersion(struct IEffectControl *self, uint32_t* majorVer, uint32_t* minorVer) {
+int32_t GetVersion(struct IEffectControl *self, uint32_t* majorVer, uint32_t* minorVer)
+{
     return SUCCESS;
 }
 
-int32_t IsSupplyEffectLibs(struct IEffectModel *self, bool* supply) {
+int32_t IsSupplyEffectLibs(struct IEffectModel *self, bool* supply)
+{
     return SUCCESS;
 }
 
 int32_t GetAllEffectDescriptors(struct IEffectModel *self, struct EffectControllerDescriptor* descs,
-    uint32_t* descsLen) {
+    uint32_t* descsLen)
+{
     return SUCCESS;
 }
 
 int32_t CreateEffectController(struct IEffectModel *self, const struct EffectInfo* info,
-    struct IEffectControl** contoller, struct ControllerId* id) {
+    struct IEffectControl** contoller, struct ControllerId* id)
+{
     return SUCCESS;
 }
 
-int32_t DestroyEffectController(struct IEffectModel *self, const struct ControllerId* id) {
+int32_t DestroyEffectController(struct IEffectModel *self, const struct ControllerId* id)
+{
     return SUCCESS;
 }
 
 int32_t GetEffectDescriptor(struct IEffectModel *self, const char* effectId,
-    struct EffectControllerDescriptor* desc) {
+    struct EffectControllerDescriptor* desc)
+{
     return SUCCESS;
 }
 
-int32_t GetVersion(struct IEffectModel *self, uint32_t* majorVer, uint32_t* minorVer) {
+int32_t GetVersion(struct IEffectModel *self, uint32_t* majorVer, uint32_t* minorVer)
+{
     return SUCCESS;
 }
 
@@ -404,7 +414,7 @@ HWTEST_F(OfflineAudioEffectServerChainUnitTest, Release_001, TestSize.Level1)
     std::shared_ptr<OfflineAudioEffectServerChain>  serverChain =
         std::make_shared<OfflineAudioEffectServerChain>("test");
 
-    IEffectControl *MockControl = new IEffectControl();
+    IEffectControl *mockControl = new IEffectControl();
     MockControl->EffectProcess = EffectProcess;
     MockControl->SendCommand = SendCommand;
     MockControl->GetEffectDescriptor = GetEffectDescriptor;
