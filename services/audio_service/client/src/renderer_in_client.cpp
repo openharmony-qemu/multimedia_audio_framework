@@ -601,7 +601,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
-        clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
+        clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
     }
