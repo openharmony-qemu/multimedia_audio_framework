@@ -175,7 +175,7 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_001, TestSize.L
  * @tc.number: SetAudioDeviceRefinerCallback_001
  * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
  */
-HWTEST(AudioRouterCenterUnitTest, etAudioDeviceRefinerCallback_001, TestSize.Level1)
+HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_001, TestSize.Level1)
 {
     AudioRouterCenter audioRouterCenter;
     sptr<IRemoteObject> object = nullptr;
