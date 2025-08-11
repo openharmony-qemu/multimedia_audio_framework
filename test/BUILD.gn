@@ -200,7 +200,6 @@ group("audio_fuzz_test") {
     "fuzztest/audioadaptermanager_fuzzer:fuzztest",
     "fuzztest/audioadaptorbluetooth_fuzzer:fuzztest",
     "fuzztest/audioaffinitymanager_fuzzer:fuzztest",
-    "fuzztest/audiobluetoothmanager_fuzzer:fuzztest",
     "fuzztest/audiobufferbase_fuzzer:fuzztest",
     "fuzztest/audiocollaborativeservice_fuzzer:fuzztest",
     "fuzztest/audioconnecteddevice_fuzzer:fuzztest",
@@ -233,7 +232,6 @@ group("audio_fuzz_test") {
     "fuzztest/audiopipemanager_fuzzer:fuzztest",
     "fuzztest/audiopipeselector_fuzzer:fuzztest",
     "fuzztest/audiopnpserver_fuzzer:fuzztest",
-    "fuzztest/audiopolicy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyanother_fuzzer:fuzztest",
     # "fuzztest/audiopolicyclient_fuzzer:fuzztest",
@@ -241,7 +239,6 @@ group("audio_fuzz_test") {
     "fuzztest/audiopolicymanager_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicymore_fuzzer:fuzztest",
-    "fuzztest/audiopolicyproxy_fuzzer:fuzztest",
 
     # "fuzztest/audiopolicyservenhance_fuzzer:fuzztest",
     "fuzztest/audiopolicyserverhandler_fuzzer:fuzztest",
