@@ -61,6 +61,9 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
 
+    int32_t SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
+        int32_t volumeFlag = 0, int32_t uid = 0);
+
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
@@ -78,6 +81,8 @@ public:
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+
+    int32_t GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
