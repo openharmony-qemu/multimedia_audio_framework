@@ -309,8 +309,7 @@ int32_t HpaeInnerCapturerManager::DeInit(bool isMoveDefault)
         AUDIO_INFO_LOG("move all sink to default sink");
         MoveAllStreamToNewSinkInner(sinkName, ids, MOVE_ALL);
     }
-    TriggerCallback(DEINIT_DEVICE_RESULT, sinkInfo_.deviceName, ret);
-    return SUCCESS;
+    return ret;
 }
 
 int32_t HpaeInnerCapturerManager::Start(uint32_t sessionId)
@@ -352,11 +351,15 @@ int32_t HpaeInnerCapturerManager::Pause(uint32_t sessionId)
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_PAUSED);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_PAUSED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+                HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::PauseCapturerStream");
             AUDIO_INFO_LOG("PauseCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_PAUSED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+                HPAE_SESSION_PAUSED, OPERATION_PAUSED);
         }
     };
     SendRequestInner(request);
@@ -427,11 +430,15 @@ int32_t HpaeInnerCapturerManager::Stop(uint32_t sessionId)
             DisConnectRendererInputSessionInner(sessionId);
             SetSessionStateForRenderer(sessionId, HPAE_SESSION_STOPPED);
             sinkInputNodeMap_[sessionId]->SetState(HPAE_SESSION_STOPPED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
+                HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         } else if (SafeGetMap(sourceOutputNodeMap_, sessionId)) {
             Trace trace("[" + std::to_string(sessionId) + "]HpaeInnerCapturerManager::StopCapturerStream");
             AUDIO_INFO_LOG("StopCapCapturerStream sessionId %{public}u", sessionId);
             DisConnectCapturerInputSessionInner(sessionId);
             SetSessionStateForCapturer(sessionId, HPAE_SESSION_STOPPED);
+            TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_RECORD, sessionId,
+                HPAE_SESSION_STOPPED, OPERATION_STOPPED);
         }
     };
     SendRequestInner(request);
@@ -552,7 +559,7 @@ int32_t HpaeInnerCapturerManager::RegisterWriteCallback(uint32_t sessionId,
             sinkInputNodeMap_[sessionId]->RegisterWriteCallback(callback);
         }
     };
-    hpaeNoLockQueue_.PushRequest(request);
+    SendRequestInner(request);
     return SUCCESS;
 }
 
@@ -588,6 +595,11 @@ int32_t HpaeInnerCapturerManager::GetSinkInputInfo(uint32_t sessionId, HpaeSinkI
     return SUCCESS;
 }
 
+int32_t HpaeInnerCapturerManager::RefreshProcessClusterByDevice()
+{
+    return SUCCESS;
+}
+
 HpaeSinkInfo HpaeInnerCapturerManager::GetSinkInfo()
 {
     return sinkInfo_;
@@ -604,12 +616,14 @@ void HpaeInnerCapturerManager::OnFadeDone(uint32_t sessionId, IOperation operati
         if (SafeGetMap(sinkInputNodeMap_, sessionId)) {
             sinkInputNodeMap_[sessionId]->SetState(state);
         }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
     };
     SendRequestInner(request);
 }
 
 void HpaeInnerCapturerManager::OnNodeStatusUpdate(uint32_t sessionId, IOperation operation)
 {
+    CHECK_AND_RETURN_LOG(SafeGetMap(sinkInputNodeMap_, sessionId), "no find sessionId in sinkInputNodeMap");
     TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId,
         rendererSessionNodeMap_[sessionId].state, operation);
 }
@@ -618,10 +632,11 @@ int32_t HpaeInnerCapturerManager::RegisterReadCallback(uint32_t sessionId,
     const std::weak_ptr<ICapturerStreamCallback> &callback)
 {
     auto request = [this, sessionId, callback]() {
+        CHECK_AND_RETURN_LOG(SafeGetMap(sourceOutputNodeMap_, sessionId), "no find sessionId in sourceOutputNodeMap");
         AUDIO_INFO_LOG("RegisterReadCallback sessionId %{public}u", sessionId);
         sourceOutputNodeMap_[sessionId]->RegisterReadCallback(callback);
     };
-    hpaeNoLockQueue_.PushRequest(request);
+    SendRequestInner(request);
     return SUCCESS;
 }
 

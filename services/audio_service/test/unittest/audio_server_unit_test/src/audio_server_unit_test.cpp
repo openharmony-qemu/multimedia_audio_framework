@@ -1353,7 +1353,7 @@ HWTEST_F(AudioServerUnitTest, RendererDataTransferCallback_001, TestSize.Level1)
         std::make_shared<DataTransferStateChangeCallbackInnerImpl>();
     int32_t pid = IPCSkeleton::GetCallingPid();
     audioServer->audioDataTransferCbMap_[pid] = callback;
-    AudioRendererDataTransferStateChangeInfo info;
+    AudioRendererDataTransferStateChangeInfo info = {};
     int callbackId = 0;
     audioServer->OnDataTransferStateChange(pid, callbackId, info);
     audioServer->RemoveRendererDataTransferCallback(pid);
@@ -1509,34 +1509,6 @@ HWTEST_F(AudioServerUnitTest, Dump_002, TestSize.Level1)
 
     auto ret = audioServer->Dump(0, args);
     EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test OnRenderSinkStateChange API
- * @tc.type  : FUNC
- * @tc.number: OnRenderSinkStateChange_001
- * @tc.desc  : Test OnRenderSinkStateChange interface.
- */
-HWTEST_F(AudioServerUnitTest, OnRenderSinkStateChange_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    audioServer->OnRenderSinkStateChange(0, true);
-}
-
-/**
- * @tc.name  : Test OnDataTransferStateChange API
- * @tc.type  : FUNC
- * @tc.number: OnDataTransferStateChange_001
- * @tc.desc  : Test OnDataTransferStateChange interface.
- */
-HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-
-    AudioRendererDataTransferStateChangeInfo info;
-
-    audioServer->audioDataTransferCbMap_.clear();
-    audioServer->OnDataTransferStateChange(0, 0, info);
 }
 
 /**
@@ -1981,6 +1953,7 @@ HWTEST_F(AudioServerUnitTest, OnStart_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     audioServer->OnStart();
+    EXPECT_NE(audioServer->isFastControlled_, false);
 }
 
 /**
@@ -2064,6 +2037,7 @@ HWTEST_F(AudioServerUnitTest, NotifyProcessStatus_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
     audioServer->NotifyProcessStatus();
+    EXPECT_NE(dlopen("libmemmgrclient.z.so", RTLD_NOW), nullptr);
 }
 
 #ifdef HAS_FEATURE_INNERCAPTURER
@@ -2121,22 +2095,11 @@ HWTEST_F(AudioServerUnitTest, IsNormalIpcStream_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, OnCapturerState_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    audioServer->OnCapturerState(true, 0, 1);
-}
-
-/**
- * @tc.name  : Test OnCapturerState API
- * @tc.type  : FUNC
- * @tc.number: OnCapturerState_002
- * @tc.desc  : Test OnCapturerState interface.
- */
-HWTEST_F(AudioServerUnitTest, OnCapturerState_002, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
     std::shared_ptr<WakeUpSourceCallback> callback = std::make_shared<WakeUpSourceCallbackTest>();
     audioServer->wakeupCallback_ = callback;
     audioServer->OnCapturerState(true, 1, 1);
     audioServer->OnCapturerState(true, 0, 1);
+    EXPECT_NE(audioServer->wakeupCallback_, nullptr);
 }
 
 /**
@@ -2382,18 +2345,6 @@ HWTEST_F(AudioServerUnitTest, CreateHdiSourcePort_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test SetBtHdiInvalidState API
- * @tc.type  : FUNC
- * @tc.number: SetBtHdiInvalidState_001
- * @tc.desc  : Test SetBtHdiInvalidState interface.
- */
-HWTEST_F(AudioServerUnitTest, SetBtHdiInvalidState_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    audioServer->SetBtHdiInvalidState();
-}
-
-/**
  * @tc.name  : Test SetActiveOutputDevice API
  * @tc.type  : FUNC
  * @tc.number: SetActiveOutputDevice_001
@@ -2402,8 +2353,10 @@ HWTEST_F(AudioServerUnitTest, SetBtHdiInvalidState_001, TestSize.Level1)
 HWTEST_F(AudioServerUnitTest, SetActiveOutputDevice_001, TestSize.Level1)
 {
     EXPECT_NE(nullptr, audioServer);
-    audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
-    audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
+    int32_t result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_NONE);
+    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
+    result = audioServer->SetActiveOutputDevice(DEVICE_TYPE_INVALID);
+    EXPECT_EQ(result, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -2518,6 +2471,20 @@ HWTEST_F(AudioServerUnitTest, GenerateSessionId_001, TestSize.Level1)
     uint32_t sessionId = 0;
     int32_t ret = audioServer->GenerateSessionId(sessionId);
     EXPECT_EQ(ERROR, ret);
+}
+
+/**
+ * @tc.name  : Test SetAsrVoiceMuteMode API
+ * @tc.type  : FUNC
+ * @tc.number: SetAsrVoiceMuteMode_001
+ * @tc.desc  : Test SetAsrVoiceMuteMode interface.
+ */
+HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t asrVoiceMuteMode = 0;
+    bool on = true;
+    EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

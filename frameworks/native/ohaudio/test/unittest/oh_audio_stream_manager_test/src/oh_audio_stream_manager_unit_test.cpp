@@ -151,7 +151,7 @@ HWTEST(OHAudioStreamManagerUnitTest, OH_AudioStreamManager_IsFastPlaybackSupport
 {
     OH_AudioStreamManager *audioStreamManager = nullptr;
     OH_AudioStreamInfo *streamInfo = nullptr;
-    OH_AudioStream_Usage usage = AUDIOSTREAM_USAGE_UNKNOWN;
+    OH_AudioStream_Usage usage = static_cast<OH_AudioStream_Usage>(100);
     auto result = OH_AudioStreamManager_IsFastPlaybackSupported(audioStreamManager, streamInfo, usage);
     EXPECT_EQ(result, false);
 }

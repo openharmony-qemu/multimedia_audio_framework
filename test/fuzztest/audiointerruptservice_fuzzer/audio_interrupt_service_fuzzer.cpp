@@ -27,7 +27,7 @@ namespace AudioStandard {
 using namespace std;
 const int32_t LIMITSIZE = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"IAudioPolicy";
-const uint8_t TESTSIZE = 47;
+const uint8_t TESTSIZE = 71;
 const uint32_t TEST_ID_MODULO = 3;
 constexpr uint32_t BOOL_MODULO = 2;
 typedef void (*TestPtr)(const uint8_t *, size_t);
@@ -702,7 +702,7 @@ void AudioInterruptServiceHandleAppStreamTypeFuzzTest(const uint8_t *rawData, si
     audioInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
     bool isNull = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
     CreateAudioSessionService(interruptService, !isNull, audioInterrupt.pid);
-    interruptService->HandleAppStreamType(audioInterrupt);
+    interruptService->HandleAppStreamType(0, audioInterrupt);
 }
 
 void AudioInterruptServiceActivateAudioInterruptFuzzTest(const uint8_t *rawData, size_t size)
@@ -950,6 +950,448 @@ void AudioInterruptServiceUpdateHintTypeForExistingSessionFuzzTest(const uint8_t
 
     interruptService->UpdateHintTypeForExistingSession(incomingInterrupt, focusEntry);
 }
+
+void AudioInterruptServiceProcessRemoteInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
+    if (interruptService == nullptr || audioInterruptZone == nullptr) {
+        return;
+    }
+    int32_t pid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = pid;
+    audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
+    audioInterruptZone->audioFocusInfoList.push_back({audioInterrupt, STOP});
+    interruptService->zonesMap_.insert({pid, audioInterruptZone});
+    InterruptEventInternal interruptEvent;
+    interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    std::set<int32_t> sessionIds;
+    interruptService->ProcessRemoteInterrupt(sessionIds, interruptEvent);
+}
+
+void AudioInterruptServiceProcessActiveInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    std::shared_ptr<AudioInterruptZone> audioInterruptZone = make_shared<AudioInterruptZone>();
+    if (interruptService == nullptr || audioInterruptZone == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = zoneId;
+    audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
+    interruptService->zonesMap_.insert({zoneId, audioInterruptZone});
+    audioInterruptZone->audioFocusInfoList.push_back(
+        {audioInterrupt, *reinterpret_cast<const AudioFocuState *>(rawData)});
+    interruptService->policyServer_ = new AudioPolicyServer(zoneId);
+    interruptService->ProcessActiveInterrupt(zoneId, audioInterrupt);
+}
+
+void AudioInterruptServiceHandleLowPriorityEventFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    if (interruptService == nullptr || sessionService == nullptr) {
+        return;
+    }
+    int32_t pid = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t streamId = *reinterpret_cast<const int32_t *>(rawData);
+    sessionService->SetAudioSessionScene(pid, *reinterpret_cast<const AudioSessionScene *>(rawData));
+    if (sessionService->sessionMap_[pid] == nullptr) {
+        return;
+    }
+    sessionService->sessionMap_[pid]->audioSessionScene_ = *reinterpret_cast<const AudioSessionScene *>(rawData);
+    sessionService->sessionMap_[pid]->state_ = *reinterpret_cast<const AudioSessionState *>(rawData);
+    interruptService->sessionService_ = sessionService;
+    interruptService->handler_ = make_shared<AudioPolicyServerHandler>();
+    bool isNull = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    if (isNull) {
+        interruptService->sessionService_ = nullptr;
+    }
+    interruptService->HandleLowPriorityEvent(pid, streamId);
+}
+
+void AudioInterruptServiceSendActiveInterruptEventFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
+    InterruptEventInternal interruptEvent;
+    interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    interruptService->SendActiveInterruptEvent(streamId, interruptEvent, incomingInterrupt, activeInterrupt);
+}
+
+void AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.pid = zoneId;
+    audioInterrupt.isAudioSessionInterrupt = *reinterpret_cast<const bool *>(rawData);
+    audioInterrupt.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    AudioFocuState audioFocusState = *reinterpret_cast<const AudioFocuState *>(rawData);
+    std::pair<AudioInterrupt, AudioFocuState> audioInterruptPair = std::make_pair(audioInterrupt, audioFocusState);
+
+    interruptService->AudioFocusInfoListRemovalCondition(audioInterrupt, audioInterruptPair);
+}
+
+void AudioInterruptServiceIsMediaStreamFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioStreamType audioStreamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+
+    interruptService->IsMediaStream(audioStreamType);
+}
+
+void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt currentInterrupt;
+    currentInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.uid = *reinterpret_cast<const int32_t *>(rawData);
+    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    incomingInterrupt.audioFocusType.sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = *reinterpret_cast<const ActionTarget *>(rawData);
+    focusEntry.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
+    focusEntry.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    focusEntry.isReject = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    interruptService->policyServer_ = new AudioPolicyServer(currentInterrupt.pid);
+
+    interruptService->UpdateAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+}
+
+void AudioInterruptServiceIsMicSourceFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
+
+    interruptService->IsMicSource(sourceType);
+}
+
+void AudioInterruptServiceFocusEntryContinueFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt audioInterrupt;
+    audioInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    audioInterrupt.uid = AUDIO_ID;
+    SourceType sourceType = *reinterpret_cast<const SourceType *>(rawData);
+    audioInterrupt.currencySources.sourcesTypes.push_back(sourceType);
+    std::list<std::pair<AudioInterrupt, AudioFocuState>> list;
+    list.push_back({audioInterrupt, ACTIVE});
+    auto iterActive = list.begin();
+    AudioFocusEntry focusEntry;
+    focusEntry.actionOn = *reinterpret_cast<const ActionTarget *>(rawData);
+    focusEntry.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
+    focusEntry.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    focusEntry.isReject = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    interruptService->FocusEntryContinue(iterActive, focusEntry, incomingInterrupt);
+}
+
+void AudioInterruptServiceProcessFocusEntryFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    if (interruptService == nullptr || zone == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    pair<AudioInterrupt, AudioFocuState> audioFocusInfo = std::make_pair(audioInterrupt, AudioFocuState::MUTED);
+    zone->audioFocusInfoList.emplace_back(audioFocusInfo);
+    interruptService->zonesMap_.insert(std::make_pair(zoneId, zone));
+
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.streamUsage = *reinterpret_cast<const StreamUsage *>(rawData);
+    interruptService->ProcessFocusEntry(zoneId, incomingInterrupt);
+}
+
+void GetHighestPriorityAudioSceneFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    interruptService->GetHighestPriorityAudioScene(zoneId);
+}
+ 
+void GetStreamTypePriorityFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioStreamType streamType = *reinterpret_cast<const AudioStreamType *>(rawData);
+    interruptService->GetStreamTypePriority(streamType);
+}
+ 
+void DeactivatePreemptModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->DeactivatePreemptMode();
+}
+ 
+void IsCapturerFocusAvailableFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+ 
+    uint32_t zoneId = *reinterpret_cast<const uint32_t *>(rawData);
+    AudioCapturerInfo capturerInfo;
+    interruptService->IsCapturerFocusAvailable(zoneId, capturerInfo);
+}
+ 
+void ClearAudioFocusBySessionIDFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    uint32_t sessionID = *reinterpret_cast<const uint32_t *>(rawData);
+    interruptService->ClearAudioFocusBySessionID(sessionID);
+}
+ 
+void DeactivateAudioSessionInFakeFocusModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    uint32_t pid = *reinterpret_cast<const int32_t *>(rawData);
+    InterruptHint hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    interruptService->DeactivateAudioSessionInFakeFocusMode(pid, hintType);
+}
+ 
+void DeactivateAudioSessionFakeInterruptFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t callerPid = *reinterpret_cast<const int32_t *>(rawData);
+    bool isSessionTimeout = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    interruptService->DeactivateAudioSessionFakeInterrupt(zoneId, callerPid, isSessionTimeout);
+}
+ 
+void AudioSessionInfoDumpFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    std::string dumpString = "";
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->AudioSessionInfoDump(dumpString);
+}
+ 
+void SetSessionMuteStateFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    uint32_t sessionId = *reinterpret_cast<const uint32_t *>(rawData);
+    bool insert = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    bool muteFlag = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
+    if (interruptService == nullptr) {
+        return;
+    }
+    interruptService->SetSessionMuteState(sessionId, insert, muteFlag);
+}
+ 
+void SetLatestMuteStateFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    InterruptEventInternal interruptEvent = {};
+    interruptEvent.eventType = *reinterpret_cast<const InterruptType *>(rawData);
+    interruptEvent.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
+    interruptEvent.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
+    interruptEvent.duckVolume = 0;
+    uint32_t streamId = *reinterpret_cast<const uint32_t *>(rawData);
+    interruptService->SetLatestMuteState(interruptEvent, streamId);
+}
+ 
+void UpdateMuteAudioFocusStrategyFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt currentInterrupt;
+    AudioInterrupt incomingInterrupt;
+    AudioFocusEntry focusEntry;
+    focusEntry.hintType = INTERRUPT_HINT_DUCK;
+    interruptService->UpdateMuteAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
+}
+ 
+void ReportRecordGetFocusFailFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt activeInterrupt;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    activeInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    int32_t reason = *reinterpret_cast<const int32_t *>(rawData);
+    interruptService->ReportRecordGetFocusFail(incomingInterrupt, activeInterrupt, reason);
+}
+ 
+void ProcessActiveStreamFocusFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    shared_ptr<AudioInterruptZone> zone = std::make_shared<AudioInterruptZone>();
+    if (interruptService == nullptr || zone == nullptr) {
+        return;
+    }
+    int32_t zoneId = *reinterpret_cast<const int32_t *>(rawData);
+    AudioInterrupt audioInterrupt;
+    pair<AudioInterrupt, AudioFocuState> audioFocusInfo = std::make_pair(audioInterrupt, AudioFocuState::MUTED);
+    zone->audioFocusInfoList.emplace_back(audioFocusInfo);
+    interruptService->zonesMap_.insert(std::make_pair(zoneId, zone));
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    incomingInterrupt.audioFocusType.isPlay = false;
+    AudioFocuState incomingState = MUTED;
+    std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator activeInterrupt = zone->audioFocusInfoList.end();
+    interruptService->ProcessActiveStreamFocus(zone->audioFocusInfoList, incomingInterrupt,
+        incomingState, activeInterrupt);
+}
+
+void CanMixForActiveSessionFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+ 
+    std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
+    if (interruptService == nullptr) {
+        return;
+    }
+    AudioInterrupt incomingInterrupt;
+    AudioInterrupt activeInterrupt;
+    incomingInterrupt.pid = *reinterpret_cast<const int32_t *>(rawData);
+    AudioFocusEntry focusEntry;
+    CreateAudioSessionService(interruptService, false, incomingInterrupt.pid);
+    interruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1001,6 +1443,30 @@ OHOS::AudioStandard::TestPtr g_testPtrs[OHOS::AudioStandard::TESTSIZE] = {
     OHOS::AudioStandard::AudioInterruptServiceIsSameAppInShareModeFuzzTest,
     OHOS::AudioStandard::AudioInterruptServiceCheckAudioSessionExistenceFuzzTest,
     OHOS::AudioStandard::AudioInterruptServiceUpdateHintTypeForExistingSessionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceProcessRemoteInterruptFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceProcessActiveInterruptFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceHandleLowPriorityEventFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceSendActiveInterruptEventFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceAudioFocusInfoListRemovalConditionFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsMediaStreamFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceIsMicSourceFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceFocusEntryContinueFuzzTest,
+    OHOS::AudioStandard::AudioInterruptServiceProcessFocusEntryFuzzTest,
+    OHOS::AudioStandard::GetHighestPriorityAudioSceneFuzzTest,
+    OHOS::AudioStandard::GetStreamTypePriorityFuzzTest,
+    OHOS::AudioStandard::DeactivatePreemptModeFuzzTest,
+    OHOS::AudioStandard::IsCapturerFocusAvailableFuzzTest,
+    OHOS::AudioStandard::ClearAudioFocusBySessionIDFuzzTest,
+    OHOS::AudioStandard::DeactivateAudioSessionInFakeFocusModeFuzzTest,
+    OHOS::AudioStandard::DeactivateAudioSessionFakeInterruptFuzzTest,
+    OHOS::AudioStandard::AudioSessionInfoDumpFuzzTest,
+    OHOS::AudioStandard::SetSessionMuteStateFuzzTest,
+    OHOS::AudioStandard::SetLatestMuteStateFuzzTest,
+    OHOS::AudioStandard::UpdateMuteAudioFocusStrategyFuzzTest,
+    OHOS::AudioStandard::ReportRecordGetFocusFailFuzzTest,
+    OHOS::AudioStandard::ProcessActiveStreamFocusFuzzTest,
+    OHOS::AudioStandard::CanMixForActiveSessionFuzzTest,
 };
 
 /* Fuzzer entry point */

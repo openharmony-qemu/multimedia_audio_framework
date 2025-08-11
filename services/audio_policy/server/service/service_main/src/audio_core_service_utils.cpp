@@ -18,6 +18,7 @@
 
 #include "audio_core_service_utils.h"
 #include "audio_policy_manager_factory.h"
+#include "audio_scene_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -36,11 +37,14 @@ bool AudioCoreServiceUtils::IsOverRunPlayback(AudioMode &mode, RendererState ren
     if (mode != AUDIO_MODE_PLAYBACK) {
         return false;
     }
-    if (rendererState != RENDERER_STOPPED && rendererState != RENDERER_RELEASED &&
-        rendererState != RENDERER_PAUSED) {
-        return false;
+    if (rendererState == RENDERER_STOPPED || rendererState == RENDERER_RELEASED) {
+        return true;
     }
-    return true;
+    if (rendererState == RENDERER_PAUSED &&
+        AudioSceneManager::GetInstance().GetAudioScene(true) != AUDIO_SCENE_RINGING) {
+        return true;
+    }
+    return false;
 }
 
 bool AudioCoreServiceUtils::IsRingDualToneOnPrimarySpeaker(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
@@ -75,6 +79,14 @@ bool AudioCoreServiceUtils::NeedDualHalToneInStatus(AudioRingerMode mode, Stream
         return false;
     }
     return true;
+}
+
+bool AudioCoreServiceUtils::IsAlarmOnActive(StreamUsage usage, bool isAlarmActive)
+{
+    if (usage != STREAM_USAGE_ALARM) {
+        return false;
+    }
+    return isAlarmActive;
 }
 } // namespace AudioStandard
 } // namespace OHOS

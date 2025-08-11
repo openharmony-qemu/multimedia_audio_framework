@@ -26,7 +26,6 @@ namespace HPAE {
 enum HpaeMsgCode {
     UPDATE_STATUS,
     INIT_DEVICE_RESULT,
-    DEINIT_DEVICE_RESULT,
     MOVE_SINK_INPUT,
     MOVE_ALL_SINK_INPUT,
     MOVE_SOURCE_OUTPUT,
@@ -128,7 +127,7 @@ public:
     virtual void OnNodeStatusUpdate(uint32_t sessionId, IOperation operation){};
     virtual void OnFadeDone(uint32_t sessionId, IOperation operation){};
     virtual void OnRequestLatency(uint32_t sessionId, uint64_t &latency){};
-    virtual void OnRewindAndFlush(uint64_t rewindTime){};
+    virtual void OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition = 0){};
     virtual void OnNotifyQueue(){};
     virtual void OnDisConnectProcessCluster(HpaeProcessorType sceneType){};
     virtual void OnNotifyDfxNodeInfo(bool isConnect, uint32_t preNodeId, HpaeDfxNodeInfo &nodeInfo){};

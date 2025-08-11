@@ -21,6 +21,7 @@
 #include <vector>
 #include "audio_info.h"
 #include "i_hpae_manager.h"
+#include "audio_volume.h"
 using namespace testing::ext;
 
 namespace OHOS {
@@ -1172,6 +1173,136 @@ HWTEST_F(AudioCoreServiceUnitTest, CaptureConcurrentCheck_001, TestSize.Level1)
     }
     audioCoreService->CaptureConcurrentCheck(originalSessionId[1]);
     AUDIO_INFO_LOG("AudioCoreServiceUnitTest CaptureConcurrentCheck end");
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetAudioScene_003
+* @tc.desc  : Test scenario: switching from the AUDIO_SCENE_RINGING to another scene,
+* with the app's STREAM_RING muted
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_003, TestSize.Level1)
+{
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 123;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    auto audioVolume = AudioVolume::GetInstance();
+    ASSERT_NE(nullptr, audioVolume);
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, true);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
+
+    int32_t result = audioCoreService->SetAudioScene(AUDIO_SCENE_DEFAULT, appUid, pid);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), false);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
+    audioVolume->streamVolume_.clear();
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetAudioScene_004
+* @tc.desc  : Test scenario: switching from the AUDIO_SCENE_RINGING to another scene,
+* with the app's STREAM_RING not muted, another app's STREAM_RING muted
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_004, TestSize.Level1)
+{
+    int32_t appUid = 123;
+    int32_t anotherAppUid = 456;
+    int32_t sessionId = 10001;
+    int32_t anotherSessionId = 10002;
+    int32_t pid = 123;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    auto audioVolume = AudioVolume::GetInstance();
+    ASSERT_NE(nullptr, audioVolume);
+    StreamVolume streamVolume1(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    StreamVolume streamVolume2(anotherSessionId, streamType, streamUsage, anotherAppUid, pid, false, 1, false);
+    audioVolume->streamVolume_.emplace(sessionId, streamVolume1);
+    audioVolume->streamVolume_.emplace(anotherSessionId, streamVolume2);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, true);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
+
+    int32_t result = audioCoreService->SetAudioScene(AUDIO_SCENE_DEFAULT, appUid, pid);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), false);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(anotherAppUid, false);
+    audioVolume->streamVolume_.clear();
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetAudioScene_005
+* @tc.desc  : Test scenario: switching from the AUDIO_SCENE_RINGING to AUDIO_SCENE_RINGING scene
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_005, TestSize.Level1)
+{
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 123;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    auto audioVolume = AudioVolume::GetInstance();
+    ASSERT_NE(nullptr, audioVolume);
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, true);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_RINGING;
+
+    int32_t result = audioCoreService->SetAudioScene(AUDIO_SCENE_RINGING, appUid, pid);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), true);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
+    audioVolume->streamVolume_.clear();
+}
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetAudioScene_006
+* @tc.desc  : Test scenario: switching from the AUDIO_SCENE_DEFAULT to AUDIO_SCENE_RINGING scene
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
+{
+    int32_t appUid = 123;
+    int32_t sessionId = 10001;
+    int32_t pid = 123;
+    AudioStreamType streamType = STREAM_RING;
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+
+    auto audioVolume = AudioVolume::GetInstance();
+    ASSERT_NE(nullptr, audioVolume);
+    StreamVolume streamVolume(sessionId, streamType, streamUsage, appUid, pid, false, 1, false);
+    audioVolume->streamVolume_.emplace(sessionId, streamVolume);
+
+    std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
+    ASSERT_NE(nullptr, audioCoreService);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, true);
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_DEFAULT;
+
+    int32_t result = audioCoreService->SetAudioScene(AUDIO_SCENE_RINGING, appUid, pid);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioCoreService->audioVolumeManager_.IsAppRingMuted(appUid), true);
+    audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
+    audioVolume->streamVolume_.clear();
 }
 } // namespace AudioStandard
 } // namespace OHOS

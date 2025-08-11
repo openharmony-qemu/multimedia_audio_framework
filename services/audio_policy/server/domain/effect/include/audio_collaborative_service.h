@@ -38,6 +38,7 @@ public:
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, bool enabled);
     // current device change, map state unchanged
     void UpdateCurrentDevice(const AudioDeviceDescriptor &selectedAudioDevice);
+    bool GetRealCollaborativeState();
 private:
     AudioCollaborativeService()
         :audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager())

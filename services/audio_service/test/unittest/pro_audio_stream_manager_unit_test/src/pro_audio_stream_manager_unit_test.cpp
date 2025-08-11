@@ -626,5 +626,36 @@ HWTEST(ProAudioStreamManagerUnitTest, ProAudioStreamManager_022, TestSize.Level1
     int32_t result = audioStreamManager->TriggerStartIfNecessary();
     EXPECT_NE(ERROR, result);
 }
+
+/**
+* @tc.name   : Test CreateRendererStream API
+* @tc.number : CreateRendererStream_001
+* @tc.desc   : Test CreateRendererStream interface.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, CreateRendererStream_001, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+    AudioProcessConfig config;
+    // Mock InitParams to return failure
+    auto stream = audioStreamManager->CreateRendererStream(config);
+    EXPECT_NE(stream, nullptr);
+}
+
+/**
+* @tc.name   : Test ReleaseRender API
+* @tc.number : ReleaseRender_001
+* @tc.desc   : Test ReleaseRender interface.
+*/
+HWTEST(ProAudioStreamManagerUnitTest, ReleaseRender_001, TestSize.Level1)
+{
+    shared_ptr<ProAudioStreamManager> audioStreamManager = make_shared<ProAudioStreamManager>(DIRECT_PLAYBACK);
+    ASSERT_TRUE(audioStreamManager != nullptr);
+
+    int32_t result = audioStreamManager->ReleaseRender(1);
+
+    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(audioStreamManager->rendererStreamMap_.size(), 0);
+}
 }
 }

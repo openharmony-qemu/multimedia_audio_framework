@@ -211,7 +211,8 @@ public:
     void SetRestoreInfo(RestoreInfo &restoreInfo) override;
     RestoreStatus CheckRestoreStatus() override;
     RestoreStatus SetRestoreStatus(RestoreStatus restoreStatus) override;
-    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair) override;
+    void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
+        std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) override;
     void FetchDeviceForSplitStream() override;
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
@@ -294,6 +295,8 @@ private:
     bool NeedStopFlush();
 
     bool CheckBufferValid(const BufferDesc &bufDesc);
+
+    bool IsRestoreNeeded();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -439,6 +442,7 @@ private:
         Timestamp::Timestampbase::BASESIZE, {0, 0}
     };
     std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
+    std::vector<uint64_t> lastSwitchPositionWithSpeed_ = {0, 0};
 
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
@@ -459,6 +463,7 @@ private:
     std::shared_ptr<AudioClientTracker> proxyObj_ = nullptr;
     int64_t preWriteEndTime_ = 0;
     uint64_t lastFlushReadIndex_ = 0;
+    uint64_t lastSpeedFlushReadIndex_ = 0;
     bool isDataLinkConnected_ = false;
 
     enum {

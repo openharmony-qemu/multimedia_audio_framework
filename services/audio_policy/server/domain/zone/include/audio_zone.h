@@ -70,6 +70,7 @@ public:
     int32_t GetId();
     const std::shared_ptr<AudioZoneDescriptor> GetDescriptor();
     const std::string GetStringDescriptor();
+    const std::string GetName();
 
     void BindByKey(const AudioZoneBindKey &key);
     void RemoveKey(const AudioZoneBindKey &key);

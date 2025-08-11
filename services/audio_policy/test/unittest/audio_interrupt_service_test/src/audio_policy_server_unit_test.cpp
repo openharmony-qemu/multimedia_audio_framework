@@ -1643,8 +1643,14 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_051, TestSize.Level1)
     EXPECT_NE(ptrAudioPolicyServer, nullptr);
 
     ptrAudioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
-    auto ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    auto ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_SILENT);
     EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_VIBRATE);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(AudioRingerMode::RINGER_MODE_NORMAL);
+    EXPECT_EQ(ret, SUCCESS);
+    ret = ptrAudioPolicyServer->SetRingerMode(60);
+    EXPECT_EQ(ret, ERR_PERMISSION_DENIED);
 }
 
 /**

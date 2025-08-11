@@ -281,7 +281,7 @@ int32_t EffectChainManagerDeleteSessionInfo(const char *sceneType, const char *s
         AUDIO_ERR_LOG("map unlink parameters missing.");
         return ERROR;
     }
-
+    audioEffectChainManager->InitEffectBuffer(sessionIDString);
     return audioEffectChainManager->SessionInfoMapDelete(sceneTypeString, sessionIDString);
 }
 

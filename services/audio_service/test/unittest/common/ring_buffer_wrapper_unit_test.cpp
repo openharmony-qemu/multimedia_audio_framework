@@ -24,6 +24,7 @@
 #include "ring_buffer_wrapper.h"
 
 using namespace testing::ext;
+using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -180,6 +181,38 @@ HWTEST_F(RingBufferWrapperUnitTest, RingBufferWrapper_003, TestSize.Level0)
         .dataLength = 0
     };
     EXPECT_EQ(legalRingBuffer3.IsLegal(), true);
+}
+
+/**
+ * @tc.name  : Test RingBufferWrapper API
+ * @tc.type  : FUNC
+ * @tc.number: RingBufferWrapper_004
+ * @tc.desc  : Test RingBufferWrapper interface.
+ */
+HWTEST_F(RingBufferWrapperUnitTest, RingBufferWrapper_004, TestSize.Level0)
+{
+    // size 2, value = 0
+    std::vector<uint8_t> vecU8(2, 0);
+    RingBufferWrapper buffer1 = {
+        .basicBufferDescs = {{
+            {vecU8.data(), 2},
+            {nullptr, 0}
+        }},
+        .dataLength = 2
+    };
+
+    // size 2, value = 1
+    std::vector<uint8_t> vecU82(2, 1);
+    RingBufferWrapper buffer2 = {
+        .basicBufferDescs = {{
+            {vecU82.data(), 2},
+            {nullptr, 0}
+        }},
+        .dataLength = 1
+    };
+
+    buffer1.CopyInputBufferValueToCurBuffer(buffer2);
+    EXPECT_THAT(vecU8, ElementsAre(1, 0));
 }
 } // namespace AudioStandard
 } // namespace OHOS

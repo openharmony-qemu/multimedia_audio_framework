@@ -97,6 +97,7 @@ private:
     void CreateSourceAttr(IAudioSourceAttr &attr);
     int32_t CapturerSourceStart();
     int32_t CapturerSourceStop();
+    void CapturerSourceStopForRemote();
     void CheckIfAnyStreamRunning();
     void UpdateAppsUidAndSessionId();
     bool CheckEcCondition(const HpaeProcessorType &sceneType, HpaeNodeInfo &ecNodeInfo,

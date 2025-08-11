@@ -1,0 +1,131 @@
+# Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("../../../../accessibility.gni")
+import("../../../../appgallery.gni")
+import("../../../../bluetooth_part.gni")
+import("../../../../config.gni")
+
+module_output_path =
+    "audio_framework/audio_framework_policy/service/audio_policy"
+
+ohos_unittest("audio_zone_client_unit_test") {
+  module_out_path = module_output_path
+
+  include_dirs = [
+    "./test/audio_zone_client_unit_test/include",
+    "../stub/include",
+    "../../../audio_policy/server/include",
+    "../../../audio_policy/server/domain/zone/include",
+    "../../../audio_policy/server/src",
+    "../../../audio_policy/server/src/interface",
+    "../../../audio_policy/server/infra/async_action_handler/include",
+    "../../../audio_policy/server/domain/interrupt/include",
+    "../../../audio_policy/server/src/service/service",
+    "../../../audio_policy/client/include",
+    "../../../audio_policy/client/src",
+    "../../../audio_policy/client/proxy",
+    "../../../audio_policy/common/include",
+    "../../../../frameworks/native/audiopolicy/include",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
+  external_deps = [
+    "ability_base:session_info",
+    "ability_base:want",
+    "ability_base:zuri",
+    "ability_runtime:ability_connect_callback_stub",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:app_context",
+    "ability_runtime:dataobs_manager",
+    "ability_runtime:extension_manager",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libprivacy_sdk",
+    "access_token:libtokenid_sdk",
+    "access_token:libtokensetproc_shared",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdf_host",
+    "hdf_core:libhdf_ipc_adapter",
+    "hdf_core:libhdf_utils",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:power_setting",
+    "power_manager:powermgr_client",
+    "pulseaudio:pulse",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "accessibility:accessibility_common",
+    "accessibility:accessibilityconfig",
+    "ability_runtime:wantagent_innerkits",
+  ]
+
+  sources = [
+    "./test/audio_zone_client_unit_test/src/audio_zone_client_unit_test.cpp",
+    "../stub/src/audio_zone_client.cpp",
+    "../../../audio_policy/server/domain/zone/src/audio_zone_service.cpp",
+    "../service/src/audio_policy_manager.cpp",
+    "../service/src/audio_policy_manager_zone.cpp",
+    "./src/audio_policy_client_stub_impl.cpp",
+  ]
+
+  deps = [
+    "../../../../services/audio_service/idl:audio_framework_interface",
+    "../../../audio_policy:audio_policy_service_static",
+  ]
+
+  configs = [
+    "../../../../services/audio_policy:audio_policy_public_config",
+    "../../../../services/audio_policy:audio_policy_client_config",
+  ]
+
+  if (bluetooth_part_enable == true) {
+    deps +=
+        [ "../../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
+}

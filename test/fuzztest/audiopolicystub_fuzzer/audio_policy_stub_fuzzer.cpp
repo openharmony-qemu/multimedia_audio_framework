@@ -1,0 +1,357 @@
+/*
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <iostream>
+#include <cstddef>
+#include <cstdint>
+#include <atomic>
+#include <thread>
+#include "audio_info.h"
+#include "audio_policy_server.h"
+#include "audio_policy_proxy.h"
+#include "audio_policy_stub.h"
+#include "audio_device_info.h"
+#include "iaudio_policy_client.h"
+#include "message_parcel.h"
+#include "accesstoken_kit.h"
+#include "audio_routing_manager.h"
+#include "audio_stream_manager.h"
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+#include "access_token.h"
+#include "iaudio_policy.h"
+#include "../fuzz_utils.h"
+using namespace std;
+
+namespace OHOS {
+namespace AudioStandard {
+
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
+const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
+const int32_t SYSTEM_ABILITY_ID = 3009;
+const bool RUN_ON_CREATE = false;
+bool g_hasServerInit = false;
+
+typedef void (*TestFuncs)();
+
+sptr<AudioPolicyServer> GetServerPtr()
+{
+    static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    if (!g_hasServerInit && server != nullptr) {
+        server->OnStart();
+        server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+        server->OnAddSystemAbility(MULTIMODAL_INPUT_SERVICE_ID, "");
+#endif
+        server->OnAddSystemAbility(BLUETOOTH_HOST_SYS_ABILITY_ID, "");
+        server->OnAddSystemAbility(POWER_MANAGER_SERVICE_ID, "");
+        server->OnAddSystemAbility(SUBSYS_ACCOUNT_SYS_ABILITY_ID_BEGIN, "");
+        server->audioPolicyService_.SetDefaultDeviceLoadFlag(true);
+        g_hasServerInit = true;
+    }
+    return server;
+}
+
+const vector<DeviceType> g_testDeviceTypes = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_ACCESSORY,
+    DEVICE_TYPE_REMOTE_DAUDIO,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_MAX,
+};
+
+vector<IAudioPolicyIpcCode> IAudioPolicyIpcCodeVec = {
+    IAudioPolicyIpcCode::COMMAND_GET_MAX_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_GET_MIN_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_SET_SYSTEM_VOLUME_LEVEL_LEGACY,
+    IAudioPolicyIpcCode::COMMAND_SET_SYSTEM_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_SET_APP_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_SET_APP_VOLUME_MUTED,
+    IAudioPolicyIpcCode::COMMAND_SET_ADJUST_VOLUME_FOR_ZONE,
+    IAudioPolicyIpcCode::COMMAND_IS_APP_VOLUME_MUTE,
+    IAudioPolicyIpcCode::COMMAND_SET_SELF_APP_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_SET_SYSTEM_VOLUME_LEVEL_WITH_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_GET_SYSTEM_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_GET_APP_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_GET_SELF_APP_VOLUME_LEVEL,
+    IAudioPolicyIpcCode::COMMAND_SET_STREAM_MUTE_LEGACY,
+    IAudioPolicyIpcCode::COMMAND_SET_STREAM_MUTE,
+    IAudioPolicyIpcCode::COMMAND_GET_STREAM_MUTE,
+    IAudioPolicyIpcCode::COMMAND_IS_STREAM_ACTIVE,
+    IAudioPolicyIpcCode::COMMAND_IS_STREAM_ACTIVE_BY_STREAM_USAGE,
+    IAudioPolicyIpcCode::COMMAND_SET_DEVICE_ACTIVE,
+    IAudioPolicyIpcCode::COMMAND_IS_DEVICE_ACTIVE,
+    IAudioPolicyIpcCode::COMMAND_GET_ACTIVE_OUTPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_GET_ACTIVE_INPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_RINGER_MODE_LEGACY,
+    IAudioPolicyIpcCode::COMMAND_SET_RINGER_MODE,
+    IAudioPolicyIpcCode::COMMAND_GET_RINGER_MODE,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_SCENE,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_SCENE,
+    IAudioPolicyIpcCode::COMMAND_SET_MICROPHONE_MUTE,
+    IAudioPolicyIpcCode::COMMAND_SET_MICROPHONE_MUTE_AUDIO_CONFIG,
+    IAudioPolicyIpcCode::COMMAND_IS_MICROPHONE_MUTE_LEGACY,
+    IAudioPolicyIpcCode::COMMAND_IS_MICROPHONE_MUTE,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_INTERRUPT_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AUDIO_INTERRUPT_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_ROUTE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AUDIO_ROUTE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_QUERY_CLIENT_TYPE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_CLIENT_INFO_MGR_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_QUERY_BUNDLE_NAME_LIST_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_ACTIVATE_AUDIO_INTERRUPT,
+    IAudioPolicyIpcCode::COMMAND_DEACTIVATE_AUDIO_INTERRUPT,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_MANAGER_INTERRUPT_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AUDIO_MANAGER_INTERRUPT_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_REQUEST_AUDIO_FOCUS,
+    IAudioPolicyIpcCode::COMMAND_ABANDON_AUDIO_FOCUS,
+    IAudioPolicyIpcCode::COMMAND_GET_STREAM_IN_FOCUS,
+    IAudioPolicyIpcCode::COMMAND_GET_SESSION_INFO_IN_FOCUS,
+    IAudioPolicyIpcCode::COMMAND_GET_DEVICES,
+    IAudioPolicyIpcCode::COMMAND_SELECT_OUTPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_GET_SELECTED_DEVICE_INFO,
+    IAudioPolicyIpcCode::COMMAND_SELECT_INPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_GET_PREFERRED_OUTPUT_STREAM_TYPE,
+    IAudioPolicyIpcCode::COMMAND_GET_PREFERRED_INPUT_STREAM_TYPE,
+    IAudioPolicyIpcCode::COMMAND_CREATE_RENDERER_CLIENT,
+    IAudioPolicyIpcCode::COMMAND_CREATE_CAPTURER_CLIENT,
+    IAudioPolicyIpcCode::COMMAND_REGISTER_TRACKER,
+    IAudioPolicyIpcCode::COMMAND_UPDATE_TRACKER,
+    IAudioPolicyIpcCode::COMMAND_GET_CURRENT_RENDERER_CHANGE_INFOS,
+    IAudioPolicyIpcCode::COMMAND_GET_CURRENT_CAPTURER_CHANGE_INFOS,
+    IAudioPolicyIpcCode::COMMAND_SET_LOW_POWER_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_FAST_STREAM_INFO,
+    IAudioPolicyIpcCode::COMMAND_GET_LOW_POWER_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_UPDATE_STREAM_STATE,
+    IAudioPolicyIpcCode::COMMAND_GET_SINGLE_STREAM_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_VOLUME_GROUP_INFOS,
+    IAudioPolicyIpcCode::COMMAND_GET_NETWORK_ID_BY_GROUP_ID,
+    IAudioPolicyIpcCode::COMMAND_GET_TONE_CONFIG,
+    IAudioPolicyIpcCode::COMMAND_GET_SUPPORTED_TONES,
+    IAudioPolicyIpcCode::COMMAND_GET_PREFERRED_OUTPUT_DEVICE_DESCRIPTORS,
+    IAudioPolicyIpcCode::COMMAND_GET_PREFERRED_INPUT_DEVICE_DESCRIPTORS,
+    IAudioPolicyIpcCode::COMMAND_SET_CLIENT_CALLBACKS_ENABLE,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_FOCUS_INFO_LIST,
+    IAudioPolicyIpcCode::COMMAND_SET_SYSTEM_SOUND_URI,
+    IAudioPolicyIpcCode::COMMAND_GET_SYSTEM_SOUND_URI,
+    IAudioPolicyIpcCode::COMMAND_GET_MIN_STREAM_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_MAX_STREAM_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_MAX_RENDERER_INSTANCES,
+    IAudioPolicyIpcCode::COMMAND_IS_VOLUME_UNADJUSTABLE,
+    IAudioPolicyIpcCode::COMMAND_ADJUST_VOLUME_BY_STEP,
+    IAudioPolicyIpcCode::COMMAND_ADJUST_SYSTEM_VOLUME_BY_STEP,
+    IAudioPolicyIpcCode::COMMAND_GET_SYSTEM_VOLUME_IN_DB,
+    IAudioPolicyIpcCode::COMMAND_QUERY_EFFECT_SCENE_MODE,
+    IAudioPolicyIpcCode::COMMAND_GET_HARDWARE_OUTPUT_SAMPLING_RATE,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_CAPTURER_MICROPHONE_DESCRIPTORS,
+    IAudioPolicyIpcCode::COMMAND_GET_AVAILABLE_MICROPHONES,
+    IAudioPolicyIpcCode::COMMAND_SET_DEVICE_ABS_VOLUME_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_IS_ABS_VOLUME_SCENE,
+    IAudioPolicyIpcCode::COMMAND_SET_A2DP_DEVICE_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_SET_NEARLINK_DEVICE_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_AVAILABLE_DEVICES,
+    IAudioPolicyIpcCode::COMMAND_SET_AVAILABLE_DEVICE_CHANGE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AVAILABLE_DEVICE_CHANGE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_IS_SPATIALIZATION_ENABLED,
+    IAudioPolicyIpcCode::COMMAND_IS_SPATIALIZATION_ENABLED_IN_STRING_OUT_BOOLEAN,
+    IAudioPolicyIpcCode::COMMAND_SET_SPATIALIZATION_ENABLED,
+    IAudioPolicyIpcCode::COMMAND_SET_SPATIALIZATION_ENABLED_IN_SHARED_PTR_AUDIO_DEVICE_AUDIODEVICEDESCRIPTOR_IN_BOOLEAN,
+    IAudioPolicyIpcCode::COMMAND_IS_HEAD_TRACKING_ENABLED,
+    IAudioPolicyIpcCode::COMMAND_IS_HEAD_TRACKING_ENABLED_IN_STRING_OUT_BOOLEAN,
+    IAudioPolicyIpcCode::COMMAND_SET_HEAD_TRACKING_ENABLED,
+    IAudioPolicyIpcCode::COMMAND_SET_HEAD_TRACKING_ENABLED_IN_SHARED_PTR_AUDIO_DEVICE_AUDIODEVICEDESCRIPTOR_IN_BOOLEAN,
+    IAudioPolicyIpcCode::COMMAND_GET_SPATIALIZATION_STATE,
+    IAudioPolicyIpcCode::COMMAND_IS_SPATIALIZATION_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_IS_SPATIALIZATION_SUPPORTED_FOR_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_IS_HEAD_TRACKING_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_IS_HEAD_TRACKING_SUPPORTED_FOR_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_UPDATE_SPATIAL_DEVICE_STATE,
+    IAudioPolicyIpcCode::COMMAND_REGISTER_SPATIALIZATION_STATE_EVENT_LISTENER,
+    IAudioPolicyIpcCode::COMMAND_CONFIG_DISTRIBUTED_ROUTING_ROLE,
+    IAudioPolicyIpcCode::COMMAND_SET_DISTRIBUTED_ROUTING_ROLE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_DISTRIBUTED_ROUTING_ROLE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNREGISTER_SPATIALIZATION_STATE_EVENT_LISTENER,
+    IAudioPolicyIpcCode::COMMAND_REGISTER_POLICY_CALLBACK_CLIENT,
+    IAudioPolicyIpcCode::COMMAND_CREATE_AUDIO_INTERRUPT_ZONE,
+    IAudioPolicyIpcCode::COMMAND_ADD_AUDIO_INTERRUPT_ZONE_PIDS,
+    IAudioPolicyIpcCode::COMMAND_REMOVE_AUDIO_INTERRUPT_ZONE_PIDS,
+    IAudioPolicyIpcCode::COMMAND_RELEASE_AUDIO_INTERRUPT_ZONE,
+    IAudioPolicyIpcCode::COMMAND_REGISTER_AUDIO_ZONE_CLIENT,
+    IAudioPolicyIpcCode::COMMAND_CREATE_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_RELEASE_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_GET_ALL_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_BIND_DEVICE_TO_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_UN_BIND_DEVICE_TO_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_ENABLE_AUDIO_ZONE_REPORT,
+    IAudioPolicyIpcCode::COMMAND_ENABLE_AUDIO_ZONE_CHANGE_REPORT,
+    IAudioPolicyIpcCode::COMMAND_ADD_UID_TO_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_REMOVE_UID_FROM_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_ADD_STREAM_TO_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_REMOVE_STREAM_FROM_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_SET_ZONE_DEVICE_VISIBLE,
+    IAudioPolicyIpcCode::COMMAND_ENABLE_SYSTEM_VOLUME_PROXY,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_INTERRUPT_FOR_ZONE,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_INTERRUPT_FOR_ZONE_IN_INT_IN_STRING_OUT_LIST_
+        ORDEREDMAP_AUDIO_INTERRUPT_AUDIOINTERRUPT_INT,
+    IAudioPolicyIpcCode::COMMAND_ENABLE_AUDIO_ZONE_INTERRUPT_REPORT,
+    IAudioPolicyIpcCode::COMMAND_INJECT_INTERRUPT_TO_AUDIO_ZONE,
+    IAudioPolicyIpcCode::COMMAND_INJECT_INTERRUPT_TO_AUDIO_ZONE_IN_INT_IN_STRING_IN_LIST_
+        ORDEREDMAP_AUDIO_INTERRUPT_AUDIOINTERRUPT_INT,
+    IAudioPolicyIpcCode::COMMAND_SET_CALL_DEVICE_ACTIVE,
+    IAudioPolicyIpcCode::COMMAND_GET_CONVERTER_CONFIG,
+    IAudioPolicyIpcCode::COMMAND_GET_ACTIVE_BLUETOOTH_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_FETCH_OUTPUT_DEVICE_FOR_TRACK,
+    IAudioPolicyIpcCode::COMMAND_FETCH_INPUT_DEVICE_FOR_TRACK,
+    IAudioPolicyIpcCode::COMMAND_IS_HIGH_RESOLUTION_EXIST,
+    IAudioPolicyIpcCode::COMMAND_SET_HIGH_RESOLUTION_EXIST,
+    IAudioPolicyIpcCode::COMMAND_GET_SPATIALIZATION_SCENE_TYPE,
+    IAudioPolicyIpcCode::COMMAND_SET_SPATIALIZATION_SCENE_TYPE,
+    IAudioPolicyIpcCode::COMMAND_GET_MAX_AMPLITUDE,
+    IAudioPolicyIpcCode::COMMAND_IS_HEAD_TRACKING_DATA_REQUESTED,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_DEVICE_REFINER_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AUDIO_DEVICE_REFINER_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_TRIGGER_FETCH_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_MOVE_TO_NEW_PIPE,
+    IAudioPolicyIpcCode::COMMAND_DISABLE_SAFE_MEDIA_VOLUME,
+    IAudioPolicyIpcCode::COMMAND_GET_DEVICES_INNER,
+    IAudioPolicyIpcCode::COMMAND_SET_MICROPHONE_MUTE_PERSISTENT,
+    IAudioPolicyIpcCode::COMMAND_GET_PERSISTENT_MIC_MUTE_STATE,
+    IAudioPolicyIpcCode::COMMAND_GET_SUPPORTED_AUDIO_EFFECT_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_EFFECT_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_EFFECT_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_GET_SUPPORTED_AUDIO_ENHANCE_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_GET_SUPPORTED_AUDIO_EFFECT_PROPERTY_OUT_AUDIOEFFECTPROPERTYARRAY,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_ENHANCE_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_EFFECT_PROPERTY_OUT_AUDIOEFFECTPROPERTYARRAY,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_ENHANCE_PROPERTY,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_EFFECT_PROPERTY_IN_AUDIOEFFECTPROPERTYARRAY,
+    IAudioPolicyIpcCode::COMMAND_INJECT_INTERRUPTION,
+    IAudioPolicyIpcCode::COMMAND_ACTIVATE_AUDIO_SESSION,
+    IAudioPolicyIpcCode::COMMAND_DEACTIVATE_AUDIO_SESSION,
+    IAudioPolicyIpcCode::COMMAND_IS_AUDIO_SESSION_ACTIVATED,
+    IAudioPolicyIpcCode::COMMAND_SET_INPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_LOAD_SPLIT_MODULE,
+    IAudioPolicyIpcCode::COMMAND_GET_SYSTEM_ACTIVE_VOLUME_TYPE,
+    IAudioPolicyIpcCode::COMMAND_GET_OUTPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_GET_INPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_DEVICE_ANAHS_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_UNSET_AUDIO_DEVICE_ANAHS_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_IS_ALLOWED_PLAYBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_VOICE_RINGTONE_MUTE,
+    IAudioPolicyIpcCode::COMMAND_SET_CALLBACK_RENDERER_INFO,
+    IAudioPolicyIpcCode::COMMAND_SET_CALLBACK_CAPTURER_INFO,
+    IAudioPolicyIpcCode::COMMAND_GET_STREAM_IN_FOCUS_BY_UID,
+    IAudioPolicyIpcCode::COMMAND_SET_PREFERRED_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_DEVICE_VOLUME_BEHAVIOR,
+    IAudioPolicyIpcCode::COMMAND_SET_VIRTUAL_CALL,
+    IAudioPolicyIpcCode::COMMAND_SET_DEVICE_CONNECTION_STATUS,
+    IAudioPolicyIpcCode::COMMAND_EXCLUDE_OUTPUT_DEVICES,
+    IAudioPolicyIpcCode::COMMAND_GET_EXCLUDED_DEVICES,
+    IAudioPolicyIpcCode::COMMAND_IS_SPATIALIZATION_ENABLED_FOR_CURRENT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_QUERY_ALLOWED_PLAYBACK_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_ACTIVATE_PREEMPT_MODE,
+    IAudioPolicyIpcCode::COMMAND_DEACTIVATE_PREEMPT_MODE,
+    IAudioPolicyIpcCode::COMMAND_IS_FAST_PLAYBACK_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_IS_FAST_RECORDING_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_GET_DM_DEVICE_TYPE,
+    IAudioPolicyIpcCode::COMMAND_GET_DIRECT_PLAYBACK_SUPPORT,
+    IAudioPolicyIpcCode::COMMAND_NOTIFY_SESSION_STATE_CHANGE,
+    IAudioPolicyIpcCode::COMMAND_NOTIFY_FREEZE_STATE_CHANGE,
+    IAudioPolicyIpcCode::COMMAND_RESET_ALL_PROXY,
+    IAudioPolicyIpcCode::COMMAND_NOTIFY_PROCESS_BACKGROUND_STATE,
+    IAudioPolicyIpcCode::COMMAND_SET_BACKGROUND_MUTE_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_IS_ACOUSTIC_ECHO_CANCELER_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_FORCE_STOP_AUDIO_STREAM,
+    IAudioPolicyIpcCode::COMMAND_IS_CAPTURER_FOCUS_AVAILABLE,
+    IAudioPolicyIpcCode::COMMAND_GET_MAX_VOLUME_LEVEL_BY_USAGE,
+    IAudioPolicyIpcCode::COMMAND_GET_MIN_VOLUME_LEVEL_BY_USAGE,
+    IAudioPolicyIpcCode::COMMAND_GET_VOLUME_LEVEL_BY_USAGE,
+    IAudioPolicyIpcCode::COMMAND_GET_STREAM_MUTE_BY_USAGE,
+    IAudioPolicyIpcCode::COMMAND_GET_VOLUME_IN_DB_BY_STREAM,
+    IAudioPolicyIpcCode::COMMAND_GET_SUPPORTED_AUDIO_VOLUME_TYPES,
+    IAudioPolicyIpcCode::COMMAND_GET_AUDIO_VOLUME_TYPE_BY_STREAM_USAGE,
+    IAudioPolicyIpcCode::COMMAND_GET_STREAM_USAGES_BY_VOLUME_TYPE,
+    IAudioPolicyIpcCode::COMMAND_SET_CALLBACK_STREAM_USAGE_INFO,
+    IAudioPolicyIpcCode::COMMAND_UPDATE_DEVICE_INFO,
+    IAudioPolicyIpcCode::COMMAND_SET_SLE_AUDIO_OPERATION_CALLBACK,
+    IAudioPolicyIpcCode::COMMAND_SET_KARAOKE_PARAMETERS,
+    IAudioPolicyIpcCode::COMMAND_IS_AUDIO_LOOPBACK_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_SET_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_IS_COLLABORATIVE_PLAYBACK_SUPPORTED,
+    IAudioPolicyIpcCode::COMMAND_IS_COLLABORATIVE_PLAYBACK_ENABLED_FOR_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_AUDIO_SESSION_SCENE,
+    IAudioPolicyIpcCode::COMMAND_GET_DEFAULT_OUTPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_SET_DEFAULT_OUTPUT_DEVICE,
+    IAudioPolicyIpcCode::COMMAND_FORCE_VOLUME_KEY_CONTROL_TYPE,
+    IAudioPolicyIpcCode::COMMAND_SET_QUERY_DEVICE_VOLUME_BEHAVIOR_CALLBACK,
+};
+
+void OnRemoteRequestFuzzTest()
+{
+    sptr<AudioPolicyServer> server = GetServerPtr();
+    if (server == nullptr) {
+        return;
+    }
+    MessageParcel data;
+    data.WriteInterfaceToken(AudioPolicyStub::GetDescriptor());
+    MessageParcel reply;
+    MessageOption option;
+    for (size_t i = 0; i < IAudioPolicyIpcCodeVec.size(); i++) {
+        IAudioPolicyIpcCode audioServerInterfaceCode = IAudioPolicyIpcCodeVec[i];
+        uint32_t code = static_cast<uint32_t>(audioServerInterfaceCode);
+        server->OnRemoteRequest(code, data, reply, option);
+    }
+}
+
+vector<TestFuncs> g_testFuncs = {
+    OnRemoteRequestFuzzTest
+};
+
+} // namespace AudioStandard
+} // namesapce OHOS
+
+/* Fuzzer entry point */
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+{
+    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
+        return 0;
+    }
+
+    OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
+    return 0;
+}

@@ -75,6 +75,7 @@ public:
     virtual void SetSpeed(uint32_t sessionId, float speed) {}
     virtual std::vector<SinkInput> GetAllSinkInputsInfo() = 0;
     virtual int32_t GetSinkInputInfo(uint32_t sessionId, HpaeSinkInputInfo &sinkInputInfo) = 0;
+    virtual int32_t RefreshProcessClusterByDevice() = 0;
     virtual HpaeSinkInfo GetSinkInfo() = 0;
     virtual int32_t AddNodeToSink(const std::shared_ptr<HpaeSinkInputNode> &node) = 0;
     virtual int32_t AddAllNodesToSink(

@@ -530,6 +530,7 @@ int32_t AudioPolicyService::GetCurrentCapturerChangeInfos(vector<shared_ptr<Audi
 void AudioPolicyService::UpdateDescWhenNoBTPermission(vector<std::shared_ptr<AudioDeviceDescriptor>> &deviceDescs)
 {
     for (std::shared_ptr<AudioDeviceDescriptor> &desc : deviceDescs) {
+        CHECK_AND_CONTINUE_LOG(desc != nullptr, "Device is nullptr, continue");
         if ((desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) || (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_SCO)) {
             std::shared_ptr<AudioDeviceDescriptor> copyDesc = std::make_shared<AudioDeviceDescriptor>(desc);
             copyDesc->deviceName_ = "";
@@ -883,8 +884,7 @@ int32_t AudioPolicyService::NearlinkGetRenderPosition(uint32_t &delayValue)
     int32_t ret = SUCCESS;
     delayValue = 0;
 
-    CHECK_AND_RETURN_RET_LOG(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret,
-        "current output device is not nearlink");
+    CHECK_AND_RETURN_RET(curOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK, ret);
 
     ret = sleAudioDeviceManager_.GetRenderPosition(curOutputDevice.macAddress_, delayValue);
     return ret;

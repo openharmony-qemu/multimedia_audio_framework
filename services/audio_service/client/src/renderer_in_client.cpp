@@ -402,6 +402,20 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     return true;
 }
 
+bool RendererInClientInner::IsRestoreNeeded()
+{
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
+
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
@@ -411,6 +425,11 @@ void RendererInClientInner::WaitForBufferNeedWrite()
             if (state_ != RUNNING) {
                 return true;
             }
+
+            if (IsRestoreNeeded()) {
+                return true;
+            }
+
             return CheckBufferNeedWrite();
         });
     if (futexRes != SUCCESS) {
@@ -582,7 +601,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
-        clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
+        clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
     }
@@ -675,6 +694,9 @@ void RendererInClientInner::ResetFramePosition()
     int32_t ret = ipcStream_->GetAudioPosition(lastFlushReadIndex_, timestampval, latency,
         Timestamp::Timestampbase::MONOTONIC);
     CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get position failed: %{public}d", ret);
+    ret = ipcStream_->GetSpeedPosition(lastSpeedFlushReadIndex_, timestampval, latency,
+        Timestamp::Timestampbase::MONOTONIC);
+    CHECK_AND_RETURN_PRELOG(ret == SUCCESS, "Get speed position failed: %{public}d", ret);
     // no need to reset timestamp, only reset frameposition
     for (int32_t base = 0; base < Timestamp::Timestampbase::BASESIZE; base++) {
         lastFramePosAndTimePair_[base].first = 0;

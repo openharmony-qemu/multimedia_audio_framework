@@ -1716,12 +1716,12 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetFastStatus_001, TestSize.Level
     OH_AudioRenderer *renderer;
     OH_AudioStream_FastStatus status = AUDIOSTREAM_FASTSTATUS_FAST;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &renderer);
-    result = OH_AudioRenderer_GetFastStatus(renderer, &status);
-    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
     result = OH_AudioRenderer_GetFastStatus(nullptr, &status);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     result = OH_AudioRenderer_GetFastStatus(renderer, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetFastStatus(renderer, &status);
+    EXPECT_EQ(result, AUDIOSTREAM_SUCCESS);
 }
 
 /**
@@ -1759,14 +1759,14 @@ HWTEST(OHAudioRenderUnitTest, OH_AudioRenderer_GetAudioTimestampInfo_001, TestSi
     int64_t framePosition = 0;
     int64_t timestamp = 0;
     OH_AudioStream_Result result = OH_AudioStreamBuilder_GenerateRenderer(builder, &renderer);
-    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, &timestamp);
-    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
     result = OH_AudioRenderer_GetAudioTimestampInfo(nullptr, &framePosition, &timestamp);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, nullptr, &timestamp);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
     result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, nullptr);
     EXPECT_EQ(result, AUDIOSTREAM_ERROR_INVALID_PARAM);
+    result = OH_AudioRenderer_GetAudioTimestampInfo(renderer, &framePosition, &timestamp);
+    EXPECT_EQ(result, AUDIOSTREAM_ERROR_ILLEGAL_STATE);
 }
 
 /**

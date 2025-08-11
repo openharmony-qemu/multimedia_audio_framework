@@ -81,9 +81,9 @@ public:
 
     virtual ~AudioAdapterManager() {}
 
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType);
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE);
 
     int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel);
 
@@ -94,6 +94,10 @@ public:
     int32_t SetAppVolumeMutedDB(int32_t appUid, bool muted);
 
     int32_t IsAppVolumeMute(int32_t appUid, bool owned, bool &isMute);
+
+    int32_t SetAppRingMuted(int32_t appUid, bool muted);
+
+    bool IsAppRingMuted(int32_t appUid);
 
     int32_t GetSystemVolumeLevel(AudioStreamType streamType);
 
@@ -298,6 +302,8 @@ public:
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
 
+    void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
+
 private:
     friend class PolicyCallbackImpl;
 
@@ -454,6 +460,7 @@ private:
     bool isVolumeUnadjustable_ = false;
     bool testModeOn_ {false};
     std::atomic<float> getSystemVolumeInDb_  {0.0f};
+    std::atomic<bool> isSleVoiceStatus_ {false};
     bool useNonlinearAlgo_ = false;
     bool isAbsVolumeScene_ = false;
     bool isAbsVolumeMute_ = false;

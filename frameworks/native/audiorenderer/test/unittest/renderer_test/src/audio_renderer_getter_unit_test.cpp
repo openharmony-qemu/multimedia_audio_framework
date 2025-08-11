@@ -2851,5 +2851,47 @@ HWTEST(AudioRendererUnitTest, GetFastStatus_001, TestSize.Level2)
     auto ret = audioRendererPrivate->GetFastStatus();
     EXPECT_EQ(ret, FASTSTATUS_NORMAL);
 }
+
+/**
+ * @tc.name  : Test GetFinalOffloadAllowed API.
+ * @tc.number: GetFinalOffloadAllowed_001
+ * @tc.desc  : Test GetFinalOffloadAllowed interface with different if cases.
+ */
+HWTEST(AudioRendererUnitTest, GetFinalOffloadAllowed_001, TestSize.Level3)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> renderer =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(renderer != nullptr);
+ 
+    bool allowed = renderer->GetFinalOffloadAllowed(true);
+    EXPECT_EQ(allowed, true);
+    allowed = renderer->GetFinalOffloadAllowed(false);
+    EXPECT_EQ(allowed, false);
+ 
+    setuid(UID_MEDIA);
+    allowed = renderer->GetFinalOffloadAllowed(true);
+    EXPECT_EQ(allowed, true);
+    allowed = renderer->GetFinalOffloadAllowed(false);
+    EXPECT_EQ(allowed, false);
+}
+ 
+/**
+ * @tc.name  : Test HandleSetRendererInfoByOptions API.
+ * @tc.number: HandleSetRendererInfoByOptions_001
+ * @tc.desc  : Test HandleSetRendererInfoByOptions interface.
+ */
+HWTEST(AudioRendererUnitTest, HandleSetRendererInfoByOptions_001, TestSize.Level3)
+{
+    AppInfo appInfo = {};
+    std::shared_ptr<AudioRendererPrivate> renderer =
+        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
+    ASSERT_TRUE(renderer != nullptr);
+ 
+    AudioRendererOptions rendererOpts;
+    rendererOpts.rendererInfo.isOffloadAllowed = false;
+    renderer->HandleSetRendererInfoByOptions(rendererOpts, appInfo);
+    EXPECT_EQ(renderer->rendererInfo_.isOffloadAllowed, false);
+}
 } // namespace AudioStandard
 } // namespace OHOS

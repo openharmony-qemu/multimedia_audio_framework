@@ -40,6 +40,15 @@ ohos_unittest("audio_server_unit_test") {
   configs = [ "../../../../../services/audio_service:audio_service_config" ]
   cflags_cc = [ "-std=c++20" ]
 
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
   deps = [
     "../../../../../services/audio_service/idl:audio_framework_interface",
     "../../../../../frameworks/native/audioclock:audio_clock",

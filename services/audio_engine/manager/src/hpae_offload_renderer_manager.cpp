@@ -220,6 +220,7 @@ int32_t HpaeOffloadRendererManager::Pause(uint32_t sessionId)
             sinkOutputNode_->StopStream();
         }
         sessionInfo_.state = HPAE_SESSION_PAUSED;
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_PAUSED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -269,6 +270,7 @@ int32_t HpaeOffloadRendererManager::Stop(uint32_t sessionId)
         if (state == HPAE_SESSION_RUNNING) {
             sinkOutputNode_->StopStream();
         }
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, sessionInfo_.state, OPERATION_STOPPED);
     };
     SendRequest(request);
     return SUCCESS;
@@ -636,6 +638,11 @@ int32_t HpaeOffloadRendererManager::GetSinkInputInfo(uint32_t sessionId, HpaeSin
     return SUCCESS;
 }
 
+int32_t HpaeOffloadRendererManager::RefreshProcessClusterByDevice()
+{
+    return SUCCESS;
+}
+
 HpaeSinkInfo HpaeOffloadRendererManager::GetSinkInfo()
 {
     return sinkInfo_;
@@ -659,9 +666,11 @@ void HpaeOffloadRendererManager::OnRequestLatency(uint32_t sessionId, uint64_t &
     latency = sinkOutputNode_->GetLatency();
 }
 
-void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime)
+void HpaeOffloadRendererManager::OnRewindAndFlush(uint64_t rewindTime, uint64_t hdiFramePosition)
 {
-    sinkInputNode_->RewindHistoryBuffer(rewindTime);
+    CHECK_AND_RETURN_LOG(sinkInputNode_ != nullptr,
+        "HpaeOffloadRendererManager::OnRewindAndFlush sinkInputNode_ is null");
+    sinkInputNode_->RewindHistoryBuffer(rewindTime, hdiFramePosition);
 }
 
 void HpaeOffloadRendererManager::OnNotifyQueue()

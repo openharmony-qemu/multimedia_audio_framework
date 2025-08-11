@@ -388,6 +388,37 @@ void AudioVolume::SetAppVolumeMute(int32_t appUid, bool isMuted)
     }
 }
 
+bool AudioVolume::SetAppRingMuted(int32_t appUid, bool isMuted)
+{
+    std::unique_lock<std::shared_mutex> lock(volumeMutex_);
+    float totalAppVolume = 1.0f;
+    auto it = appVolume_.find(appUid);
+    if (it != appVolume_.end()) {
+        it->second.totalVolume_ = it->second.isMuted_ ? 0.0f : it->second.volume_;
+        totalAppVolume = it->second.totalVolume_;
+    } else {
+        AppVolume appVolume(appUid, DEFAULT_APP_VOLUME, defaultAppVolume_, false);
+        appVolume.totalVolume_ = appVolume.volume_;
+        totalAppVolume = appVolume.totalVolume_;
+        appVolume_.emplace(appUid, appVolume);
+    }
+
+    AUDIO_INFO_LOG("appUid:%{public}d, isMuted:%{public}d", appUid, isMuted);
+    for (auto &streamVolume : streamVolume_) {
+        auto &stream = streamVolume.second;
+        AUDIO_INFO_LOG("appUid: %{public}d, streamType: %{public}d", stream.GetAppUid(), stream.GetStreamType());
+        if (stream.GetAppUid() == appUid && stream.GetStreamType() == static_cast<int32_t>(STREAM_RING)) {
+            bool isRingMuted = stream.isMuted_ || isMuted;
+            stream.appVolume_ = totalAppVolume;
+            stream.totalVolume_ = isRingMuted ? 0.0f :
+                stream.volume_ * stream.duckFactor_ * stream.lowPowerFactor_ * stream.appVolume_;
+            AUDIO_INFO_LOG("stream total volume: %{public}f", stream.totalVolume_);
+            return true;
+        }
+    }
+    return false;
+}
+
 void AudioVolume::SetAppVolume(AppVolume &appVolume)
 {
     int32_t appUid = appVolume.GetAppUid();

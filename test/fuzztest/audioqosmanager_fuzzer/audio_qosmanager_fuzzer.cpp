@@ -92,7 +92,7 @@ uint32_t GetArrLength(T& arr)
 void SetThreadQosLevelAsyncFuzzTest()
 {
 #ifdef QOSMANAGER_ENABLE
-    SetThreadQosLevelAsync();
+    SetThreadQosLevelAsync(1);
 #endif
 }
 
@@ -101,7 +101,7 @@ void SetThreadQosLevelWithTidFuzzTest()
 #ifdef QOSMANAGER_ENABLE
     int32_t pid = GetData<int32_t>();
     int32_t tid = GetData<int32_t>();
-    SetThreadQosLevelWithTid(pid, tid);
+    SetThreadQosLevelWithTid(pid, tid, 1);
 #endif
 }
 

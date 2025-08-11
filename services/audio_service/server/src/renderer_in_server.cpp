@@ -150,7 +150,7 @@ void RendererInServer::GetEAC3ControlParam()
     }
 }
 
-int32_t RendererInServer::Init()
+void RendererInServer::ProcessManagerType()
 {
     if (processConfig_.rendererInfo.audioFlag == (AUDIO_OUTPUT_FLAG_HD|AUDIO_OUTPUT_FLAG_DIRECT)) {
         Trace trace("current stream marked as high resolution");
@@ -169,6 +169,11 @@ int32_t RendererInServer::Init()
             AUDIO_WARNING_LOG("One VoIP direct stream has been created! Use normal mode.");
         }
     }
+}
+
+int32_t RendererInServer::Init()
+{
+    ProcessManagerType();
     GetEAC3ControlParam();
     streamIndex_ = processConfig_.originalSessionId;
     AUDIO_INFO_LOG("Stream index: %{public}u", streamIndex_);
@@ -1362,6 +1367,12 @@ int32_t RendererInServer::GetAudioPosition(uint64_t &framePos, uint64_t &timesta
     return SUCCESS;
 }
 
+int32_t RendererInServer::GetSpeedPosition(uint64_t &framePos, uint64_t &timestamp, uint64_t &latency, int32_t base)
+{
+    CHECK_AND_RETURN_RET_LOG(status_ != I_STATUS_STOPPED, ERR_ILLEGAL_STATE, "Current status is stopped");
+    return stream_->GetSpeedPosition(framePos, timestamp, latency, base);
+}
+
 int32_t RendererInServer::GetLatency(uint64_t &latency)
 {
     std::unique_lock<std::mutex> lock(statusLock_);
@@ -2077,6 +2088,7 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
     if (restoreStatus == NEED_RESTORE) {
         audioServerBuffer_->SetRestoreInfo(restoreInfo);
     }
+    audioServerBuffer_->WakeFutex();
     return restoreStatus;
 }
 
