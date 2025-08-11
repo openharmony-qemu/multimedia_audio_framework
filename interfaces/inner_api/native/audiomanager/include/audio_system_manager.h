@@ -168,7 +168,7 @@ public:
 
     /**
      * @brief Set the mute state of the VoIP ringtone for the specified app.
-     * @param appUid The UID fo the app.
+     * @param appUid The UID of the app.
      * @param muted Set to true to mute the VoIP ringtone, false to unmute.
      * @return Returns {@link SUCCESS} if the app ringtone is set successfully; returns an error code
      * defined in {@link audio_errors.h} otherwise.
