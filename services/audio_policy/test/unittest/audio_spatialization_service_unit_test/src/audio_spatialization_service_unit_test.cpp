@@ -1088,7 +1088,7 @@ HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
     };
     EXPECT_NO_THROW(
         ptrAudioSpatializationService->Init(effectChains);
-    ); 
+    );
 }
 } // namespace AudioStandard
 } // namespace OHOS
