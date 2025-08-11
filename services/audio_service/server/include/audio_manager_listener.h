@@ -35,6 +35,8 @@ public:
     void TrigerFirstOnCapturerStateCallback(bool isActive);
     void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override;
 private:
     sptr<IStandardAudioServerManagerListener> listener_ = nullptr;
     std::atomic<bool> isFirstOnCapturerStateCallbackSent_ = false;

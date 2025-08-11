@@ -29,6 +29,9 @@ public:
     
     virtual void OnDataTransferStateChange(const int32_t &callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 
 } // namespace AudioStandard

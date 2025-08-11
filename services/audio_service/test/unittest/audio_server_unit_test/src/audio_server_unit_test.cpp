@@ -67,6 +67,15 @@ enum PermissionStatus {
     PERMISSION_UNKNOWN = 2,
 };
 
+class DataTransferStateChangeCallbackInnerTest : public DataTransferStateChangeCallbackInner {
+public:
+    void OnDataTransferStateChange(const int32_t &callbackId,
+        const AudioRendererDataTransferStateChangeInfo &info) override {}
+
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override {}
+};
+
 class WakeUpSourceCallbackTest : public WakeUpSourceCallback {
 public:
     void OnCapturerState(bool isActive) override {}
@@ -2485,6 +2494,48 @@ HWTEST_F(AudioServerUnitTest, SetAsrVoiceMuteMode_001, TestSize.Level1)
     int32_t asrVoiceMuteMode = 0;
     bool on = true;
     EXPECT_EQ(audioServer->SetAsrVoiceMuteMode(asrVoiceMuteMode, on), ERR_SYSTEM_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test OnMuteStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnMuteStateChange_001
+ * @tc.desc  : Test OnMuteStateChange interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnMuteStateChange_001, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t uid = 0;
+    uint32_t sessionId = 0;
+    bool isMuted = true;
+
+    audioServer->audioDataTransferCbMap_.clear();
+    audioServer->OnMuteStateChange(0, 0, uid, sessionId, isMuted);
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test OnMuteStateChange API
+ * @tc.type  : FUNC
+ * @tc.number: OnMuteStateChange_002
+ * @tc.desc  : Test OnMuteStateChange interface.
+ */
+HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
+{
+    EXPECT_NE(nullptr, audioServer);
+    int32_t callbackId = 1;
+    int32_t uid = 0;
+    uint32_t sessionId = 0;
+    bool isMuted = true;
+
+    audioServer->audioDataTransferCbMap_.clear();
+    std::shared_ptr<DataTransferStateChangeCallbackInner> callback =
+        std::make_shared<DataTransferStateChangeCallbackInnerTest>();
+    int32_t pid = IPCSkeleton::GetCallingPid();
+    audioServer->audioDataTransferCbMap_[pid] = callback;
+    audioServer->OnMuteStateChange(pid, callbackId, uid, sessionId, isMuted);
+    audioServer->audioDataTransferCbMap_.clear();
+    EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

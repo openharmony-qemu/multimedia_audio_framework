@@ -50,6 +50,7 @@ public:
 
     static void CalcMuteFrame(BufferDesc &buffer, AudioStreamInfo streamInfo, std::string logTag,
         int64_t &volumeDataCount, int64_t &muteFrameCnt, size_t split = 1);
+    static bool IsZeroVolume(float volume);
 };
 } // namespace AudioStandard
 } // namespace OHOS
