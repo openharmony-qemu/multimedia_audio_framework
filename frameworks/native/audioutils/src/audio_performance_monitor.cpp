@@ -247,7 +247,7 @@ void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t period
         bean->Add("APP_NAMES", hapNames);
     }
     int64_t jankStartTime = curRealTime / AUDIO_NS_PER_MILLISECOND - static_cast<int64_t>(periodMs);
-    bean->ADD("JANK_START_TIME", static_cast<uint64_t>(jankStartTime));
+    bean->Add("JANK_START_TIME", static_cast<uint64_t>(jankStartTime));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 #endif
 }
