@@ -1125,7 +1125,7 @@ HWTEST_F(AudioStreamCollectorUnitTest, ResetCapturerStreamDeviceInfo_001, TestSi
     (rendererChangeInfo->inputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
     (rendererChangeInfo->inputDeviceInfo).macAddress_ = "12345";
     (rendererChangeInfo->inputDeviceInfo).networkId_ = "12345";
-
+    rendererChangeInfo->capturerState = CAPTURER_STOPPED;
     collector.audioCapturerChangeInfos_.push_back(move(rendererChangeInfo));
 
     EXPECT_NO_THROW(
@@ -1148,10 +1148,10 @@ HWTEST_F(AudioStreamCollectorUnitTest, ResetRendererStreamDeviceInfo_001, TestSi
 
     shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
 
-    (rendererChangeInfo->inputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
-    (rendererChangeInfo->inputDeviceInfo).macAddress_ = "12345";
-    (rendererChangeInfo->inputDeviceInfo).networkId_ = "12345";
-
+    (rendererChangeInfo->outputDeviceInfo).deviceType_ = DEVICE_TYPE_EARPIECE;
+    (rendererChangeInfo->outputDeviceInfo).macAddress_ = "12345";
+    (rendererChangeInfo->outputDeviceInfo).networkId_ = "12345";
+    rendererChangeInfo->rendererState = RENDERER_STOPPED;
     collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
 
     EXPECT_NO_THROW(
