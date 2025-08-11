@@ -568,12 +568,10 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, SetDeviceInfoMap_001, TestSize.Level1
 {
     auto audioPolicyConfigData = std::make_shared<AudioPolicyConfigData>();
     EXPECT_NE(audioPolicyConfigData, nullptr);
-    
     std::list<std::shared_ptr<AdapterDeviceInfo>> deviceInfo;
     std::unordered_map<std::string, std::shared_ptr<AdapterDeviceInfo>> deviceInfoMap;
     deviceInfoMap["test"] = std::make_shared<AdapterDeviceInfo>();
     EXPECT_NO_THROW(audioPolicyConfigData->SetDeviceInfoMap(deviceInfo, deviceInfoMap));
-
 }
 
 /**
