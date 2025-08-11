@@ -30,11 +30,11 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace OHOS::AudioStandard::HPAE;
 static const uint8_t *RAW_DATA = nullptr;
+static std::string g_rootPath = "/data/";
 static size_t g_dataSize = 0;
 static size_t g_pos;
 static const size_t THRESHOLD = 10;
-static std::string g_rootPath = "/data/";
-static uint32_t DEFAULT_SLEEP_TIME = 200; // 200ms
+static const uint32_t DEFAULT_SLEEP_TIME = 200; // 200ms
 
 typedef void (*TestFuncs)();
 
