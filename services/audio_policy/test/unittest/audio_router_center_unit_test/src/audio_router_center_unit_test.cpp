@@ -169,6 +169,19 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_001, TestSize.L
     auto result = audioRouterCenter.FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback.
+ * @tc.number: SetAudioDeviceRefinerCallback_001
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, etAudioDeviceRefinerCallback_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
+    EXPECT_EQ(ret, ERROR);
+}
 } // namespace AudioStandard
 } // namespace OHOS
  
