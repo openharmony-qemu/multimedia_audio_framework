@@ -1086,11 +1086,9 @@ HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
         {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_SUPPORTED_LABEL"},
         {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply2_1"}, "HEAD_TRACKING_SUPPORTED_LABEL"}
     };
-
     EXPECT_NO_THROW(
         ptrAudioSpatializationService->Init(effectChains);
-    );
-    
+    ); 
 }
 } // namespace AudioStandard
 } // namespace OHOS
