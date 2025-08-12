@@ -1698,5 +1698,5 @@ HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_003, TestSize.Level1)
     ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
     EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, VOIP_PLAYBACK);
 }
-}
+} 
 }

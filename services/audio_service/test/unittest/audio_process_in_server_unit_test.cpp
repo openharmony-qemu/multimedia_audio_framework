@@ -1117,4 +1117,4 @@ HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level2)
     EXPECT_TRUE(ret);
 }
 } // namespace AudioStandard
-} // namespace OHOS
+} // namespace OHOS 

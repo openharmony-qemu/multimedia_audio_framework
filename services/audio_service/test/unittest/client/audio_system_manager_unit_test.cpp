@@ -1605,5 +1605,5 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
     AudioVolumeType volumeType = STREAM_ULTRASONIC;
     EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
 }
-} // namespace AudioStandard
+} // namespace AudioStandard 
 } // namespace OHOS

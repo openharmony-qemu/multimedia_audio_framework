@@ -414,5 +414,5 @@ HWTEST(VolumeToolsUnitTest, CountVolumeLevel_008, TestSize.Level1)
     ret = volumeTools->CountVolumeLevel(bufferDesc, SAMPLE_F32LE, MONO, split);
     EXPECT_EQ(ret.volStart[0], 0);
 }
-} // namespace AudioStandard
+} // namespace AudioStandard 
 } // namespace OHOS
