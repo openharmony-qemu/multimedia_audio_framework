@@ -15,6 +15,7 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
+import("../../../ressche_part.gni")
 
 ohos_fuzztest("AudioScheduleFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
@@ -118,6 +119,10 @@ ohos_fuzztest("AudioScheduleFuzzTest") {
   }
   if (audio_framework_feature_input) {
     defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RESSCHE_ENABLE" ]
   }
 }
 
