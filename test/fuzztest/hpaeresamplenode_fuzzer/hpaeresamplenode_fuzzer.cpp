@@ -20,48 +20,28 @@
 #include <memory>
 #include <queue>
 #include <string>
-#include "hpae_sink_input_node.h"
 #include "hpae_resample_node.h"
-#include "hpae_sink_output_node.h"
 #include "hpae_source_input_node.h"
+#include "audio_engine_log.h"
+#include "audio_info.h"
 #include <fstream>
 #include <streambuf>
 #include <string>
-#include "test_case_common.h"
-#include "audio_errors.h"
 using namespace std;
 using namespace OHOS::AudioStandard::HPAE;
 
 
 namespace OHOS {
 namespace AudioStandard {
-using namespace std;
+
 static const uint8_t *RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-static constexpr uint32_t TEST_ID = 1243;
-static constexpr uint32_t TEST_ID2 = 1246;
-static constexpr uint32_t TEST_FRAMELEN1 = 960;
-static constexpr uint32_t TEST_FRAMELEN2 = 640;
-static vector<StreamManagerState> streamManagerStateMap = {
-    STREAM_MANAGER_INVALID,
-    STREAM_MANAGER_NEW,
-    STREAM_MANAGER_IDLE,
-    STREAM_MANAGER_RUNNING,
-    STREAM_MANAGER_SUSPENDED,
-    STREAM_MANAGER_RELEASED,
-};
-
-static vector<HpaeSourceInputNodeType> hpaeSourceInputNodeTypeMap = {
-    HPAE_SOURCE_DEFAULT,
-    HPAE_SOURCE_MIC,
-    HPAE_SOURCE_MIC_EC,
-    HPAE_SOURCE_EC,
-    HPAE_SOURCE_MICREF,
-};
-
-typedef void (*TestPtr)(const uint8_t *, size_t);
+const uint32_t TEST_ID = 1243;
+const uint32_t TEST_ID2 = 1246;
+const uint32_t TEST_FRAMELEN1 = 960;
+const uint32_t TEST_FRAMELEN2 = 640;
 
 template<class T>
 T GetData()
@@ -92,7 +72,7 @@ uint32_t GetArrLength(T& arr)
 static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     nodeInfo.nodeId = TEST_ID;
-    nodeInfo.frameLen = DEFAULT_FRAME_LENGTH1;
+    nodeInfo.frameLen = TEST_FRAMELEN1;
     nodeInfo.samplingRate = SAMPLE_RATE_48000;
     nodeInfo.channels = STEREO;
     nodeInfo.format = SAMPLE_F32LE;
@@ -101,7 +81,7 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 static void GetTestDtsNodeInfo(HpaeNodeInfo &nodeInfo)
 {
     dstNodeInfo.nodeId = TEST_ID2;
-    dstNodeInfo.frameLen = DEFAULT_FRAME_LENGTH2;
+    dstNodeInfo.frameLen = TEST_FRAMELEN2;
     dstNodeInfo.samplingRate = SAMPLE_RATE_44100;
     dstNodeInfo.channels = CHANNEL_4;
     dstNodeInfo.format = SAMPLE_F32LE;
@@ -121,7 +101,7 @@ void HpaeResampleNodeResetFuzzTest()
     hpaeResampleNode->Reset();
 }
 
-void HpaeResampleNodeSignalProcessFuzzTest()
+void HpaeResampleNodeSignalProcessFuzzTest01()
 {
     HpaeNodeInfo nodeInfo;
     HpaeNodeInfo dstNodeInfo;
@@ -129,6 +109,20 @@ void HpaeResampleNodeSignalProcessFuzzTest()
     GetTestDtsNodeInfo(dstNodeInfo);
     auto hpaeResampleNode = std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
     std::vector<HpaePcmBuffer *> inputs;
+    hpaeResampleNode->SignalProcess(inputs);
+}
+
+void HpaeResampleNodeSignalProcessFuzzTest02()
+{
+    HpaeNodeInfo nodeInfo;
+    HpaeNodeInfo dstNodeInfo;
+    GetTestNodeInfo(nodeInfo);
+    GetTestDtsNodeInfo(dstNodeInfo);
+    auto hpaeResampleNode = std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
+    std::vector<HpaePcmBuffer *> inputs;
+    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    inputs.emplace_back(&hpaePcmBuffer);
     hpaeResampleNode->SignalProcess(inputs);
 }
 
@@ -144,11 +138,12 @@ void HpaeResampleNodeConnectAndDisconnectWithInfoFuzzTest()
     hpaeResampleNode->DisConnectWithInfo(hpaeInputNode, srcNodeInfo);
 }
 
-typedef void (*TestFuncs[3])();
+typedef void (*TestFuncs[4])();
 
 TestFuncs g_testFuncs = {
     HpaeResampleNodeResetFuzzTest,
-    HpaeResampleNodeSignalProcessFuzzTest,
+    HpaeResampleNodeSignalProcessFuzzTest01,
+    HpaeResampleNodeSignalProcessFuzzTest02
     HpaeResampleNodeConnectAndDisconnectWithInfoFuzzTest,
 };
 
