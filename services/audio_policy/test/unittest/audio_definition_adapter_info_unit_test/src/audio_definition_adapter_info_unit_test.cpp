@@ -586,6 +586,14 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, SetVersion_001, TestSize.Level1)
     
     std::string version = "";
     EXPECT_NO_THROW(audioPolicyConfigData->SetVersion(version));
+* @tc.number: AudioPolicyConfigData_019
+* @tc.desc  : Test GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_019, TestSize.Level1)
+{
+    std::string adapterName = ADAPTER_TYPE_ACCESSORY;
+    auto ret = PolicyAdapterInfo::GetAdapterType(adapterName);
+    EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY);
 }
 } // namespace AudioStandard
 } // namespace OHOS

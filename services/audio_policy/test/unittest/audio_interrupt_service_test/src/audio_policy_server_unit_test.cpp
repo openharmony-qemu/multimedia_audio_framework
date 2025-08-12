@@ -20,6 +20,9 @@
 #include "securec.h"
 #include "audio_interrupt_service.h"
 #include "audio_device_descriptor.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 #include "accesstoken_kit.h"
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
@@ -45,6 +48,9 @@ sptr<AudioPolicyServer> GetPolicyServerUnitTest()
     static sptr<AudioPolicyServer> server =
         sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
     if (!g_hasServerInit) {
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT
@@ -101,16 +107,17 @@ void ReleaseServer()
 }
 
 void AudioPolicyUnitTest::SetUpTestCase(void) {}
-void AudioPolicyUnitTest::TearDownTestCase(void) {}
+void AudioPolicyUnitTest::TearDownTestCase(void)
+{
+    ReleaseServer();
+}
+
 void AudioPolicyUnitTest::SetUp(void)
 {
     GetPermission();
 }
 
-void AudioPolicyUnitTest::TearDown(void)
-{
-    ReleaseServer();
-}
+void AudioPolicyUnitTest::TearDown(void) {}
 
 class RemoteObjectTestStub : public IRemoteObject {
 public:

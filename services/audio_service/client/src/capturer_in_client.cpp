@@ -1434,7 +1434,7 @@ int32_t CapturerInClientInner::HandleCapturerRead(size_t &readSize, size_t &user
             BufferWrap bufferWrap = {currentOHBuffer_.buffer, clientSpanSizeInByte_};
             ringCache_->Enqueue(bufferWrap);
             memset_s(static_cast<void *>(bufferWrap.dataPtr), bufferWrap.dataSize, 0, bufferWrap.dataSize);
-            clientBuffer_->SetCurReadFrame(clientBuffer_->GetCurReadFrame() + spanSizeInFrame_);
+            clientBuffer_->SetCurReadFrame((clientBuffer_->GetCurReadFrame() + spanSizeInFrame_), false);
         } else {
             if (!isBlockingRead) {
                 return readSize; // Return buffer immediately

@@ -29,8 +29,18 @@ static const std::string PIPE_DP_OUTPUT_UNITTEST = "dp_output";
 static const std::string PIPE_ACCESSORY_INPUT_UNITTEST = "accessory_input";
 static const std::string PIPE_USB_ARM_INPUT_UNITTEST = "usb_arm_input";
 
+static AudioPolicyServer* GetServerPtr()
+{
+    return GetServerUtil::GetServerPtr();
+}
+
 void AudioPolicyServiceThirdUnitTest::SetUpTestCase(void) {}
-void AudioPolicyServiceThirdUnitTest::TearDownTestCase(void) {}
+void AudioPolicyServiceThirdUnitTest::TearDownTestCase(void)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+    server->audioPolicyService_.Deinit();
+}
 void AudioPolicyServiceThirdUnitTest::SetUp(void) {}
 void AudioPolicyServiceThirdUnitTest::TearDown(void) {}
 
@@ -42,11 +52,6 @@ public:
     std::string GetName() override { return "abc"; };
     bool Marshalling(Parcel &parcel) const override { return true; };
 };
-
-static AudioPolicyServer* GetServerPtr()
-{
-    return GetServerUtil::GetServerPtr();
-}
 
 /**
  * @tc.name  : Test AudioPolicyService.

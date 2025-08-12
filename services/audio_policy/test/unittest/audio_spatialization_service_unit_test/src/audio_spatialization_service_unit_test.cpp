@@ -1089,6 +1089,26 @@ HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
     EXPECT_NO_THROW(
         ptrAudioSpatializationService->Init(effectChains);
     );
+* @tc.name  : Test IsHeadTrackingDataRequestedForCurrentDevice.
+* @tc.number: AudioSpatializationService_050
+* @tc.desc  : Test IsHeadTrackingDataRequestedForCurrentDevice.
+*/
+HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_050, TestSize.Level1)
+{
+    auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+    EXPECT_NE(ptrAudioSpatializationService, nullptr);
+
+    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    rendererChangeInfo->outputDeviceInfo.macAddress_ = "123456";
+    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+
+    std::vector<std::shared_ptr<AudioRendererChangeInfo>>rendererChange{rendererChangeInfo};
+
+    ptrAudioSpatializationService->UpdateCurrentDevice("123456");
+    ptrAudioSpatializationService->UpdateRendererInfo(rendererChange);
+    auto ret = ptrAudioSpatializationService->IsHeadTrackingDataRequestedForCurrentDevice();
+    EXPECT_FALSE(ret);
 }
 } // namespace AudioStandard
 } // namespace OHOS

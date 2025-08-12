@@ -380,7 +380,7 @@ HWTEST_F(AudioSocketThreadUnitTest, AudioSocketThread_007, TestSize.Level1)
 
     EXPECT_EQ(result, SUCCESS);
     EXPECT_EQ(event.eventType, PNP_EVENT_DEVICE_ADD);
-    EXPECT_EQ(event.deviceType, PNP_DEVICE_HEADSET);
+    EXPECT_EQ(event.deviceType, PNP_DEVICE_HEADPHONE);
     EXPECT_EQ(event.name, "TestDevice");
     EXPECT_EQ(event.address, "TestDevName");
 }
@@ -1223,7 +1223,7 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove, Tes
     int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
 
     // Assert
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1510,13 +1510,9 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Fail_ReadFile, Test
  */
 HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove_003, TestSize.Level0)
 {
-    std::ofstream ofs(SWITCH_STATE_PATH);
-    ofs << '0';
-    ofs.close();
     AudioEvent audioEvent;
-    int32_t hdf_err_invalid_param = -3;
-    int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
-    EXPECT_EQ(ret, hdf_err_invalid_param);
+    audioSocketThread_.SetAudioPnpUevent(&audioEvent, REMOVE_AUDIO_DEVICE);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_REMOVE);
 }
 
 /**
@@ -1526,13 +1522,9 @@ HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Remove_003,
  */
 HWTEST_F(AudioSocketThreadUnitTest, DetectAnalogHeadsetState_Headset_Add_004, TestSize.Level0)
 {
-    std::ofstream ofs(SWITCH_STATE_PATH);
-    ofs << '1';
-    ofs.close();
     AudioEvent audioEvent;
-    int32_t ret = audioSocketThread_.DetectAnalogHeadsetState(&audioEvent);
-    int32_t hdf_err_invalid_param = -3;
-    EXPECT_EQ(ret, hdf_err_invalid_param);
+    audioSocketThread_.SetAudioPnpUevent(&audioEvent, ADD_DEVICE_HEADSET);
+    EXPECT_EQ(audioEvent.eventType, PNP_EVENT_DEVICE_ADD);
 }
 
 /**

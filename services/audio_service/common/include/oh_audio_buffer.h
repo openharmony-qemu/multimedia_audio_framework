@@ -191,14 +191,14 @@ public:
     int32_t GetWritableDataFrames();
     int32_t GetReadableDataFrames();
 
-    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
+    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex = true);
 
     uint64_t GetCurWriteFrame();
     uint64_t GetCurReadFrame();
     uint64_t GetBasePosInFrame();
 
-    int32_t SetCurWriteFrame(uint64_t writeFrame);
-    int32_t SetCurReadFrame(uint64_t readFrame);
+    int32_t SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex = true);
+    int32_t SetCurReadFrame(uint64_t readFrame, bool wakeFutex = true);
 
     int32_t GetBufferByOffset(size_t offset, size_t dataLength, RingBufferWrapper &buffer);
     int32_t TryGetContinuousBufferByOffset(size_t offset, size_t dataLength, BufferDesc &bufferDesc);
@@ -322,13 +322,13 @@ public:
 
     int32_t GetWritableDataFrames();
 
-    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame);
+    int32_t ResetCurReadWritePos(uint64_t readFrame, uint64_t writeFrame, bool wakeFutex = true);
 
     uint64_t GetCurWriteFrame();
     uint64_t GetCurReadFrame();
 
-    int32_t SetCurWriteFrame(uint64_t writeFrame);
-    int32_t SetCurReadFrame(uint64_t readFrame);
+    int32_t SetCurWriteFrame(uint64_t writeFrame, bool wakeFutex = true);
+    int32_t SetCurReadFrame(uint64_t readFrame, bool wakeFutex = true);
 
     uint32_t GetSessionId();
     int32_t SetSessionId(uint32_t sessionId);
