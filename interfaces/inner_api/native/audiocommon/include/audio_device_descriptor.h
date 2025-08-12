@@ -130,7 +130,9 @@ public:
             if (lhs == nullptr || rhs == nullptr) {
                 return false;
             }
-            return lhs->IsSameDeviceDesc(*rhs);
+            return lhs->deviceType_ == rhs->deviceType_ &&
+                lhs->macAddress_ == rhs->macAddress_ &&
+                lhs->networkId_ == rhs->networkId_;
         }
     };
 

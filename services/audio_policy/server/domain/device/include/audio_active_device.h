@@ -51,7 +51,8 @@ public:
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
-    void NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor);
+    void NotifyUserDisSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
+        bool isSameDevice = false);
     void NotifyUserSelectionEventForInput(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         SourceType sourceType = SOURCE_TYPE_INVALID);
 
