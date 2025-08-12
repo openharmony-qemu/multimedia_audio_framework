@@ -431,5 +431,5 @@ HWTEST(VolumeToolsUnitTest, IsVolumeValid_006, TestSize.Level4)
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsVolumeValid_005 result:%{public}d", ret);
     EXPECT_EQ(ret, false);
 }
-} // namespace AudioStandard 
+} // namespace AudioStandard
 } // namespace OHOS
