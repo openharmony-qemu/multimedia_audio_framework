@@ -73,6 +73,29 @@ TEST_F(HpaeAudioServerHpaeDumpTest, HpaeAudioServerHpaeDumpTest_001)
     audioServerHpaeDump_->OnDumpSourceOutputsInfoCb(inputOutputInfo, 0);
     EXPECT_EQ(audioServerHpaeDump_->dumpSourceOutputsInfo_.empty(), false);
 }
+
+TEST_F(HpaeAudioServerHpaeDumpTest, HpaeAudioServerHpaeDumpTest_002)
+{
+    bool isTrue = audioServerHpaeDump_->GetDevicesInfo();
+    EXPECT_EQ(isTrue, true);
+
+    std::string dumpString;
+    HpaeSinkSourceInfo sinkInfo = { "Speaker", "" };
+    audioServerHpaeDump_->devicesInfo_.sinkInfos.push_back(sinkInfo);
+    audioServerHpaeDump_->PlaybackSinkDump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    HpaeSinkSourceInfo sourceInfo = { "Built_in_mic", "" };
+    audioServerHpaeDump_->devicesInfo_.sourceInfos.push_back(sourceInfo);
+    dumpString = "";
+    audioServerHpaeDump_->RecordSourceDump(dumpString);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    std::queue<std::u16string> argQue;
+    dumpString = "";
+    audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
+    EXPECT_EQ(dumpString.empty(), false);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

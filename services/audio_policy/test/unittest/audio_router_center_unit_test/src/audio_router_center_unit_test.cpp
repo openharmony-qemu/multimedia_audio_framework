@@ -170,6 +170,19 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_001, TestSize.L
     EXPECT_NE(result, nullptr);
 }
 
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback.
+ * @tc.number: SetAudioDeviceRefinerCallback_001
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
+    EXPECT_EQ(ret, ERROR);
+}
+
 class MockRouter : public RouterBase {
 public:
     RouterType routerType_ = ROUTER_TYPE_NONE;

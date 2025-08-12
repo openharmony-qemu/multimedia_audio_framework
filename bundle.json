@@ -26,6 +26,7 @@
         ],
         "features": [
           "audio_framework_feature_wired_audio",
+          "audio_framework_feature_usb_audio",
           "audio_framework_feature_double_pnp_detect",
           "audio_framework_feature_dtmf_tone",
           "audio_framework_feature_detect_soundbox",
@@ -37,7 +38,6 @@
           "audio_framework_feature_distributed_audio",
           "audio_framework_feature_file_io",
           "audio_framework_feature_inner_capturer",
-          "audio_framework_feature_usb_audio",
           "audio_framework_feature_low_latency",
           "audio_framework_feature_new_engine_flag"
         ],
@@ -79,13 +79,13 @@
             "ipc",
             "kv_store",
             "napi",
+            "os_account",
             "power_manager",
             "resource_management",
             "resource_schedule_service",
             "safwk",
             "samgr",
             "sensor",
-            "os_account",
             "bounds_checking_function",
             "pulseaudio",
             "libuv",
@@ -132,16 +132,6 @@
                   ]
                 },
                 "name": "//foundation/multimedia/audio_framework/services/audio_service:audio_sasdk"
-            },
-            {
-              "type": "none",
-              "name": "//foundation/multimedia/audio_framework/services/audio_policy:audio_policy_ipc",
-              "header": {
-                "header_files": [
-                  "audio_policy_ipc_interface_code.h"
-                ],
-                "header_base": "//foundation/multimedia/audio_framework/services/audio_policy/common/include"
-              }
             },
             {
               "type": "none",

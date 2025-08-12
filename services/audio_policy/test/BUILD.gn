@@ -2050,6 +2050,8 @@ ohos_unittest("audio_policy_server_unit_test") {
     "../../audio_policy/server/include/service/listener",
     "../../audio_policy/server/include",
     "../../audio_policy/test/unittest/audio_interrupt_service_test/include",
+    "../../../services/audio_engine/manager/include",
+    "../../../services/audio_service/server/include",
   ]
 
   use_exceptions = true
@@ -2108,6 +2110,8 @@ ohos_unittest("audio_policy_server_unit_test") {
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
     "../../audio_policy:audio_policy_service_static",
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_engine:audio_engine_manager",
   ]
 
   defines = [ "BLUETOOTH_ENABLE" ]

@@ -558,5 +558,17 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
     pipeStreamPropInfo->supportDevices_ = { "test_device1" };
     EXPECT_NO_THROW(pipeStreamPropInfo->SelfCheck());
 }
+
+/**
+* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
+* @tc.number: AudioPolicyConfigData_019
+* @tc.desc  : Test GetAdapterType
+*/
+HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_019, TestSize.Level1)
+{
+    std::string adapterName = ADAPTER_TYPE_ACCESSORY;
+    auto ret = PolicyAdapterInfo::GetAdapterType(adapterName);
+    EXPECT_EQ(ret, AudioAdapterType::TYPE_ACCESSORY);
+}
 } // namespace AudioStandard
 } // namespace OHOS
