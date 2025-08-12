@@ -442,9 +442,27 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectProcessCluster sceneType:"
         + std::to_string(sceneType));
-    int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
+    HpaeProcessorType tmpSceneType = sceneType;
+    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+        tmpSceneType = HPAE_SCENE_DEFAULT;
+    }
+    if (toBeStoppedSceneTypeToSessionMap_.count(tmpSceneType) > 0) {
+        if (toBeStoppedSceneTypeToSessionMap_[tmpSceneType] == sessionId) {
+            toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
+        } else {
+            if (SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[tmpSceneType])) {
+                sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[tmpSceneType]]->GetNodeInfo());
+            }
+            int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo());
+            if (ret != SUCCESS) {
+                AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
+            }
+        }
+    } else {
+        int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo());
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
+        }
     }
     if (!outputCluster_->IsProcessClusterConnected(sceneType) && !sceneClusterMap_[sceneType]->GetConnectedFlag()) {
         outputCluster_->Connect(sceneClusterMap_[sceneType]);
@@ -608,6 +626,8 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             }
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
+            sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo());
+            toBeStoppedSceneTypeToSessionMap_.erase(sceneType);
         }
         DeleteProcessCluster(sceneType);
     };
@@ -617,9 +637,17 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
-    int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
-    if (ret != SUCCESS) {
-        AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
+    if (sceneClusterMap_[sceneType]->GetPreOutNum() > 0) {
+        int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
+        if (ret != SUCCESS) {
+            AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
+        }
+    } else {
+        if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
+            toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_DEFAULT] = sessionId;
+        } else {
+            toBeStoppedSceneTypeToSessionMap_[sceneType] = sessionId;
+        }
     }
 }
 
