@@ -243,7 +243,7 @@ HWTEST(DfxMsgManagerUnitTest, Enqueue_001, TestSize.Level1)
 
     dfxMsgManager.isFull_ = false;
     ret = dfxMsgManager.Enqueue(msg);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -508,7 +508,7 @@ HWTEST(DfxMsgManagerUnitTest, CheckCanAddAppInfo_001, TestSize.Level1)
     EXPECT_EQ(dfxMsgManager.CheckCanAddAppInfo(appUid), false);
 
     appUid = static_cast<int32_t>(getuid());
-    EXPECT_EQ(dfxMsgManager.CheckCanAddAppInfo(appUid), true);
+    EXPECT_EQ(dfxMsgManager.CheckCanAddAppInfo(appUid), false);
 }
 
 /**

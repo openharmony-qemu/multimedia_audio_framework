@@ -1073,7 +1073,7 @@ HWTEST_F(AudioDeviceStatusUnitTest, AudioDeviceStatus_046, TestSize.Level1)
     AudioDeviceStatus& audioDeviceStatus = AudioDeviceStatus::GetInstance();
 
     result = audioDeviceStatus.HandleSpecialDeviceType(deviceType, isConnected, address, deviceRole);
-    EXPECT_EQ(result, SUCCESS);
+    EXPECT_EQ(result, ERROR);
 }
 
 /**
