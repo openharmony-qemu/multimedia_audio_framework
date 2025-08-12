@@ -53,7 +53,8 @@ HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_001, TestSize.Level
 
     bool hasDescriptor = false;
     StreamFilterRouter rot;
-    std::shared_ptr<AudioDeviceDescriptor> result = rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
+    std::shared_ptr<AudioDeviceDescriptor> result =
+    rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
     EXPECT_TRUE(hasDescriptor);
     EXPECT_EQ(result->networkId_, "networkId123");
     EXPECT_EQ(result->deviceRole_, INPUT_DEVICE);
@@ -81,7 +82,8 @@ HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_002, TestSize.Level
 
     bool hasDescriptor = false;
     StreamFilterRouter rot;
-    std::shared_ptr<AudioDeviceDescriptor> result = rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
+    std::shared_ptr<AudioDeviceDescriptor> result =
+    rot.SelectRemoteCaptureDevice(descriptors, incomingDevice, hasDescriptor);
 
     EXPECT_FALSE(hasDescriptor);
 }
