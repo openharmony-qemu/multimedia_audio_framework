@@ -79,6 +79,7 @@
     *RestoreAudioWorkgroupPrio*;
     *SaveRenderWhitelist*;
     *InRenderWhitelist*;
+    *HpaeCapturerStreamImpl*;
   local:
     *;
 };
