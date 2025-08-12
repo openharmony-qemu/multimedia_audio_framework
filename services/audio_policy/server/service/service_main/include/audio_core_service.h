@@ -46,7 +46,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_event_utils.h"
 #include "audio_stream_id_allocator.h"
-#include "i_hape_soft_link.h"
+#include "i_hpae_soft_link.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
