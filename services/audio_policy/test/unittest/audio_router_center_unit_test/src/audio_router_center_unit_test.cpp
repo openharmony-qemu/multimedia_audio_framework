@@ -331,7 +331,8 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_NONE, TestSiz
     center.callRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, invalidDesc));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
@@ -350,7 +351,8 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_valid, TestSi
     center.callRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, validDesc));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result, validDesc);
     EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
