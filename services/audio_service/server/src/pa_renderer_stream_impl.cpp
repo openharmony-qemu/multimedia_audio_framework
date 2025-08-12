@@ -1341,7 +1341,7 @@ int32_t PaRendererStreamImpl::SetClientVolume(float clientVolume)
 
 int32_t PaRendererStreamImpl::SetLoudnessGain(float loudnessGain)
 {
-    AUDIO_INFO_LOG("set loudnessGain: %{public}f", loudnessGain);
+    AUDIO_INFO_LOG("PA set loudnessGain: %{public}f", loudnessGain);
     return SUCCESS;
 }
 
