@@ -189,26 +189,39 @@ public:
           callCaptureRet_(std::move(callCaptureRet)),
           recordCaptureRet_(std::move(recordCaptureRet)) {}
  
-    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override {
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    {
         return mediaRenderRet_;
     }
-    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override {
+
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    {
         return callRenderRet_;
     }
-    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override {
+
+    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
         return callCaptureRet_;
     }
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override {
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
+    {
         static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
         return emptyVector;
     }
-    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override {
+
+    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
         return recordCaptureRet_;
     }
-    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override {
+
+    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override
+    {
         return std::shared_ptr<AudioDeviceDescriptor>();
     }
-    RouterType GetRouterType() override {
+
+    RouterType GetRouterType() override
+    {
         return routerType_;
     }
 };
@@ -298,7 +311,8 @@ HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_desc_nullptr, TestSize.L
     center.callRenderRouters_.emplace_back(
         std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr));
     RouterType rtype = ROUTER_TYPE_NONE;
-    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
     ASSERT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
     EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
