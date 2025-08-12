@@ -456,11 +456,13 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_001, TestSize.Level1)
     sptr<IStandardSleAudioOperationCallbackTest> callback =
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
-    
-    std::string device = "LocalDevice";
+
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
     StreamUsage streamUsage = STREAM_USAGE_MEDIA;
 
-    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(device, streamUsage);
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, streamUsage);
     EXPECT_EQ(ret, SUCCESS);
 }
 
@@ -477,10 +479,12 @@ HWTEST(SleAudioDeviceManagerUnitTest, SetActiveDevice_002, TestSize.Level1)
         new(std::nothrow) IStandardSleAudioOperationCallbackTest();
     sleAudioDeviceManager_->SetSleAudioOperationCallback(callback);
     
-    std::string device = "LocalDevice";
+    AudioDeviceDescriptor deviceDesc = {};
+    deviceDesc.deviceType_ = DEVICE_TYPE_NEARLINK;
+    deviceDesc.macAddress_ = "LocalDevice";
     SourceType sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
 
-    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(device, sourceType);
+    int32_t ret = sleAudioDeviceManager_->SetActiveDevice(deviceDesc, sourceType);
     EXPECT_EQ(ret, SUCCESS);
 }
 
