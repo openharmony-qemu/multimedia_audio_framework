@@ -143,7 +143,7 @@ typedef void (*TestFuncs[4])();
 TestFuncs g_testFuncs = {
     HpaeResampleNodeResetFuzzTest,
     HpaeResampleNodeSignalProcessFuzzTest01,
-    HpaeResampleNodeSignalProcessFuzzTest02
+    HpaeResampleNodeSignalProcessFuzzTest02,
     HpaeResampleNodeConnectAndDisconnectWithInfoFuzzTest,
 };
 
