@@ -2270,6 +2270,7 @@ int32_t AudioPolicyServer::SetMicrophoneMutePersistent(bool isMute, int32_t type
     bool hasPermission = VerifyPermission(MICROPHONE_CONTROL_PERMISSION);
     CHECK_AND_RETURN_RET_LOG(hasPermission, ERR_PERMISSION_DENIED,
         "MICROPHONE_CONTROL_PERMISSION permission denied");
+    CHECK_AND_RETURN_RET_LOG(POLICY_TYPE_MAP.count(type), ERR_OPERATION_FAILED, "type invalid");
     WatchTimeout guard("PrivacyKit::SetMutePolicy:SetMicrophoneMutePersistent");
     bool originalMicrophoneMute = false;
     IsMicrophoneMute(originalMicrophoneMute);
