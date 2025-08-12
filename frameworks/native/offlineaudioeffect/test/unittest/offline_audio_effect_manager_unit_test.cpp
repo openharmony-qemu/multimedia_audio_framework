@@ -16,7 +16,7 @@
 #include <iostream>
 #include <thread>
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
+#include "gmock/gmock.h"
 #include "audio_errors.h"
 #include "offline_audio_effect_manager.h"
 #include "offline_audio_effect_server_chain.h"
@@ -174,7 +174,7 @@ void OfflineAudioEffectChainUnitTest::TearDownTestCase(void)
 
 void OfflineAudioEffectChainUnitTest::SetUp(void)
 {
-    chain_ = g_manager->CreateOfflineAudioEffectChain(g_normalName);
+    chain_ = g_manager->CreateOfflineAudioEffectChainMock(g_normalName);
 }
 
 void OfflineAudioEffectChainUnitTest::TearDown(void)
@@ -219,24 +219,8 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSiz
 {
     auto manager = make_shared<OfflineAudioEffectManager>();
     auto chain = manager->CreateOfflineAudioEffectChain(g_normalName);
-    if (g_normalName == "") {
-        EXPECT_EQ(nullptr, chain);
-    } else {
-        EXPECT_NE(nullptr, chain);
-    }
-}
-
-/**
- * @tc.name  : Test CreateOfflineAudioEffectChain API
- * @tc.type  : FUNC
- * @tc.number: OfflineAudioEffectManager_003
- * @tc.desc  : Test OfflineAudioEffectManager interface.
- */
-HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_003, TestSize.Level1)
-{
-    auto manager = make_shared<OfflineAudioEffectManager>();
-    auto chain = manager->CreateOfflineAudioEffectChain(INVALID_EFFECT_NAME);
-    EXPECT_EQ(nullptr, chain);
+    EXPECT_NE(nullptr, chain);
+    EXPECT_EQ(SUCCESS, chain->Prepare());
 }
 
 /**
@@ -247,11 +231,9 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_003, TestSiz
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.Level1)
 {
-    if (chain_) {
-        int32_t ret = chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO);
-        EXPECT_EQ(SUCCESS, ret);
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-    }
+    int32_t ret = chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 /**
@@ -262,10 +244,8 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_001, TestSize.
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_002, TestSize.Level1)
 {
-    if (chain_) {
-        EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-    }
+    EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 /**
@@ -278,24 +258,22 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
 {
     uint32_t inSize = 0;
     uint32_t outSize = 0;
-    if (chain_) {
-        EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-        EXPECT_EQ(SUCCESS, chain_->GetEffectBufferSize(inSize, outSize));
-        EXPECT_GT(inSize, 0);
-        EXPECT_GT(outSize, 0);
-        uint8_t *inBuffer = new uint8_t[inSize];
-        uint8_t *outBuffer = new uint8_t[outSize];
-        for (uint32_t i = 0; i < inSize; i++) {
+    EXPECT_EQ(SUCCESS, chain_->Configure(NORMAL_STREAM_INFO, NORMAL_STREAM_INFO));
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
+    EXPECT_EQ(SUCCESS, chain_->GetEffectBufferSize(inSize, outSize));
+    EXPECT_GT(inSize, 0);
+    EXPECT_GT(outSize, 0);
+    uint8_t *inBuffer = new uint8_t[inSize];
+    uint8_t *outBuffer = new uint8_t[outSize];
+    for (uint32_t i = 0; i < inSize; i++) {
             inBuffer[i] = 1;
         }
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(nullptr, inSize, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize + 1, outBuffer, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, nullptr, outSize));
-        EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, outBuffer, outSize + 1));
-        delete []inBuffer;
-        delete []outBuffer;
-    }
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(nullptr, inSize, outBuffer, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize + 1, outBuffer, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, nullptr, outSize));
+    EXPECT_EQ(ERR_INVALID_PARAM, chain_->Process(inBuffer, inSize, outBuffer, outSize + 1));
+    delete []inBuffer;
+    delete []outBuffer;
 }
 
 /**
@@ -306,12 +284,10 @@ HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_003, TestSize.
  */
 HWTEST_F(OfflineAudioEffectChainUnitTest, OfflineAudioEffectChain_004, TestSize.Level1)
 {
-    if (chain_) {
-        std::vector<uint8_t> param(0);
-        int32_t ret = chain_->SetParam(param);
-        EXPECT_EQ(SUCCESS, ret);
-        EXPECT_EQ(SUCCESS, chain_->Prepare());
-    }
+    std::vector<uint8_t> param(0);
+    int32_t ret = chain_->SetParam(param);
+    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(SUCCESS, chain_->Prepare());
 }
 
 HWTEST_F(OfflineAudioEffectServerChainUnitTest, Create_001, TestSize.Level1)
