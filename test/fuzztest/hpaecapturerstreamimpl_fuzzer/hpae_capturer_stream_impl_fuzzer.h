@@ -48,4 +48,4 @@ public:
 };
 }
 }
-#endif HPAE_CAPTURER_STREAM_IMPL_FUZZER_H
+#endif
