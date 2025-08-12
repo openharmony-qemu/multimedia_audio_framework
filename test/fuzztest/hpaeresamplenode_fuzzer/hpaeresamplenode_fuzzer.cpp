@@ -80,11 +80,11 @@ static void GetTestNodeInfo(HpaeNodeInfo &nodeInfo)
 
 static void GetTestDtsNodeInfo(HpaeNodeInfo &nodeInfo)
 {
-    dstNodeInfo.nodeId = TEST_ID2;
-    dstNodeInfo.frameLen = TEST_FRAMELEN2;
-    dstNodeInfo.samplingRate = SAMPLE_RATE_44100;
-    dstNodeInfo.channels = CHANNEL_4;
-    dstNodeInfo.format = SAMPLE_F32LE;
+    nodeInfo.nodeId = TEST_ID2;
+    nodeInfo.frameLen = TEST_FRAMELEN2;
+    nodeInfo.samplingRate = SAMPLE_RATE_44100;
+    nodeInfo.channels = CHANNEL_4;
+    nodeInfo.format = SAMPLE_F32LE;
 }
 
 void HpaeResampleNodeResetFuzzTest()
