@@ -33,6 +33,7 @@ using namespace testing::ext;
 namespace OHOS {
 namespace AudioStandard {
 namespace {
+    constexpr float DUCK_VOLUME = 0.2f;
 } // namespace
 
 class CapturerPositionCallbackTestStub : public CapturerPositionCallback {
@@ -80,7 +81,7 @@ public:
     bool StartAudioStream(StateChangeCmdType cmdType,
         AudioStreamDeviceChangeReasonExt reason) override { return true; }
     bool ReleaseAudioStream(bool releaseRunner, bool isSwitchStream) override { return true; }
-    float GetDuckVolume() override { return 0.2; }
+    float GetDuckVolume() override { return DUCK_VOLUME; }
 
     State state_ = State::RUNNING;
 };
