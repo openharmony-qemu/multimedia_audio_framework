@@ -925,6 +925,149 @@ void AudioVolumeManagerSetAbsVolumeMuteFuzzTest(const uint8_t *rawData, size_t s
     audioAdapterManager->SetAbsVolumeMute(mute);
 }
 
+void AudioVolumeManagerSetAppVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    uint32_t index = static_cast<uint32_t>(size);
+    audioAdapterManager_->currentActiveDevice_.deviceType_ = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    int32_t randIntValue = static_cast<int32_t>(size);
+    audioAdapterManager_->SetAppVolumeLevel(randIntValue, randIntValue / NUM_2);
+}
+ 
+void AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t zoneId = static_cast<int32_t>(size);
+    audioAdapterManager_->SetAdjustVolumeForZone(zoneId);
+}
+ 
+void AudioVolumeManagerSetZoneMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t zoneId = static_cast<int32_t>(size);
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    StreamUsage streamUsage = g_testStreamUsages[index % g_testStreamUsages.size()];
+    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager_->SetZoneMute(zoneId, streamType, mute, streamUsage, deviceType);
+}
+ 
+void AudioVolumeManagerGetZoneMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t zoneId = static_cast<int32_t>(size);
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    audioAdapterManager_->GetZoneMute(zoneId, streamType);
+}
+ 
+void AudioVolumeManagerGetZoneVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t zoneId = static_cast<int32_t>(size);
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    audioAdapterManager_->GetZoneVolumeLevel(zoneId, streamType);
+}
+ 
+void AudioVolumeManagerSetZoneVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t zoneId = static_cast<int32_t>(size);
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    int32_t volumeLevel = static_cast<int32_t>(size);
+    audioAdapterManager_->SetZoneVolumeLevel(zoneId, streamType, volumeLevel);
+}
+ 
+void AudioVolumeManagerGetDeviceVolumeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    DeviceType deviceType = g_testDeviceTypes[index % g_testDeviceTypes.size()];
+    audioAdapterManager_->GetDeviceVolume(deviceType, streamType);
+}
+ 
+void AudioVolumeManagerHandleRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    vector<AudioRingerMode> testAudioRingerModers = {
+        RINGER_MODE_SILENT,
+        RINGER_MODE_VIBRATE,
+        RINGER_MODE_NORMAL,
+    };
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioRingerMode ringMode = testAudioRingerModers[index % testAudioRingerModers.size()];
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->HandleRingerMode(ringMode);
+}
+ 
+void AudioVolumeManagerSetAppVolumeDbFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t appUid = static_cast<int32_t>(size);
+    audioAdapterManager_->SetAppVolumeDb(appUid);
+}
+ 
+void AudioVolumeManagerSetAppVolumeMutedDBFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t appUid = static_cast<int32_t>(size);
+    bool muted = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager_->SetAppVolumeMutedDB(appUid, muted);
+}
+ 
+void AudioVolumeManagerGetAppVolumeLevelFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t appUid = static_cast<int32_t>(size);
+    int32_t volumeLevel = static_cast<int32_t>(size);
+    audioAdapterManager_->GetAppVolumeLevel(appUid, volumeLevel);
+}
+ 
+void AudioVolumeManagerSetPersistMicMuteStateFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    bool mute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager_->SetPersistMicMuteState(mute);
+}
+ 
+void AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t uid = static_cast<int32_t>(size);
+    bool setMute = static_cast<bool>(static_cast<uint32_t>(size) % NUM_2);
+    audioAdapterManager_->SetSourceOutputStreamMute(uid, setMute);
+}
+ 
+void AudioVolumeManagerGetStreamMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioStreamType streamType = g_testAudioStreamTypes[index % g_testAudioStreamTypes.size()];
+    audioAdapterManager_->GetStreamMute(streamType);
+}
+ 
+void AudioVolumeManagerGetAppMuteFuzzTest(const uint8_t *rawData, size_t size)
+{
+    audioAdapterManager_->Init();
+    int32_t appUid = static_cast<int32_t>(size);
+    audioAdapterManager_->GetAppMute(appUid);
+}
+ 
+void AudioVolumeManagerSetRingerModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    vector<AudioRingerMode> testAudioRingerModers = {
+        RINGER_MODE_SILENT,
+        RINGER_MODE_VIBRATE,
+        RINGER_MODE_NORMAL,
+    };
+    uint32_t index = static_cast<uint32_t>(size);
+    AudioRingerMode ringMode = testAudioRingerModers[index % testAudioRingerModers.size()];
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    audioAdapterManager->SetRingerMode(ringMode);
+}
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -995,6 +1138,23 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioVolumeManagerSetFirstBootFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSafeVolumeDumpFuzzTest,
     OHOS::AudioStandard::AudioVolumeManagerSetVgsVolumeSupportedFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeLevelFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetAdjustVolumeForZoneFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetZoneMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetZoneMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetZoneMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetZoneVolumeLevelFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetZoneVolumeLevelFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetDeviceVolumeFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerHandleRingerModeFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeDbFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetAppVolumeMutedDBFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetAppVolumeLevelFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetPersistMicMuteStateFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetSourceOutputStreamMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetStreamMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerGetAppMuteFuzzTest,
+    OHOS::AudioStandard::AudioVolumeManagerSetRingerModeFuzzTest,
 };
 
 /* Fuzzer entry point */

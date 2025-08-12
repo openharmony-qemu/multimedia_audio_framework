@@ -386,17 +386,7 @@ void SendDistributedRoutingRoleChangeFuzzTest()
     CastType type = GetData<CastType>();
     audioPolicyServerHandler_->SendDistributedRoutingRoleChange(descriptor, type);
 }
- 
-void SendWakeupCloseEventFuzzTest()
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    if (audioPolicyServerHandler_ == nullptr) {
-        return;
-    }
-    bool isSync = GetData<uint32_t>() % NUM_2;
-    audioPolicyServerHandler_->SendWakeupCloseEvent(isSync);
-}
- 
+
 void SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest()
 {
     auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
@@ -748,7 +738,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     SendInterruptEventCallbackForAudioSessionFuzzTest,
     SendInterruptEventWithClientIdCallbackFuzzTest,
     SendDistributedRoutingRoleChangeFuzzTest,
-    SendWakeupCloseEventFuzzTest,
     SendSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
     SendSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
     SendHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
