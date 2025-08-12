@@ -311,6 +311,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaeremotesinkoutputnode_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
+    "fuzztest/hpaeresamplenode_fuzzer:fuzztest",
     "fuzztest/hpaesinkinputnode_fuzzer:fuzztest",
     "fuzztest/hpaesinkoutputnode_fuzzer:fuzztest",
     "fuzztest/hpaesoftlink_fuzzer:fuzztest",
