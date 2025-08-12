@@ -49,9 +49,6 @@ void HpaeGainNodeSignalProcessFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
-    if (hpaeGainNode == nullptr) {
-        return;
-    }
     std::vector<HpaePcmBuffer *> inputs;
     hpaeGainNode->SignalProcess(inputs);
 }
@@ -87,19 +84,19 @@ void HpaeGainNodeSilenceDataFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
-    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
-    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    PcmBufferInfo pcmBufferInfo(MONO, DEFAULT_FRAME_LEN, SAMPLE_RATE_44100);
+    std::unique_ptr<HpaePcmBuffer> hpaePcmBuffer(new HpaePcmBuffer(pcmBufferInfo));
     hpaeGainNode->SilenceData(hpaePcmBuffer);
 }
 
-void HpaeGainNodeIsSilenceDataFuzzTest()
+void HpaeGainNodeIsSilentDataFuzzTest()
 {
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
-    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
-    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
-    hpaeGainNode->IsSilenceData(hpaePcmBuffer);
+    PcmBufferInfo pcmBufferInfo(MONO, DEFAULT_FRAME_LEN, SAMPLE_RATE_44100);
+    std::unique_ptr<HpaePcmBuffer> hpaePcmBuffer(new HpaePcmBuffer(pcmBufferInfo));
+    hpaeGainNode->IsSilentData(hpaePcmBuffer);
 }
 
 vector<TestPtr> g_testPtrs = {
@@ -108,7 +105,7 @@ vector<TestPtr> g_testPtrs = {
     HpaeGainNodeGetClientVolumeFuzzTest,
     HpaeGainNodeSetFadeStateFuzzTest,
     HpaeGainNodeSilenceDataFuzzTest,
-    HpaeGainNodeIsSilenceDataFuzzTest,
+    HpaeGainNodeIsSilentDataFuzzTest,
 };
 
 } // namespace AudioStandard
