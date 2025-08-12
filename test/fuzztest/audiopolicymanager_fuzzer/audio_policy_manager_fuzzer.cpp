@@ -428,6 +428,10 @@ void AudioPolicyManagerNiNeFuzzTest()
     vector<shared_ptr<AudioCapturerChangeInfo>> audioCapturerChangeInfos;
     StreamUsage streamUsage = GetData<StreamUsage>();
     std::string address = "address";
+    int32_t volumeDegree = GetData<int32_t>();
+    AudioVolumeType volumeType = GetData<AudioVolumeType>();
+    int32_t volumeFlag = GetData<int32_t>();
+    uid_t uid = GetData<uid_t>();
 
     AudioPolicyManager::GetInstance().SetMicrophoneMutePersistent(isMute, type);
     AudioPolicyManager::GetInstance().GetPersistentMicMuteState();
@@ -441,6 +445,9 @@ void AudioPolicyManagerNiNeFuzzTest()
     AudioPolicyManager::GetInstance().GetSpatializationState(streamUsage);
     AudioPolicyManager::GetInstance().IsSpatializationSupported();
     AudioPolicyManager::GetInstance().IsSpatializationSupportedForDevice(address);
+    AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, volumeDegree, volumeFlag, uid);
+    AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
+    AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
 }
 
 void AudioPolicyManagerDeviceOneFuzzTest()

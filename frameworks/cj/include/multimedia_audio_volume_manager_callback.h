@@ -29,6 +29,7 @@ public:
 
     void RegisterFunc(std::function<void(CVolumeEvent)> cjCallback);
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
+    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override {}
 
 private:
     std::function<void(CVolumeEvent)> func_ {};

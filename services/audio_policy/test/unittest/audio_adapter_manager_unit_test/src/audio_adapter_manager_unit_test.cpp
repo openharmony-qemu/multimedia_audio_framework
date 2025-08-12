@@ -504,6 +504,31 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetInnerStreamMute_002, TestSize.Level4)
 }
 
 /**
+ * @tc.name: Test SetSystemVolumeDegree
+ * @tc.desc: SetSystemVolumeDegree_001
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, SetSystemVolumeDegree_001, TestSize.Level4)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    ASSERT_NE(audioAdapterManager, nullptr);
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    auto ret = audioAdapterManager->SetSystemVolumeDegree(streamType, volumeDegree);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioAdapterManager->SetSystemVolumeDegree(streamType, volumeDegree);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioAdapterManager->GetSystemVolumeDegree(streamType);
+    EXPECT_EQ(ret, volumeDegree);
+
+    ret = audioAdapterManager->GetMinVolumeDegree(streamType);
+    EXPECT_EQ(ret, 0);
+}
+
+/**
  * @tc.name: Test SetSleVoliceStatusFlag
  * @tc.desc: SetSleVoliceStatusFlag_001
  * @tc.type: FUNC

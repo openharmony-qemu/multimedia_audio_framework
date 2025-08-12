@@ -732,6 +732,24 @@ public:
         const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
 
     /**
+     * @brief registers the volume degree callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t RegisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback);
+
+    /**
+     * @brief Unregisters the volumeKeyEvent callback listener
+     *
+     * @return Returns {@link SUCCESS} if callback unregistration is successful; returns an error code
+     * defined in {@link audio_errors.h} otherwise.
+     */
+    int32_t UnregisterVolumeDegreeCallback(const int32_t clientPid,
+        const std::shared_ptr<VolumeKeyEventCallback> &callback = nullptr);
+
+    /**
      * @brief registers the systemVolumeChange callback listener
      *
      * @return Returns {@link SUCCESS} if callback registration is successful; returns an error code
