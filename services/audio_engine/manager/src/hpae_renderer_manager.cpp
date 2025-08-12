@@ -451,8 +451,9 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
             toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
         } else {
             if (SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[tmpSceneType])) {
-                sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[tmpSceneType]]->GetNodeInfo());
+                sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[tmpSceneType]]->GetNodeInfo());
             }
+            toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
             int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo());
             if (ret != SUCCESS) {
                 AUDIO_WARNING_LOG("update audio effect when starting failed, ret = %{public}d", ret);
@@ -626,7 +627,10 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             }
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
-            sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo());
+            if (SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[sceneType])) {
+                sceneClusterMap_[sceneType]->
+                    AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo());
+            }
             toBeStoppedSceneTypeToSessionMap_.erase(sceneType);
         }
         DeleteProcessCluster(sceneType);
