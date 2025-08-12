@@ -40,16 +40,16 @@ void StreamFilterRouterUnitTest::TearDown(void) {}
 HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_001, TestSize.Level1)
 {
     std::shared_ptr<AudioDeviceDescriptor> incomingDevice = std::make_shared<AudioDeviceDescriptor>();
-    incomingDevice->networkId_ == "networkId123";
-    incomingDevice->deviceRole_ == INPUT_DEVICE;
-    incomingDevice->deviceType_ == DEVICE_TYPE_MIC;
+    incomingDevice->networkId_ = "networkId123";
+    incomingDevice->deviceRole_ = INPUT_DEVICE;
+    incomingDevice->deviceType_ = DEVICE_TYPE_MIC;
 
     std::shared_ptr<AudioDeviceDescriptor> matchingDevice = std::make_shared<AudioDeviceDescriptor>();
-    matchingDevice->networkId_ == "networkId123";
-    matchingDevice->deviceRole_ == INPUT_DEVICE;
-    matchingDevice->deviceType_ == DEVICE_TYPE_MIC;
+    matchingDevice->networkId_ = "networkId123";
+    matchingDevice->deviceRole_ = INPUT_DEVICE;
+    matchingDevice->deviceType_ = DEVICE_TYPE_MIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor> descriptors = {matchingDevice};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {matchingDevice};
 
     bool hasDescriptor = false;
     StreamFilterRouter rot;
@@ -68,16 +68,16 @@ HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_001, TestSize.Level
 HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_002, TestSize.Level1)
 {
     std::shared_ptr<AudioDeviceDescriptor> incomingDevice = std::make_shared<AudioDeviceDescriptor>();
-    incomingDevice->networkId_ == "networkId123";
-    incomingDevice->deviceRole_ == INPUT_DEVICE;
-    incomingDevice->deviceType_ == DEVICE_TYPE_MIC;
+    incomingDevice->networkId_ = "networkId123";
+    incomingDevice->deviceRole_ = INPUT_DEVICE;
+    incomingDevice->deviceType_ = DEVICE_TYPE_MIC;
 
     std::shared_ptr<AudioDeviceDescriptor> nonMatchingDevice = std::make_shared<AudioDeviceDescriptor>();
-    nonMatchingDevice->networkId_ == "otherNetworkId";
-    nonMatchingDevice->deviceRole_ == OUTPUT_DEVICE;
-    nonMatchingDevice->deviceType_ == DEVICE_TYPE_SPEAKER;
+    nonMatchingDevice->networkId_ = "otherNetworkId";
+    nonMatchingDevice->deviceRole_ = OUTPUT_DEVICE;
+    nonMatchingDevice->deviceType_ = DEVICE_TYPE_SPEAKER;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor> descriptors = {nonMatchingDevice};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {nonMatchingDevice};
 
     bool hasDescriptor = false;
     StreamFilterRouter rot;
@@ -94,11 +94,11 @@ HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_002, TestSize.Level
 HWTEST(StreamFilterRouterUnitTest, SelectRemoteCaptureDevice_003, TestSize.Level1)
 {
     std::shared_ptr<AudioDeviceDescriptor> incomingDevice = std::make_shared<AudioDeviceDescriptor>();
-    incomingDevice->networkId_ == "networkId123";
-    incomingDevice->deviceRole_ == INPUT_DEVICE;
-    incomingDevice->deviceType_ == DEVICE_TYPE_MIC;
+    incomingDevice->networkId_ = "networkId123";
+    incomingDevice->deviceRole_ = INPUT_DEVICE;
+    incomingDevice->deviceType_ = DEVICE_TYPE_MIC;
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor> descriptors = {};
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> descriptors = {};
 
     bool hasDescriptor = false;
     StreamFilterRouter rot;
