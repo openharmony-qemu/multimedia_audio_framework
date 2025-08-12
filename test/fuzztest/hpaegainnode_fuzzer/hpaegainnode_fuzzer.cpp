@@ -84,9 +84,9 @@ void HpaeGainNodeSilenceDataFuzzTest()
     HpaeNodeInfo nodeInfo;
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
-    PcmBufferInfo pcmBufferInfo(MONO, TDEFAULT_FRAME_LEN, SAMPLE_RATE_44100);
-    HpaePcmBuffer pcmBuffer = new HpaePcmBuffer(pcmBufferInfo);
-    hpaeGainNode->SilenceData(&pcmBuffer);
+    PcmBufferInfo pcmBufferInfo(MONO, DEFAULT_FRAME_LEN, SAMPLE_RATE_44100);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaeGainNode->SilenceData(&hpaePcmBuffer);
 }
 
 void HpaeGainNodeIsSilentDataFuzzTest()
@@ -95,8 +95,8 @@ void HpaeGainNodeIsSilentDataFuzzTest()
     GetTestNodeInfo(nodeInfo);
     std::shared_ptr<HpaeGainNode> hpaeGainNode = std::make_shared<HpaeGainNode>(nodeInfo);
     PcmBufferInfo pcmBufferInfo(MONO, DEFAULT_FRAME_LEN, SAMPLE_RATE_44100);
-    HpaePcmBuffer pcmBuffer = new HpaePcmBuffer(pcmBufferInfo);
-    hpaeGainNode->IsSilentData(&pcmBuffer);
+    HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
+    hpaeGainNode->IsSilentData(&hpaePcmBuffer);
 }
 
 vector<TestPtr> g_testPtrs = {
