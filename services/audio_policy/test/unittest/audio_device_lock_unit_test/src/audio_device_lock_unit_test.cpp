@@ -153,5 +153,22 @@ HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_026, TestSize.Level1)
     audioDeviceLock->OnDeviceStatusUpdated(updatedDesc, isConnected);
     EXPECT_NE(audioDeviceLock, nullptr);
 }
+
+/**
+* @tc.name  :  AudioDeviceLock_027
+* @tc.desc  : Test AudioDeviceLock interface.
+*/
+HWTEST_F(AudioDeviceLockUnitTest, AudioDeviceLock_027, TestSize.Level1)
+{
+    auto audioDeviceLock = std::make_shared<AudioDeviceLock>();
+    EXPECT_NE(audioDeviceLock, nullptr);
+
+    AudioDeviceDescriptor updatedDesc;
+    updatedDesc.deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP_IN;
+    updatedDesc.connectState_ = VIRTUAL_CONNECTED;
+    DeviceInfoUpdateCommand command = DeviceInfoUpdateCommand::ENABLE_UPDATE;
+
+    EXPECT_NO_THROW(audioDeviceLock->OnDeviceInfoUpdated(updatedDesc, command));
+}
 } // namespace AudioStandard
 } // namespace OHOS
