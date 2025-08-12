@@ -194,8 +194,6 @@ public:
 
     static const sptr<IStandardAudioService> GetAudioServerProxy();
 
-    bool RestoreAudioStream(bool needStoreState = true) override;
-
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
@@ -211,6 +209,8 @@ public:
     void SetSwitchInfoTimestamp(std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePair,
         std::vector<std::pair<uint64_t, uint64_t>> lastFramePosAndTimePairWithSpeed) override;
     void FetchDeviceForSplitStream() override;
+
+    bool RestoreAudioStream(bool needStoreState = true) override;
 
     void SetCallStartByUserTid(pid_t tid) override;
     void SetCallbackLoopTid(int32_t tid) override;
