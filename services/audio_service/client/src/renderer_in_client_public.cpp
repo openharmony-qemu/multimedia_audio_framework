@@ -666,6 +666,7 @@ void RendererInClientInner::NotifyRouteUpdate(uint32_t routeFlag, const std::str
     } else {
         if (realSpeed_.has_value()) {
             SetSpeedInner(realSpeed_.value());
+            DoHdiSetSpeed(1.0, false);
         }
     }
 }
