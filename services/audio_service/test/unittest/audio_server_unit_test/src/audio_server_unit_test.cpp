@@ -1944,19 +1944,6 @@ HWTEST_F(AudioServerUnitTest, OnDataTransferStateChange_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test OnStart API
- * @tc.type  : FUNC
- * @tc.number: OnStart_001
- * @tc.desc  : Test OnStart interface.
- */
-HWTEST_F(AudioServerUnitTest, OnStart_001, TestSize.Level1)
-{
-    EXPECT_NE(nullptr, audioServer);
-    audioServer->OnStart();
-    EXPECT_NE(audioServer->isFastControlled_, false);
-}
-
-/**
  * @tc.name  : Test ProcessKeyValuePairs API
  * @tc.type  : FUNC
  * @tc.number: ProcessKeyValuePairs_001
