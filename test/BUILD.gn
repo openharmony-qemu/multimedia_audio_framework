@@ -292,6 +292,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaecapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaecapturerstreamimpl_fuzzer:fuzztest",
     "fuzztest/hpaeengine_fuzzer:fuzztest",
+    "fuzztest/hpaegainnode_fuzzer:fuzztest",
     "fuzztest/hpaeinnercapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaemanager_fuzzer:fuzztest",
     "fuzztest/hpaemanagerimpl_fuzzer:fuzztest",
