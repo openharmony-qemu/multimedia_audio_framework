@@ -481,7 +481,7 @@ private:
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
     void UpdateRouteForCollaboration(InternalDeviceType deviceType);
-    int32_t CheckAndUpdateHearingAidCall(const DeviceType);
+    int32_t CheckAndUpdateHearingAidCall(const DeviceType deviceType);
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
