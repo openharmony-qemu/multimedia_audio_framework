@@ -83,7 +83,7 @@ public:
 
     MOCK_METHOD(int32_t, UpdateActiveDevice, (std::vector<DeviceType> &outputDevices), (override));
 
-    void RegistCallback(uint32_t /* type */, IAudioSinkCallback* /* callback */) override {}
+    void RegistCallback(uint32_t /* type */, IAudioSinkCallback * /* callback */) override {}
     void RegistCallback(uint32_t /* type */, std::shared_ptr<IAudioSinkCallback> /* callback */) override {}
     MOCK_METHOD(void, ResetActiveDeviceForDisconnect, (DeviceType device), (override));
 
@@ -94,18 +94,18 @@ public:
     MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
 
     int32_t SetRenderEmpty(int32_t /* durationUs */) override { return 0; }
-    void SetAddress(const std::string &/* address */) override {}
+    void SetAddress(const std::string & /* address */) override {}
     void SetInvalidState() override {}
 
     MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
 
     bool IsSinkInited() override { return false; }
 
-    int32_t GetMmapBufferInfo(int &/* fd */, uint32_t &/* totalSizeInframe */,
-        uint32_t &/* spanSizeInframe */, uint32_t& /* byteSizePerFrame */,
-        uint32_t &/* syncInfoSize */) override { return -1; }
-    int32_t GetMmapHandlePosition(uint64_t &/* frames */, int64_t &/* timeSec */,
-        int64_t &/* timeNanoSec */) override { return -1; }
+    int32_t GetMmapBufferInfo(int & /* fd */, uint32_t & /* totalSizeInframe */,
+        uint32_t & /* spanSizeInframe */, uint32_t & /* byteSizePerFrame */,
+        uint32_t & /* syncInfoSize */) override { return -1; }
+    int32_t GetMmapHandlePosition(uint64_t & /* frames */, int64_t & /* timeSec */,
+        int64_t & /* timeNanoSec */) override { return -1; }
 
     int32_t Drain(AudioDrainType /* type */) override { return -1; }
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override {}
@@ -116,8 +116,8 @@ public:
     int32_t LockOffloadRunningLock() override { return -1; }
     int32_t UnLockOffloadRunningLock() override { return -1; }
 
-    int32_t SplitRenderFrame(char &/* data */, uint64_t /* len */, uint64_t &/* writeLen */,
-        const char */* streamType */) override { return -1; }
+    int32_t SplitRenderFrame(char & /* data */, uint64_t /* len */, uint64_t & /* writeLen */,
+        const char * /* streamType */) override { return -1; }
 
     int32_t UpdatePrimaryConnectionState(uint32_t /* operation */) override { return -1; }
 
