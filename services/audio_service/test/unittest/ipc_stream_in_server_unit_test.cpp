@@ -1705,7 +1705,7 @@ HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_003, TestSize.Level1)
  * @tc.number: GetAudioSessionID_001
  * @tc.desc  : Test GetAudioSessionID interface.
  */
-HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_001, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
@@ -1725,7 +1725,7 @@ HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_001, TestSize.Level1)
  * @tc.number: GetAudioSessionID_002
  * @tc.desc  : Test GetAudioSessionID interface.
  */
-HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_002, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_002, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_RECORD;
@@ -1745,7 +1745,7 @@ HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_002, TestSize.Level1)
  * @tc.number: Start_001
  * @tc.desc  : Test Start interface.
  */
-HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_RECORD;
@@ -1763,7 +1763,7 @@ HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level1)
  * @tc.number: Start_002
  * @tc.desc  : Test Start interface.
  */
-HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
@@ -1781,7 +1781,7 @@ HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level1)
  * @tc.number: stop_001
  * @tc.desc  : Test Start interface.
  */
-HWTEST(IpcStreamInServerUnitTest, Stop_001, TestSize.Level1)
+HWTEST(IpcStreamInServerUnitTest, Stop_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
     AudioMode modeRet = AUDIO_MODE_PLAYBACK;
