@@ -44,9 +44,9 @@ public:
 
     virtual bool ConnectServiceAdapter() = 0;
 
-    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
-    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType) = 0;
+    virtual int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) = 0;
 
     virtual int32_t SetSystemVolumeLevel(AudioStreamType streamType, int32_t volumeLevel) = 0;
 
@@ -244,6 +244,8 @@ public:
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
+
+    virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

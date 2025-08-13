@@ -1959,7 +1959,7 @@ void HpaeManager::SetOutputDeviceSink(int32_t device, const std::string &sinkNam
         HpaePolicyManager::GetInstance().SetOutputDeviceSink(device, sinkName);
         std::shared_ptr<IHpaeRendererManager> rendererManager = GetRendererManagerByName(sinkName);
         CHECK_AND_RETURN_LOG(rendererManager, "can not find sink[%{public}s] in rendererManagerMap_", sinkName.c_str());
-        rendererManager->RefreshProcessClusrerByDevice();
+        rendererManager->RefreshProcessClusterByDevice();
     };
     SendRequest(request, __func__);
 }
@@ -2351,6 +2351,22 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
             "can not find sink[%{public}s] in rendererManagerMap_", coreSink_.c_str());
         CHECK_AND_RETURN_LOG(hpaeCoBufferNode != nullptr, "hpaeCoBufferNode is nullptr");
         defaultRendererManager->DisConnectCoBufferNode(hpaeCoBufferNode);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)
+{
+    auto request = [stringSessionID, streamVolume]() {
+        HpaePolicyManager::GetInstance().AddStreamVolumeToEffect(stringSessionID, streamVolume);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
+{
+    auto request = [stringSessionID]() {
+        HpaePolicyManager::GetInstance().DeleteStreamVolumeToEffect(stringSessionID);
     };
     SendRequest(request, __func__);
 }

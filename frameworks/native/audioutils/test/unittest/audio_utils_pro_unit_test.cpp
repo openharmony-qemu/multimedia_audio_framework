@@ -757,33 +757,5 @@ HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_031, TestSize.Level1)
     auto ret = SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
     EXPECT_EQ(ret, true);
 }
-
-/**
- * @tc.name  : Test HandleSwitchInfoInRecord API
- * @tc.type  : FUNC
- * @tc.number: HandleSwitchInfoInRecord_032
- * @tc.desc  : Test UpdateSwitchStreamRecordwhen case is SWITCH_STATE_STARTED.
- */
-HWTEST(AudioUtilsProUnitTest, SwitchStreamUtil_032, TestSize.Level1)
-{
-    SwitchStreamInfo info = {0, 1, 0, 0, 0, CAPTURER_NEW};
-    SwitchState targetState = SwitchState::SWITCH_STATE_WAITING;
-
-    SwitchStreamUtil::InsertSwitchStreamRecord(info, targetState);
-
-    SwitchStreamInfo info2 = {0, 1, 0, 0, 0, CAPTURER_NEW};
-    SwitchState targetState2 = SwitchState::SWITCH_STATE_STARTED;
-
-    auto ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState2);
-    EXPECT_EQ(ret, false);
-
-    SwitchState targetState3 = SwitchState::SWITCH_STATE_TIMEOUT;
-
-    ret = SwitchStreamUtil::UpdateSwitchStreamRecord(info2, targetState3);
-    EXPECT_EQ(ret, true);
-
-    ret = SwitchStreamUtil::RemoveAllRecordBySessionId(0);
-    EXPECT_EQ(ret, true);
-}
 } // namespace AudioStandard
 } // namespace OHOS

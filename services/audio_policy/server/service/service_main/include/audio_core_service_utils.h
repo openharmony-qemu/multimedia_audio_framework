@@ -38,6 +38,7 @@ public:
         const int32_t sessionId);
     static bool NeedDualHalToneInStatus(AudioRingerMode mode, StreamUsage usage,
         bool isPcVolumeEnable, bool isMusicMute);
+    static bool IsAlarmOnActive(StreamUsage usage, bool isAlarmActive);
 };
 }
 }

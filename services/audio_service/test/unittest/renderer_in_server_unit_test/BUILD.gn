@@ -14,6 +14,11 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../config.gni")
+import("../../../../../appgallery.gni")
+import("../../../../../audio_framework_test_sources.gni")
+import("../../../../../ressche_part.gni")
+import("../../../../../sensor.gni")
+import("../../../../../window_manager.gni")
 
 module_output_path = "audio_framework/audio_framework_route/audio_server"
 
@@ -80,10 +85,41 @@ ohos_unittest("renderer_in_server_unit_test") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
   ]
+  if (!audio_framework_feature_new_engine_flag) {
+    external_deps += [
+      "pulseaudio:pulse",
+    ]
+  }
 
   defines = []
+  if (audio_framework_feature_power_manager) {
+    external_deps += [ "power_manager:powermgr_client" ]
+    defines += [ "FEATURE_POWER_MANAGER" ]
+  }
+
+  if (ressche_enable == true) {
+    external_deps += [ "resource_schedule_service:ressched_client" ]
+    defines += [ "RESSCHE_ENABLE" ]
+  }
+
+  if (audio_framework_feature_offline_effect) {
+    deps += [
+      "../../../../../frameworks/native/offlineaudioeffect:offline_audio_effect_service",
+    ]
+    defines += [ "FEATURE_OFFLINE_EFFECT" ]
+  }
+
+  if (audio_framework_feature_inner_capturer) {
+    deps += [ "../../../../../frameworks/native/playbackcapturer:playback_capturer" ]
+    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
+  }
+
   if (audio_framework_feature_low_latency) {
     defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+
+  if (!audio_framework_feature_new_engine_flag) {
+    defines += [ "SUPPORT_OLD_ENGINE" ]
   }
 }
 

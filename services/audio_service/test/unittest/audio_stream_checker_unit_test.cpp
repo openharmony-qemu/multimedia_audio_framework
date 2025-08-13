@@ -1530,5 +1530,36 @@ HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_010, TestSize.Level1)
     checker->MonitorOnAllCallback(DATA_TRANS_RESUME, false);
     EXPECT_TRUE(checker->monitorSwitch_);
 }
+
+/**
+ * @tc.name  : Test CheckVolume API
+ * @tc.type  : FUNC
+ * @tc.number: CheckVolume_001
+ */
+HWTEST(AudioStreamCheckerTest, CheckVolume_001, TestSize.Level1)
+{
+    AudioProcessConfig cfg;
+    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
+
+    checker->curVolume_ = 0.0f;
+    checker->preVolume_ = 0.0f;
+    checker->CheckVolume();
+    EXPECT_EQ(checker->curVolume_, checker->preVolume_);
+
+    checker->curVolume_ = 0.0f;
+    checker->preVolume_ = 1.0f;
+    checker->CheckVolume();
+    EXPECT_EQ(checker->curVolume_, checker->preVolume_);
+
+    checker->curVolume_ = 1.0f;
+    checker->preVolume_ = 0.0f;
+    checker->CheckVolume();
+    EXPECT_EQ(checker->curVolume_, checker->preVolume_);
+
+    checker->curVolume_ = 1.0f;
+    checker->preVolume_ = 1.0f;
+    checker->CheckVolume();
+    EXPECT_EQ(checker->curVolume_, checker->preVolume_);
+}
 }
 }

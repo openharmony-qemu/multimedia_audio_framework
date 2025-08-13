@@ -244,7 +244,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
         case SESSION_OPERATION_STOP:
             if (findRunningSessionRet && (targetSession.sourceType == audioEcManager_.GetSourceOpened())) {
                 needReload = true;
-                targetSessionId = runningSessionInfo.sessionId;
+                targetSessionId = static_cast<uint32_t>(runningSessionInfo.sessionId);
                 targetSession = sessionWithNormalSourceType_[targetSessionId];
             }
             break;

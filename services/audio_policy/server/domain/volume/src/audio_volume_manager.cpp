@@ -122,20 +122,20 @@ void AudioVolumeManager::DeInit(void)
     audioPolicyServerHandler_ = nullptr;
 }
 
-int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMaxVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMaxVolumeLevel(volumeType, deviceType);
 }
 
-int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType) const
+int32_t AudioVolumeManager::GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType) const
 {
     if (volumeType == STREAM_ALL) {
         volumeType = STREAM_MUSIC;
     }
-    return audioPolicyManager_.GetMinVolumeLevel(volumeType);
+    return audioPolicyManager_.GetMinVolumeLevel(volumeType, deviceType);
 }
 
 bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol)
@@ -585,7 +585,8 @@ int32_t AudioVolumeManager::HandleAbsBluetoothVolume(const std::string &macAddre
 int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddress, AudioStreamType streamType,
     int32_t volumeLevel, bool internalCall)
 {
-    int ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType, volumeLevel);
+    int32_t ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType,
+        volumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetNearlinkDeviceVolumeLevel failed");
     int32_t sVolumeLevel = volumeLevel;
     // Voice call does not support safe volume
@@ -601,8 +602,11 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
     }
     ret = SleAudioDeviceManager::GetInstance().SetNearlinkDeviceVolumeLevel(macAddress, streamType, sVolumeLevel);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetDeviceAbsVolume failed");
+    ret = audioPolicyManager_.SetSystemVolumeLevel(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+        sVolumeLevel);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERROR, "SetSystemVolumeLevel failed");
 
-    bool mute = sVolumeLevel == 0 ? true : false;
+    bool mute = sVolumeLevel == 0 && (VolumeUtils::GetVolumeTypeFromStreamType(streamType) == STREAM_MUSIC);
 
     if (internalCall) {
         CheckToCloseNotification(streamType, volumeLevel);
@@ -610,8 +614,8 @@ int32_t AudioVolumeManager::SetNearlinkDeviceVolume(const std::string &macAddres
 
     SleAudioDeviceManager::GetInstance().SetNearlinkDeviceMute(macAddress, streamType, mute);
     audioPolicyManager_.SetAbsVolumeMute(mute);
-    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d]",
-        GetEncryptAddr(macAddress).c_str(), sVolumeLevel);
+    AUDIO_INFO_LOG("success for macaddress:[%{public}s], volume value:[%{public}d], streamType [%{public}d]",
+        GetEncryptAddr(macAddress).c_str(), sVolumeLevel, streamType);
     CHECK_AND_RETURN_RET_LOG(sVolumeLevel == volumeLevel, ERR_UNKNOWN, "safevolume did not deal");
     return SUCCESS;
 }

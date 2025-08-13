@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 #include "audio_effect_service.h"
+#include "audio_inner_call.h"
 using namespace std;
 
 namespace OHOS {
@@ -308,6 +309,24 @@ void AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest()
     audioEffectService->UpdateSupportedEffectProperty(device, device2PropertySet);
 }
 
+void AudioEffectServiceUpdateAvailableAEConfigFuzzTest()
+{
+    std::shared_ptr<AudioEffectService> audioEffectService = std::make_shared<AudioEffectService>();
+    if (audioEffectService == nullptr) {
+        return;
+    }
+    OriginalEffectConfig aeConfig;
+    SceneMappingItem sceneMappingItem;
+    PreStreamScene preStreamScene;
+    preStreamScene.stream = "SCENE_VOIP_UP";
+    preStreamScene.mode.push_back("ENHANCE_NONE");
+    aeConfig.preProcess.defaultScenes.push_back(preStreamScene);
+    aeConfig.preProcess.priorScenes.push_back(preStreamScene);
+    aeConfig.preProcess.normalScenes.push_back(preStreamScene);
+    aeConfig.postProcess.sceneMap.push_back(sceneMappingItem);
+    audioEffectService->UpdateAvailableAEConfig(aeConfig);
+}
+
 TestPtr g_testPtrs[] = {
     AudioEffectServiceFuzzTest,
     AudioEffectServiceGetAvailableEffectsFuzzTest,
@@ -324,6 +343,7 @@ TestPtr g_testPtrs[] = {
     AudioEffectServiceAddSupportedAudioEnhancePropertyByDeviceFuzzTest,
     AudioEffectServiceUpdateUnavailableEffectChainsFuzzTest,
     AudioEffectServiceUpdateSupportedEffectPropertyFuzzTest,
+    AudioEffectServiceUpdateAvailableAEConfigFuzzTest,
 };
 
 void FuzzTest(const uint8_t *rawData, size_t size)

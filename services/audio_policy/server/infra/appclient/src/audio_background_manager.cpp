@@ -65,11 +65,13 @@ void AudioBackgroundManager::SubscribeBackgroundTask()
 
 bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t &pid)
 {
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     if (!FindKeyInMap(pid)) {
         AppState appState;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     }
-    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+
     AppState &appState = appStatesMap_[pid];
     AUDIO_INFO_LOG("appStatesMap_ start pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
@@ -92,50 +94,56 @@ bool AudioBackgroundManager::IsAllowedPlayback(const int32_t &uid, const int32_t
 
 void AudioBackgroundManager::NotifyAppStateChange(const int32_t uid, const int32_t pid, AppIsBackState state)
 {
-    if (state == STATE_END) {
-        return DeleteFromMap(pid);
-    }
-    bool isBack = state != STATE_FOREGROUND;
-    if (!FindKeyInMap(pid)) {
-        AppState appState;
-        appState.isBack = isBack;
-        InsertIntoAppStatesMap(pid, appState);
-    } else {
-        bool notifyMute = false;
-        {
-            std::lock_guard<std::mutex> lock(appStatesMapMutex_);
-            AppState &appState = appStatesMap_[pid];
-            CHECK_AND_RETURN(appState.isBack != isBack);
+    bool isBack = (state != STATE_FOREGROUND);
+    {
+        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+        if (state == STATE_END) {
+            return DeleteFromMap(pid);
+        }
+        if (!FindKeyInMap(pid)) {
+            AppState appState;
             appState.isBack = isBack;
-            appState.isFreeze = isBack ? appState.isFreeze : false;
-            appState.isBinder = isBack ? appState.isBinder : false;
-            AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
-                "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
-                appState.hasBackTask, appState.isFreeze);
-            if (!isBack) {
-                return streamCollector_.HandleForegroundUnmute(uid, pid);
-            }
-            bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-            streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
-            streamCollector_.HandleKaraokeAppToBack(uid, pid);
+            appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+            InsertIntoAppStatesMap(pid, appState);
         }
-        if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
-            lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
-            CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
-            AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
-            backgroundMuteListener_->OnBackgroundMute(uid);
+        return;
+    }
+
+    bool notifyMute = false;
+    {
+        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
+        AppState &appState = appStatesMap_[pid];
+        CHECK_AND_RETURN(appState.isBack != isBack);
+        appState.isBack = isBack;
+        appState.isFreeze = isBack ? appState.isFreeze : false;
+        appState.isBinder = isBack ? appState.isBinder : false;
+        AUDIO_INFO_LOG("appStatesMap_ change pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
+            "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
+            appState.hasBackTask, appState.isFreeze);
+        if (!isBack) {
+            return streamCollector_.HandleForegroundUnmute(uid, pid);
         }
+        bool needMute = !appState.hasSession && appState.isBack && !CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+        streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
+        streamCollector_.HandleKaraokeAppToBack(uid, pid);
+    }
+    if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
+        lock_guard<mutex> lock(g_backgroundMuteListenerMutex);
+        CHECK_AND_RETURN_LOG(backgroundMuteListener_ != nullptr, "backgroundMuteListener_ is nulptr");
+        AUDIO_INFO_LOG("OnBackground with uid: %{public}d", uid);
+        backgroundMuteListener_->OnBackgroundMute(uid);
     }
 }
 
 void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, const int32_t pid, bool hasBackgroundTask)
 {
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.hasBackTask = hasBackgroundTask;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN(appState.hasBackTask != hasBackgroundTask);
         appState.hasBackTask = hasBackgroundTask;
@@ -150,12 +158,13 @@ void AudioBackgroundManager::NotifyBackgroundTaskStateChange(const int32_t uid, 
 
 int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, const int32_t pid, const bool hasSession)
 {
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     if (!FindKeyInMap(pid)) {
         AppState appState;
         appState.hasSession = hasSession;
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
         InsertIntoAppStatesMap(pid, appState);
     } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         AppState &appState = appStatesMap_[pid];
         CHECK_AND_RETURN_RET(appState.hasSession != hasSession, SUCCESS);
         appState.hasSession = hasSession;
@@ -169,9 +178,12 @@ int32_t AudioBackgroundManager::NotifySessionStateChange(const int32_t uid, cons
 
 void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const int32_t pid)
 {
-    bool isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
-    AppState &appState = appStatesMap_[pid];
-    bool needMute = !appState.hasSession && appState.isBack && !isSystem;
+    auto it = appStatesMap_.find(pid);
+    AppState &appState = (it != appStatesMap_.end()) ? it->second : appStatesMap_[pid];
+    if (it == appStatesMap_.end()) {
+        appState.isSystem = CheckoutSystemAppUtil::CheckoutSystemApp(uid);
+    }
+    bool needMute = !appState.hasSession && appState.isBack && !appState.isSystem;
     bool notifyMute = false;
     streamCollector_.HandleAppStateChange(uid, pid, needMute, notifyMute, appState.hasBackTask);
     if (notifyMute && !VolumeUtils::IsPCVolumeEnable()) {
@@ -184,14 +196,14 @@ void AudioBackgroundManager::HandleSessionStateChange(const int32_t uid, const i
 
 int32_t AudioBackgroundManager::NotifyFreezeStateChange(const std::set<int32_t> &pidList, const bool isFreeze)
 {
+    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     for (auto pid : pidList) {
         if (!FindKeyInMap(pid)) {
             AppState appState;
             appState.isFreeze = isFreeze;
             InsertIntoAppStatesMap(pid, appState);
         } else {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
-        AppState &appState = appStatesMap_[pid];
+            AppState &appState = appStatesMap_[pid];
             CHECK_AND_RETURN_RET(appState.isFreeze != isFreeze, SUCCESS);
             appState.isFreeze = isFreeze;
             appState.isBinder = !isFreeze;
@@ -231,7 +243,6 @@ void AudioBackgroundManager::HandleFreezeStateChange(const int32_t pid, bool isF
 
 void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, AppState appState)
 {
-    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     appStatesMap_.insert(std::make_pair(pid, appState));
     AUDIO_INFO_LOG("appStatesMap_ add pid: %{public}d with hasSession: %{public}d, isBack: %{public}d, "
         "hasBackgroundTask: %{public}d, isFreeze: %{public}d", pid, appState.hasSession, appState.isBack,
@@ -241,7 +252,6 @@ void AudioBackgroundManager::InsertIntoAppStatesMap(int32_t pid, AppState appSta
 void AudioBackgroundManager::DeleteFromMap(int32_t pid)
 {
     if (FindKeyInMap(pid)) {
-        std::lock_guard<std::mutex> lock(appStatesMapMutex_);
         appStatesMap_.erase(pid);
         AUDIO_INFO_LOG("Delete pid: %{public}d success.", pid);
     } else {
@@ -251,7 +261,6 @@ void AudioBackgroundManager::DeleteFromMap(int32_t pid)
 
 bool AudioBackgroundManager::FindKeyInMap(int32_t pid)
 {
-    std::lock_guard<std::mutex> lock(appStatesMapMutex_);
     return appStatesMap_.find(pid) != appStatesMap_.end();
 }
 }

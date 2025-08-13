@@ -282,8 +282,6 @@ private:
 
     int32_t SetSpeedInner(float speed);
 
-    void NotifyOffloadSpeed();
-
     void WaitForBufferNeedWrite();
 
     void UpdatePauseReadIndex();
@@ -295,6 +293,8 @@ private:
     bool NeedStopFlush();
 
     bool CheckBufferValid(const BufferDesc &bufDesc);
+
+    bool IsRestoreNeeded();
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;

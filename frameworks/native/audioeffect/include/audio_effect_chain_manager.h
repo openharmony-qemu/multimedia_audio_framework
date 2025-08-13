@@ -158,6 +158,7 @@ public:
     void LoadEffectProperties();
     ProcessClusterOperation CheckProcessClusterInstances(const std::string &sceneType);
     int32_t GetOutputChannelInfo(const std::string &sceneType, uint32_t &channels, uint64_t &channelLayout);
+    int32_t DeleteStreamVolume(const std::string StringSessionID);
 private:
     int32_t SetAudioEffectChainDynamic(std::string &sceneType, const std::string &effectMode);
     void UpdateSensorState();
@@ -189,6 +190,9 @@ private:
     int32_t SetAbsVolumeStateToEffectInner(const bool absVolumeState);
     int32_t EffectDspAbsVolumeStateUpdate(const bool absVolumeState);
     int32_t EffectApAbsVolumeStateUpdate(const bool absVolumeState);
+    void UpdateDefaultAudioEffectInner();
+    void UpdateStreamUsageInner();
+    int32_t DeleteStreamVolumeInner(const std::string StringSessionID);
 #ifdef WINDOW_MANAGER_ENABLE
     int32_t EffectDspRotationUpdate(std::shared_ptr<AudioEffectRotation> audioEffectRotation,
         const uint32_t rotationState);
@@ -205,8 +209,7 @@ private:
     int32_t EffectVolumeUpdateInner(std::shared_ptr<AudioEffectVolume> audioEffectVolume);
     void InitHdiStateInner();
     void UpdateSpatializationEnabled(AudioSpatializationState spatializationState);
-    void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-        const std::string &effectMode, std::string &sceneType);
+    void ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain, const std::string &effectMode);
     int32_t NotifyAndCreateAudioEffectChain(const std::string &sceneType);
     void WaitAndReleaseEffectChain(const std::string &sceneType, const std::string &sceneTypeAndDeviceKey,
         const std::string &defaultSceneTypeAndDeviceKey, int32_t ret);

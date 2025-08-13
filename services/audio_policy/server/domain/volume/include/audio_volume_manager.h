@@ -79,8 +79,8 @@ public:
     bool Init(std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler);
     void DeInit(void);
     void InitKVStore();
-    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType) const;
-    int32_t GetMinVolumeLevel(AudioVolumeType volumeType) const;
+    int32_t GetMaxVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
+    int32_t GetMinVolumeLevel(AudioVolumeType volumeType, DeviceType deviceType = DEVICE_TYPE_NONE) const;
     bool SetSharedVolume(AudioVolumeType streamType, DeviceType deviceType, Volume vol);
     int32_t InitSharedVolume(std::shared_ptr<AudioSharedMemory> &buffer);
     void SetSharedAbsVolumeScene(const bool support);

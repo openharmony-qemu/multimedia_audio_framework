@@ -24,6 +24,7 @@
 #include "audio_utils_c.h"
 #include "audio_stream_info.h"
 #include "media_monitor_manager.h"
+#include "audio_stream_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -113,8 +114,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumes->volumeSystem = 1.0f;
         }
     } else {
-        AUDIO_ERR_LOG("system volume not exist, volumeType:%{public}d, deviceClass%{public}s",
-            volumeType, deviceClass.c_str());
+        AUDIO_ERR_LOG("no system volume, volumeType:%{public}d deviceClass%{public}s", volumeType, deviceClass.c_str());
     }
     float sysVolume = volumes->volumeSystem;
     if (it != streamVolume_.end() && it->second.IsVirtualKeyboard() && itSV != systemVolume_.end()) {
@@ -131,6 +131,7 @@ float AudioVolume::GetVolume(uint32_t sessionId, int32_t streamType, const std::
             volumes->volumeSystem, volumes->volumeStream, volumes->volumeApp, it->second.IsVirtualKeyboard(),
             itSV != systemVolume_.end() ? (itSV->second.isMuted_ ? "T" : "F") : "null", doNotDisturbStatusVolume);
     }
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(sessionId, volumes->volume);
     return volumes->volume;
 }
 

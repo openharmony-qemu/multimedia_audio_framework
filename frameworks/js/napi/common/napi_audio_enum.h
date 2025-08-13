@@ -185,7 +185,7 @@ private:
     static napi_value SetVolumeMode(napi_env env, napi_callback_info info);
 
     static napi_value CreateEnumObject(const napi_env &env, const std::map<std::string, int32_t> &map);
-    static napi_value CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &reasonMap);
+    static napi_value CreateEnumInt64Object(const napi_env &env, const std::map<std::string, uint64_t> &map);
     static napi_value CreateLocalNetworkIdObject(napi_env env);
     static napi_value CreateDefaultVolumeGroupIdObject(napi_env env);
     static napi_value CreateDefaultInterruptIdObject(napi_env env);

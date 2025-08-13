@@ -402,6 +402,20 @@ bool RendererInClientInner::CheckBufferNeedWrite()
     return true;
 }
 
+bool RendererInClientInner::IsRestoreNeeded()
+{
+    RestoreStatus restoreStatus = clientBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
+
 void RendererInClientInner::WaitForBufferNeedWrite()
 {
     int32_t timeout = offloadEnable_ ? OFFLOAD_OPERATION_TIMEOUT_IN_MS : WRITE_CACHE_TIMEOUT_IN_MS;
@@ -411,6 +425,11 @@ void RendererInClientInner::WaitForBufferNeedWrite()
             if (state_ != RUNNING) {
                 return true;
             }
+
+            if (IsRestoreNeeded()) {
+                return true;
+            }
+
             return CheckBufferNeedWrite();
         });
     if (futexRes != SUCCESS) {
@@ -582,7 +601,7 @@ int32_t RendererInClientInner::WriteCacheData(uint8_t *buffer, size_t bufferSize
         inBuffer.dataLength = copySize;
         ret = ringBuffer.CopyInputBufferValueToCurBuffer(inBuffer);
         CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "errcode: %{public}d", ret);
-        clientBuffer_->SetCurWriteFrame(writePos + (copySize / sizePerFrameInByte_));
+        clientBuffer_->SetCurWriteFrame((writePos + (copySize / sizePerFrameInByte_)), false);
         inBuffer.SeekFromStart(copySize);
         remainSize -= copySize;
     }
@@ -970,25 +989,6 @@ int32_t RendererInClientInner::SetSpeedInner(float speed)
     speedEnable_ = true;
     AUDIO_DEBUG_LOG("SetSpeed %{public}f, OffloadEnable %{public}d", speed_, offloadEnable_);
     return SUCCESS;
-}
-
-void RendererInClientInner::NotifyOffloadSpeed()
-{
-    std::lock_guard lock(speedMutex_);
-    bool curIsHdiSpeed = offloadEnable_ && eStreamType_ == STREAM_MOVIE &&
-        rendererInfo_.originalFlag == AUDIO_FLAG_PCM_OFFLOAD;
-    AUDIO_INFO_LOG("need set speed to hdi: %{public}s", curIsHdiSpeed ? "true" : "false");
-    isHdiSpeed_.store(curIsHdiSpeed);
-    if (curIsHdiSpeed) {
-        if (realSpeed_.has_value()) {
-            DoHdiSetSpeed(realSpeed_.value(), true);
-            SetSpeedInner(1.0);
-        }
-    } else {
-        if (realSpeed_.has_value()) {
-            SetSpeedInner(realSpeed_.value());
-        }
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

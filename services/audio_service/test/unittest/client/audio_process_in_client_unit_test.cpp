@@ -3101,7 +3101,7 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_GetAudioTime_002,
 
     ptrBufferInfo->handleTime++;
     ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);
-    EXPECT_EQ(nanoSec, 0);
+    EXPECT_EQ(nanoSec, 1);
 
     ptrBufferInfo->handlePos++;
     ptrAudioProcessInClientInner->GetAudioTime(framePos, sec, nanoSec);

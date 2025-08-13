@@ -284,15 +284,15 @@ void SleAudioDeviceManagerSetActiveDeviceFuzzTest()
         sptr<IStandardSleAudioOperationCallback> callback = new IStandardSleAudioOperationCallbackFuzzTest();
         manager.SetSleAudioOperationCallback(callback);
     }
-    std::string device;
+    AudioDeviceDescriptor deviceDesc;
     if (g_testAudioStreamUsages.size() == 0 || g_testSourceTypes.size() == 0) {
         return;
     }
     StreamUsage streamUsage = g_testAudioStreamUsages[GetData<uint32_t>() % g_testAudioStreamUsages.size()];
-    manager.SetActiveDevice(device, streamUsage);
-    device.clear();
+    manager.SetActiveDevice(deviceDesc, streamUsage);
+    AudioDeviceDescriptor deviceDescBySource;
     SourceType sourceType = g_testSourceTypes[GetData<uint32_t>() % g_testSourceTypes.size()];
-    manager.SetActiveDevice(device, sourceType);
+    manager.SetActiveDevice(deviceDescBySource, sourceType);
 }
 
 void SleAudioDeviceManagerStartPlayingFuzzTest()

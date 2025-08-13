@@ -277,7 +277,7 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     }
 }
 
-int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
+int32_t HpaeRendererManager::RefreshProcessClusterByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
@@ -385,7 +385,7 @@ void HpaeRendererManager::DisConnectProcessCluster(
     const HpaeNodeInfo &nodeInfo, HpaeProcessorType sceneType, uint32_t sessionId)
 {
     Trace trace("[" + std::to_string(sessionId) +
-        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sessionId));
+        "]HpaeRendererManager::DisConnectProcessCluster sceneType:" + std::to_string(sceneType));
     if (!sessionNodeMap_[sessionId].bypass) {
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
@@ -696,6 +696,10 @@ int32_t HpaeRendererManager::Flush(uint32_t sessionId)
             "Flush not find sessionId %{public}u", sessionId);
         // flush history buffer
         sinkInputNodeMap_[sessionId]->Flush();
+        HpaeProcessorType sceneType = GetProcessorType(sessionId);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, sceneType),
+            "Flush not find sceneType: %{public}d in sceneClusterMap", static_cast<int32_t>(sceneType));
+        sceneClusterMap_[sceneType]->InitEffectBuffer(sessionId);
     };
     SendRequest(request);
     return SUCCESS;

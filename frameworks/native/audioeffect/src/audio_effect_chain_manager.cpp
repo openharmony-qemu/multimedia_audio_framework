@@ -339,7 +339,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
         effectChain = effectNone;
     }
 
-    ConfigureAudioEffectChain(audioEffectChain, effectMode, sceneType);
+    ConfigureAudioEffectChain(audioEffectChain, effectMode);
     bool exists = std::find(AUDIO_PERSISTENCE_SCENE.begin(), AUDIO_PERSISTENCE_SCENE.end(), sceneType) !=
         AUDIO_PERSISTENCE_SCENE.end();
     if (exists && !hasLoadedEffectProperties_) {
@@ -373,7 +373,7 @@ int32_t AudioEffectChainManager::SetAudioEffectChainDynamic(std::string &sceneTy
 }
 
 void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEffectChain> audioEffectChain,
-    const std::string &effectMode, std::string &sceneType)
+    const std::string &effectMode)
 {
     audioEffectChain->SetEffectMode(effectMode);
     audioEffectChain->SetExtraSceneType(extraSceneType_);
@@ -383,11 +383,6 @@ void AudioEffectChainManager::ConfigureAudioEffectChain(std::shared_ptr<AudioEff
     audioEffectChain->SetLidState(lidState_);
     audioEffectChain->SetFoldState(foldState_);
     audioEffectChain->SetAbsVolumeStateToEffectChain(absVolumeState_);
-    std::string maxSession = std::to_string(maxSessionID_);
-    if (sessionIDToEffectInfoMap_.count(maxSession)) {
-        sceneType = sessionIDToEffectInfoMap_[maxSession].sceneType;
-        audioEffectChain->SetStreamUsage(sessionIDToEffectInfoMap_[maxSession].streamUsage);
-    }
 }
 
 bool AudioEffectChainManager::CheckAndRemoveSessionID(const std::string &sessionID)
@@ -560,9 +555,26 @@ int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDS
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     audioEffectVolume->SetStreamVolume(sessionIDString, streamVolume);
     int32_t ret;
-    AUDIO_INFO_LOG("streamVolume is %{public}f", audioEffectVolume->GetStreamVolume(sessionIDString));
+    AUDIO_INFO_LOG("sessionId: %{public}s, set streamVolume: %{public}f",
+        sessionIDString.c_str(), audioEffectVolume->GetStreamVolume(sessionIDString));
     ret = EffectVolumeUpdateInner(audioEffectVolume);
     return ret;
+}
+
+int32_t AudioEffectChainManager::DeleteStreamVolume(const std::string StringSessionID)
+{
+    // delete streamVolume by sessionId, but don't update volume
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return DeleteStreamVolumeInner(StringSessionID);
+}
+
+int32_t AudioEffectChainManager::DeleteStreamVolumeInner(const std::string StringSessionID)
+{
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    audioEffectVolume->StreamVolumeDelete(StringSessionID);
+    AUDIO_INFO_LOG("delete streamVolume, sessionId: %{public}s", StringSessionID.c_str());
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
@@ -913,6 +925,8 @@ void AudioEffectChainManager::RecoverAllChains()
         }
         UpdateMultichannelConfigInner(item.first);
     }
+    UpdateDefaultAudioEffectInner();
+    UpdateStreamUsageInner();
 }
 
 uint32_t AudioEffectChainManager::GetLatency(const std::string &sessionId)
@@ -1079,6 +1093,11 @@ void AudioEffectChainManager::ResetInfo()
 void AudioEffectChainManager::UpdateDefaultAudioEffect()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    UpdateDefaultAudioEffectInner();
+}
+
+void AudioEffectChainManager::UpdateDefaultAudioEffectInner()
+{
     // for default scene type
     uint32_t maxDefaultSessionID = 0;
     uint32_t maxSessionID = 0;
@@ -1114,6 +1133,11 @@ void AudioEffectChainManager::UpdateDefaultAudioEffect()
 void AudioEffectChainManager::UpdateStreamUsage()
 {
     std::lock_guard<std::mutex> lock(dynamicMutex_);
+    UpdateStreamUsageInner();
+}
+
+void AudioEffectChainManager::UpdateStreamUsageInner()
+{
     // for special scene type
     for (auto& specialSceneType : sceneTypeToSpecialEffectSet_) {
         uint32_t maxSpecialSessionID = 0;
@@ -1781,8 +1805,10 @@ int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 
 int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessionID)
 {
-    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
-        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID: %{public}s", sessionID.c_str());
+    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end() ||
+        sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE") {
+        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID or sceneMode is EFFECT_NONE: %{public}s",
+            sessionID.c_str());
         return SUCCESS;
     }
     std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;

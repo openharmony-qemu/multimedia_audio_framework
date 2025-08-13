@@ -52,7 +52,7 @@ public:
     const static std::vector<AudioZoneBindKey> GetSupportKeys(const AudioZoneBindKey &key);
 
 private:
-    int32_t uid_ = -1;
+    int32_t uid_ = INVALID_UID;
     std::string deviceTag_ = "";
     std::string streamTag_ = "";
     StreamUsage usage_ = StreamUsage::STREAM_USAGE_INVALID;

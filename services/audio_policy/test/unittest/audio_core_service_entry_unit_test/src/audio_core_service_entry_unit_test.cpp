@@ -866,5 +866,64 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
     EXPECT_NE(temp, nullptr);
     EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
 }
+
+/**
+ * @tc.name  : Test FetchOutputDeviceAndRoute.
+ * @tc.number: FetchOutputDeviceAndRoute_041
+ * @tc.desc  : Test AudioCoreService::EventEntry::FetchOutputDeviceAndRoute
+ */
+HWTEST(AudioCoreServiceEntryTest, FetchOutputDeviceAndRoute_041, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    std::string caller;
+    AudioStreamDeviceChangeReasonExt reason;
+
+    auto ret =  eventEntry->FetchOutputDeviceAndRoute(caller, reason);
+    EXPECT_NE(ret, ERR_UNKNOWN);
+}
+
+/**
+ * @tc.name  : Test UpdateSessionOperation.
+ * @tc.number: UpdateSessionOperation_042
+ * @tc.desc  : Test AudioCoreService::EventEntry::UpdateSessionOperation
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_042, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    uint32_t sessionId = 0;
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_START;
+    SessionOperationMsg opMsg = SESSION_OP_MSG_REMOVE_PIPE;
+
+    auto ret = eventEntry->UpdateSessionOperation(sessionId, operation, opMsg);
+    EXPECT_NE(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioCoreServUpdateSessionOperationice.
+ * @tc.number: AudioCoreService_043
+ * @tc.desc  : Test AudioCoreService::EventEntry::UpdateSessionOperation
+ */
+HWTEST(AudioCoreServiceEntryTest, UpdateSessionOperation_043, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    EXPECT_NE(audioCoreService, nullptr);
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    EXPECT_NE(eventEntry, nullptr);
+
+    uint32_t sessionId = 0;
+    SessionOperation operation = SessionOperation::SESSION_OPERATION_START;
+    SessionOperationMsg opMsg = (SessionOperationMsg)3;
+
+    auto ret = eventEntry->UpdateSessionOperation(sessionId, operation, opMsg);
+    EXPECT_NE(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

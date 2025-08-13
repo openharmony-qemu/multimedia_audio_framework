@@ -1698,5 +1698,100 @@ HWTEST(IpcStreamInServerUnitTest, ProcessManagerType_003, TestSize.Level1)
     ipcStreamInServerRet.rendererInServer_->ProcessManagerType();
     EXPECT_EQ(ipcStreamInServerRet.rendererInServer_->managerType_, VOIP_PLAYBACK);
 }
+
+/**
+ * @tc.name  : Test GetAudioSessionID API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioSessionID_001
+ * @tc.desc  : Test GetAudioSessionID interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_001, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    uint32_t sessionId = 0;
+ 
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.capturerInServer_ = nullptr;
+    auto ret = ipcStreamInServerRet.GetAudioSessionID(sessionId);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test GetAudioSessionID API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioSessionID_002
+ * @tc.desc  : Test GetAudioSessionID interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_002, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    uint32_t sessionId = 0;
+ 
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    auto ret = ipcStreamInServerRet.GetAudioSessionID(sessionId);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: Start_001
+ * @tc.desc  : Test Start interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+ 
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    auto ret = ipcStreamInServerRet.Start();
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: Start_002
+ * @tc.desc  : Test Start interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+ 
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    auto ret = ipcStreamInServerRet.Start();
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
+}
+ 
+/**
+ * @tc.name  : Test Start API
+ * @tc.type  : FUNC
+ * @tc.number: stop_001
+ * @tc.desc  : Test Start interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, Stop_001, TestSize.Level3)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+ 
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    auto ret = ipcStreamInServerRet.Stop();
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
+}
 }
 }

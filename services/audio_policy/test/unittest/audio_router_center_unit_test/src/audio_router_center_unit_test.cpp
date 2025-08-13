@@ -169,6 +169,336 @@ HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_001, TestSize.L
     auto result = audioRouterCenter.FetchVoiceMessageCaptureDevice(sourceType, clientUID, routerType, sessionID);
     EXPECT_NE(result, nullptr);
 }
+
+/**
+ * @tc.name  : Test SetAudioDeviceRefinerCallback.
+ * @tc.number: SetAudioDeviceRefinerCallback_001
+ * @tc.desc  : Test SetAudioDeviceRefinerCallback interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, SetAudioDeviceRefinerCallback_001, TestSize.Level1)
+{
+    AudioRouterCenter audioRouterCenter;
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = audioRouterCenter.SetAudioDeviceRefinerCallback(object);
+    EXPECT_EQ(ret, ERROR);
+}
+
+class MockRouter : public RouterBase {
+public:
+    RouterType routerType_ = ROUTER_TYPE_NONE;
+    std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callRenderRet_;
+    std::shared_ptr<AudioDeviceDescriptor> callCaptureRet_;
+    std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet_;
+ 
+    MockRouter(RouterType type = ROUTER_TYPE_DEFAULT,
+        std::shared_ptr<AudioDeviceDescriptor> mediaRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callRenderRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> callCaptureRet = nullptr,
+        std::shared_ptr<AudioDeviceDescriptor> recordCaptureRet = nullptr)
+        : routerType_(type),
+          mediaRenderRet_(std::move(mediaRenderRet)),
+          callRenderRet_(std::move(callRenderRet)),
+          callCaptureRet_(std::move(callCaptureRet)),
+          recordCaptureRet_(std::move(recordCaptureRet)) {}
+ 
+    std::shared_ptr<AudioDeviceDescriptor> GetMediaRenderDevice(StreamUsage, int32_t) override
+    {
+        return mediaRenderRet_;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetCallRenderDevice(StreamUsage, int32_t) override
+    {
+        return callRenderRet_;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetCallCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return callCaptureRet_;
+    }
+
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
+    {
+        static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
+        return emptyVector;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override
+    {
+        return recordCaptureRet_;
+    }
+
+    std::shared_ptr<AudioDeviceDescriptor> GetToneRenderDevice(StreamUsage, int32_t) override
+    {
+        return std::shared_ptr<AudioDeviceDescriptor>();
+    }
+
+    RouterType GetRouterType() override
+    {
+        return routerType_;
+    }
+};
+ 
+/**
+ * @tc.name  : Test FetchMediaRenderDevice.
+ * @tc.number: FetchMediaRenderDevice_001
+ * @tc.desc  : Test FetchMediaRenderDevice interface when desc is nullptr.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_desc_nullptr, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchMediaRenderDevice.
+ * @tc.number: FetchMediaRenderDevice_002
+ * @tc.desc  : Test FetchMediaRenderDevice interface when desc->deviceType_ is DEVICE_TYPE_NONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_NONE, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>();
+    invalidDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, invalidDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchMediaRenderDevice.
+ * @tc.number: FetchMediaRenderDevice_003
+ * @tc.desc  : Test FetchMediaRenderDevice interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_deviceType_valid, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, validDesc);
+    EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
+}
+ 
+/**
+ * @tc.name  : Test FetchMediaRenderDevice.
+ * @tc.number: FetchMediaRenderDevice_004
+ * @tc.desc  : Test FetchMediaRenderDevice interface when routerType == bypassType.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchMediaRenderDevice_bypassType_skip, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.mediaRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_STREAM_FILTER, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchMediaRenderDevice(STREAM_USAGE_MEDIA, 123, rtype, ROUTER_TYPE_STREAM_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallRenderDevice.
+ * @tc.number: FetchCallRenderDevice_001
+ * @tc.desc  : Test FetchCallRenderDevice interface when desc is nullptr.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_desc_nullptr, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.callRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallRenderDevice.
+ * @tc.number: FetchCallRenderDevice_002
+ * @tc.desc  : Test FetchCallRenderDevice interface when desc->deviceType_ is DEVICE_TYPE_NONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_NONE, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>();
+    invalidDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.callRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, invalidDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallRenderDevice.
+ * @tc.number: FetchCallRenderDevice_003
+ * @tc.desc  : Test FetchCallRenderDevice interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_deviceType_valid, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.callRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, validDesc);
+    EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallRenderDevice.
+ * @tc.number: FetchCallRenderDevice_004
+ * @tc.desc  : Test FetchCallRenderDevice interface when routerType == bypassType.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallRenderDevice_bypassType_skip, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.callRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_STREAM_FILTER, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallRenderDevice(STREAM_USAGE_MEDIA, 123,
+        rtype, ROUTER_TYPE_STREAM_FILTER, ROUTER_TYPE_PACKAGE_FILTER);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallCaptureDevice.
+ * @tc.number: FetchCallCaptureDevice_001
+ * @tc.desc  : Test FetchCallCaptureDevice interface when desc is nullptr.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_desc_nullptr, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallCaptureDevice.
+ * @tc.number: FetchCallCaptureDevice_002
+ * @tc.desc  : Test FetchCallCaptureDevice interface when desc->deviceType_ is DEVICE_TYPE_NONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_deviceType_NONE, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>();
+    invalidDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, invalidDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchCallCaptureDevice.
+ * @tc.number: FetchCallCaptureDevice_003
+ * @tc.desc  : Test FetchCallCaptureDevice interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchCallCaptureDevice_deviceType_valid, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.callCaptureRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchCallCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, validDesc);
+    EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
+}
+ 
+/**
+ * @tc.name  : Test FetchVoiceMessageCaptureDevice.
+ * @tc.number: FetchVoiceMessageCaptureDevice_001
+ * @tc.desc  : Test FetchVoiceMessageCaptureDevice interface when desc is nullptr.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_desc_nullptr, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, nullptr));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchVoiceMessageCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchVoiceMessageCaptureDevice.
+ * @tc.number: FetchVoiceMessageCaptureDevice_002
+ * @tc.desc  : Test FetchVoiceMessageCaptureDevice interface when desc->deviceType_ is DEVICE_TYPE_NONE.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_NONE, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>();
+    invalidDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, invalidDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchVoiceMessageCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result->deviceType_, DEVICE_TYPE_NONE);
+    EXPECT_EQ(rtype, ROUTER_TYPE_NONE);
+}
+ 
+/**
+ * @tc.name  : Test FetchVoiceMessageCaptureDevice.
+ * @tc.number: FetchVoiceMessageCaptureDevice_003
+ * @tc.desc  : Test FetchVoiceMessageCaptureDevice interface when desc->deviceType_ is valid.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchVoiceMessageCaptureDevice_deviceType_valid, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto validDesc = std::make_shared<AudioDeviceDescriptor>();
+    validDesc->deviceType_ = DEVICE_TYPE_SPEAKER;
+    center.voiceMessageRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, nullptr, validDesc));
+    RouterType rtype = ROUTER_TYPE_NONE;
+    auto result = center.FetchVoiceMessageCaptureDevice(SOURCE_TYPE_MIC, 123, rtype, 0);
+    ASSERT_NE(result, nullptr);
+    EXPECT_EQ(result, validDesc);
+    EXPECT_EQ(rtype, ROUTER_TYPE_DEFAULT);
+}
 } // namespace AudioStandard
 } // namespace OHOS
- 

@@ -337,5 +337,94 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_014, TestSize.Level1)
     ret = audioSession->Deactivate();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+
+/**
+* @tc.name  : Test SetAudioSessionScene
+* @tc.number: AudioSessionUnitTest_015
+* @tc.desc  : Test SetAudioSessionScene function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_015, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+
+    AudioSessionScene scene = AudioSessionScene::INVALID;
+    int32_t ret = audioSession->SetAudioSessionScene(scene);
+    EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+* @tc.name  : Test ShouldExcludeStreamType
+* @tc.number: AudioSessionUnitTest_016
+* @tc.desc  : Test ShouldExcludeStreamType function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_016, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+    audioSession->IsActivated();
+    audioSession->IsSceneParameterSet();
+    AudioInterrupt incomingInterrupt;
+
+    incomingInterrupt.audioFocusType.streamType = STREAM_NOTIFICATION;
+    EXPECT_TRUE(audioSession->ShouldExcludeStreamType(incomingInterrupt));
+    
+    EXPECT_NO_THROW(
+        audioSession->AddStreamInfo(incomingInterrupt);
+    );
+
+    incomingInterrupt.isAudioSessionInterrupt = true;
+    EXPECT_NO_THROW(
+        audioSession->AddStreamInfo(incomingInterrupt);
+    );
+}
+
+/**
+* @tc.name  : Test EnableSingleVoipStreamDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_017
+* @tc.desc  : Test EnableSingleVoipStreamDefaultOutputDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_017, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+    
+    EXPECT_EQ(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA));
+
+    AudioInterrupt interrupt = {};
+    interrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    interrupt.streamId = 2;
+    int32_t ret = audioSession->EnableSingleVoipStreamDefaultOutputDevice(interrupt);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test EnableVoipStreamsDefaultOutputDevice
+* @tc.number: AudioSessionUnitTest_018
+* @tc.desc  : Test EnableVoipStreamsDefaultOutputDevice function
+*/
+HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_018, TestSize.Level1)
+{
+    int32_t callerPid = 1;
+    AudioSessionStrategy strategy;
+    std::shared_ptr<AudioSessionStateMonitor> audioSessionStateMonitor = std::make_shared<AudioSessionService>();
+    auto audioSession = std::make_shared<AudioSession>(callerPid, strategy, audioSessionStateMonitor);
+    
+    EXPECT_EQ(SUCCESS, audioSession->SetAudioSessionScene(AudioSessionScene::MEDIA));
+
+    AudioInterrupt interrupt = {};
+    interrupt.streamUsage = STREAM_USAGE_VOICE_MESSAGE;
+    interrupt.streamId = 2;
+    audioSession->AddStreamInfo(interrupt);
+    int32_t ret = audioSession->EnableVoipStreamsDefaultOutputDevice();
+    EXPECT_EQ(ret, SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS

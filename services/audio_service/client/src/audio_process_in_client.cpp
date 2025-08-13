@@ -1080,7 +1080,7 @@ int32_t AudioProcessInClientInner::WriteDataChunk(const BufferDesc &bufDesc, siz
 
         curWriteBuffer.dataLength = copySizeInFrame * byteSizePerFrame_;
         ret = ProcessData(curCallbackBuffer, curWriteBuffer);
-        audioBuffer_->SetCurWriteFrame(curWritePos + copySizeInFrame);
+        audioBuffer_->SetCurWriteFrame((curWritePos + copySizeInFrame), false);
         if (ret != SUCCESS) {
             return ERR_OPERATION_FAILED;
         }
@@ -1404,7 +1404,7 @@ void AudioProcessInClientInner::UpdateHandleInfo(bool isAysnc, bool resetReadWri
 
     if (resetReadWritePos) {
         uint64_t nextWritePos = serverHandlePos + spanSizeInFrame_;
-        ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos);
+        ret = audioBuffer_->ResetCurReadWritePos(nextWritePos, nextWritePos, false);
         CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed ret:%{public}d", ret);
     }
 }
@@ -1618,7 +1618,7 @@ int32_t AudioProcessInClientInner::RecordReSyncServicePos()
         "serverHandleTime %{public}" PRId64".", __func__, tryTimes, serverHandlePos, serverHandleTime);
     ClockTime::AbsoluteSleep(serverHandleTime + RECORD_HANDLE_DELAY_NANO);
 
-    ret = audioBuffer_->SetCurReadFrame(serverHandlePos);
+    ret = audioBuffer_->SetCurReadFrame(serverHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s set curReadPos fail, ret %{public}d.", __func__, ret);
     return SUCCESS;
 }
@@ -1629,7 +1629,7 @@ int32_t AudioProcessInClientInner::RecordFinishHandleCurrent(uint64_t &curReadPo
         "%{public}s audio buffer is null.", __func__);
 
     uint64_t nextWritePos = curReadPos + spanSizeInFrame_;
-    int32_t ret = audioBuffer_->SetCurReadFrame(nextWritePos);
+    int32_t ret = audioBuffer_->SetCurReadFrame(nextWritePos, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "%{public}s set next hand frame %{public}" PRIu64" fail, "
         "ret %{public}d.", __func__, nextWritePos, ret);
     curReadPos = nextWritePos;
@@ -1818,7 +1818,7 @@ bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curReadPos, int6
         wakeUpTime = nextServerHandleTime;
     }
 
-    int32_t ret = audioBuffer_->SetCurReadFrame(nextHandlePos);
+    int32_t ret = audioBuffer_->SetCurReadFrame(nextHandlePos, false);
     if (ret != SUCCESS) {
         AUDIO_ERR_LOG("SetCurWriteFrame or SetCurReadFrame failed, ret2:%{public}d", ret);
         return false;

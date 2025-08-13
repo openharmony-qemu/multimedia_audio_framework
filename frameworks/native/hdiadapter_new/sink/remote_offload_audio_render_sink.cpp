@@ -407,8 +407,8 @@ int32_t RemoteOffloadAudioRenderSink::GetLatency(uint32_t &latency)
     AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetLatency originLatencyUS: %{public}u", originLatencyUS);
 
     uint64_t positionUS = lastHdiOriginFramesUS_ > originLatencyUS ? lastHdiOriginFramesUS_ - originLatencyUS : 0;
-    uint64_t renderFrameUS =
-        renderPos_ * SECOND_TO_MICROSECOND / (attr_.sampleRate * GetFormatByteSize(attr_.format) * attr_.channel);
+    uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
+        (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
     AUDIO_DEBUG_LOG("RemoteOffloadAudioRenderSink::GetOriginLatency renderFrameUS: %{public}" PRIu64, renderFrameUS);
     latency = renderFrameUS > positionUS ? (renderFrameUS - positionUS) / MICROSECOND_PER_MILLISECOND : 0;
     return ret;
@@ -461,12 +461,12 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     // The sample count can be inferred based on the time interval
     // between the current time and the last occurrence.
     int64_t now = ClockTime::GetCurNano();
-    int64_t durationNS = now - lastSystemTimeNS_;
-    int64_t durationUS = durationNS / NANOSECOND_TO_MICROSECOND;
+    int64_t durationNS = now > lastSystemTimeNS_ ? now - lastSystemTimeNS_ : 0;
+    uint64_t durationUS = static_cast<uint64_t>(durationNS) / NANOSECOND_TO_MICROSECOND;
 
     uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
-    uint64_t renderFrameUS =
-        renderPos_ * SECOND_TO_MICROSECOND / (attr_.sampleRate * GetFormatByteSize(attr_.format) * attr_.channel);
+    uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
+        (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
     if (originFrameUS > renderFrameUS) {
         AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
             ", originFrameUS: %{public}" PRIu64 " No need to estimate", renderFrameUS, originFrameUS);
@@ -615,7 +615,7 @@ void RemoteOffloadAudioRenderSink::AddHdiLatency(uint32_t duration)
             realLatencyTotalUS_ -= realLatencyDeque_.back().first;
             realLatencyDeque_.pop_back();
         } else {
-            int excess = realLatencyTotalUS_ - maxDequeLengthUS;
+            uint32_t excess = realLatencyTotalUS_ - maxDequeLengthUS;
             realLatencyDeque_.back().first -= excess;
             realLatencyTotalUS_ -= excess;
         }

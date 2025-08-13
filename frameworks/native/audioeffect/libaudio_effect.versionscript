@@ -97,6 +97,7 @@
     *QueryEffectChannelInfo*;
     *ResetInfo*;
     *SetAbsVolumeStateToEffect*;
+    *DeleteStreamVolume*;
   local:
     *;
 };
