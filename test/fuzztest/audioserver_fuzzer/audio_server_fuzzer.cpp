@@ -1248,7 +1248,7 @@ void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
         "UPLOAD",
         "test"
     };
-    string pairTest = testPairs[static_cast<uint32_t>(size) % testPairs.size()];
+    string pairTest = testPairs[*reinterpret_cast<const uint32_t*>(rawData) % testPairs.size()];
     std::vector<std::pair<std::string, std::string>> params;
     params.push_back(make_pair(pairTest, "test_value"));
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -1299,8 +1299,8 @@ void AudioServerGetTransactionIdFuzzTest(const uint8_t *rawData, size_t size)
         OUTPUT_DEVICE,
         DEVICE_ROLE_MAX
     };
-    DeviceType deviceType = g_testDeviceTypes[static_cast<uint32_t>(size) % g_testDeviceTypes.size()];
-    DeviceRole deviceRole = g_deviceRole[static_cast<uint32_t>(size) % g_deviceRole.size()];
+    DeviceType deviceType = g_testDeviceTypes[*reinterpret_cast<const uint32_t*>(rawData) % g_testDeviceTypes.size()];
+    DeviceRole deviceRole = g_deviceRole[*reinterpret_cast<const uint32_t*>(rawData) % g_deviceRole.size()];
     uint64_t transactionId = *reinterpret_cast<const uint64_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetTransactionId(deviceType, deviceRole, transactionId);
@@ -1892,7 +1892,7 @@ void AudioServerGetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    std::string subKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
+    std::string subKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
     std::vector<std::string> subKeys = {subKey};
     std::vector<std::pair<std::string, std::string>> result;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
@@ -1903,8 +1903,8 @@ void AudioServerGetExtraParametersInnerFuzzTest(const uint8_t *rawData, size_t s
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    std::string mainKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
-    std::string subKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
+    std::string mainKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
+    std::string subKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
     std::vector<std::string> subKeys = {subKey};
     std::vector<std::pair<std::string, std::string>> result;
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
