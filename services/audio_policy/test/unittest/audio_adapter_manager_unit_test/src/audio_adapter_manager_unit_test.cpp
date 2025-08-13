@@ -594,9 +594,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
     if (audioAdapterManager->streamVolumeInfos_.end() != audioAdapterManager->streamVolumeInfos_.find(volumeType)) {
         if ((audioAdapterManager->streamVolumeInfos_[volumeType] != nullptr) &&
             (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
-            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
-            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
-            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel = 10;
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceType)) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceType] != nullptr)) {
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceType]->maxLevel = 10;
         }
     }
 
@@ -657,9 +657,9 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
     if (audioAdapterManager->streamVolumeInfos_.end() != audioAdapterManager->streamVolumeInfos_.find(volumeType)) {
         if ((audioAdapterManager->streamVolumeInfos_[volumeType] != nullptr) &&
             (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
-            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
-            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
-            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel = 2;
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceType)) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceType] != nullptr)) {
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceType]->minLevel = 2;
         }
     }
 
