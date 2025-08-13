@@ -217,7 +217,7 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level0)
 {
-    auto chain = CreateOfflineAudioEffectChain(g_normalName);
+    auto chain = CreateOfflineAudioEffectChainMock(g_normalName);
     EXPECT_NE(nullptr, chain);
     EXPECT_EQ(SUCCESS, chain->Prepare());
 }
