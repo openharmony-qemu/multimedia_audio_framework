@@ -215,7 +215,7 @@ int32_t AudioInterruptService::ProcessActiveStreamFocus(
         CheckIncommingFoucsValidity(focusEntry, incomingInterrupt, incomingInterrupt.currencySources.sourcesTypes);
         if (FocusEntryContinue(iterActive, focusEntry, incomingInterrupt)) { continue; }
         if (focusEntry.isReject) {
-            if (IsGameAvoidCallbackCase(iterActive->first)) {
+            if (IsGameAvoidCallbackCase(incomingInterrupt)) {
                 incomingState = PAUSE;
                 AUDIO_INFO_LOG("incomingState: %{public}d", incomingState);
                 continue;
