@@ -53,7 +53,7 @@ public:
     MOCK_METHOD(int32_t, Flush, (), (override));
     MOCK_METHOD(int32_t, Reset, (), (override));
     MOCK_METHOD(int32_t, RenderFrame, (char &data, uint64_t len, uint64_t &writeLen), (override));
-    MOCK_METHOD(int64_t, GetVolumeDataCount, (int64_t &volumeData), (override));
+    MOCK_METHOD(int64_t, GetVolumeDataCount, (), (override));
 
     MOCK_METHOD(int32_t, SuspendRenderSink, (), (override));
     MOCK_METHOD(int32_t, RestoreRenderSink, (), (override));
