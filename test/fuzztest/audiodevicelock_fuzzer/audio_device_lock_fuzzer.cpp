@@ -47,7 +47,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 18;
+const uint8_t TESTSIZE = 19;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -345,6 +345,20 @@ void AudioDeviceLockUpdateSpatializationSupportedFuzzTest()
     audioDeviceLock->UpdateSpatializationSupported(macAddress, support);
 }
 
+void AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest()
+{
+    Parcel parcel;
+    std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor = std::make_shared<AudioDeviceDescriptor>();
+    if (audioDeviceDescriptor == nullptr) {
+        return;
+    }
+    audioDeviceDescriptor->deviceType_ = GetData<DeviceType>();
+    bool hasBTPermission = GetData<bool>();
+    bool hasSystemPermission = GetData<bool>();
+    int32_t apiVersion = GetData<int32_t>();
+    audioDeviceDescriptor->MarshallingToDeviceInfo(parcel, hasBTPermission, hasSystemPermission, apiVersion);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     RegisterTrackerFuzzTest,
     SendA2dpConnectedWhileRunningFuzzTest,
@@ -364,6 +378,7 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioDeviceLockGetExcludedDevicesFuzzTest,
     AudioDeviceLockOnPnpDeviceStatusUpdatedFuzzTest,
     AudioDeviceLockUpdateSpatializationSupportedFuzzTest,
+    AudioDeviceDescriptorMarshallingToDeviceInfoFuzzTest
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

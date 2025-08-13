@@ -32,6 +32,81 @@ void PrivacyPriorityRouterUnitTest::TearDown(void) {}
 
 /**
  * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_002
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_002, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_VOICE_RECOGNITION;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 1;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_003
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_003, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 1;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetRecordCaptureDevice_004
+ * @tc.desc  : Test GetRecordCaptureDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetRecordCaptureDevice_004, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    SourceType sourceType = SOURCE_TYPE_INVALID;
+    int32_t clientUID = 1;
+    uint32_t sessionID = 1;
+    shared_ptr<AudioDeviceDescriptor> desc = make_shared<AudioDeviceDescriptor>();
+    desc->deviceType_ = DEVICE_TYPE_BLUETOOTH_SCO;
+    auto result = privacyPriorityRouter.GetRecordCaptureDevice(sourceType, clientUID, sessionID);
+    EXPECT_NE(result->deviceType_, desc->deviceType_);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallRenderDevice_001
+ * @tc.desc  : Test GetCallRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallRenderDevice_001, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    StreamUsage streamUsage = STREAM_USAGE_VOICE_MODEM_COMMUNICATION;
+    int32_t clientUID = 12345;
+    auto result = privacyPriorityRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
+ * @tc.number: GetCallRenderDevice_002
+ * @tc.desc  : Test GetCallRenderDevice interface.
+ */
+HWTEST(PrivacyPriorityRouterUnitTest, GetCallRenderDevice_002, TestSize.Level1)
+{
+    PrivacyPriorityRouter privacyPriorityRouter;
+    StreamUsage streamUsage = STREAM_USAGE_MEDIA;
+    int32_t clientUID = 12345;
+    auto result = privacyPriorityRouter.GetCallRenderDevice(streamUsage, clientUID);
+    EXPECT_NE(result, nullptr);
+}
+
+/**
+ * @tc.name  : Test PrivacyPriorityRouter.
  * @tc.number: PrivacyPriorityRouter_001
  * @tc.desc  : Test NeedLatestConnectWithDefaultDevices interface.
  */

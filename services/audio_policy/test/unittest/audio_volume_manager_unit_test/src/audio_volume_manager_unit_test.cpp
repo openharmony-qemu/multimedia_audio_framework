@@ -47,6 +47,18 @@ void AudioVolumeManagerUnitTest::TearDown(void)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: GetAllDeviceVolumeInfo_001
+* @tc.desc  : Test GetAllDeviceVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetAllDeviceVolumeInfo_001, TestSize.Level1)
+{
+    AudioVolumeManager audioVolumeManager;
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo = audioVolumeManager.GetAllDeviceVolumeInfo();
+    EXPECT_EQ(allDeviceVolumeInfo.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_002
 * @tc.desc  : Test InitSharedVolume interface.
 */

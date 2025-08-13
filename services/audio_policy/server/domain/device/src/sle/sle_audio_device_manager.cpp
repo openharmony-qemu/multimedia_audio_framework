@@ -189,14 +189,16 @@ std::set<SourceType> SleAudioDeviceManager::GetSourceTypesBySleStreamType(uint32
     return std::set<SourceType>();
 }
 
-int32_t SleAudioDeviceManager::SetActiveDevice(const std::string &device, StreamUsage streamUsage)
+int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)
 {
-    return SetActiveSinkDevice(device, GetSleStreamTypeByStreamUsage(streamUsage));
+    CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
+    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeByStreamUsage(streamUsage));
 }
 
-int32_t SleAudioDeviceManager::SetActiveDevice(const std::string &device, SourceType sourceType)
+int32_t SleAudioDeviceManager::SetActiveDevice(const AudioDeviceDescriptor &deviceDesc, SourceType sourceType)
 {
-    return SetActiveSinkDevice(device, GetSleStreamTypeBySourceType(sourceType));
+    CHECK_AND_RETURN_RET_LOG(IsNearlinkDevice(deviceDesc.deviceType_), ERROR, "device type is not nearlink");
+    return SetActiveSinkDevice(deviceDesc.macAddress_, GetSleStreamTypeBySourceType(sourceType));
 }
 
 int32_t SleAudioDeviceManager::StartPlaying(const AudioDeviceDescriptor &deviceDesc, StreamUsage streamUsage)

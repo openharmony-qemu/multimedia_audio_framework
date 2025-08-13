@@ -356,13 +356,17 @@ int32_t AudioZoneService::FindAudioZoneByUid(int32_t uid)
 int32_t AudioZoneService::FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate)
 {
     int32_t zoneId;
+    std::shared_ptr<AudioInterruptService> tmp = nullptr;
     {
         std::lock_guard<std::mutex> lock(zoneMutex_);
-        zoneId = FindAudioZoneByKey(callerUid, "", "", StreamUsage::STREAM_USAGE_INVALID);
-        CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
-        StreamUsage streamUsage = interruptService_->GetAudioSessionStreamUsage(callerPid);
+        tmp = interruptService_;
+    }
+    CHECK_AND_RETURN_RET_LOG(tmp != nullptr, ERROR, "interruptService_ is nullptr");
+    StreamUsage streamUsage = tmp->GetAudioSessionStreamUsage(callerPid);
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
         if (streamUsage == StreamUsage::STREAM_USAGE_INVALID) {
-            return zoneId;
+            return FindAudioZoneByKey(callerUid, "", "", StreamUsage::STREAM_USAGE_INVALID);
         }
         zoneId = FindAudioZoneByKey(INVALID_UID, "", "", streamUsage);
     }

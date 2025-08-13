@@ -47,6 +47,7 @@
 #include "audio_dump_pcm.h"
 #include "audio_dump_pcm_private.h"
 #include "audio_zone_service.h"
+#include "audio_schedule.h"
 
 namespace OHOS {
 namespace AudioStandard {

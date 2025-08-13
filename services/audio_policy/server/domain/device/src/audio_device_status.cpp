@@ -1133,7 +1133,6 @@ void AudioDeviceStatus::OnDeviceStatusUpdated(AudioDeviceDescriptor &updatedDesc
 
     AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(isConnected ? updatedDesc.dmDeviceType_ : 0,
         updatedDesc.deviceType_);
-    dmDeviceType_ = isConnected ? updatedDesc.dmDeviceType_ : 0;
 
     UpdateLocalGroupInfo(isConnected, macAddress, deviceName, streamInfo, updatedDesc);
     // fill device change action for callback
@@ -1282,7 +1281,7 @@ void AudioDeviceStatus::DeactivateNearlinkDevice(AudioDeviceDescriptor &desc)
 {
     if (desc.deviceType_ == DEVICE_TYPE_NEARLINK || desc.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         if (desc.macAddress_ == audioActiveDevice_.GetCurrentOutputDeviceMacAddr()) {
-            SleAudioDeviceManager::GetInstance().SetActiveDevice(desc.macAddress_, STREAM_USAGE_INVALID);
+            SleAudioDeviceManager::GetInstance().SetActiveDevice(desc, STREAM_USAGE_INVALID);
         }
     }
 }
