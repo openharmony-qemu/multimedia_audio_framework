@@ -442,8 +442,8 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectProcessCluster sceneType:"
         + std::to_string(sceneType));
-    HpaeProcessorType tmpSceneType =
-        (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) ? HPAE_SCENE_DEFAULT : sceneType;
+    HpaeProcessorType tmpSceneType = (sceneClusterMap_[sceneType] == SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT))
+        ? HPAE_SCENE_DEFAULT : sceneType;
     if (toBeStoppedSceneTypeToSessionMap_.count(tmpSceneType) > 0) {
         uint32_t sessionIdToStop = toBeStoppedSceneTypeToSessionMap_[tmpSceneType];
         if (sessionIdToStop == sessionId) {
@@ -647,8 +647,8 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
             AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
         }
     } else {
-        HpaeProcessorType tmpSceneType = (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT])
-            ? HPAE_SCENE_DEFAULT : sceneType;
+        HpaeProcessorType tmpSceneType = (sceneClusterMap_[sceneType] ==
+            SafeGetMap(sceneClusterMap_, HPAE_SCENE_DEFAULT)) ? HPAE_SCENE_DEFAULT : sceneType;
         CHECK_AND_RETURN_LOG(toBeStoppedSceneTypeToSessionMap_.count(sceneType) == 0,
             "sessionId %{public}d to stop already existed", sessionId);
         toBeStoppedSceneTypeToSessionMap_[tmpSceneType] = sessionId;
