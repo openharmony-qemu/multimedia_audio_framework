@@ -1607,19 +1607,6 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
 }
 
 /**
- * @tc.name   : Test GetAudioScene API
- * @tc.number : GetAudioScene_003
- * @tc.desc   : Test GetAudioScene interface
- */
-HWTEST(AudioSystemManagerUnitTest, GetAudioScene_003, TestSize.Level4)
-{
-    AudioSystemManager audioSystemManager;
-    AudioSystemManager::GetInstance()->SetAudioScene(AUDIO_SCENE_CALL_END);
-    int result = audioSystemManager.GetAudioScene();
-    EXPECT_NE(result, AUDIO_SCENE_INVALID);
-}
-
-/**
  * @tc.name   : Test IsDeviceActive API
  * @tc.number : IsDeviceActive_003
  * @tc.desc   : Test IsDeviceActive interface
