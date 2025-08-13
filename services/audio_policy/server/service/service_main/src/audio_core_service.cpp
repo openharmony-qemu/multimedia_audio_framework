@@ -1230,6 +1230,8 @@ int32_t AudioCoreService::FetchOutputDeviceAndRoute(std::string caller, const Au
         streamDesc->newDeviceDescs_ =
             audioRouterCenter_.FetchOutputDevices(streamUsage, GetRealUid(streamDesc),
                 caller + "FetchOutputDeviceAndRoute");
+        AUDIO_INFO_LOG("[AudioSession] streamUsage %{public}d renderer streamUsage %{public}d",
+            streamUsage, streamDesc->rendererInfo_.streamUsage);
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
         AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}u",
