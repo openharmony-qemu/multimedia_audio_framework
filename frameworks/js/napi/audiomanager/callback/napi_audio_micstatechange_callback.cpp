@@ -150,8 +150,8 @@ void NapiAudioManagerMicStateChangeCallback::MicStateChangeTsfnFinalize(napi_env
     AUDIO_INFO_LOG("MicStateChangeTsfnFinalize: safe thread resource release.");
 }
 
-void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange
-    (std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
+void NapiAudioManagerMicStateChangeCallback::OnJsCallbackMicStateChange(
+    std::unique_ptr<AudioManagerMicStateChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
         AUDIO_ERR_LOG("OnJsCallbackMicStateChange: jsCb.get() is null");

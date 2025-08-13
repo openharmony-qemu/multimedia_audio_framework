@@ -44,13 +44,14 @@ const std::vector<DeviceType> DEVICE_TYPE_SET = {
     DEVICE_TYPE_DP,
     DEVICE_TYPE_REMOTE_CAST,
     DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
     DEVICE_TYPE_REMOTE_DAUDIO,
     DEVICE_TYPE_USB_ARM_HEADSET,
     DEVICE_TYPE_FILE_SINK,
     DEVICE_TYPE_FILE_SOURCE,
     DEVICE_TYPE_EXTERN_CABLE,
     DEVICE_TYPE_HDMI,
-    DEVICE_TYPE_LINE_DIGITAL,
     DEVICE_TYPE_ACCESSORY,
     DEVICE_TYPE_NEARLINK,
     DEVICE_TYPE_HEARING_AID,
@@ -554,6 +555,7 @@ napi_status NapiParamUtils::SetDeviceDescriptors(const napi_env &env,
     }
     return status;
 }
+
 napi_status NapiParamUtils::SetAudioSpatialEnabledStateForDevice(const napi_env &env,
     const AudioSpatialEnabledStateForDevice audioSpatialEnabledStateForDevice, napi_value &result)
 {
@@ -937,6 +939,7 @@ napi_status NapiParamUtils::GetAudioCapturerFilter(const napi_env &env, sptr<Aud
     if (audioCapturerFilter != nullptr && napi_get_named_property(env, in, "capturerInfo", &tempValue) == napi_ok) {
         GetCapturerInfo(env, &(audioCapturerFilter->capturerInfo), tempValue);
     }
+
     return napi_ok;
 }
 
@@ -1202,6 +1205,29 @@ napi_status NapiParamUtils::SetExtraAudioParametersInfo(const napi_env &env,
     return status;
 }
 
+napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
+    AudioSessionStrategy &audioSessionStrategy, napi_value in)
+{
+    int32_t intValue = {0};
+    napi_status status = napi_generic_failure;
+    status = GetValueInt32(env, "concurrencyMode", intValue, in);
+    if (status == napi_ok) {
+        audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(intValue);
+        return napi_ok;
+    } else {
+        AUDIO_ERR_LOG("invaild concurrencyMode");
+        return napi_generic_failure;
+    }
+}
+
+napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
+    const napi_env &env, const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result)
+{
+    napi_create_object(env, &result);
+    SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
+    return napi_ok;
+}
+
 int32_t NapiParamUtils::UniqueEffectPropertyData(AudioEffectPropertyArrayV3 &propertyArray)
 {
     int32_t propSize = static_cast<int32_t>(propertyArray.property.size());
@@ -1294,7 +1320,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectProp
     napi_status status = napi_get_array_length(env, in, &arrayLen);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok, status, "get subKeys length failed");
 
-    for (size_t i = 0; i < arrayLen; i++) {
+    for (uint32_t i = 0; i < arrayLen; i++) {
         napi_value element = nullptr;
         napi_get_element(env, in, i, &element);
 
@@ -1312,7 +1338,7 @@ napi_status NapiParamUtils::GetEffectPropertyArray(napi_env env, AudioEffectProp
         effectArray.property.push_back(prop);
     }
 
-    int32_t size = effectArray.property.size();
+    int32_t size = static_cast<int32_t>(effectArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
                              napi_invalid_arg, "Audio effect property array size invalid");
 
@@ -1353,7 +1379,7 @@ napi_status NapiParamUtils::GetEnhancePropertyArray(napi_env env, AudioEnhancePr
         enhanceArray.property.push_back(prop);
     }
 
-    int32_t size = enhanceArray.property.size();
+    int32_t size = static_cast<int32_t>(enhanceArray.property.size());
     CHECK_AND_RETURN_RET_LOG(size > 0 && size <= AUDIO_EFFECT_COUNT_UPPER_LIMIT,
                              napi_invalid_arg, "Audio enhance property array size invalid");
 
@@ -1407,28 +1433,7 @@ napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEf
     return napi_ok;
 }
 
-napi_status NapiParamUtils::GetAudioSessionStrategy(const napi_env &env,
-    AudioSessionStrategy &audioSessionStrategy, napi_value in)
-{
-    int32_t intValue = {0};
-    napi_status status = napi_generic_failure;
-    status = GetValueInt32(env, "concurrencyMode", intValue, in);
-    if (status == napi_ok) {
-        audioSessionStrategy.concurrencyMode = static_cast<AudioConcurrencyMode>(intValue);
-        return napi_ok;
-    } else {
-        AUDIO_ERR_LOG("invaild concurrencyMode");
-        return napi_generic_failure;
-    }
-}
 
-napi_status NapiParamUtils::SetAudioSessionDeactiveEvent(
-    const napi_env &env, const AudioSessionDeactiveEvent &deactiveEvent, napi_value &result)
-{
-    napi_create_object(env, &result);
-    SetValueInt32(env, "reason", static_cast<int32_t>(deactiveEvent.deactiveReason), result);
-    return napi_ok;
-}
 
 bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType)
 {
