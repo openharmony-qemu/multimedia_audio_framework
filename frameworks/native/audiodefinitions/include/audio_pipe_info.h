@@ -50,7 +50,7 @@ public:
 
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
 
-    bool softLinkFlag = false;
+    bool softLinkFlag_ = false;
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 
