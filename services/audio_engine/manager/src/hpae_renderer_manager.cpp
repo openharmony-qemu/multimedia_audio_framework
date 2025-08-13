@@ -270,7 +270,7 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
                 sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
             } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
                 !sessionNodeMap_[nodeInfo.sessionId].bypass) {
-                bool isConnected = (sinkInputNodeMap_[nodeInfo.sessionId]->isConnected_) ? true : false;
+                bool isConnected = (it.second->isConnected_) ? true : false;
                 DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
                 DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
                 sessionNodeMap_[nodeInfo.sessionId].bypass = true;
