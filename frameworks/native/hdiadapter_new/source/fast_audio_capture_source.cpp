@@ -53,6 +53,7 @@ void FastAudioCaptureSource::DeInit(void)
 {
     AUDIO_INFO_LOG("in, flag: %{public}d, isCheckPositionSuccess: %{public}d", attr_.audioStreamFlag,
         isCheckPositionSuccess_.load());
+    std::lock_guard<std::mutex> lock(statusMutex_);
     if (started_ || !isCheckPositionSuccess_) {
         Stop();
         started_ = false;

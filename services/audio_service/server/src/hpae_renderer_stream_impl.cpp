@@ -134,6 +134,8 @@ int32_t HpaeRendererStreamImpl::Start()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     ClockTime::GetAllTimeStamp(timestamp_);
     int32_t ret = IHpaeManager::GetHpaeManager().Start(HPAE_STREAM_CLASS_TYPE_PLAY, processConfig_.originalSessionId);
+    std::string tempStringSessionId = std::to_string(streamIndex_);
+    IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume_);
     if (ret != 0) {
         AUDIO_ERR_LOG("Start is error!");
         return ERR_INVALID_PARAM;
@@ -208,6 +210,8 @@ int32_t HpaeRendererStreamImpl::Release()
     AUDIO_INFO_LOG("[%{public}u] Enter", streamIndex_);
     int32_t ret = IHpaeManager::GetHpaeManager().DestroyStream(HPAE_STREAM_CLASS_TYPE_PLAY,
         processConfig_.originalSessionId);
+    std::string tempStringSessionId = std::to_string(streamIndex_);
+    IHpaeManager::GetHpaeManager().DeleteStreamVolumeToEffect(tempStringSessionId);
     if (ret != 0) {
         AUDIO_ERR_LOG("Release is error");
         return ERR_INVALID_PARAM;
@@ -662,6 +666,8 @@ int32_t HpaeRendererStreamImpl::SetClientVolume(float clientVolume)
         return ERR_INVALID_PARAM;
     }
     int32_t ret = IHpaeManager::GetHpaeManager().SetClientVolume(processConfig_.originalSessionId, clientVolume);
+    std::string tempStringSessionId = std::to_string(processConfig_.originalSessionId);
+    IHpaeManager::GetHpaeManager().AddStreamVolumeToEffect(tempStringSessionId, clientVolume);
     if (ret != 0) {
         AUDIO_ERR_LOG("SetClientVolume is error");
         return ERR_INVALID_PARAM;

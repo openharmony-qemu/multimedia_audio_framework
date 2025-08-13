@@ -141,6 +141,8 @@ public:
     virtual bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) = 0;
     virtual int32_t UpdateCollaborativeState(bool isCollaborationEnabled) = 0;
+    virtual void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) = 0;
+    virtual void DeleteStreamVolumeToEffect(const std::string stringSessionID) = 0;
 };
 }  // namespace HPAE
 }  // namespace AudioStandard

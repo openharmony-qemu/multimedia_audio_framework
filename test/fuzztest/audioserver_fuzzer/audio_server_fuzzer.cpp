@@ -105,6 +105,8 @@ class DataTransferStateChangeCallbackInnerFuzzTest : public DataTransferStateCha
 public:
     void OnDataTransferStateChange(const int32_t &callbackId,
             const AudioRendererDataTransferStateChangeInfo &info) override {}
+    void OnMuteStateChange(const int32_t &callbackId, const int32_t &uid,
+        const uint32_t &sessionId, const bool &isMuted) override {}
 };
 template<class T>
 uint32_t GetArrLength(T& arr)
@@ -1194,6 +1196,20 @@ void AudioServerOnDataTransferStateChangeFuzzTest(const uint8_t *rawData, size_t
     audioServerPtr->OnDataTransferStateChange(testPid, testCallbackId, info);
 }
 
+void AudioServerOnMuteStateChangeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    int32_t testPid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t testCallbackId = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t testUid = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t testSessionId = *reinterpret_cast<const uint32_t*>(rawData);
+    bool testIsMuted = *reinterpret_cast<const bool*>(rawData);
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->OnMuteStateChange(testPid, testCallbackId, testUid, testSessionId, testIsMuted);
+}
+
 void AudioServerRegisterDataTransferStateChangeCallbackFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -2146,6 +2162,7 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
     OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
     OHOS::AudioStandard::AudioServerSetRenderWhitelistFuzzTest,
+    OHOS::AudioStandard::AudioServerOnMuteStateChangeFuzzTest
 };
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
