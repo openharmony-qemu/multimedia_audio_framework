@@ -270,9 +270,13 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
                 sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
             } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
                 !sessionNodeMap_[nodeInfo.sessionId].bypass) {
+                bool isConnected = (sinkInputNodeMap_[nodeInfo.sessionId]->isConnected_) ? true : false;
                 DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
                 DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
                 sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+                if (isConnected) {
+                    ConnectInputSession(nodeInfo.sessionId);
+                }
             }
         }
     };
@@ -384,6 +388,7 @@ void HpaeRendererManager::DisConnectProcessCluster(
         sceneClusterMap_[nodeInfo.sceneType]->AudioRendererRelease(sinkInputNodeMap_[sessionId]->GetNodeInfo());
     }
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
+    sinkInputNodeMap_[sessionId]->isConnected_ = false;
     if (!sessionNodeMap_[sessionId].bypass) {
         sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]--;
         if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
@@ -469,6 +474,7 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
         sceneClusterMap_[sceneType]->SetConnectedFlag(true);
     }
     sceneClusterMap_[sceneType]->Connect(sinkInputNodeMap_[sessionId]);
+    sinkInputNodeMap_[sessionId]->isConnected_ = true;
     if (sceneType == HPAE_SCENE_COLLABORATIVE && hpaeCoBufferNode_ != nullptr) {
         uint32_t latency = outputCluster_->GetLatency();
         hpaeCoBufferNode_->SetLatency(latency);
@@ -641,6 +647,7 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
 void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcessorType sceneType)
 {
     sceneClusterMap_[sceneType]->DisConnect(sinkInputNodeMap_[sessionId]);
+    sinkInputNodeMap_[sessionId]->isConnected_ = false;
     if (sceneClusterMap_[sceneType]->GetPreOutNum() > 0) {
         int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionId]->GetNodeInfo());
         if (ret != SUCCESS) {

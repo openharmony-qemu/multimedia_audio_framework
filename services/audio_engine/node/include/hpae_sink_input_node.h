@@ -57,6 +57,7 @@ public:
     float GetLoudnessGain();
     void SetSpeed(float speed);
     float GetSpeed();
+    bool isConnected_ = false;
 private:
     int32_t GetDataFromSharedBuffer();
     void CheckAndDestroyHistoryBuffer();
