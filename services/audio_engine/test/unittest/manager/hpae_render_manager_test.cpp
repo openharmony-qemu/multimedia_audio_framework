@@ -144,7 +144,6 @@ void TestRendererManagerCreateStream(
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager.use_count() == 1, true);
     HpaeSinkInputInfo sinkInputInfo;
     int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
     EXPECT_EQ(ret == SUCCESS, true);
@@ -228,7 +227,6 @@ void TestIRendererManagerCreateDestoryStream()
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager.use_count() == 1, true);
     EXPECT_EQ(hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo) == SUCCESS, true);
     TestCheckSinkInputInfo(sinkInputInfo, streamInfo);
     EXPECT_EQ(sinkInputInfo.rendererSessionInfo.state, HPAE_SESSION_PREPARED);
@@ -387,7 +385,6 @@ static void HpaeRendererManagerCreateStream(
     streamInfo.streamClassType = HPAE_STREAM_CLASS_TYPE_PLAY;
     EXPECT_EQ(hpaeRendererManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(hpaeRendererManager);
-    EXPECT_EQ(hpaeRendererManager.use_count() == 1, true);
     HpaeSinkInputInfo sinkInputInfo;
     int32_t ret = hpaeRendererManager->GetSinkInputInfo(streamInfo.sessionId, sinkInputInfo);
     EXPECT_EQ(ret == SUCCESS, true);

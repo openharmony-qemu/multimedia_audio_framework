@@ -110,7 +110,9 @@ public:
     int32_t Drain(AudioDrainType /* type */) override { return -1; }
     void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override {}
     int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override
-    { return 0; }
+    {
+        return 0;
+    }
     int32_t SetBufferSize(uint32_t /* sizeMs */) override { return -1; }
     int32_t SetOffloadRenderCallbackType(RenderCallbackType /* type */) override { return -1; }
     int32_t LockOffloadRunningLock() override { return -1; }
