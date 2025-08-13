@@ -719,7 +719,7 @@ void AudioEndpointInner::InitAudiobuffer(bool resetReadWritePos)
 {
     CHECK_AND_RETURN_LOG((dstAudioBuffer_ != nullptr), "dst audio buffer is null.");
     if (resetReadWritePos) {
-        dstAudioBuffer_->ResetCurReadWritePos(0, 0);
+        dstAudioBuffer_->ResetCurReadWritePos(0, 0, false);
     }
 
     uint32_t spanCount = dstAudioBuffer_->GetSpanCount();
@@ -790,7 +790,7 @@ void AudioEndpointInner::RecordReSyncPosition()
     uint64_t nextDstReadPos = curHdiWritePos;
     uint64_t nextDstWritePos = curHdiWritePos;
     InitAudiobuffer(false);
-    int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextDstReadPos, nextDstWritePos);
+    int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextDstReadPos, nextDstWritePos, false);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed.");
 
     SpanInfo *nextReadSapn = dstAudioBuffer_->GetSpanInfo(nextDstReadPos);
@@ -815,7 +815,7 @@ void AudioEndpointInner::ReSyncPosition()
     readTimeModel_.ResetFrameStamp(curHdiReadPos, readTime);
     uint64_t nextDstWritePos = curHdiReadPos + dstSpanSizeInframe_;
     InitAudiobuffer(false);
-    int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextDstWritePos, nextDstWritePos);
+    int32_t ret = dstAudioBuffer_->ResetCurReadWritePos(nextDstWritePos, nextDstWritePos, false);
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "ResetCurReadWritePos failed.");
 
     SpanInfo *nextWriteSapn = dstAudioBuffer_->GetSpanInfo(nextDstWritePos);
@@ -1732,9 +1732,9 @@ bool AudioEndpointInner::RecordPrepareNextLoop(uint64_t curReadPos, int64_t &wak
         wakeUpTime = predictWakeupTime;
     }
 
-    int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
+    int32_t ret = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "set dst buffer write frame fail, ret %{public}d.", ret);
-    ret = dstAudioBuffer_->SetCurReadFrame(nextHandlePos);
+    ret = dstAudioBuffer_->SetCurReadFrame(nextHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, false, "set dst buffer read frame fail, ret %{public}d.", ret);
 
     return true;
@@ -1757,8 +1757,8 @@ bool AudioEndpointInner::PrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTi
     SpanInfo *nextWriteSpan = dstAudioBuffer_->GetSpanInfo(nextHandlePos);
     CHECK_AND_RETURN_RET_LOG(nextWriteSpan != nullptr, false, "GetSpanInfo failed, can not get next write span");
 
-    int32_t ret1 = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos);
-    int32_t ret2 = dstAudioBuffer_->SetCurReadFrame(nextHandlePos);
+    int32_t ret1 = dstAudioBuffer_->SetCurWriteFrame(nextHandlePos, false);
+    int32_t ret2 = dstAudioBuffer_->SetCurReadFrame(nextHandlePos, false);
     CHECK_AND_RETURN_RET_LOG(ret1 == SUCCESS && ret2 == SUCCESS, false,
         "SetCurWriteFrame or SetCurReadFrame failed, ret1:%{public}d ret2:%{public}d", ret1, ret2);
     std::lock_guard<std::mutex> lock(listLock_);
