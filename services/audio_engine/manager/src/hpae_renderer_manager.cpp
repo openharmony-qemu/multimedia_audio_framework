@@ -442,16 +442,15 @@ void HpaeRendererManager::ConnectProcessCluster(uint32_t sessionId, HpaeProcesso
 {
     Trace trace("[" + std::to_string(sessionId) + "]HpaeRendererManager::ConnectProcessCluster sceneType:"
         + std::to_string(sceneType));
-    HpaeProcessorType tmpSceneType = sceneType;
-    if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
-        tmpSceneType = HPAE_SCENE_DEFAULT;
-    }
+    HpaeProcessorType tmpSceneType =
+        (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) ? HPAE_SCENE_DEFAULT : sceneType;
     if (toBeStoppedSceneTypeToSessionMap_.count(tmpSceneType) > 0) {
-        if (toBeStoppedSceneTypeToSessionMap_[tmpSceneType] == sessionId) {
+        uint32_t sessionIdToStop = toBeStoppedSceneTypeToSessionMap_[tmpSceneType];
+        if (sessionIdToStop == sessionId) {
             toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
         } else {
-            if (SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[tmpSceneType])) {
-                sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[tmpSceneType]]->GetNodeInfo());
+            if (SafeGetMap(sinkInputNodeMap_, sessionIdToStop)) {
+                sceneClusterMap_[sceneType]->AudioRendererStop(sinkInputNodeMap_[sessionIdToStop]->GetNodeInfo());
             }
             toBeStoppedSceneTypeToSessionMap_.erase(tmpSceneType);
             int32_t ret = sceneClusterMap_[sceneType]->AudioRendererStart(sinkInputNodeMap_[sessionId]->GetNodeInfo());
@@ -647,11 +646,10 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
             AUDIO_WARNING_LOG("update audio effect when stopping failed, ret = %{public}d", ret);
         }
     } else {
-        if (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT]) {
-            toBeStoppedSceneTypeToSessionMap_[HPAE_SCENE_DEFAULT] = sessionId;
-        } else {
-            toBeStoppedSceneTypeToSessionMap_[sceneType] = sessionId;
-        }
+        HpaeProcessorType tmpSceneType = (sceneClusterMap_[nodeInfo.sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT])
+            ? HPAE_SCENE_DEFAULT : sceneType;
+        toBeStoppedSceneTypeToSessionMap_[tmpSceneType] = sessionId;
+        AUDIO_INFO_LOG("sessionId:%{public}u will be stop", sessionId);
     }
 }
 
