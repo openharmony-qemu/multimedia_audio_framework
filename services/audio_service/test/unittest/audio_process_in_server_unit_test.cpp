@@ -1116,5 +1116,20 @@ HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level2)
     bool ret = audioProcessInServerRet.GetInnerCapState(innerCapId);
     EXPECT_TRUE(ret);
 }
+
+/**
+ * @tc.name  : Test CheckBGCapturer API
+ * @tc.type  : FUNC
+ * @tc.number: CheckBGCapturer_001
+ * @tc.desc  : Test CheckBGCapturer interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, CheckBGCapturer_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+
+    EXPECT_FALSE(audioProcessInServerRet.CheckBGCapturer());
+}
 } // namespace AudioStandard
 } // namespace OHOS
