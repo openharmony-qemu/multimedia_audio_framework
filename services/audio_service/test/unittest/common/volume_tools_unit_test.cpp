@@ -428,7 +428,7 @@ HWTEST(VolumeToolsUnitTest, IsVolumeValid_006, TestSize.Level4)
     ChannelVolumes channelVolumes = {STEREO, {1, 65536}, {3, 65537}};
     channelVolumes.channel = CHANNEL_UNKNOW;
     bool ret = volumeTools->IsVolumeValid(channelVolumes);
-    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsVolumeValid_005 result:%{public}d", ret);
+    AUDIO_INFO_LOG("AudioSystemManagerUnitTest IsVolumeValid_006 result:%{public}d", ret);
     EXPECT_EQ(ret, false);
 }
 } // namespace AudioStandard
