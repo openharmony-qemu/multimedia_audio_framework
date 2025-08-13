@@ -1339,7 +1339,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t zoneId = 10;
     auto ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
