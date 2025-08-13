@@ -836,7 +836,7 @@ void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest()
     uint32_t sessionID = GetData<uint32_t>();
     uint32_t zoneID = GetData<uint32_t>();
 	uint32_t clientUid = GetData<uint32_t>();
-    sptr<IRemoteObject> object = nullptr;
+    sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
     audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     audioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
     audioPolicyServer->SetAudioInterruptCallback(sessionID, object, clientUid, zoneID);
@@ -858,7 +858,7 @@ void AudioPolicyServerSetAudioRouteCallbackFuzztest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     audioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
     uint32_t sessionId = GetData<uint32_t>();
-    sptr<IRemoteObject> object = nullptr;
+    sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
     uint32_t clientUid = GetData<uint32_t>();
     audioPolicyServer->SetAudioRouteCallback(sessionId, object, clientUid);
 }
@@ -876,7 +876,7 @@ void AudioPolicyServerSetQueryBundleNameListCallbackFuzztest()
 {
     auto audioPolicyServer = GetServerPtr();
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
-    sptr<IRemoteObject> object = nullptr;
+    sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
     audioPolicyServer->SetQueryBundleNameListCallback(object);
 }
 
