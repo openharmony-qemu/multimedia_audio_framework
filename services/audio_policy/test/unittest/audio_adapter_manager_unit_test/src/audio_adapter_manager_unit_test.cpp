@@ -591,12 +591,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
     DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
-    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
-        if ((streamVolumeInfos_[volumeType] != nullptr) &&
-            (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
-            streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
-            (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
-            streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel = 10;
+    if (audioAdapterManager->streamVolumeInfos_.end() != audioAdapterManager->streamVolumeInfos_.find(volumeType)) {
+        if ((audioAdapterManager->streamVolumeInfos_[volumeType] != nullptr) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel = 10;
         }
     }
 
@@ -654,12 +654,12 @@ HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
     auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
     AudioVolumeType volumeType = STREAM_VOICE_CALL;
     DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
-    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
-        if ((streamVolumeInfos_[volumeType] != nullptr) &&
-            (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
-            streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
-            (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
-            streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel = 2;
+    if (audioAdapterManager->streamVolumeInfos_.end() != audioAdapterManager->streamVolumeInfos_.find(volumeType)) {
+        if ((audioAdapterManager->streamVolumeInfos_[volumeType] != nullptr) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+            (audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
+            audioAdapterManager->streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel = 2;
         }
     }
 

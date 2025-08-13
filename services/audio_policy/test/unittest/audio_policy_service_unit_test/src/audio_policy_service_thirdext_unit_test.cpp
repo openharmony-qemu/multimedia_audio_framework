@@ -39,8 +39,8 @@ const int32_t SESSION_ID = 1000001;
 const int32_t STATE = 1;
 const uint32_t TEST_APP_UID = 1;
 
-const Uint32_t MIN_VOLUME_LEVEL = 0;
-const Uint32_t MAX_VOLUME_LEVEL = 15;
+const uint32_t MIN_VOLUME_LEVEL = 0;
+const uint32_t MAX_VOLUME_LEVEL = 15;
 
 void AudioPolicyServiceFourthUnitTest::SetUpTestCase(void)
 {
