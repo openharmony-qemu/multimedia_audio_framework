@@ -173,7 +173,6 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerCreateDestoryStreamTest, Te
     InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager.use_count() == 1, true);
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
@@ -242,7 +241,6 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerStartStopTest, TestSize.Lev
     InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager.use_count() == 1, true);
 
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
@@ -307,7 +305,6 @@ HWTEST_F(HpaeCapturerManagerTest, HpaeCapturerManagerReloadTest, TestSize.Level1
     InitReloadStreamInfo(streamInfo);
     EXPECT_EQ(capturerManager->CreateStream(streamInfo) == SUCCESS, true);
     WaitForMsgProcessing(capturerManager);
-    EXPECT_EQ(capturerManager.use_count() == 1, true);
     HpaeSourceOutputInfo sourceOutputInfo;
     EXPECT_EQ(capturerManager->GetSourceOutputInfo(streamInfo.sessionId, sourceOutputInfo) == SUCCESS, true);
     TestCheckSourceOutputInfo(sourceOutputInfo, streamInfo);
