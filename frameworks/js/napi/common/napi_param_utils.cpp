@@ -1433,8 +1433,6 @@ napi_status NapiParamUtils::SetEffectProperty(const napi_env &env, const AudioEf
     return napi_ok;
 }
 
-
-
 bool NapiParamUtils::CheckArgType(napi_env env, napi_value arg, napi_valuetype expectedType)
 {
     napi_valuetype valueType = napi_undefined;
