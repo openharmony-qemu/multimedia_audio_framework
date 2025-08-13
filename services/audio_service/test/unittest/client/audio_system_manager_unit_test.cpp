@@ -1675,7 +1675,8 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_003, TestSize.Level4)
  */
 HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level4)
 {
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK, OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
     EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
 }
 
@@ -1687,7 +1688,8 @@ HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level
  */
 HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_002, TestSize.Level4)
 {
-    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY, OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
     EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
 }
 
