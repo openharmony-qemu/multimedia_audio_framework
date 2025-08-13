@@ -40,7 +40,7 @@ int32_t AudioPolicyManager::CreateAudioZone(const std::string &name, const Audio
     CHECK_AND_RETURN_RET_LOG(gsp != nullptr, ERROR, "audio policy manager proxy is NULL.");
 
     int32_t zoneId = ERROR;
-    gsp->CreateAudioZone(name, context, zoneId);
+    gsp->CreateAudioZone(name, context, zoneId, getpid());
     return zoneId;
 }
 

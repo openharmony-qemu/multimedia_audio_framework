@@ -449,7 +449,8 @@ public:
 
     int32_t RegisterAudioZoneClient(const sptr<IRemoteObject> &object) override;
 
-    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId) override;
+    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId,
+        int32_t pid) override;
 
     int32_t ReleaseAudioZone(int32_t zoneId) override;
 

@@ -85,7 +85,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
     std::shared_ptr<AudioInterruptService> interruptService = std::make_shared<AudioInterruptService>();
     AudioZoneService::GetInstance().Init(handler, interruptService);
     AudioZoneContext context;
-    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context);
+    int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context, 0);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
     descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, "", ROUTER_TYPE_NONE);
     EXPECT_EQ(descs.size(), 0);
