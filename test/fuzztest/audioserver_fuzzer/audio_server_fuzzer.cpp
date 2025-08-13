@@ -77,6 +77,7 @@ const vector<DeviceType> g_testDeviceTypes = {
 const vector<DeviceFlag> g_testDeviceFlags = {
     NONE_DEVICES_FLAG,
     OUTPUT_DEVICES_FLAG,
+    INPUT_DEVICES_FLAG,
     ALL_DEVICES_FLAG,
     DISTRIBUTED_OUTPUT_DEVICES_FLAG,
     DISTRIBUTED_INPUT_DEVICES_FLAG,
@@ -710,9 +711,13 @@ void AudioServerGetUsbParameterTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
+    const vector<std::string> params = {
+        "address=card2;device=0 role=1",
+        "address=card2;device=0 role=2"
+    };
+    std::string param = params[static_cast<uint32_t>(size) % params.size()];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetUsbParameter("address=card2;device=0 role=1");
+    audioServerPtr->GetUsbParameter(param);
 }
 
 void AudioServerOnAddSystemAbilityTest(const uint8_t *rawData, size_t size)
@@ -1154,7 +1159,11 @@ void AudioServerRegisterDataTransferCallbackFuzzTest(const uint8_t *rawData, siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    sptr<IRemoteObject> object = nullptr;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterDataTransferCallback(object);
 }
@@ -1266,8 +1275,14 @@ void AudioServerGetTransactionIdFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t deviceRole = *reinterpret_cast<const int32_t*>(rawData);
+    const vector<DeviceRole> g_deviceRole = {
+        DEVICE_ROLE_NONE,
+        INPUT_DEVICE,
+        OUTPUT_DEVICE,
+        DEVICE_ROLE_MAX
+    };
+    DeviceType deviceType = g_testDeviceTypes[static_cast<uint32_t>(size) % g_testDeviceTypes.size()];
+    DeviceRole deviceRole = g_deviceRole[static_cast<uint32_t>(size) % g_deviceRole.size()]
     uint64_t transactionId = *reinterpret_cast<const uint64_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetTransactionId(deviceType, deviceRole, transactionId);
@@ -1846,6 +1861,29 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
+void AudioServerGetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::string subKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
+    std::vector<std::string> subKeys = {subKey};
+    std::vector<std::pair<std::string, std::string>> result;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->GetPcmDumpParameter(subKey, result);
+}
+void AudioServerGetExtraParametersInnerFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::string mainKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
+    std::string subKey = g_testKeys[static_cast<uint32_t>(size) % g_testKeys.size()];
+    std::vector<std::string> subKeys = {subKey};
+    std::vector<std::pair<std::string, std::string>> result;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
+}
 
 } // namespace AudioStandard
 } // namesapce OHOS
@@ -1969,7 +2007,9 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest,
     OHOS::AudioStandard::AudioServerStartGroupFuzzTest,
     OHOS::AudioStandard::AudioServerStopGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest
+    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest,
+    OHOS::AudioStandard::AudioServerGetPcmDumpParameterFuzzTest,
+    OHOS::AudioStandard::AudioServerGetExtraParametersInnerFuzzTest,
 };
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
