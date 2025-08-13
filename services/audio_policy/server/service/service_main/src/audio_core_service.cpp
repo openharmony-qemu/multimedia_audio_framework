@@ -187,11 +187,13 @@ int32_t AudioCoreService::CreateRendererClient(
         return SUCCESS;
     }
 
+    int32_t ret = ActivateOutputDevice(streamDesc);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
+
     // Bluetooth may be inactive (paused ringtone stream at Speaker switches to A2dp)
     std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
-    int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,
-        AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
-    CHECK_AND_RETURN_RET(bluetoothFetchResult == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
+    ret = BluetoothDeviceFetchOutputHandle(streamDesc, AudioStreamDeviceChangeReason::UNKNOWN, encryptMacAddr);
+    CHECK_AND_RETURN_RET(ret == BLUETOOTH_FETCH_RESULT_DEFAULT, ERR_OPERATION_FAILED);
 
     UpdatePlaybackStreamFlag(streamDesc, true);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
@@ -199,7 +201,7 @@ int32_t AudioCoreService::CreateRendererClient(
 
     // Fetch pipe
     audioActiveDevice_.UpdateStreamDeviceMap("CreateRendererClient");
-    int32_t ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
+    ret = FetchRendererPipeAndExecute(streamDesc, sessionId, audioFlag);
     networkId = streamDesc->newDeviceDescs_.front()->networkId_;
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
     AddSessionId(sessionId);
