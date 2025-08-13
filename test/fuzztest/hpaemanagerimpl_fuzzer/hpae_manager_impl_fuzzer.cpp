@@ -62,6 +62,57 @@ vector<AudioSpatializationSceneType> AudioSpatializationSceneTypeVec {
     SPATIALIZATION_SCENE_TYPE_MAX,
 };
 
+vector<SourceType> SourceTypeVec =  {
+    SOURCE_TYPE_INVALID,
+    SOURCE_TYPE_MIC,
+    SOURCE_TYPE_VOICE_RECOGNITION,
+    SOURCE_TYPE_PLAYBACK_CAPTURE,
+    SOURCE_TYPE_WAKEUP,
+    SOURCE_TYPE_VOICE_CALL,
+    SOURCE_TYPE_VOICE_COMMUNICATION,
+    SOURCE_TYPE_ULTRASONIC,
+    SOURCE_TYPE_VIRTUAL_CAPTURE,
+    SOURCE_TYPE_VOICE_MESSAGE,
+    SOURCE_TYPE_REMOTE_CAST,
+    SOURCE_TYPE_VOICE_TRANSCRIPTION,
+    SOURCE_TYPE_CAMCORDER,
+    SOURCE_TYPE_UNPROCESSED,
+    SOURCE_TYPE_EC,
+    SOURCE_TYPE_MIC_REF,
+    SOURCE_TYPE_LIVE,
+    SOURCE_TYPE_MAX
+};
+
+vector<DeviceType> DeviceTypeVec = {
+    DEVICE_TYPE_NONE,
+    DEVICE_TYPE_INVALID,
+    DEVICE_TYPE_EARPIECE,
+    DEVICE_TYPE_SPEAKER,
+    DEVICE_TYPE_WIRED_HEADSET,
+    DEVICE_TYPE_WIRED_HEADPHONES,
+    DEVICE_TYPE_BLUETOOTH_SCO,
+    DEVICE_TYPE_BLUETOOTH_A2DP,
+    DEVICE_TYPE_BLUETOOTH_A2DP_IN,
+    DEVICE_TYPE_MIC,
+    DEVICE_TYPE_WAKEUP,
+    DEVICE_TYPE_USB_HEADSET,
+    DEVICE_TYPE_DP,
+    DEVICE_TYPE_REMOTE_CAST,
+    DEVICE_TYPE_USB_DEVICE,
+    DEVICE_TYPE_ACCESSORY,
+    DEVICE_TYPE_REMOTE_DAUDIO,
+    DEVICE_TYPE_HDMI,
+    DEVICE_TYPE_LINE_DIGITAL,
+    DEVICE_TYPE_NEARLINK,
+    DEVICE_TYPE_NEARLINK_IN,
+    DEVICE_TYPE_FILE_SINK,
+    DEVICE_TYPE_FILE_SOURCE,
+    DEVICE_TYPE_EXTERN_CABLE,
+    DEVICE_TYPE_DEFAULT,
+    DEVICE_TYPE_USB_ARM_HEADSET,
+    DEVICE_TYPE_MAX,
+};
+
 bool Init()
 {
     if (hpaeManagerImpl_ == nullptr) {
@@ -418,6 +469,112 @@ void SetAudioEffectPropertyFuzzTest()
     hpaeManagerImpl_->SetAudioEffectProperty(propertyArray);
 }
 
+void SetOutputDeviceFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    uint32_t renderId = g_fuzzUtils.GetData<uint32_t>();
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType outputDevice = DeviceTypeVec[index];
+    hpaeManagerImpl_->SetOutputDevice(renderId, outputDevice);
+}
+
+void SetVolumeInfoFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    std::vector<AudioVolumeType> validVolumeTypes;
+    for (int32_t type = static_cast<int32_t>(AudioStreamType::STREAM_DEFAULT);
+         type <= static_cast<int32_t>(AudioStreamType::STREAM_APP);
+         ++type) {
+        validVolumeTypes.push_back(static_cast<AudioVolumeType>(type));
+    }
+    uint32_t typeIndex = g_fuzzUtils.GetData<uint32_t>() % validVolumeTypes.size();
+    AudioVolumeType volumeType = validVolumeTypes[typeIndex];
+    float systemVol = g_fuzzUtils.GetData<float>();
+    systemVol = std::clamp(systemVol, 0.0f, 1.0f);
+    hpaeManagerImpl_->SetVolumeInfo(volumeType, systemVol);
+}
+
+void SetMicrophoneMuteInfoFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    bool isMute = g_fuzzUtils.GetData<bool>();
+    hpaeManagerImpl_->SetMicrophoneMuteInfo(isMute);
+}
+
+void SetAudioEnhancePropertyFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    AudioEffectPropertyArrayV3 propertyArrayV3;
+    AudioEnhancePropertyArray propertyArray;
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % DeviceTypeVec.size();
+    DeviceType outputDevice = DeviceTypeVec[index];
+    hpaeManagerImpl_->SetAudioEnhanceProperty(propertyArrayV3, outputDevice);
+    hpaeManagerImpl_->SetAudioEnhanceProperty(propertyArray, outputDevice);
+}
+
+void UpdateExtraSceneTypeFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    std::string mainkey = "audio_effect";
+    std::string subkey = "extra_scene_type";
+    std::string extraSceneType = "default";
+    hpaeManagerImpl_->UpdateExtraSceneType(mainkey, subkey, extraSceneType);
+}
+
+void NotifySettingsDataReadyFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    hpaeManagerImpl_->NotifySettingsDataReady();
+}
+
+void NotifyAccountsChangedFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    hpaeManagerImpl_->NotifyAccountsChanged();
+}
+
+void IsAcousticEchoCancelerSupportedFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    uint32_t index = g_fuzzUtils.GetData<uint32_t>() % SourceTypeVec.size();
+    SourceType sourceType = SourceTypeVec[index];
+    hpaeManagerImpl_->IsAcousticEchoCancelerSupported(sourceType);
+}
+
+void UpdateCollaborativeStateFuzzTest()
+{
+    hpaeManagerImpl_ = std::make_shared<HpaeManagerImpl>();
+    if (hpaeManagerImpl_ == nullptr) {
+        return;
+    }
+    bool isCollaborationEnabled = g_fuzzUtils.GetData<bool>();
+    hpaeManagerImpl_->UpdateCollaborativeState(isCollaborationEnabled);
+}
+
 vector<TestFuncs> g_testFuncs = {
     DeInitFuzzTest,
     DumpSinkInfoFuzzTest,
@@ -450,6 +607,15 @@ vector<TestFuncs> g_testFuncs = {
     SetEffectSystemVolumeFuzzTest,
     SetAbsVolumeStateToEffectFuzzTest,
     SetAudioEffectPropertyFuzzTest,
+    SetOutputDeviceFuzzTest,
+    SetVolumeInfoFuzzTest,
+    SetMicrophoneMuteInfoFuzzTest,
+    SetAudioEnhancePropertyFuzzTest,
+    UpdateExtraSceneTypeFuzzTest,
+    NotifySettingsDataReadyFuzzTest,
+    NotifyAccountsChangedFuzzTest,
+    IsAcousticEchoCancelerSupportedFuzzTest,
+    UpdateCollaborativeStateFuzzTest,
 };
 } // namespace AudioStandard
 } // namesapce OHOS

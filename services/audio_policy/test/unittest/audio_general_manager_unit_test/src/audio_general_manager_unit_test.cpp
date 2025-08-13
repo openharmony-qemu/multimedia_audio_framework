@@ -269,7 +269,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_014, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -288,7 +288,7 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_015, TestSize.Level1)
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors = {audioDeviceDescriptor};
 
     auto ret = audioGeneralManagerPtr->SelectOutputDevice(audioDeviceDescriptors);
-    EXPECT_NE(ret, SUCCESS);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -448,6 +448,24 @@ HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_023, TestSize.Level1)
 
     int32_t ret = audioGeneralManagerPtr->SelectOutputDevice(audioRendererFilter,  audioDeviceDescriptors);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
+}
+
+/**
+ * @tc.name  : Test SetDeviceVolumeBehavior.
+ * @tc.number: AudioGeneralManager_024
+ * @tc.desc  : Test SetDeviceVolumeBehavior when AudioPolicyManagerProxy is null.
+ */
+HWTEST(AudioGeneralManagerUnitTest, AudioGeneralManager_024, TestSize.Level4)
+{
+    auto audioGeneralManager = AudioGeneralManager::GetInstance();
+    EXPECT_NE(audioGeneralManager, nullptr);
+
+    std::string networkId = "invalid_id";
+    DeviceType deviceType = DeviceType::DEVICE_TYPE_SPEAKER;
+    VolumeBehavior volumeBehavior = {false, false, "invalid"};
+
+    int32_t ret = audioGeneralManager->SetDeviceVolumeBehavior(networkId, deviceType, volumeBehavior);
+    EXPECT_NE(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

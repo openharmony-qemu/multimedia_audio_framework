@@ -77,5 +77,61 @@ HWTEST(AudioSessionManagerUnitTest, UnsetAudioSessionCurrentDeviceChangeCallback
     EXPECT_EQ(result, SUCCESS);
 }
 
+/**
+ * @tc.name  : Test AudioSessionRestoreParame class
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionRestoreParame_001
+ * @tc.desc  : Test AudioSessionRestoreParame class interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionRestoreParame_001, TestSize.Level1)
+{
+    AudioSessionRestoreParame restoreParame_;
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 1);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE, 1);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE, 0);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 1);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 1);
+    EXPECT_EQ(restoreParame_.actions_.size(), 2);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE, 1);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_SET_SCENE, 1);
+    EXPECT_EQ(restoreParame_.actions_.size(), 3);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    EXPECT_EQ(restoreParame_.actions_.size(), 2);
+
+    restoreParame_.OnAudioSessionStateChanged(AudioSessionStateChangeHint::INVALID);
+    restoreParame_.OnAudioSessionStateChanged(AudioSessionStateChangeHint::STOP);
+    restoreParame_.OnAudioSessionStateChanged(AudioSessionStateChangeHint::TIME_OUT_STOP);
+    restoreParame_.OnAudioSessionStateChanged(AudioSessionStateChangeHint::PAUSE);
+    EXPECT_EQ(restoreParame_.actions_.size(), 0);
+
+    restoreParame_.RecordAudioSessionOpt(AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restoreParame_.OnAudioSessionDeactive();
+    EXPECT_EQ(restoreParame_.actions_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test OnAudioPolicyServiceDied api
+ * @tc.type  : FUNC
+ * @tc.number: AudioSessionManagerServiceDiedRestore_001
+ * @tc.desc  : Test OnAudioPolicyServiceDied interface.
+ */
+HWTEST(AudioSessionManagerUnitTest, AudioSessionManagerServiceDiedRestore_001, TestSize.Level1)
+{
+    AudioSessionManagerServiceDiedRestore restore;
+
+    AudioSessionManager::GetInstance()->restoreParame_.actions_.clear();
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = false;
+    restore.OnAudioPolicyServiceDied();
+
+    AudioSessionManager::GetInstance()->setDefaultOutputDevice_ = true;
+    AudioSessionManager::GetInstance()->setDeviceType_ = DEVICE_TYPE_DEFAULT;
+    AudioSessionManager::GetInstance()->restoreParame_.RecordAudioSessionOpt(
+        AudioSessionRestoreParame::OperationType::AUDIO_SESSION_ACTIVATE, 0);
+    restore.OnAudioPolicyServiceDied();
+    EXPECT_EQ(AudioSessionManager::GetInstance()->restoreParame_.actions_.size(), 1);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

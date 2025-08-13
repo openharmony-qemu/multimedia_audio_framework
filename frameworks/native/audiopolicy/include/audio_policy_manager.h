@@ -61,6 +61,9 @@ public:
     int32_t SetSystemVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
         int32_t volumeFlag = 0, int32_t uid = 0);
 
+    int32_t SetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t volumeLevel, bool isLegacy = false,
+        int32_t volumeFlag = 0, int32_t uid = 0);
+
     int32_t SetSystemVolumeLevelWithDevice(AudioVolumeType volumeType, int32_t volumeLevel, DeviceType deviceType,
         int32_t volumeFlag = 0);
     int32_t SetAppVolumeLevel(int32_t appUid, int32_t volumeLevel, int32_t volumeFlag = 0);
@@ -78,6 +81,8 @@ public:
     AudioStreamType GetSystemActiveVolumeType(const int32_t clientUid);
 
     int32_t GetSystemVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
+
+    int32_t GetSystemNotificationVolumeLevel(AudioVolumeType volumeType, int32_t uid = 0);
 
     int32_t GetAppVolumeLevel(int32_t appUid, int32_t &volumeLevel);
 
@@ -209,6 +214,10 @@ public:
     int32_t ActivateAudioInterrupt(
         AudioInterrupt &audioInterrupt, const int32_t zoneID = 0, const bool isUpdatedAudioStrategy = false);
 
+    int32_t SetAppConcurrencyMode(const int32_t appUid, const int32_t mode = 0);
+
+    int32_t SetAppSlientOnDisplay(const int32_t displayId = -1);
+
     int32_t DeactivateAudioInterrupt(const AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
 
     int32_t ActivatePreemptMode(void);
@@ -233,6 +242,10 @@ public:
     AudioStreamType GetStreamInFocusByUid(const int32_t uid, const int32_t zoneID = 0);
 
     int32_t GetSessionInfoInFocus(AudioInterrupt &audioInterrupt, const int32_t zoneID = 0);
+
+    int32_t RegisterAudioPolicyServerDiedCb(std::shared_ptr<AudioSessionManagerPolicyServiceDiedCallback> &callback);
+
+    static void AudioSessionManagerCallback();
 
     int32_t ActivateAudioSession(const AudioSessionStrategy &strategy);
 
@@ -712,6 +725,9 @@ private:
 
     static std::vector<AudioServerDiedCallBack> serverDiedCbks_;
     static std::mutex serverDiedCbkMutex_;
+
+    static std::weak_ptr<AudioSessionManagerPolicyServiceDiedCallback> audioSessionManagerCb_;
+    static std::mutex serverDiedSessionManagerCbkMutex_;
 };
 } // namespce AudioStandard
 } // namespace OHOS

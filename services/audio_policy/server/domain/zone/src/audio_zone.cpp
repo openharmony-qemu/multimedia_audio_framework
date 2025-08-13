@@ -163,7 +163,7 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(int32_t uid
     pushBack(AudioZoneBindKey(uid, "", streamTag));
     pushBack(AudioZoneBindKey(uid));
     pushBack(AudioZoneBindKey(uid, deviceTag));
-    pushBack(AudioZoneBindKey(INVALID_ZONEID, "", "", usage));
+    pushBack(AudioZoneBindKey(INVALID_UID, "", "", usage));
     return keys;
 }
 

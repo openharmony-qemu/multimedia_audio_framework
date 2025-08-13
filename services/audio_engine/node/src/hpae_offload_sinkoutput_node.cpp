@@ -45,6 +45,7 @@ namespace {
     constexpr uint32_t OFFLOAD_HDI_CACHE_FRONTGROUND_IN_MS = 200;
     constexpr uint32_t OFFLOAD_HDI_CACHE_MOVIE_IN_MS = 500;
     // hdi fallback, modify when hdi change
+    constexpr uint32_t OFFLOAD_FAD_INTERVAL_IN_US = 180000;
     constexpr uint32_t OFFLOAD_SET_BUFFER_SIZE_NUM = 5;
     constexpr uint32_t POLICY_STATE_DELAY_IN_SEC = 3;
     static constexpr float EPSILON = 1e-6f;
@@ -360,6 +361,8 @@ void HpaeOffloadSinkOutputNode::StopStream()
     auto ret = RenderSinkFlush();
     CHECK_AND_RETURN_LOG(ret == SUCCESS, "RenderSinkFlush failed");
     uint64_t cacheLenInHdi = CalcOffloadCacheLenInHdi();
+    uint64_t fadeOutLen = static_cast<uint64_t>(OFFLOAD_FAD_INTERVAL_IN_US * speed_);
+    cacheLenInHdi = cacheLenInHdi > fadeOutLen ? cacheLenInHdi - fadeOutLen : 0;
     uint64_t rewindTime = cacheLenInHdi + ConvertDatalenToUs(renderFrameData_.size(), GetNodeInfo());
     AUDIO_DEBUG_LOG("OffloadRewindAndFlush rewind time in us %{public}" PRIu64, rewindTime);
     auto callback = GetNodeInfo().statusCallback.lock();

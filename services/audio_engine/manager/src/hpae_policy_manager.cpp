@@ -218,6 +218,20 @@ void HpaePolicyManager::SendInitCommandToAlgo()
     CHECK_AND_RETURN_LOG(audioEnhanceChainManager != nullptr, "audioEnhanceChainManager is null");
     audioEnhanceChainManager->SendInitCommand();
 }
+
+void HpaePolicyManager::AddStreamVolumeToEffect(const std::string stringSessionId, const float streamVolume)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->StreamVolumeUpdate(stringSessionId, streamVolume);
+}
+
+void HpaePolicyManager::DeleteStreamVolumeToEffect(const std::string stringSessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->DeleteStreamVolume(stringSessionId);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

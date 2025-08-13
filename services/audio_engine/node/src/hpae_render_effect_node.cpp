@@ -415,6 +415,21 @@ bool HpaeRenderEffectNode::IsByPassEffectZeroVolume(HpaePcmBuffer *pcmBuffer)
     }
     return isByPassEffect_;
 }
+
+void HpaeRenderEffectNode::InitEffectBuffer(const uint32_t sessionId)
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->InitEffectBuffer(std::to_string(sessionId));
+}
+
+void HpaeRenderEffectNode::InitEffectBufferFromDisConnect()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    CHECK_AND_RETURN_LOG(audioEffectChainManager != nullptr, "null audioEffectChainManager");
+    audioEffectChainManager->InitAudioEffectChainDynamic(sceneType_);
+    AUDIO_INFO_LOG("begin InitEffectBuffer from DisConnect, sceneType:%{public}s", sceneType_.c_str());
+}
 } // namespace HPAE
 } // namespace AudioStandard
 } // namespace OHOS

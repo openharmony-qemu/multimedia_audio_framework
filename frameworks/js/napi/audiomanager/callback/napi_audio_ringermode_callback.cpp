@@ -160,8 +160,9 @@ void NapiAudioRingerModeCallback::SafeJsCallbackRingModeWork(napi_env env, napi_
             request.c_str());
         napi_value args[ARGS_ONE] = { nullptr };
         NapiParamUtils::SetValueInt32(env, GetJsAudioRingMode(event->ringerMode), args[PARAM0]);
-        CHECK_AND_BREAK_LOG(args[PARAM0] != nullptr,
+        CHECK_AND_BREAK_LOG(nstatus == napi_ok && args[PARAM0] != nullptr,
             "%{public}s fail to create ringer mode callback", request.c_str());
+
         const size_t argCount = ARGS_ONE;
         napi_value result = nullptr;
         nstatus = napi_call_function(env, nullptr, jsCallback, argCount, args, &result);

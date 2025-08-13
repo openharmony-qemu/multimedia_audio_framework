@@ -99,6 +99,8 @@ int32_t MemChunk::GetCurUsedMemory(size_t &dataLength, size_t &bufferLength, siz
 {
     dataLength = pointerOffset_;
     bufferLength = totalBufferSize_;
+    structLength = 0;
+    CHECK_AND_RETURN_RET_LOG(memBlockDeque_ != nullptr, ERROR, "memBlockDeque_ is nullptr");
     structLength = sizeof(MemBlock) * memBlockDeque_->size() + sizeof(MemChunk) +
         FILENAME_AND_ID_SIZE * idFileNameMap_.size() * NAME_MAP_NUM; // roughly estimate the size of the map structure
     return SUCCESS;

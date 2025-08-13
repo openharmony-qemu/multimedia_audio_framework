@@ -129,6 +129,97 @@ HWTEST_F(AudioProResamplerTest, UpdateChannel, TestSize.Level0)
     resampler.UpdateChannels(CHANNEL_6);
     EXPECT_EQ(resampler.channels_, CHANNEL_6);
 }
+
+/*
+ * @tc.name  : Test UpdateRates API.
+ * @tc.type  : FUNC
+ * @tc.number: UpdateRatesTest_01.
+ * @tc.desc  : Test UpdateRates, set inRate is 2.
+ */
+HWTEST_F(AudioProResamplerTest, UpdateRatesTest_01, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+    EXPECT_EQ(resampler.inRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_96000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_96000 * FRAME_LEN_20MS / MS_PER_SECOND);
+
+    resampler.UpdateRates(2, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.inRate_, 2);
+    EXPECT_EQ(resampler.outRate_, SAMPLE_RATE_48000);
+    EXPECT_EQ(resampler.expectedInFrameLen_, 2 * FRAME_LEN_40MS / MS_PER_SECOND);
+    EXPECT_EQ(resampler.expectedOutFrameLen_, SAMPLE_RATE_48000 * FRAME_LEN_20MS / MS_PER_SECOND);
+}
+
+/*
+ * @tc.name  : Test ErrCodeToString API.
+ * @tc.type  : FUNC
+ * @tc.number: ErrCodeToString_01.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_SUCCESS.
+ */
+HWTEST_F(AudioProResamplerTest, ErrCodeToString_01, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+
+    std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_SUCCESS);
+    ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_SUCCESS");
+}
+
+/*
+ * @tc.name  : Test ErrCodeToString API.
+ * @tc.type  : FUNC
+ * @tc.number: ErrCodeToString_02.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_ALLOC_FAILED.
+ */
+HWTEST_F(AudioProResamplerTest, ErrCodeToString_02, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+
+    std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED);
+    ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_ALLOC_FAILED");
+}
+
+/*
+ * @tc.name  : Test ErrCodeToString API.
+ * @tc.type  : FUNC
+ * @tc.number: ErrCodeToString_03.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_OVERFLOW.
+ */
+HWTEST_F(AudioProResamplerTest, ErrCodeToString_03, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+
+    std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_OVERFLOW);
+    ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_OVERFLOW");
+}
+
+/*
+ * @tc.name  : Test ErrCodeToString API.
+ * @tc.type  : FUNC
+ * @tc.number: ErrCodeToString_04.
+ * @tc.desc  : Test ErrCodeToString, set errCode is 7.
+ */
+HWTEST_F(AudioProResamplerTest, ErrCodeToString_04, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+
+    std::string ret = resampler.ErrCodeToString(7);
+    ASSERT_STREQ(ret.c_str(), "Unknown Error Code");
+}
+
+/*
+ * @tc.name  : Test ErrCodeToString API.
+ * @tc.type  : FUNC
+ * @tc.number: ErrCodeToString_05.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_INVALID_ARG.
+ */
+HWTEST_F(AudioProResamplerTest, ErrCodeToString_05, TestSize.Level0)
+{
+    ProResampler resampler(SAMPLE_RATE_48000, SAMPLE_RATE_96000, STEREO, QUALITY_ONE);
+
+    std::string ret = resampler.ErrCodeToString(RESAMPLER_ERR_INVALID_ARG);
+    ASSERT_STREQ(ret.c_str(), "RESAMPLER_ERR_INVALID_ARG");
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

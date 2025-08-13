@@ -433,6 +433,7 @@ void AudioPolicyManagerFuzzTest()
     AudioSocketThread::AudioPnpUeventOpen(&fd);
     AudioSocketThread::UpdateDeviceState(audioEvent);
     AudioSocketThread::DetectAnalogHeadsetState(&audioEvent);
+    AudioSocketThread::SetAudioPnpUevent(&audioEvent);
     AudioSocketThread::AudioPnpUeventParse(msg, strLength);
     AudioInputThread::AudioPnpInputOpen();
 

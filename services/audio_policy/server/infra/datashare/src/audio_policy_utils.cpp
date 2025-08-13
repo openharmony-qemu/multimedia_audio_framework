@@ -509,6 +509,7 @@ void AudioPolicyUtils::UpdateEffectDefaultSink(DeviceType deviceType)
         case DeviceType::DEVICE_TYPE_SPEAKER:
         case DeviceType::DEVICE_TYPE_FILE_SINK:
         case DeviceType::DEVICE_TYPE_WIRED_HEADSET:
+        case DeviceType::DEVICE_TYPE_WIRED_HEADPHONES:
         case DeviceType::DEVICE_TYPE_USB_HEADSET:
         case DeviceType::DEVICE_TYPE_DP:
         case DeviceType::DEVICE_TYPE_USB_ARM_HEADSET:
@@ -613,6 +614,7 @@ DeviceRole AudioPolicyUtils::GetDeviceRole(AudioPin pin) const
             return DeviceRole::DEVICE_ROLE_NONE;
         case OHOS::AudioStandard::AUDIO_PIN_OUT_SPEAKER:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADSET:
+        case OHOS::AudioStandard::AUDIO_PIN_OUT_HEADPHONE:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_LINEOUT:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_HDMI:
         case OHOS::AudioStandard::AUDIO_PIN_OUT_USB:

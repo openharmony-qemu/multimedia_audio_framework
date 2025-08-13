@@ -52,6 +52,7 @@ static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
 const int32_t NUM_2 = 2;
+const int32_t TEST_HANDLE_SIZE = 10;
 
 vector<EffectChain> DEFAULT_EFFECT_CHAINS = {{"EFFECTCHAIN_SPK_MUSIC", {}, ""}, {"EFFECTCHAIN_BT_MUSIC", {}, ""}};
 vector<shared_ptr<AudioEffectLibEntry>> DEFAULT_EFFECT_LIBRARY_LIST = {};
@@ -1135,7 +1136,76 @@ void QueryEffectChannelInfoInnerFuzzTest()
     audioEffectChainManager->QueryEffectChannelInfoInner(sceneType, channels, channelLayout);
 }
 
-typedef void (*TestFuncs[55])();
+void EffectChainManagerExistAudioEffectChainInnerFuzzTest1()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    audioEffectChainManager->InitAudioEffectChainManager(DEFAULT_EFFECT_CHAINS,
+        DEFAULT_EFFECT_CHAIN_MANAGER_PARAM, DEFAULT_EFFECT_LIBRARY_LIST);
+    std::string sceneType = "SCENE_MOVIE";
+    std::string effectMode = "EFFECT_MODE_NORMAL";
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+    audioEffectChainManager->deviceType_ = DeviceType::DEVICE_TYPE_SPEAKER;
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+}
+
+void EffectChainManagerExistAudioEffectChainInnerFuzzTest2()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    std::string sceneType = "test";
+    std::string effectMode = "123";
+
+    audioEffectChainManager->ResetInfo();
+    audioEffectChainManager->isInitialized_ = true;
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+
+    std::string sceneTypeAndMode = sceneType + "_&_" + effectMode + "_&_" +
+        audioEffectChainManager->GetDeviceTypeName();
+    audioEffectChainManager->sceneTypeAndModeToEffectChainNameMap_[sceneTypeAndMode] = "123456";
+
+    std::shared_ptr<AudioEffectChain> audioEffectChain =
+        audioEffectChainManager->CreateAudioEffectChain(sceneType, true);
+    CHECK_AND_RETURN(audioEffectChain != nullptr);
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + audioEffectChainManager->GetDeviceTypeName();
+    audioEffectChainManager->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = audioEffectChain;
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+}
+
+void EffectChainManagerExistAudioEffectChainInnerFuzzTest3()
+{
+    AudioEffectChainManager *audioEffectChainManager = AudioEffectChainManager::GetInstance();
+    if (audioEffectChainManager == nullptr) {
+        return;
+    }
+    std::string sceneType = "test";
+    std::string effectMode = "123";
+
+    audioEffectChainManager->ResetInfo();
+    audioEffectChainManager->isInitialized_ = true;
+    std::string sceneTypeAndMode = sceneType + "_&_" + effectMode + "_&_" +
+        audioEffectChainManager->GetDeviceTypeName();
+    audioEffectChainManager->sceneTypeAndModeToEffectChainNameMap_[sceneTypeAndMode] = "123456";
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+
+    std::string sceneTypeAndDeviceKey = sceneType + "_&_" + audioEffectChainManager->GetDeviceTypeName();
+    audioEffectChainManager->sceneTypeToEffectChainMap_[sceneTypeAndDeviceKey] = nullptr;
+    audioEffectChainManager->ExistAudioEffectChainInner(sceneType, effectMode);
+}
+
+void EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest()
+{
+    AudioEnhanceChainManagerImpl audioEnhanceChainManagerImpl;
+    audioEnhanceChainManagerImpl.enhancePropertyMap_.insert({"SCENE_VOIP_UP_&_DEVICE_TYPE_MIC", "ENHANCE_DEFAULT"});
+    DeviceType deviceType = GetData<DeviceType>();
+    audioEnhanceChainManagerImpl.UpdatePropertyAndSendToAlgo(deviceType);
+}
+
+typedef void (*TestFuncs[59])();
 
 TestFuncs g_testFuncs = {
     EffectChainManagerInitCbFuzzTest,
@@ -1193,6 +1263,10 @@ TestFuncs g_testFuncs = {
     ReleaseAudioEffectChainDynamicInnerFuzzTest,
     EnhanceChainManagerGetAlgoConfigFuzzTest,
     QueryEffectChannelInfoInnerFuzzTest,
+    EffectChainManagerExistAudioEffectChainInnerFuzzTest1,
+    EffectChainManagerExistAudioEffectChainInnerFuzzTest2,
+    EffectChainManagerExistAudioEffectChainInnerFuzzTest3,
+    EnhanceChainManagerUpdatePropertyAndSendToAlgoFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -214,6 +214,36 @@ HWTEST_F(AudioSessionServiceUnitTest, SetAudioSessionSceneTest, TestSize.Level1)
 }
 
 /**
+* @tc.name  : Test GetAudioSessionStreamUsage
+* @tc.number: GetAudioSessionStreamUsage
+* @tc.desc  : Test GetAudioSessionStreamUsage
+*/
+HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    StreamUsage usage = sessionService->GetAudioSessionStreamUsage(fakePid);
+    EXPECT_EQ(STREAM_USAGE_INVALID, usage);
+}
+
+/**
+* @tc.name  : Test GetAudioSessionStreamUsage
+* @tc.number: GetAudioSessionStreamUsage_001
+* @tc.desc  : Test GetAudioSessionStreamUsage
+*/
+HWTEST_F(AudioSessionServiceUnitTest, GetAudioSessionStreamUsage_001, TestSize.Level1)
+{
+    int32_t fakePid = 123;
+    std::shared_ptr<AudioSessionService> sessionService = std::make_shared<AudioSessionService>();
+    ASSERT_TRUE(sessionService != nullptr);
+    int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
+    EXPECT_EQ(SUCCESS, ret);
+    StreamUsage usage = sessionService->GetAudioSessionStreamUsage(fakePid);
+    EXPECT_EQ(STREAM_USAGE_INVALID, usage);
+}
+
+/**
 * @tc.name  : Test AudioSessionService.
 * @tc.number: AudioSessionServiceUnitTest_010.
 * @tc.desc  : Test ActivateAudioSession.

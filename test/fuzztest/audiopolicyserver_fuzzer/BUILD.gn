@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -14,21 +14,19 @@
 import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
-import("../../../appgallery.gni")
-import("../../../bluetooth_part.gni")
 import("../../../config.gni")
+import("../../../bluetooth_part.gni")
 
-ohos_fuzztest("AudioPolicyFuzzTest") {
+ohos_fuzztest("AudioPolicyServerFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
-  fuzz_config_file = "../audiopolicy_fuzzer"
+  fuzz_config_file = "../audiopolicyserver_fuzzer"
 
   include_dirs = [
-    "../../../services/audio_policy/client/include",
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
-    "../../../services/audio_policy/server/include/service/manager",
+    "../../../services/audio_engine/manager/include",
+    "../../../services/audio_service/server/include",
   ]
-
   cflags = [
     "-g",
     "-O0",
@@ -48,14 +46,17 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
   if (use_libfuzzer || use_clang_coverage) {
     defines += [ "TEST_COVERAGE" ]
   }
+  if (audio_framework_feature_input) {
+    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
+  }
 
-  sources = [ "audio_policy_fuzzer.cpp" ]
+  sources = [ "audio_policy_server_fuzzer.cpp" ]
 
   deps = [
-    "../../../services/audio_service/idl:audio_framework_interface",
-    "../../../frameworks/native/audioutils:audio_utils",
-    "../../../services/audio_policy:audio_policy_client_static",
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_client",
   ]
 
   external_deps = [
@@ -91,55 +92,12 @@ ohos_fuzztest("AudioPolicyFuzzTest") {
       "accessibility:accessibilityconfig",
     ]
   }
-
-  if (build_variant == "user") {
-    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
-  } else if (build_variant == "root") {
-    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
-  }
-
-  if (audio_framework_feature_support_os_account) {
-    defines += [ "SUPPORT_USER_ACCOUNT" ]
-  }
-
-  if (audio_framework_feature_dtmf_tone) {
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-
-  if (audio_framework_config_policy_enable) {
-    defines += [ "USE_CONFIG_POLICY" ]
-    external_deps += [ "config_policy:configpolicy_util" ]
-  }
-
-  if (accessibility_enable == true) {
-    external_deps += [
-      "accessibility:accessibility_common",
-      "accessibility:accessibilityconfig",
-    ]
-  }
-
-  if (appgallery_part_enable == true) {
-    defines += [ "FEATURE_APPGALLERY" ]
-  }
-
   if (bluetooth_part_enable == true) {
-    deps +=
-        [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
     external_deps += [ "bluetooth:btframework" ]
-  }
-
-  if (audio_framework_feature_input) {
-    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    external_deps += [ "input:libmmi-client" ]
-  }
-
-  if (audio_framework_feature_device_manager) {
-    defines += [ "FEATURE_DEVICE_MANAGER" ]
-    external_deps += [ "device_manager:devicemanagersdk" ]
   }
 }
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":AudioPolicyFuzzTest" ]
+  deps = [ ":AudioPolicyServerFuzzTest" ]
 }

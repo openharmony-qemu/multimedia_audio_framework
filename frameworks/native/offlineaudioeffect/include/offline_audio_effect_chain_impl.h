@@ -40,6 +40,8 @@ public:
 
     void Release() override;
 
+    OfflineAudioEffectChainImpl(){};
+
     OfflineAudioEffectChainImpl(const std::string &chainName);
 
     ~OfflineAudioEffectChainImpl();

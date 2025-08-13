@@ -729,6 +729,25 @@ HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_028, TestSize.Level0)
     EXPECT_EQ(nullptr, audioCapturer);
 }
 
+/**
+ * @tc.name  : Test Create API via legal input.
+ * @tc.number: Audio_Capturer_Create_029
+ * @tc.desc  : Test Create capture with invalid sourceType
+ */
+HWTEST(AudioCapturerUnitTest, Audio_Capturer_Create_029, TestSize.Level0)
+{
+    AudioCapturerOptions capturerOptions;
+    capturerOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_16000;
+    capturerOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
+    capturerOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
+    capturerOptions.streamInfo.channels = AudioChannel::MONO;
+    capturerOptions.capturerInfo.capturerFlags = CAPTURER_FLAG;
+    capturerOptions.capturerInfo.sourceType = static_cast<SourceType>(SOURCE_TYPE_VIRTUAL_CAPTURE);
+
+    unique_ptr<AudioCapturer> audioCapturer = AudioCapturer::Create(capturerOptions);
+    EXPECT_EQ(nullptr, audioCapturer);
+}
+
 #ifdef TEMP_DISABLE
 /**
 * @tc.name  : Test SetParams API via legal input

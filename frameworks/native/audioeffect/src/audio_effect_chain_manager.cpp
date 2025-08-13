@@ -555,9 +555,26 @@ int32_t AudioEffectChainManager::StreamVolumeUpdate(const std::string sessionIDS
     CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     audioEffectVolume->SetStreamVolume(sessionIDString, streamVolume);
     int32_t ret;
-    AUDIO_INFO_LOG("streamVolume is %{public}f", audioEffectVolume->GetStreamVolume(sessionIDString));
+    AUDIO_INFO_LOG("sessionId: %{public}s, set streamVolume: %{public}f",
+        sessionIDString.c_str(), audioEffectVolume->GetStreamVolume(sessionIDString));
     ret = EffectVolumeUpdateInner(audioEffectVolume);
     return ret;
+}
+
+int32_t AudioEffectChainManager::DeleteStreamVolume(const std::string StringSessionID)
+{
+    // delete streamVolume by sessionId, but don't update volume
+    std::lock_guard<std::mutex> lock(dynamicMutex_);
+    return DeleteStreamVolumeInner(StringSessionID);
+}
+
+int32_t AudioEffectChainManager::DeleteStreamVolumeInner(const std::string StringSessionID)
+{
+    std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    audioEffectVolume->StreamVolumeDelete(StringSessionID);
+    AUDIO_INFO_LOG("delete streamVolume, sessionId: %{public}s", StringSessionID.c_str());
+    return SUCCESS;
 }
 
 int32_t AudioEffectChainManager::SetEffectSystemVolume(const int32_t systemVolumeType, const float systemVolume)
@@ -1788,8 +1805,10 @@ int32_t AudioEffectChainManager::InitEffectBuffer(const std::string &sessionID)
 
 int32_t AudioEffectChainManager::InitEffectBufferInner(const std::string &sessionID)
 {
-    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end()) {
-        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID: %{public}s", sessionID.c_str());
+    if (sessionIDToEffectInfoMap_.find(sessionID) == sessionIDToEffectInfoMap_.end() ||
+        sessionIDToEffectInfoMap_[sessionID].sceneMode == "EFFECT_NONE") {
+        AUDIO_INFO_LOG("sessionIDToEffectInfoMap not find sessionID or sceneMode is EFFECT_NONE: %{public}s",
+            sessionID.c_str());
         return SUCCESS;
     }
     std::string sceneTypeTemp = sessionIDToEffectInfoMap_[sessionID].sceneType;

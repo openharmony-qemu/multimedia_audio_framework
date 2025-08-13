@@ -3196,6 +3196,7 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_001, TestSize.Level1)
     uint8_t buffer[10] = {0};
     size_t bufferLen = 0;
     struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.formatByteSize_ = 1;
     signalDetectAgent.sampleFormat_= SAMPLE_S32LE;
     bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
@@ -3212,6 +3213,7 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_002, TestSize.Level1)
     uint8_t buffer[10] = {2, 3, 2, 3, 2, 3, 2, 3, 2, 3};
     size_t bufferLen = 10 * sizeof(int32_t);
     struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.formatByteSize_ = 1;
     signalDetectAgent.sampleFormat_= SAMPLE_S24LE;
     bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
@@ -3228,6 +3230,7 @@ HWTEST(AudioUtilsUnitTest, CheckAudioData_003, TestSize.Level1)
     uint8_t buffer[10] = {2, 3, 2, 3, 2, 3, 2, 3, 2, 3};
     size_t bufferLen = 10 * sizeof(int32_t);
     struct SignalDetectAgent signalDetectAgent;
+    signalDetectAgent.formatByteSize_ = 1;
     bool ret = signalDetectAgent.CheckAudioData(buffer, bufferLen);
     EXPECT_EQ(ret, false);
 

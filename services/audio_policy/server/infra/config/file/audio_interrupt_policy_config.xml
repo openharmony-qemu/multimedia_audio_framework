@@ -265,7 +265,7 @@
                 <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER" is_forced="true" action_type="STOP" action_on="existing"/>
-                <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="STOP" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_LIVE" is_forced="true" action_type="STOP" action_on="existing"/>
             </private>
         </focus_table>
@@ -932,6 +932,7 @@
                 <focus_type value="SOURCE_TYPE_REMOTE_CAST" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_VOICE_TRANSCRIPTION" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_MIC" is_forced="true" action_type="PLAY" action_on="incoming"/>
+                <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="PLAY" action_on="incoming"/>
                 <focus_type value="SOURCE_TYPE_LIVE" is_forced="true" action_type="PLAY" action_on="incoming"/>
             </shared>
             <private>
@@ -941,7 +942,6 @@
                 <focus_type value="SOURCE_TYPE_VOICE_CALL" is_forced="true" action_type="STOP" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_CAMCORDER" is_forced="true" action_type="PAUSE" action_on="existing"/>
                 <focus_type value="SOURCE_TYPE_VOICE_MESSAGE" is_forced="true" action_type="PAUSE" action_on="existing"/>
-                <focus_type value="SOURCE_TYPE_UNPROCESSED" is_forced="true" action_type="PAUSE" action_on="existing"/>
             </private>
         </focus_table>
     </focus_type>

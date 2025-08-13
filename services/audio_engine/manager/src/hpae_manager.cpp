@@ -2354,6 +2354,22 @@ void HpaeManager::HandleDisConnectCoBufferNode(std::shared_ptr<HpaeCoBufferNode>
     };
     SendRequest(request, __func__);
 }
+
+void HpaeManager::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)
+{
+    auto request = [stringSessionID, streamVolume]() {
+        HpaePolicyManager::GetInstance().AddStreamVolumeToEffect(stringSessionID, streamVolume);
+    };
+    SendRequest(request, __func__);
+}
+
+void HpaeManager::DeleteStreamVolumeToEffect(const std::string stringSessionID)
+{
+    auto request = [stringSessionID]() {
+        HpaePolicyManager::GetInstance().DeleteStreamVolumeToEffect(stringSessionID);
+    };
+    SendRequest(request, __func__);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

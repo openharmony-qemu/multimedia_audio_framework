@@ -260,8 +260,6 @@ void AudioPipeSelector::HandlePipeNotExist(std::vector<std::shared_ptr<AudioPipe
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, pipeInfo);
     pipeInfo.pipeAction_ = PIPE_ACTION_NEW;
     std::shared_ptr<AudioPipeInfo> tempPipeInfo = std::make_shared<AudioPipeInfo>(pipeInfo);
-    tempPipeInfo->streamDescriptors_.push_back(streamDesc);
-    tempPipeInfo->streamDescMap_[streamDesc->sessionId_] = streamDesc;
     newPipeInfoList.push_back(tempPipeInfo);
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u with action %{public}d, "
         "routeFlag %{public}d", tempPipeInfo->ToString().c_str(), streamDesc->sessionId_, streamDesc->streamAction_,

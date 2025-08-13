@@ -29,6 +29,7 @@ public:
     static int32_t GetOfflineAudioEffectChains(std::vector<std::string> &effectChains);
     static std::shared_ptr<OfflineStreamInClient> Create();
 
+    OfflineStreamInClient() = default;
     OfflineStreamInClient(const sptr<IIpcOfflineStream> &ipcProxy);
     ~OfflineStreamInClient() = default;
 

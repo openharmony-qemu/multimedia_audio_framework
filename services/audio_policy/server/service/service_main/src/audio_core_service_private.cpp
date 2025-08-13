@@ -42,6 +42,7 @@ const int32_t DATA_LINK_CONNECTED = 11;
 const uint32_t FIRST_SESSIONID = 100000;
 const uid_t MCU_UID = 7500;
 const uid_t TV_SERVICE_UID = 7501;
+const int32_t AUDIO_EXT_UID = 1041;
 constexpr uint32_t MAX_VALID_SESSIONID = UINT32_MAX - FIRST_SESSIONID;
 static const int VOLUME_LEVEL_DEFAULT_SIZE = 3;
 static const int32_t BLUETOOTH_FETCH_RESULT_DEFAULT = 0;
@@ -1150,8 +1151,6 @@ int32_t AudioCoreService::MoveToRemoteOutputDevice(std::vector<SinkInput> sinkIn
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sinkInputIds.size(); i++) {
@@ -1266,8 +1265,6 @@ int32_t AudioCoreService::MoveToRemoteInputDevice(std::vector<SourceOutput> sour
             return OpenRemoteAudioDevice(networkId, deviceRole, deviceType, remoteDeviceDescriptor);
         }
     }
-    int32_t res = AudioServerProxy::GetInstance().CheckRemoteDeviceStateProxy(networkId, deviceRole, true);
-    CHECK_AND_RETURN_RET_LOG(res == SUCCESS, ERR_OPERATION_FAILED, "remote device state is invalid!");
 
     // start move.
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
@@ -1757,6 +1754,15 @@ int32_t AudioCoreService::GetRealUid(std::shared_ptr<AudioStreamDescriptor> stre
     return streamDesc->callerUid_;
 }
 
+int32_t AudioCoreService::GetRealPid(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+{
+    CHECK_AND_RETURN_RET_LOG(streamDesc != nullptr, -1, "Stream desc is nullptr");
+    if (streamDesc->callerUid_ == MEDIA_SERVICE_UID) {
+        return streamDesc->appInfo_.appPid;
+    }
+    return streamDesc->callerPid_;
+}
+
 void AudioCoreService::UpdateRendererInfoWhenNoPermission(
     const shared_ptr<AudioRendererChangeInfo> &audioRendererChangeInfos, bool hasSystemPermission)
 {
@@ -1857,6 +1863,10 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
     }
     if (!streamDesc->rendererInfo_.isOffloadAllowed) {
         AUDIO_INFO_LOG("normal stream because renderInfo not support offload.");
+        return false;
+    }
+    if (GetRealUid(streamDesc) == AUDIO_EXT_UID) {
+        AUDIO_INFO_LOG("the extra uid not support offload.");
         return false;
     }
     if (streamDesc->streamInfo_.channels > STEREO &&
@@ -2168,8 +2178,8 @@ void AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &str
 
     if (isRingDualToneOnPrimarySpeaker_ && AudioCoreServiceUtils::IsOverRunPlayback(mode, rendererState) &&
         Util::IsRingerOrAlarmerStreamUsage(streamUsage)) {
-        CHECK_AND_RETURN_LOG(!streamCollector_.IsStreamActive(AudioVolumeType::STREAM_RING),
-            "ring still on active, dont over ring dual");
+        CHECK_AND_RETURN_LOG(!AudioCoreServiceUtils::IsAlarmOnActive(streamUsage,
+            streamCollector_.IsStreamActive(AudioVolumeType::STREAM_ALARM)), "alarm still on active");
         AUDIO_INFO_LOG("[ADeviceEvent] disable primary speaker dual tone when ringer renderer run over");
         isRingDualToneOnPrimarySpeaker_ = false;
         // Add delay between end of double ringtone and device switch.
@@ -2638,7 +2648,7 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
     }
     if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK || deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         auto runDeviceActivationFlow = [this, &deviceDesc, &isRunning](auto &&config) -> int32_t {
-            int32_t ret = sleAudioDeviceManager_.SetActiveDevice(deviceDesc->macAddress_, config);
+            int32_t ret = sleAudioDeviceManager_.SetActiveDevice(*deviceDesc, config);
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Activating Nearlink device fails");
             CHECK_AND_RETURN_RET_LOG(isRunning, ret, "Stream is not runningf, no needs start playing");
             return sleAudioDeviceManager_.StartPlaying(*deviceDesc, config);

@@ -25,7 +25,6 @@
 
 namespace OHOS {
 namespace AudioStandard {
-AudioSettingProvider* AudioSettingProvider::instance_;
 std::mutex AudioSettingProvider::mutex_;
 std::atomic<bool> AudioSettingProvider::isDataShareReady_ = false;
 sptr<IRemoteObject> AudioSettingProvider::remoteObj_;
@@ -42,7 +41,6 @@ constexpr int64_t SLEEP_TIME = 1;
 
 AudioSettingProvider::~AudioSettingProvider()
 {
-    instance_ = nullptr;
     remoteObj_ = nullptr;
 }
 
@@ -71,14 +69,12 @@ void AudioSettingObserver::SetUpdateFunc(UpdateFunc &func)
 AudioSettingProvider& AudioSettingProvider::GetInstance(
     int32_t systemAbilityId)
 {
-    if (instance_ == nullptr) {
-        std::lock_guard<std::mutex> lock(mutex_);
-        if (instance_ == nullptr) {
-            Initialize(systemAbilityId);
-            instance_ = new AudioSettingProvider();
-        }
+    static AudioSettingProvider instance_;
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (remoteObj_ == nullptr) {
+        Initialize(systemAbilityId);
     }
-    return *instance_;
+    return instance_;
 }
 
 ErrCode AudioSettingProvider::GetIntValue(const std::string &key, int32_t &value,
@@ -449,9 +445,12 @@ std::shared_ptr<DataShare::DataShareHelper> AudioSettingProvider::CreateDataShar
 {
     CHECK_AND_RETURN_RET_LOG(isDataShareReady_.load(), nullptr,
         "DATA_SHARE_READY not received, create DataShareHelper failed");
-    if (remoteObj_ == nullptr) {
+    {
         std::lock_guard<std::mutex> lock(mutex_);
-        Initialize(AUDIO_POLICY_SERVICE_ID);
+        if (remoteObj_ == nullptr) {
+            AUDIO_WARNING_LOG("remoteObj_ is nullptr");
+            Initialize(AUDIO_POLICY_SERVICE_ID);
+        }
     }
 #ifdef SUPPORT_USER_ACCOUNT
     int32_t currentuserId = GetCurrentUserId(userId);

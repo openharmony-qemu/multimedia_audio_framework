@@ -868,6 +868,7 @@ ohos_unittest("hpae_plugins_unit_test") {
     "plugin/channel_converter/down_mixer_test.cpp",
     "plugin/channel_converter/channel_converter_test.cpp",
     "plugin/proresampler/audio_proresampler_test.cpp",
+    "plugin/proresampler/audio_proresampler_process_test.cpp",
   ]
 
   configs = [ ":audio_engine_private_config" ]
