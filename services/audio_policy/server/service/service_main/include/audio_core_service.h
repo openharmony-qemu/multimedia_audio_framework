@@ -482,6 +482,10 @@ private:
     // for collaboration
     void UpdateRouteForCollaboration(InternalDeviceType deviceType);
     int32_t CheckAndUpdateHearingAidCall(const DeviceType deviceType);
+    void CheckModuleForHearingAid(const DeviceType deviceType);
+    void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
+    void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
