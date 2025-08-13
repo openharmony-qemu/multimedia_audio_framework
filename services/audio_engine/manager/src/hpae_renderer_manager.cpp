@@ -258,6 +258,7 @@ int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
+            CHECK_AND_RETURN_LOG(it.second != nullptr, "sinkInputNode is nullptr");
             HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
             std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
             int32_t processClusterDecision =
