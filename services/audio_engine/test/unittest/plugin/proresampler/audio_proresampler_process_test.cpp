@@ -57,7 +57,7 @@ HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_01, 
  * @tc.type  : FUNC
  * @tc.number: SingleStagePolyphaseResamplerSetRate_02
  * @tc.desc  : Test SingleStagePolyphaseResamplerSetRate, set decimateFactor is
- *             0 and interpolateFactor is 0.
+ *             0 and interpolateFactor is 2.
  */
 HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_02, TestSize.Level0)
 {
@@ -73,9 +73,9 @@ HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_02, 
  * @tc.type  : FUNC
  * @tc.number: SingleStagePolyphaseResamplerSetRate_03
  * @tc.desc  : Test SingleStagePolyphaseResamplerSetRate, set decimateFactor is
- *             0 and interpolateFactor is 0.
+ *             2 and interpolateFactor is 0.
  */
-HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_04, TestSize.Level0)
+HWTEST_F(AudioProResamplerProcessTest, SingleStagePolyphaseResamplerSetRate_03, TestSize.Level0)
 {
     SingleStagePolyphaseResamplerState state;
     uint32_t decimateFactor = 2;
