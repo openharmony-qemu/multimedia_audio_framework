@@ -1751,10 +1751,10 @@ HWTEST(IpcStreamInServerUnitTest, start_001, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
  
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.Start();
-    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+    EXPECT_NE(ret, ERR_OPERATION_FAILED);
 }
  
 /**
