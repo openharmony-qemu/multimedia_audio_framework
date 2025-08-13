@@ -1734,7 +1734,8 @@ HWTEST(IpcStreamInServerUnitTest, GetAudioSessionID_002, TestSize.Level3)
  
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
-    ipcStreamInServerRet.capturerInServer_ = nullptr;
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.GetAudioSessionID(sessionId);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
 }
