@@ -59,13 +59,15 @@ static std::unordered_map<SourceType, HpaeProcessorType> g_sourceTypeToSceneType
     {SOURCE_TYPE_VOICE_CALL, HPAE_SCENE_VOIP_UP},
     {SOURCE_TYPE_VOICE_COMMUNICATION, HPAE_SCENE_VOIP_UP},
     {SOURCE_TYPE_VOICE_TRANSCRIPTION, HPAE_SCENE_PRE_ENHANCE},
-    {SOURCE_TYPE_VOICE_MESSAGE, HPAE_SCENE_VOICE_MESSAGE}
+    {SOURCE_TYPE_VOICE_MESSAGE, HPAE_SCENE_VOICE_MESSAGE},
++    {SOURCE_TYPE_VOICE_RECOGNITION, HPAE_SCENE_RECOGNITION},
 };
 
 
 static std::unordered_set<HpaeProcessorType> g_processorTypeNeedEcSet = {
     HPAE_SCENE_VOIP_UP,
     HPAE_SCENE_PRE_ENHANCE,
+    HPAE_SCENE_RECOGNITION,
 };
 
 static std::unordered_set<HpaeProcessorType> g_processorTypeNeedMicRefSet = {
@@ -77,7 +79,8 @@ static std::unordered_map<HpaeProcessorType, AudioEnhanceScene> g_processorTypeT
     {HPAE_SCENE_RECORD, SCENE_RECORD},
     {HPAE_SCENE_VOIP_UP, SCENE_VOIP_UP},
     {HPAE_SCENE_PRE_ENHANCE, SCENE_PRE_ENHANCE},
-    {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE}
+    {HPAE_SCENE_VOICE_MESSAGE, SCENE_VOICE_MESSAGE},
+    {HPAE_SCENE_RECOGNITION, SCENE_RECOGNITION},
 };
 
 static std::unordered_map<HpaeSessionState, std::string> g_sessionStateToStrMap = {

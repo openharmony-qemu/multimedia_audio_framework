@@ -45,6 +45,7 @@ const std::unordered_map<AudioEnhanceScene, std::string>& GetEnhanceSupportedSce
         {SCENE_ASR, "SCENE_ASR"},
         {SCENE_PRE_ENHANCE, "SCENE_PRE_ENHANCE"},
         {SCENE_VOICE_MESSAGE, "SCENE_VOICE_MESSAGE"},
+        {SCENE_RECOGNITION, "SCENE_RECOGNITION"},
     };
     return audioEnhanceSupportedSceneTypes;
 }
