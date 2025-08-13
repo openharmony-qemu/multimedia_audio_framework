@@ -22,9 +22,11 @@
 #include "message_parcel.h"
 #include "pulseaudio_ipc_interface_code.h"
 #include "audio_service_types.h"
+#include "../fuzz_utils.h"
 using namespace std;
 namespace OHOS {
 namespace AudioStandard {
+FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
 constexpr int32_t OFFSET = 4;
 const std::u16string FORMMGR_INTERFACE_TOKEN = u"OHOS.AudioStandard.IAudioPolicy";
 const int32_t SYSTEM_ABILITY_ID = 3001;
@@ -1527,6 +1529,14 @@ void AudioServerHandleCheckRecorderBackgroundCaptureFuzzTest(const uint8_t *rawD
         return;
     }
     AudioProcessConfig config;
+    config.callerUid = g_fuzzUtils.GetData<int32_t>();
+    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    config.appInfo.appTokenId = g_fuzzUtils.GetData<uint32_t>();
+    config.appInfo.appFullTokenId = g_fuzzUtils.GetData<uint64_t>();
+    config.originalSessionId = g_fuzzUtils.GetData<uint32_t>();
+    config.appInfo.appUid = g_fuzzUtils.GetData<int32_t>();
+    config.appInfo.appPid = g_fuzzUtils.GetData<int32_t>();
+
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->HandleCheckRecorderBackgroundCapture(config);
 }
@@ -1845,6 +1855,160 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
 
+void AudioServerResetRecordConfigSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    audioServerPtr->ResetRecordConfig(config);
+}
+
+void AudioServerResetProcessConfigCallerUidFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.callerUid = g_fuzzUtils.GetData<int32_t>();
+    audioServerPtr->ResetProcessConfig(config);
+}
+
+void AudioServerCheckStreamInfoFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.streamInfo.format = g_fuzzUtils.GetData<AudioSampleFormat>();
+    config.streamInfo.encoding = g_fuzzUtils.GetData<AudioEncodingType>();
+    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
+    config.streamInfo.channels = g_fuzzUtils.GetData<AudioChannel>();
+    audioServerPtr->CheckStreamInfoFormat(config);
+}
+
+void AudioServerCheckRendererFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    audioServerPtr->CheckRendererFormat(config);
+}
+
+void AudioServerCheckRecorderFormatNotContainFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    config.capturerInfo.capturerFlags = g_fuzzUtils.GetData<int32_t>();
+    audioServerPtr->CheckRecorderFormat(config);
+}
+
+void AudioServerCreateAudioProcessInnerAudioModeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    int32_t errorCode = g_fuzzUtils.GetData<int32_t>();
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
+    config.rendererInfo.streamUsage = g_fuzzUtils.GetData<StreamUsage>();
+    audioServerPtr->CreateAudioProcessInner(config, errorCode, filterConfig);
+}
+
+#ifdef HAS_FEATURE_INNERCAPTURER
+void AudioServerHandleCheckCaptureLimitFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    audioServerPtr->HandleCheckCaptureLimit(config, filterConfig);
+}
+
+void AudioServerInnerCheckCaptureLimitFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioPlaybackCaptureConfig filterConfig = AudioPlaybackCaptureConfig();
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    int32_t innerCapId = g_fuzzUtils.GetData<int32_t>();
+    audioServerPtr->InnerCheckCaptureLimit(filterConfig, innerCapId);
+}
+#endif
+
+void AudioServerIsNormalIpcStreamFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.audioMode = g_fuzzUtils.GetData<AudioMode>();
+    audioServerPtr->IsNormalIpcStream(config);
+}
+
+void AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    bool isStartDevice = g_fuzzUtils.GetData<bool>();
+    int32_t deviceRole = g_fuzzUtils.GetData<int32_t>();
+    audioServerPtr->CheckRemoteDeviceState("LocalDevice", deviceRole, isStartDevice);
+}
+
+void AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    AudioProcessConfig config;
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    config.capturerInfo.sourceType = g_fuzzUtils.GetData<SourceType>();
+    audioServerPtr->CheckInnerRecorderPermission(config);
+}
+
+void AudioServerSetRenderWhitelistFuzzTest(const uint8_t *rawData, size_t size)
+{
+    if (rawData == nullptr || size < LIMITSIZE) {
+        return;
+    }
+    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
+    CHECK_AND_RETURN(audioServerPtr != nullptr);
+    std::vector<std::string> list;
+    list.push_back(g_fuzzUtils.GetData<std::string>());
+    audioServerPtr->SetRenderWhitelist(list);
+}
+
 } // namespace AudioStandard
 } // namesapce OHOS
 
@@ -1967,7 +2131,21 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerForceStopAudioStreamFuzzTest,
     OHOS::AudioStandard::AudioServerStartGroupFuzzTest,
     OHOS::AudioStandard::AudioServerStopGroupFuzzTest,
-    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest
+    OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest,
+    OHOS::AudioStandard::AudioServerResetRecordConfigSourceTypeFuzzTest,
+    OHOS::AudioStandard::AudioServerResetProcessConfigCallerUidFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckStreamInfoFormatNotContainFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckRendererFormatNotContainFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckRecorderFormatNotContainFuzzTest,
+    OHOS::AudioStandard::AudioServerCreateAudioProcessInnerAudioModeFuzzTest,
+#ifdef HAS_FEATURE_INNERCAPTURER
+    OHOS::AudioStandard::AudioServerHandleCheckCaptureLimitFuzzTest,
+    OHOS::AudioStandard::AudioServerInnerCheckCaptureLimitFuzzTest,
+#endif
+    OHOS::AudioStandard::AudioServerIsNormalIpcStreamFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckRemoteDeviceStateSwitchCaseFuzzTest,
+    OHOS::AudioStandard::AudioServerCheckInnerRecorderPermissionSourceTypeFuzzTest,
+    OHOS::AudioStandard::AudioServerSetRenderWhitelistFuzzTest,
 };
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
