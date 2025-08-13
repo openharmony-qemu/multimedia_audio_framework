@@ -597,5 +597,94 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_030, TestSize.Level1)
     unit->OnDeviceClassChange(info);
     EXPECT_GT(unit->lastHdiFramePosition_, 10000);
 }
+
+/**
+ * @tc.name  : Test OnDeviceClassChange.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_031
+ * @tc.desc  : Test OnDeviceClassChange.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_031, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000
+    };
+    unit->deviceClass_ = "remote_offload";
+    unit->OnDeviceClassChange(info);
+    EXPECT_EQ(0, unit->lastHdiFramePosition_);
+    EXPECT_EQ(0, unit->lastFramePosition_);
+}
+ 
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_032
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_032, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+        .needData = false
+    };
+    unit->isCallbackMode_ = false;
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+}
+ 
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_033
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_033, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+        .needData = true,
+        .requestDataLen = 0,
+    };
+    unit->isCallbackMode_ = false;
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+}
+ 
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_034
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+        .needData = true,
+        .requestDataLen = 0,
+    };
+    unit->offloadEnable_ = true;
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+}
 }
 }
