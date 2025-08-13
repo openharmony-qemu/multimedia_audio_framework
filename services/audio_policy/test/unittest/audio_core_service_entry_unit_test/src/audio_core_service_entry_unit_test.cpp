@@ -867,7 +867,6 @@ HWTEST(AudioCoreServiceEntryTest, AudioCoreService_040, TestSize.Level1)
     EXPECT_NE(temp->a2dpOffloadFlag_, A2DP_OFFLOAD);
 }
 
-
 /**
  * @tc.name  : Test FetchOutputDeviceAndRoute.
  * @tc.number: FetchOutputDeviceAndRoute_041

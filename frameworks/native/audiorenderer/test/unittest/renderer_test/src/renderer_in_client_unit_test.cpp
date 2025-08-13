@@ -1689,14 +1689,6 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     ptrRendererInClientInner->offloadEnable_ = true;
     ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
-    ptrRendererInClientInner->NotifyOffloadSpeed();
-    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-    ptrRendererInClientInner->NotifyOffloadSpeed();
-
-    ptrRendererInClientInner->isHdiSpeed_ = false;
-    ptrRendererInClientInner->offloadEnable_ = true;
-    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
-    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
     ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
     ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
     ptrRendererInClientInner->NotifyRouteUpdate(AUDIO_OUTPUT_FLAG_LOWPOWER, LOCAL_NETWORK_ID);
@@ -1711,14 +1703,6 @@ HWTEST(RendererInClientInnerUnitTest, SetSpeed_001, TestSize.Level0)
     EXPECT_EQ(ret, SUCCESS);
     speed = ptrRendererInClientInner->GetSpeed();
     EXPECT_EQ(speed, 2.5f);
-
-    ptrRendererInClientInner->isHdiSpeed_ = false;
-    ptrRendererInClientInner->offloadEnable_ = true;
-    ptrRendererInClientInner->eStreamType_ = STREAM_MOVIE;
-    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_PCM_OFFLOAD;
-    ptrRendererInClientInner->NotifyOffloadSpeed();
-    ptrRendererInClientInner->rendererInfo_.originalFlag = AUDIO_FLAG_NORMAL;
-    ptrRendererInClientInner->NotifyOffloadSpeed();
 
     ptrRendererInClientInner->isHdiSpeed_ = false;
     ptrRendererInClientInner->offloadEnable_ = true;

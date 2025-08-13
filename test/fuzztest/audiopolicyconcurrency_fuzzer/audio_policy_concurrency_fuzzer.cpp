@@ -29,6 +29,9 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 #include "access_token.h"
+#include "i_hpae_manager.h"
+#include "manager/hdi_adapter_manager.h"
+#include "util/id_handler.h"
 using namespace std;
 
 namespace OHOS {
@@ -47,6 +50,9 @@ sptr<AudioPolicyServer> GetServerPtr()
 {
     static sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     if (!g_hasServerInit && server != nullptr) {
+        IdHandler::GetInstance();
+        HdiAdapterManager::GetInstance();
+        HPAE::IHpaeManager::GetHpaeManager().Init();
         server->OnStart();
         server->OnAddSystemAbility(AUDIO_DISTRIBUTED_SERVICE_ID, "");
 #ifdef FEATURE_MULTIMODALINPUT_INPUT

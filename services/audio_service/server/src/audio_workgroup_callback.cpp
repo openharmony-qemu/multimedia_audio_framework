@@ -34,9 +34,9 @@ AudioWorkgroupCallback::~AudioWorkgroupCallback()
 void AudioWorkgroupCallback::OnWorkgroupChange(const AudioWorkgroupChangeInfo &info)
 {
     if (listener_ != nullptr) {
-        AudioWorkgroupChangeInfoIpc infoIpc;
-        infoIpc.changeInfo = info;
-        listener_->OnWorkgroupChange(infoIpc);
+        AudioWorkgroupChangeInfoIpc ipcInfo = {};
+        ipcInfo.changeInfo = info;
+        listener_->OnWorkgroupChange(ipcInfo);
     }
 }
 } // namespace AudioStandard

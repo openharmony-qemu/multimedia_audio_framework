@@ -234,6 +234,15 @@ uint32_t AudioPolicyConfigData::GetDynamicStreamPropsSize(const std::string adap
     return pipeInfo->dynamicStreamPropInfos_.size();
 }
 
+PolicyAdapterInfo::PolicyAdapterInfo()
+{
+    AUDIO_INFO_LOG("in");
+}
+PolicyAdapterInfo::~PolicyAdapterInfo()
+{
+    AUDIO_INFO_LOG("in");
+}
+
 AudioAdapterType PolicyAdapterInfo::GetTypeEnum()
 {
     return GetAdapterType(adapterName);

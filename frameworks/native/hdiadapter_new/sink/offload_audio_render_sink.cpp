@@ -833,8 +833,8 @@ void OffloadAudioRenderSink::SetSpeed(float speed)
     HdiAdapterManager &manager = HdiAdapterManager::GetInstance();
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_LOG(deviceManager != nullptr, "deviceManager is nullptr");
-    std::string parameters = "pcm_offload_player_speed=" + std::to_string(hdiSpeed) + ";";
-    deviceManager->SetAudioParameter(attr_.adapterName, NONE, "", parameters);
+    std::string parameters = "pcm_offload_play_speed=" + std::to_string(hdiSpeed) + ";";
+    deviceManager->SetAudioParameter(attr_.adapterName, NONE, "pcm_offload_play_speed", parameters);
 }
 } // namespace AudioStandard
 } // namespace OHOS

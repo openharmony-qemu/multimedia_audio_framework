@@ -282,8 +282,6 @@ private:
 
     int32_t SetSpeedInner(float speed);
 
-    void NotifyOffloadSpeed();
-
     void WaitForBufferNeedWrite();
 
     void UpdatePauseReadIndex();

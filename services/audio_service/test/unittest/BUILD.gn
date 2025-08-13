@@ -331,6 +331,7 @@ ohos_unittest("audio_service_unit_test") {
     "access_token:libprivacy_sdk",
     "c_utils:utils",
     "googletest:gtest",
+    "googletest:gmock",
     "hilog:libhilog",
     "qos_manager:concurrent_task_client",
     "safwk:system_ability_fwk",

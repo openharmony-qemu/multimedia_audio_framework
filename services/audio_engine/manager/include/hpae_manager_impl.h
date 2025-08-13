@@ -137,6 +137,8 @@ public:
     bool GetEffectLiveParameter(const std::vector<std::string> &subKeys,
         std::vector<std::pair<std::string, std::string>> &result) override;
     int32_t UpdateCollaborativeState(bool isCollaborationEnabled) override;
+    void AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume) override;
+    void DeleteStreamVolumeToEffect(const std::string stringSessionID) override;
 private:
     std::shared_ptr<HpaeManager> manager_;
 };

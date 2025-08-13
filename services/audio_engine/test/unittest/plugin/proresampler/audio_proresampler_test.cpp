@@ -169,7 +169,7 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_01, TestSize.Level0)
  * @tc.name  : Test ErrCodeToString API.
  * @tc.type  : FUNC
  * @tc.number: ErrCodeToString_02.
- * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_SUCCESS.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_ALLOC_FAILED.
  */
 HWTEST_F(AudioProResamplerTest, ErrCodeToString_02, TestSize.Level0)
 {
@@ -183,7 +183,7 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_02, TestSize.Level0)
  * @tc.name  : Test ErrCodeToString API.
  * @tc.type  : FUNC
  * @tc.number: ErrCodeToString_03.
- * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_SUCCESS.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_OVERFLOW.
  */
 HWTEST_F(AudioProResamplerTest, ErrCodeToString_03, TestSize.Level0)
 {
@@ -197,7 +197,7 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_03, TestSize.Level0)
  * @tc.name  : Test ErrCodeToString API.
  * @tc.type  : FUNC
  * @tc.number: ErrCodeToString_04.
- * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_SUCCESS.
+ * @tc.desc  : Test ErrCodeToString, set errCode is 7.
  */
 HWTEST_F(AudioProResamplerTest, ErrCodeToString_04, TestSize.Level0)
 {
@@ -211,7 +211,7 @@ HWTEST_F(AudioProResamplerTest, ErrCodeToString_04, TestSize.Level0)
  * @tc.name  : Test ErrCodeToString API.
  * @tc.type  : FUNC
  * @tc.number: ErrCodeToString_05.
- * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_SUCCESS.
+ * @tc.desc  : Test ErrCodeToString, set errCode is RESAMPLER_ERR_INVALID_ARG.
  */
 HWTEST_F(AudioProResamplerTest, ErrCodeToString_05, TestSize.Level0)
 {

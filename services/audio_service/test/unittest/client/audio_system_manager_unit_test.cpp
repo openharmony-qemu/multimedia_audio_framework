@@ -46,6 +46,7 @@ public:
 class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override {}
 };
 
 class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {
@@ -1604,6 +1605,95 @@ HWTEST(AudioSystemManagerUnitTest, GetVolume_002, TestSize.Level4)
     AudioSystemManager audioSystemManager;
     AudioVolumeType volumeType = STREAM_ULTRASONIC;
     EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name   : Test IsDeviceActive API
+ * @tc.number : IsDeviceActive_003
+ * @tc.desc   : Test IsDeviceActive interface
+ */
+HWTEST(AudioSystemManagerUnitTest, IsDeviceActive_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    int result = audioSystemManager.IsDeviceActive(DeviceType::DEVICE_TYPE_NONE);
+    EXPECT_EQ(result, true);
+}
+
+/**
+ * @tc.name   : Test GetVolume API
+ * @tc.number : GetVolume_003
+ * @tc.desc   : Test GetVolume interface
+ */
+HWTEST(AudioSystemManagerUnitTest, GetVolume_003, TestSize.Level4)
+{
+    AudioSystemManager audioSystemManager;
+    AudioVolumeType volumeType = STREAM_ALL;
+    EXPECT_NE(audioSystemManager.GetVolume(volumeType), ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_001
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_001, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_FILE_SINK,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
+}
+
+/**
+ * @tc.name  : Test GetPinValueForPeripherals API
+ * @tc.type  : FUNC
+ * @tc.number: GetPinValueForPeripherals_002
+ * @tc.desc  : Test GetPinValueForPeripherals interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetPinValueForPeripherals_002, TestSize.Level4)
+{
+    AudioPin pinValue = AudioSystemManager::GetInstance()->GetPinValueForPeripherals(DEVICE_TYPE_ACCESSORY,
+        OUTPUT_DEVICE, DM_DEVICE_TYPE_UWB);
+    EXPECT_EQ(pinValue, AUDIO_PIN_NONE);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_001
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_001, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(AUDIO_PIN_OUT_HEADSET);
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name  : Test GetTypeValueFromPin API
+ * @tc.type  : FUNC
+ * @tc.number: GetTypeValueFromPin_002
+ * @tc.desc  : Test GetTypeValueFromPin interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetTypeValueFromPin_002, TestSize.Level4)
+{
+    DeviceType deviceValue = AudioSystemManager::GetInstance()->GetTypeValueFromPin(static_cast<AudioPin>(1000));
+    EXPECT_EQ(deviceValue, DEVICE_TYPE_NONE);
+}
+
+/**
+ * @tc.name   : Test IsValidToStartGroup API
+ * @tc.number : IsValidToStartGroup_002
+ * @tc.desc   : Test IsValidToStartGroup interface createAudioWorkgroup
+ */
+HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
+{
+    int workgroupId = 1;
+
+    AudioSystemManager audioSystemManager;
+    audioSystemManager.hasSystemPermission_ = false;
+    bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
+    EXPECT_FALSE(result);
 }
 } // namespace AudioStandard
 } // namespace OHOS

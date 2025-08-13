@@ -47,6 +47,18 @@ void AudioVolumeManagerUnitTest::TearDown(void)
 
 /**
 * @tc.name  : Test AudioVolumeManager.
+* @tc.number: GetAllDeviceVolumeInfo_001
+* @tc.desc  : Test GetAllDeviceVolumeInfo interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetAllDeviceVolumeInfo_001, TestSize.Level1)
+{
+    AudioVolumeManager audioVolumeManager;
+    std::vector<std::shared_ptr<AllDeviceVolumeInfo>> allDeviceVolumeInfo = audioVolumeManager.GetAllDeviceVolumeInfo();
+    EXPECT_EQ(allDeviceVolumeInfo.size(), 0);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
 * @tc.number: AudioVolumeManager_002
 * @tc.desc  : Test InitSharedVolume interface.
 */
@@ -342,6 +354,25 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_015, TestSize.Level1)
     audioVolumeManager.UpdateSafeVolumeByS4();
     audioVolumeManager.audioPolicyManager_.SetVolumeForSwitchDevice(audioDeviceDescriptor);
     EXPECT_EQ(audioVolumeManager.isBtFirstBoot_, true);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: GetSystemVolumeLevel_001
+* @tc.desc  : Test GetSystemVolumeLevel interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, GetSystemVolumeLevel_001, TestSize.Level1)
+{
+    AudioStreamType streamType = STREAM_NOTIFICATION;
+    int32_t safeVolume = 0;
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+
+    audioVolumeManager.RestoreSafeVolume(streamType, safeVolume);
+    EXPECT_EQ(audioVolumeManager.GetSystemVolumeLevel(streamType), 0);
+
+    safeVolume = -1;
+    audioVolumeManager.RestoreSafeVolume(streamType, safeVolume);
+    EXPECT_EQ(audioVolumeManager.GetSystemVolumeLevel(streamType), 0);
 }
 
 /**

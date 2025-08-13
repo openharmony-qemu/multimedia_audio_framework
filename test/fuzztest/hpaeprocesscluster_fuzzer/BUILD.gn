@@ -16,7 +16,7 @@ import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../config.gni")
 
-ohos_fuzztest("HpaeProcessCluster") {
+ohos_fuzztest("HpaeProcessClusterFuzzTest") {
   module_out_path = "audio_framework/audio_framework_route"
   fuzz_config_file = "../hpaeprocesscluster_fuzzer"
 
@@ -96,5 +96,5 @@ defines = []
 
 group("fuzztest") {
   testonly = true
-  deps = [ ":HpaeProcessCluster" ]
+  deps = [ ":HpaeProcessClusterFuzzTest" ]
 }

@@ -362,7 +362,7 @@ StreamUsage AudioSession::GetStreamUsageInner()
         return it->second;
     }
 
-    return StreamUsage::STREAM_USAGE_UNKNOWN;
+    return StreamUsage::STREAM_USAGE_INVALID;
 }
 
 AudioSessionStrategy AudioSession::GetSessionStrategy()

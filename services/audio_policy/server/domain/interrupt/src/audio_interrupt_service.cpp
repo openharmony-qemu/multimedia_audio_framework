@@ -188,6 +188,7 @@ int32_t AudioInterruptService::GetAudioSessionZoneidByPid(const int32_t pid)
             }
         }
     }
+    AUDIO_ERR_LOG("get audio session zoneid by pid failed!");
     return ZONEID_INVALID;
 }
 

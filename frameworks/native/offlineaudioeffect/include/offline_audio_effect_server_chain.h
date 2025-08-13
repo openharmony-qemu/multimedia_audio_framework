@@ -21,6 +21,15 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <algorithm>
+#include <chrono>
+#include <cinttypes>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <string>
+#include <unistd.h>
+#include "securec.h"
 
 #include "v1_0/effect_types.h"
 #include "v1_0/ieffect_control.h"

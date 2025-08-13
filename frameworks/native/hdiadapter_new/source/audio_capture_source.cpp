@@ -627,7 +627,7 @@ AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceTy
 enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType)
 {
     AudioInputType hdiSource = MappingAudioInputType(hdiSourceType);
-    if (hdiSource!= AUDIO_INPUT_DEFAULT_TYPE) {
+    if (hdiSource != AUDIO_INPUT_DEFAULT_TYPE) {
         return hdiSource;
     }
 
@@ -645,8 +645,6 @@ enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourc
             hdiAudioInputType = AUDIO_INPUT_SPEECH_WAKEUP_TYPE;
             break;
         case SOURCE_TYPE_VOICE_TRANSCRIPTION:
-            hdiAudioInputType = AUDIO_INPUT_VOICE_TRANSCRIPTION;
-            break;
         case SOURCE_TYPE_VOICE_COMMUNICATION:
             hdiAudioInputType = AUDIO_INPUT_VOICE_COMMUNICATION_TYPE;
             break;

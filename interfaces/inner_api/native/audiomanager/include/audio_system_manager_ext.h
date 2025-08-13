@@ -360,6 +360,8 @@ public:
     virtual ~AudioRendererDataTransferStateChangeCallback() = default;
 
     virtual void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) = 0;
+
+    virtual void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) = 0;
 };
 
 class AudioWorkgroupChangeCallback {

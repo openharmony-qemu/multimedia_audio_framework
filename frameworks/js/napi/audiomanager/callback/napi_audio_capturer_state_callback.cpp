@@ -156,14 +156,8 @@ void NapiAudioCapturerStateCallback::CapturerStateTsfnFinalize(napi_env env, voi
     AUDIO_INFO_LOG("CapturerStateTsfnFinalize: safe thread resource release.");
 }
 
-
 void NapiAudioCapturerStateCallback::OnJsCallbackCapturerState(std::unique_ptr<AudioCapturerStateJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
-        return;
-    }
-
     AudioCapturerStateJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
     

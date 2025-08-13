@@ -176,7 +176,7 @@ void NapiAudioCapturerCallback::InterruptTsfnFinalize(napi_env env, void *data, 
 void NapiAudioCapturerCallback::OnJsCallbackInterrupt(std::unique_ptr<AudioCapturerJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackInterrupt: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallBackInterrupt: jsCb.get() is null");
         return;
     }
 
