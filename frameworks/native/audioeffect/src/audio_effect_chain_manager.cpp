@@ -571,7 +571,7 @@ int32_t AudioEffectChainManager::DeleteStreamVolume(const std::string StringSess
 int32_t AudioEffectChainManager::DeleteStreamVolumeInner(const std::string StringSessionID)
 {
     std::shared_ptr<AudioEffectVolume> audioEffectVolume = AudioEffectVolume::GetInstance();
-    CHECK_AND_RETURN_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
+    CHECK_AND_RETURN_RET_LOG(audioEffectVolume != nullptr, ERROR, "null audioEffectVolume");
     audioEffectVolume->StreamVolumeDelete(StringSessionID);
     AUDIO_INFO_LOG("delete streamVolume, sessionId: %{public}s", StringSessionID.c_str());
     return SUCCESS;

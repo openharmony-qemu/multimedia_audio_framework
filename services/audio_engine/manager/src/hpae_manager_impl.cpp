@@ -580,13 +580,13 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
 void HpaeManagerImpl::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    return manager_->AddStreamVolumeToEffect(stringSessionID, streamVolume);
+    manager_->AddStreamVolumeToEffect(stringSessionID, streamVolume);
 }
 
 void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSessionID)
 {
     CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
-    return manager_->DeleteStreamVolumeToEffect(stringSessionID);
+    manager_->DeleteStreamVolumeToEffect(stringSessionID);
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
