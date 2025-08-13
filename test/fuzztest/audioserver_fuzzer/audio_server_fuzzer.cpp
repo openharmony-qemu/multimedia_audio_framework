@@ -1215,7 +1215,15 @@ void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
+    const vector<string> testPairs = {
+        "OPEN",
+        "CLOSE",
+        "UPLOAD",
+        "test"
+    };
+    string pairTest = testPairs[static_cast<uint32_t>(size) % testPairs.size()];
     std::vector<std::pair<std::string, std::string>> params;
+    params.push_back(make_pair(pairTest, "test_value"));
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetPcmDumpParameter(params);
 }
