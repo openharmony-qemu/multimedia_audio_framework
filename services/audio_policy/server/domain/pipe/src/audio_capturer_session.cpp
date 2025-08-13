@@ -219,6 +219,7 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
 {
     std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
     bool hasSession = false;
+    CHECK_AND_RETURN_RET_LOG(AudioPipeManager::GetPipeManager(), ERROR, "PipeManager is nullptr");
     auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
     if (pipes.empty()) {
         AUDIO_ERR_LOG("pipes invalid");
