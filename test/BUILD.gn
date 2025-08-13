@@ -288,6 +288,7 @@ group("audio_fuzz_test") {
     "fuzztest/formatconverter_fuzzer:fuzztest",
     "fuzztest/futextool_fuzzer:fuzztest",
     "fuzztest/hapeaudioformatconverternode_fuzzer:fuzztest",
+    "fuzztest/hapedownmixer_fuzzer:fuzztest",
     "fuzztest/hpaecaptureeffectnode_fuzzer:fuzztest",
     "fuzztest/hpaecapturermanager_fuzzer:fuzztest",
     "fuzztest/hpaecapturerstreamimpl_fuzzer:fuzztest",
