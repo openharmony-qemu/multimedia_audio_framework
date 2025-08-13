@@ -46,6 +46,7 @@ public:
 class DataTransferStateChangeCallbackTest : public AudioRendererDataTransferStateChangeCallback {
 public:
     void OnDataTransferStateChange(const AudioRendererDataTransferStateChangeInfo &info) override {}
+    void OnMuteStateChange(const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override {}
 };
 
 class SystemVolumeChangeCallbackTest : public SystemVolumeChangeCallback {

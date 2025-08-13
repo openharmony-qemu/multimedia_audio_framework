@@ -38,6 +38,7 @@
 #include "res_sched_client.h"
 #endif
 #include "audio_volume.h"
+#include "audio_stream_monitor.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -1404,6 +1405,7 @@ AudioEndpointInner::VolumeResult AudioEndpointInner::CalculateVolume(size_t i)
     result.muteFlag = processList_[i]->GetMuteState();
     result.volumeEnd = volumeFromOhaudioBuffer;
     result.volumeHap = result.muteFlag ? 0 : volumeFromOhaudioBuffer;
+    AudioStreamMonitor::GetInstance().UpdateMonitorVolume(processList_[i]->GetAudioSessionId(), result.volumeStart);
 
     return result;
 }

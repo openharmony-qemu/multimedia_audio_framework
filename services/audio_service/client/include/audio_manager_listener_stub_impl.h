@@ -32,6 +32,7 @@ public:
     int32_t OnWakeupClose() override;
     int32_t OnDataTransferStateChange(int32_t callbackId,
         const AudioRendererDataTransferStateChangeInfo &info) override;
+    int32_t OnMuteStateChange(int32_t callbackId, int32_t uid, uint32_t sessionId, bool isMuted) override;
 
     void SetParameterCallback(const std::weak_ptr<AudioParameterCallback>& callback);
     void SetWakeupSourceCallback(const std::weak_ptr<WakeUpSourceCallback>& callback);

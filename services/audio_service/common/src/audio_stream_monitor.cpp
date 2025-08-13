@@ -100,9 +100,21 @@ void AudioStreamMonitor::OnCallback(int32_t pid, int32_t callbackId,
     if (audioServer_ == nullptr) {
         return;
     }
-    AUDIO_INFO_LOG("Stream callback, pid = %{public}d, callbackid = %{public}d, type = %{public}d",
-        pid, callbackId, info.stateChangeType);
+    AUDIO_INFO_LOG("pid = %{public}d, callbackid = %{public}d, sessionId = %{public}d, type = %{public}d",
+        pid, callbackId, info.sessionId, info.stateChangeType);
     audioServer_->OnDataTransferStateChange(pid, callbackId, info);
+}
+
+void AudioStreamMonitor::OnMuteCallback(const int32_t &pid, const int32_t &callbackId,
+    const int32_t &uid, const uint32_t &sessionId, const bool &isMuted)
+{
+    std::lock_guard<std::mutex> lock(regStatusMutex_);
+    if (audioServer_ == nullptr) {
+        return;
+    }
+    AUDIO_INFO_LOG("pid = %{public}d, uid = %{public}d, sessionId = %{public}d, isMuted = %{public}d",
+        pid, uid, sessionId, isMuted);
+    audioServer_->OnMuteStateChange(pid, callbackId, uid, sessionId, isMuted);
 }
 
 void AudioStreamMonitor::SetAudioServerPtr(DataTransferStateChangeCallbackForMonitor *ptr)
@@ -173,6 +185,15 @@ void AudioStreamMonitor::NotifyAppStateChange(const int32_t uid, bool isBackgrou
             iter->second->UpdateAppState(isBackground);
         }
         iter++;
+    }
+}
+
+void AudioStreamMonitor::UpdateMonitorVolume(const uint32_t &sessionId, const float &volume)
+{
+    std::lock_guard<std::mutex> lock(regStatusMutex_);
+    auto iter = audioStreamCheckers_.find(sessionId);
+    if (iter != audioStreamCheckers_.end()) {
+        iter->second->SetVolume(volume);
     }
 }
 }
