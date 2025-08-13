@@ -1135,4 +1135,44 @@ HWTEST_F(HpaeRendererManagerTest, RefreshProcessClusrerByDevice_004, TestSize.Le
     int32_t ret = hpaeRendererManager->RefreshProcessClusrerByDevice();
     EXPECT_EQ(ret == SUCCESS, true);
 }
+
+/**
+ * @tc.name: DisConnectInputCluster
+ * @tc.type: FUNC
+ * @tc.number: DisConnectInputCluster_001
+ * @tc.desc: Test DisConnectInputCluster
+ */
+HWTEST_F(HpaeRendererManagerTest, DisConnectInputCluster_001, TestSize.Level0)
+{
+    HpaeSinkInfo sinkInfo;
+    sinkInfo.deviceNetId = DEFAULT_TEST_DEVICE_NETWORKID;
+    sinkInfo.deviceClass = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.adapterName = DEFAULT_TEST_DEVICE_CLASS;
+    sinkInfo.filePath = g_rootPath + "constructHpaeRendererManagerTest.pcm";
+    sinkInfo.frameLen = FRAME_LENGTH_960;
+    sinkInfo.samplingRate = SAMPLE_RATE_48000;
+    sinkInfo.format = SAMPLE_F32LE;
+    sinkInfo.channels = STEREO;
+    sinkInfo.deviceType = DEVICE_TYPE_SPEAKER;
+    std::shared_ptr<HpaeRendererManager> hpaeRendererManager = std::make_shared<HpaeRendererManager>(sinkInfo);
+    EXPECT_EQ(hpaeRendererManager->Init(), SUCCESS);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), true);
+
+    HpaeStreamInfo streamInfo;
+    streamInfo.effectInfo.effectScene = SCENE_MUSIC;
+    streamInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    TestRendererManagerCreateStream(hpaeRendererManager, streamInfo);
+    HpaeNodeInfo nodeInfo;
+    nodeInfo.sessionId = TEST_STREAM_SESSION_ID;
+    nodeInfo.effectInfo.effectScene = SCENE_MUSIC;
+    nodeInfo.effectInfo.effectMode = EFFECT_DEFAULT;
+    nodeInfo.sceneType = HPAE_SCENE_MUSIC;
+    hpaeRendererManager->sinkInputNodeMap_[nodeInfo.sessionId] = std::make_shared<HpaeSinkInputNode>(nodeInfo);
+    hpaeRendererManager->DisConnectInputCluster(TEST_STREAM_SESSION_ID, HPAE_SCENE_MUSIC);
+    hpaeRendererManager->OnDisConnectProcessCluster(HPAE_SCENE_DEFAULT);
+    WaitForMsgProcessing(hpaeRendererManager);
+    EXPECT_EQ(hpaeRendererManager->DeInit() == SUCCESS, true);
+    EXPECT_EQ(hpaeRendererManager->IsInit(), false);
+}
 }  // namespace
