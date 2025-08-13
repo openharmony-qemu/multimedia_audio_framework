@@ -330,6 +330,7 @@ void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, co
             CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_NULL_POINTER, "Release failed");
             softLink_ = nullptr;
 
+            CHECK_AND_RETURN_RET_LOG(pipeManager_ != nullptr, ERR_NULL_POINTER, "pipeManager is nullptr");
             std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeinfoByNameAndFlag("primary",
                 AUDIO_INPUT_FLAG_NORMAL);
             CHECK_AND_RETURN_RET_LOG(pipeInfo != nullptr, ERR_NULL_POINTER, "pipeInfo is null");
