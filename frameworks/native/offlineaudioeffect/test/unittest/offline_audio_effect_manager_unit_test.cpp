@@ -89,7 +89,7 @@ void OfflineAudioEffectChainUnitTest::SetUpTestCase(void)
     }
 }
 
-unique_ptr<OfflineAudioEffectChain> OfflineAudioEffectManager::CreateOfflineAudioEffectChainMock(
+unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(
     const std::string &chainName)
 {
     sptr<IpcOfflineStreamMock> mockProxy = new IpcOfflineStreamMock();
@@ -174,7 +174,7 @@ void OfflineAudioEffectChainUnitTest::TearDownTestCase(void)
 
 void OfflineAudioEffectChainUnitTest::SetUp(void)
 {
-    chain_ = g_manager->CreateOfflineAudioEffectChainMock(g_normalName);
+    chain_ = CreateOfflineAudioEffectChainMock(g_normalName);
 }
 
 void OfflineAudioEffectChainUnitTest::TearDown(void)
@@ -217,8 +217,7 @@ HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_001, TestSiz
  */
 HWTEST(OfflineAudioEffectManagerUnitTest, OfflineAudioEffectManager_002, TestSize.Level0)
 {
-    auto manager = make_shared<OfflineAudioEffectManager>();
-    auto chain = manager->CreateOfflineAudioEffectChain(g_normalName);
+    auto chain = CreateOfflineAudioEffectChain(g_normalName);
     EXPECT_NE(nullptr, chain);
     EXPECT_EQ(SUCCESS, chain->Prepare());
 }
