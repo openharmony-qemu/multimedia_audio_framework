@@ -626,7 +626,8 @@ void HpaeRendererManager::OnDisConnectProcessCluster(HpaeProcessorType sceneType
             }
             outputCluster_->DisConnect(sceneClusterMap_[sceneType]);
             sceneClusterMap_[sceneType]->SetConnectedFlag(false);
-            if (SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[sceneType])) {
+            if (SafeGetMap(toBeStoppedSceneTypeToSessionMap_, sceneType) &&
+                SafeGetMap(sinkInputNodeMap_, toBeStoppedSceneTypeToSessionMap_[sceneType])) {
                 sceneClusterMap_[sceneType]->
                     AudioRendererStop(sinkInputNodeMap_[toBeStoppedSceneTypeToSessionMap_[sceneType]]->GetNodeInfo());
             }
@@ -648,6 +649,8 @@ void HpaeRendererManager::DisConnectInputCluster(uint32_t sessionId, HpaeProcess
     } else {
         HpaeProcessorType tmpSceneType = (sceneClusterMap_[sceneType] == sceneClusterMap_[HPAE_SCENE_DEFAULT])
             ? HPAE_SCENE_DEFAULT : sceneType;
+        CHECK_AND_RETURN_LOG(!SafeGetMap(toBeStoppedSceneTypeToSessionMap_, tmpSceneType),
+            "sessionId %{public}d to stop already exist", sessionId);
         toBeStoppedSceneTypeToSessionMap_[tmpSceneType] = sessionId;
         AUDIO_INFO_LOG("sessionId:%{public}u will be stop", sessionId);
     }
