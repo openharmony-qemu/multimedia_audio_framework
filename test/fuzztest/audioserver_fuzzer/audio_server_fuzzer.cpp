@@ -719,7 +719,7 @@ void AudioServerGetUsbParameterTest(const uint8_t *rawData, size_t size)
         "address=card2;device=0 role=1",
         "address=card2;device=0 role=2"
     };
-    std::string param = params[static_cast<uint32_t>(size) % params.size()];
+    std::string param = params[*reinterpret_cast<const uint32_t*>(rawData) % params.size()];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetUsbParameter(param);
 }
