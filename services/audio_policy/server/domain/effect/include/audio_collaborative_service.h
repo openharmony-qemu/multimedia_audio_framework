@@ -22,6 +22,13 @@
 #include "iaudio_policy_interface.h"
 namespace OHOS {
 namespace AudioStandard {
+
+enum class CollaborativeState: uint32_t {
+    COLLABORATIVE_CLOSED = 0,
+    COLLABORATIVE_OPENED,
+    COLLABORATIVE_RESERVED,
+};
+
 class AudioCollaborativeService {
 public:
     static AudioCollaborativeService& GetAudioCollaborativeService()
@@ -51,8 +58,7 @@ private:
     bool isCollaborativeStateEnabled_ = false;
     std::string curDeviceAddress_;
     std::mutex collaborativeServiceMutex_;
-    std::map<std::string, bool> addressToCollaborativeEnabledMap_;
-    std::map<std::string, bool> addressToCollaborativeMemoryMap_;
+    std::map<std::string, CollaborativeState> addressToCollaborativeEnabledMap_;
     IAudioPolicyInterface& audioPolicyManager_;
 };
 } // OHOS
