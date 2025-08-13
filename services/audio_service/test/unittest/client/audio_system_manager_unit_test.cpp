@@ -111,6 +111,20 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetDeviceMaxVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMaxVolume_002
+ * @tc.desc  : Test GetDeviceMaxVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+}
+
+/**
  * @tc.name  : Test GetDeviceMinVolume API
  * @tc.type  : FUNC
  * @tc.number: GetDeviceMinVolume_001
@@ -131,6 +145,20 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1)
     result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMinVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMinVolume_002
+ * @tc.desc  : Test GetDeviceMinVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
 }
 
 /**

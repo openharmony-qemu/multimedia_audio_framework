@@ -567,5 +567,131 @@ HWTEST_F(AudioAdapterManagerUnitTest, SetSleVoliceStatusFlag_004, TestSize.Level
     EXPECT_EQ(ret, SUCCESS);
 }
 
+/**
+ * @tc.name: Test GetMaxVolumeLevel
+ * @tc.number: GetMaxVolumeLevel_001
+ * @tc.type: FUNC
+ * @tc.desc: the volumeType is STREAM_APP, return appConfigVolume_.maxVolume.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_APP, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.maxVolume);
+}
+
+/**
+ * @tc.name: Test GetMaxVolumeLevel
+ * @tc.number: GetMaxVolumeLevel_002
+ * @tc.type: FUNC
+ * @tc.desc: the device maxLevel is valid, return the device maxLevel.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
+    DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
+    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
+        if ((streamVolumeInfos_[volumeType] != nullptr) &&
+            (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+            streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+            (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
+            streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->maxLevel = 10;
+        }
+    }
+
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(volumeType, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, 10);
+}
+
+/**
+ * @tc.name: Test GetMaxVolumeLevel
+ * @tc.number: GetMaxVolumeLevel_003
+ * @tc.type: FUNC
+ * @tc.desc: the device maxLevel is not valid, return maxVolumeIndexMap_[volumeType].
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_ALARM, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->maxVolumeIndexMap_[STREAM_ALARM]);
+}
+
+/**
+ * @tc.name: Test GetMaxVolumeLevel
+ * @tc.number: GetMaxVolumeLevel_004
+ * @tc.type: FUNC
+ * @tc.desc: the volume Type is not valid, return maxVolumeIndexMap_[STREAM_MUSIC].
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMaxVolumeLevel_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMaxVolumeLevel(STREAM_DEFAULT, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->maxVolumeIndexMap_[STREAM_MUSIC]);
+}
+
+/**
+ * @tc.name: Test GetMinVolumeLevel
+ * @tc.number: GetMinVolumeLevel_001
+ * @tc.type: FUNC
+ * @tc.desc: the volumeType is STREAM_APP, return appConfigVolume_.minVolume.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_001, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMinVolumeLevel(STREAM_APP, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->appConfigVolume_.minVolume);
+}
+
+/**
+ * @tc.name: Test GetMinVolumeLevel
+ * @tc.number: GetMinVolumeLevel_002
+ * @tc.type: FUNC
+ * @tc.desc: the device maxLevel is valid, return the device maxLevel.
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_002, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    AudioVolumeType volumeType = STREAM_VOICE_CALL;
+    DeviceVolumeType deviceType = SPEAKER_VOLUME_TYPE;
+    if (streamVolumeInfos_.end() != streamVolumeInfos_.find(volumeType)) {
+        if ((streamVolumeInfos_[volumeType] != nullptr) &&
+            (streamVolumeInfos_[volumeType]->deviceVolumeInfos.end() !=
+            streamVolumeInfos_[volumeType]->deviceVolumeInfos.find(deviceVolumeType)) &&
+            (streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType] != nullptr)) {
+            streamVolumeInfos_[volumeType]->deviceVolumeInfos[deviceVolumeType]->minLevel = 2;
+        }
+    }
+
+    int32_t ret = audioAdapterManager->GetMinVolumeLevel(volumeType, DEVICE_TYPE_SPEAKER);
+    EXPECT_EQ(ret, 2);
+}
+
+/**
+ * @tc.name: Test GetMinVolumeLevel
+ * @tc.number: GetMinVolumeLevel_003
+ * @tc.type: FUNC
+ * @tc.desc: the device maxLevel is not valid, return minVolumeIndexMap_[volumeType].
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_003, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMinVolumeLevel(STREAM_ALARM, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->minVolumeIndexMap_[STREAM_ALARM]);
+}
+
+/**
+ * @tc.name: Test GetMinVolumeLevel
+ * @tc.number: GetMinVolumeLevel_004
+ * @tc.type: FUNC
+ * @tc.desc: the volume Type is not valid, return minVolumeIndexMap_[STREAM_MUSIC].
+ */
+HWTEST_F(AudioAdapterManagerUnitTest, GetMinVolumeLevel_004, TestSize.Level1)
+{
+    auto audioAdapterManager = std::make_shared<AudioAdapterManager>();
+    int32_t ret = audioAdapterManager->GetMinVolumeLevel(STREAM_DEFAULT, DEVICE_TYPE_NONE);
+    EXPECT_EQ(ret, audioAdapterManager->minVolumeIndexMap_[STREAM_MUSIC]);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
