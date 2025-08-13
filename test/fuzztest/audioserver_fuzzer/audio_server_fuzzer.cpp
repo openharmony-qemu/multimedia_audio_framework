@@ -1215,14 +1215,7 @@ void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    static const vector<string> testPairs = {
-        "unprocess_audio_effect",
-        "test"
-    };
     std::vector<std::pair<std::string, std::string>> params;
-    uint32_t id = *reinterpret_cast<const uint32_t*>(size) % g_testKeys.size();
-    std::pair<std::string, std::string> param = std::make_pair(g_testKeys[id], g_testKeys[id]);
-    params.push_back(param);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetPcmDumpParameter(params);
 }
@@ -1840,7 +1833,8 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t deviceTypeId = *reinterpret_cast<const int32_t*>(rawData) % g_testDeviceTypes.size();
+    int32_t deviceType = g_testDeviceTypes[deviceTypeId];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
