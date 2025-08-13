@@ -212,6 +212,7 @@ void AudioCoreServiceUnexcludeOutputDevicesFuzzTest()
     audioDevDesc->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     audioDevDesc->macAddress_ = "00:00:00:00:00:00";
     audioDeviceDescriptors.push_back(audioDevDesc);
+    AudioRecoveryDevice::GetInstance().audioA2dpOffloadManager_ = std::make_shared<AudioA2dpOffloadManager>();
     audioCoreService->UnexcludeOutputDevices(audioDevUsage, audioDeviceDescriptors);
 }
 
