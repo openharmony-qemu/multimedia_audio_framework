@@ -254,31 +254,34 @@ HpaeProcessorType HpaeRendererManager::GetProcessorType(uint32_t sessionId)
     return nodeInfo.sceneType;
 }
 
+void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node)
+{
+    CHECK_AND_RETURN_LOG(node != nullptr, "sinkInputNode is nullptr");
+    HpaeNodeInfo nodeInfo = node->GetNodeInfo();
+    std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
+    int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
+        CreateProcessClusterInner(nodeInfo, processClusterDecision);
+        CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
+            "could not find processorType %{public}d", nodeInfo.sceneType);
+        sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
+        sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
+    } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass) {
+        bool isConnected = (node->isConnected_) ? true : false;
+        DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
+        DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
+        sessionNodeMap_[nodeInfo.sessionId].bypass = true;
+        if (isConnected) {
+            ConnectInputSession(nodeInfo.sessionId);
+        }
+    }
+}
+
 int32_t HpaeRendererManager::RefreshProcessClusrerByDevice()
 {
     auto request = [this]() {
         for (const auto &it : sinkInputNodeMap_) {
-            CHECK_AND_RETURN_LOG(it.second != nullptr, "sinkInputNode is nullptr");
-            HpaeNodeInfo nodeInfo = it.second->GetNodeInfo();
-            std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
-            int32_t processClusterDecision =
-                AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
-            if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
-                CreateProcessClusterInner(nodeInfo, processClusterDecision);
-                CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
-                    "could not find processorType %{public}d", nodeInfo.sceneType);
-                sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
-                sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
-            } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER &&
-                !sessionNodeMap_[nodeInfo.sessionId].bypass) {
-                bool isConnected = (it.second->isConnected_) ? true : false;
-                DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
-                DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
-                sessionNodeMap_[nodeInfo.sessionId].bypass = true;
-                if (isConnected) {
-                    ConnectInputSession(nodeInfo.sessionId);
-                }
-            }
+            RefreshProcessClusterByDeviceInner(it.second);
         }
     };
     SendRequest(request);
