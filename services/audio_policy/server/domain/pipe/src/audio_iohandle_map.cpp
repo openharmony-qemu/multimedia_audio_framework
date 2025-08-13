@@ -211,6 +211,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
 {
     std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    CHECK_AND_RETURN_RET_LOG(pipeManager, ERROR, "PipeManager is nullptr");
     auto pipeInfoInput = pipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
     if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
         pipeInfoInput->streamDescMap_.clear();
