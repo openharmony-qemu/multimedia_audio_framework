@@ -576,6 +576,18 @@ int32_t HpaeManagerImpl::UpdateCollaborativeState(bool isCollaborationEnabled)
     CHECK_AND_RETURN_RET_LOG(manager_, false, "manager is nullptr");
     return manager_->UpdateCollaborativeState(isCollaborationEnabled);
 }
+
+void HpaeManagerImpl::AddStreamVolumeToEffect(const std::string stringSessionID, const float streamVolume)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->AddStreamVolumeToEffect(stringSessionID, streamVolume);
+}
+
+void HpaeManagerImpl::DeleteStreamVolumeToEffect(const std::string stringSessionID)
+{
+    CHECK_AND_RETURN_LOG(manager_, "manager is nullptr");
+    manager_->DeleteStreamVolumeToEffect(stringSessionID);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

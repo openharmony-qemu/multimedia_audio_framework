@@ -1365,6 +1365,11 @@ HWTEST(AudioEffectChainManagerUnitTest, EffectVolumeUpdate_001, TestSize.Level1)
     audioEffectVolume->SetStreamVolume(sessionIDString, streamVolume);
     int32_t ret = AudioEffectChainManager::GetInstance()->EffectVolumeUpdate();
     EXPECT_EQ(ret, SUCCESS);
+
+    const std::string sessionIDString1 = "123456";
+    audioEffectVolume->SetStreamVolume(sessionIDString1, streamVolume);
+    ret = AudioEffectChainManager::GetInstance()->DeleteStreamVolume(sessionIDString1);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
