@@ -835,7 +835,7 @@ void AudioPolicyServerSetAndUnsetAudioInterruptCallbackFuzztest()
     CHECK_AND_RETURN(audioPolicyServer != nullptr);
     uint32_t sessionID = GetData<uint32_t>();
     uint32_t zoneID = GetData<uint32_t>();
-	uint32_t clientUid = GetData<uint32_t>();
+    uint32_t clientUid = GetData<uint32_t>();
     sptr<IRemoteObject> object = new RemoteObjectFuzzTestStub();
     audioPolicyServer->interruptService_ = std::make_shared<AudioInterruptService>();
     audioPolicyServer->coreService_ = std::make_shared<AudioCoreService>();
