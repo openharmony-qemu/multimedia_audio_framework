@@ -832,19 +832,18 @@ sptr<AudioProcessInServer> AudioService::GetAudioProcess(const AudioProcessConfi
 {
     Trace trace("AudioService::GetAudioProcess for " + std::to_string(config.appInfo.appPid));
     AUDIO_INFO_LOG("GetAudioProcess dump %{public}s", ProcessConfig::DumpProcessConfig(config).c_str());
-    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config);
+    AudioStreamInfo audioStreamInfo;
+    AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, audioStreamInfo);
     std::lock_guard<std::mutex> lock(processListMutex_);
     std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-        IsEndpointTypeVoip(config, deviceInfo));
+        audioStreamInfo, IsEndpointTypeVoip(config, deviceInfo));
     CHECK_AND_RETURN_RET_LOG(audioEndpoint != nullptr, nullptr, "no endpoint found for the process");
 
     uint32_t totalSizeInframe = 0;
     uint32_t spanSizeInframe = 0;
     audioEndpoint->GetPreferBufferInfo(totalSizeInframe, spanSizeInframe);
 
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    CHECK_AND_RETURN_RET_LOG(*audioStreamInfo.samplingRate.rbegin() > 0, nullptr,
-        "Sample rate in server is invalid.");
+    CHECK_AND_RETURN_RET_LOG(audioStreamInfo.samplingRate > 0, nullptr, "Sample rate in server is invalid.");
 
     sptr<AudioProcessInServer> process = AudioProcessInServer::Create(config, this);
     CHECK_AND_RETURN_RET_LOG(process != nullptr, nullptr, "AudioProcessInServer create failed.");
@@ -899,10 +898,11 @@ void AudioService::ReLinkProcessToEndpoint()
             AUDIO_INFO_LOG("Session id %{public}u", paired->first->GetSessionId());
 
             // get new endpoint
+            AudioStreamInfo streamInfo;
             const AudioProcessConfig &config = paired->first->processConfig_;
-            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, true);
+            AudioDeviceDescriptor deviceInfo = GetDeviceInfoForProcess(config, streamInfo, true);
             std::shared_ptr<AudioEndpoint> audioEndpoint = GetAudioEndpointForDevice(deviceInfo, config,
-                IsEndpointTypeVoip(config, deviceInfo));
+                streamInfo, IsEndpointTypeVoip(config, deviceInfo));
             if (audioEndpoint == nullptr) {
                 AUDIO_ERR_LOG("Get new endpoint failed");
                 errorLinkedPaireds.push_back(paired);
@@ -1001,12 +1001,13 @@ void AudioService::DelayCallReleaseEndpoint(std::string endpointName)
     return;
 }
 
-AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess)
+AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessConfig &config,
+    AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     // send the config to AudioPolicyServera and get the device info.
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
     int32_t ret = CoreServiceHandler::GetInstance().GetProcessDeviceInfoBySessionId(config.originalSessionId,
-        deviceInfo, isReloadProcess);
+        deviceInfo, streamInfo, isReloadProcess);
     if (ret == SUCCESS) {
         AUDIO_INFO_LOG("Get DeviceInfo from policy: deviceType:%{public}d, supportLowLatency:%{public}s"
             " a2dpOffloadFlag:%{public}d", deviceInfo.deviceType_, (deviceInfo.isLowLatencyDevice_ ? "true" : "false"),
@@ -1016,13 +1017,13 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
             config.capturerInfo.sourceType == SOURCE_TYPE_VOICE_COMMUNICATION) {
             if (config.streamInfo.samplingRate <= SAMPLE_RATE_16000) {
                 AUDIO_INFO_LOG("VoIP 16K");
-                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
+                streamInfo = {SAMPLE_RATE_16000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             } else {
                 AUDIO_INFO_LOG("VoIP 48K");
-                deviceInfo.audioStreamInfo_ = {{SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, CH_LAYOUT_STEREO}};
+                streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO, CH_LAYOUT_STEREO};
             }
         } else {
-            AUDIO_INFO_LOG("Fast stream use format:%{public}s", deviceInfo.GetDeviceStreamInfo().Serialize().c_str());
+            AUDIO_INFO_LOG("Fast stream use format:%{public}d", streamInfo.format);
             deviceInfo.deviceName_ = "mmap_device";
         }
         return deviceInfo;
@@ -1040,9 +1041,8 @@ AudioDeviceDescriptor AudioService::GetDeviceInfoForProcess(const AudioProcessCo
         deviceInfo.deviceRole_ = OUTPUT_DEVICE;
         deviceInfo.deviceType_ = DEVICE_TYPE_SPEAKER;
     }
-    AudioStreamInfo targetStreamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
+    streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO,
         CH_LAYOUT_STEREO}; // note: read from xml
-    deviceInfo.audioStreamInfo_ = { targetStreamInfo };
     deviceInfo.deviceName_ = "mmap_device";
     return deviceInfo;
 }
@@ -1063,22 +1063,23 @@ void AudioService::CheckBeforeRecordEndpointCreate(bool isRecord)
 }
 
 // must be called with processListMutex_ lock hold
-ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey)
+ReuseEndpointType AudioService::GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
+    const std::string &deviceKey, AudioStreamInfo &streamInfo)
 {
     if (endpointList_.find(deviceKey) == endpointList_.end()) {
         return ReuseEndpointType::CREATE_ENDPOINT;
     }
-    bool reuse = deviceInfo.audioStreamInfo_ == endpointList_[deviceKey]->GetDeviceInfo().audioStreamInfo_;
+    bool reuse = streamInfo == endpointList_[deviceKey]->GetAudioStreamInfo();
     return reuse ? ReuseEndpointType::REUSE_ENDPOINT : ReuseEndpointType::RECREATE_ENDPOINT;
 }
 
 std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-    const AudioProcessConfig &clientConfig, bool isVoipStream)
+    const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream)
 {
     // Create shared stream.
     int32_t endpointFlag = isVoipStream ? AUDIO_FLAG_VOIP_FAST : AUDIO_FLAG_MMAP;
     std::string deviceKey = AudioEndpoint::GenerateEndpointKey(deviceInfo, endpointFlag);
-    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey);
+    ReuseEndpointType type = GetReuseEndpointType(deviceInfo, deviceKey, streamInfo);
     std::shared_ptr<AudioEndpoint> endpoint = nullptr;
 
     switch (type) {
@@ -1096,7 +1097,7 @@ std::shared_ptr<AudioEndpoint> AudioService::GetAudioEndpointForDevice(AudioDevi
         case ReuseEndpointType::CREATE_ENDPOINT: {
             CheckBeforeRecordEndpointCreate(clientConfig.audioMode == AudioMode::AUDIO_MODE_RECORD);
             endpoint = AudioEndpoint::CreateEndpoint(isVoipStream ? AudioEndpoint::TYPE_VOIP_MMAP :
-                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo);
+                AudioEndpoint::TYPE_MMAP, endpointFlag, clientConfig, deviceInfo, streamInfo);
             CHECK_AND_RETURN_RET_LOG(endpoint != nullptr, nullptr, "Create mmap AudioEndpoint failed.");
             AUDIO_INFO_LOG("Add endpoint %{public}s to endpointList_", deviceKey.c_str());
             endpointList_[deviceKey] = endpoint;

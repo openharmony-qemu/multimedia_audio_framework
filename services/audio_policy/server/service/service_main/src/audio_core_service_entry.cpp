@@ -121,15 +121,15 @@ std::string AudioCoreService::EventEntry::GetAdapterNameBySessionId(uint32_t ses
     return coreService_->GetAdapterNameBySessionId(sessionId);
 }
 
-int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(
-    uint32_t sessionId, AudioDeviceDescriptor &deviceInfo, bool isReloadProcess)
+int32_t AudioCoreService::EventEntry::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     if (isReloadProcess) {
         // Get process from reload does not require lock
-        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+        return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
     }
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    return coreService_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo);
 }
 
 uint32_t AudioCoreService::EventEntry::GenerateSessionId()

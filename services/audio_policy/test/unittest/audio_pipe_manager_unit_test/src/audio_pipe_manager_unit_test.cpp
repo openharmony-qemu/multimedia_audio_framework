@@ -511,9 +511,10 @@ HWTEST_F(AudioPipeManagerUnitTest, GetProcessDeviceInfoBySessionId_001, TestSize
     desc->newDeviceDescs_.front()->deviceType_ = DEVICE_TYPE_SPEAKER;
     pipeInfo->streamDescriptors_.push_back(desc);
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
-
+    
+    AudioStreamInfo info;
     uint32_t targetSessionId = 123;
-    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
     EXPECT_NE(result, nullptr);
     EXPECT_EQ(result->deviceType_, DEVICE_TYPE_SPEAKER);
 }
@@ -538,7 +539,8 @@ HWTEST_F(AudioPipeManagerUnitTest, GetProcessDeviceInfoBySessionId_002, TestSize
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
     uint32_t targetSessionId = 456;
-    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    AudioStreamInfo info;
+    auto result = audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
     EXPECT_EQ(result, nullptr);
 }
 

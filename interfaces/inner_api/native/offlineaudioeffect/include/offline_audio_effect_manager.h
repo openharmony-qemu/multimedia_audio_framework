@@ -100,8 +100,6 @@ public:
      * @since 15
      */
     std::unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChain(const std::string &chainName);
-
-    std::unique_ptr<OfflineAudioEffectChain> CreateOfflineAudioEffectChainMock(const std::string &chainName);
 };
 } // namespace AudioStandard
 } // namespace OHOS

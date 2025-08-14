@@ -36,7 +36,10 @@ AudioPipeManager::~AudioPipeManager()
 void AudioPipeManager::AddAudioPipeInfo(std::shared_ptr<AudioPipeInfo> info)
 {
     std::unique_lock<std::shared_mutex> pLock(pipeListLock_);
-    AUDIO_INFO_LOG("Add id:%{public}u, name %{public}s", info->id_, info->name_.c_str());
+    auto streamInfo = info->audioStreamInfo_;
+    AUDIO_INFO_LOG("Add id:%{public}u, name %{public}s, format %{public}d, rate %{public}d, channel %{public}d",
+        info->id_, info->name_.c_str(), streamInfo.format, streamInfo.samplingRate, streamInfo.channels);
+
     // Action is only used in pipe execution, while pipeManager can only store default action
     info->pipeAction_ = PIPE_ACTION_DEFAULT;
     curPipeList_.push_back(info);
@@ -217,7 +220,8 @@ std::string AudioPipeManager::GetAdapterNameBySessionId(uint32_t sessionId)
     return "";
 }
 
-std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoBySessionId(uint32_t sessionId)
+std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoBySessionId(
+    uint32_t sessionId, AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("Cur pipe list size %{public}zu, sessionId %{public}u", curPipeList_.size(), sessionId);
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
@@ -228,6 +232,7 @@ std::shared_ptr<AudioDeviceDescriptor> AudioPipeManager::GetProcessDeviceInfoByS
                 desc->newDeviceDescs_.front() != nullptr, "desc is nullptr");
             if (desc->sessionId_ == sessionId) {
                 AUDIO_INFO_LOG("Device type: %{public}d", desc->newDeviceDescs_.front()->deviceType_);
+                streamInfo = pipeInfo->audioStreamInfo_;
                 return desc->newDeviceDescs_.front();
             }
         }
