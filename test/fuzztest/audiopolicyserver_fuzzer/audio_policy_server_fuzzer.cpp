@@ -659,8 +659,7 @@ void AudioPolicyServerSetSingleStreamVolumeWithDeviceFuzztest()
     int32_t volumeLevel = GetData<int32_t>();
     bool isUpdateUi = GetData<bool>();
     DeviceType deviceType = GetData<DeviceType>();
-    audioPolicyServer->SetSingleStreamVolumeWithDevice(streamType, volumeLevel,
-        isUpdateUi, deviceType);
+    audioPolicyServer->SetSingleStreamVolumeWithDevice(streamType, volumeLevel, isUpdateUi, deviceType);
 }
 
 void AudioPolicyServerGetStreamMuteFuzztest()
@@ -696,8 +695,7 @@ void AudioPolicyServerGetPreferredOutputDeviceDescriptorsFuzztest()
     auto deviceDesc = std::make_shared<AudioDeviceDescriptor>();
     deviceDescs.push_back(deviceDesc);
     bool forceNoBTPermission = false;
-    audioPolicyServer->GetPreferredOutputDeviceDescriptors(rendererInfo,
-        forceNoBTPermission, deviceDescs);
+    audioPolicyServer->GetPreferredOutputDeviceDescriptors(rendererInfo, forceNoBTPermission, deviceDescs);
 }
 
 void AudioPolicyServerGetPreferredInputDeviceDescriptorsFuzztest()
