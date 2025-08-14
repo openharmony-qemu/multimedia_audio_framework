@@ -26,6 +26,8 @@
 #include "hpae_manager_impl.h"
 #include "i_hpae_soft_link.h"
 #include "hpae_manager_stream_fuzzer.h"
+#include "id_handler.h"
+#include "hdi_adapter_manager.h"
 namespace OHOS {
 namespace AudioStandard {
 using namespace OHOS::AudioStandard::HPAE;
@@ -115,6 +117,8 @@ static AudioModuleInfo GetSourceAudioModeInfo(std::string name = "mic")
 
 void SetUp()
 {
+    IdHandler::GetInstance();
+    HdiAdapterManager::GetInstance();
     IHpaeManager::GetHpaeManager().Init();
     std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP_TIME));
 }

@@ -22,6 +22,8 @@ ohos_fuzztest("HpaeSoftLinkFuzzTest") {
 
   include_dirs = [
     "../hpaemanagerstream_fuzzer",
+    "../../../frameworks/native/hdiadapter_new/include/manager",
+    "../../../frameworks/native/hdiadapter_new/include/util",
     "../../../services/audio_policy/server/include/service",
     "../../../services/audio_policy/server/include",
     "../../../services/audio_service/common/include/limiter/",
@@ -48,6 +50,7 @@ ohos_fuzztest("HpaeSoftLinkFuzzTest") {
   deps = [
     "../../../frameworks/native/audioutils:audio_utils",
     "../../../frameworks/native/bluetoothclient:audio_bluetooth_client",
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_common",
     "../../../frameworks/native/audioclock:audio_clock",
