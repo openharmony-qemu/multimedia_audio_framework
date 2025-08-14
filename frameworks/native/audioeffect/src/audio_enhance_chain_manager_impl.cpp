@@ -269,12 +269,12 @@ void AudioEnhanceChainManagerImpl::ReleaseThreadHandlerByScene(AudioEnhanceScene
 {
     auto threadId = GetThreadIdByScene(scene);
     auto iter = threadHandlerMap_.find(threadId);
-    CHECK_AND_RETURN_LOG(iter != threadHandlerMap_.end(), "cannot find threadId: %{public}u ", threadId);
-    iter->second.second--;
-    CHECK_AND_RETURN_LOG(iter->second.second <= 0,
-        "threadId: %{public}u useCount: %{public}u, no need to release", threadId, iter->second.second);
-    Trace trace("DeleteThread: " + std::to_string(scene));
-    threadHandlerMap_.erase(threadId);
+    if (iter != threadHandlerMap_.end() && --iter->second.second > 0) {
+        AUDIO_INFO_LOG("threadId: %{public}u useCount: %{public}u", threadId, iter->second.second);
+    } else {
+        Trace trace("DeleteThread: " + std::to_string(scene));
+        threadHandlerMap_.erase(threadId);
+    }
 }
 
 int32_t AudioEnhanceChainManagerImpl::CreateAudioEnhanceChainDynamic(uint64_t sceneKeyCode,
