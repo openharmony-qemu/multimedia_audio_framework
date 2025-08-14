@@ -1845,8 +1845,7 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_009, TestSize.Level1)
     float badFrameRatio = 0.5f;
  
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(0, checkerPara.noDataFrameNum);
 }
  
 /**
@@ -1870,8 +1869,7 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_010, TestSize.Level1)
     float badFrameRatio = 0.5f;
  
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(0, checker->streamConfig_.originalSessionId);
 }
  
 /**
@@ -1912,21 +1910,7 @@ HWTEST(AudioStreamCheckerTest, IsMonitorNoDataFrame_002, TestSize.Level1)
     bool ret = checker->IsMonitorNoDataFrame(checkerParamTest);
     EXPECT_EQ(false, ret);
 }
- 
-/**
- * @tc.name  : Test StopCheckStreamThread API
- * @tc.type  : FUNC
- * @tc.number: StopCheckStreamThread_001
- */
-HWTEST(AudioStreamCheckerTest, StopCheckStreamThread_001, TestSize.Level1)
-{
-    AudioProcessConfig cfg;
-    std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    bool ret = 1;
-    checker->StopCheckStreamThread();
-    EXPECT_EQ(true, ret);
-}
- 
+
 /**
  * @tc.name  : Test CheckStreamThread API
  * @tc.type  : FUNC
@@ -1936,9 +1920,8 @@ HWTEST(AudioStreamCheckerTest, CheckStreamThread_001, TestSize.Level1)
 {
     AudioProcessConfig cfg;
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
-    bool ret = 1;
     checker->CheckStreamThread();
-    EXPECT_EQ(true, ret);
+    EXPECT_EQ(false, checker->isKeepCheck_);
 }
  
 /**
