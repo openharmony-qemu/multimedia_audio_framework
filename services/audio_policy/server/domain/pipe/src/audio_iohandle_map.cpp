@@ -201,6 +201,7 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
     pipeInfo->adapterName_ = moduleInfo.adapterName;
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     AudioPipeManager::GetPipeManager()->AddAudioPipeInfo(pipeInfo);
 
     AddIOHandleInfo(moduleName, ioHandle);
@@ -329,6 +330,7 @@ int32_t AudioIOHandleMap::ReloadPortAndUpdateIOHandle(std::shared_ptr<AudioPipeI
     pipeInfo->adapterName_ = moduleInfo.adapterName;
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
 
     AddIOHandleInfo(moduleInfo.name, ioHandle);
     return SUCCESS;

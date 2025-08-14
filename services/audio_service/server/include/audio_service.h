@@ -89,9 +89,10 @@ public:
     void ReleaseProcess(const std::string endpointName, const int32_t delayTime);
 
     void CheckBeforeRecordEndpointCreate(bool isRecord);
-    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config, bool isReloadProcess = false);
+    AudioDeviceDescriptor GetDeviceInfoForProcess(const AudioProcessConfig &config,
+        AudioStreamInfo &streamInfo, bool isReloadProcess = false);
     std::shared_ptr<AudioEndpoint> GetAudioEndpointForDevice(AudioDeviceDescriptor &deviceInfo,
-        const AudioProcessConfig &clientConfig, bool isVoipStream);
+        const AudioProcessConfig &clientConfig, AudioStreamInfo &streamInfo, bool isVoipStream);
 
     int32_t LinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
     int32_t UnlinkProcessToEndpoint(sptr<AudioProcessInServer> process, std::shared_ptr<AudioEndpoint> endpoint);
@@ -144,7 +145,8 @@ public:
 private:
     AudioService();
     void DelayCallReleaseEndpoint(std::string endpointName);
-    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo, const std::string &deviceKey);
+    ReuseEndpointType GetReuseEndpointType(AudioDeviceDescriptor &deviceInfo,
+        const std::string &deviceKey, AudioStreamInfo &streamInfo);
     void InsertRenderer(uint32_t sessionId, std::shared_ptr<RendererInServer> renderer);
     void InsertCapturer(uint32_t sessionId, std::shared_ptr<CapturerInServer> capturer);
 #ifdef HAS_FEATURE_INNERCAPTURER

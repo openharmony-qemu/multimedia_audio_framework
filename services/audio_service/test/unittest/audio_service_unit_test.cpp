@@ -686,10 +686,11 @@ HWTEST(AudioServiceUnitTest, AudioServiceGetDeviceInfoForProcess_001, TestSize.L
     AudioProcessConfig config = {};
     config.audioMode = AUDIO_MODE_PLAYBACK;
     AudioDeviceDescriptor deviceinfo(AudioDeviceDescriptor::DEVICE_INFO);
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
+    AudioStreamInfo info;
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
     EXPECT_NE(deviceinfo.deviceRole_, INPUT_DEVICE);
     config.audioMode = AUDIO_MODE_RECORD;
-    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config);
+    deviceinfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info);
     EXPECT_NE(deviceinfo.deviceRole_, OUTPUT_DEVICE);
 }
 
@@ -2993,9 +2994,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_001, TestSize.Level1)
     config.originalSessionId = 1;
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isReloadProcess = false;
-
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, isReloadProcess);
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3015,9 +3016,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_002, TestSize.Level1)
     config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
     config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
     config.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isReloadProcess = false;
-
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, isReloadProcess);
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
 
     EXPECT_NE(deviceInfo.deviceType_, DEVICE_TYPE_MIC);
     EXPECT_EQ(deviceInfo.isLowLatencyDevice_, false);
@@ -3037,9 +3038,9 @@ HWTEST(AudioServiceUnitTest, GetDeviceInfoForProcess_003, TestSize.Level1)
     AudioProcessConfig config = {};
     config.originalSessionId = 1;
     config.audioMode = AUDIO_MODE_RECORD;
-    bool isReloadProcess = false;
-
-    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, isReloadProcess);
+    bool reload = false;
+    AudioStreamInfo info;
+    AudioDeviceDescriptor deviceInfo = AudioService::GetInstance()->GetDeviceInfoForProcess(config, info, reload);
 
     EXPECT_EQ(deviceInfo.deviceId_, 1);
     EXPECT_EQ(deviceInfo.networkId_, LOCAL_NETWORK_ID);

@@ -17,6 +17,7 @@ package OHOS.AudioStandard;
 
 import AudioServiceTypes;
 
+sequenceable audio_stream_info..OHOS.AudioStandard.AudioStreamInfo;
 sequenceable audio_device_descriptor..OHOS.AudioStandard.AudioDeviceDescriptor;
 sequenceable audio_info..OHOS.AudioStandard.AudioProcessConfig;
 interface ICoreServiceProviderIpc {
@@ -33,6 +34,7 @@ interface ICoreServiceProviderIpc {
     void GetProcessDeviceInfoBySessionId(
         [in] unsigned int sessionID,
         [out] AudioDeviceDescriptor deviceInfo,
+        [out] AudioStreamInfo streamInfo,
         [in] boolean isReloadProcess);
     void GenerateSessionId([out] unsigned int sessionId);
     void ReloadCaptureSession(

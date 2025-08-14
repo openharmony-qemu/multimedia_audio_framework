@@ -56,7 +56,7 @@ public:
     AudioEndpointInner(EndpointType type, uint64_t id, const AudioProcessConfig &clientConfig);
     ~AudioEndpointInner();
 
-    bool Config(const AudioDeviceDescriptor &deviceInfo) override;
+    bool Config(const AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo) override;
     bool StartDevice(EndpointStatus preferredState = INVALID);
     void HandleStartDeviceFailed();
     bool StopDevice();
@@ -112,17 +112,6 @@ public:
     EndpointStatus GetStatus() override;
 
     void Release() override;
-
-    AudioDeviceDescriptor &GetDeviceInfo() override
-    {
-        return deviceInfo_;
-    }
-
-    DeviceRole GetDeviceRole() override
-    {
-        return deviceInfo_.deviceRole_;
-    }
-
     float GetMaxAmplitude() override;
     uint32_t GetLinkedProcessCount() override;
 
@@ -272,9 +261,7 @@ private:
         ACTIVE,
         IN_TIMING
     };
-    // SamplingRate EncodingType SampleFormat Channel
-    AudioDeviceDescriptor deviceInfo_ = AudioDeviceDescriptor(AudioDeviceDescriptor::DEVICE_INFO);
-    AudioStreamInfo dstStreamInfo_;
+    
     EndpointType endpointType_;
     int32_t id_ = 0;
     std::mutex listLock_;

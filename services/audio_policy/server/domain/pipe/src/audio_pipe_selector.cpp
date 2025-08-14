@@ -496,6 +496,7 @@ void AudioPipeSelector::ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamD
     info.adapterName_ = adapterInfoPtr->adapterName;
     info.pipeRole_ = pipeInfoPtr->role_;
     info.name_ = pipeInfoPtr->name_;
+    info.InitAudioStreamInfo();
 }
 
 AudioStreamAction AudioPipeSelector::JudgeStreamAction(

@@ -289,7 +289,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     audioPipeManager->AddAudioPipeInfo(pipeInfo);
 
     uint32_t targetSessionId = GetData<uint32_t>();
-    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId);
+    AudioStreamInfo info;
+    audioPipeManager->GetProcessDeviceInfoBySessionId(targetSessionId, info);
 }
 
 void GetAllOutputStreamDescsFuzzTest()

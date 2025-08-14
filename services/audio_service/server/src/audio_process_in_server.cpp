@@ -601,7 +601,7 @@ int32_t AudioProcessInServer::InitBufferStatus()
 }
 
 int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
-    uint32_t &spanSizeInframe, DeviceStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
+    uint32_t &spanSizeInframe, AudioStreamInfo &serverStreamInfo, const std::shared_ptr<OHAudioBufferBase> &buffer)
 {
     if (processBuffer_ != nullptr) {
         AUDIO_INFO_LOG("ConfigProcessBuffer: process buffer already configed!");
@@ -610,21 +610,19 @@ int32_t AudioProcessInServer::ConfigProcessBuffer(uint32_t &totalSizeInframe,
     // check
     CHECK_AND_RETURN_RET_LOG(totalSizeInframe != 0 && spanSizeInframe != 0 && totalSizeInframe % spanSizeInframe == 0,
         ERR_INVALID_PARAM, "ConfigProcessBuffer failed: ERR_INVALID_PARAM");
-    std::set<AudioChannel> channels = serverStreamInfo.GetChannels();
-    CHECK_AND_RETURN_RET_LOG(serverStreamInfo.samplingRate.size() > 0 && channels.size() > 0,
-        ERR_INVALID_PARAM, "Invalid stream info in server");
-    uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / *serverStreamInfo.samplingRate.rbegin();
+
+    uint32_t spanTime = spanSizeInframe * AUDIO_MS_PER_SECOND / serverStreamInfo.samplingRate;
     spanSizeInframe_ = spanTime * processConfig_.streamInfo.samplingRate / AUDIO_MS_PER_SECOND;
     totalSizeInframe_ = totalSizeInframe / spanSizeInframe * spanSizeInframe_;
 
     uint32_t channel = processConfig_.streamInfo.channels;
     uint32_t formatbyte = PcmFormatToBits(processConfig_.streamInfo.format);
     byteSizePerFrame_ = channel * formatbyte;
-    if (*channels.rbegin() != processConfig_.streamInfo.channels ||
+    if (serverStreamInfo.channels != processConfig_.streamInfo.channels ||
         serverStreamInfo.format != processConfig_.streamInfo.format) {
         size_t spanSizeInByte = 0;
         if (processConfig_.audioMode == AUDIO_MODE_PLAYBACK) {
-            uint32_t serverByteSize = *channels.rbegin() * PcmFormatToBits(serverStreamInfo.format);
+            uint32_t serverByteSize = serverStreamInfo.channels * PcmFormatToBits(serverStreamInfo.format);
             spanSizeInByte = static_cast<size_t>(spanSizeInframe * serverByteSize);
         } else {
             spanSizeInByte = static_cast<size_t>(spanSizeInframe_ * byteSizePerFrame_);
