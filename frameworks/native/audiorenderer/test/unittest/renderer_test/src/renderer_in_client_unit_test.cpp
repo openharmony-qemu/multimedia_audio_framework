@@ -2412,5 +2412,213 @@ HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_092, TestSize.Level4
     ptrRendererInClientInner->WaitForBufferNeedWrite();
     EXPECT_EQ(ptrRendererInClientInner->IsRestoreNeeded(), true);
 }
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTime_001
+ * @tc.desc  : Test RendererInClientInner::GetAudioTime
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTime_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    Timestamp timestamp;
+    EXPECT_EQ(ptrRendererInClientInner->GetAudioTime(timestamp, Timestamp::Timestampbase::BASESIZE), false);
+}
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTime_002
+ * @tc.desc  : Test RendererInClientInner::GetAudioTime
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTime_002, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->state_ = RELEASED;
+    Timestamp timestamp;
+    EXPECT_EQ(ptrRendererInClientInner->GetAudioTime(timestamp, Timestamp::Timestampbase::BASESIZE), false);
+}
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTime_003
+ * @tc.desc  : Test RendererInClientInner::GetAudioTime
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTime_003, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->paramsIsSet_ = true;
+    ptrRendererInClientInner->state_ = RUNNING;
+    Timestamp timestamp;
+    EXPECT_EQ(ptrRendererInClientInner->GetAudioTime(timestamp, Timestamp::Timestampbase::BASESIZE), false);
+}
+
+/**
+ * @tc.name  : Test GetAudioTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetAudioTime_004
+ * @tc.desc  : Test RendererInClientInner::GetAudioTime
+ */
+HWTEST(RendererInClientInnerUnitTest, GetAudioTime_004, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->paramsIsSet_ = true;
+    ptrRendererInClientInner->state_ = RUNNING;
+    ptrRendererInClientInner->offloadEnable_ = true;
+    Timestamp timestamp;
+    EXPECT_NE(ptrRendererInClientInner->GetAudioTime(timestamp, Timestamp::Timestampbase::BASESIZE), true);
+}
+
+/**
+ * @tc.name  : Test SetAudioStreamType API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioStreamType_001
+ * @tc.desc  : Test RendererInClientInner::SetAudioStreamType
+ */
+HWTEST(RendererInClientInnerUnitTest, SetAudioStreamType_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    AudioStreamType audioStreamType = AudioStreamType::STREAM_DEFAULT;
+    int32_t ret = ptrRendererInClientInner->SetAudioStreamType(audioStreamType);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test Write API
+ * @tc.type  : FUNC
+ * @tc.number: Write_001
+ * @tc.desc  : Test RendererInClientInner::Write
+ */
+HWTEST(RendererInClientInnerUnitTest, Write_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint8_t pcmBuffer[10] = {0};
+    size_t pcmBufferSize = 10;
+    uint8_t metaBuffer[10] = {0};
+    size_t metaBufferSize = 10;
+
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_NORMAL;
+    int32_t ret = ptrRendererInClientInner->Write(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    EXPECT_NE(ret, pcmBufferSize);
+}
+
+/**
+ * @tc.name  : Test Write API
+ * @tc.type  : FUNC
+ * @tc.number: Write_002
+ * @tc.desc  : Test RendererInClientInner::Write
+ */
+HWTEST(RendererInClientInnerUnitTest, Write_002, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    uint8_t pcmBuffer[10] = {0};
+    size_t pcmBufferSize = 10;
+    uint8_t metaBuffer[10] = {0};
+    size_t metaBufferSize = 10;
+
+    ptrRendererInClientInner->renderMode_ = RENDER_MODE_CALLBACK;
+    int32_t ret = ptrRendererInClientInner->Write(pcmBuffer, pcmBufferSize, metaBuffer, metaBufferSize);
+    EXPECT_EQ(ret, ERR_INCORRECT_MODE);
+}
+
+/**
+ * @tc.name  : Test GetStreamSwitchInfo API
+ * @tc.type  : FUNC
+ * @tc.number: GetStreamSwitchInfo_001
+ * @tc.desc  : Test RendererInClientInner::GetStreamSwitchInfo
+ */
+HWTEST(RendererInClientInnerUnitTest, GetStreamSwitchInfo_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    IAudioStream::SwitchInfo info;
+
+    ptrRendererInClientInner->effectMode_ = EFFECT_NONE;
+    ptrRendererInClientInner->rendererRate_ = RENDER_RATE_NORMAL;
+    ptrRendererInClientInner->clientPid_ = 1234;
+    ptrRendererInClientInner->clientUid_ = 5678;
+    ptrRendererInClientInner->clientVolume_ = 50;
+    ptrRendererInClientInner->duckVolume_ = 30;
+    ptrRendererInClientInner->silentModeAndMixWithOthers_ = false;
+    ptrRendererInClientInner->rendererMarkPosition_ = 1000;
+    ptrRendererInClientInner->rendererPositionCallback_ = nullptr;
+    ptrRendererInClientInner->rendererPeriodSize_ = 1024;
+    ptrRendererInClientInner->rendererPeriodPositionCallback_ = nullptr;
+    ptrRendererInClientInner->writeCb_ = nullptr;
+
+    ptrRendererInClientInner->GetStreamSwitchInfo(info);
+
+    EXPECT_EQ(info.underFlowCount, ptrRendererInClientInner->GetUnderflowCount());
+    EXPECT_EQ(info.effectMode, EFFECT_NONE);
+    EXPECT_NE(info.renderRate, 44100);
+    EXPECT_EQ(info.clientPid, 1234);
+    EXPECT_EQ(info.clientUid, 5678);
+    EXPECT_EQ(info.volume, 50);
+    EXPECT_EQ(info.duckVolume, 30);
+    EXPECT_EQ(info.silentModeAndMixWithOthers, false);
+    EXPECT_EQ(info.frameMarkPosition, 1000);
+    EXPECT_EQ(info.renderPositionCb, nullptr);
+    EXPECT_EQ(info.framePeriodNumber, 1024);
+    EXPECT_EQ(info.renderPeriodPositionCb, nullptr);
+    EXPECT_EQ(info.rendererWriteCallback, nullptr);
+}
+
+/**
+ * @tc.name  : Test SetSourceDuration API
+ * @tc.type  : FUNC
+ * @tc.number: SetSourceDuration_001
+ * @tc.desc  : Test RendererInClientInner::SetSourceDuration
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSourceDuration_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    int64_t duration = 100;
+    ptrRendererInClientInner->ipcStream_ = nullptr;
+    int32_t ret = ptrRendererInClientInner->SetSourceDuration(duration);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetSourceDuration API
+ * @tc.type  : FUNC
+ * @tc.number: SetSourceDuration_002
+ * @tc.desc  : Test RendererInClientInner::SetSourceDuration
+ */
+HWTEST(RendererInClientInnerUnitTest, SetSourceDuration_002, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    int64_t duration = 100;
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    int32_t ret = ptrRendererInClientInner->SetSourceDuration(duration);
+    EXPECT_NE(ret, ERROR);
+}
+
+/**
+ * @tc.name  : Test SetOffloadDataCallbackState API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadDataCallbackState_001
+ * @tc.desc  : Test RendererInClientInner::SetOffloadDataCallbackState
+ */
+HWTEST(RendererInClientInnerUnitTest, SetOffloadDataCallbackState_001, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    int cbState = 1;
+    EXPECT_EQ(ptrRendererInClientInner->SetOffloadDataCallbackState(cbState), ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetOffloadDataCallbackState API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadDataCallbackState_002
+ * @tc.desc  : Test RendererInClientInner::SetOffloadDataCallbackState
+ */
+HWTEST(RendererInClientInnerUnitTest, SetOffloadDataCallbackState_002, TestSize.Level4)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    ptrRendererInClientInner->ipcStream_ = new(std::nothrow) IpcStreamTest();
+    int cbState = 1;
+    EXPECT_EQ(ptrRendererInClientInner->SetOffloadDataCallbackState(cbState), SUCCESS);
+}
 } // namespace AudioStandard
 } // namespace OHOS
