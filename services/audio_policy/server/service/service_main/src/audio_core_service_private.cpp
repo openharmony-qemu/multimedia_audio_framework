@@ -407,8 +407,7 @@ void AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
                 "can not find primary in IOmap");
             auto pipeInfoInput = pipeManager_->GetPipeinfoByNameAndFlag("primary",
                 AUDIO_INPUT_FLAG_NORMAL);
-            CHECK_AND_CONTINUE_LOG(pipeInfoInput != nullptr && pipeInfoInput->id_ == ioHandle,
-                "can not find primary pipeInfo");
+            CHECK_AND_CONTINUE_LOG(pipeInfoInput != nullptr, "can not find primary pipeInfo");
             paIndex = pipeInfoInput->paIndex_;
             pipeInfo->id_ = ioHandle;
             pipeInfo->paIndex_ = paIndex;
