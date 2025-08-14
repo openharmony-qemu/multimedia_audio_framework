@@ -316,7 +316,8 @@ int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDevi
     return SUCCESS;
 }
 
-void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type) {
+void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type)
+{
     if (hearingAidCallFlag_) {
         if ((isModemCallRunning && type != DEVICE_TYPE_HEARING_AID) || !isModemCallRunning) {
             hearingAidCallFlag_ = false;
@@ -344,7 +345,8 @@ void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, c
     }
 }
 
-void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type) {
+void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type)
+{
     if (!hearingAidCallFlag_) {
         if (isModemCallRunning && type == DEVICE_TYPE_HEARING_AID) {
             hearingAidCallFlag_ = true;
@@ -368,7 +370,8 @@ void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, co
     }
 }
 
-void AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex) {
+void AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
+{
     std::list<AudioModuleInfo> moduleInfoList;
     bool configRet = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
     CHECK_AND_RETURN_LOG(configRet, "HearingAid not exist in config");
