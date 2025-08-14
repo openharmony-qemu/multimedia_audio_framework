@@ -132,6 +132,8 @@ void AudioRendererUnitTest::ReleaseBufferAndFiles(uint8_t* &buffer, uint8_t* &me
     fclose(metaFile);
 }
 
+
+
 /**
  * @tc.name  : Test Create API via legal input.
  * @tc.number: Audio_Renderer_Create_001
@@ -231,6 +233,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
 {
     AudioRendererOptions rendererOptions;
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
+    rendererOptions.streamInfo.samplingRate = 96010;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;

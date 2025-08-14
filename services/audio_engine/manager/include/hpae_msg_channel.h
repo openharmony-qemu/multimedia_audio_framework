@@ -110,6 +110,7 @@ struct HpaeDfxNodeInfo {
     uint32_t frameLen;
     size_t historyFrameCount;
     AudioSamplingRate samplingRate;
+    uint32_t nonStandardSamplingRate;
     AudioSampleFormat format = AudioSampleFormat::SAMPLE_F32LE;
     AudioChannel channels;
     AudioChannelLayout channelLayout = AudioChannelLayout::CH_LAYOUT_UNKNOWN;

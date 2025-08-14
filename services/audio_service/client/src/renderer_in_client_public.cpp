@@ -228,15 +228,20 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     const AudioPlaybackCaptureConfig &config)
 {
     // In plan: If paramsIsSet_ is true, and new info is same as old info, return
-    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, channels: %{public}d, format: %{public}d,"
-        " stream type: %{public}d, encoding type: %{public}d", info.samplingRate, info.channels, info.format,
-        eStreamType_, info.encoding);
+    AUDIO_INFO_LOG("AudioStreamInfo, Sampling rate: %{public}d, nonstandard sampling rate: %{public}d, channels: %{public}d,"
+    "format: %{public}d, stream type: %{public}d, encoding type: %{public}d",info.samplingRate, info.nonStandardSamplingRate,
+    info.channels, info.format, eStreamType_, info.encoding);
 
     AudioXCollie guard("RendererInClientInner::SetAudioStreamInfo", CREATE_TIMEOUT_IN_SECOND,
          nullptr, nullptr, AUDIO_XCOLLIE_FLAG_LOG);
-    if (!IsFormatValid(info.format) || !IsSamplingRateValid(info.samplingRate) || !IsEncodingTypeValid(info.encoding)) {
+
+    // 校验
+    if (!IsFormatValid(info.format) || !IsEncodingTypeValid(info.encoding)
+        || !(IsSamplingRateValid(info.samplingRate) | IsNonStandardSamplingRateValid(info.nonStandardSamplingRate))) {
         AUDIO_ERR_LOG("Unsupported audio parameter");
         return ERR_NOT_SUPPORTED;
+    }else if(IsNonStandardSamplingRateValid(info.nonStandardSamplingRate) && !IsSamplingRateValid(info.samplingRate)) {
+        AUDIO_INFO_LOG("Parameter: 10Hz resolution sampling rate");
     }
 
     streamParams_ = curStreamParams_ = info; // keep it for later use
@@ -268,7 +273,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
 
     // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" + std::to_string(curStreamParams_.samplingRate) + "_" +
+    dumpOutFile_ = std::to_string(sessionId_) + "_" + 
+        std::to_string(curStreamParams_.nonStandardSamplingRate == 0 ? curStreamParams_.samplingRate : curStreamParams_.nonStandardSamplingRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpOutFile_, &dumpOutFd_);

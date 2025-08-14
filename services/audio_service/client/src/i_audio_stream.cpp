@@ -282,6 +282,12 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
     return isValidSamplingRate;
 }
 
+// 另写IsSamplingRateValid不同名函数
+bool IAudioStream::IsNonStandardSamplingRateValid(uint32_t nonStandardSamplingRate)
+{
+    return nonStandardSamplingRate > 0 && nonStandardSamplingRate % 10 == 0;
+}
+
 bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)
 {
     bool isValidRendererChannelLayout = (find(RENDERER_SUPPORTED_CHANNELLAYOUTS.begin(),

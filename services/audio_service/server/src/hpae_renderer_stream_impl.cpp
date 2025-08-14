@@ -82,6 +82,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     HpaeStreamInfo streamInfo;
     streamInfo.channels = processConfig_.streamInfo.channels;
     streamInfo.samplingRate = processConfig_.streamInfo.samplingRate;
+    streamInfo.nonStandardSamplingRate = processConfig_.streamInfo.nonStandardSamplingRate;
     streamInfo.format = processConfig_.streamInfo.format;
     streamInfo.channelLayout = processConfig_.streamInfo.channelLayout;
     if (streamInfo.channelLayout == CH_LAYOUT_UNKNOWN) {
@@ -109,7 +110,8 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
-    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.samplingRate);
+    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.nonStandardSamplingRate == 0 ? 
+                    streamInfo.samplingRate : streamInfo.nonStandardSamplingRate);
     AUDIO_INFO_LOG("InitParams format %{public}u  end", streamInfo.format);
     AUDIO_INFO_LOG("InitParams frameLen %{public}zu  end", streamInfo.frameLen);
     AUDIO_INFO_LOG("InitParams streamType %{public}u  end", streamInfo.streamType);
