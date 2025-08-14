@@ -868,10 +868,11 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_004, TestSize.Level1)
     std::list<RenderDfxInfo> renderInfo;
     RenderDfxInfo renderdfxInfo;
 
-    renderdfxInfo.rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
+    renderdfxInfo.rendererAction.fourthByte = static_cast<uint8_t>(RendererStage::RENDERER_STAGE_START_OK);
+    renderdfxInfo.rendererAction.firstByte = 1;
     renderInfo.push_back(renderdfxInfo);
     dfxMsgManager.UpdateAction(appUid, renderInfo);
-    EXPECT_NE(dfxMsgManager.appInfo_.count(appUid), 0);
+    EXPECT_EQ(renderInfo.frontt().rendererAction.firstByte, 22);
 }
 
 /**
@@ -886,10 +887,11 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_005, TestSize.Level1)
     std::list<CapturerDfxInfo> capturerInfo;
     CapturerDfxInfo capturerdfxInfo;
 
-    capturerdfxInfo.capturerAction.fourthByte = CapturerStage::CAPTURER_STAGE_START_OK;
+    capturerdfxInfo.capturerAction.fourthByte = static_cast<uint8_t>(CapturerStage::CAPTURER_STAGE_START_OK);
+    capturerdfxInfo.capturerAction.firstByte = 2;
     capturerInfo.push_back(capturerdfxInfo);
     dfxMsgManager.UpdateAction(appUid, capturerInfo);
-    EXPECT_NE(dfxMsgManager.appInfo_.count(appUid), 0);
+    EXPECT_EQ(capturerInfo.front().capturerAction.firstByte, 2);
 }
 
 /**
@@ -904,10 +906,11 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_006, TestSize.Level1)
     std::list<InterruptDfxInfo> interruptInfo;
     InterruptDfxInfo interruptdfxInfo;
 
-    interruptdfxInfo.interruptAction.fourthByte = InterruptStage::INTERRUPT_STAGE_START;
+    interruptdfxInfo.interruptAction.fourthByte = static_cast<uint8_t>(InterruptStage::INTERRUPT_STAGE_START);
+    interruptdfxInfo.interruptAction.firstByte = 3;
     interruptInfo.push_back(interruptdfxInfo);
     dfxMsgManager.UpdateAction(appUid, interruptInfo);
-    EXPECT_NE(dfxMsgManager.appInfo_.count(appUid), 0);
+    EXPECT_EQ(interruptInfo.front().interruptAction.firstByte, 3);
 }
 
 /**
