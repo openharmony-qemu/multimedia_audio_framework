@@ -159,6 +159,11 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetUnusedRecordPip
     for (auto pipe : curPipeList_) {
         CHECK_AND_CONTINUE_LOG(pipe != nullptr, "pipe is nullptr");
         if (pipe->pipeRole_ == PIPE_ROLE_INPUT && pipe->streamDescriptors_.empty() && IsNormalRecordPipe(pipe)) {
+            if (pipe->softLinkFlag_) {
+                pipe->streamDescMap_.clear();
+                pipe->streamDescriptors_.clear();
+                continue;
+            }
             unusedPipeList.push_back(pipe);
         }
     }
