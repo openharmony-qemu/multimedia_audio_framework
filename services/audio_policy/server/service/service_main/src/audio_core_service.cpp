@@ -187,6 +187,8 @@ int32_t AudioCoreService::CreateRendererClient(
         return SUCCESS;
     }
 
+    // Activate device opt move to CreateRendererClient()
+    // For SCO, the device can only be activated at StartClient(), so it is retained.
     int32_t ret = ActivateOutputDevice(streamDesc);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "FetchPipeAndExecute failed");
 
