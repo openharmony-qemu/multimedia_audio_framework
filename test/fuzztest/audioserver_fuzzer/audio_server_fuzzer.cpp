@@ -79,6 +79,7 @@ const vector<DeviceType> g_testDeviceTypes = {
 const vector<DeviceFlag> g_testDeviceFlags = {
     NONE_DEVICES_FLAG,
     OUTPUT_DEVICES_FLAG,
+    INPUT_DEVICES_FLAG,
     ALL_DEVICES_FLAG,
     DISTRIBUTED_OUTPUT_DEVICES_FLAG,
     DISTRIBUTED_INPUT_DEVICES_FLAG,
@@ -714,9 +715,13 @@ void AudioServerGetUsbParameterTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-
+    const vector<std::string> params = {
+        "address=card2;device=0 role=1",
+        "address=card2;device=0 role=2"
+    };
+    std::string param = params[*reinterpret_cast<const uint32_t*>(rawData) % params.size()];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetUsbParameter("address=card2;device=0 role=1");
+    audioServerPtr->GetUsbParameter(param);
 }
 
 void AudioServerOnAddSystemAbilityTest(const uint8_t *rawData, size_t size)
@@ -1158,7 +1163,11 @@ void AudioServerRegisterDataTransferCallbackFuzzTest(const uint8_t *rawData, siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    sptr<IRemoteObject> object = nullptr;
+    MessageParcel data;
+    data.WriteInterfaceToken(FORMMGR_INTERFACE_TOKEN);
+    data.WriteBuffer(rawData, size);
+    data.RewindRead(0);
+    sptr<IRemoteObject> object = data.ReadRemoteObject();
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->RegisterDataTransferCallback(object);
 }
@@ -1233,14 +1242,15 @@ void AudioServerSetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    static const vector<string> testPairs = {
-        "unprocess_audio_effect",
+    const vector<string> testPairs = {
+        "OPEN",
+        "CLOSE",
+        "UPLOAD",
         "test"
     };
+    string pairTest = testPairs[*reinterpret_cast<const uint32_t*>(rawData) % testPairs.size()];
     std::vector<std::pair<std::string, std::string>> params;
-    uint32_t id = *reinterpret_cast<const uint32_t*>(size) % g_testKeys.size();
-    std::pair<std::string, std::string> param = std::make_pair(g_testKeys[id], g_testKeys[id]);
-    params.push_back(param);
+    params.push_back(make_pair(pairTest, "test_value"));
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetPcmDumpParameter(params);
 }
@@ -1283,8 +1293,14 @@ void AudioServerGetTransactionIdFuzzTest(const uint8_t *rawData, size_t size)
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
-    int32_t deviceRole = *reinterpret_cast<const int32_t*>(rawData);
+    const vector<DeviceRole> g_deviceRole = {
+        DEVICE_ROLE_NONE,
+        INPUT_DEVICE,
+        OUTPUT_DEVICE,
+        DEVICE_ROLE_MAX
+    };
+    DeviceType deviceType = g_testDeviceTypes[*reinterpret_cast<const uint32_t*>(rawData) % g_testDeviceTypes.size()];
+    DeviceRole deviceRole = g_deviceRole[*reinterpret_cast<const uint32_t*>(rawData) % g_deviceRole.size()];
     uint64_t transactionId = *reinterpret_cast<const uint64_t*>(rawData);
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->GetTransactionId(deviceType, deviceRole, transactionId);
@@ -1866,11 +1882,11 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     if (rawData == nullptr || size < LIMITSIZE) {
         return;
     }
-    int32_t deviceType = *reinterpret_cast<const int32_t*>(rawData);
+    int32_t deviceTypeId = *reinterpret_cast<const int32_t*>(rawData) % g_testDeviceTypes.size();
+    int32_t deviceType = g_testDeviceTypes[deviceTypeId];
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
-
 void AudioServerResetRecordConfigSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
