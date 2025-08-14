@@ -1398,22 +1398,16 @@ HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_002, TestSize.Level4)
     SLuint32 objectId = SL_OBJECTID_ENGINE;
     ClassTable *result = ObjectIdToClass(objectId);
     EXPECT_TRUE(result != nullptr);
-}
- 
-HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_003, TestSize.Level4)
-{
-    SLuint32 objectId = SL_OBJECTID_AUDIOPLAYER;
-    ClassTable *result = ObjectIdToClass(objectId);
+
+    objectId = SL_OBJECTID_AUDIOPLAYER;
+    result = ObjectIdToClass(objectId);
+    EXPECT_TRUE(result != nullptr);
+
+    objectId = SL_OBJECTID_OUTPUTMIX;
+    result = ObjectIdToClass(objectId);
     EXPECT_TRUE(result != nullptr);
 }
- 
-HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_004, TestSize.Level4)
-{
-    SLuint32 objectId = SL_OBJECTID_OUTPUTMIX;
-    ClassTable *result = ObjectIdToClass(objectId);
-    EXPECT_TRUE(result != nullptr);
-}
- 
+
 HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_005, TestSize.Level4)
 {
     SLuint32 objectId = -1;
