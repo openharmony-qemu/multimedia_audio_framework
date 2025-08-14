@@ -605,6 +605,27 @@ public:
     int32_t UnsetMicrophoneBlockedCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerMicrophoneBlockedCallback> &callback);
 
+    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
+
+    int32_t SetQueryDeviceVolumeBehaviorCallback(
+        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
+
+    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
+    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
+    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
+    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
+    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
+    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
+    bool SetKaraokeParameters(const std::string &parameters);
+    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
+    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
+
     int32_t SetAudioSceneChangeCallback(const int32_t clientId,
         const std::shared_ptr<AudioManagerAudioSceneChangedCallback> &callback);
 
@@ -627,11 +648,6 @@ public:
 
     static void RegisterServerDiedCallBack(AudioServerDiedCallBack func);
 
-    int32_t SetDeviceVolumeBehavior(const std::string &networkId, DeviceType deviceType, VolumeBehavior volumeBehavior);
-
-    int32_t SetQueryDeviceVolumeBehaviorCallback(
-        const std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallback> &callback);
-
     int32_t SetVirtualCall(const bool isVirtual);
 
     int32_t SetInputDevice(const DeviceType deviceType, const uint32_t sessionId,
@@ -649,22 +665,6 @@ public:
     int32_t UnsetAudioFormatUnsupportedErrorCallback();
 
     DirectPlaybackMode GetDirectPlaybackSupport(const AudioStreamInfo &streamInfo, const StreamUsage &streamUsage);
-
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArrayV3 &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArrayV3 &propertyArray);
-
-    int32_t GetSupportedAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t GetSupportedAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    int32_t SetAudioEffectProperty(const AudioEffectPropertyArray &propertyArray);
-    int32_t GetAudioEffectProperty(AudioEffectPropertyArray &propertyArray);
-    int32_t SetAudioEnhanceProperty(const AudioEnhancePropertyArray &propertyArray);
-    int32_t GetAudioEnhanceProperty(AudioEnhancePropertyArray &propertyArray);
-    bool IsAcousticEchoCancelerSupported(SourceType sourceType);
-    bool IsAudioLoopbackSupported(AudioLoopbackMode mode);
-    bool SetKaraokeParameters(const std::string &parameters);
-    int32_t SetAudioRouteCallback(uint32_t sessionId, std::shared_ptr<AudioRouteCallback> callback, uint32_t clientUid);
-    int32_t UnsetAudioRouteCallback(uint32_t sessionId);
 
     int32_t ForceStopAudioStream(StopAudioType audioType);
     bool IsCapturerFocusAvailable(const AudioCapturerInfo &capturerInfo);
