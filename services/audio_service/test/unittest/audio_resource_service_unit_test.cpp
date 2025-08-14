@@ -259,7 +259,7 @@ HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Lev
 /**
  * @tc.name  : Test AudioWorkgroupCheck
  * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck
+ * @tc.number: AudioWorkgroupCheck_001
  * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
@@ -271,6 +271,84 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
     pid = -111;
     result = audioResourceService.AudioWorkgroupCheck(pid);
     EXPECT_EQ(result, false);
+}
+
+/**
+ * @tc.name  : AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_002
+ * @tc.desc  : Should return ERR_NOT_SUPPORTED if a process already has >= AUDIO_MAX_GRP_PER_PROCESS groups.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_002, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    int32_t pid = 1001;
+    service->audioWorkgroupMap_.clear();
+    service->audioWorkgroupMap_[pid].groups.clear();
+    for (int i = 0; i < 4; ++i) {
+        service->audioWorkgroupMap_[pid].groups[i] = std::make_shared<AudioWorkgroup>(i);
+    }
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_003
+ * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_003, TestSize.Level0)
+{
+    int32_t pid = 1234;
+    for (int i = 0; i < AUDIO_MAX_PROCESS; i++) {
+        audioResourceService.audioWorkgroupMap_[AUDIO_MAX_PROCESS].hasSystemPermission = false;
+    }
+    EXPECT_NE(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_004
+ * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
+{
+    int32_t pid = 1234;
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), SUCCESS);
+}
+
+/**
+ * @tc.name  : AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_005
+ * @tc.desc  : Should enter the for-loop over processes when not in any group.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_005, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    service->audioWorkgroupMap_.clear();
+    // Fill a few process entries, all without system permission
+    service->audioWorkgroupMap_[2001].hasSystemPermission = false;
+    int32_t pid = 9999;
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
+}
+ 
+/**
+ * @tc.name  : AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck_006
+ * @tc.desc  : Should return ERR_NOT_SUPPORTED if normal process count reaches AUDIO_MAX_PROCESS.
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_006, TestSize.Level1)
+{
+    auto* service = AudioResourceService::GetInstance();
+    service->audioWorkgroupMap_.clear();
+    for (int i = 0; i < 2; ++i) {
+        service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
+    }
+    int32_t pid = 8888;
+    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -655,84 +733,6 @@ HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_005, TestSize.Level0)
     EXPECT_NE(ret, SUCCESS);
 }
 
-/**
- * @tc.name  : Test AudioWorkgroupCheck
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_003
- * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_003, TestSize.Level0)
-{
-    int32_t pid = 1234;
-    for (int i = 0; i < AUDIO_MAX_PROCESS; i++) {
-        audioResourceService.audioWorkgroupMap_[AUDIO_MAX_PROCESS].hasSystemPermission = false;
-    }
-    EXPECT_NE(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
-}
-
-/**
- * @tc.name  : Test AudioWorkgroupCheck
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_004
- * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
-{
-    int32_t pid = 1234;
-    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), SUCCESS);
-}
-
-/**
- * @tc.name  : AudioWorkgroupCheck
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_002
- * @tc.desc  : Should return ERR_NOT_SUPPORTED if a process already has >= AUDIO_MAX_GRP_PER_PROCESS groups.
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_002, TestSize.Level1)
-{
-    auto* service = AudioResourceService::GetInstance();
-    int32_t pid = 1001;
-    service->audioWorkgroupMap_.clear();
-    service->audioWorkgroupMap_[pid].groups.clear();
-    for (int i = 0; i < 4; ++i) {
-        service->audioWorkgroupMap_[pid].groups[i] = std::make_shared<AudioWorkgroup>(i);
-    }
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
-}
- 
-/**
- * @tc.name  : AudioWorkgroupCheck
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_003
- * @tc.desc  : Should enter the for-loop over processes when not in any group.
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_003, TestSize.Level1)
-{
-    auto* service = AudioResourceService::GetInstance();
-    service->audioWorkgroupMap_.clear();
-    // Fill a few process entries, all without system permission
-    service->audioWorkgroupMap_[2001].hasSystemPermission = false;
-    int32_t pid = 9999;
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), SUCCESS);
-}
- 
-/**
- * @tc.name  : AudioWorkgroupCheck - Max Process Limit
- * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_004
- * @tc.desc  : Should return ERR_NOT_SUPPORTED if normal process count reaches AUDIO_MAX_PROCESS.
- */
-HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level1)
-{
-    auto* service = AudioResourceService::GetInstance();
-    service->audioWorkgroupMap_.clear();
-    for (int i = 0; i < 2; ++i) {
-        service->audioWorkgroupMap_[3000 + i].hasSystemPermission = false;
-    }
-    int32_t pid = 8888;
-    EXPECT_EQ(service->AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
-}
- 
 class DummyAudioWorkgroup : public AudioWorkgroup {
 public:
     explicit DummyAudioWorkgroup(int32_t groupId) : AudioWorkgroup(groupId) {}
