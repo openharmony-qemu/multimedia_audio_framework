@@ -209,6 +209,7 @@ static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t
 
 static void ConvertToSplitArr(const char *str)
 {
+    AUDIO_INFO_LOG("start ConvertToSplitArr");
     g_splitNums = 0;
     for (int i = 0; i < MAX_PARTS; ++i) {
         g_splitArr[i] = NULL;
@@ -1139,6 +1140,7 @@ static int32_t InitRemoteSink(struct userdata *u, const char *filePath)
 
 static void UserdataFree(struct userdata *u)
 {
+    AUDIO_INFO_LOG("start UserdataFree");
     CHECK_AND_RETURN_LOG(u != NULL, "u is null");
     if (u->sink) {
         pa_sink_unlink(u->sink);
