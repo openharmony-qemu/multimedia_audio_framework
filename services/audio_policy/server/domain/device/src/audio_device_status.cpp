@@ -33,6 +33,7 @@
 #include "audio_core_service.h"
 #include "audio_utils_c.h"
 #include "sle_audio_device_manager.h"
+#include "audio_zone_service.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -831,12 +832,28 @@ string AudioDeviceStatus::GetModuleNameByType(ClassType type)
     return moduleList.front().name;
 }
 
+std::shared_ptr<AudioDeviceDescriptor> AudioDeviceStatus::GetDeviceByStatusInfo(const DStatusInfo &statusInfo)
+{
+    DeviceType devType = GetDeviceTypeFromPin(statusInfo.hdiPin);
+    AudioDeviceDescriptor deviceDesc(devType, AudioPolicyUtils::GetInstance().GetDeviceRole(devType));
+    deviceDesc.SetDeviceInfo(statusInfo.deviceName, statusInfo.macAddress);
+    DeviceStreamInfo streamInfo = {};
+    std::list<DeviceStreamInfo> streamInfoList = statusInfo.streamInfo.empty() ?
+        std::list<DeviceStreamInfo>{ streamInfo } : statusInfo.streamInfo;
+    deviceDesc.SetDeviceCapability(streamInfoList, 0);
+    deviceDesc.networkId_ = statusInfo.networkId;
+    return std::make_shared<AudioDeviceDescriptor>(deviceDesc);
+}
+
 void AudioDeviceStatus::OnDeviceStatusUpdated(DStatusInfo statusInfo, bool isStop)
 {
     AUDIO_WARNING_LOG("[ADeviceEvent] remote HDI_PIN[%{public}d] connet[%{public}d] "
         "networkId[%{public}s]", statusInfo.hdiPin, statusInfo.isConnected,
         GetEncryptStr(statusInfo.networkId).c_str());
     if (isStop) {
+        std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
+        AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
+
         HandleOfflineDistributedDevice();
         audioCapturerSession_.ReloadSourceForDeviceChange(audioActiveDevice_.GetCurrentInputDevice(),
             audioActiveDevice_.GetCurrentOutputDevice(), "OnDeviceStatusUpdated 2.1 param");
