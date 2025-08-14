@@ -175,7 +175,7 @@ void ErrCodeToString()
     resampler.ErrCodeToString(RESAMPLER_ERR_SUCCESS);
     resampler.ErrCodeToString(RESAMPLER_ERR_ALLOC_FAILED);
     resampler.ErrCodeToString(RESAMPLER_ERR_OVERFLOW);
-    resampler.ErrCodeToString(NUM_SEVENN);
+    resampler.ErrCodeToString(NUM_SEVEN);
     resampler.ErrCodeToString(RESAMPLER_ERR_INVALID_ARG);
     resampler.ErrCodeToString(GetData<int32_t>());
 }
