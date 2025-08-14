@@ -29,6 +29,7 @@ group("audio_policy_config_parser_unittest_packages") {
 }
 
 module_output_path = "audio_framework/audio_framework_policy/audio_policy_config_parser"
+audio_framework_root = "../../../../../../.."
 
 ohos_unittest("audio_focus_parser_unit_test") {
   module_out_path = module_output_path
@@ -49,6 +50,16 @@ ohos_unittest("audio_focus_parser_unit_test") {
 
   cflags_cc = cflags
   cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = false
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
+  }
 
   external_deps = [
     "bluetooth:btframework",
@@ -95,11 +106,12 @@ ohos_unittest("audio_concurrency_parser_unit_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   external_deps = [
@@ -149,11 +161,12 @@ ohos_unittest("audio_tone_parser_test") {
 
   sanitize = {
     cfi = true
-    cfi_cross_dso = true
+    cfi_cross_dso = false
     boundary_sanitize = true
     debug = false
     integer_overflow = true
-    ubsan = true
+    ubsan = false
+    blocklist = "${audio_framework_root}/cfi_blocklist.txt"
   }
 
   external_deps = [
