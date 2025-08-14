@@ -209,6 +209,7 @@ static enum AudioSampleFormatIntf ConvertPaToHdiAdapterFormat(pa_sample_format_t
 
 static void ConvertToSplitArr(const char *str)
 {
+    g_splitNums = 0;
     for (int i = 0; i < MAX_PARTS; ++i) {
         g_splitArr[i] = NULL;
     }
@@ -407,6 +408,7 @@ static void SplitSinkRenderInputsDrop(pa_sink *si, pa_mix_info *infoIn, unsigned
 static int IsPeekCurrentSinkInput(char *streamType, const char *usageStr)
 {
     CHECK_AND_RETURN_RET_LOG(usageStr != NULL, -1, "usageStr is null");
+    CHECK_AND_RETURN_RET_LOG(streamType != NULL, -1, "streamType is null");
     int flag = 0;
     if (g_splitNums == SPLIT_ONE_STREAM) {
         flag = 1;
@@ -1175,6 +1177,8 @@ static void UserdataFree(struct userdata *u)
 
     pa_xfree(u);
 
+    // restore the arr ptr and len
+    g_splitNums = 0;
     for (int32_t i = 0; i < MAX_PARTS; ++i) {
         if (g_splitArr[i] == NULL) {
             continue;
