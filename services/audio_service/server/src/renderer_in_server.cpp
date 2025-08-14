@@ -363,6 +363,7 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
+    std::lock_guard<std::mutex> lock(dupMutex_);
     size_t dupTotalSizeInFrameTemp_ = 0;
 
     if (offloadEnable_ == true) {
@@ -842,6 +843,7 @@ void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, Cap
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         if (captureInfo.dupStream != nullptr) {
+            Trace trace("InnerCaptureOtherStream WriteData " + "sessionId: " + std::to_string(captureInfo.dupStream->GetStreamIndex()));
             InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
         }
     }
@@ -2112,12 +2114,13 @@ std::unique_ptr<AudioRingCache>& RendererInServer::GetDupRingBuffer()
 int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 {
     // todo dynamic
-    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
-        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
-        innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr) {
-        AUDIO_INFO_LOG("dup buffer already configed!");
-        return SUCCESS;
-    }
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) !=
+        innerCapIdToDupStreamCallbackMap_.end(), SUCCESS,
+        "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
+        SUCCESS, "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
+        SUCCESS, "DupRingBuffe is null, innerCapId: %{public}d", innerCapId);
 
     auto &capInfo = captureInfos_[innerCapId];
     capInfo.dupStream->GetSpanSizePerFrame(dupSpanSizeInFrame_);
@@ -2149,12 +2152,13 @@ int32_t RendererInServer::CreateDupBufferInner(int32_t innerCapId)
 int32_t RendererInServer::WriteDupBufferInner(const BufferDesc &bufferDesc, int32_t innerCapId)
 {
     size_t targetSize = bufferDesc.bufLength;
-    if (innerCapIdToDupStreamCallbackMap_.find(innerCapId) == innerCapIdToDupStreamCallbackMap_.end() ||
-        innerCapIdToDupStreamCallbackMap_[innerCapId] == nullptr ||
-        innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr) {
-        AUDIO_INFO_LOG("dup buffer is nnullptr, failed WriteDupBuffer!");
-        return ERROR;
-    }
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_.find(innerCapId) !=
+        innerCapIdToDupStreamCallbackMap_.end(), ERROR,
+        "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
+        ERROR, "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", innerCapId);
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
+        ERROR, "DupRingBuffe is null, innerCapId: %{public}d", innerCapId);
     OptResult result = innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer()->GetWritableSize();
     // todo get writeable size failed
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
