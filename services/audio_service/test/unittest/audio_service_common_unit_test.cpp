@@ -1496,7 +1496,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_002, TestSize.Level1)
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
  * @tc.number: ReadFromParcel_003
- * @tc.desc  : Test ReadFromParcel interface.
+ * @tc.desc  : Test AudioSharedMemory::ReadFromParcel interface.
  */
 HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level1)
 {
@@ -1511,7 +1511,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level1)
  * @tc.name  : Test Unmarshalling API
  * @tc.type  : FUNC
  * @tc.number: Unmarshalling_001
- * @tc.desc  : Test AudioBufferBase::Unmarshalling interface.
+ * @tc.desc  : Test OHAudioBufferBase::Unmarshalling interface.
  */
 HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level1)
 {
@@ -1522,8 +1522,8 @@ HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level1)
     messageParcel.WriteUint32(10);
     messageParcel.WriteFileDescriptor(3);
     messageParcel.WriteFileDescriptor(4);
-    
-    auto buffer = AudioBufferBase::Unmarshalling(parcel);
+
+    auto buffer = OHAudioBufferBase::Unmarshalling(parcel);
     EXPECT_EQ(buffer, nullptr);
 }
 
@@ -1531,7 +1531,7 @@ HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level1)
  * @tc.name  : Test CreateFromRemote API
  * @tc.type  : FUNC
  * @tc.number: CreateFromRemote _001
- * @tc.desc  : Test CreateFromRemote  interface.
+ * @tc.desc  : Test OHAudioBufferBase::CreateFromRemote  interface.
  */
 HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level1)
 {
@@ -1541,7 +1541,7 @@ HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level1)
     int dataFd = 3;
     int infoFd = 1;
 
-    std::shared_ptr<AudioBufferBase> buffer = AudioBufferBase::CreateFromRemote(totalSizeInFrame,
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::CreateFromRemote(totalSizeInFrame,
         byteSizePerFrame, bufferHolder, dataFd, infoFd);
     EXPECT_EQ(buffer, nullptr);
 }
@@ -1550,7 +1550,7 @@ HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level1)
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
  * @tc.number: ReadFromParcel_004
- * @tc.desc  : Test AudioBufferBase::ReadFromParcel interface.
+ * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
 HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level1)
 {
@@ -1562,7 +1562,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level1)
     int infoFd = 2;
     parcel.WriteFileDescriptor(dataFd);
     parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<AudioBufferBase> buffer = AudioBufferBase::ReadFromParcel(parcel);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
     EXPECT_EQ(buffer, nullptr);
 }
 
@@ -1570,7 +1570,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level1)
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
  * @tc.number: ReadFromParcel_005
- * @tc.desc  : Test AudioBufferBase::ReadFromParcel interface.
+ * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
 HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level1)
 {
@@ -1582,7 +1582,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level1)
     int infoFd = 2;
     parcel.WriteFileDescriptor(dataFd);
     parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<AudioBufferBase> buffer = AudioBufferBase::ReadFromParcel(parcel);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
     EXPECT_EQ(buffer, nullptr);
 }
 
@@ -1590,7 +1590,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level1)
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
  * @tc.number: ReadFromParcel_007
- * @tc.desc  : Test AudioBufferBase::ReadFromParcel interface.
+ * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
 HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level1)
 {
@@ -1602,7 +1602,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level1)
     int infoFd = 4;
     parcel.WriteFileDescriptor(dataFd);
     parcel.WriteFileDescriptor(infoFd);
-    std::shared_ptr<AudioBufferBase> buffer = AudioBufferBase::ReadFromParcel(parcel);
+    std::shared_ptr<OHAudioBufferBase> buffer = OHAudioBufferBase::ReadFromParcel(parcel);
     EXPECT_EQ(buffer, nullptr);
 }
 
@@ -1614,7 +1614,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level1)
  */
 HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_004, TestSize.Level1)
 {
-    AudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
+    OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
     audioBufferBase.syncWriteFrame_ = nullptr;
     EXPECT_EQ(audioBufferBase.GetSyncWriteFrame(), 0);
@@ -1628,11 +1628,10 @@ HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_004, TestSize.Level1)
  */
 HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_005, TestSize.Level1)
 {
-    AudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
+    OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
     uint32_t syncWriteFrame = 50;
     audioBufferBase.syncWriteFrame_ = &syncWriteFrame;
-    uint32_t readFrame = 10;
     EXPECT_EQ(audioBufferBase.GetSyncWriteFrame(), syncWriteFrame);
 }
 
@@ -1645,23 +1644,22 @@ HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_005, TestSize.Level1)
 HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_002, TestSize.Level1)
 {
     uint32_t syncWriteFrame = 50;
-    AudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
+    OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
-    audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
-    audioBufferBase.syncWriteFrame_ = &syncWriteFrame;
+    audioBufferBase.syncReadFrame_ = &syncWriteFrame;
     uint32_t readFrame = 10;
-    EXPECT_TRUE(audioBufferBase.GetSyncWriteFrame(readFrame));
+    EXPECT_TRUE(audioBufferBase.SetSyncReadFrame(readFrame));
 }
 
 /**
  * @tc.name  : Test GetFutex API
  * @tc.type  : FUNC
  * @tc.number: GetFutex
- * @tc.desc  : Test GetFutex interface.
+ * @tc.desc  : Test OHAudioBufferBase::GetFutex() interface.
  */
 HWTEST(AudioServiceCommonUnitTest, GetFutex_001, TestSize.Level1)
 {
-    AudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
+    OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.basicBufferInfo_ = nullptr;
     EXPECT_EQ(audioBufferBase.GetFutex(), nullptr);
 }
