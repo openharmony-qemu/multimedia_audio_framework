@@ -663,7 +663,7 @@ int32_t AudioRendererPrivate::SetParams(const AudioRendererParams params)
     RegisterRendererPolicyServiceDiedCallback();
     // eg: 100005_44100_2_1_client_in.pcm
     std::string dumpFileName = std::to_string(sessionID_) + "_" + 
-        std::to_string(params.nonStandardSamplingRate == 0 ? params.samplingRate : params.nonStandardSamplingRate) + "_" +
+        std::to_string(params.nonStandardSamplingRate == 0 ? params.sampleRate : params.nonStandardSamplingRate) + "_" +
         std::to_string(params.channelCount) + "_" + std::to_string(params.sampleFormat) + "_client_in.pcm";
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_CLIENT_PARA, dumpFileName, &dumpFile_);
 
