@@ -31,6 +31,7 @@ using namespace HPAE;
 static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
+const size_t THRESHOLD = 10;
 const size_t NUM_TWO = 2;
 const size_t NUM_SEVEN = 7;
 const static std::vector<uint32_t>  TEST_CHANNELS = {MONO, STEREO, CHANNEL_6};
