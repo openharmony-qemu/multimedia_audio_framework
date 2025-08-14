@@ -52,9 +52,9 @@ public:
     {
         AudioZoneUnitTestBase::SetUp();
         AudioZoneContext context;
-        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+        zoneId1_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
         EXPECT_NE(zoneId1_, 0);
-        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+        zoneId2_ = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
         EXPECT_NE(zoneId2_, 0);
     }
 

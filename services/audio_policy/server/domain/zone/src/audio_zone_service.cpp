@@ -55,9 +55,9 @@ void AudioZoneService::DeInit()
     interruptService_ = nullptr;
 }
 
-int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZoneContext &context)
+int32_t AudioZoneService::CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid)
 {
-    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(zoneClientManager_, name, context);
+    std::shared_ptr<AudioZone> zone = std::make_shared<AudioZone>(zoneClientManager_, name, context, clientPid);
     CHECK_AND_RETURN_RET_LOG(zone != nullptr, ERROR, "zone is nullptr");
     int32_t zoneId = zone->GetId();
     {
@@ -669,6 +669,25 @@ int32_t AudioZoneService::ClearAudioFocusBySessionID(const int32_t &sessionID)
 {
     CHECK_AND_RETURN_RET_LOG(interruptService_ != nullptr, ERROR, "interruptService_ is nullptr");
     return interruptService_->ClearAudioFocusBySessionID(sessionID);
+}
+
+void AudioZoneService::ReleaseAudioZoneByClientPid(pid_t clientPid)
+{
+    int32_t zoneId;
+    {
+        std::lock_guard<std::mutex> lock(zoneMutex_);
+        auto findZone = [&clientPid] (const std::pair<int32_t, std::shared_ptr<AudioZone>> &item) {
+            CHECK_AND_RETURN_RET(item.second != nullptr, false);
+            return item.second->GetClientPid() == clientPid;
+        };
+
+        auto itZone = std::find_if(zoneMaps_.begin(), zoneMaps_.end(), findZone);
+        CHECK_AND_RETURN(itZone != zoneMaps_.end());
+        zoneId = itZone->first;
+    }
+
+    AUDIO_INFO_LOG("client %{public}d died, release zone %{public}d", clientPid, zoneId);
+    ReleaseAudioZone(zoneId);
 }
 } // namespace AudioStandard
 } // namespace OHOS

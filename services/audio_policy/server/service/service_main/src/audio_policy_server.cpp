@@ -3157,6 +3157,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     }
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
+    AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -4061,11 +4062,12 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId)
+int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId,
+    int32_t pid)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERR_INVALID_PARAM, "audio zone name is empty");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
-    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context);
+    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context, static_cast<pid_t>(pid));
     return SUCCESS;
 }
 
