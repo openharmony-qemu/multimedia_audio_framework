@@ -2032,7 +2032,6 @@ HWTEST(IpcStreamInServerUnitTest, GetLatency_001, TestSize.Level3)
         ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.GetLatency(latency);
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
-
 }
 
 /**
