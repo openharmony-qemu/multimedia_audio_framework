@@ -671,10 +671,10 @@ HWTEST(DfxMsgManagerUnitTest, CheckIsInterrupted_001, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_004
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_004
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_004, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -692,10 +692,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_005
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_005
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_005, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -713,10 +713,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_006
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_006
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_006, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -734,10 +734,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_007
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_007
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_007, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -755,10 +755,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_008
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_008
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_008, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -776,10 +776,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: ProcessInner_009
-* @tc.desc  : Test DfxMsgManager::ProcessInner
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: ProcessInner_009
+ * @tc.desc  : Test DfxMsgManager::ProcessInner
+ */
 HWTEST(DfxMsgManagerUnitTest, ProcessInner_009, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -797,10 +797,10 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteRenderMsg_002
-* @tc.desc  : Test DfxMsgManager::WriteRenderMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteRenderMsg_002
+ * @tc.desc  : Test DfxMsgManager::WriteRenderMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -817,10 +817,10 @@ HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteRenderMsg_003
-* @tc.desc  : Test DfxMsgManager::WriteRenderMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteRenderMsg_003
+ * @tc.desc  : Test DfxMsgManager::WriteRenderMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_003, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -837,10 +837,10 @@ HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteRenderMsg_004
-* @tc.desc  : Test DfxMsgManager::WriteRenderMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteRenderMsg_004
+ * @tc.desc  : Test DfxMsgManager::WriteRenderMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_004, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -857,10 +857,10 @@ HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_004
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_004
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_004, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -875,10 +875,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_004, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_005
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_005
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_005, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -893,10 +893,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_005, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_006
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_006
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_006, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -911,10 +911,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_006, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_007
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_007
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_007, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -929,10 +929,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_007, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_008
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_008
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_008, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -947,10 +947,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_008, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: UpdateAction_009
-* @tc.desc  : Test DfxMsgManager::UpdateAction
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: UpdateAction_009
+ * @tc.desc  : Test DfxMsgManager::UpdateAction
+ */
 HWTEST(DfxMsgManagerUnitTest, UpdateAction_009, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -966,10 +966,10 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_009, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteInterruptMsg_002
-* @tc.desc  : Test DfxMsgManager::WriteInterruptMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteInterruptMsg_002
+ * @tc.desc  : Test DfxMsgManager::WriteInterruptMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -987,10 +987,10 @@ HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_002, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteInterruptMsg_003
-* @tc.desc  : Test DfxMsgManager::WriteInterruptMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteInterruptMsg_003
+ * @tc.desc  : Test DfxMsgManager::WriteInterruptMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_003, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
@@ -1008,10 +1008,10 @@ HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_003, TestSize.Level1)
 }
 
 /**
-* @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteCapturerMsg_002
-* @tc.desc  : Test DfxMsgManager::WriteCapturerMsg
-*/
+ * @tc.name  : Test DfxMsgManager.
+ * @tc.number: WriteCapturerMsg_002
+ * @tc.desc  : Test DfxMsgManager::WriteCapturerMsg
+ */
 HWTEST(DfxMsgManagerUnitTest, WriteCapturerMsg_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
