@@ -1498,7 +1498,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_002, TestSize.Level1)
  * @tc.number: ReadFromParcel_003
  * @tc.desc  : Test AudioSharedMemory::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint64(100);
@@ -1513,7 +1513,7 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level1)
  * @tc.number: Unmarshalling_001
  * @tc.desc  : Test OHAudioBufferBase::Unmarshalling interface.
  */
-HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level4)
 {
     Parcel parcel;
     MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
@@ -1533,7 +1533,7 @@ HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level1)
  * @tc.number: CreateFromRemote _001
  * @tc.desc  : Test OHAudioBufferBase::CreateFromRemote  interface.
  */
-HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level4)
 {
     uint32_t totalSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
@@ -1552,7 +1552,7 @@ HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level1)
  * @tc.number: ReadFromParcel_004
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_ONLY));
@@ -1572,10 +1572,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level1)
  * @tc.number: ReadFromParcel_005
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level4)
 {
     MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
     parcel.WriteUint32(100);
     parcel.WriteUint32(10);
     int dataFd = 1;
@@ -1592,10 +1592,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level1)
  * @tc.number: ReadFromParcel_007
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level4)
 {
     MessageParcel parcel;
-    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
+    parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
     parcel.WriteUint32(100);
     parcel.WriteUint32(10);
     int dataFd = 3;
