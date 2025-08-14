@@ -1826,8 +1826,8 @@ HWTEST(IpcStreamInServerUnitTest, GetRenderer_001, TestSize.Level3)
 
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
-    auto ret1 = ipcStreamInServerRet.GetRenderer();
-    EXPECT_EQ(ret1, nullptr);
+    auto ret = ipcStreamInServerRet.GetRenderer();
+    EXPECT_EQ(ret, nullptr);
 }
 
 /**
