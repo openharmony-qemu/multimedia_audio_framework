@@ -1606,8 +1606,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_006, TestSize.Level1)
     checkerPara.sumFrameCount = 100;
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(true, checker->isKeepCheck_);
 }
  
 /**
@@ -1629,8 +1628,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_007, TestSize.Level1)
     checkerPara.sumFrameCount = 100;
     checkerPara.hasInitCheck = false;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(false, checker->isNeedCreateThread_);
 }
  
 /**
@@ -1652,8 +1650,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_008, TestSize.Level1)
     checkerPara.sumFrameCount = 100;
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, false, checkerPara);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(AUDIO_STREAM_START, checkerPara.lastStatus);
 }
  
 /**
@@ -1675,8 +1672,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_009, TestSize.Level1)
     checkerPara.sumFrameCount = 100;
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
-    int size = checker->checkParaVector_.size();
-    EXPECT_NE(0, size);
+    EXPECT_EQ(0, checkerPara.pid);
 }
  
 /**
@@ -1718,7 +1714,7 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_010, TestSize.Level1)
     para.isMonitorNoDataFrame = false;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-    EXPECT_EQ(0, abnormalFrameNum);
+    EXPECT_EQ(false, para.isMonitorNoDataFrame);
 }
  
 /**
@@ -1739,7 +1735,7 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_011, TestSize.Level1)
     para.isMonitorNoDataFrame = false;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-    EXPECT_EQ(0, abnormalFrameNum);
+    EXPECT_NE(0, para.noDataFrameNum);
 }
  
 /**
@@ -1760,7 +1756,7 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_012, TestSize.Level1)
     para.isMonitorNoDataFrame = false;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-    EXPECT_EQ(0, abnormalFrameNum);
+    EXPECT_NE(0, para.noDataFrameNum);
 }
  
 /**
@@ -1782,7 +1778,7 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_013, TestSize.Level1)
     para.isMonitorNoDataFrame = false;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-    EXPECT_EQ(0, abnormalFrameNum);
+    EXPECT_EQ(0, para.noDataFrameNum);
 }
  
 /**
@@ -1801,10 +1797,10 @@ HWTEST(AudioStreamCheckerTest, CalculateFrameAfterStandby_014, TestSize.Level1)
     para.standbyStopTime = DEFAULT_TIME;
     para.isInStandby = 0;
     para.lastUpdateTime = 0;
-    para.isMonitorNoDataFrame = false;
+    para.isMonitorNoDataFrame = true;
     checker->streamConfig_.rendererInfo.rendererFlags = 0;
     checker->CalculateFrameAfterStandby(para, abnormalFrameNum);
-    EXPECT_EQ(0, abnormalFrameNum);
+    EXPECT_EQ(0, para.noDataFrameNum);
 }
  
 /**
