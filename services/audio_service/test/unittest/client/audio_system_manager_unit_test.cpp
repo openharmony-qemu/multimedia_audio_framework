@@ -1726,10 +1726,10 @@ HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
 
 /**
  * @tc.name   : Test OnWorkgroupChange API
- * @tc.number : OnWorkgroupChange_001
+ * @tc.number : OnWorkgroupChange_004
  * @tc.desc   : Test OnWorkgroupChange interface
  */
-HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_001, TestSize.Level4)
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
 {
     AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
     AudioWorkgroupChangeInfoIpc info;
