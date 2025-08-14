@@ -85,7 +85,6 @@ const char* MODIFY_AUDIO_SETTINGS_PERMISSION = "ohos.permission.MODIFY_AUDIO_SET
 const char* ACCESS_NOTIFICATION_POLICY_PERMISSION = "ohos.permission.ACCESS_NOTIFICATION_POLICY";
 const char* CAPTURER_VOICE_DOWNLINK_PERMISSION = "ohos.permission.CAPTURE_VOICE_DOWNLINK_AUDIO";
 const char* RECORD_VOICE_CALL_PERMISSION = "ohos.permission.RECORD_VOICE_CALL";
-const char* CAPTURE_VOICE_CALL_PERMISSION = "ohos.permission.CAPTURE_VOICE_CALL";
 
 const char* PRIMARY_WAKEUP = "Built_in_wakeup";
 const char* INNER_CAPTURER_SINK = "InnerCapturerSink_";
@@ -343,6 +342,7 @@ enum CallbackChange : int32_t {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
     CALLBACK_MAX,
 };
 
@@ -399,6 +399,7 @@ constexpr CallbackChange CALLBACK_ENUMS[] = {
     CALLBACK_SYSTEM_VOLUME_CHANGE,
     CALLBACK_AUDIO_SESSION_STATE,
     CALLBACK_AUDIO_SESSION_DEVICE,
+    CALLBACK_SET_VOLUME_DEGREE_CHANGE,
 };
 
 static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<size_t>(CALLBACK_MAX),
@@ -407,6 +408,7 @@ static_assert((sizeof(CALLBACK_ENUMS) / sizeof(CallbackChange)) == static_cast<s
 struct VolumeEvent : public Parcelable {
     AudioVolumeType volumeType;
     int32_t volume;
+    int32_t volumeDegree;
     bool updateUi;
     int32_t volumeGroupId = 0;
     std::string networkId = LOCAL_NETWORK_ID;
@@ -421,6 +423,7 @@ struct VolumeEvent : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(volumeType))
             && parcel.WriteInt32(volume)
+            && parcel.WriteInt32(volumeDegree)
             && parcel.WriteBool(updateUi)
             && parcel.WriteInt32(volumeGroupId)
             && parcel.WriteString(networkId)
@@ -431,6 +434,7 @@ struct VolumeEvent : public Parcelable {
     {
         volumeType = static_cast<AudioVolumeType>(parcel.ReadInt32());
         volume = parcel.ReadInt32();
+        volumeDegree = parcel.ReadInt32();
         updateUi = parcel.ReadBool();
         volumeGroupId = parcel.ReadInt32();
         networkId = parcel.ReadString();
@@ -1374,6 +1378,7 @@ struct Volume {
     bool isMute = false;
     float volumeFloat = 1.0f;
     uint32_t volumeInt = 0;
+    uint32_t volumeDegree = 0;
 };
 
 enum AppIsBackState {

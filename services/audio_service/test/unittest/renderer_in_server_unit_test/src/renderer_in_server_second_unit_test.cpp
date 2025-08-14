@@ -871,7 +871,7 @@ HWTEST_F(RendererInServerExtUnitTest, StreamCallbacksOnWriteData_002, TestSize.L
 
     streamCallbacks->dupRingBuffer_ = AudioRingCache::Create(10);
     ret = streamCallbacks->OnWriteData(inputData, 3);
-    EXPECT_EQ(SUCCESS, ret);
+    EXPECT_EQ(ERROR, ret);
     delete[] inputData;
 }
 

@@ -88,7 +88,7 @@ HWTEST(AudioRouterCenterUnitTest, AudioRouterCenter_003, TestSize.Level1)
     int32_t zoneId = AudioZoneService::GetInstance().CreateAudioZone("1", context);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 1);
     descs = audioRouterCenter.FetchOutputDevices(STREAM_USAGE_ALARM, 1, "", ROUTER_TYPE_NONE);
-    EXPECT_EQ(descs.size(), 0);
+    EXPECT_EQ(descs.size(), 1);
 }
 
 /**

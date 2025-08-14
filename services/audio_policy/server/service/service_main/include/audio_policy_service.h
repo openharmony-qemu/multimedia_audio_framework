@@ -249,8 +249,8 @@ public:
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
     void SetVoiceTranscriptionMuteState(uint32_t sessionId, bool isMute);
-    void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState);
-    void RemoveVoiceTranscriptionMuteState(uint32_t sessionId);
+    void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
+    void RemoveVoiceMuteState(uint32_t sessionId);
 
 private:
     AudioPolicyService()

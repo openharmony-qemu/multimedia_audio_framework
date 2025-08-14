@@ -803,6 +803,11 @@ void AudioPolicyServerHandler::HandleVolumeKeyEvent(const AppExecFwk::InnerEvent
             clientCallbacksMap_[it->first][CALLBACK_SYSTEM_VOLUME_CHANGE]) {
             volumeChangeCb->OnSystemVolumeChange(eventContextObj->volumeEvent);
         }
+        if (clientCallbacksMap_.count(it->first) > 0 &&
+            clientCallbacksMap_[it->first].count(CALLBACK_SET_VOLUME_DEGREE_CHANGE) > 0 &&
+            clientCallbacksMap_[it->first][CALLBACK_SET_VOLUME_DEGREE_CHANGE]) {
+            volumeChangeCb->OnVolumeDegreeEvent(eventContextObj->volumeEvent);
+        }
         HandleVolumeChangeCallback(it->first, volumeChangeCb, eventContextObj->volumeEvent);
     }
 }

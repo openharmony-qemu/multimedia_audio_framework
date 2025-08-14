@@ -634,7 +634,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_030, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckAIinputPipe(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
 }
 
@@ -658,7 +658,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_031, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckAIinputPipe(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
 }
 
@@ -679,7 +679,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckAIinputPipe(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
 }
 
@@ -697,7 +697,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_033, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 }
@@ -720,7 +720,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_034, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 
@@ -728,7 +728,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_034, TestSize.Level1)
     auto pipenew = std::make_shared<AudioPipeInfo>();
     pipenew->pipeRole_ = PIPE_ROLE_NONE;
     pipeList.push_back(pipenew);
-    result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 }
@@ -752,7 +752,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_035, TestSize.Level1)
     uint32_t sessionId = 1;
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 
@@ -761,7 +761,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_035, TestSize.Level1)
     pipe->pipeRole_ = PIPE_ROLE_INPUT;
     pipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     pipeList.push_back(pipenew);
-    result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 }
@@ -790,7 +790,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_036, TestSize.Level1)
     // sessionId相同
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 }
@@ -819,7 +819,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_037, TestSize.Level1)
     // stream为空
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, false);
     EXPECT_EQ(hasSession, false);
 }
@@ -853,7 +853,7 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_038, TestSize.Level1)
 
     AudioStreamDescriptor runningSessionInfo = {};
     bool hasSession = false;
-    bool result = audioCapturerSession->CheckNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
+    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
     EXPECT_EQ(result, true);
     EXPECT_EQ(hasSession, true);
 }

@@ -70,10 +70,9 @@ bool AudioPolicyConfigManager::Init(bool isRefresh)
     std::unique_ptr<AudioSourceStrategyParser> audioSourceStrategyParser = make_unique<AudioSourceStrategyParser>();
     CHECK_AND_RETURN_RET_LOG(audioSourceStrategyParser != nullptr, false, "AudioSourceStrategyParser create failed");
     ret = audioSourceStrategyParser->LoadConfig();
-    if (!ret) {
+    if (ret == false) {
         AudioPolicyUtils::GetInstance().WriteServiceStartupError("Audio SourceStrategy Load Configuration failed");
         AUDIO_ERR_LOG("Audio SourceStrategy Load Configuration failed");
-        return ret;
     }
 
     xmlHasLoaded_ = true;
@@ -635,9 +634,6 @@ std::shared_ptr<AdapterPipeInfo> AudioPolicyConfigManager::GetNormalRecordAdapte
 void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDescriptor> &desc,
     std::shared_ptr<PipeStreamPropInfo> &info)
 {
-    CHECK_AND_RETURN_LOG(desc != nullptr, "none desc");
-    CHECK_AND_RETURN_LOG(info != nullptr, "none info");
-    AUDIO_INFO_LOG("streampropinfo sourcetype: %{public}d", desc->capturerInfo_.sourceType);
     auto newDeviceDesc = desc->newDeviceDescs_.front();
     std::shared_ptr<AdapterDeviceInfo> deviceInfo = audioPolicyConfig_.GetAdapterDeviceInfo(newDeviceDesc->deviceType_,
         newDeviceDesc->deviceRole_, newDeviceDesc->networkId_, desc->audioFlag_, newDeviceDesc->a2dpOffloadFlag_);

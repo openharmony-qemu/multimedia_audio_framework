@@ -28,7 +28,7 @@ public:
     CoreServiceHandlerMockInterface() {}
     ~CoreServiceHandlerMockInterface() = default;
 
-    MOCK_METHOD2(GetVoiceTranscriptionMuteState, int32_t(uint32_t, bool &));
+    MOCK_METHOD2(GetVoiceMuteState, int32_t(uint32_t, bool &));
 };
 }
 }

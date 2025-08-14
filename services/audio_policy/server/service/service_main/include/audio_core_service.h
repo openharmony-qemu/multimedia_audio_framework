@@ -95,8 +95,8 @@ public:
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
-        void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState) override;
-        void RemoveVoiceTranscriptionMuteState(uint32_t sessionId) override;
+        void GetVoiceMuteState(uint32_t sessionId, bool &muteState) override;
+        void RemoveVoiceMuteState(uint32_t sessionId) override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
         // IDeviceStatusObserver
@@ -209,8 +209,8 @@ private:
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
-    void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState);
-    void RemoveVoiceTranscriptionMuteState(uint32_t sessionId);
+    void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
+    void RemoveVoiceMuteState(uint32_t sessionId);
 
     // IDeviceStatusObserver from EventEntry
     void OnDeviceInfoUpdated(AudioDeviceDescriptor &desc, const DeviceInfoUpdateCommand command);

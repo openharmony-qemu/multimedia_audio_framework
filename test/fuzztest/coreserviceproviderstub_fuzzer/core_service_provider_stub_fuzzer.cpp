@@ -142,7 +142,7 @@ void GetVoiceTranscriptionMuteStateFuzzTest()
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
     uint32_t sessionId = GetData<uint32_t>();
     bool muteState = GetData<bool>();
-    coreServiceProviderWrapper.GetVoiceTranscriptionMuteState(sessionId, muteState);
+    coreServiceProviderWrapper.GetVoiceMuteState(sessionId, muteState);
 }
 
 void RemoveVoiceTranscriptionMuteStateFuzzTest()
@@ -151,7 +151,7 @@ void RemoveVoiceTranscriptionMuteStateFuzzTest()
     auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
     uint32_t sessionId = GetData<uint32_t>();
-    coreServiceProviderWrapper.RemoveVoiceTranscriptionMuteState(sessionId);
+    coreServiceProviderWrapper.RemoveVoiceMuteState(sessionId);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {

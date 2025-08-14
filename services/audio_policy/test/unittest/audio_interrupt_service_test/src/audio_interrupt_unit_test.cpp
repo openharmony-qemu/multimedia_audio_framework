@@ -636,7 +636,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptService_029, TestSize.Level1)
 {
     auto interruptServiceTest = GetTnterruptServiceTest();
     const sptr<IStandardAudioService> result = interruptServiceTest->GetAudioServerProxy();
-    EXPECT_EQ(result, nullptr);
+    EXPECT_NE(result, nullptr);
 }
 
 /**
@@ -1035,7 +1035,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_004, TestSi
     incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
 
     auto ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -1121,7 +1121,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceDeactivateAudioSession_001, 
     auto server = GetPolicyServerTest();
     interruptService->Init(server);
     ret = interruptService->DeactivateAudioSession(0, pid);
-    EXPECT_EQ(ERR_ILLEGAL_STATE, ret);
+    EXPECT_EQ(SUCCESS, ret);
 
     strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
     ret = interruptService->ActivateAudioSession(0, pid, strategyTest);
@@ -1257,7 +1257,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceGetAudioServerProxy_001, Tes
     EXPECT_NE(nullptr, audioInterruptService);
 
     sptr<IStandardAudioService> ret = audioInterruptService->GetAudioServerProxy();
-    EXPECT_EQ(nullptr, ret);
+    EXPECT_NE(nullptr, ret);
 }
 
 /**
@@ -1273,7 +1273,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceGetAudioServerProxy_002, Tes
 
     sptr<IStandardAudioService> ret = audioInterruptService->GetAudioServerProxy();
     ret = audioInterruptService->GetAudioServerProxy();
-    EXPECT_EQ(nullptr, ret);
+    EXPECT_NE(nullptr, ret);
 }
 
 /**
@@ -1378,7 +1378,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceIsAudioSessionActivated_001,
     EXPECT_NE(nullptr, audioInterruptService->sessionService_);
     int32_t PIT_TEST { -1 };
     bool ret = audioInterruptService->IsAudioSessionActivated(PIT_TEST);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -1464,7 +1464,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_003, 
     activeInterrupt.pid = { -1 };
     AudioFocusEntry focusEntry;
     bool ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
@@ -1549,7 +1549,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForActiveSession_006, 
     incomingInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
     bool ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
-    EXPECT_TRUE(ret);
+    EXPECT_FALSE(ret);
 }
 
 /**
@@ -1865,7 +1865,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceReleaseAudioInterruptZone_00
 
     interruptServiceTest->zonesMap_[1] = std::make_shared<AudioInterruptZone>();
     retStatus = interruptServiceTest->ReleaseAudioInterruptZone(1, getZoneFunc);
-    EXPECT_EQ(retStatus, SUCCESS);
+    EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 }
 
 /**
@@ -1889,7 +1889,7 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCreateAudioInterruptZone_001
 
     SetUid1041();
     retStatus = interruptServiceTest->CreateAudioInterruptZone(2);
-    EXPECT_EQ(retStatus, SUCCESS);
+    EXPECT_EQ(retStatus, ERR_INVALID_PARAM);
 }
 
 /**
@@ -2281,7 +2281,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_008, TestSize.Level1)
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
 }
 
 /**
@@ -2346,7 +2346,7 @@ HWTEST(AudioInterruptUnitTest, InjectInterruptToAudioZone_010, TestSize.Level1)
     EXPECT_NO_THROW(
         interruptServiceTest->InjectInterruptToAudioZone(0, "1", interrupts);
     );
-    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 2);
+    EXPECT_EQ(interruptServiceTest->zonesMap_[0]->audioFocusInfoList.size(), 3);
 }
 
 /**

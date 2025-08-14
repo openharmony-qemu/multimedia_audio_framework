@@ -356,6 +356,18 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
 
 void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap != nullptr) {
+        auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
+        if (strategyIt != sourceStrategyMap->end()) {
+            streamDesc->audioFlag_ = strategyIt->second.audioFlag;
+            streamDesc->capturerInfo_.hdiSourceType = strategyIt->second.hdiSource;
+            AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u, hdisource: %{public}s",
+                streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag,
+                strategyIt->second.hdiSource.c_str());
+        }
+    }
+
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
@@ -390,20 +402,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
             break;
     }
 
-    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-    if (!sourceStrategyMap) {
-        streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
-        return;
-    }
-
-    auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
-    if (strategyIt != sourceStrategyMap->end()) {
-        streamDesc->audioFlag_ = strategyIt->second.audioFlag;
-        streamDesc->capturerInfo_.hdiSourceType = strategyIt->second.hdiSource;
-        AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u, hdisource: %{public}s",
-            streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag,
-            strategyIt->second.hdiSource.c_str());
-    }
+    streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
     return;
 }
 

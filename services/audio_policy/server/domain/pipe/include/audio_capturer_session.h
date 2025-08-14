@@ -103,12 +103,12 @@ private:
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
     bool IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> pipe);
-    bool CheckAIinputPipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+    bool HandleIndependentInputpipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
-    bool CheckNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
+    bool HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool IsStreamValid(const std::shared_ptr<AudioStreamDescriptor> &stream);
-    bool CompareAIxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
+    bool CompareIndependentxmlPriority(const std::shared_ptr<AudioPipeInfo> &pipe,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool IsRemainingSourceIndependent();
 private:

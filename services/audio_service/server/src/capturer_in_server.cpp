@@ -330,20 +330,17 @@ void CapturerInServer::UpdateBufferTimeStamp(size_t readLen)
     audioServerBuffer_->SetTimeStampInfo(curProcessPos_, timestamp);
 }
 
-void CapturerInServer::MuteVoiceTranscription(const SourceType sourceType, BufferDesc &dstBuffer)
+void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuffer)
 {
-    if (sourceType != SOURCE_TYPE_VOICE_TRANSCRIPTION) {
-        return;
-    }
-
     bool muteState = false;
-    if (CoreServiceHandler::GetInstance().GetVoiceTranscriptionMuteState(streamIndex_, muteState)) {
+    if (CoreServiceHandler::GetInstance().GetVoiceMuteState(streamIndex_, muteState)) {
         if (muteState) {
             AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
-            memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
+            int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
+                0, dstBuffer.bufLength);
+            CHECK_AND_RETURN_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
         }
     }
-    return;
 }
 
 void CapturerInServer::ReadData(size_t length)
@@ -382,7 +379,7 @@ void CapturerInServer::ReadData(size_t length)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    MuteVoiceTranscription(processConfig_.capturerInfo.sourceType, dstBuffer);
+    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -446,7 +443,7 @@ int32_t CapturerInServer::OnReadData(int8_t *outputData, size_t requestDataLen)
         dstBuffer.buffer = dischargeBuffer_.get(); // discharge valid data.
     }
 
-    MuteVoiceTranscription(processConfig_.capturerInfo.sourceType, dstBuffer);
+    MuteVoice(processConfig_.capturerInfo.sourceType, dstBuffer);
 
     if (muteFlag_) {
         memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength, 0, dstBuffer.bufLength);
@@ -724,7 +721,7 @@ int32_t CapturerInServer::Stop()
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "Stop stream failed, reason: %{public}d", ret);
     CoreServiceHandler::GetInstance().UpdateSessionOperation(streamIndex_, SESSION_OPERATION_STOP);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
-    CoreServiceHandler::GetInstance().RemoveVoiceTranscriptionMuteState(streamIndex_);
+    CoreServiceHandler::GetInstance().RemoveVoiceMuteState(streamIndex_);
     return SUCCESS;
 }
 

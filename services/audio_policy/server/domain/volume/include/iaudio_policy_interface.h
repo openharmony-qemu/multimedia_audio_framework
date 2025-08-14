@@ -129,7 +129,7 @@ public:
 
     virtual bool SetSinkMute(const std::string &sinkName, bool isMute, bool isSync = false) = 0;
 
-    virtual float CalculateVolumeDb(int32_t volumeLevel) = 0;
+    virtual float CalculateVolumeDb(int32_t volumeLevel, int32_t maxDegree = 0) = 0;
 
     virtual int32_t SetSystemSoundUri(const std::string &key, const std::string &uri) = 0;
 
@@ -202,6 +202,9 @@ public:
     virtual void HandleSaveVolume(DeviceType deviceType, AudioStreamType streamType, int32_t volumeLevel,
         std::string networkId) = 0;
 
+    virtual void HandleSaveVolumeDegree(DeviceType deviceType, AudioStreamType streamType, int32_t volumeDegree,
+        std::string networkId) = 0;
+
     virtual void HandleStreamMuteStatus(AudioStreamType streamType, bool mute,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN,
         const DeviceType &deviceType = DEVICE_TYPE_NONE,
@@ -244,10 +247,13 @@ public:
     virtual void RegisterDoNotDisturbStatus() = 0;
     virtual void RegisterDoNotDisturbStatusWhiteList() = 0;
     virtual int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object) = 0;
-    virtual void GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState) = 0;
-    virtual void RemoveVoiceTranscriptionMuteState(uint32_t sessionId) = 0;
+    virtual void GetVoiceMuteState(uint32_t sessionId, bool &muteState) = 0;
+    virtual void RemoveVoiceMuteState(uint32_t sessionId) = 0;
 
     virtual void SetSleVoiceStatusFlag(bool isSleVoiceStatus) = 0;
+    virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
+    virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType) = 0;
+    virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS

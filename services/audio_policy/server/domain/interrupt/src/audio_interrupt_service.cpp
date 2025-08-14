@@ -1569,20 +1569,17 @@ void AudioInterruptService::HandleVoiceCallAndTranscriptionFocus(
         (newInterrupt.audioFocusType.sourceType == SOURCE_TYPE_VOICE_CALL ||
         newInterrupt.audioFocusType.streamType == STREAM_VOICE_CALL);
 
-    AUDIO_INFO_LOG("current streamtype: %{public}d, sourcetype: %{public}d, newInterrupt streamtype: %{public}d, "
-                   "sourcetype: %{public}d",
-        currentInterrupt.audioFocusType.streamType, currentInterrupt.audioFocusType.sourceType,
-        newInterrupt.audioFocusType.streamType, newInterrupt.audioFocusType.sourceType);
-
-    uint32_t mutesessionId;
+    uint32_t mutesessionId = 0;
     if (isSourceVoiceCall) {
         mutesessionId = newInterrupt.sessionId;
     }
-
     if (isSourceVoiceTranscripTion) {
         mutesessionId = currentInterrupt.sessionId;
     }
-    AUDIO_INFO_LOG("mutesessionId:%{public}d", mutesessionId);
+    AUDIO_INFO_LOG("current streamtype: %{public}d, sourcetype: %{public}d, newInterrupt streamtype: %{public}d, "
+                   "sourcetype: %{public}d, mutesessionId:%{public}d",
+        currentInterrupt.audioFocusType.streamType, currentInterrupt.audioFocusType.sourceType,
+        newInterrupt.audioFocusType.streamType, newInterrupt.audioFocusType.sourceType, mutesessionId);
     if (isSourceVoiceCall || isSourceVoiceTranscripTion) {
         auto key = std::make_pair(currentInterrupt.audioFocusType, newInterrupt.audioFocusType);
         auto it = focusMap.find(key);
@@ -1591,15 +1588,15 @@ void AudioInterruptService::HandleVoiceCallAndTranscriptionFocus(
         }
 
         CHECK_AND_RETURN_LOG(policyServer_ != nullptr, "policyServer nullptr");
-        if (policyServer_->VerifyPermission(CAPTURE_VOICE_CALL_PERMISSION)) {
+        if (policyServer_->VerifyPermission(RECORD_VOICE_CALL_PERMISSION)) {
             AUDIO_INFO_LOG("VerifyPermission mutesessionId:%{public}d", mutesessionId);
             it->second.forceType = INTERRUPT_FORCE;
             it->second.hintType = INTERRUPT_HINT_NONE;
             it->second.actionOn = INCOMING;
             it->second.isReject = false;
-            policyServer_->SetVoiceTranscriptionMuteState(mutesessionId, false);
+            policyServer_->SetVoiceMuteState(mutesessionId, false);
         } else {
-            policyServer_->SetVoiceTranscriptionMuteState(mutesessionId, true);
+            policyServer_->SetVoiceMuteState(mutesessionId, true);
         }
     }
 }

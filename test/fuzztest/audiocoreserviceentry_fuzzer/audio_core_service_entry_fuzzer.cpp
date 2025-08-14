@@ -632,7 +632,7 @@ void AudioCoreServiceEventEntryGetVoiceTranscriptionMuteState()
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     uint32_t sessionId = 0;
     bool muteState = false;
-    eventEntry->GetVoiceTranscriptionMuteState(sessionId, muteState);
+    eventEntry->GetVoiceMuteState(sessionId, muteState);
 }
 
 void AudioCoreServiceEventEntryRemoveVoiceTranscriptionMuteState()
@@ -640,7 +640,7 @@ void AudioCoreServiceEventEntryRemoveVoiceTranscriptionMuteState()
     auto audioCoreService = std::make_shared<AudioCoreService>();
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     uint32_t sessionId = 0;
-    eventEntry->RemoveVoiceTranscriptionMuteState(sessionId);
+    eventEntry->RemoveVoiceMuteState(sessionId);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {

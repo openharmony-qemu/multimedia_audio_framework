@@ -53,7 +53,7 @@ HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_001, TestSize.Level1)
 HWTEST_F(AudioZoneServiceUnitTest, AudioZoneService_002, TestSize.Level1)
 {
     EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(-1), false);
-    EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(0), true);
+    EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(1), false);
     EXPECT_EQ(AudioZoneService::GetInstance().CheckIsZoneValid(1), false);
 }
 

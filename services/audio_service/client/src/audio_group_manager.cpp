@@ -437,5 +437,79 @@ float AudioGroupManager::GetMaxAmplitude(const int32_t deviceId)
 {
     return AudioPolicyManager::GetInstance().GetMaxAmplitude(deviceId);
 }
+
+int32_t AudioGroupManager::SetVolumeDegree(AudioVolumeType volumeType, int32_t degree, int32_t volumeFlag, int32_t uid)
+{
+    AUDIO_INFO_LOG("volumeType[%{public}d], degree[%{public}d], flag[%{public}d]",
+        volumeType, degree, volumeFlag);
+
+    /* Validate volume type and return INVALID_PARAMS error */
+    switch (volumeType) {
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_RING:
+        case STREAM_MUSIC:
+        case STREAM_ALARM:
+        case STREAM_SYSTEM:
+        case STREAM_ACCESSIBILITY:
+        case STREAM_VOICE_ASSISTANT:
+                break;
+        case STREAM_ULTRASONIC:
+        case STREAM_ALL:{
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED, "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("volumeType[%{public}d] is not supported", volumeType);
+            return ERR_NOT_SUPPORTED;
+    }
+
+    return AudioPolicyManager::GetInstance().SetSystemVolumeDegree(volumeType, degree, volumeFlag, uid);
+}
+
+int32_t AudioGroupManager::GetVolumeDegree(AudioVolumeType volumeType, int32_t uid)
+{
+    switch (volumeType) {
+        case STREAM_MUSIC:
+        case STREAM_RING:
+        case STREAM_NOTIFICATION:
+        case STREAM_VOICE_CALL:
+        case STREAM_VOICE_COMMUNICATION:
+        case STREAM_VOICE_ASSISTANT:
+        case STREAM_ALARM:
+        case STREAM_SYSTEM:
+        case STREAM_ACCESSIBILITY:
+            break;
+        case STREAM_ULTRASONIC:
+        case STREAM_ALL:{
+            bool ret = PermissionUtil::VerifySelfPermission();
+            CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+                "No system permission");
+            break;
+        }
+        default:
+            AUDIO_ERR_LOG("volumeType=%{public}d not supported", volumeType);
+            return ERR_NOT_SUPPORTED;
+    }
+
+    return AudioPolicyManager::GetInstance().GetSystemVolumeDegree(volumeType, uid);
+}
+
+int32_t AudioGroupManager::GetMinVolumeDegree(AudioVolumeType volumeType)
+{
+    if (volumeType == STREAM_ALL) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+            "No system permission");
+    }
+
+    if (volumeType == STREAM_ULTRASONIC) {
+        bool ret = PermissionUtil::VerifySelfPermission();
+        CHECK_AND_RETURN_RET_LOG(ret, ERR_PERMISSION_DENIED,
+            "STREAM_ULTRASONIC No system permission");
+    }
+    return AudioPolicyManager::GetInstance().GetMinVolumeDegree(volumeType);
+}
 } // namespace AudioStandard
 } // namespace OHOS

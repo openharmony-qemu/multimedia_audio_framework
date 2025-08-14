@@ -880,5 +880,94 @@ HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetPersistentMicMuteState_
         EXPECT_EQ(isMutePersistent, true);
     }
 }
+
+/**
+ * @tc.name  : Test SetVolumeDegree API
+ * @tc.number: Audio_Group_Manager_SetVolumeDegree_001
+ * @tc.desc  : SetVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_SetVolumeDegree_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        int32_t degree = 44;
+        AudioStreamType streamType = STREAM_MUSIC;
+        ret = audioGroupMngr_->SetVolumeDegree(streamType, degree);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioStreamType streamType2 = STREAM_ULTRASONIC;
+        ret = audioGroupMngr_->SetVolumeDegree(streamType2, degree);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioStreamType streamType3 = STREAM_APP;
+        ret = audioGroupMngr_->SetVolumeDegree(streamType3, degree);
+        EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test GetVolumeDegree API
+ * @tc.number: Audio_Group_Manager_GetVolumeDegree_001
+ * @tc.desc  : GetVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetVolumeDegree_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        int32_t degree = 44;
+        AudioStreamType streamType = STREAM_MUSIC;
+        ret = audioGroupMngr_->SetVolumeDegree(streamType, degree);
+        EXPECT_EQ(SUCCESS, ret);
+
+        ret = audioGroupMngr_->GetVolumeDegree(streamType);
+        EXPECT_EQ(ret, degree);
+
+        AudioStreamType streamType3 = STREAM_APP;
+        ret = audioGroupMngr_->GetVolumeDegree(streamType3);
+        EXPECT_EQ(ERR_NOT_SUPPORTED, ret);
+    }
+}
+
+/**
+ * @tc.name  : Test GetMinVolumeDegree API
+ * @tc.number: Audio_Group_Manager_GetMinVolumeDegree_001
+ * @tc.desc  : GetMinVolumeDegree
+ * @tc.require:
+ */
+HWTEST(AudioGroupManagerUnitTest, Audio_Group_Manager_GetMinVolumeDegree_001, TestSize.Level0)
+{
+    int32_t ret = -1;
+    std::vector<sptr<VolumeGroupInfo>> infos;
+    AudioSystemManager::GetInstance()->GetVolumeGroups(networkId, infos);
+    if (infos.size() > 0) {
+        int32_t groupId = infos[0]->volumeGroupId_;
+        auto audioGroupMngr_ = AudioSystemManager::GetInstance()->GetGroupManager(groupId);
+
+        AudioVolumeType streamType = STREAM_ALL;
+        ret = audioGroupMngr_->GetMinVolumeDegree(streamType);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioVolumeType streamType2 = STREAM_ULTRASONIC;
+        ret = audioGroupMngr_->GetMinVolumeDegree(streamType2);
+        EXPECT_EQ(SUCCESS, ret);
+
+        AudioVolumeType streamType3 = STREAM_MUSIC;
+        ret = audioGroupMngr_->GetMinVolumeDegree(streamType3);
+        EXPECT_EQ(SUCCESS, ret);
+    }
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

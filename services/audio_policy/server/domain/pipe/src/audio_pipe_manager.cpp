@@ -548,15 +548,16 @@ std::shared_ptr<AudioPipeInfo> AudioPipeManager::FindPipeBySessionId(
     const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList, uint32_t sessionId)
 {
     for (const auto &pipe : pipeList) {
-        if (!pipe) {
+        if (pipe == nullptr) {
             continue;
         }
 
         for (const auto &stream : pipe->streamDescriptors_) {
-            if (!stream) {
+            if (stream == nullptr) {
                 continue;
             }
             if (stream->sessionId_ == sessionId) {
+                AUDIO_INFO_LOG("find pipe: %{public}s by sessionId: %{public}u", pipe->name_.c_str(), sessionId);
                 return pipe;
             }
         }

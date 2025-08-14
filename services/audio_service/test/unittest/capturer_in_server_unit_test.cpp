@@ -1383,7 +1383,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_043, TestSize.Level1
     ASSERT_TRUE(capturerInServer_ != nullptr);
 
     BufferDesc dstBuffer = { nullptr, 1024 };
-    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_CALL, dstBuffer);
+    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_CALL, dstBuffer);
     EXPECT_EQ(dstBuffer.buffer, nullptr);
 }
 
@@ -1403,13 +1403,13 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_044, TestSize.Level1
     BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
     memset_s(dstBuffer.buffer, 1024, 1, 1024);
     auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
-    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceTranscriptionMuteState(100001, _))
+    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceMuteState(100001, _))
         .Times(1)
         .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
             muteState = true;
             return SUCCESS;
         }));
-    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
+    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
     for (int32_t i = 0; i < 1024; i++) {
         EXPECT_EQ(dstBuffer.buffer[i], 0);
     }
@@ -1433,13 +1433,13 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_045, TestSize.Level1
     BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
     memset_s(dstBuffer.buffer, 1024, 1, 1024);
     auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
-    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceTranscriptionMuteState(100001, _))
+    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceMuteState(100001, _))
         .Times(1)
         .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
             muteState = false;
             return SUCCESS;
         }));
-    capturerInServer_->MuteVoiceTranscription(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
+    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
     for (int32_t i = 0; i < 1024; i++) {
         EXPECT_EQ(dstBuffer.buffer[i], 1);
     }

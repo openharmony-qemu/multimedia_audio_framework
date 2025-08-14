@@ -901,14 +901,14 @@ uint32_t AudioCoreService::GenerateSessionId()
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
-void AudioCoreService::GetVoiceTranscriptionMuteState(uint32_t sessionId, bool &muteState)
+void AudioCoreService::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
 {
-    return audioPolicyManager_.GetVoiceTranscriptionMuteState(sessionId, muteState);
+    return audioPolicyManager_.GetVoiceMuteState(sessionId, muteState);
 }
 
-void AudioCoreService::RemoveVoiceTranscriptionMuteState(uint32_t sessionId)
+void AudioCoreService::RemoveVoiceMuteState(uint32_t sessionId)
 {
-    return audioPolicyManager_.RemoveVoiceTranscriptionMuteState(sessionId);
+    return audioPolicyManager_.RemoveVoiceMuteState(sessionId);
 }
 
 void AudioCoreService::AddSessionId(const uint32_t sessionId)

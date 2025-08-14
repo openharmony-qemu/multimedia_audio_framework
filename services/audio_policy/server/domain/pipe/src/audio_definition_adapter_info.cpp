@@ -19,7 +19,6 @@
 #include "audio_definition_adapter_info.h"
 #include "audio_device_type.h"
 #include "audio_effect.h"
-#include "v5_0/iaudio_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
