@@ -1780,7 +1780,7 @@ HWTEST(IpcStreamInServerUnitTest, start_002, TestSize.Level3)
  * @tc.name  : Test Start API
  * @tc.type  : FUNC
  * @tc.number: stop_001
- * @tc.desc  : Test Start interface.
+ * @tc.desc  : Test Start interface. 
  */
 HWTEST(IpcStreamInServerUnitTest, Stop_001, TestSize.Level3)
 {
