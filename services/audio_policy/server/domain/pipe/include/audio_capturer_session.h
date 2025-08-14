@@ -69,6 +69,7 @@ public:
         const AudioEnhancePropertyArray &newPropertyArray);
     CapturerState GetCapturerState();
     int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation);
+    int32_t ReloadCaptureSessionSoftLink();
 private:
     AudioCapturerSession() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
         audioRouterCenter_(AudioRouterCenter::GetAudioRouterCenter()),

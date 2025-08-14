@@ -210,12 +210,19 @@ int32_t AudioIOHandleMap::OpenPortAndInsertIOHandle(const std::string &moduleNam
 
 int32_t AudioIOHandleMap::ClosePortAndEraseIOHandle(const std::string &moduleName)
 {
+    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
+    auto pipeInfoInput = pipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
+    if (pipeInfoInput != nullptr && pipeInfoInput->softLinkFlag_) {
+        pipeInfoInput->streamDescMap_.clear();
+        pipeInfoInput->streamDescriptors_.clear();
+        pipeManager->UpdateAudioPipeInfo(pipeInfoInput);
+        return SUCCESS;
+    }
     AudioIOHandle ioHandle;
     CHECK_AND_RETURN_RET_LOG(GetModuleIdByKey(moduleName, ioHandle), ERROR,
         "can not find %{public}s in io map", moduleName.c_str());
     DelIOHandleInfo(moduleName);
 
-    std::shared_ptr<AudioPipeManager> pipeManager = AudioPipeManager::GetPipeManager();
     uint32_t paIndex = pipeManager->GetPaIndexByIoHandle(ioHandle);
     pipeManager->RemoveAudioPipeInfo(ioHandle);
 

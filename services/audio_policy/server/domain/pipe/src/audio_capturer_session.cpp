@@ -215,6 +215,53 @@ bool AudioCapturerSession::FindRunningNormalSession(uint32_t sessionId, AudioCap
     return hasSession;
 }
 
+int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
+{
+    std::lock_guard<std::mutex> lock(onCapturerSessionChangedMutex_);
+    bool hasSession = false;
+    auto pipes = AudioPipeManager::GetPipeManager()->GetPipeList();
+    if (pipes.empty()) {
+        AUDIO_ERR_LOG("pipes invalid");
+        return hasSession;
+    }
+    AudioStreamDescriptor targetStream;
+    for (auto pipe : pipes) {
+        if (pipe == nullptr || pipe->streamDescriptors_.empty()) {
+            AUDIO_WARNING_LOG("pipe invalid");
+            continue;
+        }
+        if (pipe->pipeRole_ == AudioPipeRole::PIPE_ROLE_OUTPUT || (pipe->routeFlag_ & AUDIO_INPUT_FLAG_FAST) != 0) {
+            AUDIO_INFO_LOG("ignore pipe for pipeRole_: %{public}d, routeFlag_: %{public}d",
+                pipe->pipeRole_, pipe->routeFlag_);
+            continue;
+        }
+        for (auto streamDescriptor : pipe->streamDescriptors_) {
+            if (streamDescriptor == nullptr ||
+                sessionWithNormalSourceType_.find(streamDescriptor->sessionId_) ==
+                sessionWithNormalSourceType_.end()) {
+                AUDIO_WARNING_LOG("streamDescriptor invalid");
+                continue;
+            }
+            SourceType higherSourceType = sessionWithNormalSourceType_[streamDescriptor->sessionId_].sourceType;
+            if (streamDescriptor->streamStatus_ != AudioStreamStatus::STREAM_STATUS_STARTED ||
+                specialSourceTypeSet_.count(higherSourceType) != 0) {
+                continue;
+            }
+            if (IsHigherPrioritySourceType(higherSourceType, targetStream.capturerInfo_.sourceType)) {
+                hasSession = true;
+                targetStream = *streamDescriptor;
+            }
+        }
+    }
+
+    CHECK_AND_RETURN_RET_LOG(hasSession, ERROR, "no need to reload session");
+    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
+
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_]);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
+    return SUCCESS;
+}
+
 int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOperation operation)
 {
     AUDIO_INFO_LOG("prepare reload session: %{public}u with operation: %{public}d", sessionId, operation);
