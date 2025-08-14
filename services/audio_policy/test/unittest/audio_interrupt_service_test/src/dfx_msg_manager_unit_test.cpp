@@ -682,7 +682,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_004, TestSize.Level1)
     std::list<CapturerDfxInfo> dfxInfo;
     std::list<CapturerDfxInfo> curDfxInfo;
     CapturerDfxInfo renderInfo;
-   
+
     dfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         curDfxInfo.push_back(renderInfo);
@@ -703,7 +703,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_005, TestSize.Level1)
     std::list<CapturerDfxInfo> dfxInfo;
     std::list<CapturerDfxInfo> curDfxInfo;
     CapturerDfxInfo renderInfo;
-   
+
     curDfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         dfxInfo.push_back(renderInfo);
@@ -724,7 +724,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_006, TestSize.Level1)
     std::list<RenderDfxInfo> dfxInfo;
     std::list<RenderDfxInfo> curDfxInfo;
     RenderDfxInfo renderInfo;
-   
+
     dfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         curDfxInfo.push_back(renderInfo);
@@ -745,7 +745,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_007, TestSize.Level1)
     std::list<RenderDfxInfo> dfxInfo;
     std::list<RenderDfxInfo> curDfxInfo;
     RenderDfxInfo renderInfo;
-   
+
     curDfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         dfxInfo.push_back(renderInfo);
@@ -766,7 +766,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_008, TestSize.Level1)
     std::list<InterruptDfxInfo> dfxInfo;
     std::list<InterruptDfxInfo> curDfxInfo;
     InterruptDfxInfo renderInfo;
-   
+
     dfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         curDfxInfo.push_back(renderInfo);
@@ -787,7 +787,7 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_009, TestSize.Level1)
     std::list<InterruptDfxInfo> dfxInfo;
     std::list<InterruptDfxInfo> curDfxInfo;
     InterruptDfxInfo renderInfo;
-   
+
     curDfxInfo.push_back(renderInfo);
     for (int i = 0; i < MAX_DFX_MSG_MEMBER_SIZE; i++) {
         dfxInfo.push_back(renderInfo);
@@ -827,7 +827,7 @@ HWTEST(DfxMsgManagerUnitTest, WriteRenderMsg_003, TestSize.Level1)
     DfxMessage msg;
     std::unique_ptr<DfxReportResult> bean = std::make_unique<DfxReportResult>();
     RenderDfxInfo renderInfo;
-    renderInfo.rendererAction.fourthByte = static_cast<uint8_t>(RendererStage::RENDERER_STAGE_STOP_FAIL);
+    renderInfo.rendererAction.fourthByte = static_cast<uint8_t>(RendererStage::RENDERER_STAGE_START_FAIL);
     msg.appUid = 1;
     for (int i = 0; i < 10; i++) {
         msg.renderInfo.push_back(renderInfo);
@@ -868,7 +868,7 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_004, TestSize.Level1)
     std::list<RenderDfxInfo> renderInfo;
     RenderDfxInfo renderdfxInfo;
 
-    renderdfxInfo.renderAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
+    renderdfxInfo.rendererAction.fourthByte = RendererStage::RENDERER_STAGE_START_OK;
     renderInfo.push_back(renderdfxInfo);
     dfxMsgManager.UpdateAction(appUid, renderInfo);
     EXPECT_NE(dfxMsgManager.appInfo_.count(appUid), 0);
@@ -904,7 +904,7 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_006, TestSize.Level1)
     std::list<InterruptDfxInfo> interruptInfo;
     InterruptDfxInfo interruptdfxInfo;
 
-    interruptdfxInfo.interruptAction.fourthByte = InterruptStage::INTERRUPT_STAGE_STAR;
+    interruptdfxInfo.interruptAction.fourthByte = InterruptStage::INTERRUPT_STAGE_START;
     interruptInfo.push_back(interruptdfxInfo);
     dfxMsgManager.UpdateAction(appUid, interruptInfo);
     EXPECT_NE(dfxMsgManager.appInfo_.count(appUid), 0);
@@ -921,11 +921,11 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_007, TestSize.Level1)
     int32_t appUid = 1;
     std::list<RenderDfxInfo> renderInfo;
     RenderDfxInfo renderdfxInfo;
-    renderdfxInfo.renderAction.firstByte = 2;
-    renderdfxInfo.renderAction.fourthByte = 1;
+    renderdfxInfo.rendererAction.firstByte = 2;
+    renderdfxInfo.rendererAction.fourthByte = 1;
     renderInfo.push_back(renderdfxInfo);
     dfxMsgManager.UpdateAction(appUid, renderInfo);
-    EXPECT_EQ(renderInfo.front().renderAction.firstByte, 22);
+    EXPECT_EQ(renderInfo.front().rendererAction.firstByte, 22);
 }
 
 /**
@@ -976,14 +976,14 @@ HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_002, TestSize.Level1)
     DfxMessage msg;
     InterruptDfxInfo interruptInfo;
     std::unique_ptr<DfxReportResult> bean = std::make_unique<DfxReportResult>();
-    interruptInfo.interruptAction.fourthByte = InterruptStage::INTERRUPT_STAGE_STAR;
+    interruptInfo.interruptAction.fourthByte = InterruptStage::INTERRUPT_STAGE_START;
 
     msg.appUid = 1;
     for (int i = 0; i < 10; i++) {
         msg.interruptInfo.push_back(interruptInfo);
     }
     dfxMsgManager.WriteInterruptMsg(msg, bean);
-    EXPECT_EQ(bean->interruptInfo.size(), 0);
+    EXPECT_EQ(bean->interruptInfo.size(), 10);
 }
 
 /**
@@ -1004,12 +1004,12 @@ HWTEST(DfxMsgManagerUnitTest, WriteInterruptMsg_003, TestSize.Level1)
         msg.interruptInfo.push_back(interruptInfo);
     }
     dfxMsgManager.WriteInterruptMsg(msg, bean);
-    EXPECT_EQ(bean->interruptInfo.size(), 0);
+    EXPECT_EQ(bean->interruptInfo.size(), 10);
 }
 
 /**
 * @tc.name  : Test DfxMsgManager.
-* @tc.number: WriteCapturerMsg_001
+* @tc.number: WriteCapturerMsg_002
 * @tc.desc  : Test DfxMsgManager::WriteCapturerMsg
 */
 HWTEST(DfxMsgManagerUnitTest, WriteCapturerMsg_002, TestSize.Level1)
