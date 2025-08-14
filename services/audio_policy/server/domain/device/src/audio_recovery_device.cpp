@@ -464,7 +464,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         WriteExcludeOutputSysEvents(audioDevUsage, desc);
     }
 
-    AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
+    AudioCoreService::GetCoreService()->GetEventEntry()->FetchOutputDeviceAndRoute("ExcludeOutputDevices",
         AudioStreamDeviceChangeReason::OVERRODE);
     AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("ExcludeOutputDevices");
     AudioDeviceDescriptor currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
