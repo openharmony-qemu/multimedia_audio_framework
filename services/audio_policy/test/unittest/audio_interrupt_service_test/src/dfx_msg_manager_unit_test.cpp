@@ -872,7 +872,7 @@ HWTEST(DfxMsgManagerUnitTest, UpdateAction_004, TestSize.Level1)
     renderdfxInfo.rendererAction.firstByte = 1;
     renderInfo.push_back(renderdfxInfo);
     dfxMsgManager.UpdateAction(appUid, renderInfo);
-    EXPECT_EQ(renderInfo.frontt().rendererAction.firstByte, 22);
+    EXPECT_EQ(renderInfo.front().rendererAction.firstByte, 22);
 }
 
 /**
