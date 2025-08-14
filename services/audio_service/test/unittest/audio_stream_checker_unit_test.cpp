@@ -1584,7 +1584,7 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameSub_008, TestSize.Level1)
     checkerPara.isMonitorNoDataFrame = true;
     checker->MonitorCheckFrameSub(checkerPara);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1607,7 +1607,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_006, TestSize.Level1)
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1630,7 +1630,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_007, TestSize.Level1)
     checkerPara.hasInitCheck = false;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1653,7 +1653,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_008, TestSize.Level1)
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, false, checkerPara);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1676,7 +1676,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnCallback_009, TestSize.Level1)
     checkerPara.hasInitCheck = true;
     checker->MonitorOnCallback(AUDIO_STREAM_START, true, checkerPara);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1850,7 +1850,7 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_009, TestSize.Level1)
  
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1875,7 +1875,7 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_010, TestSize.Level1)
  
     checker->MonitorCheckFrameAction(checkerPara, abnormalFrameNum, badFrameRatio);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(0, size);
+    EXPECT_NE(0, size);
 }
  
 /**
@@ -1899,7 +1899,7 @@ HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_006, TestSize.Level1)
  
     checker->MonitorOnAllCallback(type, false);
     int size = checker->checkParaVector_.size();
-    EXPECT_GT(1, size);
+    EXPECT_EQ(1, size);
 }
  
 /**
