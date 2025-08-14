@@ -767,7 +767,8 @@ HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_003, TestSize.Level1)
         AudioMode::AUDIO_MODE_RECORD, 0);
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = fastAudioStream.ParamsToStateCmdType(FastAudioStreamFork2::HANDLER_PARAM_PAUSED, state, cmdType);
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_PAUSED, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(state, PAUSED);
     EXPECT_EQ(cmdType, CMD_FROM_CLIENT);
@@ -785,7 +786,8 @@ HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_004, TestSize.Level1)
         AudioMode::AUDIO_MODE_RECORD, 0);
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = fastAudioStream.ParamsToStateCmdType(FastAudioStreamFork2::HANDLER_PARAM_RUNNING_FROM_SYSTEM, state, cmdType);
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_RUNNING_FROM_SYSTEM, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(state, RUNNING);
     EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);
@@ -803,7 +805,8 @@ HWTEST(AudioCapturerUnitTest, ParamsToStateCmdType_005, TestSize.Level1)
         AudioMode::AUDIO_MODE_RECORD, 0);
     State state;
     StateChangeCmdType cmdType;
-    int32_t ret = fastAudioStream.ParamsToStateCmdType(FastAudioStreamFork2::HANDLER_PARAM_PAUSED_FROM_SYSTEM, state, cmdType);
+    int32_t ret = fastAudioStream.ParamsToStateCmdType(
+        FastAudioStreamFork2::HANDLER_PARAM_PAUSED_FROM_SYSTEM, state, cmdType);
     EXPECT_EQ(ret, SUCCESS);
     EXPECT_EQ(state, PAUSED);
     EXPECT_EQ(cmdType, CMD_FROM_SYSTEM);

@@ -189,7 +189,8 @@ HWTEST(AudioStreamManagerUnitTest, RegisterAudioRendererEventListener_001, TestS
     int32_t clientPid = 1;
     std::shared_ptr<AudioRendererStateChangeCallback> callback = nullptr;
 
-    EXPECT_EQ(AudioStreamManager::GetInstance()->RegisterAudioRendererEventListener(clientPid, callback), ERR_INVALID_PARAM);
+    EXPECT_EQ(AudioStreamManager::GetInstance()
+              ->RegisterAudioRendererEventListener(clientPid, callback), ERR_INVALID_PARAM);
 }
 
 /**
