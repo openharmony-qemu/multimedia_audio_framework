@@ -1821,13 +1821,13 @@ HWTEST(IpcStreamInServerUnitTest, Config_001, TestSize.Level3)
 HWTEST(IpcStreamInServerUnitTest, GetRenderer_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_RECORD;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
 
     ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.GetRenderer();
-    EXPECT_EQ(ret, nullptr);
+    EXPECT_EQ(ret, ipcStreamInServerRet.rendererInServer_);
 }
 
 /**
@@ -1839,13 +1839,13 @@ HWTEST(IpcStreamInServerUnitTest, GetRenderer_001, TestSize.Level3)
 HWTEST(IpcStreamInServerUnitTest, GetCapturer_001, TestSize.Level3)
 {
     AudioProcessConfig configRet;
-    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
 
-    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.GetCapturer();
-    EXPECT_EQ(ret, nullptr);
+    EXPECT_EQ(ret, ipcStreamInServerRet.capturerInServer_);
 }
 
 /**
@@ -1865,7 +1865,7 @@ HWTEST(IpcStreamInServerUnitTest, ResolveBuffer_001, TestSize.Level3)
         ipcStreamInServerRet.streamListenerHolder_);
     ipcStreamInServerRet.capturerInServer_ = nullptr;
     auto ret = ipcStreamInServerRet.ResolveBuffer(buffer);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
@@ -1884,7 +1884,7 @@ HWTEST(IpcStreamInServerUnitTest, ResolveBuffer_002, TestSize.Level3)
     ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
         ipcStreamInServerRet.streamListenerHolder_);
     auto ret = ipcStreamInServerRet.ResolveBuffer(buffer);
-    EXPECT_EQ(ret, 0);
+    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
