@@ -1806,19 +1806,19 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_075, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     float loudnessGain = 0.1f;
- 
+
     auto ret1 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     auto ret2 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     auto ret3 = ipcStreamInServerRet.SetLoudnessGain(loudnessGain);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);  
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
- 
+
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
@@ -1831,19 +1831,19 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_076, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     int64_t duration = 0;
- 
+
     auto ret1 = ipcStreamInServerRet.SetSourceDuration(duration);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     auto ret2 = ipcStreamInServerRet.SetSourceDuration(duration);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     auto ret3 = ipcStreamInServerRet.SetSourceDuration(duration);
     EXPECT_EQ(ret3, ERR_OPERATION_FAILED);  
 }
- 
+
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
@@ -1856,19 +1856,19 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_078, TestSize.Level1)
     AudioMode modeRet = AUDIO_MODE_RECORD;
     IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
     int32_t state = 0;
- 
+
     auto ret1 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     auto ret2 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     auto ret3 = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);  
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
- 
+
 /**
  * @tc.name  : Test IpcStreamInServer API
  * @tc.type  : FUNC
@@ -1887,20 +1887,20 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_079, TestSize.Level1)
     uint32_t byteSizePerFrame = 0;
     std::shared_ptr<OHAudioBufferBase> processBuffer = std::make_shared<OHAudioBufferBase>(bufferHolder,
         totalSizeInFrame, byteSizePerFrame);
- 
+
     auto ret1 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
             spanSizeInFrame, engineTotalSizeInFrame);
     EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_PLAYBACK;
     auto ret2 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
             spanSizeInFrame, engineTotalSizeInFrame);
     EXPECT_EQ(ret2, ERR_OPERATION_FAILED);
- 
+
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     auto ret3 = ipcStreamInServerRet.ResolveBufferBaseAndGetServerSpanSize(processBuffer,
             spanSizeInFrame, engineTotalSizeInFrame);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);  
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 }
 }
