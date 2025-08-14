@@ -136,7 +136,7 @@ void GenerateSessionIdFuzzTest()
     coreServiceProviderWrapper.GenerateSessionId(sessionId);
 }
 
-void GetVoiceTranscriptionMuteStateFuzzTest()
+void GetMuteStateFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
@@ -146,7 +146,7 @@ void GetVoiceTranscriptionMuteStateFuzzTest()
     coreServiceProviderWrapper.GetVoiceMuteState(sessionId, muteState);
 }
 
-void RemoveVoiceTranscriptionMuteStateFuzzTest()
+void RemoveMuteStateFuzzTest()
 {
     std::shared_ptr<AudioCoreService> audioCoreService = AudioCoreService::GetCoreService();
     auto coreServiceWorker = new AudioCoreService::EventEntry(audioCoreService);
@@ -163,8 +163,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     GetAdapterNameBySessionIdFuzzTest,
     GetProcessDeviceInfoBySessionIdFuzzTest,
     GenerateSessionIdFuzzTest,
-    GetVoiceTranscriptionMuteStateFuzzTest,
-    RemoveVoiceTranscriptionMuteStateFuzzTest,
+    GetMuteStateFuzzTest,
+    RemoveMuteStateFuzzTest,
 };
 
 

@@ -423,7 +423,7 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
     return SUCCESS;
 }
 
-void AudioCapturerSession::IsRemainingSourceIndependent()
+bool AudioCapturerSession::IsRemainingSourceIndependent()
 {
     for (auto it = sessionWithNormalSourceType_.begin(); it !=sessionWithNormalSourceType_.end(); it++) {
         auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();

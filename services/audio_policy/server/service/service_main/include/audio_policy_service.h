@@ -248,7 +248,7 @@ public:
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object);
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     int32_t CaptureConcurrentCheck(const uint32_t &sessionID);
-    void SetVoiceTranscriptionMuteState(uint32_t sessionId, bool isMute);
+    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
     void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
     void RemoveVoiceMuteState(uint32_t sessionId);
 
@@ -419,7 +419,7 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
-    std::unordered_map<uint32_t, bool> voiceTranscriptionMuteStateMap_;
+    std::unordered_map<uint32_t, bool> voiceMuteStateMap_;
     std::shared_mutex muteMutex_;
 };
 

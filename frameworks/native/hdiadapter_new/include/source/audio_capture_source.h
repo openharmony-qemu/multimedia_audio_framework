@@ -176,7 +176,6 @@ private:
     std::unordered_map<DeviceType, uint16_t> dmDeviceTypeMap_;
 
     std::shared_ptr<AudioCapturerSourceClock> audioSrcClock_ = nullptr;
-    static std::unordered_map<std::string, AudioInputType> audioInputTypeMap_;
 };
 
 } // namespace AudioStandard

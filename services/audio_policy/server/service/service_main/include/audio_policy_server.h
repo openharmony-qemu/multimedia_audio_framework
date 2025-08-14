@@ -679,7 +679,7 @@ public:
     int32_t UpdateDeviceInfo(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc, int32_t command) override;
     int32_t SetSleAudioOperationCallback(const sptr<IRemoteObject> &object) override;
     int32_t CallRingtoneLibrary();
-    void SetVoiceTranscriptionMuteState(uint32_t sessionId, bool isMute);
+    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;

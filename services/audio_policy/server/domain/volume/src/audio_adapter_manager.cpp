@@ -1999,7 +1999,7 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     return attr;
 }
 
-void AudioAdapterManager::SetHdiSourceTypeToAudioSourceAttr(IAudioSoureAttr &attr, int32_t sourceType) const
+void AudioAdapterManager::GetHdiSourceTypeToAudioSourceAttr(IAudioSoureAttr &attr, int32_t sourceType) const
 {
     auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
     if (sourceStrategyMapget == nullptr) {

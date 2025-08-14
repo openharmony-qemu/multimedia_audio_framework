@@ -5148,9 +5148,9 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     return SUCCESS;
 }
 
-void AudioPolicyServer::SetVoiceTranscriptionMuteState(uint32_t sessionId, bool isMute)
+void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
 {
-    return audioPolicyService_.SetVoiceTranscriptionMuteState(sessionId, isMute);
+    return audioPolicyService_.SetVoiceMuteState(sessionId, isMute);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,
