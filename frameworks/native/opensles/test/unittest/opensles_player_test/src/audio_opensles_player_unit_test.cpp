@@ -1393,6 +1393,34 @@ HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_001, TestSize.Level1)
     EXPECT_TRUE(result != nullptr);
 }
 
+HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_002, TestSize.Level4)
+{
+    SLuint32 objectId = SL_OBJECTID_ENGINE;
+    ClassTable *result = ObjectIdToClass(objectId);
+    EXPECT_TRUE(result != nullptr);
+}
+ 
+HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_003, TestSize.Level4)
+{
+    SLuint32 objectId = SL_OBJECTID_AUDIOPLAYER;
+    ClassTable *result = ObjectIdToClass(objectId);
+    EXPECT_TRUE(result != nullptr);
+}
+ 
+HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_004, TestSize.Level4)
+{
+    SLuint32 objectId = SL_OBJECTID_OUTPUTMIX;
+    ClassTable *result = ObjectIdToClass(objectId);
+    EXPECT_TRUE(result != nullptr);
+}
+ 
+HWTEST(AudioOpenslesPlayerUnitTest, ObjectIdToClass_005, TestSize.Level4)
+{
+    SLuint32 objectId = -1;
+    ClassTable *result = ObjectIdToClass(objectId);
+    EXPECT_TRUE(result == nullptr);
+}
+
 HWTEST(AudioOpenslesPlayerUnitTest, CreateAudioRecorder_001, TestSize.Level1)
 {
     SLEngineItf self = {};
