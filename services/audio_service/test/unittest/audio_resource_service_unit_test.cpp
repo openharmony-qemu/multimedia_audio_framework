@@ -735,7 +735,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level1)
  
 class DummyAudioWorkgroup : public AudioWorkgroup {
 public:
-    DummyAudioWorkgroup(int32_t groupId) : AudioWorkgroup(groupId) {}
+    explicit DummyAudioWorkgroup(int32_t groupId) : AudioWorkgroup(groupId) {}
 };
  
 /**
