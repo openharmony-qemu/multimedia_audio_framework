@@ -169,9 +169,6 @@ private:
 
     void UpdateHandleInfo(bool isAysnc = true, bool resetReadWritePos = false);
     int64_t GetPredictNextHandleTime(uint64_t posInFrame, bool isIndependent = false);
-    bool PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime);
-    bool ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime);
-    bool PrepareNextIndependent(uint64_t curReadPos, int64_t &wakeUpTime);
 
     std::string GetStatusInfo(StreamStatus status);
     bool KeepLoopRunning();
@@ -180,7 +177,6 @@ private:
     void CallExitStandBy();
 
     bool ProcessCallbackFuc(uint64_t &curWritePos);
-    void ProcessCallbackFucIndependent();
     bool RecordProcessCallbackFuc(uint64_t &curReadPos, int64_t clientReadCost);
     void InitPlaybackThread(std::weak_ptr<FastAudioStream> weakStream);
     void InitRecordThread(std::weak_ptr<FastAudioStream> weakStream);
@@ -771,14 +767,8 @@ bool AudioProcessInClientInner::Init(const AudioProcessConfig &config, std::weak
 
     streamStatus_->store(StreamStatus::STREAM_IDEL);
 
-    AudioBufferHolder bufferHolder = audioBuffer_->GetBufferHolder();
-    bool isIndependent = bufferHolder == AudioBufferHolder::AUDIO_SERVER_INDEPENDENT;
     if (config.audioMode == AUDIO_MODE_RECORD) {
         InitRecordThread(weakStream);
-    } else if (isIndependent) {
-        logUtilsTag_ = "ProcessPlay::" + std::to_string(sessionId_);
-        callbackLoop_ = std::thread([this] { this->ProcessCallbackFucIndependent(); });
-        pthread_setname_np(callbackLoop_.native_handle(), "OS_AudioPlayCb");
     } else {
         InitPlaybackThread(weakStream);
     }
@@ -1434,38 +1424,6 @@ int64_t AudioProcessInClientInner::GetPredictNextHandleTime(uint64_t posInFrame,
     return nextHandleTime;
 }
 
-bool AudioProcessInClientInner::PrepareNext(uint64_t curHandPos, int64_t &wakeUpTime)
-{
-    Trace trace("AudioProcessInClient::PrepareNext " + std::to_string(curHandPos));
-    int64_t handleModifyTime = 0;
-    if (processConfig_.audioMode == AUDIO_MODE_RECORD) {
-        handleModifyTime = RECORD_HANDLE_DELAY_NANO;
-    } else {
-        handleModifyTime = -WRITE_BEFORE_DURATION_NANO;
-    }
-
-    int64_t nextServerHandleTime = GetPredictNextHandleTime(curHandPos) + handleModifyTime;
-    if (nextServerHandleTime < ClockTime::GetCurNano()) {
-        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
-    } else {
-        wakeUpTime = nextServerHandleTime;
-    }
-    AUDIO_DEBUG_LOG("%{public}s end, audioMode %{public}d, curReadPos %{public}" PRIu64", nextServerHandleTime "
-        "%{public}" PRId64" wakeUpTime %{public}" PRId64".", __func__, processConfig_.audioMode, curHandPos,
-        nextServerHandleTime, wakeUpTime);
-    return true;
-}
-
-bool AudioProcessInClientInner::ClientPrepareNextLoop(uint64_t curWritePos, int64_t &wakeUpTime)
-{
-    size_t round = (spanSizeInFrame_ == 0 ? 1 : clientSpanSizeInFrame_ / spanSizeInFrame_);
-    for (size_t count = 0; count < round; count++) {
-        bool ret = PrepareNext(curWritePos + count * spanSizeInFrame_, wakeUpTime);
-        CHECK_AND_RETURN_RET_LOG(ret, false, "PrepareNextLoop in process failed!");
-    }
-    return true;
-}
-
 void AudioProcessInClientInner::CallExitStandBy()
 {
     Trace trace("AudioProcessInClient::CallExitStandBy::" + std::to_string(sessionId_));
@@ -1734,61 +1692,6 @@ bool AudioProcessInClientInner::ProcessCallbackFuc(uint64_t &curWritePos)
     return true;
 }
 
-void AudioProcessInClientInner::ProcessCallbackFucIndependent()
-{
-    AUDIO_INFO_LOG("multi play loop start");
-    processProxy_->RegisterThreadPriority(gettid(),
-        AudioSystemManager::GetInstance()->GetSelfBundleName(processConfig_.appInfo.appUid), METHOD_WRITE_OR_READ);
-    int64_t curTime = 0;
-    uint64_t curWritePos = 0;
-    int64_t wakeUpTime = ClockTime::GetCurNano();
-    while (!isCallbackLoopEnd_) {
-        if (!KeepLoopRunningIndependent()) {
-            continue;
-        }
-        threadStatus_ = INRUNNING;
-        curTime = ClockTime::GetCurNano();
-        Trace traceLoop("AudioProcessInClient::InRunning");
-        if (needReSyncPosition_) {
-            UpdateHandleInfo(true, true);
-            wakeUpTime = curTime;
-            needReSyncPosition_ = false;
-            continue;
-        }
-        curWritePos = audioBuffer_->GetCurWriteFrame();
-        if (streamStatus_->load() == STREAM_RUNNING) {
-            CallClientHandleCurrent();
-        } else {
-            RingBufferWrapper curWriteBuffer;
-            int32_t ret = audioBuffer_->GetAllWritableBufferFromPosFrame(curWritePos, curWriteBuffer);
-            CHECK_AND_RETURN_LOG(ret == SUCCESS && (curWriteBuffer.dataLength > 0),
-                "ret is fail or buffer is nullptr");
-            curWriteBuffer.SetBuffersValueWithSpecifyDataLen(0);
-        }
-        bool prepared = true;
-        curWritePos = audioBuffer_->GetCurWriteFrame();
-        uint64_t curReadPos = audioBuffer_->GetCurReadFrame();
-
-        uint64_t readBufferSizeInFrame = (curWritePos > curReadPos) ? (curWritePos - curReadPos) : 0;
-        size_t round = (readBufferSizeInFrame == 0 ? 1 : readBufferSizeInFrame / spanSizeInFrame_);
-        for (size_t count = 0; count < round; count++) {
-            if (!PrepareNextIndependent(curReadPos + count * spanSizeInFrame_, wakeUpTime)) {
-                prepared = false;
-                AUDIO_ERR_LOG("PrepareNextLoop failed!");
-                break;
-            }
-        }
-        if (!prepared) {
-            break;
-        }
-        traceLoop.End();
-        // start sleep
-        threadStatus_ = SLEEPING;
-
-        ClockTime::AbsoluteSleep(wakeUpTime);
-    }
-}
-
 bool AudioProcessInClientInner::KeepLoopRunningIndependent()
 {
     switch (streamStatus_->load()) {
@@ -1803,27 +1706,6 @@ bool AudioProcessInClientInner::KeepLoopRunningIndependent()
     }
 
     return false;
-}
-
-bool AudioProcessInClientInner::PrepareNextIndependent(uint64_t curReadPos, int64_t &wakeUpTime)
-{
-    uint64_t nextHandlePos = curReadPos + spanSizeInFrame_;
-    Trace prepareTrace("AudioEndpoint::PrepareNextLoop " + std::to_string(nextHandlePos));
-    int64_t nextHdiReadTime = GetPredictNextHandleTime(nextHandlePos, true);
-    uint64_t aheadTime = spanSizeInFrame_ * AUDIO_NS_PER_SECOND / processConfig_.streamInfo.samplingRate;
-    int64_t nextServerHandleTime = nextHdiReadTime - static_cast<int64_t>(aheadTime);
-    if (nextServerHandleTime < ClockTime::GetCurNano()) {
-        wakeUpTime = ClockTime::GetCurNano() + ONE_MILLISECOND_DURATION; // make sure less than duration
-    } else {
-        wakeUpTime = nextServerHandleTime;
-    }
-
-    int32_t ret = audioBuffer_->SetCurReadFrame(nextHandlePos, false);
-    if (ret != SUCCESS) {
-        AUDIO_ERR_LOG("SetCurWriteFrame or SetCurReadFrame failed, ret2:%{public}d", ret);
-        return false;
-    }
-    return true;
 }
 
 void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &wakeUpTime)

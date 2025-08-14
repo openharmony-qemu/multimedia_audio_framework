@@ -130,26 +130,6 @@ HWTEST(AudioProcessInClientUnitTest, GetPredictNextHandleTime_002, TestSize.Leve
 }
 
 /**
- * @tc.name  : Test ProcessCallbackFucIndependent API
- * @tc.type  : FUNC
- * @tc.number: ProcessCallbackFucIndependentg_001
- * @tc.desc  : Test ProcessCallbackFucIndependent
- */
-HWTEST(AudioProcessInClientUnitTest, ProcessCallbackFucIndependent_001, TestSize.Level2)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
-    EXPECT_NE(ptrAudioProcessInClientInner, nullptr);
-
-    ptrAudioProcessInClientInner->isCallbackLoopEnd_ = true;
-    ptrAudioProcessInClientInner->ProcessCallbackFucIndependent();
-}
-
-/**
  * @tc.name  : Test GetPredictNextHandleTime API
  * @tc.type  : FUNC
  * @tc.number: GetPredictNextHandleTime_003
