@@ -2534,6 +2534,7 @@ HWTEST(RendererInClientInnerUnitTest, GetStreamSwitchInfo_001, TestSize.Level4)
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     IAudioStream::SwitchInfo info;
 
+    // Set up the renderer with some known values
     ptrRendererInClientInner->effectMode_ = EFFECT_NONE;
     ptrRendererInClientInner->rendererRate_ = RENDER_RATE_NORMAL;
     ptrRendererInClientInner->clientPid_ = 1234;
@@ -2547,9 +2548,23 @@ HWTEST(RendererInClientInnerUnitTest, GetStreamSwitchInfo_001, TestSize.Level4)
     ptrRendererInClientInner->rendererPeriodPositionCallback_ = nullptr;
     ptrRendererInClientInner->writeCb_ = nullptr;
 
+    // Call the function under test
     ptrRendererInClientInner->GetStreamSwitchInfo(info);
 
+    // Check if the SwitchInfo structure is correctly set
     EXPECT_EQ(info.underFlowCount, ptrRendererInClientInner->GetUnderflowCount());
+    EXPECT_EQ(info.effectMode, ptrRendererInClientInner->effectMode_);
+    EXPECT_EQ(info.renderRate, ptrRendererInClientInner->rendererRate_);
+    EXPECT_EQ(info.clientPid, ptrRendererInClientInner->clientPid_);
+    EXPECT_EQ(info.clientUid, ptrRendererInClientInner->clientUid_);
+    EXPECT_EQ(info.volume, ptrRendererInClientInner->clientVolume_);
+    EXPECT_EQ(info.duckVolume, ptrRendererInClientInner->duckVolume_);
+    EXPECT_EQ(info.silentModeAndMixWithOthers, ptrRendererInClientInner->silentModeAndMixWithOthers_);
+    EXPECT_EQ(info.frameMarkPosition, ptrRendererInClientInner->rendererMarkPosition_);
+    EXPECT_EQ(info.renderPositionCb, ptrRendererInClientInner->rendererPositionCallback_);
+    EXPECT_EQ(info.framePeriodNumber, ptrRendererInClientInner->rendererPeriodSize_);
+    EXPECT_EQ(info.renderPeriodPositionCb, ptrRendererInClientInner->rendererPeriodPositionCallback_);
+    EXPECT_EQ(info.rendererWriteCallback, ptrRendererInClientInner->writeCb_);
 }
 
 /**
