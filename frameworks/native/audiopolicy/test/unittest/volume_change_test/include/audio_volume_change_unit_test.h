@@ -35,7 +35,7 @@ public:
     ~ApplicationCallback() = default;
 
     void OnVolumeKeyEvent(VolumeEvent volumeEvent) override;
-
+    void OnVolumeDegreeEvent(VolumeEvent volumeEvent) override;
 private:
     std::string testCaseName_;
 };
