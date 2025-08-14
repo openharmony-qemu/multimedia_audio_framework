@@ -307,6 +307,7 @@ group("audio_fuzz_test") {
     "fuzztest/hpaepcmprocess_fuzzer:fuzztest",
     "fuzztest/hpaepolicymanager_fuzzer:fuzztest",
     "fuzztest/hpaeprocesscluster_fuzzer:fuzztest",
+    "fuzztest/hpaeproresamplerprocess_fuzzer:fuzztest",
     "fuzztest/hpaeremoteoutputcluster_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanager_fuzzer:fuzztest",
     "fuzztest/hpaerenderermanageradd_fuzzer:fuzztest",
