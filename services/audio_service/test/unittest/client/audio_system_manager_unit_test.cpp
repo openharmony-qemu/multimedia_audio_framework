@@ -1723,5 +1723,31 @@ HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
     bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
     EXPECT_FALSE(result);
 }
+
+/**
+ * @tc.name   : Test OnWorkgroupChange API
+ * @tc.number : OnWorkgroupChange_001
+ * @tc.desc   : Test OnWorkgroupChange interface
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_001, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    AudioWorkgroupChangeInfoIpc info;
+    audioWorkgroupCallbackImpl.workgroupCb_ = nullptr;
+    EXPECT_EQ(audioWorkgroupCallbackImpl.OnWorkgroupChange(info), ERROR);
+}
+
+/**
+ * @tc.name   : Test RemoveWorkgroupChangeCallback API
+ * @tc.number : RemoveWorkgroupChangeCallback_001
+ * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
+ */
+HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    audioWorkgroupCallbackImpl.RemoveWorkgroupChangeCallback();
+    EXPECT_EQ(nullptr, audioWorkgroupCallbackImpl.workgroupCb_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

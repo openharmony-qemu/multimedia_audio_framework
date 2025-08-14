@@ -1,4 +1,4 @@
-/*
+                  /*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -333,6 +333,39 @@ HWTEST(AudioApatialChannelCoverterUnitTest, AudioApatialChannelCoverter_015, Tes
     uint8_t buffer1 = 1;
     bufDesc.buffer = &buffer1;
     audioSpatialChannelConverter->Process(bufDesc);
+}
+
+/**
+ * @tc.name  : Test GetInputBufferSize API
+ * @tc.type  : FUNC
+ * @tc.number: GetInputBufferSize_001
+ * @tc.desc  : Test GetInputBufferSize interface.
+ */
+HWTEST(AudioApatialChannelCoverterUnitTest, GetInputBufferSize_001, TestSize.Level1)
+{
+    auto audioSpatialChannelConverter = std::make_shared<AudioSpatialChannelConverter>();
+    ASSERT_TRUE(audioSpatialChannelConverter != nullptr);
+    size_t bufferSize = 0;
+    bool result = audioSpatialChannelConverter->GetInputBufferSize(bufferSize);
+    EXPECT_FALSE(result);
+}
+
+/**
+ * @tc.name  : Test GetOutputBufferStream API
+ * @tc.type  : FUNC
+ * @tc.number: GetOutputBufferStream_001
+ * @tc.desc  : Test GetOutputBufferStream interface.
+ */
+HWTEST(AudioApatialChannelCoverterUnitTest, GetOutputBufferStream_001, TestSize.Level1)
+{
+    auto audioSpatialChannelConverter = std::make_shared<AudioSpatialChannelConverter>();
+    ASSERT_TRUE(audioSpatialChannelConverter != nullptr);
+    uint8_t *buffer = nullptr;
+    uint32_t bufferLen = 0;
+
+    audioSpatialChannelConverter->GetOutputBufferStream(buffer, bufferLen);
+
+    EXPECT_EQ(buffer, nullptr);
 }
 } // namespace AudioStandard
 } // namespace OHOS
