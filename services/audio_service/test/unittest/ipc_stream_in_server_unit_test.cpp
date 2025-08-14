@@ -1841,7 +1841,7 @@ HWTEST(IpcStreamInServerUnitTest, IpcStreamInServer_076, TestSize.Level1)
 
     ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
     auto ret3 = ipcStreamInServerRet.SetSourceDuration(duration);
-    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);  
+    EXPECT_EQ(ret3, ERR_OPERATION_FAILED);
 }
 
 /**
