@@ -1862,6 +1862,40 @@ bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode)
     return result;
 }
 
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackReverbPreset::REVERB_PRESET_ORIGINAL:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_KTV:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_THEATRE:
+        case AudioLoopbackReverbPreset::REVERB_PRESET_CONCERT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+bool NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset)
+{
+    bool result = false;
+    switch (preset) {
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FLAT:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_FULL:
+        case AudioLoopbackEqualizerPreset::EQUALIZER_PRESET_BRIGHT:
+            result = true;
+            break;
+        default:
+            result = false;
+            break;
+    }
+    return result;
+}
+
+
 bool NapiAudioEnum::IsLegalInputArgumentSessionScene(int32_t scene)
 {
     bool result = false;

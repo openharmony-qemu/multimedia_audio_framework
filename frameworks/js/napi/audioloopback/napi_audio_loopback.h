@@ -74,7 +74,7 @@ private:
     static NapiAudioLoopback* GetParamWithSync(const napi_env &env, napi_callback_info info,
         size_t &argc, napi_value *args);
     static napi_value SetReverbPreset(napi_env env, napi_callback_info info);
-    static napi_value GetReverbPreset(api_env env, napi_callback_info info);
+    static napi_value GetReverbPreset(napi_env env, napi_callback_info info);
     static napi_value SetEqualizerPreset(napi_env env, napi_callback_info info);
     static napi_value GetEqualizerPreset(napi_env env, napi_callback_info info);
 

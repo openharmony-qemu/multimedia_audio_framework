@@ -507,10 +507,10 @@ NapiAudioLoopback* NapiAudioLoopback::GetParamWithSync(const napi_env &env, napi
 {
     NapiAudioLoopback *napiLoopback = nullptr;
     napi_value jsThis = nullptr;
-    napi_status status = napi_get_cb_info(env, info, &argc, argv, &jsThis, nullptr);
+    napi_status status = napi_get_cb_info(env, info, &argc, args, &jsThis, nullptr);
     CHECK_AND_RETURN_RET_LOG(status == napi_ok && jsThis != nullptr, nullptr, "status error");
     status = napi_unwrap(env, jsThis, reinterpret_cast<void **>(&napiLoopback));
-    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr "napi_unwrap failed");
+    CHECK_AND_RETURN_RET_LOG(status == napi_ok, nullptr, "napi_unwrap failed");
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr, nullptr, "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, nullptr, "loopback_ is nullptr");
     return napiLoopback;
@@ -525,12 +525,12 @@ napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info i
     CHECK_AND_RETURN_RET_LOG(argc >= ARGS_ONE, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
     napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, args[PARAM0], &valueType);
+    napi_typeof(env, argv[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
         "valueType invaild");
     int32_t preset;
-    NapiParamUtils::GetValueInt32(env, preset, args[PARAM0]);
+    NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(preset)) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -546,9 +546,8 @@ napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info i
     return result;
 }
 
-napi_value NapiAudioLoopback::GetReverbPreset(api_env env, napi_callback_info info)
+napi_value NapiAudioLoopback::GetReverbPreset(npi_env env, napi_callback_info info)
 {
-    napi_value result = nullptr;
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
@@ -572,12 +571,12 @@ napi_value NapiAudioLoopback::SetEqualizerPreset(napi_env env, napi_callback_inf
         NAPI_ERR_INPUT_INVALID, "mandatory parameters are left unspecified"), "argcCount invalid");
 
     napi_valuetype valueType = napi_undefined;
-    napi_typeof(env, args[PARAM0], &valueType);
+    napi_typeof(env, argv[PARAM0], &valueType);
     CHECK_AND_RETURN_RET_LOG(valueType == napi_number, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_INPUT_INVALID, "incorrect parameter types: The type of mode must be number"),
         "valueType invaild");
     int32_t preset;
-    NapiParamUtils::GetValueInt32(env, preset, args[PARAM0]);
+    NapiParamUtils::GetValueInt32(env, preset, argv[PARAM0]);
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(preset)) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
@@ -588,14 +587,13 @@ napi_value NapiAudioLoopback::SetEqualizerPreset(napi_env env, napi_callback_inf
         NapiAudioError::ThrowErrorAndReturn(env, NAPI_ERR_NO_MEMORY), "napiLoopback is nullptr");
     CHECK_AND_RETURN_RET_LOG(napiLoopback->loopback_ != nullptr, NapiAudioError::ThrowErrorAndReturn(env,
         NAPI_ERR_NO_MEMORY), "loopback_ is nullptr");
-    napiLoopback->loopback_->SetEqualizerPreset(static_cast<AudioLoopbackEqualizerPreset>(preset));
+    bool ret = napiLoopback->loopback_->SetEqualizerPreset(static_cast<AudioLoopbackEqualizerPreset>(preset));
     napi_get_boolean(env, ret, &result);
     return result;
 }
 
 napi_value NapiAudioLoopback::GetEqualizerPreset(napi_env env, napi_callback_info info)
 {
-    napi_value result = nullptr;
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,

@@ -65,11 +65,11 @@ public:
 
     virtual bool SetReverbPreset(AudioLoopbackReverbPreset preset) = 0;
 
-    virtual AudioLoopbackReverbPreset getReverbPreset() = 0;
+    virtual AudioLoopbackReverbPreset GetReverbPreset() = 0;
 
-    virtual bool setEqualizerPreset(AudioLoopbackEqualizerPreset preset) = 0;
+    virtual bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) = 0;
 
-    virtual AudioLoopbackEqualizerPreset getEqualizerPreset() = 0;
+    virtual AudioLoopbackEqualizerPreset GetEqualizerPreset() = 0;
 
     virtual ~AudioLoopback();
 };

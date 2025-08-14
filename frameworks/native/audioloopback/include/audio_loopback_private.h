@@ -38,12 +38,9 @@ public:
     void OnReadData(size_t length) override;
     
     bool SetReverbPreset(AudioLoopbackReverbPreset preset) override;
-
-    AudioLoopbackReverbPreset getReverbPreset() override;
-
-    bool setEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
-
-    AudioLoopbackEqualizerPreset getEqualizerPreset() override;
+    AudioLoopbackReverbPreset GetReverbPreset() override;
+    bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) override;
+    AudioLoopbackEqualizerPreset GetEqualizerPreset() override;
 
 private:
 
@@ -110,8 +107,8 @@ private:
     std::atomic<CapturerState> capturerState_ = CAPTURER_INVALID;
     std::atomic<bool> isCapturerUsb_ = false;
     std::atomic<FastStatus> capturerFastStatus_ = FASTSTATUS_NORMAL;
-    AudioLoopbackReverbPreset currentReverbPresetMap = REVERB_PRESET_THEATRE;
-    AudioLoopbackEqualizerPreset currentEqualizerPresetMap = EQUALIZER_PRESET_FULL;
+    AudioLoopbackReverbPreset currentReverbPreset_ = REVERB_PRESET_THEATRE;
+    AudioLoopbackEqualizerPreset currentEqualizerPreset_ = EQUALIZER_PRESET_FULL;
 };
 }  // namespace AudioStandard
 }  // namespace OHOS
