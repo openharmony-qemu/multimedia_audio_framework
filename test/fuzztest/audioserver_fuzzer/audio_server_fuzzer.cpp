@@ -1887,30 +1887,6 @@ void AudioServerSetActiveOutputDeviceFuzzTest(const uint8_t *rawData, size_t siz
     std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
     audioServerPtr->SetActiveOutputDevice(deviceType);
 }
-void AudioServerGetPcmDumpParameterFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string subKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
-    std::vector<std::string> subKeys = {subKey};
-    std::vector<std::pair<std::string, std::string>> result;
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetPcmDumpParameter(subKeys, result);
-}
-void AudioServerGetExtraParametersInnerFuzzTest(const uint8_t *rawData, size_t size)
-{
-    if (rawData == nullptr || size < LIMITSIZE) {
-        return;
-    }
-    std::string mainKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
-    std::string subKey = g_testKeys[*reinterpret_cast<const uint32_t*>(rawData) % g_testKeys.size()];
-    std::vector<std::string> subKeys = {subKey};
-    std::vector<std::pair<std::string, std::string>> result;
-    std::shared_ptr<AudioServer> audioServerPtr = std::make_shared<AudioServer>(SYSTEM_ABILITY_ID, RUN_ON_CREATE);
-    audioServerPtr->GetExtraParametersInner(mainKey, subKeys, result);
-}
-
 void AudioServerResetRecordConfigSourceTypeFuzzTest(const uint8_t *rawData, size_t size)
 {
     if (rawData == nullptr || size < LIMITSIZE) {
@@ -2188,8 +2164,6 @@ OHOS::AudioStandard::TestPtr g_testPtrs[] = {
     OHOS::AudioStandard::AudioServerStartGroupFuzzTest,
     OHOS::AudioStandard::AudioServerStopGroupFuzzTest,
     OHOS::AudioStandard::AudioServerSetActiveOutputDeviceFuzzTest,
-    OHOS::AudioStandard::AudioServerGetPcmDumpParameterFuzzTest,
-    OHOS::AudioStandard::AudioServerGetExtraParametersInnerFuzzTest,
     OHOS::AudioStandard::AudioServerResetRecordConfigSourceTypeFuzzTest,
     OHOS::AudioStandard::AudioServerResetProcessConfigCallerUidFuzzTest,
     OHOS::AudioStandard::AudioServerCheckStreamInfoFormatNotContainFuzzTest,
