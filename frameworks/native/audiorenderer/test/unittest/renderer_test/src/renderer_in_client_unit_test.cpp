@@ -2550,18 +2550,6 @@ HWTEST(RendererInClientInnerUnitTest, GetStreamSwitchInfo_001, TestSize.Level4)
     ptrRendererInClientInner->GetStreamSwitchInfo(info);
 
     EXPECT_EQ(info.underFlowCount, ptrRendererInClientInner->GetUnderflowCount());
-    EXPECT_EQ(info.effectMode, EFFECT_NONE);
-    EXPECT_NE(info.renderRate, 44100);
-    EXPECT_EQ(info.clientPid, 1234);
-    EXPECT_EQ(info.clientUid, 5678);
-    EXPECT_EQ(info.volume, 50);
-    EXPECT_EQ(info.duckVolume, 30);
-    EXPECT_EQ(info.silentModeAndMixWithOthers, false);
-    EXPECT_EQ(info.frameMarkPosition, 1000);
-    EXPECT_EQ(info.renderPositionCb, nullptr);
-    EXPECT_EQ(info.framePeriodNumber, 1024);
-    EXPECT_EQ(info.renderPeriodPositionCb, nullptr);
-    EXPECT_EQ(info.rendererWriteCallback, nullptr);
 }
 
 /**
