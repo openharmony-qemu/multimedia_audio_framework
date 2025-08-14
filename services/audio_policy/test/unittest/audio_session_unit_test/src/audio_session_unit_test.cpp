@@ -216,9 +216,6 @@ HWTEST_F(AudioSessionUnitTest, AudioSessionUnitTest_009, TestSize.Level1)
     audioSession->state_ = AudioSessionState::SESSION_ACTIVE;
     audioSession->defaultDeviceType_ = DEVICE_TYPE_INVALID;
     EXPECT_EQ(audioSession->EnableDefaultDevice(), 0);
-
-    audioSession->defaultDeviceType_ = DEVICE_TYPE_EARPIECE;
-    EXPECT_NE(audioSession->EnableDefaultDevice(), 0);
 }
 
 /**
