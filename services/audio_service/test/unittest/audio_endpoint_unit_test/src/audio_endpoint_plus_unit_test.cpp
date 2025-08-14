@@ -129,9 +129,9 @@ static sptr<AudioProcessInServer> CreateAudioProcessInServer()
 {
     AudioService *audioServicePtr = AudioService::GetInstance();
     AudioDeviceDescriptor deviceInfo(AudioDeviceDescriptor::DEVICE_INFO);
-    DeviceStreamInfo audioStreamInfo = deviceInfo.GetDeviceStreamInfo();
-    audioStreamInfo.samplingRate.insert(SAMPLE_RATE_48000);
-    audioStreamInfo.channelLayout.insert(CH_LAYOUT_STEREO);
+    AudioStreamInfo audioStreamInfo;
+    audioStreamInfo.samplingRate = SAMPLE_RATE_48000;
+    audioStreamInfo.channelLayout = CH_LAYOUT_STEREO;
     AudioProcessConfig serverConfig = InitServerProcessConfig();
     sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(serverConfig, audioServicePtr);
     std::shared_ptr<OHAudioBufferBase> buffer = nullptr;
@@ -1820,6 +1820,60 @@ HWTEST_F(AudioEndpointPlusUnitTest, CheckAudioHapticsSync_002, TestSize.Level1)
     audioEndpointnIner->CheckAudioHapticsSync(10);
 
     EXPECT_NE(audioEndpointnIner->audioHapticsSyncId_, 1);
+}
+
+/*
+ * @tc.name  : Test IsNearlinkAbsVolSupportStream API
+ * @tc.type  : FUNC
+ * @tc.number: IsNearlinkAbsVolSupportStream_001
+ * @tc.desc  : Test AudioEndpointInner::IsNearlinkAbsVolSupportStream()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, IsNearlinkAbsVolSupportStream_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_MUSIC));
+
+    EXPECT_TRUE(audioEndpointnIner->IsNearlinkAbsVolSupportStream(DEVICE_TYPE_NEARLINK, STREAM_VOICE_CALL));
+}
+
+/*
+ * @tc.name  : Test CheckSyncInfo API
+ * @tc.type  : FUNC
+ * @tc.number: CheckSyncInfo_001
+ * @tc.desc  : Test AudioEndpointInner::CheckSyncInfo()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, CheckSyncInfo_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    audioEndpointnIner->dstSpanSizeInframe_ = 0;
+    audioEndpointnIner->CheckSyncInfo(100);
+    EXPECT_EQ(audioEndpointnIner->dstSpanSizeInframe_, 0);
+}
+
+/*
+ * @tc.name  : Test ProcessToDupStream API
+ * @tc.type  : FUNC
+ * @tc.number: ProcessToDupStream_001
+ * @tc.desc  : Test AudioEndpointInner::ProcessToDupStream()
+ */
+HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
+{
+    AudioEndpoint::EndpointType type = AudioEndpoint::TYPE_MMAP;
+    uint64_t id = 123;
+    AudioProcessConfig clientConfig = {};
+    auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
+    std::vector<AudioStreamData> audioDataList;
+    AudioStreamData dstStreamData;
+    int32_t innerCapId = 1;
+
+    audioEndpointnIner->ProcessToDupStream(audioDataList, dstStreamData, innerCapId);
+    EXPECT_EQ(innerCapId, 1);
 }
 } // namespace AudioStandard
 } // namespace OHOS

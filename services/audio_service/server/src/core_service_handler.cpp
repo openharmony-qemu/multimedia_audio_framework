@@ -84,10 +84,10 @@ std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)
 }
 
 int32_t CoreServiceHandler::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-    bool isReloadProcess)
+    AudioStreamInfo &streamInfo, bool isReloadProcess)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
+    return iCoreServiceProvider_->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, streamInfo, isReloadProcess);
 }
 
 uint32_t CoreServiceHandler::GenerateSessionId()

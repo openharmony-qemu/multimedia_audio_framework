@@ -35,7 +35,7 @@ public:
         std::shared_ptr<AudioInterruptService> interruptService);
     void DeInit();
     
-    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context);
+    int32_t CreateAudioZone(const std::string &name, const AudioZoneContext &context, pid_t clientPid);
     void ReleaseAudioZone(int32_t zoneId);
     const std::vector<std::shared_ptr<AudioZoneDescriptor>> GetAllAudioZone();
     const std::shared_ptr<AudioZoneDescriptor> GetAudioZone(int32_t zoneId);
@@ -45,6 +45,7 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
     int32_t UnBindDeviceToAudioZone(int32_t zoneId,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> devices);
+    void MoveDeviceToGlobalFromZones(std::shared_ptr<AudioDeviceDescriptor> device);
     int32_t UpdateDeviceFromGlobalForAllZone(std::shared_ptr<AudioDeviceDescriptor> device);
 
     int32_t RegisterAudioZoneClient(pid_t clientPid, sptr<IStandardAudioZoneClient> client);
@@ -91,6 +92,8 @@ public:
     int32_t ClearAudioFocusBySessionID(const int32_t &sessionID);
     bool CheckZoneExist(int32_t zoneId);
     int32_t FindAudioSessionZoneid(int32_t callerUid, int32_t callerPid, bool isActivate);
+
+    void ReleaseAudioZoneByClientPid(pid_t clientPid);
 
 private:
     AudioZoneService() = default;

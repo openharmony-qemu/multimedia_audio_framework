@@ -265,6 +265,18 @@ std::shared_ptr<ThreadHandler> AudioEnhanceChainManagerImpl::GetThreadHandlerByS
     return threadHandler;
 }
 
+void AudioEnhanceChainManagerImpl::ReleaseThreadHandlerByScene(AudioEnhanceScene scene)
+{
+    auto threadId = GetThreadIdByScene(scene);
+    auto iter = threadHandlerMap_.find(threadId);
+    if (iter != threadHandlerMap_.end() && --iter->second.second > 0) {
+        AUDIO_INFO_LOG("threadId: %{public}u useCount: %{public}u", threadId, iter->second.second);
+    } else {
+        Trace trace("DeleteThread: " + std::to_string(scene));
+        threadHandlerMap_.erase(threadId);
+    }
+}
+
 int32_t AudioEnhanceChainManagerImpl::CreateAudioEnhanceChainDynamic(uint64_t sceneKeyCode,
     const AudioEnhanceDeviceAttr &deviceAttr)
 {
@@ -280,15 +292,20 @@ int32_t AudioEnhanceChainManagerImpl::CreateAudioEnhanceChainDynamic(uint64_t sc
     auto newChain = CreateEnhanceChainInner(sceneKeyCode, deviceAttr);
     CHECK_AND_RETURN_RET_LOG(newChain != nullptr, ERROR, "CreateEnhanceChainInner fail");
 
+    bool defaultFlag = (newChain->GetScenePriority() == DEFAULT_SCENE);
+    auto enhanceNames = GetEnhanceNamesBySceneCode(sceneKeyCode, defaultFlag);
+    CHECK_AND_RETURN_RET_LOG(enhanceNames.size() != 0, ERROR, "enhanceNames is empty");
+
     auto scene = static_cast<AudioEnhanceScene>((sceneKeyCode & SCENE_TYPE_MASK) >> SCENE_TYPE_OFFSET);
     auto handler = GetThreadHandlerByScene(scene);
     CHECK_AND_RETURN_RET_LOG(handler != nullptr, ERROR, "handler is null");
     newChain->SetThreadHandler(handler);
 
-    bool defaultFlag = (newChain->GetScenePriority() == DEFAULT_SCENE);
-    auto enhanceNames = GetEnhanceNamesBySceneCode(sceneKeyCode, defaultFlag);
-    auto addHandlesRet = AddAudioEnhanceChainHandles(newChain, enhanceNames);
-    CHECK_AND_RETURN_RET_LOG(addHandlesRet == SUCCESS, ERROR, "chain: %{public}" PRIu64 " create fail", sceneKeyCode);
+    if (AddAudioEnhanceChainHandles(newChain, enhanceNames) != SUCCESS) {
+        AUDIO_ERR_LOG("chain: %{public}" PRIu64 " create failed", sceneKeyCode);
+        ReleaseThreadHandlerByScene(scene);
+        return ERROR;
+    }
 
     ChainPool::GetInstance().AddChain(newChain);
     AUDIO_INFO_LOG("chain: %{public}" PRIu64 " create success", sceneKeyCode);
@@ -365,7 +382,6 @@ std::shared_ptr<AudioEnhanceChain> AudioEnhanceChainManagerImpl::CreateEnhanceCh
 int32_t AudioEnhanceChainManagerImpl::AddAudioEnhanceChainHandles(std::shared_ptr<AudioEnhanceChain> &audioEnhanceChain,
     const std::vector<std::string> &enhanceNames)
 {
-    CHECK_AND_RETURN_RET_LOG(enhanceNames.size() != 0, ERROR, "enhanceNames is empty");
     std::vector<EnhanceModulePara> moduleParas;
     for (const auto &enhance : enhanceNames) {
         EnhanceModulePara para = {};
@@ -396,15 +412,7 @@ int32_t AudioEnhanceChainManagerImpl::ReleaseAudioEnhanceChainDynamic(uint64_t s
     ChainPool::GetInstance().DeleteChain(sceneKeyCode);
 
     auto scene = static_cast<AudioEnhanceScene>((sceneKeyCode & SCENE_TYPE_MASK) >> SCENE_TYPE_OFFSET);
-    auto threadId = GetThreadIdByScene(scene);
-    auto iter = threadHandlerMap_.find(threadId);
-    if (iter != threadHandlerMap_.end() && --iter->second.second > 0) {
-        AUDIO_INFO_LOG("threadId: %{public}u useCount: %{public}u", threadId, iter->second.second);
-        return SUCCESS;
-    } else {
-        Trace trace("DeleteThread: " + std::to_string(scene));
-        threadHandlerMap_.erase(threadId);
-    }
+    ReleaseThreadHandlerByScene(scene);
 
     return SUCCESS;
 }

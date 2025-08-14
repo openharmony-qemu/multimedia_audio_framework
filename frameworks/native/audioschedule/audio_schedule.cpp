@@ -165,7 +165,7 @@ bool SetEndpointThreadPriority()
     if (ret == 0) {
         res = true;
     }
-    AUDIO_INFO_LOG("set thread qos %s", ret ? "failed" : "success");
+    AUDIO_INFO_LOG("set thread qos %{public}s", ret ? "failed" : "success");
     return res;
 }
 

@@ -122,8 +122,9 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     CoreServiceProviderWrapper coreServiceProviderWrapper(static_cast<ICoreServiceProvider*>(coreServiceWorker));
     uint32_t sessionId = GetData<uint32_t>();
     AudioDeviceDescriptor deviceInfo;
-    bool isReloadProcess = GetData<bool>();
-    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, isReloadProcess);
+    bool reload = GetData<bool>();
+    AudioStreamInfo info;
+    coreServiceProviderWrapper.GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info, reload);
 }
 
 void GenerateSessionIdFuzzTest()

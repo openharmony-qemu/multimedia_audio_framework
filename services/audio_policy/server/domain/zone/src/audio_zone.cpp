@@ -177,10 +177,11 @@ const std::vector<AudioZoneBindKey> AudioZoneBindKey::GetSupportKeys(const Audio
 }
 
 AudioZone::AudioZone(std::shared_ptr<AudioZoneClientManager> manager,
-    const std::string &name, const AudioZoneContext &context)
+    const std::string &name, const AudioZoneContext &context, pid_t clientPid)
     : zoneId_(GenerateZoneId()),
       name_(name),
-      clientManager_(manager)
+      clientManager_(manager),
+      zoneClientPid_(clientPid)
 {
 }
 
@@ -478,6 +479,11 @@ int32_t AudioZone::GetSystemVolumeLevel(AudioVolumeType volumeType)
         mgr = clientManager_;
     }
     return mgr->GetSystemVolumeLevel(volumeProxyClientPid_, zoneId_, volumeType);
+}
+
+pid_t AudioZone::GetClientPid()
+{
+    return zoneClientPid_;
 }
 } // namespace AudioStandard
 } // namespace OHOS

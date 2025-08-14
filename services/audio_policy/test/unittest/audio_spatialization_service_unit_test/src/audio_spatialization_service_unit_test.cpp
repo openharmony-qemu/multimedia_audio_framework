@@ -1070,26 +1070,25 @@ HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_049, Tes
 }
 
 /**
-* @tc.name  : Test IsHeadTrackingDataRequestedForCurrentDevice.
-* @tc.number: AudioSpatializationService_050
-* @tc.desc  : Test IsHeadTrackingDataRequestedForCurrentDevice.
+* @tc.name  : Test AudioSpatializationService.
+* @tc.number: AudioSpatializationService::Init_001
+* @tc.desc  : Test AudioSpatializationService::Init
 */
-HWTEST_F(AudioSpatializationServiceUnitTest, AudioSpatializationService_050, TestSize.Level1)
+HWTEST_F(AudioSpatializationServiceUnitTest, Init_001, TestSize.Level1)
 {
     auto ptrAudioSpatializationService = std::make_shared<AudioSpatializationService>();
+
     EXPECT_NE(ptrAudioSpatializationService, nullptr);
 
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
-    rendererChangeInfo->rendererState = RENDERER_RUNNING;
-    rendererChangeInfo->outputDeviceInfo.macAddress_ = "123456";
-    rendererChangeInfo->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
-
-    std::vector<std::shared_ptr<AudioRendererChangeInfo>>rendererChange{rendererChangeInfo};
-
-    ptrAudioSpatializationService->UpdateCurrentDevice("123456");
-    ptrAudioSpatializationService->UpdateRendererInfo(rendererChange);
-    auto ret = ptrAudioSpatializationService->IsHeadTrackingDataRequestedForCurrentDevice();
-    EXPECT_FALSE(ret);
+    const std::vector<EffectChain> effectChains = {
+        {"Effect3", {}, "HEADTRACKING"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_AND_HEAD_TRACKING_SUPPORTED_LABEL"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply1_1", "apply1_2"}, "SPATIALIZATION_SUPPORTED_LABEL"},
+        {"BLUETOOTH_EFFECT_CHAIN_NAME", {"apply2_1"}, "HEAD_TRACKING_SUPPORTED_LABEL"}
+    };
+    EXPECT_NO_THROW(
+        ptrAudioSpatializationService->Init(effectChains);
+    );
 }
 } // namespace AudioStandard
 } // namespace OHOS

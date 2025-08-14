@@ -47,8 +47,12 @@ public:
     std::string adapterName_ = "";
 
     AudioModuleInfo moduleInfo_ = {};
+    AudioStreamInfo audioStreamInfo_ = {};
+    void InitAudioStreamInfo();
 
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
+
+    bool softLinkFlag_ = false;
 
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamDescriptors_ = {};
 

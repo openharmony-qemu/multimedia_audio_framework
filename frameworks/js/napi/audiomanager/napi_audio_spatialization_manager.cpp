@@ -24,7 +24,9 @@
 #include "napi_audio_enum.h"
 #include "audio_errors.h"
 #include "audio_manager_log.h"
+#ifndef CROSS_PLATFORM
 #include "xpower_event_js.h"
+#endif
 #include "napi_audio_spatialization_manager_callback.h"
 
 namespace OHOS {

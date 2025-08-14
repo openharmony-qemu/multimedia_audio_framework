@@ -584,6 +584,12 @@ public:
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
     }
 
+    bool operator==(const AudioStreamInfo &info) const
+    {
+        return encoding == info.encoding && format == info.format && channels == info.channels &&
+            channelLayout == info.channelLayout && samplingRate == info.samplingRate;
+    }
+
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
     {
         auto info = new(std::nothrow) AudioStreamInfo();

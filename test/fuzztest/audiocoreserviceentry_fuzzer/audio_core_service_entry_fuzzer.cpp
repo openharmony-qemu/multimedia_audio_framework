@@ -208,7 +208,8 @@ void GetProcessDeviceInfoBySessionIdFuzzTest()
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     uint32_t sessionId = 0;
     AudioDeviceDescriptor deviceInfo;
-    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo);
+    AudioStreamInfo info;
+    auto ret = eventEntry->GetProcessDeviceInfoBySessionId(sessionId, deviceInfo, info);
 }
 
 void GenerateSessionIdFuzzTest()
