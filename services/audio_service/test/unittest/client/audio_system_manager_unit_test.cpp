@@ -18,6 +18,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
+#include "audio_workgroup_callback_impl.h"
 
 using namespace testing::ext;
 
