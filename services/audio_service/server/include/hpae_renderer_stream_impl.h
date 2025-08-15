@@ -84,7 +84,7 @@ public:
 private:
     void SyncOffloadMode();
     void InitRingBuffer();
-    int32_t WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen);
+    int32_t WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen);
     uint32_t GetA2dpOffloadLatency(); // unit ms
     uint32_t GetNearlinkLatency(); // unit ms
     void GetLatencyInner(uint64_t &timestamp, uint64_t &latencyUs, int32_t base);
