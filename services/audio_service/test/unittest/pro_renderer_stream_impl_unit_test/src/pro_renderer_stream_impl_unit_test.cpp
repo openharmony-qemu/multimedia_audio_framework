@@ -656,23 +656,49 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_007, TestSize.Level3)
 {
     AudioProcessConfig processConfig = InitProcessConfig();
     processConfig.streamType = STREAM_VOICE_CALL;
+    processConfig.streamInfo.format = SAMPLE_S16LE;
     processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_8000;
-    bool isDirect = true;
+    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
+    bool isDirect = false;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-
     rendererStreamImpl->InitParams();
     rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = true;
-    rendererStreamImpl->bufferInfo_.format = AudioSampleFormat::SAMPLE_S24LE;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->resampleSrcBuffer.size();
+    rendererStreamImpl->isNeedResample_ = false;
+    rendererStreamImpl->desFormat_ = SAMPLE_U8;
+    const BufferDesc bufferDesc = {nullptr, 1, 0};
 
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
+    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
+    rendererStreamImpl->bufferInfo_.format = 0;
+    rendererStreamImpl->bufferInfo_.frameSize =
+                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
+
+    rendererStreamImpl->bufferInfo_.format = 1;
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
+
+    rendererStreamImpl->bufferInfo_.format = 2;
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 3);
+
+    ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
+
+    rendererStreamImpl->bufferInfo_.format = 3;
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 4);
+
+    rendererStreamImpl->bufferInfo_.format = 4;
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 5);
+
+    rendererStreamImpl->bufferInfo_.format = 24;
+    rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
 }
+
 
 /**
 * @tc.name  : Test EnqueueBuffer API
@@ -689,187 +715,41 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_008, TestSize.Level3)
     bool isDirect = false;
     std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
         std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
-
     rendererStreamImpl->InitParams();
     rendererStreamImpl->isNeedMcr_ = false;
     rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_U8;
+    rendererStreamImpl->desFormat_ = SAMPLE_S16LE;
+    const BufferDesc bufferDesc = {nullptr, 1, 0};
+
+    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
     rendererStreamImpl->bufferInfo_.format = 0;
     rendererStreamImpl->bufferInfo_.frameSize =
                     rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
     int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 1);
 
     rendererStreamImpl->bufferInfo_.format = 1;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 2);
 
-/**
-* @tc.name  : Test EnqueueBuffer API
- * @tc.type  : FUNC
- * @tc.number: EnqueueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_009, TestSize.Level3)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    processConfig.streamType = STREAM_VOICE_CALL;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isDirect = false;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
- 
-    rendererStreamImpl->InitParams();
-    rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_U8;
     rendererStreamImpl->bufferInfo_.format = 2;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 3);
+
+    ret = rendererStreamImpl->Flush();
     EXPECT_EQ(ret, SUCCESS);
 
     rendererStreamImpl->bufferInfo_.format = 3;
     ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 4);
 
-/**
-* @tc.name  : Test EnqueueBuffer API
- * @tc.type  : FUNC
- * @tc.number: EnqueueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_010, TestSize.Level3)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    processConfig.streamType = STREAM_VOICE_CALL;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isDirect = false;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
-
-    rendererStreamImpl->InitParams();
-    rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_U8;
     rendererStreamImpl->bufferInfo_.format = 4;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 5);
 
     rendererStreamImpl->bufferInfo_.format = 24;
-    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test EnqueueBuffer API
- * @tc.type  : FUNC
- * @tc.number: EnqueueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_011, TestSize.Level3)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    processConfig.streamType = STREAM_VOICE_CALL;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isDirect = false;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
-
-    rendererStreamImpl->InitParams();
-    rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_S16LE;
-    rendererStreamImpl->bufferInfo_.format = 0;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-
-    rendererStreamImpl->bufferInfo_.format = 1;
-    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test EnqueueBuffer API
- * @tc.type  : FUNC
- * @tc.number: EnqueueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_017, TestSize.Level3)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    processConfig.streamType = STREAM_VOICE_CALL;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isDirect = false;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
-
-    rendererStreamImpl->InitParams();
-    rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_S16LE;
-    rendererStreamImpl->bufferInfo_.format = 2;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-
-    rendererStreamImpl->bufferInfo_.format = 3;
-    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
-* @tc.name  : Test EnqueueBuffer API
- * @tc.type  : FUNC
- * @tc.number: EnqueueBuffer
- */
-HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_019, TestSize.Level3)
-{
-    AudioProcessConfig processConfig = InitProcessConfig();
-    processConfig.streamType = STREAM_VOICE_CALL;
-    processConfig.streamInfo.format = SAMPLE_S16LE;
-    processConfig.streamInfo.channels = STEREO;
-    processConfig.streamInfo.samplingRate = SAMPLE_RATE_16000;
-    bool isDirect = false;
-    std::shared_ptr<ProRendererStreamImpl> rendererStreamImpl =
-        std::make_shared<ProRendererStreamImpl>(processConfig, isDirect);
-    int32_t writeIndex = rendererStreamImpl->PopWriteBufferIndex();
-
-    rendererStreamImpl->InitParams();
-    rendererStreamImpl->isNeedMcr_ = false;
-    rendererStreamImpl->isNeedResample_ = false;
-    rendererStreamImpl->desFormat_ = SAMPLE_S16LE;
-    rendererStreamImpl->bufferInfo_.format = 4;
-    rendererStreamImpl->bufferInfo_.frameSize =
-                    rendererStreamImpl->sinkBuffer_[writeIndex].size() / sizeof(int32_t);
-    const BufferDesc bufferDesc = {nullptr, 0, 0};
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
-
-    rendererStreamImpl->bufferInfo_.format = 24;
-    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
-    EXPECT_EQ(ret, SUCCESS);
+    rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    EXPECT_EQ(rendererStreamImpl->totalBytesWritten_, 6);
 }
 
 /**
