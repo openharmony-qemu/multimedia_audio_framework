@@ -100,9 +100,12 @@ void HpaeSinkOutputNode::DoProcess()
     if (ret != SUCCESS || writeLen != renderFrameData_.size()) {
         AUDIO_ERR_LOG("HpaeSinkOutputNode: RenderFrame failed");
         if (GetDeviceClass() != "remote") {
-            usleep(SLEEP_TIME_IN_US); // others failed to RenderFrame, need sleep 20ms
+            periodTimer_.Stop();
+            uint64_t usedTimeUs = periodTimer_.Elapsed<std::chrono::microseconds>();
+            usleep(SLEEP_TIME_IN_US > usedTimeUs ? SLEEP_TIME_IN_US - usedTimeUs : 0);
         }
     }
+    periodTimer_.Start();
     HandleRemoteTiming(); // used to control remote RenderFrame tempo.
 #ifdef ENABLE_HOOK_PCM
     timer.Stop();
@@ -294,6 +297,7 @@ int32_t HpaeSinkOutputNode::RenderSinkStart(void)
         AUDIO_INFO_LOG("Speaker sink started, open pa:[%{public}s] -- [%{public}s], ret:%{public}d",
             GetDeviceClass().c_str(), (ret == 0 ? "success" : "failed"), ret);
     }
+    periodTimer_.Start();
     return SUCCESS;
 }
 
