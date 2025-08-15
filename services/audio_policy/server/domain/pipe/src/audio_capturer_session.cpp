@@ -253,11 +253,6 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
                 continue;
             }
 
-            auto it = sessionWithNormalSourceType_.find(stream->sessionId_);
-            if (it == sessionWithNormalSourceType_.end()) {
-                continue;
-            }
-
             SourceType tmpSource = sessionWithNormalSourceType_[stream->sessionId_].sourceType;
             if (IsHigherPrioritySourceType(tmpSource, runningSessionInfo.capturerInfo_.sourceType)) {
                 hasSession = true;
