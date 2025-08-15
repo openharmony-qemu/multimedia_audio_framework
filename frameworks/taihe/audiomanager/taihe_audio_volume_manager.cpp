@@ -28,6 +28,7 @@ namespace ANI::Audio {
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
 AudioVolumeManagerImpl::AudioVolumeManagerImpl(std::shared_ptr<AudioVolumeManagerImpl> obj)
+    : audioSystemMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioSystemMngr_ = obj->audioSystemMngr_;

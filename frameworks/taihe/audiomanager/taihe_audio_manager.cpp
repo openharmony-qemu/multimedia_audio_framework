@@ -32,6 +32,7 @@ namespace ANI::Audio {
 AudioManagerImpl::AudioManagerImpl() : audioMngr_(nullptr) {}
 
 AudioManagerImpl::AudioManagerImpl(std::shared_ptr<AudioManagerImpl> obj)
+    : audioMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioMngr_ = obj->audioMngr_;

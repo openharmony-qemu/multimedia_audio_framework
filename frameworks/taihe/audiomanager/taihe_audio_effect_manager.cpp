@@ -28,6 +28,7 @@ using namespace OHOS::HiviewDFX;
 AudioEffectManagerImpl::AudioEffectManagerImpl() : audioEffectMngr_(nullptr) {}
 
 AudioEffectManagerImpl::AudioEffectManagerImpl(OHOS::AudioStandard::AudioEffectManager *audioEffectMngr)
+    : audioEffectMngr_(nullptr)
 {
     cachedClientId_ = getpid();
     if (audioEffectMngr != nullptr) {

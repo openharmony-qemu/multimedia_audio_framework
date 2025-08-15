@@ -25,6 +25,7 @@ namespace ANI::Audio {
 AudioStreamManagerImpl::AudioStreamManagerImpl() : audioStreamMngr_(nullptr) {}
 
 AudioStreamManagerImpl::AudioStreamManagerImpl(std::shared_ptr<AudioStreamManagerImpl> obj)
+    : audioStreamMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioStreamMngr_ = obj->audioStreamMngr_;

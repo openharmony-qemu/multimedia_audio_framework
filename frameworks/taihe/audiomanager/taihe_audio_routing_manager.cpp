@@ -31,6 +31,7 @@ namespace ANI::Audio {
 AudioRoutingManagerImpl::AudioRoutingManagerImpl() : audioMngr_(nullptr) {}
 
 AudioRoutingManagerImpl::AudioRoutingManagerImpl(std::shared_ptr<AudioRoutingManagerImpl> obj)
+    : audioMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioMngr_ = obj->audioMngr_;
