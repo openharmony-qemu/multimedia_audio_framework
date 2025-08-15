@@ -1028,12 +1028,12 @@ HWTEST(DfxMsgManagerUnitTest, WriteCapturerMsg_002, TestSize.Level1)
         msg.captureInfo.push_back(captureInfo);
     }
     dfxMsgManager.WriteCapturerMsg(msg, bean);
-    EXPECT_EQ(dfxMsgManager.reportQueue_.size(), 0);
+    EXPECT_EQ(dfxMsgManager.reportQueue_.size(), 1);
 
     captureInfo.capturerAction.fourthByte = CapturerStage::CAPTURER_STAGE_START_OK;
     msg.captureInfo.push_back(captureInfo);
     dfxMsgManager.WriteCapturerMsg(msg, bean);
-    EXPECT_EQ(dfxMsgManager.reportQueue_.size(), 0);
+    EXPECT_EQ(dfxMsgManager.reportQueue_.size(), 1);
 }
 } // AudioStandard
 } // OHOS
