@@ -171,7 +171,7 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     auto it = audioLoopbackReverbPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackReverbPresetMap.end(), false,"preset invalid");
+    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackReverbPresetMap.end(), false, "preset invalid");
     currentReverbPreset_ = preset;
     karaokeParams_["Karaoke_reverb_mode"] = it->second;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
@@ -192,7 +192,7 @@ bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset prese
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     auto it = audioLoopbackEqualizerPresetMap.find(preset);
-    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackEqualizerPresetMap.end(), false,"preset invalid");
+    CHECK_AND_RETURN_RET_LOG(it != audioLoopbackEqualizerPresetMap.end(), false, "preset invalid");
     currentEqualizerPreset_ = preset;
     karaokeParams_["Karaoke_eq_mode"] = it->second;
     if (currentState_ == LOOPBACK_STATE_RUNNING) {
