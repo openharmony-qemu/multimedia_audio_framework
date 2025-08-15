@@ -181,6 +181,7 @@ private:
     bool IsMuteSwitchStream(uint32_t sessionId);
     float GetSystemVolume();
     void UpdateSystemVolume(AudioStreamType streamType, float volume);
+    void UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag);
 
 private:
     std::mutex foregroundSetMutex_;
