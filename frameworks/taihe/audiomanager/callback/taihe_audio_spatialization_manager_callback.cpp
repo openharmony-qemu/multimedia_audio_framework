@@ -70,9 +70,13 @@ void TaiheAudioSpatializationEnabledChangeCallback::SaveSpatializationEnabledCha
         CHECK_AND_RETURN_LOG(anyDeviceCb != nullptr, "creating callback failed");
         spatializationEnabledChangeCbForAnyDeviceList_.push_back(anyDeviceCb);
     }
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioSpatializationEnabledChangeCallback::RemoveSpatializationEnabledChangeCallbackReference(
@@ -251,9 +255,13 @@ void TaiheAudioCurrentSpatializationEnabledChangeCallback::SaveCurrentSpatializa
     CHECK_AND_RETURN_LOG(cb != nullptr, "TaiheAudioCurrentSpatializationEnabledChangeCallback:create callback failed");
 
     spatializationEnabledChangeCbForCurrentDeviceList_.push_back(cb);
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioCurrentSpatializationEnabledChangeCallback::RemoveCurrentSpatializationEnabledChangeCallbackReference(
@@ -389,9 +397,13 @@ void TaiheAudioHeadTrackingEnabledChangeCallback::SaveHeadTrackingEnabledChangeC
         headTrackingEnabledChangeCbForAnyDeviceList_.push_back(anyDeviceCb);
     }
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioHeadTrackingEnabledChangeCallback::RemoveHeadTrackingEnabledChangeCallbackReference(

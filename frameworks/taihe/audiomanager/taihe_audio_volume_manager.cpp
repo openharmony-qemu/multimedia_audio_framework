@@ -26,6 +26,7 @@ namespace ANI::Audio {
 AudioVolumeManagerImpl::AudioVolumeManagerImpl() : audioSystemMngr_(nullptr) {}
 
 AudioVolumeManagerImpl::AudioVolumeManagerImpl(std::shared_ptr<AudioVolumeManagerImpl> obj)
+    : audioSystemMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioSystemMngr_ = obj->audioSystemMngr_;
@@ -266,7 +267,8 @@ void AudioVolumeManagerImpl::RegisterSelfAppVolumeChangeCallback(std::shared_ptr
         audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ =
             std::make_shared<TaiheAudioManagerAppVolumeChangeCallback>();
     }
-    CHECK_AND_RETURN_LOG(audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ != nullptr,
+    CHECK_AND_RETURN_RET_LOG(audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_ != nullptr,
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM, "System error"),
         "audioVolMngrImpl: Memory Allocation Failed !");
     int32_t ret = audioVolMngrImpl->audioSystemMngr_->SetSelfAppVolumeCallback(
         audioVolMngrImpl->selfAppVolumeChangeCallbackTaihe_);

@@ -28,6 +28,7 @@ using namespace OHOS::HiviewDFX;
 AudioSessionManagerImpl::AudioSessionManagerImpl() : audioSessionMngr_(nullptr) {}
 
 AudioSessionManagerImpl::AudioSessionManagerImpl(OHOS::AudioStandard::AudioSessionManager *audioSessionMngr)
+    : audioSessionMngr_(nullptr)
 {
     if (audioSessionMngr != nullptr) {
         audioSessionMngr_ = audioSessionMngr;

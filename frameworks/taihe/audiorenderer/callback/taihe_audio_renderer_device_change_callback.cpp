@@ -46,10 +46,14 @@ void TaiheAudioRendererDeviceChangeCallback::AddCallbackReference(std::shared_pt
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
     callbacks_.push_back(cb);
 
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
-    AUDIO_DEBUG_LOG("AddAudioRendererDeviceChangeCallback sucessful");
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
+    AUDIO_DEBUG_LOG("AddAudioRendererDeviceChangeCallback successful");
 }
 
 void TaiheAudioRendererDeviceChangeCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
@@ -181,9 +185,13 @@ void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::AddCallbackReference(
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     callbacks_.push_back(cb);
     AUDIO_INFO_LOG("successful");
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioRendererOutputDeviceChangeWithInfoCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
