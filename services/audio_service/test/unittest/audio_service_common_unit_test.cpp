@@ -1549,10 +1549,10 @@ HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level4)
 /**
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
- * @tc.number: ReadFromParcel_004
+ * @tc.number: OHAudioBufferBase_ReadFromParcel_001
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_001, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_ONLY));
@@ -1569,10 +1569,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_004, TestSize.Level4)
 /**
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
- * @tc.number: ReadFromParcel_005
+ * @tc.number: OHAudioBufferBase_ReadFromParcel_002
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_002, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_INDEPENDENT));
@@ -1589,10 +1589,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_005, TestSize.Level4)
 /**
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
- * @tc.number: ReadFromParcel_007
+ * @tc.number: OHAudioBufferBase_ReadFromParcel_003
  * @tc.desc  : Test OHAudioBufferBase::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_ReadFromParcel_003, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint32(static_cast<uint32_t>(AudioBufferHolder::AUDIO_SERVER_SHARED));
@@ -1609,10 +1609,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_007, TestSize.Level4)
 /**
  * @tc.name  : Test GetSyncWriteFrame API
  * @tc.type  : FUNC
- * @tc.number: GetSyncWriteFrame
+ * @tc.number: OHAudioBufferBase_GetSyncWriteFrame_001
  * @tc.desc  : Test GetSyncWriteFrame interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_004, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetSyncWriteFrame_001, TestSize.Level1)
 {
     OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
@@ -1623,10 +1623,10 @@ HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_004, TestSize.Level1)
 /**
  * @tc.name  : Test GetSyncWriteFrame API
  * @tc.type  : FUNC
- * @tc.number: GetSyncWriteFrame
+ * @tc.number: OHAudioBufferBase_GetSyncWriteFrame_002
  * @tc.desc  : Test GetSyncWriteFrame interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_005, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetSyncWriteFrame_002, TestSize.Level1)
 {
     OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.bufferHolder_ = AUDIO_SERVER_ONLY_WITH_SYNC;
@@ -1638,10 +1638,10 @@ HWTEST(AudioServiceCommonUnitTest, GetSyncWriteFrame_005, TestSize.Level1)
 /**
  * @tc.name  : Test SetSyncReadFrame API
  * @tc.type  : FUNC
- * @tc.number: SetSyncReadFrame
+ * @tc.number: OHAudioBufferBase_SetSyncReadFrame_001
  * @tc.desc  : Test SetSyncReadFrame interface.
  */
-HWTEST(AudioServiceCommonUnitTest, SetSyncReadFrame_002, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_SetSyncReadFrame_001, TestSize.Level1)
 {
     uint32_t syncWriteFrame = 50;
     OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
