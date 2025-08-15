@@ -681,7 +681,7 @@ HWTEST(AudioResourceServiceUnitTest, AddThreadToGroup_006, TestSize.Level1)
     service->audioWorkgroupMap_[pid].groups[groupId] = workgroupPtr;
  
     for (int i = 0; i < 4; ++i) {
-        workgroupPtr->AddThread(tokenId + i + 100); // 不影响主测试tokenId
+        workgroupPtr->AddThread(tokenId + i + 100);
     }
     int32_t ret = service->AddThreadToGroup(pid, groupId, tokenId);
     EXPECT_EQ(ret, ERR_NOT_SUPPORTED);
