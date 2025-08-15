@@ -1495,10 +1495,10 @@ HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_002, TestSize.Level1)
 /**
  * @tc.name  : Test ReadFromParcel API
  * @tc.type  : FUNC
- * @tc.number: ReadFromParcel_003
+ * @tc.number: AudioSharedMemory_ReadFromParcel_001
  * @tc.desc  : Test AudioSharedMemory::ReadFromParcel interface.
  */
-HWTEST(AudioServiceCommonUnitTest, ReadFromParcel_003, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, AudioSharedMemory_ReadFromParcel_001, TestSize.Level4)
 {
     MessageParcel parcel;
     parcel.WriteUint64(100);
