@@ -1031,7 +1031,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "../../../../services/audio_service/server/src/audio_workgroup_callback.cpp",
     "../../../../services/audio_service/server/src/audio_workgroup.cpp",
     "../../../../services/audio_service/server/src/audio_resource_service.cpp",
-    "capturer_in_server_unit_test.cpp",
   ]
 
   configs = [
@@ -1079,7 +1078,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
-    "pulseaudio:pulse",
     "googletest:gmock",
   ]
 
@@ -1089,6 +1087,7 @@ ohos_unittest("capturer_in_server_unit_test") {
       "../../../../services/audio_service/server/src/pa_adapter_manager.cpp",
       "../../../../services/audio_service/server/src/pa_capturer_stream_impl.cpp",
       "../../../../services/audio_service/server/src/pa_renderer_stream_impl.cpp",
+      "capturer_in_server_unit_test.cpp",
     ]
     external_deps += [
       "pulseaudio:pulse",

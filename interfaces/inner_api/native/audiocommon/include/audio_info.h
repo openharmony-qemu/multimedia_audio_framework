@@ -670,7 +670,6 @@ public:
     RecorderType recorderType = RECORDER_TYPE_DEFAULT;
     bool isLoopback = false;
     AudioLoopbackMode loopbackMode = LOOPBACK_HARDWARE;
-    std::string hdiSourceType = "";
 
     AudioCapturerInfo(SourceType sourceType_, int32_t capturerFlags_) : sourceType(sourceType_),
         capturerFlags(capturerFlags_) {}
@@ -692,8 +691,7 @@ public:
             parcel.WriteString(sceneType) &&
             parcel.WriteInt32(static_cast<int32_t>(recorderType)) &&
             parcel.WriteBool(isLoopback) &&
-            parcel.WriteInt32(static_cast<int32_t>(loopbackMode)) &&
-            parcel.WriteString(hdiSourceType);
+            parcel.WriteInt32(static_cast<int32_t>(loopbackMode));
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -709,7 +707,6 @@ public:
         recorderType = static_cast<RecorderType>(parcel.ReadInt32());
         isLoopback = parcel.ReadBool();
         loopbackMode = static_cast<AudioLoopbackMode>(parcel.ReadInt32());
-        hdiSourceType = parcel.ReadString();
     }
 
     static AudioCapturerInfo *Unmarshalling(Parcel &parcel)

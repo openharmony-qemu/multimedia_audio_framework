@@ -3439,16 +3439,6 @@ int32_t AudioAdapterManager::GetMinVolumeDegree(AudioVolumeType volumeType)
     return MIN_VOLUME_LEVEL;
 }
 
-void AudioAdapterManager::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    return AudioPolicyService::GetAudioPolicyService().GetVoiceMuteState(sessionId, muteState);
-}
-
-void AudioAdapterManager::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    return AudioPolicyService::GetAudioPolicyService().RemoveVoiceMuteState(sessionId);
-}
-
 // LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS

@@ -211,6 +211,7 @@ private:
         AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
+    void SetVoiceMuteState(uint32_t sessionId, bool isMute);
     void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
     void RemoveVoiceMuteState(uint32_t sessionId);
 
@@ -567,6 +568,8 @@ private:
         .descriptor = nullptr,
         .type = CAST_TYPE_NULL
     };
+    std::unordered_map<uint32_t, bool> voiceMuteStateMap_;
+    std::shared_mutex muteMutex_;
 };
 }
 }

@@ -1215,34 +1215,5 @@ int32_t AudioPolicyService::CaptureConcurrentCheck(const uint32_t &sessionID)
 {
     return AudioCoreService::GetCoreService()->CaptureConcurrentCheck(sessionID);
 }
-
-void AudioPolicyService::SetVoiceMuteState(uint32_t sessionId, bool isMute)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    voiceMuteStateMap_[sessionId] = isMute;
-    AUDIO_INFO_LOG("set mute state for session %{public}u to %{public}s", sessionId, isMute ? "muted" : "unmuted");
-}
-
-void AudioPolicyService::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
-{
-    std::shared_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        muteState = it->second;
-        return;
-    }
-
-    muteState = false;
-}
-
-void AudioPolicyService::RemoveVoiceMuteState(uint32_t sessionId)
-{
-    std::unique_lock<std::shared_mutex> lock(muteMutex_);
-    auto it = voiceMuteStateMap_.find(sessionId);
-    if (it != voiceMuteStateMap_.end()) {
-        AUDIO_INFO_LOG("remove mute state for session %{public}u", sessionId);
-        voiceMuteStateMap_.erase(it);
-    }
-}
 } // namespace AudioStandard
 } // namespace OHOS

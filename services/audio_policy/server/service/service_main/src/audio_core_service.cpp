@@ -361,10 +361,8 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
         auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
         if (strategyIt != sourceStrategyMap->end()) {
             streamDesc->audioFlag_ = strategyIt->second.audioFlag;
-            streamDesc->capturerInfo_.hdiSourceType = strategyIt->second.hdiSource;
-            AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u, hdisource: %{public}s",
-                streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag,
-                strategyIt->second.hdiSource.c_str());
+            AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u",
+                streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag);
         }
     }
 

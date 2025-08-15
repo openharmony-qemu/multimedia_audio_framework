@@ -305,9 +305,6 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
-    void GetVoiceMuteState(uint32_t sessionId, bool &muteState);
-    void RemoveVoiceMuteState(uint32_t sessionId);
-
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
