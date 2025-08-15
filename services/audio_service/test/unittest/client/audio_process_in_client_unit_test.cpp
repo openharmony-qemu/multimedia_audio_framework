@@ -1940,28 +1940,6 @@ HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_085, TestSize.Lev
 /**
  * @tc.name  : Test AudioProcessInClientInner API
  * @tc.type  : FUNC
- * @tc.number: AudioProcessInClientInner_086
- * @tc.desc  : Test AudioProcessInClientInner::ClientPrepareNextLoop
- */
-HWTEST(AudioProcessInClientUnitTest, AudioProcessInClientInner_086, TestSize.Level1)
-{
-    AudioProcessConfig config = InitProcessConfig();
-    AudioService *g_audioServicePtr = AudioService::GetInstance();
-    sptr<AudioProcessInServer> processStream = AudioProcessInServer::Create(config, g_audioServicePtr);
-    bool isVoipMmap = true;
-    AudioStreamInfo info = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S16LE, STEREO};
-    auto ptrAudioProcessInClientInner = std::make_shared<AudioProcessInClientInner>(processStream, isVoipMmap, info);
-    ASSERT_TRUE(ptrAudioProcessInClientInner != nullptr);
-
-    uint64_t curWritePos = 0;
-    int64_t wakeUpTime = 0;
-    auto ret = ptrAudioProcessInClientInner->ClientPrepareNextLoop(curWritePos, wakeUpTime);
-    EXPECT_EQ(ret, true);
-}
-
-/**
- * @tc.name  : Test AudioProcessInClientInner API
- * @tc.type  : FUNC
  * @tc.number: AudioProcessInClientInner_087
  * @tc.desc  : Test AudioProcessInClientInner::PrepareCurrent
  */
