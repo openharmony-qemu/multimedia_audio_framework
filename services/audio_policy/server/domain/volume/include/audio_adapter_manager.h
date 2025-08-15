@@ -416,7 +416,7 @@ private:
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
     bool IsDistributedVolumeType(AudioStreamType streamType);
-    void GetHdiSourceTypeToAudioSourceAttr(IAudioSoureAttr &attr, int32_t sourceType) const;
+    void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
