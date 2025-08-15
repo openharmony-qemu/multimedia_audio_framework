@@ -689,6 +689,7 @@ HWTEST(DfxMsgManagerUnitTest, CapturerDfxInfo_ProcessInner_001, TestSize.Level1)
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
     EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 1);
 }
 
 /**
@@ -709,7 +710,8 @@ HWTEST(DfxMsgManagerUnitTest, CapturerDfxInfo_ProcessInner_002, TestSize.Level1)
         dfxInfo.push_back(renderInfo);
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
-    EXPECT_EQ(curDfxInfo.size(), 1);
+    EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 100);
 }
 
 /**
@@ -731,6 +733,7 @@ HWTEST(DfxMsgManagerUnitTest, RenderDfxInfo_ProcessInner_001, TestSize.Level1)
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
     EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 1);
 }
 
 /**
@@ -751,7 +754,8 @@ HWTEST(DfxMsgManagerUnitTest, RenderDfxInfo_ProcessInner_002, TestSize.Level1)
         dfxInfo.push_back(renderInfo);
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
-    EXPECT_EQ(curDfxInfo.size(), 1);
+    EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 100);
 }
 
 /**
@@ -773,6 +777,7 @@ HWTEST(DfxMsgManagerUnitTest, InterruptDfxInfo_ProcessInner_001, TestSize.Level1
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
     EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 1);
 }
 
 /**
@@ -793,7 +798,8 @@ HWTEST(DfxMsgManagerUnitTest, InterruptDfxInfo_ProcessInner_002, TestSize.Level1
         dfxInfo.push_back(renderInfo);
     }
     bool ret = dfxMsgManager.ProcessInner(index, dfxInfo, curDfxInfo);
-    EXPECT_EQ(curDfxInfo.size(), 1);
+    EXPECT_EQ(curDfxInfo.size(), 100);
+    EXPECT_EQ(dfxInfo.size(), 100);
 }
 
 /**
