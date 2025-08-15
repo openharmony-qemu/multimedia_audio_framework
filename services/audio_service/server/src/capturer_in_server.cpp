@@ -338,7 +338,7 @@ void CapturerInServer::MuteVoice(const SourceType sourceType, BufferDesc &dstBuf
             AUDIO_DEBUG_LOG("session:%{public}d muted", streamIndex_);
             int32_t ret = memset_s(static_cast<void *>(dstBuffer.buffer), dstBuffer.bufLength,
                 0, dstBuffer.bufLength);
-            CHECK_AND_RETURN_LOG(ret == EOK, ERR_OPERATION_FAILED, "Clear buffer fail, ret %{public}d.", ret);
+            CHECK_AND_RETURN_LOG(ret == EOK, "Clear buffer fail, ret %{public}d.", ret);
         }
     }
 }
