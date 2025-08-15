@@ -41,7 +41,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 7;
+const uint8_t TESTSIZE = 6;
 const int32_t NUM_1 = 1;
 const uint32_t IDNUM = 100;
 constexpr int32_t AUDIO_MODE_COUNT = static_cast<int32_t>(AudioMode::AUDIO_MODE_RECORD) + NUM_1;
