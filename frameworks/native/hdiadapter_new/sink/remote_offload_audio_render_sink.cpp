@@ -474,9 +474,9 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
 
     uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
         (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
-    if (renderFrameUS <= lastHdiFramesUS_) {
+    if (renderFrameUS <= lastHdiOriginFramesUS_) {
         AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
-            ", lastHdiFramesUS_: %{public}" PRIu64 " no need to estimate", renderFrameUS, lastHdiFramesUS_);
+            ", lastHdiFramesUS_: %{public}" PRIu64 " no need to estimate", renderFrameUS, lastHdiOriginFramesUS_);
         return SUCCESS;
     }
     
@@ -484,7 +484,12 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     if (originFrameUS > renderFrameUS) {
         AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
             ", originFrameUS: %{public}" PRIu64 " set to renderFrameUS", renderFrameUS, originFrameUS);
-        durationUS = renderFrameUS - lastHdiFramesUS_;
+        auto excess = (renderFrameUS - lastHdiOriginFramesUS_) / speed_;
+        lastHdiOriginFramesUS_ = renderFrameUS;
+        lastHdiFramesUS_ += excess;
+
+        AddHdiLatency(excess);
+        return SUCCESS;
     }
 
     lastHdiFramesUS_ += durationUS;
