@@ -671,11 +671,11 @@ HWTEST(DfxMsgManagerUnitTest, CheckIsInterrupted_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_004
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: CapturerDfxInfo_ProcessInner_001
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is CapturerDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_004, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, CapturerDfxInfo_ProcessInner_001, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
@@ -692,11 +692,11 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_004, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_005
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: CapturerDfxInfo_ProcessInner_002
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is CapturerDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_005, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, CapturerDfxInfo_ProcessInner_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
@@ -713,11 +713,11 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_005, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_006
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: RenderDfxInfo_ProcessInner_001
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is RenderDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_006, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, RenderDfxInfo_ProcessInner_001, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
@@ -734,11 +734,11 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_006, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_007
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: RenderDfxInfo_ProcessInner_002
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is RenderDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_007, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, RenderDfxInfo_ProcessInner_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
@@ -755,11 +755,11 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_007, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_008
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: InterruptDfxInfo_ProcessInner_001
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is InterruptDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_008, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, InterruptDfxInfo_ProcessInner_001, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
@@ -776,11 +776,11 @@ HWTEST(DfxMsgManagerUnitTest, ProcessInner_008, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test DfxMsgManager.
- * @tc.number: ProcessInner_009
- * @tc.desc  : Test DfxMsgManager::ProcessInner
+ * @tc.name  : ProcessInner.
+ * @tc.number: InterruptDfxInfo_ProcessInner_002
+ * @tc.desc  : Test DfxMsgManager::ProcessInner of parameter is InterruptDfxInfo
  */
-HWTEST(DfxMsgManagerUnitTest, ProcessInner_009, TestSize.Level1)
+HWTEST(DfxMsgManagerUnitTest, InterruptDfxInfo_ProcessInner_002, TestSize.Level1)
 {
     DfxMsgManager &dfxMsgManager = DfxMsgManager::GetInstance();
     uint32_t index = 0;
