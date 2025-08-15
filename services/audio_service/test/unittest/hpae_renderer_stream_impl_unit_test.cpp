@@ -677,10 +677,10 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_033, TestSize.Level0)
 /**
  * @tc.name  : Test OnStreamData.
  * @tc.type  : FUNC
- * @tc.number: HpaeRenderer_031
+ * @tc.number: HpaeRenderer_034
  * @tc.desc  : Test OnStreamData.
  */
-HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_031, TestSize.Level1)
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
 {
     auto unit = CreateHpaeRendererStreamImpl();
     EXPECT_NE(nullptr, unit);
