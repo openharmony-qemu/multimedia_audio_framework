@@ -763,10 +763,113 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerRestoreSession_001, TestSi
 /**
  * @tc.name  : Test WriteMuteDataSysEvent API
  * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_001
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and startMuteTime_ is 0.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_001, TestSize.Level4)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    bufferDesc.buffer[0] = 0;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
+}
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_002
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and startMuteTime_ is not 0.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_002, TestSize.Level4)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    uint8_t bufferTest = 0;
+    bufferDesc.buffer = &bufferTest;
+    rendererInServer->startMuteTime_ = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
+}
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_003
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is 0 and isInSilentState_ is not 1.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_003, TestSize.Level4)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    bufferDesc.buffer[0] = 0;
+    rendererInServer->isInSilentState_ = 0;
+    rendererInServer->startMuteTime_ = 1;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(0, rendererInServer->startMuteTime_);
+}
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_004
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_004, TestSize.Level4)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    bufferDesc.buffer[0] = 1;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(0, rendererInServer->startMuteTime_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
+}
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: RendererInServerWriteMuteDataSysEvent_005
+ * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 0.
+ */
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_005, TestSize.Level4)
+{
+    AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
+        AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    InitAudioProcessConfig(testStreamInfo);
+    rendererInServer = std::make_shared<RendererInServer>(processConfig, streamListener);
+    EXPECT_NE(nullptr, rendererInServer);
+
+    bufferDesc.buffer[0] = 1;
+    rendererInServer->startMuteTime_ = 1;
+    rendererInServer->isInSilentState_ = 0;
+    rendererInServer->WriteMuteDataSysEvent(bufferDesc);
+    EXPECT_EQ(0, rendererInServer->startMuteTime_);
+    EXPECT_EQ(false, rendererInServer->isInSilentState_);
+}
+
+/**
+ * @tc.name  : Test WriteMuteDataSysEvent API
+ * @tc.type  : FUNC
  * @tc.number: RendererInServerWriteMuteDataSysEvent_006
  * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 0.
  */
-HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_006, TestSize.Level1)
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_006, TestSize.Level4)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_U8, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
@@ -792,7 +895,7 @@ HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_006,
 * @tc.number: RendererInServerWriteMuteDataSysEvent_007
 * @tc.desc  : Test WriteMuteDataSysEvent when buffer[0] is not 0 and startMuteTime_ is not 0 and isInSilentState_ is 1.
 */
-HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_007, TestSize.Level1)
+HWTEST_F(RendererInServerExtUnitTest, RendererInServerWriteMuteDataSysEvent_007, TestSize.Level4)
 {
     AudioStreamInfo testStreamInfo(SAMPLE_RATE_48000, ENCODING_INVALID, SAMPLE_S24LE, MONO,
         AudioChannelLayout::CH_LAYOUT_UNKNOWN);
