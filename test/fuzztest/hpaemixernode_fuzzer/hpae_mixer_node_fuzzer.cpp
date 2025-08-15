@@ -551,7 +551,7 @@ void ConvertFromFloatFuzzTest()
         int16_t dst[1] = {0};
         ConvertFromFloat(format, 1, src, dst);
     } else if (format == SAMPLE_S24LE) {
-        uint8_t dst[1] = {0};
+        uint8_t dst[4] = {0};
         ConvertFromFloat(format, 1, src, dst);
     } else if (format == SAMPLE_S32LE) {
         int32_t dst[1] = {0};
