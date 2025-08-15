@@ -260,14 +260,19 @@ void HpaeRendererManager::RefreshProcessClusterByDeviceInner(const std::shared_p
     HpaeNodeInfo nodeInfo = node->GetNodeInfo();
     std::string sceneType = TransProcessorTypeToSceneType(nodeInfo.sceneType);
     int32_t processClusterDecision = AudioEffectChainManager::GetInstance()->CheckProcessClusterInstances(sceneType);
+    bool isConnected = (node->isConnected_) ? true : false;
     if (processClusterDecision != USE_NONE_PROCESSCLUSTER && sessionNodeMap_[nodeInfo.sessionId].bypass) {
+        DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
+        DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
         CreateProcessClusterInner(nodeInfo, processClusterDecision);
         CHECK_AND_RETURN_LOG(SafeGetMap(sceneClusterMap_, nodeInfo.sceneType),
             "could not find processorType %{public}d", nodeInfo.sceneType);
         sceneTypeToProcessClusterCountMap_[nodeInfo.sceneType]++;
         sceneClusterMap_[nodeInfo.sceneType]->AudioRendererCreate(nodeInfo);
+        if (isConnected) {
+            ConnectInputSession(nodeInfo.sessionId);
+        }
     } else if (processClusterDecision == USE_NONE_PROCESSCLUSTER && !sessionNodeMap_[nodeInfo.sessionId].bypass) {
-        bool isConnected = (node->isConnected_) ? true : false;
         DeleteConnectInputProcessor(sinkInputNodeMap_[nodeInfo.sessionId]);
         DeleteProcessCluster(GetProcessorType(nodeInfo.sessionId));
         sessionNodeMap_[nodeInfo.sessionId].bypass = true;
