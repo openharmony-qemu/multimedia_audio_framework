@@ -51,6 +51,24 @@ public:
 };
 
 typedef AudioSafeVolumeNotification* CreateSafeVolumeNotification();
+
+const int32_t LOUD_ICON_WIDTH = 24;
+const int32_t LOUD_ICON_HEIGHT = 24;
+
+const std::string LOUD_VOLUME_ICON_ID = "loud_volume_notification_icon";
+const std::string LOUD_VOLUME_FEATURE_TITTLE_ID = "notification_feature_loud_volume_tittle";
+const std::string LOUD_VOLUME_ENABLE_TITTLE_ID = "notification_enable_loud_volume_tittle";
+
+class AudioLoudVolumeNotification {
+public:
+    AudioLoudVolumeNotification() = default;
+    virtual ~AudioLoudVolumeNotification() = default;
+
+    virtual void PublishLoudVolumeNotification(int32_t notificationId) = 0;
+};
+
+typedef AudioLoudVolumeNotification* CreateLoudVolumeNotification();
+
 } // namespace AudioStandard
 } // namespace OHOS
 #endif // AUDIO_SAFE_VOLUME_NOTIFICATION_H

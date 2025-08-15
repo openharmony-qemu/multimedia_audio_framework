@@ -311,6 +311,7 @@ public:
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType);
+    void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state);
 private:
     friend class PolicyCallbackImpl;
 

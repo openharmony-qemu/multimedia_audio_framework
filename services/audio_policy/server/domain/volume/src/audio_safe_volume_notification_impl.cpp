@@ -248,5 +248,107 @@ Global::Resource::RState AudioSafeVolumeNotificationImpl::GetMediaDataByName(con
     IPCSkeleton::SetCallingIdentity(identity);
     return rstate;
 }
+
+std::string AudioLoudVolumeNotificationImpl::GetSystemStringByName(const std::string &name)
+{
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    std::string result = ResourceManagerAdapter::GetInstance()->GetSystemStringByName(name);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return result;
+}
+
+bool AudioLoudVolumeNotificationImpl::SetTitleAndText(int32_t notificationId,
+    Notification::NotificationCapsule &capsule)
+{
+    capsule.SetTitle(GetSystemStringByName(LOUD_VOLUME_FEATURE_TITTLE_ID));
+    capsule.SetContent(GetSystemStringByName(LOUD_VOLUME_ENABLE_TITTLE_ID));
+
+    return true;
+}
+
+bool AudioLoudVolumeNotificationImpl::GetPixelMap()
+{
+    if (iconPixelMap_ != nullptr) {
+        AUDIO_ERR_LOG("icon pixel map already exists.");
+        return false;
+    }
+
+    std::unique_ptr<uint8_t[]> resourceData;
+    size_t resourceDataLength = 0;
+    auto ret = GetMediaDataByName(LOUD_VOLUME_ICON_ID.c_str(), resourceDataLength, resourceData);
+    if (ret != Global::Resource::RState::SUCCESS) {
+        AUDIO_ERR_LOG("get (%{public}s) failed, errorCode:%{public}d", LOUD_VOLUME_ICON_ID.c_str(),
+            static_cast<int32_t>(ret));
+        return false;
+    }
+
+    Media::SourceOptions opts;
+    uint32_t errorCode = 0;
+    std::unique_ptr<Media::ImageSource> imageSource =
+        Media::ImageSource::CreateImageSource(resourceData.get(), resourceDataLength, opts, errorCode);
+    Media::DecodeOptions decodeOpts;
+    decodeOpts.desiredSize = {LOUD_ICON_WIDTH, LOUD_ICON_HEIGHT};
+    decodeOpts.desiredPixelFormat = Media::PixelFormat::BGRA_8888;
+    if (imageSource) {
+        AUDIO_INFO_LOG("GetPixelMap SUCCESS.");
+        std::unique_ptr<Media::PixelMap> pixelMap = imageSource->CreatePixelMap(decodeOpts, errorCode);
+        iconPixelMap_ = std::move(pixelMap);
+    }
+    if (errorCode != 0 || (iconPixelMap_ == nullptr)) {
+        AUDIO_ERR_LOG("get badge failed, errorCode:%{public}u", errorCode);
+        return false;
+    }
+    return true;
+}
+
+void AudioLoudVolumeNotificationImpl::PublishLoudVolumeNotification(int32_t notificationId)
+{
+    const int TYPE_CODE = 16;
+    std::shared_ptr<Notification::NotificationLocalLiveViewContent> instantlLiveViewContent =
+        std::make_shared<Notification::NotificationLocalLiveViewContent>();
+    if (instantlLiveViewContent == nullptr) {
+        AUDIO_ERR_LOG("instantlLiveViewContent is null");
+        return;
+    }
+
+    Notification::NotificationCapsule capsule;
+    if (!SetTitleAndText(notificationId, capsule)) {
+        AUDIO_ERR_LOG("error setting title and text");
+        return;
+    }
+    GetPixelMap();
+    if (iconPixelMap_ != nullptr) {
+        capsule.SetIcon(iconPixelMap_);
+    }
+    instantlLiveViewContent->SetCapsule(capsule);
+    instantlLiveViewContent->addFlag(Notification::NotificationLocalLiveViewContent::LiveViewContentInner::CAPSULE);
+
+    instantlLiveViewContent->SetType(TYPE_CODE);
+    instantlLiveViewContent->SetLiveViewType(
+        Notification::NotificationLocalLiveViewContent::LiveViewTypes::LIVE_VIEW_INSTANT);
+
+    std::shared_ptr<Notification::NotificationContent> instantContent =
+        std::make_shared<Notification::NotificationContent>(instantlLiveViewContent);
+
+    Notification::NotificationRequest instantRequest;
+    instantRequest.SetNotificationId(notificationId);
+    instantRequest.SetCreatorUid(getuid());
+    instantRequest.SetContent(instantContent);
+    instantRequest.SetSlotType(Notification::NotificationConstant::SlotType::LIVE_VIEW);
+
+    int32_t result = Notification::NotificationHelper::PublishNotification(instantRequest);
+    AUDIO_INFO_LOG("AudioPolicyServer publish result:%{public}d", result);
+    return;
+}
+
+Global::Resource::RState AudioLoudVolumeNotificationImpl::GetMediaDataByName(const std::string& name, size_t& len,
+    std::unique_ptr<uint8_t[]>& outValue, uint32_t density)
+{
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    Global::Resource::RState rstate =
+        ResourceManagerAdapter::GetInstance()->GetMediaDataByName(name, len, outValue, density);
+    IPCSkeleton::SetCallingIdentity(identity);
+    return rstate;
+}
 }  // namespace AudioStandard
 }  // namespace OHOS

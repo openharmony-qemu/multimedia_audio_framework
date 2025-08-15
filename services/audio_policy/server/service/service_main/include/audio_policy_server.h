@@ -682,6 +682,10 @@ public:
     int32_t SetSystemVolumeDegree(int32_t streamType, int32_t volumeDegree, int32_t volumeFlag, int32_t uid) override;
     int32_t GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree) override;
     int32_t GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree) override;
+#ifdef FEATURE_MULTIMODALINPUT_INPUT
+    bool ReloadLoudVolumeMode(const AudioStreamType streamInFocus,
+        SetLoudVolMode setVolMode = LOUD_VOLUME_SWITCH_UNSET);
+#endif
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
     void RegisterParamCallback();
@@ -776,6 +780,10 @@ private:
     bool IsContinueAddVol();
     void TriggerMuteCheck();
     int32_t ProcessVolumeKeyEvents(const int32_t keyType);
+    void SetLoudVolumeHoldMap(FunctionHoldType funcHoldType, bool state);
+    bool ClearLoudVolumeHoldMap(FunctionHoldType funcHoldType);
+    bool GetLoudVolumeHoldMap(FunctionHoldType funcHoldType, bool &state);
+    bool CheckLoudVolumeMode(const int32_t volLevel, const int32_t keyType, const AudioStreamType &streamInFocus);
 #endif
     void AddAudioServiceOnStart();
     void SubscribeOsAccountChangeEvents();
@@ -864,6 +872,13 @@ private:
     std::mutex volUpHistoryMutex_;
     std::deque<int64_t> volUpHistory_;
     std::atomic<bool> hasSubscribedVolumeKeyEvents_ = false;
+
+    int32_t triggerTime = 0;
+    int64_t upTriggerTimeMSec = 0;
+    std::mutex loudVolTrigTimeMutex_;
+    AudioStreamType lastReloadStreamType = STREAM_DEFAULT;
+    std::mutex setLoudVolHoldMutex_;
+    std::unordered_map<FunctionHoldType, bool> loudVolumeHoldMap_;
 #endif
     std::vector<pid_t> clientDiedListenerState_;
     sptr<PowerStateListener> powerStateListener_;
@@ -881,6 +896,7 @@ private:
     bool volumeApplyToAll_ = false;
     bool screenOffAdjustVolumeEnable_ = false;
     bool supportVibrator_ = false;
+    bool loudVolumeModeEnable_ = false;
 
     bool isHighResolutionExist_ = false;
     std::mutex descLock_;

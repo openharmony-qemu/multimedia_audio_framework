@@ -141,6 +141,7 @@ public:
         int32_t zoneId);
     int32_t GetSystemVolumeDegree(AudioStreamType streamType);
     int32_t GetMinVolumeDegree(AudioVolumeType volumeType) const;
+    void SendLoudVolumeMode(FunctionHoldType funcHoldType, bool state, bool repeatTrigNotif = false);
 
 private:
     AudioVolumeManager() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
@@ -167,6 +168,7 @@ private:
         DeviceType deviceType = DEVICE_TYPE_NONE);
     void PublishSafeVolumeNotification(int32_t notificationId);
     void CancelSafeVolumeNotification(int32_t notificationId);
+    void PublishLoudVolumeNotification(int32_t notificationId);
     bool IsWiredHeadSet(const DeviceType &deviceType);
     void CheckToCloseNotification(AudioStreamType streamType, int32_t volumeLevel);
     bool DeviceIsSupportSafeVolume();
