@@ -14,7 +14,7 @@
  */
 #ifndef LOG_TAG
 #define LOG_TAG "AudioCoreService"
-#endifA
+#endif
 
 #include "audio_core_service.h"
 #include "system_ability.h"
