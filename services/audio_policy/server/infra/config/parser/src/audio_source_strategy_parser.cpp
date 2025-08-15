@@ -28,7 +28,7 @@
 namespace OHOS {
 namespace AudioStandard {
 
-static const std::unordered_map<std::string, SourceType> sourceTypeMap = {
+const std::unordered_map<std::string, SourceType> AudioSourceStrategyParser::sourceTypeMap = {
     {"SOURCE_TYPE_MIC", SOURCE_TYPE_MIC},
     {"SOURCE_TYPE_CAMCORDER", SOURCE_TYPE_CAMCORDER},
     {"SOURCE_TYPE_VOICE_RECOGNITION", SOURCE_TYPE_VOICE_RECOGNITION},
@@ -109,7 +109,7 @@ bool AudioSourceStrategyParser::LoadConfig()
 }
 
 void AudioSourceStrategyParser::ParseSourceStrategyMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &source,
-    const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap)
+    const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> &sourceStrategyMap)
 {
     while (curNode->IsNodeValid()) {
         if (curNode->CompareName("item")) {
@@ -121,7 +121,7 @@ void AudioSourceStrategyParser::ParseSourceStrategyMap(std::shared_ptr<AudioXmlN
 }
 
 void AudioSourceStrategyParser::ParseConfig(std::shared_ptr<AudioXmlNode> curNode,
-    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap)
+    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> &sourceStrategyMap)
 {
     if (sourceStrategyMap == nullptr) {
         AUDIO_ERR_LOG("sourceStrategyMap is null");
@@ -142,7 +142,7 @@ void AudioSourceStrategyParser::ParseConfig(std::shared_ptr<AudioXmlNode> curNod
 }
 
 void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &source,
-    const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap)
+    const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> &sourceStrategyMap)
 {
     AUDIO_INFO_LOG("enter");
     if (source.empty() || hdiSource.empty()) {
@@ -167,7 +167,7 @@ void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNod
 
     auto sourceTypeIt = sourceTypeMap.find(source);
     if (sourceTypeIt == sourceTypeMap.end()) {
-        AUDIO_INFO_LOG("sourceType: %{public}s is not in sourceTypeMap", source.c_str());
+        AUDIO_ERR_LOG("sourceType: %{public}s is not in sourceTypeMap", source.c_str());
         return;
     }
 
@@ -176,6 +176,7 @@ void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNod
     if (it != AudioDefinitionPolicyUtils::flagStrToEnum.end()) {
         audioFlag = it->second;
     } else {
+        AUDIO_ERR_LOG("flagStrToEnum is null");
         return;
     }
 

@@ -103,7 +103,7 @@ private:
 
     std::string GetEnhancePropByName(const AudioEnhancePropertyArray &propertyArray, const std::string &propName);
     std::string GetEnhancePropByNameV3(const AudioEffectPropertyArrayV3 &oldPropertyArray, const std::string &propName);
-    bool IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> pipe);
+    bool IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> &pipe);
     bool HandleIndependentInputpipe(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,
         uint32_t sessionId, AudioStreamDescriptor &runningSessionInfo, bool &hasSession);
     bool HandleNormalInputPipes(const std::vector<std::shared_ptr<AudioPipeInfo>> &pipeList,

@@ -1571,10 +1571,10 @@ void AudioInterruptService::HandleVoiceCallAndTranscriptionFocus(
 
     uint32_t mutesessionId = 0;
     if (isSourceVoiceCall) {
-        mutesessionId = newInterrupt.sessionId;
+        mutesessionId = newInterrupt.streamId;
     }
     if (isSourceVoiceTranscripTion) {
-        mutesessionId = currentInterrupt.sessionId;
+        mutesessionId = currentInterrupt.streamId;
     }
     AUDIO_INFO_LOG("current streamtype: %{public}d, sourcetype: %{public}d, newInterrupt streamtype: %{public}d, "
                    "sourcetype: %{public}d, mutesessionId:%{public}d",

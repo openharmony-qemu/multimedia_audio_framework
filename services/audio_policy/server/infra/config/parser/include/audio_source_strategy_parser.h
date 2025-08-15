@@ -40,11 +40,14 @@ private:
 #endif
     std::shared_ptr<AudioXmlNode> curNode_ = nullptr;
     void ParseSourceStrategyMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &source,
-        const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap);
+        const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>>
+        &sourceStrategyMap);
     void ParseConfig(std::shared_ptr<AudioXmlNode> curNode,
-        std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap);
+        std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> &sourceStrategyMap);
     void AddSourceStrategyMap(std::shared_ptr<AudioXmlNode> curNode, const std::string &source,
-        const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMap);
+        const std::string &hdiSource, std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>>
+        &sourceStrategyMap);
+    static const std::unordered_map<std::string, SourceType> sourceTypeMap;
 };
 } // namespace AudioStandard
 } // namespace OHOS

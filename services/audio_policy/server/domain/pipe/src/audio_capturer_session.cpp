@@ -187,7 +187,7 @@ void AudioCapturerSession::HandleRemoteCastDevice(bool isConnected, AudioStreamI
 #endif
 }
 
-bool AudioCapturerSession::IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> pipe)
+bool AudioCapturerSession::IsInvalidPipeRole(const std::shared_ptr<AudioPipeInfo> &pipe)
 {
     return pipe->pipeRole_ != PIPE_ROLE_INPUT;
 }
