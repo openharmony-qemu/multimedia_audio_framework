@@ -53,8 +53,8 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 6;
-static int32_t NUM_2 = 2;
+const uint8_t TESTSIZE = 12;
+const int32_t NUM_2 = 2;
 const int32_t NUM_4 = 2;
 const int32_t NUM_8 = 2;
 
@@ -177,7 +177,93 @@ void DataAccumulationFromVolumeFuzzTest()
     AudioStreamData dstData;
     dstData.streamInfo = {SAMPLE_RATE_48000, ENCODING_PCM, SAMPLE_S32LE, STEREO};
     dstData.bufferDesc = dstDesc;
+    dstData.streamInfo.format = GetData<AudioSampleFormat>();
     FormatConverter::DataAccumulationFromVolume(srcDataList, dstData);
+}
+
+void FormatConverterS32MonoToS16StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_8] = {0};
+    uint8_t dstBuffer[NUM_8] = {0};
+
+    srcDesc.bufLength = NUM_8;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_8;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToS16Stereo(srcDesc, dstDesc);
+}
+
+void FormatConverterS32StereoToS16StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_8] = {0};
+    uint8_t dstBuffer[NUM_4] = {0};
+
+    srcDesc.bufLength = NUM_8;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_4;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32StereoToS16Stereo(srcDesc, dstDesc);
+}
+
+void FormatConverterS16StereoToS32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_4] = {0};
+    uint8_t dstBuffer[NUM_8] = {0};
+
+    srcDesc.bufLength = NUM_4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_8;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16StereoToS32Stereo(srcDesc, dstDesc);
+}
+
+void FormatConverterS16MonoToS32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_2] = {0};
+    uint8_t dstBuffer[NUM_8] = {0};
+
+    srcDesc.bufLength = NUM_2;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_8;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S16MonoToS32Stereo(srcDesc, dstDesc);
+}
+
+void FormatConverterS32MonoToS32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_4] = {0};
+    uint8_t dstBuffer[NUM_8] = {0};
+
+    srcDesc.bufLength = NUM_4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_8;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::S32MonoToS32Stereo(srcDesc, dstDesc);
+    FormatConverter::F32MonoToS32Stereo(srcDesc, dstDesc);
+}
+
+void FormatConverterF32StereoToS32StereoFuzzTest()
+{
+    BufferDesc srcDesc;
+    BufferDesc dstDesc;
+    uint8_t srcBuffer[NUM_4] = {0};
+    uint8_t dstBuffer[NUM_4] = {0};
+
+    srcDesc.bufLength = NUM_4;
+    srcDesc.buffer = srcBuffer;
+    dstDesc.bufLength = NUM_4;
+    dstDesc.buffer = dstBuffer;
+    FormatConverter::F32StereoToS32Stereo(srcDesc, dstDesc);
 }
 
 TestFuncs g_testFuncs[TESTSIZE] = {
@@ -187,6 +273,12 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     F32StereoToS16StereoFuzzTest,
     S16MonoToS16StereoFuzzTest,
     DataAccumulationFromVolumeFuzzTest,
+    FormatConverterS32MonoToS16StereoFuzzTest,
+    FormatConverterS32StereoToS16StereoFuzzTest,
+    FormatConverterS16StereoToS32StereoFuzzTest,
+    FormatConverterS16MonoToS32StereoFuzzTest,
+    FormatConverterS32MonoToS32StereoFuzzTest,
+    FormatConverterF32StereoToS32StereoFuzzTest,
 };
 
 void FuzzTest(const uint8_t* rawData, size_t size)
