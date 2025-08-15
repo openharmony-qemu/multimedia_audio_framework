@@ -87,14 +87,16 @@ int32_t CoreServiceProviderWrapper::SetWakeUpAudioCapturerFromAudioServer(
 int32_t CoreServiceProviderWrapper::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
 {
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->GetVoiceMuteState(sessionId, muteState);
+    coreServiceWorker_->GetVoiceMuteState(sessionId, muteState);
+    return SUCCESS;
 }
 
 int32_t CoreServiceProviderWrapper::RemoveVoiceMuteState(uint32_t sessionId)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), AUDIO_PERMISSION_DENIED, "only audio is allowed");
     CHECK_AND_RETURN_RET_LOG(coreServiceWorker_ != nullptr, AUDIO_INIT_FAIL, "coreServiceWorker_ is null");
-    return coreServiceWorker_->RemoveVoiceMuteState(sessionId);
+    coreServiceWorker_->RemoveVoiceMuteState(sessionId);
+    return SUCCESS;
 }
 } // namespace AudioStandard
 } // namespace OHOS
