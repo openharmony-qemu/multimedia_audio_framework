@@ -38,8 +38,8 @@ struct AudioRendererParams {
     AudioSampleFormat sampleFormat = SAMPLE_S16LE;
     /** Sampling rate */
     AudioSamplingRate sampleRate = SAMPLE_RATE_8000;
-    /** Nonstandard Sampling Rate */
-    uint32_t nonStandardSamplingRate = 0;
+    /** Custom Sampling Rate */
+    uint32_t customSampleRate = 0;
     /** Number of channels */
     AudioChannel channelCount = MONO;
     /** Encoding Type */

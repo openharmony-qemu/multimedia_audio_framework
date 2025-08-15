@@ -63,7 +63,7 @@ int32_t HpaeRendererManager::CreateInputSession(const HpaeStreamInfo &streamInfo
     nodeInfo.streamType = streamInfo.streamType;
     nodeInfo.sessionId = streamInfo.sessionId;
     nodeInfo.samplingRate = static_cast<AudioSamplingRate>(streamInfo.samplingRate);
-    nodeInfo.nonStandardSamplingRate = streamInfo.nonStandardSamplingRate;
+    nodeInfo.customSampleRate = streamInfo.customSampleRate;
     nodeInfo.sceneType = TransToProperSceneType(streamInfo.effectInfo.streamUsage, streamInfo.effectInfo.effectScene);
     nodeInfo.effectInfo = streamInfo.effectInfo;
     TransNodeInfoForCollaboration(nodeInfo, isCollaborationEnabled_);

@@ -567,8 +567,8 @@ struct AudioRendererInfo : public Parcelable {
     int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    // 非标准采样率
-    uint32_t nonStandardSamplingRate = 0;
+    // Add customSampleRate
+    uint32_t customSampleRate = 0;
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     AudioSampleFormat format = SAMPLE_S16LE;
@@ -605,7 +605,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
-            && parcel.WriteInt32(static_cast<int32_t>(nonStandardSamplingRate))
+            && parcel.WriteInt32(static_cast<int32_t>(customSampleRate))
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteInt32(format)
@@ -630,7 +630,7 @@ struct AudioRendererInfo : public Parcelable {
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        nonStandardSamplingRate = static_cast<uint32_t>(parcel.ReadInt32());
+        customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
@@ -1245,7 +1245,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
-        parcel.WriteInt32(streamInfo.nonStandardSamplingRate);
+        parcel.WriteInt32(streamInfo.customSampleRate);
         parcel.WriteInt32(streamInfo.encoding);
         parcel.WriteInt32(streamInfo.format);
         parcel.WriteInt32(streamInfo.channels);
@@ -1315,7 +1315,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        config->streamInfo.nonStandardSamplingRate = static_cast<uint32_t>(parcel.ReadInt32());
+        config->streamInfo.customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
         config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());

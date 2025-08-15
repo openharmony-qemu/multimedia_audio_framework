@@ -282,7 +282,7 @@ public:
 
     bool IsSamplingRateValid(uint32_t samplingRate);
 
-    bool IsNonStandardSamplingRateValid(uint32_t nonStandardSamplingRate);
+    bool IscustomSampleRateValid(uint32_t customSampleRate);
 
     bool IsRendererChannelLayoutValid(uint64_t channelLayout);
 

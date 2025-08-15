@@ -263,8 +263,8 @@ enum AudioPreloadType {
 
 struct AudioStreamParams {
     uint32_t samplingRate = 0;
-    // 添加非标准采样率
-    uint32_t nonStandardSamplingRate = 0;
+    // Add customSampleRate
+    uint32_t customSampleRate = 0;
     uint8_t encoding = 0;
     uint8_t format = 0;
     uint8_t channels = 0;
@@ -562,13 +562,13 @@ public:
     AudioSampleFormat format = AudioSampleFormat::INVALID_WIDTH;
     AudioChannel channels;
     AudioChannelLayout channelLayout  = AudioChannelLayout::CH_LAYOUT_UNKNOWN;
-    // 这里添加非标准的samplingRate，初始默认0，后面相应修改构造函数和方法
-    uint32_t nonStandardSamplingRate = 0;
+    // Add customSampleRate Init Value 0
+    uint32_t customSampleRate = 0;
 
     AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
-    AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN, uint32_t nonStandardSamplingRate_ = 0)
+    AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN, uint32_t customSampleRate_ = 0)
         : samplingRate(samplingRate_), encoding(encoding_), format(format_),
-        channels(channels_), channelLayout(channelLayout_), nonStandardSamplingRate(nonStandardSamplingRate_)
+        channels(channels_), channelLayout(channelLayout_), customSampleRate(customSampleRate_)
     {}
     AudioStreamInfo() = default;
     bool Marshalling(Parcel &parcel) const override
@@ -578,7 +578,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && parcel.WriteInt32(static_cast<int32_t>(channels))
             && parcel.WriteInt64(static_cast<int64_t>(channelLayout))
-            && parcel.WriteInt32(static_cast<int32_t>(nonStandardSamplingRate));
+            && parcel.WriteInt32(static_cast<int32_t>(customSampleRate));
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -588,7 +588,7 @@ public:
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
-        nonStandardSamplingRate = static_cast<uint32_t>(parcel.ReadInt32());
+        customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
     }
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)

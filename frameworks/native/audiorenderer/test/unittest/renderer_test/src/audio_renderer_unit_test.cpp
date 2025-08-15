@@ -233,7 +233,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
 {
     AudioRendererOptions rendererOptions;
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    rendererOptions.streamInfo.samplingRate = 96010;
+    rendererOptions.streamInfo.customSampleRate = 96010;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;

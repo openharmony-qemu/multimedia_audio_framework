@@ -166,7 +166,7 @@ public:
 
         audioStreamParams.format = params.sampleFormat;
         audioStreamParams.samplingRate = params.sampleRate;
-        audioStreamParams.nonStandardSamplingRate = params.nonStandardSamplingRate;
+        audioStreamParams.customSampleRate = params.customSampleRate;
         audioStreamParams.channels = params.channelCount;
         audioStreamParams.encoding = params.encodingType;
         audioStreamParams.channelLayout = params.channelLayout;
