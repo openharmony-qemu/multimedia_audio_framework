@@ -24,6 +24,8 @@ ohos_fuzztest("AudioPolicyServerFuzzTest") {
   include_dirs = [
     "../../../services/audio_policy/server/include",
     "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_engine/manager/include",
+    "../../../services/audio_service/server/include",
   ]
   cflags = [
     "-g",
@@ -51,6 +53,8 @@ ohos_fuzztest("AudioPolicyServerFuzzTest") {
   sources = [ "audio_policy_server_fuzzer.cpp" ]
 
   deps = [
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_engine:audio_engine_manager",
     "../../../services/audio_policy:audio_policy_service_static",
     "../../../services/audio_service:audio_client",
   ]

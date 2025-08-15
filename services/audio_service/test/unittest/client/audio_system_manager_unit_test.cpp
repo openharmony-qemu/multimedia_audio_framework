@@ -18,6 +18,7 @@
 #include "audio_service_log.h"
 #include "audio_errors.h"
 #include "audio_system_manager.h"
+#include "audio_workgroup_callback_impl.h"
 
 using namespace testing::ext;
 
@@ -112,6 +113,20 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name  : Test GetDeviceMaxVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMaxVolume_002
+ * @tc.desc  : Test GetDeviceMaxVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMaxVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ALL, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMaxVolume(STREAM_ULTRASONIC, DEVICE_TYPE_SPEAKER);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+}
+
+/**
  * @tc.name  : Test GetDeviceMinVolume API
  * @tc.type  : FUNC
  * @tc.number: GetDeviceMinVolume_001
@@ -132,6 +147,20 @@ HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_001, TestSize.Level1)
     result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_MUSIC, DEVICE_TYPE_BLUETOOTH_A2DP);
     AUDIO_INFO_LOG("AudioSystemManagerUnitTest GetDeviceMinVolume_001 result4:%{public}d", result);
     EXPECT_EQ(result, TEST_RET_NUM);
+}
+
+/**
+ * @tc.name  : Test GetDeviceMinVolume API
+ * @tc.type  : FUNC
+ * @tc.number: GetDeviceMinVolume_002
+ * @tc.desc  : Test GetDeviceMinVolume interface.
+ */
+HWTEST(AudioSystemManagerUnitTest, GetDeviceMinVolume_002, TestSize.Level1)
+{
+    int32_t result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ALL, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
+    result = AudioSystemManager::GetInstance()->GetDeviceMinVolume(STREAM_ULTRASONIC, DEVICE_TYPE_NONE);
+    EXPECT_NE(result, ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -1695,5 +1724,31 @@ HWTEST(AudioSystemManagerUnitTest, IsValidToStartGroup_002, TestSize.Level4)
     bool result = audioSystemManager.IsValidToStartGroup(workgroupId);
     EXPECT_FALSE(result);
 }
+
+/**
+ * @tc.name   : Test OnWorkgroupChange API
+ * @tc.number : OnWorkgroupChange_004
+ * @tc.desc   : Test OnWorkgroupChange interface
+ */
+HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    AudioWorkgroupChangeInfoIpc info;
+    audioWorkgroupCallbackImpl.workgroupCb_ = nullptr;
+    EXPECT_EQ(audioWorkgroupCallbackImpl.OnWorkgroupChange(info), ERROR);
+}
+
+/**
+ * @tc.name   : Test RemoveWorkgroupChangeCallback API
+ * @tc.number : RemoveWorkgroupChangeCallback_001
+ * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
+ */
+HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
+{
+    AudioWorkgroupCallbackImpl audioWorkgroupCallbackImpl;
+    audioWorkgroupCallbackImpl.RemoveWorkgroupChangeCallback();
+    EXPECT_EQ(nullptr, audioWorkgroupCallbackImpl.workgroupCb_);
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

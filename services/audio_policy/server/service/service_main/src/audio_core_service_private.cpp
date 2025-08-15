@@ -285,12 +285,16 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
             AUDIO_INFO_LOG("HandleScoOutputDeviceFetched %{public}d", ret);
         }
     }
+    if (descs.front()->deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(descs.front()));
+    }
     auto ret = ActivateNearlinkDevice(pipeManager_->GetModemCommunicationMap().begin()->second);
     // If the modem call is in progress, and the device is currently switching,
     // and the current output device is different from the target device, then mute to avoid pop issue.
     if (isModemCallRunning && IsDeviceSwitching(reason) && !curDesc.IsSameDeviceDesc(*descs.front())) {
         SetVoiceCallMuteForSwitchDevice();
     }
+    CheckAndUpdateHearingAidCall(descs.front()->deviceType_);
 }
 
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
@@ -310,6 +314,117 @@ int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDevi
         sleAudioDeviceManager_.UpdateSleStreamTypeCount(it->second);
     }
     return SUCCESS;
+}
+
+void AudioCoreService::CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type)
+{
+    if (hearingAidCallFlag_) {
+        if ((isModemCallRunning && type != DEVICE_TYPE_HEARING_AID) || !isModemCallRunning) {
+            hearingAidCallFlag_ = false;
+            AudioServerProxy::GetInstance().SetAudioParameterProxy("mute_call", "false");
+
+            CHECK_AND_RETURN_LOG(softLink_ != nullptr, "softLink is null");
+            int32_t ret = softLink_->Stop();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Stop failed");
+            ret = softLink_->Release();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Release failed");
+            softLink_ = nullptr;
+
+            std::shared_ptr<AudioPipeInfo> pipeInfo = pipeManager_->GetPipeinfoByNameAndFlag("primary",
+                AUDIO_INPUT_FLAG_NORMAL);
+            CHECK_AND_RETURN_LOG(pipeInfo != nullptr, "pipeInfo is null");
+            pipeInfo->softLinkFlag_ = false;
+            pipeManager_->UpdateAudioPipeInfo(pipeInfo);
+
+            if (pipeInfo->streamDescriptors_.empty()) {
+                RemoveUnusedRecordPipe();
+            } else {
+                audioCapturerSession_.ReloadCaptureSessionSoftLink();
+            }
+        }
+    }
+}
+
+void AudioCoreService::CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type)
+{
+    if (!hearingAidCallFlag_) {
+        if (isModemCallRunning && type == DEVICE_TYPE_HEARING_AID) {
+            hearingAidCallFlag_ = true;
+            uint32_t paIndex = 0;
+            audioActiveDevice_.UpdateActiveDeviceRoute(DeviceType::DEVICE_TYPE_SPEAKER,
+                DeviceFlag::OUTPUT_DEVICES_FLAG);
+            AudioServerProxy::GetInstance().SetAudioParameterProxy("mute_call", "true");
+
+            CheckModuleForHearingAid(paIndex);
+
+            std::shared_ptr<AudioPipeInfo> pipeInfoOutput = pipeManager_->GetPipeinfoByNameAndFlag("hearing_aid",
+                AUDIO_OUTPUT_FLAG_NORMAL);
+            CHECK_AND_RETURN_LOG(pipeInfoOutput != nullptr, "Can not find pipe hearing_aid");
+
+            softLink_ = HPAE::IHpaeSoftLink::CreateSoftLink(pipeInfoOutput->paIndex_, paIndex,
+                HPAE::SoftLinkMode::HEARING_AID);
+            CHECK_AND_RETURN_LOG(softLink_ != nullptr, "CreateSoftLink failed");
+            int32_t ret = softLink_->Start();
+            CHECK_AND_RETURN_LOG(ret == SUCCESS, "Start failed");
+        }
+    }
+}
+
+void AudioCoreService::CheckModuleForHearingAid(uint32_t &paIndex)
+{
+    std::list<AudioModuleInfo> moduleInfoList;
+    bool configRet = policyConfigMananger_.GetModuleListByType(ClassType::TYPE_PRIMARY, moduleInfoList);
+    CHECK_AND_RETURN_LOG(configRet, "HearingAid not exist in config");
+    for (auto &moduleInfo : moduleInfoList) {
+        if (moduleInfo.role != "source") { continue; }
+        AUDIO_INFO_LOG("hearingAidCall connects");
+        moduleInfo.networkId = "LocalDevice";
+        moduleInfo.deviceType = std::to_string(DEVICE_TYPE_MIC);
+        moduleInfo.sourceType = std::to_string(SOURCE_TYPE_VOICE_CALL);
+
+        std::shared_ptr<AudioPipeInfo> pipeInfo = std::make_shared<AudioPipeInfo>();
+        pipeInfo->name_ = "primary_input";
+        pipeInfo->pipeRole_ = PIPE_ROLE_INPUT;
+        pipeInfo->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+        pipeInfo->adapterName_ = "primary";
+        pipeInfo->moduleInfo_ = moduleInfo;
+        pipeInfo->pipeAction_ = PIPE_ACTION_NEW;
+        pipeInfo->softLinkFlag_ = true;
+        AudioIOHandle ioHandle;
+        if (!audioIOHandleMap_.CheckIOHandleExist(moduleInfo.name)) {
+            ioHandle = audioPolicyManager_.OpenAudioPort(moduleInfo, paIndex);
+            CHECK_AND_CONTINUE_LOG(ioHandle != HDI_INVALID_ID,
+                "OpenAudioPort failed ioHandle[%{public}u]", ioHandle);
+            CHECK_AND_CONTINUE_LOG(paIndex != OPEN_PORT_FAILURE,
+                "OpenAudioPort failed paId[%{public}u]", paIndex);
+            audioIOHandleMap_.AddIOHandleInfo(moduleInfo.name, ioHandle);
+            pipeInfo->id_ = ioHandle;
+            pipeInfo->paIndex_ = paIndex;
+            pipeManager_->AddAudioPipeInfo(pipeInfo);
+            AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAidCall.", pipeInfo->id_);
+        } else {
+            CHECK_AND_CONTINUE_LOG(audioIOHandleMap_.GetModuleIdByKey(PRIMARY_MIC, ioHandle),
+                "can not find primary in IOmap");
+            auto pipeInfoInput = pipeManager_->GetPipeinfoByNameAndFlag("primary",
+                AUDIO_INPUT_FLAG_NORMAL);
+            CHECK_AND_CONTINUE_LOG(pipeInfoInput != nullptr, "can not find primary pipeInfo");
+            paIndex = pipeInfoInput->paIndex_;
+            pipeInfo->id_ = ioHandle;
+            pipeInfo->paIndex_ = paIndex;
+            pipeInfo->streamDescriptors_ = pipeInfoInput->streamDescriptors_;
+            pipeInfo->streamDescMap_ = pipeInfoInput->streamDescMap_;
+            pipeManager_->UpdateAudioPipeInfo(pipeInfo);
+            AUDIO_INFO_LOG("Update PipeInfo %{public}u in load hearingAidCall.", pipeInfo->id_);
+            audioCapturerSession_.ReloadCaptureSessionSoftLink();
+        }
+    }
+}
+
+void AudioCoreService::CheckAndUpdateHearingAidCall(const DeviceType type)
+{
+    bool isModemCallRunning = audioSceneManager_.IsInPhoneCallScene();
+    CheckCloseHearingAidCall(isModemCallRunning, type);
+    CheckOpenHearingAidCall(isModemCallRunning, type);
 }
 
 void AudioCoreService::HandleAudioCaptureState(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)
@@ -489,6 +604,7 @@ int32_t AudioCoreService::LoadA2dpModule(DeviceType deviceType, const AudioStrea
             pipeInfo->adapterName_ = "a2dp";
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+            pipeInfo->InitAudioStreamInfo();
             pipeManager_->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load a2dp.", pipeInfo->id_);
         } else {
@@ -552,6 +668,7 @@ int32_t AudioCoreService::ReloadA2dpAudioPort(AudioModuleInfo &moduleInfo, Devic
     pipeInfo->adapterName_ = "a2dp";
     pipeInfo->moduleInfo_ = moduleInfo;
     pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+    pipeInfo->InitAudioStreamInfo();
     pipeInfo->streamDescriptors_.insert(pipeInfo->streamDescriptors_.end(), streamDescs.begin(), streamDescs.end());
     pipeManager_->AddAudioPipeInfo(pipeInfo);
     AUDIO_INFO_LOG("Close paIndex: %{public}u, open paIndex: %{public}u", curPaIndex, paIndex);
@@ -878,6 +995,7 @@ void AudioCoreService::RemoveUnusedRecordPipe()
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
         audioPolicyManager_.CloseAudioPort(pipeInfo->id_, pipeInfo->paIndex_);
         pipeManager_->RemoveAudioPipeInfo(pipeInfo);
+        audioIOHandleMap_.DelIOHandleInfo(pipeInfo->moduleInfo_.name);
     }
 }
 
@@ -888,10 +1006,11 @@ std::string AudioCoreService::GetAdapterNameBySessionId(uint32_t sessionId)
     return adapterName;
 }
 
-int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo)
+int32_t AudioCoreService::GetProcessDeviceInfoBySessionId(uint32_t sessionId,
+    AudioDeviceDescriptor &deviceInfo, AudioStreamInfo &streamInfo)
 {
     AUDIO_INFO_LOG("SessionId %{public}u", sessionId);
-    deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId));
+    deviceInfo = AudioDeviceDescriptor(pipeManager_->GetProcessDeviceInfoBySessionId(sessionId, streamInfo));
     return SUCCESS;
 }
 
@@ -2474,6 +2593,9 @@ int32_t AudioCoreService::ActivateOutputDevice(std::shared_ptr<AudioStreamDescri
     if (deviceDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
         audioEcManager_.ActivateArmDevice(deviceDesc->macAddress_, deviceDesc->deviceRole_);
     }
+    if (deviceDesc->deviceType_ == DEVICE_TYPE_HEARING_AID) {
+        SwitchActiveHearingAidDevice(std::make_shared<AudioDeviceDescriptor>(deviceDesc));
+    }
     return SUCCESS;
 }
 
@@ -2749,6 +2871,7 @@ int32_t AudioCoreService::LoadHearingAidModule(DeviceType deviceType, const Audi
             pipeInfo->adapterName_ = "hearing_aid";
             pipeInfo->moduleInfo_ = moduleInfo;
             pipeInfo->pipeAction_ = PIPE_ACTION_DEFAULT;
+            pipeInfo->InitAudioStreamInfo();
             pipeManager_->AddAudioPipeInfo(pipeInfo);
             AUDIO_INFO_LOG("Add PipeInfo %{public}u in load hearingAid.", pipeInfo->id_);
         }

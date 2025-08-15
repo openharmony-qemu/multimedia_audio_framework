@@ -510,7 +510,8 @@ enum AudioEnhanceScene {
     SCENE_PRE_ENHANCE = 2,
     SCENE_ASR = 4,
     SCENE_VOICE_MESSAGE = 5,
-    SCENE_NONE = 6,
+    SCENE_RECOGNITION = 6,
+    SCENE_NONE = 7,
 };
 
 /**

@@ -46,6 +46,7 @@
 #include "sle_audio_device_manager.h"
 #include "audio_event_utils.h"
 #include "audio_stream_id_allocator.h"
+#include "i_hpae_soft_link.h"
 namespace OHOS {
 namespace AudioStandard {
 enum OffloadType {
@@ -93,7 +94,7 @@ public:
             const StreamUsage streamUsage, bool isRunning) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-            bool isReloadProcess = false) override;
+            AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
         uint32_t GenerateSessionId() override;
         int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
@@ -204,7 +205,8 @@ private:
     int32_t SetDefaultOutputDevice(
         const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
-    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo);
+    int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
+        AudioStreamInfo &streamInfo);
     uint32_t GenerateSessionId();
     int32_t LoadSplitModule(const std::string &splitArgs, const std::string &networkId);
 
@@ -480,6 +482,11 @@ private:
         const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     // for collaboration
     void UpdateRouteForCollaboration(InternalDeviceType deviceType);
+    void CheckAndUpdateHearingAidCall(const DeviceType deviceType);
+    void CheckModuleForHearingAid(uint32_t &paIndex);
+    void CheckCloseHearingAidCall(const bool isModemCallRunning, const DeviceType type);
+    void CheckOpenHearingAidCall(const bool isModemCallRunning, const DeviceType type);
+
 private:
     std::shared_ptr<EventEntry> eventEntry_;
     std::shared_ptr<AudioPolicyServerHandler> audioPolicyServerHandler_ = nullptr;
@@ -513,6 +520,9 @@ private:
     std::shared_ptr<AudioA2dpOffloadManager> audioA2dpOffloadManager_ = nullptr;
     std::shared_ptr<DeviceStatusListener> deviceStatusListener_;
     std::shared_ptr<AudioPipeManager> pipeManager_ = nullptr;
+
+    bool hearingAidCallFlag_ = false;
+    std::shared_ptr<HPAE::IHpaeSoftLink> softLink_ = nullptr;
 
     // select device history
     std::mutex hisQueueMutex_;

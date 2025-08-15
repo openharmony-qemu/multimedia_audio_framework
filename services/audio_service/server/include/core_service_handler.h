@@ -42,7 +42,7 @@ public:
         const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
-        bool isReloadProcess);
+        AudioStreamInfo &streamInfo, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
 private:

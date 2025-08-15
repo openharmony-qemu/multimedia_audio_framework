@@ -80,6 +80,7 @@ config("audio_policy_public_config") {
     "../audio_service/client/include",
     "../audio_service/common/include",
     "../audio_service/common/include/dfx",
+    "../audio_engine/manager/include",
     "../../frameworks/native/audioinnercall/include",
     "../../frameworks/native/audiorenderer/include",
     "../../frameworks/native/audioadapter/include",
@@ -334,6 +335,7 @@ audio_ohos_library("audio_policy_service") {
     "../audio_policy:audio_foundation",
     "../audio_policy:audio_setting_provider",
     "../audio_service:audio_common",
+    "../audio_engine:audio_engine_manager",
   ]
 
   external_deps = [

@@ -188,6 +188,7 @@ int32_t AudioInterruptService::GetAudioSessionZoneidByPid(const int32_t pid)
             }
         }
     }
+    AUDIO_ERR_LOG("get audio session zoneid by pid failed!");
     return ZONEID_INVALID;
 }
 
@@ -1929,6 +1930,9 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
+    if (IsGameAvoidCallbackCase(incomingInterrupt) && incomingState == PAUSE) {
+        return SUCCESS;
+    }
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 

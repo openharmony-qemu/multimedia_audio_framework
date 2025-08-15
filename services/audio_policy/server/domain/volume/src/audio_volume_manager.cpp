@@ -153,8 +153,10 @@ bool AudioVolumeManager::SetSharedVolume(AudioVolumeType streamType, DeviceType 
     volumeVector_[index].isMute = vol.isMute;
     volumeVector_[index].volumeFloat = vol.volumeFloat;
     volumeVector_[index].volumeInt = vol.volumeInt;
-    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, volume:%{public}d",
-        streamType, deviceType, vol.volumeInt);
+    volumeVector_[index].volumeDegree = vol.volumeDegree;
+    AUDIO_INFO_LOG("Success Set Shared Volume with StreamType:%{public}d, DeviceType:%{public}d, \
+        volume:%{public}d, volumeDegree:%{public}d",
+        streamType, deviceType, vol.volumeInt, vol.volumeDegree);
 
     AudioServerProxy::GetInstance().NotifyStreamVolumeChangedProxy(streamType, vol.volumeFloat);
     return true;
@@ -1443,6 +1445,42 @@ void ForceControlVolumeTypeMonitor::SetTimer(int32_t duration,
     }
     duration_ = (duration > MAX_DURATION_TIME_S ? MAX_DURATION_TIME_S : duration);
     StartMonitor(duration_, cb);
+}
+
+int32_t AudioVolumeManager::SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree,
+    int32_t zoneId)
+{
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree);
+    int32_t currentVolumeDegree = GetSystemVolumeDegree(streamType);
+    int32_t currentVolumeLevel = VolumeUtils::VolumeDegreeToLevel(currentVolumeDegree);
+    if (volumeLevel == currentVolumeLevel) {
+        volumeDegree = currentVolumeDegree;
+        AUDIO_WARNING_LOG("volume level dont change, keep volume degree=%{public}d", volumeDegree);
+    }
+
+    Volume vol{};
+    vol.isMute = volumeDegree == 0;
+    vol.volumeInt = volumeLevel;
+    vol.volumeDegree = static_cast<uint32_t>(volumeDegree);
+    vol.volumeFloat = audioPolicyManager_.CalculateVolumeDb(volumeDegree, MAX_VOLUME_DEGREE);
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    SetSharedVolume(streamType, curOutputDeviceType, vol);
+
+    return audioPolicyManager_.SetSystemVolumeDegree(VolumeUtils::GetVolumeTypeFromStreamType(streamType),
+        volumeDegree);
+}
+
+int32_t AudioVolumeManager::GetSystemVolumeDegree(AudioStreamType streamType)
+{
+    return audioPolicyManager_.GetSystemVolumeDegree(streamType);
+}
+
+int32_t AudioVolumeManager::GetMinVolumeDegree(AudioVolumeType volumeType) const
+{
+    if (volumeType == STREAM_ALL) {
+        volumeType = STREAM_MUSIC;
+    }
+    return audioPolicyManager_.GetMinVolumeDegree(volumeType);
 }
 }
 }

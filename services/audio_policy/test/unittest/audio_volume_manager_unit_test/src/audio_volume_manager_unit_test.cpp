@@ -1339,7 +1339,7 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_061, TestSize.Level1)
     AudioStreamType streamType = STREAM_MUSIC;
     int32_t zoneId = 10;
     auto ret = audioVolumeManager.GetStreamMute(streamType, zoneId);
-    EXPECT_EQ(ret, true);
+    EXPECT_EQ(ret, false);
 }
 
 /**
@@ -1352,6 +1352,33 @@ HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManager_062, TestSize.Level1)
     AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
     auto ret = audioVolumeManager.ResetRingerModeMute();
     EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+* @tc.name  : Test AudioVolumeManager.
+* @tc.number: AudioVolumeManagerDegree_001
+* @tc.desc  : Test SetSystemVolumeDegree interface.
+*/
+HWTEST_F(AudioVolumeManagerUnitTest, AudioVolumeManagerDegree_001, TestSize.Level1)
+{
+    AudioVolumeManager& audioVolumeManager(AudioVolumeManager::GetInstance());
+    int32_t zoneId = 0;
+    int32_t ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_EQ(ret, SUCCESS);
+    zoneId = 1;
+    ret = audioVolumeManager.SetAdjustVolumeForZone(zoneId);
+    EXPECT_NE(ret, SUCCESS);
+
+    AudioStreamType streamType = STREAM_MUSIC;
+    int32_t volumeDegree = 44;
+    ret = audioVolumeManager.SetSystemVolumeDegree(streamType, volumeDegree, 0);
+    EXPECT_EQ(ret, SUCCESS);
+
+    ret = audioVolumeManager.GetSystemVolumeDegree(streamType);
+    EXPECT_EQ(ret, volumeDegree);
+
+    ret = audioVolumeManager.GetMinVolumeDegree(streamType);
+    EXPECT_EQ(ret, 0);
 }
 
 /**

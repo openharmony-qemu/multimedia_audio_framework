@@ -162,14 +162,9 @@ void NapiAudioRendererStateCallback::RendererStateTsfnFinalize(napi_env env, voi
 
 void NapiAudioRendererStateCallback::OnJsCallbackRendererState(std::unique_ptr<AudioRendererStateJsCallback> &jsCb)
 {
-    if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackRendererState: jsCb.get() is null");
-        return;
-    }
-
     AudioRendererStateJsCallback *event = jsCb.release();
     CHECK_AND_RETURN_LOG((event != nullptr) && (event->callback != nullptr), "event is nullptr.");
-    
+
     napi_acquire_threadsafe_function(amRendererSatTsfn_);
     napi_call_threadsafe_function(amRendererSatTsfn_, event, napi_tsfn_blocking);
 }

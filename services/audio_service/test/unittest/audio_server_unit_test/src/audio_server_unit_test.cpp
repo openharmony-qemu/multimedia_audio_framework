@@ -28,6 +28,7 @@
 #include "system_ability_definition.h"
 #include "iservice_registry.h"
 #include "audio_service_types.h"
+#include "audio_server_hpae_dump.h"
 
 using namespace testing::ext;
 using OHOS::AudioStandard::SetSysPara;
@@ -2523,6 +2524,23 @@ HWTEST_F(AudioServerUnitTest, OnMuteStateChange_002, TestSize.Level1)
     audioServer->OnMuteStateChange(pid, callbackId, uid, sessionId, isMuted);
     audioServer->audioDataTransferCbMap_.clear();
     EXPECT_EQ(audioServer->audioDataTransferCbMap_.size(), 0);
+}
+
+/**
+ * @tc.name  : Test ArgDataDump API
+ * @tc.type  : FUNC
+ * @tc.number: ArgDataDump_001
+ * @tc.desc  : Test ArgDataDump interface.
+ */
+HWTEST_F(AudioServerUnitTest, ArgDataDump_001, TestSize.Level1)
+{
+    AudioServerHpaeDump audioServerHpaeDump;
+    std::string dumpString;
+    std::queue<std::u16string> argQue;
+
+    audioServerHpaeDump.ArgDataDump(dumpString, argQue);
+
+    EXPECT_NE(dumpString, "Hpae AudioServer Data Dump:\n\n");
 }
 } // namespace AudioStandard
 } // namespace OHOS

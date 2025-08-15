@@ -130,7 +130,7 @@ void NapiAudioPreferredOutputDeviceChangeCallback::OnJsCallbackActiveOutputDevic
     std::unique_ptr<AudioActiveOutputDeviceChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackActiveOutputDeviceChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
 
@@ -257,7 +257,7 @@ void NapiAudioPreferredInputDeviceChangeCallback::OnJsCallbackActiveInputDeviceC
     std::unique_ptr<AudioActiveInputDeviceChangeJsCallback> &jsCb)
 {
     if (jsCb.get() == nullptr) {
-        AUDIO_ERR_LOG("OnJsCallbackActiveInputDeviceChange: jsCb.get() is null");
+        AUDIO_ERR_LOG("OnJsCallbackDeviceChange: jsCb.get() is null");
         return;
     }
 

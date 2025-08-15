@@ -183,7 +183,7 @@ ohos_unittest("audio_zone_service_unit_test") {
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
 
-  defines = []
+  defines = ["private=public"]
   if (audio_framework_enable_unittest_debug) {
     defines += [ "INTERRUPT_UNITTEST" ]
   }

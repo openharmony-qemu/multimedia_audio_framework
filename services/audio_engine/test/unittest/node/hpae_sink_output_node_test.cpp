@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cmath>
 #include <memory>
@@ -38,6 +39,92 @@ void HpaeSinkOutputNodeTest::SetUp()
 
 void HpaeSinkOutputNodeTest::TearDown()
 {}
+
+class MockAudioRenderSink : public IAudioRenderSink {
+public:
+    MOCK_METHOD(int32_t, Init, (const IAudioSinkAttr &attr), (override));
+    MOCK_METHOD(void, DeInit, (), (override));
+    MOCK_METHOD(bool, IsInited, (), (override));
+
+    MOCK_METHOD(int32_t, Start, (), (override));
+    MOCK_METHOD(int32_t, Stop, (), (override));
+    MOCK_METHOD(int32_t, Resume, (), (override));
+    MOCK_METHOD(int32_t, Pause, (), (override));
+    MOCK_METHOD(int32_t, Flush, (), (override));
+    MOCK_METHOD(int32_t, Reset, (), (override));
+    MOCK_METHOD(int32_t, RenderFrame, (char &data, uint64_t len, uint64_t &writeLen), (override));
+    MOCK_METHOD(int64_t, GetVolumeDataCount, (), (override));
+
+    MOCK_METHOD(int32_t, SuspendRenderSink, (), (override));
+    MOCK_METHOD(int32_t, RestoreRenderSink, (), (override));
+
+    MOCK_METHOD(void, SetAudioParameter,
+        (const AudioParamKey key, const std::string &condition, const std::string &value), (override));
+    MOCK_METHOD(std::string, GetAudioParameter,
+        (const AudioParamKey key, const std::string &condition), (override));
+
+    MOCK_METHOD(int32_t, SetVolume, (float left, float right), (override));
+    MOCK_METHOD(int32_t, GetVolume, (float &left, float &right), (override));
+
+    MOCK_METHOD(int32_t, GetLatency, (uint32_t &latency), (override));
+    MOCK_METHOD(int32_t, GetTransactionId, (uint64_t &transactionId), (override));
+    MOCK_METHOD(int32_t, GetPresentationPosition,
+        (uint64_t &frames, int64_t &timeSec, int64_t &timeNanoSec), (override));
+    MOCK_METHOD(float, GetMaxAmplitude, (), (override));
+    MOCK_METHOD(void, SetAudioMonoState, (bool audioMono), (override));
+    MOCK_METHOD(void, SetAudioBalanceValue, (float audioBalance), (override));
+
+    int32_t SetSinkMuteForSwitchDevice(bool /* mute */) override { return 0; }
+    int32_t SetDeviceConnectedFlag(bool /* flag */) override { return -1; }
+    void SetSpeed(float /* speed */) override {}
+
+    MOCK_METHOD(int32_t, SetAudioScene, (AudioScene audioScene, bool scoExcludeFlag), (override));
+    MOCK_METHOD(int32_t, GetAudioScene, (), (override));
+
+    MOCK_METHOD(int32_t, UpdateActiveDevice, (std::vector<DeviceType> &outputDevices), (override));
+
+    void RegistCallback(uint32_t /* type */, IAudioSinkCallback * /* callback */) override {}
+    void RegistCallback(uint32_t /* type */, std::shared_ptr<IAudioSinkCallback> /* callback */) override {}
+    MOCK_METHOD(void, ResetActiveDeviceForDisconnect, (DeviceType device), (override));
+
+    MOCK_METHOD(int32_t, SetPaPower, (int32_t flag), (override));
+    MOCK_METHOD(int32_t, SetPriPaPower, (), (override));
+
+    MOCK_METHOD(int32_t, UpdateAppsUid, (const int32_t appsUid[MAX_MIX_CHANNELS], const size_t size), (override));
+    MOCK_METHOD(int32_t, UpdateAppsUid, (const std::vector<int32_t> &appsUid), (override));
+
+    int32_t SetRenderEmpty(int32_t /* durationUs */) override { return 0; }
+    void SetAddress(const std::string & /* address */) override {}
+    void SetInvalidState() override {}
+
+    MOCK_METHOD(void, DumpInfo, (std::string &dumpString), (override));
+
+    bool IsSinkInited() override { return false; }
+
+    int32_t GetMmapBufferInfo(int & /* fd */, uint32_t & /* totalSizeInframe */,
+        uint32_t & /* spanSizeInframe */, uint32_t & /* byteSizePerFrame */,
+        uint32_t & /* syncInfoSize */) override { return -1; }
+    int32_t GetMmapHandlePosition(uint64_t & /* frames */, int64_t & /* timeSec */,
+        int64_t & /* timeNanoSec */) override { return -1; }
+
+    int32_t Drain(AudioDrainType /* type */) override { return -1; }
+    void RegistOffloadHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override {}
+    int32_t RegistDirectHdiCallback(std::function<void(const RenderCallbackType type)> /* callback */) override
+    {
+        return 0;
+    }
+    int32_t SetBufferSize(uint32_t /* sizeMs */) override { return -1; }
+    int32_t SetOffloadRenderCallbackType(RenderCallbackType /* type */) override { return -1; }
+    int32_t LockOffloadRunningLock() override { return -1; }
+    int32_t UnLockOffloadRunningLock() override { return -1; }
+
+    int32_t SplitRenderFrame(char & /* data */, uint64_t /* len */, uint64_t & /* writeLen */,
+        const char * /* streamType */) override { return -1; }
+
+    int32_t UpdatePrimaryConnectionState(uint32_t /* operation */) override { return -1; }
+
+    void SetDmDeviceType(uint16_t /* dmDeviceType */, DeviceType /* deviceType */) override {}
+};
 
 static void PrepareNodeInfo(HpaeNodeInfo &nodeInfo)
 {
@@ -215,6 +302,35 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower, TestSize.Level0)
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
 
+HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower2, TestSize.Level0)
+{
+    PcmBufferInfo bufferInfo = { 2, 960, 48000 }; // 2 channel, 960 framelen, 48000 sampleRate
+    std::shared_ptr<HpaePcmBuffer> outputData = std::make_shared<HpaePcmBuffer>(bufferInfo);
+    outputData->pcmBufferInfo_.state = PCM_BUFFER_STATE_SILENCE;
+
+    uint32_t sessionId = 10001; // default sessionID
+    HpaeNodeInfo nodeInfo;
+    PrepareNodeInfo(nodeInfo);
+    nodeInfo.sessionId = sessionId;
+    nodeInfo.deviceClass = "primary"; // primary set pa power
+    auto hpaeSinkOutputNode = std::make_shared<HpaeSinkOutputNode>(nodeInfo);
+    auto mockSink = std::make_shared<MockAudioRenderSink>();
+    hpaeSinkOutputNode->audioRendererSink_ = mockSink;
+    hpaeSinkOutputNode->isOpenPaPower_ = true;
+    hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
+
+    EXPECT_CALL(*mockSink, GetAudioScene())
+        .WillOnce(Return(0))
+        .WillOnce(Return(1));
+    EXPECT_CALL(*mockSink, SetPaPower(false))
+        .WillOnce(Return(0));
+    hpaeSinkOutputNode->HandlePaPower(outputData.get());
+
+    hpaeSinkOutputNode->isOpenPaPower_ = true;
+    hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
+    hpaeSinkOutputNode->HandlePaPower(outputData.get());
+}
+
 #ifdef ENABLE_HOOK_PCM
 HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Level0)
 {
@@ -246,7 +362,6 @@ HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Leve
     attr.audioStreamFlag = 0;
     hpaeSinkOutputNode->RenderSinkInit(attr);
     hpaeSinkOutputNode->RenderSinkStart();
-    hpaeSinkOutputNode->outputPcmDumper_ = nullptr;
     hpaeSinkOutputNode->DoProcess();
     hpaeSinkOutputNode->RenderSinkDeInit();
 }

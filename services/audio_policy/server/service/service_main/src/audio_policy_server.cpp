@@ -3157,6 +3157,7 @@ void AudioPolicyServer::RegisteredStreamListenerClientDied(pid_t pid, pid_t uid)
     }
 
     AudioZoneService::GetInstance().UnRegisterAudioZoneClient(pid);
+    AudioZoneService::GetInstance().ReleaseAudioZoneByClientPid(pid);
 }
 
 int32_t AudioPolicyServer::ResumeStreamState()
@@ -4061,11 +4062,12 @@ int32_t AudioPolicyServer::RegisterAudioZoneClient(const sptr<IRemoteObject> &ob
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId)
+int32_t AudioPolicyServer::CreateAudioZone(const std::string &name, const AudioZoneContext &context, int32_t &zoneId,
+    int32_t pid)
 {
     CHECK_AND_RETURN_RET_LOG(!name.empty(), ERR_INVALID_PARAM, "audio zone name is empty");
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifySystemPermission(), ERR_PERMISSION_DENIED, "no system permission");
-    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context);
+    zoneId = AudioZoneService::GetInstance().CreateAudioZone(name, context, static_cast<pid_t>(pid));
     return SUCCESS;
 }
 
@@ -5143,6 +5145,59 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
         DATASHARE_SERVICE_TIMEOUT_SECONDS);
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,
+    int32_t uid)
+{
+    AudioStreamType streamType = static_cast<AudioStreamType>(streamTypeIn);
+    if (!PermissionUtil::VerifySystemPermission()) {
+        AUDIO_ERR_LOG("No system permission");
+        return ERR_PERMISSION_DENIED;
+    }
+
+    if (!IsVolumeTypeValid(streamType)) {
+        return ERR_NOT_SUPPORTED;
+    }
+
+    bool adjustable = false;
+    IsVolumeUnadjustable(adjustable);
+    if (adjustable) {
+        AUDIO_ERR_LOG("Unadjustable device, not allow set degree");
+        return ERR_OPERATION_FAILED;
+    }
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    bool flag = volumeFlag == VolumeFlag::FLAG_SHOW_SYSTEM_UI;
+    int32_t volumeLevel = VolumeUtils::VolumeDegreeToLevel(volumeDegree);
+    int32_t callingUid =  uid != 0 ? uid : IPCSkeleton::GetCallingUid();
+    int32_t zoneId = AudioZoneService::GetInstance().FindAudioZoneByUid(callingUid);
+    SetSystemVolumeLevelInternal(streamType, volumeLevel, flag, zoneId);
+
+    return SetSystemVolumeDegreeInner(streamType, volumeDegree, flag, uid);
+}
+
+int32_t AudioPolicyServer::SetSystemVolumeDegreeInner(AudioStreamType streamType, int32_t volumeDegree,
+    bool volumeFlag, int32_t uid)
+{
+    int32_t ret = audioVolumeManager_.SetSystemVolumeDegree(streamType, volumeDegree, volumeFlag);
+    if (ret != SUCCESS) {
+        AUDIO_ERR_LOG("Update volume degree failed, err:%{public}d", ret);
+    }
+    return ret;
+}
+
+int32_t AudioPolicyServer::GetSystemVolumeDegree(int32_t streamType, int32_t uid, int32_t &volumeDegree)
+{
+    std::lock_guard<std::mutex> lock(systemVolumeMutex_);
+    AudioStreamType newStreamType = static_cast<AudioStreamType>(streamType);
+    volumeDegree = audioVolumeManager_.GetSystemVolumeDegree(newStreamType);
+    return SUCCESS;
+}
+
+int32_t AudioPolicyServer::GetMinVolumeDegree(int32_t volumeType, int32_t &volumeDegree)
+{
+    volumeDegree = audioVolumeManager_.GetMinVolumeDegree(static_cast<AudioVolumeType>(volumeType));
     return SUCCESS;
 }
 } // namespace AudioStandard

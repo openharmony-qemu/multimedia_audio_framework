@@ -716,6 +716,28 @@ HWTEST(AudioPolicyManager, CreateCapturerClient_002, TestSize.Level1)
 
 /**
 * @tc.name  : Test AudioPolicyManager.
+* @tc.number: SetSystemVolumeDegree_001.
+* @tc.desc  : Test SetSystemVolumeDegree.
+*/
+HWTEST(AudioPolicyManager, SetSystemVolumeDegree_001, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+
+    AudioVolumeType volumeType = AudioVolumeType::STREAM_MUSIC;
+    int32_t volumeDegree = 4;
+    auto result = audioPolicyManager_->SetSystemVolumeDegree(volumeType, volumeDegree, 0, 0);
+    EXPECT_EQ(result, SUCCESS);
+
+    result = audioPolicyManager_->GetSystemVolumeDegree(volumeType, 0);
+    EXPECT_EQ(result, volumeDegree);
+
+    result = audioPolicyManager_->GetMinVolumeDegree(volumeType);
+    EXPECT_EQ(result, 0);
+}
+
+/**
+* @tc.name  : Test AudioPolicyManager.
 * @tc.number: GetDirectPlaybackSupport_001.
 * @tc.desc  : Test GetDirectPlaybackSupport. Returns DIRECT_PLAYBACK_NOT_SUPPORTED when xml not supported.
 */

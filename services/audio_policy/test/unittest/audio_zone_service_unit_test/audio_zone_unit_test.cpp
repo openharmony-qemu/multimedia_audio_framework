@@ -126,9 +126,9 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_004, TestSize.Level1)
 {
     ClearZone();
     AudioZoneContext context;
-    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+    auto zoneId1 = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     EXPECT_NE(zoneId1, 0);
-    auto zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context);
+    auto zoneId2 = AudioZoneService::GetInstance().CreateAudioZone("TestZone2", context, 0);
     EXPECT_NE(zoneId2, 0);
 
     auto zoneList = AudioZoneService::GetInstance().GetAllAudioZone();
@@ -186,7 +186,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_005, TestSize.Level1)
 {
     ClearZone();
     AudioZoneContext context;
-    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
     AudioZoneService::GetInstance().ReleaseAudioZone(zoneId);
     auto ret = AudioZoneService::GetInstance().GetAudioZone(zoneId);
@@ -218,7 +218,7 @@ HWTEST_F(AudioZoneUnitTest, AudioZone_007, TestSize.Level1)
     int32_t fakeUid = 1234;
     int32_t fakePid = 4321;
     AudioZoneContext context;
-    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context);
+    auto zoneId = AudioZoneService::GetInstance().CreateAudioZone("TestZone1", context, 0);
     AudioZoneService::GetInstance().AddUidToAudioZone(zoneId, 20);
     std::shared_ptr<AudioSessionService> sessionService = AudioSessionService::GetAudioSessionService();
     int ret = sessionService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
