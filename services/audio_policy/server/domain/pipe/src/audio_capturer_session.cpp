@@ -425,10 +425,9 @@ int32_t AudioCapturerSession::OnCapturerSessionAdded(uint64_t sessionID, Session
 
 bool AudioCapturerSession::IsRemainingSourceIndependent()
 {
+    auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    CHECK_AND_RETURN_RET(sourceStrategyMapget != nullptr, false);
     for (auto it = sessionWithNormalSourceType_.begin(); it !=sessionWithNormalSourceType_.end(); it++) {
-        auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
-        CHECK_AND_RETURN_RET(sourceStrategyMapget != nullptr, false);
-
         SourceType sourceType = it->second.sourceType;
         auto smapIt = sourceStrategyMapget->find(sourceType);
         CHECK_AND_RETURN_RET_LOG(smapIt != sourceStrategyMapget->end(), false,
