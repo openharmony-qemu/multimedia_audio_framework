@@ -271,5 +271,35 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_UpdateStatus_003, TestSize.Level1
     audioLoopback->UpdateStatus();
     EXPECT_EQ(audioLoopback->currentState_, LOOPBACK_STATE_DESTROYED);
 }
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_001, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetReverbPreset_002, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    bool ret = audioLoopback->SetReverbPreset(REVERB_PRESET_THEATRE);
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetEqualizerPreset_001, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    audioLoopback->currentState_ = LOOPBACK_STATE_RUNNING;
+    bool ret = audioLoopback->SetEqualizerPreset(EQUALIZER_PRESET_FLAT);
+    EXPECT_EQ(ret, true);
+}
+
+HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_SetEqualizerPreset_002, TestSize.Level1)
+{
+    auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
+    bool ret = audioLoopback->SetEqualizerPreset(EQUALIZER_PRESET_FLAT);
+    EXPECT_EQ(ret, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS

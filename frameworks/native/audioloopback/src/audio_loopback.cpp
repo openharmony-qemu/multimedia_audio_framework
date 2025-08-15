@@ -179,16 +179,16 @@ bool AudioLoopbackPrivate::SetReverbPreset(AudioLoopbackReverbPreset preset)
         CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
             "SetReverbPreset failed");
     }
-    return SUCCESS;
+    return true;
 }
 
-AudioLoopbackReverbPreset AudioLoopbackPrivate::getReverbPreset()
+AudioLoopbackReverbPreset AudioLoopbackPrivate::GetReverbPreset()
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     return currentReverbPreset_;
 }
 
-bool AudioLoopbackPrivate::setEqualizerPreset(AudioLoopbackEqualizerPreset preset)
+bool AudioLoopbackPrivate::SetEqualizerPreset(AudioLoopbackEqualizerPreset preset)
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     auto it = audioLoopbackEqualizerPresetMap.find(preset);
@@ -200,10 +200,10 @@ bool AudioLoopbackPrivate::setEqualizerPreset(AudioLoopbackEqualizerPreset prese
         CHECK_AND_RETURN_RET_LOG(AudioPolicyManager::GetInstance().SetKaraokeParameters(parameters), false,
             "SetEqualizerPreset failed");
     }
-    return SUCCESS;
+    return true;
 }
 
-AudioLoopbackEqualizerPreset AudioLoopbackPrivate::getEqualizerPreset()
+AudioLoopbackEqualizerPreset AudioLoopbackPrivate::GetEqualizerPreset()
 {
     std::unique_lock<std::mutex> stateLock(stateMutex_);
     return currentEqualizerPreset_;
