@@ -1162,21 +1162,21 @@ HWTEST_F(AudioEndpointUnitTest, AudioEnableFastInnerCap_003, TestSize.Level1)
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
- 
+
     auto &info = audioEndpointInner->fastCaptureInfos_[1];
     info.isInnerCapEnabled = true;
     audioEndpointInner->deviceInfo_.deviceRole_ = DeviceRole::OUTPUT_DEVICE;
     int32_t result = audioEndpointInner->EnableFastInnerCap(1);
     EXPECT_EQ(SUCCESS, result);
- 
+
     audioEndpointInner->endpointStatus_ = AudioEndpointInner::RUNNING;
     EXPECT_EQ(SUCCESS, audioEndpointInner->EnableFastInnerCap(1));
- 
+
     audioEndpointInner->endpointStatus_.store(AudioEndpoint::EndpointStatus::IDEL);
     audioEndpointInner->isDeviceRunningInIdel_ = true;
     EXPECT_EQ(SUCCESS, audioEndpointInner->EnableFastInnerCap(1));
 }
- 
+
 /*
  * @tc.name  : Test Dump API
  * @tc.type  : FUNC
@@ -1187,13 +1187,13 @@ HWTEST_F(AudioEndpointUnitTest, Dump_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
     EXPECT_NE(nullptr, audioEndpointInner);
- 
+
     std::string dumpString = "";
     audioEndpointInner->dstAudioBuffer_  = nullptr;
     audioEndpointInner->Dump(dumpString);
     ASSERT_STRNE("", dumpString.c_str());
 }
- 
+
 /*
  * @tc.name  : Test ZeroVolumeCheck API
  * @tc.type  : FUNC
@@ -1211,36 +1211,36 @@ HWTEST_F(AudioEndpointUnitTest, ZeroVolumeCheck_006, TestSize.Level1)
     std::shared_ptr<AudioEndpointInner> audioEndpointInner =
         CreateEndpointInner(AudioEndpoint::TYPE_MMAP, 123, config, deviceInfo);
     EXPECT_NE(nullptr, audioEndpointInner);
- 
+
     audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
     audioEndpointInner->ZeroVolumeCheck(0);
     EXPECT_EQ(AudioEndpointInner::IN_TIMING, audioEndpointInner->zeroVolumeState_);
- 
+
     usleep(4000000); // 2000000 for sleep 2s, wait for 4s limitation
     audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
     audioEndpointInner->isStarted_ = true;
     audioEndpointInner->ZeroVolumeCheck(0); //enter check and stop device
     EXPECT_EQ(AudioEndpointInner::IN_TIMING, audioEndpointInner->zeroVolumeState_);
- 
+
     audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
     audioEndpointInner->isStarted_ = true;
     audioEndpointInner->ZeroVolumeCheck(1); //enter check and start device
     EXPECT_EQ(AudioEndpointInner::INACTIVE, audioEndpointInner->zeroVolumeState_);
- 
+
     audioEndpointInner->zeroVolumeState_ = AudioEndpointInner::IN_TIMING;
     audioEndpointInner->ZeroVolumeCheck(1);
     EXPECT_EQ(AudioEndpointInner::INACTIVE, audioEndpointInner->zeroVolumeState_);
- 
+
     HdiAdapterManager::GetInstance().ReleaseId(audioEndpointInner->fastRenderId_);
 }
- 
+
 /*
  * @tc.name  : Test HandleZeroVolumeStartEvent API
  * @tc.type  : FUNC
- * @tc.number: HandleZeroVolumeStartEvent_005
+ * @tc.number: TestHandleZeroVolumeStartEvent_001
  * @tc.desc  : Test HandleZeroVolumeStartEvent interface
  */
-HWTEST(AudioEndpointInnerUnitTest, HandleZeroVolumeStartEvent_005, TestSize.Level1)
+HWTEST(AudioEndpointInnerUnitTest, TestHandleZeroVolumeStartEvent_001, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->isStarted_ = true;
@@ -1248,14 +1248,14 @@ HWTEST(AudioEndpointInnerUnitTest, HandleZeroVolumeStartEvent_005, TestSize.Leve
     EXPECT_EQ(true, audioEndpointInner->isStarted_);
     EXPECT_EQ(true, audioEndpointInner->needReSyncPosition_);
 }
- 
+
 /*
  * @tc.name  : Test HandleZeroVolumeStartEvent API
  * @tc.type  : FUNC
- * @tc.number: HandleZeroVolumeStartEvent_006
+ * @tc.number: TestHandleZeroVolumeStartEvent_002
  * @tc.desc  : Test HandleZeroVolumeStartEvent interface
  */
-HWTEST(AudioEndpointInnerUnitTest, HandleZeroVolumeStartEvent_006, TestSize.Level1)
+HWTEST(AudioEndpointInnerUnitTest, TestHandleZeroVolumeStartEvent_002, TestSize.Level1)
 {
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateInputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->isStarted_ = false;
@@ -1263,7 +1263,7 @@ HWTEST(AudioEndpointInnerUnitTest, HandleZeroVolumeStartEvent_006, TestSize.Leve
     EXPECT_EQ(false, audioEndpointInner->isStarted_);
     EXPECT_EQ(true, audioEndpointInner->needReSyncPosition_);
 }
- 
+
 /*
  * @tc.name  : Test CheckRecordSignal API
  * @tc.type  : FUNC
@@ -1281,7 +1281,7 @@ HWTEST(AudioEndpointInnerUnitTest, CheckRecordSignal_004, TestSize.Level1)
     audioEndpointInner->CheckRecordSignal(buffer, 10);
     EXPECT_NE(nullptr, audioEndpointInner->signalDetectAgent_);
 }
- 
+
 /*
  * @tc.name  : Test CheckPlaySignal API
  * @tc.type  : FUNC
@@ -1293,130 +1293,19 @@ HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_004, TestSize.Level1)
     std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
     audioEndpointInner->latencyMeasEnabled_ = true;
     audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
     audioEndpointInner->detectedTime_ = 0;
     audioEndpointInner->signalDetected_ = true;
     uint8_t buffer[10] = {0};
+
     audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(0, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_005
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_005, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
+    EXPECT_EQ(false, audioEndpointInner->signalDetectAgent_->dspTimestampGot_);
+
     audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
     audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = true;
-    audioEndpointInner->detectedTime_ = 0;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
     audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(0, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_006
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_006, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
-    audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = false;
-    audioEndpointInner->detectedTime_ = 0;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(0, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_007
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_007, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
-    audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = true;
+    EXPECT_EQ(false, audioEndpointInner->detectedTime_);
+
     audioEndpointInner->detectedTime_ = 1000;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(1000, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_008
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_008, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = true;
-    audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = false;
-    audioEndpointInner->detectedTime_ = 1000;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(1000, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_009
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_009, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = false;
-    audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = true;
-    audioEndpointInner->detectedTime_ = 1000;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
-    audioEndpointInner->CheckPlaySignal(buffer, 10);
-    EXPECT_EQ(1000, audioEndpointInner->detectedTime_);
-}
- 
-/*
- * @tc.name  : Test CheckPlaySignal API
- * @tc.type  : FUNC
- * @tc.number: CheckPlaySignal_010
- * @tc.desc  : Test CheckPlaySignal interface
- */
-HWTEST_F(AudioEndpointUnitTest, CheckPlaySignal_010, TestSize.Level1)
-{
-    std::shared_ptr<AudioEndpointInner> audioEndpointInner = CreateOutputEndpointInner(AudioEndpoint::TYPE_MMAP);
-    audioEndpointInner->latencyMeasEnabled_ = true;
-    audioEndpointInner->signalDetectAgent_ = std::make_shared<SignalDetectAgent>();
-    audioEndpointInner->signalDetectAgent_->signalDetected_ = false;
-    audioEndpointInner->signalDetectAgent_->dspTimestampGot_ = false;
-    audioEndpointInner->detectedTime_ = 1000;
-    audioEndpointInner->signalDetected_ = true;
-    uint8_t buffer[10] = {0};
     audioEndpointInner->CheckPlaySignal(buffer, 10);
     EXPECT_EQ(1000, audioEndpointInner->detectedTime_);
 }
