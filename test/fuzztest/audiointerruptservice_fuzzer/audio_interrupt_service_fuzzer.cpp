@@ -992,7 +992,7 @@ void AudioInterruptServiceProcessActiveInterruptFuzzTest(const uint8_t *rawData,
     interruptService->zonesMap_.insert({zoneId, audioInterruptZone});
     audioInterruptZone->audioFocusInfoList.push_back(
         {audioInterrupt, *reinterpret_cast<const AudioFocuState *>(rawData)});
-    interruptService->policyServer_ = new AudioPolicyServer(zoneId);
+    interruptService->policyServer_ = nullptr;
     interruptService->ProcessActiveInterrupt(zoneId, audioInterrupt);
 }
 
@@ -1099,7 +1099,7 @@ void AudioInterruptServiceUpdateAudioFocusStrategyFuzzTest(const uint8_t *rawDat
     focusEntry.forceType = *reinterpret_cast<const InterruptForceType *>(rawData);
     focusEntry.hintType = *reinterpret_cast<const InterruptHint *>(rawData);
     focusEntry.isReject = (*reinterpret_cast<const uint32_t *>(rawData)) % BOOL_MODULO;
-    interruptService->policyServer_ = new AudioPolicyServer(currentInterrupt.pid);
+    interruptService->policyServer_ = nullptr;
 
     interruptService->UpdateAudioFocusStrategy(currentInterrupt, incomingInterrupt, focusEntry);
 }
