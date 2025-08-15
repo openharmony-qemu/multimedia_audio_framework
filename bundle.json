@@ -46,7 +46,6 @@
         "ram": "11000KB",
         "deps": {
           "components": [
-            "av_session",
             "ability_base",
             "ability_runtime",
             "access_token",
@@ -98,8 +97,6 @@
             "window_manager"
             ],
           "third_party": [
-            "glib",
-            "libsnd",
             "libxml2",
             "openssl"
           ]

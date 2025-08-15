@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("../../accessibility.gni")
 import("../../appgallery.gni")
 import("../../audio_framework_test_sources.gni")
-import("../../av_session.gni")
 import("../../bluetooth_part.gni")
 import("../../config.gni")
 
@@ -109,10 +108,6 @@ config("audio_policy_public_config") {
 
   if (bluetooth_part_enable == true) {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
-  }
-
-  if (avsession_part_enable == true && !(use_libfuzzer || use_clang_coverage)) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
   }
 
   ldflags = [ "-Wl" ]
