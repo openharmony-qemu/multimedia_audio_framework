@@ -1510,10 +1510,10 @@ HWTEST(AudioServiceCommonUnitTest, AudioSharedMemory_ReadFromParcel_001, TestSiz
 /**
  * @tc.name  : Test Unmarshalling API
  * @tc.type  : FUNC
- * @tc.number: Unmarshalling_001
+ * @tc.number: OHAudioBufferBase_Unmarshalling_001
  * @tc.desc  : Test OHAudioBufferBase::Unmarshalling interface.
  */
-HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_Unmarshalling_001, TestSize.Level4)
 {
     Parcel parcel;
     MessageParcel &messageParcel = static_cast<MessageParcel &>(parcel);
@@ -1530,10 +1530,10 @@ HWTEST(AudioServiceCommonUnitTest, Unmarshalling_001, TestSize.Level4)
 /**
  * @tc.name  : Test CreateFromRemote API
  * @tc.type  : FUNC
- * @tc.number: CreateFromRemote _001
+ * @tc.number: OHAudioBufferBase_CreateFromRemote _001
  * @tc.desc  : Test OHAudioBufferBase::CreateFromRemote  interface.
  */
-HWTEST(AudioServiceCommonUnitTest, CreateFromRemote_001, TestSize.Level4)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_CreateFromRemote_001, TestSize.Level4)
 {
     uint32_t totalSizeInFrame = 10;
     uint32_t byteSizePerFrame = 10;
@@ -1654,10 +1654,10 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_SetSyncReadFrame_001, TestS
 /**
  * @tc.name  : Test GetFutex API
  * @tc.type  : FUNC
- * @tc.number: GetFutex
+ * @tc.number: OHAudioBufferBase_GetFutex_001
  * @tc.desc  : Test OHAudioBufferBase::GetFutex() interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetFutex_001, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetFutex_001, TestSize.Level1)
 {
     OHAudioBufferBase audioBufferBase(AUDIO_SERVER_ONLY_WITH_SYNC, 100, 10);
     audioBufferBase.basicBufferInfo_ = nullptr;
@@ -1667,10 +1667,10 @@ HWTEST(AudioServiceCommonUnitTest, GetFutex_001, TestSize.Level1)
 /**
  * @tc.name  : Test SetRestoreStatus API
  * @tc.type  : FUNC
- * @tc.number: SetRestoreStatus
+ * @tc.number: OHAudioBufferBase_SetRestoreStatus_001
  * @tc.desc  : Test SetRestoreStatus interface.
  */
-HWTEST(AudioServiceCommonUnitTest, SetRestoreStatus_002, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_SetRestoreStatus_001, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1683,10 +1683,10 @@ HWTEST(AudioServiceCommonUnitTest, SetRestoreStatus_002, TestSize.Level1)
 /**
  * @tc.name  : Test GetStreamVolume API
  * @tc.type  : FUNC
- * @tc.number: GetStreamVolume
+ * @tc.number: OHAudioBufferBase_GetStreamVolume_001
  * @tc.desc  : Test GetStreamVolume interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_002, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetStreamVolume_001, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1700,10 +1700,10 @@ HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_002, TestSize.Level1)
 /**
  * @tc.name  : Test GetStreamVolume API
  * @tc.type  : FUNC
- * @tc.number: GetStreamVolume
+ * @tc.number: OHAudioBufferBase_GetStreamVolume_002
  * @tc.desc  : Test GetStreamVolume interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_003, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetStreamVolume_002, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1717,10 +1717,10 @@ HWTEST(AudioServiceCommonUnitTest, GetStreamVolume_003, TestSize.Level1)
 /**
  * @tc.name  : Test GetMuteFactor API
  * @tc.type  : FUNC
- * @tc.number: GetMuteFactor
+ * @tc.number: OHAudioBufferBase_GetMuteFactor_001
  * @tc.desc  : Test GetMuteFactor interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_002, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetMuteFactor_001, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1734,10 +1734,10 @@ HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_002, TestSize.Level1)
 /**
  * @tc.name  : Test GetMuteFactor API
  * @tc.type  : FUNC
- * @tc.number: GetMuteFactor
+ * @tc.number: OHAudioBufferBase_GetMuteFactor_002
  * @tc.desc  : Test GetMuteFactor interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_003, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetMuteFactor_002, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1751,10 +1751,10 @@ HWTEST(AudioServiceCommonUnitTest, GetMuteFactor_003, TestSize.Level1)
 /**
  * @tc.name  : Test GetDuckFactor API
  * @tc.type  : FUNC
- * @tc.number: GetDuckFactor
+ * @tc.number: OHAudioBufferBase_GetDuckFactor_001
  * @tc.desc  : Test GetDuckFactor interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetDuckFactor_002, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetDuckFactor_001, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
@@ -1768,10 +1768,10 @@ HWTEST(AudioServiceCommonUnitTest, GetDuckFactor_002, TestSize.Level1)
 /**
  * @tc.name  : Test GetDuckFactor API
  * @tc.type  : FUNC
- * @tc.number: GetDuckFactor
+ * @tc.number: OHAudioBufferBase_GetDuckFactor_002
  * @tc.desc  : Test GetDuckFactor interface.
  */
-HWTEST(AudioServiceCommonUnitTest, GetDuckFactor_003, TestSize.Level1)
+HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetDuckFactor_002, TestSize.Level1)
 {
     uint32_t spanSizeInFrame = 1000;
     uint32_t totalSizeInFrame = spanSizeInFrame;
