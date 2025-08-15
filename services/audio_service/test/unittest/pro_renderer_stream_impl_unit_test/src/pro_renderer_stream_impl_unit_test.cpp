@@ -835,7 +835,7 @@ HWTEST(ProRendererStreamImplUnitTest, EnqueueBuffer_017, TestSize.Level3)
     EXPECT_EQ(ret, SUCCESS);
 
     rendererStreamImpl->bufferInfo_.format = 3;
-    int32_t ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
+    ret = rendererStreamImpl->EnqueueBuffer(bufferDesc);
     EXPECT_EQ(ret, SUCCESS);
 }
 
