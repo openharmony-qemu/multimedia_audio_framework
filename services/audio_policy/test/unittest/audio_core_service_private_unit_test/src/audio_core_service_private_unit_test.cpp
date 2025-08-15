@@ -2499,7 +2499,6 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
-
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
