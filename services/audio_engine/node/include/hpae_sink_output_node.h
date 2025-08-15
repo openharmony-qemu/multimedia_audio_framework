@@ -77,6 +77,7 @@ private:
     int32_t syncId_ = -1;
     uint32_t latency_ = 0;
     uint64_t renderFrameTimes_ = 0;
+    HighResolutionTimer periodTimer_;
 #ifdef ENABLE_HOOK_PCM
     HighResolutionTimer intervalTimer_;
 #endif
