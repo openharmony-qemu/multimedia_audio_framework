@@ -68,6 +68,11 @@ public:
     DECLARE_INTERFACE_DESCRIPTOR(u"RemoteObjectTestStub");
 };
 
+class DummyAudioWorkgroup : public AudioWorkgroup {
+public:
+    explicit DummyAudioWorkgroup(int32_t groupId) : AudioWorkgroup(groupId) {}
+};
+
 /**
  * @tc.name  : Test deathRecipient
  * @tc.type  : FUNC
