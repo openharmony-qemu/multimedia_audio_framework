@@ -1699,7 +1699,6 @@ HWTEST(AudioStreamCheckerTest, MonitorCheckFrameAction_009, TestSize.Level1)
  */
 HWTEST(AudioStreamCheckerTest, MonitorOnAllCallback_006, TestSize.Level1)
 {
-    
     AudioProcessConfig cfg;
     std::shared_ptr<AudioStreamChecker> checker = std::make_shared<AudioStreamChecker>(cfg);
     CheckerParam checkerParamTest;
