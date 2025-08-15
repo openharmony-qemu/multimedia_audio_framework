@@ -546,7 +546,7 @@ napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info i
     return result;
 }
 
-napi_value NapiAudioLoopback::GetReverbPreset(npi_env env, napi_callback_info info)
+napi_value NapiAudioLoopback::GetReverbPreset(napi_env env, napi_callback_info info)
 {
     size_t argc = PARAM0;
     NapiAudioLoopback *napiLoopback = GetParamWithSync(env, info, argc, nullptr);
