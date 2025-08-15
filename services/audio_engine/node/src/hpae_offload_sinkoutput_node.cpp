@@ -51,6 +51,7 @@ namespace {
     static constexpr float EPSILON = 1e-6f;
 
     const std::string DEVICE_CLASS_OFFLOAD = "offload";
+    const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 }
 HpaeOffloadSinkOutputNode::HpaeOffloadSinkOutputNode(HpaeNodeInfo &nodeInfo)
     : HpaeNode(nodeInfo),
@@ -416,8 +417,10 @@ int32_t HpaeOffloadSinkOutputNode::SetOffloadRenderCallbackType(int32_t type)
 void HpaeOffloadSinkOutputNode::SetSpeed(float speed)
 {
     CHECK_AND_RETURN_LOG(audioRendererSink_, "audioRendererSink_ is nullptr sessionId: %{public}u", GetSessionId());
-    speed_ = speed;
-    audioRendererSink_->SetSpeed(speed);
+    if (GetStreamType() == STREAM_MOVIE || GetDeviceClass() == DEVICE_CLASS_REMOTE_OFFLOAD) {
+        speed_ = speed;
+        audioRendererSink_->SetSpeed(speed);
+    }
 }
 
 void HpaeOffloadSinkOutputNode::RunningLock(bool islock)
