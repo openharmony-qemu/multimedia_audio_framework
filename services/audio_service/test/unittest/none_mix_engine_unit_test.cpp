@@ -1682,5 +1682,27 @@ HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_053, TestSize.Level1)
     ret = ptrNoneMixEngine->Pause();
     EXPECT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name  : Test NoneMixEngine API
+ * @tc.type  : FUNC
+ * @tc.number: NoneMixEngine_051
+ * @tc.desc  : Test NoneMixEngine::GetDirectVoipDeviceFormat()
+ */
+HWTEST_F(NoneMixEngineUnitTest, NoneMixEngine_051, TestSize.Level1)
+{
+    NoneMixEngine noneMixEngineRet;
+    AudioSampleFormat formatRet = AudioSampleFormat::SAMPLE_S24LE;
+    auto ret = noneMixEngineRet.GetDirectVoipDeviceFormat(formatRet);
+    EXPECT_EQ(SAMPLE_S32LE, ret);
+ 
+    formatRet = AudioSampleFormat::SAMPLE_S32LE;
+    ret = noneMixEngineRet.GetDirectVoipDeviceFormat(formatRet);
+    EXPECT_EQ(SAMPLE_S32LE, ret);
+ 
+    formatRet = AudioSampleFormat::INVALID_WIDTH;
+    ret = noneMixEngineRet.GetDirectVoipDeviceFormat(formatRet);
+    EXPECT_EQ(SAMPLE_S16LE, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

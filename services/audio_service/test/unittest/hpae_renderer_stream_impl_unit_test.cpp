@@ -673,5 +673,33 @@ HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_033, TestSize.Level0)
     EXPECT_THAT(std::vector<int8_t>(tmpBuffer.begin(), tmpBuffer.end() - 1), Each(Eq(1)));
     EXPECT_EQ(tmpBuffer[bufferSize - 1], 0);
 }
+
+/**
+ * @tc.name  : Test OnStreamData.
+ * @tc.type  : FUNC
+ * @tc.number: HpaeRenderer_034
+ * @tc.desc  : Test OnStreamData.
+ */
+HWTEST_F(HpaeRendererStreamUnitTest, HpaeRenderer_034, TestSize.Level1)
+{
+    auto unit = CreateHpaeRendererStreamImpl();
+    EXPECT_NE(nullptr, unit);
+ 
+    AudioCallBackStreamInfo info = {
+        .deviceClass = "remote_offload",
+        .framePosition = 10000,
+    };
+   
+    unit->OnStreamData(info);
+    EXPECT_EQ(10000, unit->lastHdiFramePosition_);
+    EXPECT_EQ(10000, unit->lastFramePosition_);
+
+    unit->isCallbackMode_ = false;
+    info.needData = true;
+    info.requestDataLen = 0;
+    unit->OnStreamData(info);
+    EXPECT_EQ(OFFLOAD_DEFAULT, unit->offloadStatePolicy_);
+    EXPECT_EQ(INVALID, unit->state_);
+}
 }
 }
