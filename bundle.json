@@ -95,7 +95,7 @@
             "media_foundation",
             "usb_manager",
             "frame_aware_sched",
-            "window_manager"
+            "window_manager_lite"
             ],
           "third_party": [
             "glib",
