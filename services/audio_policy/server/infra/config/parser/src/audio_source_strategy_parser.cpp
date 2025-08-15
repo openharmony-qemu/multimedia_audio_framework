@@ -94,7 +94,7 @@ bool AudioSourceStrategyParser::LoadConfig()
         std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
     while (curNode_->IsNodeValid()) {
         if (curNode_->CompareName("audio_source_config")) {
-            ParseConfig(curNode->GetChildrenNode(), sourceStrategyMap);
+            ParseConfig(curNode_->GetChildrenNode(), sourceStrategyMap);
             break;
         } else {
             curNode_->MoveToNext();
@@ -172,7 +172,7 @@ void AudioSourceStrategyParser::AddSourceStrategyMap(std::shared_ptr<AudioXmlNod
     }
 
     AudioFlag audioFlag;
-    auto it = AudioDefinitionPolicyUtils::flagStrToEnum.find(audioFlag);
+    auto it = AudioDefinitionPolicyUtils::flagStrToEnum.find(audioFlagStr);
     if (it != AudioDefinitionPolicyUtils::flagStrToEnum.end()) {
         audioFlag = it->second;
     } else {

@@ -377,7 +377,7 @@ int32_t AudioCapturerSession::ReloadCaptureSession(uint32_t sessionId, SessionOp
         case SESSION_OPERATION_STOP:
             if (findRunningSessionRet && (targetSession.sourceType == audioEcManager_.GetSourceOpened())) {
                 needReload = true;
-                targetSessionId = static_cast<uint32_t>(runningSessionInfo.sessionId);
+                targetSessionId = runningSessionInfo.sessionId_;
                 targetSession = sessionWithNormalSourceType_[targetSessionId];
             }
             break;
@@ -432,9 +432,9 @@ bool AudioCapturerSession::IsRemainingSourceIndependent()
         SourceType sourceType = it->second.sourceType;
         auto smapIt = sourceStrategyMapget->find(sourceType);
         CHECK_AND_RETURN_RET_LOG(smapIt != sourceStrategyMapget->end(), false,
-            "not find sourceType:%{public}"d, sourceType);
+            "not find sourceType:%{public}d", sourceType);
         CHECK_AND_RETURN_RET_LOG(smapIt->second.pipeName == PIPE_PRIMARY_INPUT_AI, false,
-            "invalid pipeName:%{public}"s, smapIt->second.pipeName.c_str());
+            "invalid pipeName:%{public}s", smapIt->second.pipeName.c_str());
     }
     return true;
 }
