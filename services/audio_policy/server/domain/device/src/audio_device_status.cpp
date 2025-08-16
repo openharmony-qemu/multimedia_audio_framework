@@ -957,8 +957,6 @@ int32_t AudioDeviceStatus::HandleDistributedDeviceUpdate(DStatusInfo &statusInfo
             AudioServerProxy::GetInstance().NotifyDeviceInfoProxy(networkId, true);
         }
     } else {
-        std::shared_ptr<AudioDeviceDescriptor> device = GetDeviceByStatusInfo(statusInfo);
-        AudioZoneService::GetInstance().MoveDeviceToGlobalFromZones(device);
         audioDeviceCommon_.UpdateConnectedDevicesWhenDisconnecting(deviceDesc, descForCb);
         reason = AudioStreamDeviceChangeReasonExt::ExtEnum::DISTRIBUTED_DEVICE_UNAVAILABLE;
         std::string moduleName = AudioPolicyUtils::GetInstance().GetRemoteModuleName(networkId,
