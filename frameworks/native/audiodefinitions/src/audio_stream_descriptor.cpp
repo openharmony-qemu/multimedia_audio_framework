@@ -235,7 +235,7 @@ std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDesc
     out.append(":" + std::to_string(static_cast<uint32_t>(desc->deviceId_)));
     return out + "]";
 }
- 
+
 std::string AudioStreamDescriptor::GetNewDevicesInfo()
 {
     std::string out = "";

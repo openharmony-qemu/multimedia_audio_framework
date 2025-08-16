@@ -157,6 +157,23 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
     offloadCloseCondition_[type].notify_all();
 }
 
+void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
+    OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (action == OFFLOAD_NEW || action == OFFLOAD_MOVE_IN) {
+        // Check stream is offload and then set
+        if (streamDesc->IsRouteOffload()) {
+            OffloadAdapter adapter = (streamDesc->IsDeviceRemote() ? OFFLOAD_IN_REMOTE : OFFLOAD_IN_PRIMARY);
+            audioOffloadStream_.SetOffloadStatus(adapter, streamDesc->GetSessionId());
+        }
+    } else {
+        // Check stream is moved from offload and then unset
+        if (streamDesc->IsRouteNormal() && (streamDesc->IsOldRouteOffload())) {
+            audioOffloadStream_.UnsetOffloadStatus(streamDesc->GetSessionId());
+        }
+    }
+}
+
 void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     for (auto &streamDesc : streamDescs) {

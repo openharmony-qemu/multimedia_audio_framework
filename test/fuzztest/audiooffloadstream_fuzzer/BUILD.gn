@@ -10,3 +10,59 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../accessibility.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("AudioOffloadStreamFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audiooffloadstream_fuzzer"
+
+  include_dirs = [
+    "../../../services/audio_policy/server/include/service",
+    "../../../services/audio_policy/server/include",
+    "../../../frameworks/native/audioutils/include",
+    "../../../services/audio_service/common/include/limiter/",
+  ]
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
+
+  sources = [ "audio_offload_stream_fuzzer.cpp" ]
+
+  deps = [
+    "../../../frameworks/native/audioutils:audio_utils",
+    "../../../services/audio_policy:audio_policy_service_static",
+    "../../../services/audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_consumer",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  defines = []
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+
+  if (use_libfuzzer || use_clang_coverage) {
+    defines += [ "TEST_COVERAGE" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = [ ":AudioOffloadStreamFuzzTest" ]
+}
