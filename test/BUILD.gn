@@ -277,6 +277,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozone_fuzzer:fuzztest",
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
+    "fuzztest/bluetoothscomanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/capturermanager_fuzzer:fuzztest",
     "fuzztest/channelconverter_fuzzer:fuzztest",
