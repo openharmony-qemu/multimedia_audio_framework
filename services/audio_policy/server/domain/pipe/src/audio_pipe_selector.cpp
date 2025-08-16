@@ -552,22 +552,12 @@ void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<A
         });
 }
 
-void AudioPipeSelector::MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+void AudioPipeSelector::MoveStreamsToNormalPipes(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,
     std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList)
 {
-    // Remove streams from old pipes and record old pipe adapter which is used to find
-    // normal pipe in the same adapter.
     std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> streamToAdapter;
-    for (auto &stream : streamsToMove) {
-        for (auto &pipe : pipeInfoList) {
-            if (pipe->ContainStream(stream->GetSessionId())) {
-                streamToAdapter[stream] = pipe->GetAdapterName();
-                pipe->RemoveStream(stream->GetSessionId());
-                // Should be only one matching pipe
-                break;
-            }
-        }
-    }
+    RemoveTargetStreams(streamsToMove, pipeInfoList, streamToAdapter);
  
     // Put each stream to its according normal pipe
     for (auto &stream : streamsToMove) {
@@ -581,6 +571,25 @@ void AudioPipeSelector::MoveStreamsToNormalPipes(std::vector<std::shared_ptr<Aud
                 if (pipe->GetAction() != PIPE_ACTION_NEW) {
                     pipe->SetAction(PIPE_ACTION_UPDATE);
                 }
+                break;
+            }
+        }
+    }
+}
+
+void AudioPipeSelector::RemoveTargetStreams(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+    std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
+    std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> &streamToAdapter)
+{
+    // Remove streams from old pipes and record old pipe adapter which is used to find
+    // normal pipe in the same adapter.
+    for (auto &stream : streamsToMove) {
+        for (auto &pipe : pipeInfoList) {
+            if (pipe->ContainStream(stream->GetSessionId())) {
+                streamToAdapter[stream] = pipe->GetAdapterName();
+                pipe->RemoveStream(stream->GetSessionId());
+                // Should be only one matching pipe
                 break;
             }
         }

@@ -60,8 +60,11 @@ private:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
-    void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+    void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,
         std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList);
+    void RemoveTargetStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
+        std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> &streamToAdapter);
 
     AudioPolicyConfigManager& configManager_;
 };
