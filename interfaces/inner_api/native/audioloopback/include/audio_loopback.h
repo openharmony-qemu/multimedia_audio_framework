@@ -63,6 +63,14 @@ public:
 
     virtual int32_t RemoveAudioLoopbackCallback() = 0;
 
+    virtual bool SetReverbPreset(AudioLoopbackReverbPreset preset) = 0;
+
+    virtual AudioLoopbackReverbPreset GetReverbPreset() = 0;
+
+    virtual bool SetEqualizerPreset(AudioLoopbackEqualizerPreset preset) = 0;
+
+    virtual AudioLoopbackEqualizerPreset GetEqualizerPreset() = 0;
+
     virtual ~AudioLoopback();
 };
 } // namespace AudioStandard
