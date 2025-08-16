@@ -552,15 +552,7 @@ void HpaeRendererManager::MoveStreamSync(uint32_t sessionId, const std::string &
     AUDIO_INFO_LOG("[StartMove] session: %{public}u,sink [%{public}s] --> [%{public}s]",
         sessionId, sinkInfo_.deviceName.c_str(), sinkName.c_str());
     std::shared_ptr<HpaeSinkInputNode> inputNode = sinkInputNodeMap_[sessionId];
-    HpaeSessionState inputState = inputNode->GetState();
-    if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
-        HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
-        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
-        SetSessionState(sessionId, state);
-        inputNode->SetState(state);
-        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
-        // todo: do fade out
-    }
+    TriggerStreamState(sessionId, inputNode);
     DeleteInputSessionForMove(sessionId);
     std::string name = sinkName;
     TriggerCallback(MOVE_SINK_INPUT, inputNode, name);
@@ -817,6 +809,7 @@ int32_t HpaeRendererManager::ReloadRenderManager(const HpaeSinkInfo &sinkInfo, b
         AUDIO_INFO_LOG("ReloadRenderManager deviceName %{public}s", sinkInfo.deviceName.c_str());
         
         for (const auto &it : sinkInputNodeMap_) {
+            TriggerStreamState(it.first, it.second);
             DeleteConnectInputProcessor(it.second);
         }
         AUDIO_INFO_LOG("delete device:%{public}s all input processor end", sinkInfo.deviceName.c_str());
@@ -1394,6 +1387,18 @@ int32_t HpaeRendererManager::HandleSyncId(uint32_t sessionId, int32_t syncId)
         return ERR_INVALID_OPERATION;
     }
     return outputCluster_->SetSyncId(syncId);
+}
+
+void HpaeRendererManager::TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &inputNode)
+{
+    HpaeSessionState inputState = inputNode->GetState();
+    if (inputState == HPAE_SESSION_STOPPING || inputState == HPAE_SESSION_PAUSING) {
+        HpaeSessionState state = inputState == HPAE_SESSION_PAUSING ? HPAE_SESSION_PAUSED : HPAE_SESSION_STOPPED;
+        IOperation operation = inputState == HPAE_SESSION_PAUSING ? OPERATION_PAUSED : OPERATION_STOPPED;
+        SetSessionState(sessionId, state);
+        inputNode->SetState(state);
+        TriggerCallback(UPDATE_STATUS, HPAE_STREAM_CLASS_TYPE_PLAY, sessionId, state, operation);
+    }
 }
 }  // namespace HPAE
 }  // namespace AudioStandard
