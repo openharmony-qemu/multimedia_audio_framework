@@ -109,6 +109,7 @@ ohos_unittest("audio_a2dp_offload_manager_unit_test") {
     "c_utils:utils",
     "googletest:gmock",
     "hilog:libhilog",
+    "ipc:ipc_single",
   ]
 
   defines = []

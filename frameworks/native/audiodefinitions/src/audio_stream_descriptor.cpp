@@ -42,8 +42,8 @@ static const char *StreamStatusToString(AudioStreamStatus status)
 }
 
 AudioStreamDescriptor::AudioStreamDescriptor(
-    AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo) :
-    streamInfo_(streamInfo),
+    AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo)
+    : streamInfo_(streamInfo),
     audioMode_(AUDIO_MODE_PLAYBACK),
     rendererInfo_(rendererInfo),
     appInfo_(appInfo)
@@ -51,8 +51,8 @@ AudioStreamDescriptor::AudioStreamDescriptor(
 }
 
 AudioStreamDescriptor::AudioStreamDescriptor(
-    AudioStreamInfo streamInfo, AudioCapturerInfo capturerInfo, AppInfo appInfo) :
-    streamInfo_(streamInfo),
+    AudioStreamInfo streamInfo, AudioCapturerInfo capturerInfo, AppInfo appInfo)
+    : streamInfo_(streamInfo),
     audioMode_(AUDIO_MODE_RECORD),
     capturerInfo_(capturerInfo),
     appInfo_(appInfo)

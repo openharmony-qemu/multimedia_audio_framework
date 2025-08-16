@@ -54,7 +54,7 @@ public:
     void SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_t sessionId);
     void UnsetOffloadStatus(uint32_t sessionId);
     void HandlePowerStateChanged(PowerMgr::PowerState state);
-    void UpdateOffloadStatusFromUpdateTracker(uint32_t sessionId , RendererState state);
+    void UpdateOffloadStatusFromUpdateTracker(uint32_t sessionId, RendererState state);
     void Dump(std::string &dumpString);
 
     // not offload related

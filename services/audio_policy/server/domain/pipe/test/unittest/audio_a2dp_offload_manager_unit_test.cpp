@@ -34,11 +34,13 @@ static std::vector<int32_t> TEST_SESSION_ID_VECTOR = {
 void AudioA2dpOffloadManagerUnitTest::SetUpTestCase(void) {}
 void AudioA2dpOffloadManagerUnitTest::TearDownTestCase(void) {}
 
-void AudioA2dpOffloadManagerUnitTest::SetUp(void) {
+void AudioA2dpOffloadManagerUnitTest::SetUp(void)
+{
     testManager_ = std::make_shared<AudioA2dpOffloadManager>();
 }
 
-void AudioA2dpOffloadManagerUnitTest::TearDown(void) {
+void AudioA2dpOffloadManagerUnitTest::TearDown(void)
+{
     testManager_ = nullptr;
 }
 
@@ -113,7 +115,6 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, WaitForConnectionCompleted_001, TestSi
     testManager_->ConnectA2dpOffload(TEST_DEVICE_ADDR, TEST_SESSION_ID_VECTOR);
     testManager_->WaitForConnectionCompleted();
     EXPECT_EQ(testManager_->audioA2dpOffloadFlag_.GetCurrentOffloadConnectedState(), CONNECTION_STATUS_CONNECTED);
-
 }
 
 /**

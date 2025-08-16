@@ -382,12 +382,10 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
         GetPipeType(existingStream->routeFlag_, existingStream->audioMode_),
         GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_));
     action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
-
     // No running offload can not concede incoming special pipe
     if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
         action = CONCEDE_EXISTING;
     }
-
     AUDIO_INFO_LOG("Action: %{public}u "
         "existingStream id: %{public}u, routeFlag: %{public}u; "
         "incomingStream id: %{public}u, routeFlag: %{public}u",
@@ -558,22 +556,28 @@ void AudioPipeSelector::MoveStreamsToNormalPipes(
 {
     std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> streamToAdapter;
     RemoveTargetStreams(streamsToMove, pipeInfoList, streamToAdapter);
- 
+
     // Put each stream to its according normal pipe
     for (auto &stream : streamsToMove) {
         for (auto &pipe : pipeInfoList) {
             if (pipe->IsRouteNormal() && pipe->IsSameAdapter(streamToAdapter[stream])) {
-                AUDIO_INFO_LOG("Put stream %{public}u to pipe %{public}s",
-                    stream->GetSessionId(), pipe->GetName().c_str());
-                pipe->AddStream(stream);
-                // When fetching, pipe action may already be PIPE_ACTION_NEW before,
-                // do not change it to PIPE_ACTION_UPDATE.
-                if (pipe->GetAction() != PIPE_ACTION_NEW) {
-                    pipe->SetAction(PIPE_ACTION_UPDATE);
-                }
+                AddStreamToPipeAndUpdateAction(stream, pipe);
                 break;
             }
         }
+    }
+}
+
+void AudioPipeSelector::AddStreamToPipeAndUpdateAction(
+    std::shared_ptr<AudioStreamDescriptor> &streamToAdd, std::shared_ptr<AudioPipeInfo> &pipe)
+{
+    AUDIO_INFO_LOG("Put stream %{public}u to pipe %{public}s",
+        streamToAdd->GetSessionId(), pipe->GetName().c_str());
+    pipe->AddStream(streamToAdd);
+    // When fetching, pipe action may already be PIPE_ACTION_NEW before,
+    // do not change it to PIPE_ACTION_UPDATE.
+    if (pipe->GetAction() != PIPE_ACTION_NEW) {
+        pipe->SetAction(PIPE_ACTION_UPDATE);
     }
 }
 

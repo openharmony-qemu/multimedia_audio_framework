@@ -467,9 +467,7 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
 
     // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
     // will reset a2dp device to none.
-    if (audioA2dpOffloadManager_) {
-        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
-    }
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
 
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);

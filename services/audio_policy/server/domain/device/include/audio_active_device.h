@@ -23,14 +23,12 @@
 #include <mutex>
 #include "singleton.h"
 #include "audio_group_handle.h"
-#include "audio_manager_base.h"
 #include "audio_module_info.h"
 #include "audio_volume_config.h"
 #include "audio_system_manager.h"
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
-
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
 #include "audio_iohandle_map.h"
@@ -85,8 +83,8 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
 private:
-    AudioActiveDevice() :
-        audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
+    AudioActiveDevice()
+        : audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}

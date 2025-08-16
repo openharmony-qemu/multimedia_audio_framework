@@ -288,14 +288,12 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagInternal(
     BluetoothOffloadState newA2dpOffloadFlag = NO_A2DP_DEVICE;
     BluetoothOffloadState oldA2dpOffloadFlag = GetA2dpOffloadFlag();
     if (deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        newA2dpOffloadFlag =
-            static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(
-            allRunningA2dpInfos));
+        newA2dpOffloadFlag = static_cast<BluetoothOffloadState>(
+                Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allRunningA2dpInfos));
     } else if (audioActiveDevice_.GetCurrentOutputDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP &&
         audioActiveDevice_.GetCurrentOutputDeviceNetworkId() == LOCAL_NETWORK_ID && deviceType == DEVICE_TYPE_NONE) {
-        newA2dpOffloadFlag =
-            static_cast<BluetoothOffloadState>(Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(
-            allRunningA2dpInfos));
+        newA2dpOffloadFlag = static_cast<BluetoothOffloadState>(
+                Bluetooth::AudioA2dpManager::A2dpOffloadSessionRequest(allRunningA2dpInfos));
     }
 
     std::lock_guard<std::mutex> lock(switchA2dpOffloadMutex_);

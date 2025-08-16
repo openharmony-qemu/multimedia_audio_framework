@@ -198,9 +198,7 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
 
     // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
-    if (audioA2dpOffloadManager_) {
-        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
-    }
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
 
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
@@ -828,9 +826,9 @@ int32_t AudioCoreService::FetchRendererPipeAndExecute(std::shared_ptr<AudioStrea
         UpdateOffloadState(pipeInfo);
         if (pipeInfo->pipeAction_ == PIPE_ACTION_UPDATE) {
             ProcessOutputPipeUpdate(pipeInfo, audioFlag, reason);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) {
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_NEW) { // new
             ProcessOutputPipeNew(pipeInfo, audioFlag, reason);
-        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) {
+        } else if (pipeInfo->pipeAction_ == PIPE_ACTION_DEFAULT) { // DEFAULT
             // Do nothing
         }
     }

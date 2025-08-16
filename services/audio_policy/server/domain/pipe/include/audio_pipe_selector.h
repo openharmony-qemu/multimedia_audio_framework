@@ -65,6 +65,8 @@ private:
     void RemoveTargetStreams(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
         std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> &streamToAdapter);
+    void AddStreamToPipeAndUpdateAction(std::shared_ptr<AudioStreamDescriptor> &streamToAdd,
+        std::shared_ptr<AudioPipeInfo> &pipe);
 
     AudioPolicyConfigManager& configManager_;
 };
