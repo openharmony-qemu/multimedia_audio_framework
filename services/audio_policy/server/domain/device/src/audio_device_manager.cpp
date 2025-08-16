@@ -1272,7 +1272,7 @@ DeviceUsage AudioDeviceManager::GetDeviceUsage(const AudioDeviceDescriptor &desc
     return usage;
 }
 
-void AudioDeviceManager::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioDeviceManager::OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName)
 {
     std::lock_guard<std::mutex> currentActiveDevicesLock(currentActiveDevicesMutex_);
     for (auto device : connectedDevices_) {
