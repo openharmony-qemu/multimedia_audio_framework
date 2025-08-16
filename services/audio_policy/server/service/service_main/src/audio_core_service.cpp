@@ -363,6 +363,7 @@ void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescrip
             streamDesc->audioFlag_ = strategyIt->second.audioFlag;
             AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u",
                 streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag);
+            return;
         }
     }
 
