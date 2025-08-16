@@ -3193,14 +3193,10 @@ void AudioAdapterManager::NotifyAccountsChanged(const int &id)
 {
     AUDIO_INFO_LOG("start reload the kv data, current id:%{public}d", id);
     LoadVolumeMap();
-    LoadMuteStatusMap();
-
-    auto iter = defaultVolumeTypeList_.begin();
-    while (iter != defaultVolumeTypeList_.end()) {
-        SetVolumeDb(*iter);
-        AUDIO_INFO_LOG("NotifyAccountsChanged: volume: %{public}d, mute: %{public}d for stream type %{public}d",
-            volumeDataMaintainer_.GetStreamVolume(*iter), volumeDataMaintainer_.GetStreamMute(*iter), *iter);
-        iter++;
+    for (auto &deviceType : VOLUME_GROUP_TYPE_LIST) {
+        for (auto &streamType : defaultVolumeTypeList_) {
+            CheckAndDealMuteStatus(deviceType, streamType);
+        }
     }
 }
 
