@@ -12,3 +12,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include "audio_definitions_unit_test_utils.h"
+
+namespace OHOS {
+namespace AudioStandard {
+
+std::shared_ptr<AudioStreamDescriptor> AudioDefinitionsUnitTestUtil::GenerateCommonStream(AudioMode mode)
+{
+    AudioStreamInfo streamInfo = {
+        TEST_AUDIO_SAMPLE_RATE,
+        TEST_AUDIO_ENCODING_TYPE,
+        TEST_AUDIO_SAMPLE_FORMAT,
+        TEST_AUDIO_CHANNEL,
+        TEST_AUDIO_CHANNEL_LAYOUT
+    };
+
+    AppInfo appInfo = {
+        TEST_UID,
+        TEST_TOKEN_ID,
+        TEST_PID,
+        TEST_FULL_TOKEN_ID
+    };
+
+    std::shared_ptr<AudioStreamDescriptor> streamDesc;
+    if (mode == AUDIO_MODE_PLAYBACK) {
+        AudioRendererInfo rendererInfo(CONTENT_TYPE_UNKNOWN, STREAM_USAGE_MOVIE);
+        streamDesc = std::make_shared<AudioStreamDescriptor>(
+            streamInfo, rendererInfo, appInfo);
+        streamDesc->sessionId_ = TEST_RENDERER_SESSION_ID;
+    } else {
+        AudioCapturerInfo capturerInfo(SOURCE_TYPE_MIC, 0);
+        streamDesc = std::make_shared<AudioStreamDescriptor>(
+            streamInfo, capturerInfo, appInfo);
+        streamDesc->sessionId_ = TEST_CAPTURER_SESSION_ID;
+    }
+
+    return streamDesc;
+}
+
+} // namespace AudioStandard
+} // namespace OHOS
