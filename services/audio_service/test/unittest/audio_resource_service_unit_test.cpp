@@ -673,7 +673,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_003, TestSize.Level0)
 /**
  * @tc.name  : Test AudioWorkgroupCheck
  * @tc.type  : FUNC
- * @tc.number: AudioWorkgroupCheck_004
+ * @tc.number: AudioWorkgroupCheck_004 
  * @tc.desc  : Test AudioWorkgroupCheck when find workgroup
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)

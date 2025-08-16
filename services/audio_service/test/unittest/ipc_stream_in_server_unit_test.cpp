@@ -2151,7 +2151,7 @@ HWTEST(IpcStreamInServerUnitTest, SetSilentModeAndMixWithOthers_001, TestSize.Le
  * @tc.name  : Test unsetOffloadMode API
  * @tc.type  : FUNC
  * @tc.number: UnsetOffloadMode_001
- * @tc.desc  : Test UnsetOffloadMode interface.
+ * @tc.desc  : Test UnsetOffloadMode interface. 
  */
 HWTEST(IpcStreamInServerUnitTest, UnsetOffloadMode_001, TestSize.Level3)
 {
