@@ -534,7 +534,7 @@ napi_value NapiAudioLoopback::SetReverbPreset(napi_env env, napi_callback_info i
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackReverbPreset(preset)) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of mode must be enum InterruptMode");
+            "parameter verification failed: The param of mode must be enum AudioLoopbackReverbPreset");
         return result;
     }
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
@@ -580,7 +580,7 @@ napi_value NapiAudioLoopback::SetEqualizerPreset(napi_env env, napi_callback_inf
 
     if (!NapiAudioEnum::IsLegalInputArgumentAudioLoopbackEqualizerPreset(preset)) {
         NapiAudioError::ThrowError(env, NAPI_ERR_INVALID_PARAM,
-            "parameter verification failed: The param of mode must be enum InterruptMode");
+            "parameter verification failed: The param of mode must be enum AudioLoopbackEqualizerPreset");
         return result;
     }
     CHECK_AND_RETURN_RET_LOG(napiLoopback != nullptr,
