@@ -17,13 +17,12 @@
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "capturer_in_server.h"
-#include "pro_audio_stream_manager.h"
 
 using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
-class CapturerInServerUnitTest : public testing::Test {
+class CapturerInServerSecondUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -35,10 +34,10 @@ public:
     void TearDown(void);
 };
 
-void CapturerInServerUnitTest::SetUpTestCase() {}
-void CapturerInServerUnitTest::TearDownTestCase() {}
-void CapturerInServerUnitTest::SetUp() {}
-void CapturerInServerUnitTest::TearDown() {}
+void CapturerInServerSecondUnitTest::SetUpTestCase() {}
+void CapturerInServerSecondUnitTest::TearDownTestCase() {}
+void CapturerInServerSecondUnitTest::SetUp() {}
+void CapturerInServerSecondUnitTest::TearDown() {}
 
 class ConcreteIStreamListener : public IStreamListener {
     int32_t OnOperationHandled(Operation operation, int64_t result) { return SUCCESS; }
@@ -117,10 +116,10 @@ public:
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_003.
+ * @tc.number: CapturerInServerSecondUnitTest_003.
  * @tc.desc  : Test InitBufferStatus interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_003, TestSize.Level1)
 {
     AudioBufferHolder bufferHolder;
     uint32_t totalSizeInFrame = 10;
@@ -142,10 +141,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_003, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_004.
+ * @tc.number: CapturerInServerSecondUnitTest_004.
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_004, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_004, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
@@ -172,10 +171,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_004, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_005.
+ * @tc.number: CapturerInServerSecondUnitTest_005.
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_005, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_005, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
@@ -192,10 +191,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_005, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_006.
+ * @tc.number: CapturerInServerSecondUnitTest_006.
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_006, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_006, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
@@ -209,10 +208,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_006, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_007.
+ * @tc.number: CapturerInServerSecondUnitTest_007.
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_007, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_007, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::shared_ptr<IStreamListener> iStreamListener_ = std::make_shared<ConcreteIStreamListener>();
@@ -226,10 +225,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_007, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_019.
+ * @tc.number: CapturerInServerSecondUnitTest_019.
  * @tc.desc  : Test Release interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_019, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_019, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -242,10 +241,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_019, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_020.
+ * @tc.number: CapturerInServerSecondUnitTest_020.
  * @tc.desc  : Test Release interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_020, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_020, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -268,7 +267,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_020, TestSize.Level1
  * @tc.number: pdatePlaybackCaptureConfigInLegacy_021.
  * @tc.desc  : Test pdatePlaybackCaptureConfigInLegacy interface.
  */
-HWTEST_F(CapturerInServerUnitTest, UpdatePlaybackCaptureConfigInLegacy_001, TestSize.Level3)
+HWTEST_F(CapturerInServerSecondUnitTest, UpdatePlaybackCaptureConfigInLegacy_001, TestSize.Level3)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -283,10 +282,10 @@ HWTEST_F(CapturerInServerUnitTest, UpdatePlaybackCaptureConfigInLegacy_001, Test
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_021.
+ * @tc.number: CapturerInServerSecondUnitTest_021.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_021, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_021, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -301,10 +300,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_021, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_022.
+ * @tc.number: CapturerInServerSecondUnitTest_022.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_022, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_022, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -319,10 +318,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_022, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_023.
+ * @tc.number: CapturerInServerSecondUnitTest_023.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_023, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_023, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -338,10 +337,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_023, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_024.
+ * @tc.number: CapturerInServerSecondUnitTest_024.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_024, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -357,10 +356,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_024, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_025.
+ * @tc.number: CapturerInServerSecondUnitTest_025.
  * @tc.desc  : Test GetAudioTime interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_025, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_025, TestSize.Level1)
 {
     uint64_t framePos;
     uint64_t timestamp;
@@ -375,10 +374,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_025, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_026.
+ * @tc.number: CapturerInServerSecondUnitTest_026.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_026, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_026, TestSize.Level1)
 {
     size_t targetSize = 0;
     AudioProcessConfig processConfig;
@@ -394,10 +393,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_026, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_027.
+ * @tc.number: CapturerInServerSecondUnitTest_027.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_027, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_027, TestSize.Level1)
 {
     size_t targetSize = 0;
     AudioProcessConfig processConfig;
@@ -413,10 +412,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_027, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_028.
+ * @tc.number: CapturerInServerSecondUnitTest_028.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_028, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_028, TestSize.Level1)
 {
     size_t targetSize = 0;
     AudioProcessConfig processConfig;
@@ -432,10 +431,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_028, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_029.
+ * @tc.number: CapturerInServerSecondUnitTest_029.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_029, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_029, TestSize.Level1)
 {
     size_t targetSize = 0;
     AudioProcessConfig processConfig;
@@ -451,10 +450,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_029, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_030.
+ * @tc.number: CapturerInServerSecondUnitTest_030.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_030, TestSize.Level1)
 {
     size_t cacheSize = 960;
     size_t targetSize = 0;
@@ -473,7 +472,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_030, TestSize.Level1
  * @tc.number: DrainAudioBuffer_001.
  * @tc.desc  : Test DrainAudioBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, DrainAudioBuffer_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, DrainAudioBuffer_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -488,7 +487,7 @@ HWTEST_F(CapturerInServerUnitTest, DrainAudioBuffer_001, TestSize.Level1)
  * @tc.number: ResolveBuffer_001.
  * @tc.desc  : Test ResolveBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, ResolveBuffer_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, ResolveBuffer_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -504,7 +503,7 @@ HWTEST_F(CapturerInServerUnitTest, ResolveBuffer_001, TestSize.Level1)
  * @tc.number: OnReadData_001.
  * @tc.desc  : Test OnReadData interface.
  */
-HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, OnReadData_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -520,7 +519,7 @@ HWTEST_F(CapturerInServerUnitTest, OnReadData_001, TestSize.Level1)
  * @tc.number: HandleOperationFlushed_001.
  * @tc.desc  : Test HandleOperationFlushed interface.
  */
-HWTEST_F(CapturerInServerUnitTest, HandleOperationFlushed_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, HandleOperationFlushed_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -548,7 +547,7 @@ HWTEST_F(CapturerInServerUnitTest, HandleOperationFlushed_001, TestSize.Level1)
  * @tc.number: GetLastAudioDuration_001.
  * @tc.desc  : Test GetLastAudioDuration interface.
  */
-HWTEST_F(CapturerInServerUnitTest, GetLastAudioDuration_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, GetLastAudioDuration_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -567,10 +566,10 @@ HWTEST_F(CapturerInServerUnitTest, GetLastAudioDuration_001, TestSize.Level1)
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_033.
+ * @tc.number: CapturerInServerSecondUnitTest_033.
  * @tc.desc  : Test GetAudioTime interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_033, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_033, TestSize.Level1)
 {
     uint32_t totalSizeInFrame = 10;
     uint32_t spanSizeInFrame = 10;
@@ -617,10 +616,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_033, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_034
+ * @tc.number: CapturerInServerSecondUnitTest_034
  * @tc.desc  : Test ConfigServerBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_034, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_034, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
@@ -638,10 +637,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_034, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_035
+ * @tc.number: CapturerInServerSecondUnitTest_035
  * @tc.desc  : Test ConfigServerBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_035, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_035, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     processConfig.capturerInfo.sourceType = SOURCE_TYPE_WAKEUP;
@@ -659,10 +658,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_035, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_037.
+ * @tc.number: CapturerInServerSecondUnitTest_037.
  * @tc.desc  : Test TurnOnMicIndicator interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_037, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
     std::weak_ptr<IStreamListener> streamListener;
@@ -682,10 +681,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_037, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_038.
+ * @tc.number: CapturerInServerSecondUnitTest_038.
  * @tc.desc  : Test TurnOffMicIndicator interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_038, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
     std::weak_ptr<IStreamListener> streamListener;
@@ -704,10 +703,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_038, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_040.
+ * @tc.number: CapturerInServerSecondUnitTest_040.
  * @tc.desc  : Test Release interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_040, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_040, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -723,10 +722,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_040, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_041.
+ * @tc.number: CapturerInServerSecondUnitTest_041.
  * @tc.desc  : Test InitCacheBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_041, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_041, TestSize.Level1)
 {
     size_t targetSize = 17 * 1024 * 1024;
     size_t cacheSize = 960;
@@ -742,10 +741,10 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_041, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_042.
+ * @tc.number: CapturerInServerSecondUnitTest_042.
  * @tc.desc  : Test GetAudioTime interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_042, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, CapturerInServerSecondUnitTest_042, TestSize.Level1)
 {
     uint32_t totalSizeInFrame = 10;
     uint32_t spanSizeInFrame = 10;
@@ -771,7 +770,7 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_042, TestSize.Level1
  * @tc.number: ConfigServerBuffer_001.
  * @tc.desc  : Test ConfigServerBuffer interface.
  */
-HWTEST_F(CapturerInServerUnitTest, ConfigServerBuffer_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, ConfigServerBuffer_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -793,7 +792,7 @@ HWTEST_F(CapturerInServerUnitTest, ConfigServerBuffer_001, TestSize.Level1)
  * @tc.number: OnStatusUpdate_001.
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_001, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, OnStatusUpdate_001, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -811,7 +810,7 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_001, TestSize.Level1)
  * @tc.number: OnStatusUpdate_002
  * @tc.desc  : Test OnStatusUpdate interface.
  */
-HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
+HWTEST_F(CapturerInServerSecondUnitTest, OnStatusUpdate_002, TestSize.Level1)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -829,7 +828,7 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
  * @tc.number: StopSession_001
  * @tc.desc  : Test StopSession interface.
  */
-HWTEST_F(CapturerInServerUnitTest, StopSession_001, TestSize.Level3)
+HWTEST_F(CapturerInServerSecondUnitTest, StopSession_001, TestSize.Level3)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
@@ -851,7 +850,7 @@ HWTEST_F(CapturerInServerUnitTest, StopSession_001, TestSize.Level3)
  * @tc.number: ResolveBufferBaseAndGetServerSpanSize_001
  * @tc.desc  : Test ResolveBufferBaseAndGetServerSpanSize interface.
  */
-HWTEST_F(CapturerInServerUnitTest, ResolveBufferBaseAndGetServerSpanSize_001, TestSize.Level3)
+HWTEST_F(CapturerInServerSecondUnitTest, ResolveBufferBaseAndGetServerSpanSize_001, TestSize.Level3)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
