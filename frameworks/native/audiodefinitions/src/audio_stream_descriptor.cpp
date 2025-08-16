@@ -41,11 +41,21 @@ static const char *StreamStatusToString(AudioStreamStatus status)
     }
 }
 
-AudioStreamDescriptor::AudioStreamDescriptor()
+AudioStreamDescriptor::AudioStreamDescriptor(
+    AudioStreamInfo streamInfo, AudioRendererInfo rendererInfo, AppInfo appInfo) :
+    streamInfo_(streamInfo),
+    audioMode_(AUDIO_MODE_PLAYBACK),
+    rendererInfo_(rendererInfo),
+    appInfo_(appInfo)
 {
 }
 
-AudioStreamDescriptor::~AudioStreamDescriptor()
+AudioStreamDescriptor::AudioStreamDescriptor(
+    AudioStreamInfo streamInfo, AudioCapturerInfo capturerInfo, AppInfo appInfo) :
+    streamInfo_(streamInfo),
+    audioMode_(AUDIO_MODE_RECORD),
+    capturerInfo_(capturerInfo),
+    appInfo_(appInfo)
 {
 }
 
@@ -55,6 +65,7 @@ bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
         parcel.WriteUint32(audioMode_) &&
         parcel.WriteUint32(audioFlag_) &&
         parcel.WriteUint32(routeFlag_) &&
+        parcel.WriteUint32(oldRouteFlag_) &&
         parcel.WriteInt64(createTimeStamp_) &&
         parcel.WriteInt64(startTimeStamp_) &&
         rendererInfo_.Marshalling(parcel) &&
@@ -82,6 +93,7 @@ AudioStreamDescriptor *AudioStreamDescriptor::Unmarshalling(Parcel &parcel)
     info->audioMode_ = static_cast<AudioMode>(parcel.ReadUint32());
     info->audioFlag_ = static_cast<AudioFlag>(parcel.ReadUint32());
     info->routeFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
+    info->oldRouteFlag_ = static_cast<uint32_t>(parcel.ReadUint32());
     info->createTimeStamp_ = parcel.ReadInt64();
     info->startTimeStamp_ = parcel.ReadInt64();
     info->rendererInfo_.UnmarshallingSelf(parcel);
@@ -120,8 +132,7 @@ bool AudioStreamDescriptor::WriteDeviceDescVectorToParcel(
 void AudioStreamDescriptor::UnmarshallingDeviceDescVector(
     Parcel &parcel, std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
-    int32_t size = 0;
-    parcel.ReadInt32(size);
+    int32_t size = parcel.ReadInt32();
     if (size == -1 || size > MAX_STREAM_DESCRIPTORS_SIZE) {
         AUDIO_ERR_LOG("Invalid vector size");
         return;
@@ -165,7 +176,8 @@ void AudioStreamDescriptor::DumpCommonAttrs(std::string &dumpString)
         streamInfo_.samplingRate, streamInfo_.channels, streamInfo_.channelLayout,
         streamInfo_.format, streamInfo_.encoding);
 
-    AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x\n", audioFlag_, routeFlag_);
+    AppendFormat(dumpString, "    - AudioFlag: 0x%x RouteFlag: 0x%x OldRouteFlag: 0x%x\n",
+        audioFlag_, routeFlag_, oldRouteFlag_);
     AppendFormat(dumpString, "    - CreateTimestamp: %" PRId64"\n", createTimeStamp_);
     AppendFormat(dumpString, "    - StartTimestamp: %" PRId64"\n", startTimeStamp_);
 }
@@ -223,7 +235,7 @@ std::string AudioStreamDescriptor::GetDeviceInfo(std::shared_ptr<AudioDeviceDesc
     out.append(":" + std::to_string(static_cast<uint32_t>(desc->deviceId_)));
     return out + "]";
 }
-
+ 
 std::string AudioStreamDescriptor::GetNewDevicesInfo()
 {
     std::string out = "";
@@ -233,5 +245,14 @@ std::string AudioStreamDescriptor::GetNewDevicesInfo()
     }
     return out;
 }
+
+void AudioStreamDescriptor::ResetToNormalRoute(bool updateRoute)
+{
+    if (updateRoute) {
+        oldRouteFlag_ = routeFlag_;
+    }
+    routeFlag_ = (IsPlayback() ? AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL);
+}
+
 } // AudioStandard
 } // namespace OHOS
