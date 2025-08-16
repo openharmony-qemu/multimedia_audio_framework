@@ -69,7 +69,7 @@ void FuzzTestDump()
     testModule.Dump(fuzzStr);
 }
 
-std::vector<TestPtr> g_testPtrs = {
+vector<TestPtr> g_testPtrs = {
     FuzzTestGetOffloadSessionId,
     FuzzTestSetOffloadStatus,
     FuzzTestUnsetOffloadStatus,

@@ -48,6 +48,8 @@ public:
 
     AudioModuleInfo moduleInfo_ = {};
 
+    AudioStreamInfo audioStreamInfo_ = {};
+
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
 
     bool softLinkFlag_ = false;
@@ -117,6 +119,8 @@ public:
     void AddStream(std::shared_ptr<AudioStreamDescriptor> stream);
 
     void RemoveStream(uint32_t sessionId);
+
+    void InitAudioStreamInfo();
 
 private:
     void DumpCommonAttrs(std::string &dumpString);

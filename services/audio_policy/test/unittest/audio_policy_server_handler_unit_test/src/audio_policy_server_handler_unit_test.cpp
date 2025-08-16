@@ -838,8 +838,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::MICROPHONE_BLOCKED;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 

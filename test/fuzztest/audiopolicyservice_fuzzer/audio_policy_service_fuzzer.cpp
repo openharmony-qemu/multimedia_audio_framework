@@ -43,7 +43,7 @@ const uint32_t LIMIT_TWO = 30;
 const uint32_t LIMIT_THREE = 60;
 const uint32_t LIMIT_FOUR = static_cast<uint32_t>(AudioPolicyInterfaceCode::AUDIO_POLICY_MANAGER_CODE_MAX);
 bool g_hasServerInit = false;
-const uint8_t TESTSIZE = 73;
+const uint8_t TESTSIZE = 70;
 typedef void (*TestPtr)(const uint8_t *, size_t);
 
 static const uint8_t* RAW_DATA = nullptr;

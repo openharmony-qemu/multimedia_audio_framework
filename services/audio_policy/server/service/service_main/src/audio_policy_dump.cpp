@@ -215,12 +215,7 @@ void AudioPolicyDump::GetOffloadStatusDump(std::string &dumpString)
 {
     dumpString += "\nOffload status:";
     dumpString += "\nA2DP offload\n";
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        AppendFormat(dumpString, " - A2DP deviceType: %d\n", dev);
-        AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
-    } else {
-        AppendFormat(dumpString, " - current device is not A2DP\n");
-    }
+    AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     AppendFormat(dumpString, "\n");
 }
 

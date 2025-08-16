@@ -16,8 +16,9 @@
 #define FUZZ_UTILS_H
 
 #include <cstdint>
+#include <vector>
 #include <securec.h>
-#include "audio_log.h"
+#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {

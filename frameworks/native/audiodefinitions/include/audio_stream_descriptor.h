@@ -35,7 +35,7 @@ enum AudioStreamAction : uint32_t {
 
 class AudioStreamDescriptor : public Parcelable {
 public:
-    AudioStreamInfo streamInfo_ = {};
+    AudioStreamInfo streamInfo_;
     AudioMode audioMode_ = AUDIO_MODE_PLAYBACK;
     AudioFlag audioFlag_ = AUDIO_FLAG_NONE;
     uint32_t routeFlag_ = AUDIO_FLAG_NONE;

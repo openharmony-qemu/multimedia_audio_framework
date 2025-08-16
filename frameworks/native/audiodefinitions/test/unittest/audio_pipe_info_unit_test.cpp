@@ -207,5 +207,17 @@ HWTEST_F(AudioPipeInfoUnitTest, StreamOperation_001, TestSize.Level2)
     EXPECT_EQ(false, testOutputPipe_->ContainStream(stream->GetSessionId()));
 }
 
+/**
+ * @tc.name   : AudioPipeInfo_StreamOperation_002
+ * @tc.number : StreamOperation_002
+ * @tc.desc   : Test stream operation funcs by default output pipe in abnormal situations
+ */
+HWTEST_F(AudioPipeInfoUnitTest, StreamOperation_002, TestSize.Level4)
+{
+    auto stream = AudioDefinitionsUnitTestUtil::GenerateCommonStream(AUDIO_MODE_PLAYBACK);
+    testOutputPipe_->RemoveStream(stream->GetSessionId());
+    EXPECT_EQ(false, testOutputPipe_->ContainStream(stream->GetSessionId()));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS
