@@ -136,7 +136,6 @@ void AudioPipeManager::RemoveClient(uint32_t sessionId)
 const std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeManager::GetPipeList()
 {
     std::shared_lock<std::shared_mutex> pLock(pipeListLock_);
-    AUDIO_INFO_LOG("List size: %{public}zu", curPipeList_.size());
     return curPipeList_;
 }
 
