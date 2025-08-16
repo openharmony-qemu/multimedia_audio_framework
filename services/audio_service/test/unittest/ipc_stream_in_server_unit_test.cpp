@@ -2151,7 +2151,7 @@ HWTEST(IpcStreamInServerUnitTest, SetSilentModeAndMixWithOthers_001, TestSize.Le
  * @tc.name  : Test unsetOffloadMode API
  * @tc.type  : FUNC
  * @tc.number: UnsetOffloadMode_001
- * @tc.desc  : Test UnsetOffloadMode interface. 
+ * @tc.desc  : Test UnsetOffloadMode interface.
  */
 HWTEST(IpcStreamInServerUnitTest, UnsetOffloadMode_001, TestSize.Level3)
 {
@@ -2163,6 +2163,225 @@ HWTEST(IpcStreamInServerUnitTest, UnsetOffloadMode_001, TestSize.Level3)
 
     auto ret = ipcStreamInServerRet.UnsetOffloadMode();
     EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test Drain API
+ * @tc.type  : FUNC
+ * @tc.number: Drain_001
+ * @tc.desc  : Test Drain interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, Drain_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    bool stopFlag = true;
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto result = ipcStreamInServerRet.Drain(stopFlag);
+    EXPECT_EQ(result, ERR_ILLEGAL_STATE);
+}
+
+/**
+ * @tc.name  : Test UpdatePlaybackCaptureConfig API
+ * @tc.type  : FUNC
+ * @tc.number: UpdatePlaybackCaptureConfig_001
+ * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, UpdatePlaybackCaptureConfig_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    AudioPlaybackCaptureConfig config;
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto ret = ipcStreamInServerRet.UpdatePlaybackCaptureConfig(config);
+    EXPECT_EQ(ret, ERR_INVALID_OPERATION);
+}
+
+/**
+ * @tc.name  : Test GetSpeedPosition API
+ * @tc.type  : FUNC
+ * @tc.number: GetSpeedPosition_001
+ * @tc.desc  : Test GetSpeedPosition interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, GetSpeedPosition_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+
+    uint64_t framePos = 0;
+    uint64_t timestamp = 0;
+    uint64_t latency = 0;
+    int32_t base = 0;
+
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    auto ret = ipcStreamInServerRet.GetSpeedPosition(framePos, timestamp, latency, base);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetOffloadApproximatelyCacheTime API
+ * @tc.type  : FUNC
+ * @tc.number: GetOffloadApproximatelyCacheTime_001
+ * @tc.desc  : Test GetOffloadApproximatelyCacheTime interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, GetOffloadApproximatelyCacheTime_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    uint64_t timestampRet = EFFECT_NONE;
+    uint64_t paWriteIndexRet = EFFECT_NONE;
+    uint64_t cacheTimeDspRet = EFFECT_NONE;
+    uint64_t cacheTimePaRet = EFFECT_NONE;
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto ret1 = ipcStreamInServerRet.GetOffloadApproximatelyCacheTime(timestampRet, paWriteIndexRet,
+        cacheTimeDspRet, cacheTimePaRet);
+    EXPECT_EQ(ret1, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test UpdateSpatializationState API
+ * @tc.type  : FUNC
+ * @tc.number: UpdateSpatializationState_001
+ * @tc.desc  : Test UpdateSpatializationState interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, UpdateSpatializationState_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    bool spatializationEnabledRet = false;
+    bool headTrackingEnabledRet = false;
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto ret = ipcStreamInServerRet.UpdateSpatializationState(spatializationEnabledRet, headTrackingEnabledRet);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetSourceDuration API
+ * @tc.type  : FUNC
+ * @tc.number: SetSourceDuration_001
+ * @tc.desc  : Test SetDefaultOutputDevice interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetSourceDuration_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    ipcStreamInServerRet.rendererInServer_ = nullptr;
+    int64_t duration = 0;
+    auto result = ipcStreamInServerRet.SetSourceDuration(duration);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetOffloadDataCallbackState API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadDataCallbackState_001
+ * @tc.desc  : Test SetOffloadDataCallbackState interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetOffloadDataCallbackState_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    int64_t state = 0;
+    auto result = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetOffloadDataCallbackState API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadDataCallbackState_001
+ * @tc.desc  : Test SetOffloadDataCallbackState interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetOffloadDataCallbackState_002, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    ipcStreamInServerRet.rendererInServer_ = nullptr;
+
+    int64_t state = 0;
+    auto result = ipcStreamInServerRet.SetOffloadDataCallbackState(state);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test GetRate API
+ * @tc.type  : FUNC
+ * @tc.number: GetRate_001
+ * @tc.desc  : Test GetRate interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, GetRate_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_RECORD;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t rateRet = 0;
+
+    auto ret = ipcStreamInServerRet.GetRate(rateRet);
+    EXPECT_EQ(ret, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test SetAudioHapticsSyncId API
+ * @tc.type  : FUNC
+ * @tc.number: SetAudioHapticsSyncId_001
+ * @tc.desc  : Test SetAudioHapticsSyncId interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, SetAudioHapticsSyncId_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    int32_t syncId = 0;
+
+    ipcStreamInServerRet.mode_ = AUDIO_MODE_RECORD;
+    ipcStreamInServerRet.capturerInServer_ = std::make_shared<CapturerInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+    int32_t result = ipcStreamInServerRet.SetAudioHapticsSyncId(syncId);
+    EXPECT_EQ(result, ERR_OPERATION_FAILED);
+}
+
+/**
+ * @tc.name  : Test RegisterThreadPriority API
+ * @tc.type  : FUNC
+ * @tc.number: RegisterThreadPriority_001
+ * @tc.desc  : Test RegisterThreadPriority interface.
+ */
+HWTEST(IpcStreamInServerUnitTest, RegisterThreadPriority_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet;
+    AudioMode modeRet = AUDIO_MODE_PLAYBACK;
+    IpcStreamInServer ipcStreamInServerRet(configRet, modeRet);
+    pid_t tidRet = 0;
+    std::string clientBundleNameRet;
+    ipcStreamInServerRet.rendererInServer_ = std::make_shared<RendererInServer>(ipcStreamInServerRet.config_,
+        ipcStreamInServerRet.streamListenerHolder_);
+
+    auto ret = ipcStreamInServerRet.RegisterThreadPriority(tidRet, clientBundleNameRet, METHOD_START);
+    EXPECT_EQ(ret, SUCCESS);
 }
 }
 }
