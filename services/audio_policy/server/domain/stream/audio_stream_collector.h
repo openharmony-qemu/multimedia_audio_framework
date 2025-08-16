@@ -81,7 +81,7 @@ public:
     bool ExistStreamForPipe(AudioPipeType pipeType);
     int32_t GetRendererDeviceInfo(const int32_t sessionId, AudioDeviceDescriptor &outputDeviceInfo);
 
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& GetConcurrencyMap();
+    ConcurrencyAction GetConcurrencyAction(const AudioPipeType existingPipe, const AudioPipeType commingPipe);
     void ResetRendererStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     void ResetCapturerStreamDeviceInfo(const AudioDeviceDescriptor& updatedDesc);
     StreamUsage GetRunningStreamUsageNoUltrasonic();

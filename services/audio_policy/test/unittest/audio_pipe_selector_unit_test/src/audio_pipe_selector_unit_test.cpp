@@ -404,12 +404,12 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdataDeviceStreamInfo_001
- * @tc.desc: Test UpdataDeviceStreamInfo
+ * @tc.name: UpdateDeviceStreamInfo_001
+ * @tc.desc: Test UpdateDeviceStreamInfo
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateDeviceStreamInfo_001, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
 
@@ -418,24 +418,24 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     // test empty
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     std::shared_ptr<AudioDeviceDescriptor> temp = nullptr;
     streamDesc->newDeviceDescs_.push_back(temp);
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     streamDesc->newDeviceDescs_.front() = std::make_shared<AudioDeviceDescriptor>();
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     // test nullptr
     streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
     streamPropInfo->sampleRate_ = static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000);
     streamPropInfo->channels_ = AudioChannel::STEREO;
 
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     EXPECT_EQ(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().format, streamPropInfo->format_);
     EXPECT_EQ(*(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().samplingRate.rbegin()),
@@ -509,29 +509,29 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_002, TestSize.Level4)
 }
 
 /**
- * @tc.name: IncomingConcurrency_001
- * @tc.desc: Test IncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
+ * @tc.name: CheckAndHandleIncomingConcurrency_001
+ * @tc.desc: Test CheckAndHandleIncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
  *           && stream->audioMode_ == AUDIO_MODE_RECORD.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeSelectorUnitTest, IncomingConcurrency_001, TestSize.Level4)
+HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleIncomingConcurrency_001, TestSize.Level4)
 {
     std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioStreamDescriptor> cmpStream = std::make_shared<AudioStreamDescriptor>();
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
     stream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
     cmpStream->audioMode_ = AUDIO_MODE_PLAYBACK;
     stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
     stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
     EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
 }
 

@@ -314,25 +314,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_012, TestSize.Lev
 
 /**
 * @tc.name  : Test AudioPolicyService.
-* @tc.number: AudioPolicyServiceTest_013
-* @tc.desc  : Test DynamicUnloadModule interfaces.
-*/
-HWTEST_F(AudioPolicyServiceExtUnitTest, AudioPolicyServiceTest_013, TestSize.Level1)
-{
-    AudioPipeType pipeType;
-    pipeType = PIPE_TYPE_OFFLOAD;
-    auto ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-    pipeType = PIPE_TYPE_MULTICHANNEL;
-    ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(ERROR, ret);
-    pipeType = PIPE_TYPE_HIGHRESOLUTION;
-    ret = AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-    EXPECT_EQ(SUCCESS, ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyService.
 * @tc.number: AudioPolicyServiceTest_014
 * @tc.desc  : Test RegisterBluetoothListener interfaces.
 */

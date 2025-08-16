@@ -1001,9 +1001,6 @@ int32_t AudioRendererPrivate::CheckAndRestoreAudioRenderer(std::string callingFu
         }
         // Check if split stream. If true, fetch output device and return.
         CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
-        // Check if continue to switch after some concede operation.
-        CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-            true, "No need for switch");
         oldStream = audioStream_;
     }
     // ahead join callbackLoop and do not hold rendererMutex_ when waiting for callback
@@ -2294,32 +2291,6 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
 
     isFastRenderer_ = IAudioStream::IsFastStreamClass(targetClass);
     return switchResult;
-}
-
-bool AudioRendererPrivate::ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo)
-{
-    CHECK_AND_RETURN_RET(restoreInfo.restoreReason == STREAM_CONCEDED, true);
-    targetClass = IAudioStream::PA_STREAM;
-    uint32_t sessionId = sessionID_;
-    GetAudioStreamIdInner(sessionId);
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_OUT;
-    audioStream_->GetAudioPipeType(pipeType);
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, rendererInfo_.pipeType);
-    rendererInfo_.pipeType = PIPE_TYPE_NORMAL_OUT;
-    rendererInfo_.isOffloadAllowed = false;
-    audioStream_->SetRendererInfo(rendererInfo_);
-    if (pipeType == PIPE_TYPE_OFFLOAD) {
-        UnsetOffloadModeInner();
-        AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, PIPE_TYPE_NORMAL_OUT);
-        audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-        return false;
-    }
-    if ((pipeType == PIPE_TYPE_LOWLATENCY_OUT && audioStream_->GetStreamClass() != IAudioStream::PA_STREAM) ||
-        pipeType == PIPE_TYPE_DIRECT_MUSIC) {
-        return true;
-    }
-    audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-    return false;
 }
 
 bool AudioRendererPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)

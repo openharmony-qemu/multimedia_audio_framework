@@ -231,18 +231,6 @@ void SetCallDeviceActiveFuzzTest()
     }
 }
 
-void CheckActiveOutputDeviceSupportOffloadFuzzTest()
-{
-    auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    DeviceType deviceType = DeviceTypeVec[deviceTypeCount];
-    uint32_t roleCount = GetData<uint32_t>() % DeviceRoleVec.size();
-    DeviceRole role = DeviceRoleVec[roleCount];
-    AudioDeviceDescriptor audioDeviceDescriptor(deviceType, role);
-    audioActiveDevice->SetCurrentOutputDevice(audioDeviceDescriptor);
-    audioActiveDevice->CheckActiveOutputDeviceSupportOffload();
-}
-
 void IsDirectSupportedDeviceFuzzTest()
 {
     auto audioActiveDevice = std::make_shared<AudioActiveDevice>();
@@ -394,7 +382,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleNegtiveBtFuzzTest,
     SetDeviceActiveFuzzTest,
     SetCallDeviceActiveFuzzTest,
-    CheckActiveOutputDeviceSupportOffloadFuzzTest,
     IsDirectSupportedDeviceFuzzTest,
     IsDeviceActiveFuzzTest,
     AudioActiveDeviceGetCurrentOutputDeviceCategoryFuzzTest,

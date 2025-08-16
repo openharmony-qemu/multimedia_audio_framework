@@ -53,7 +53,6 @@ public:
     void OffloadStreamReleaseCheck(uint32_t sessionId);
     void HandlePowerStateChanged(PowerMgr::PowerState state);
     void ResetOffloadMode(int32_t sessionId);
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     void RemoteOffloadStreamRelease(uint32_t sessionId);
     bool CheckStreamMultichannelMode(const int64_t activateSessionId);
     int32_t MoveToOutputDevice(uint32_t sessionId, std::string portName);
@@ -77,7 +76,6 @@ private:
     bool CheckStreamOffloadMode(int64_t activateSessionId, AudioStreamType streamType);
     bool CheckSpatializationAndEffectState();
     void SetOffloadMode();
-    int32_t MoveToNewPipeInner(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t SwitchToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
     int32_t LoadOffloadModule();
     int32_t UnloadOffloadModule();

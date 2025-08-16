@@ -30,8 +30,6 @@
 #include "audio_errors.h"
 #include "audio_device_manager.h"
 #include "audio_affinity_manager.h"
-#include "audio_policy_manager_factory.h"
-
 
 #include "audio_a2dp_offload_flag.h"
 #include "audio_a2dp_device.h"
@@ -40,6 +38,8 @@
 namespace OHOS {
 namespace AudioStandard {
 
+using InternalDeviceType = DeviceType;
+
 class AudioActiveDevice {
 public:
     static AudioActiveDevice& GetInstance()
@@ -47,7 +47,6 @@ public:
         static AudioActiveDevice instance;
         return instance;
     }
-    bool CheckActiveOutputDeviceSupportOffload();
     bool IsDirectSupportedDevice();
     void NotifyUserSelectionEventToBt(std::shared_ptr<AudioDeviceDescriptor> audioDeviceDescriptor,
         StreamUsage streamUsage = STREAM_USAGE_UNKNOWN);
@@ -86,11 +85,10 @@ public:
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs);
     void UpdateStreamDeviceMap(std::string source);
 private:
-    AudioActiveDevice() : audioPolicyManager_(AudioPolicyManagerFactory::GetAudioPolicyManager()),
+    AudioActiveDevice() :
         audioDeviceManager_(AudioDeviceManager::GetAudioDeviceManager()),
         audioAffinityManager_(AudioAffinityManager::GetAudioAffinityManager()),
         audioA2dpDevice_(AudioA2dpDevice::GetInstance()),
-        audioIOHandleMap_(AudioIOHandleMap::GetInstance()),
         audioA2dpOffloadFlag_(AudioA2dpOffloadFlag::GetInstance()) {}
     ~AudioActiveDevice() {}
     void WriteOutputRouteChangeEvent(std::shared_ptr<AudioDeviceDescriptor> &desc,
@@ -109,11 +107,9 @@ private:
     std::unordered_map<AudioStreamType, std::shared_ptr<AudioDeviceDescriptor>> streamTypeDeviceMap_;
     std::unordered_map<StreamUsage, std::shared_ptr<AudioDeviceDescriptor>> streamUsageDeviceMap_;
 
-    IAudioPolicyInterface& audioPolicyManager_;
     AudioDeviceManager &audioDeviceManager_;
     AudioAffinityManager &audioAffinityManager_;
     AudioA2dpDevice& audioA2dpDevice_;
-    AudioIOHandleMap& audioIOHandleMap_;
     AudioA2dpOffloadFlag& audioA2dpOffloadFlag_;
 };
 

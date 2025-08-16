@@ -35,14 +35,15 @@ public:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
 
 private:
-    void UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    void UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
         std::shared_ptr<PipeStreamPropInfo> streamPropInfo);
     void ScanPipeListForStreamDesc(std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
         std::shared_ptr<AudioStreamDescriptor> streamDesc);
-    bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
-        std::shared_ptr<AudioStreamDescriptor> cmpStream);
-    void IncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
-            std::shared_ptr<AudioStreamDescriptor> cmpStream);
+    bool ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream,
+        std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove);
+    void CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
+        std::shared_ptr<AudioStreamDescriptor> incomingStream);
     uint32_t GetRouteFlagByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     std::string GetAdapterNameByStreamDesc(std::shared_ptr<AudioStreamDescriptor> streamDesc);
     void ConvertStreamDescToPipeInfo(std::shared_ptr<AudioStreamDescriptor> streamDesc,
@@ -59,6 +60,9 @@ private:
         std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void DecidePipesAndStreamAction(std::vector<std::shared_ptr<AudioPipeInfo>> &newPipeInfoList,
         std::map<uint32_t, std::shared_ptr<AudioPipeInfo>> streamDescToOldPipeInfo);
+    void MoveStreamsToNormalPipes(std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+        std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList);
+
     AudioPolicyConfigManager& configManager_;
 };
 } // namespace AudioStandard

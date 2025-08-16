@@ -589,8 +589,6 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback();
 
-    int32_t MoveToNewPipe(const uint32_t sessionId, const AudioPipeType pipeType);
-
     void ResetClientTrackerStubMap();
 
     void RemoveClientTrackerStub(int32_t sessionId);

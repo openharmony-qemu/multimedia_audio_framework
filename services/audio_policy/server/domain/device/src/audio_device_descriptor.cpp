@@ -481,6 +481,11 @@ bool AudioDeviceDescriptor::IsDistributedSpeaker() const
     return deviceType_ == DEVICE_TYPE_SPEAKER && networkId_ != "LocalDevice";
 }
 
+bool AudioDeviceDescriptor::IsRemote() const
+{
+    return networkId_ != "LocalDevice";
+}
+
 void AudioDeviceDescriptor::Dump(std::string &dumpString)
 {
     AppendFormat(dumpString, "      - device %d: role %s type %d (%s) name: %s\n",

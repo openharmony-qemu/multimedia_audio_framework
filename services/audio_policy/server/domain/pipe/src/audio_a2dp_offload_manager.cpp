@@ -282,7 +282,7 @@ int32_t AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForAllStream(DeviceType de
     return activeSessionsSize;
 }
 
-void AudioA2dpOffloadManager::UpdateOffloadWhenActiveDeviceSwitchFromA2dp()
+void AudioA2dpOffloadManager::UpdateA2dpOffloadFlagForA2dpDeviceOut()
 {
     AUDIO_PRERELEASE_LOGI("a2dpOffloadFlag change from %{public}d to %{public}d", GetA2dpOffloadFlag(),
         NO_A2DP_DEVICE);
@@ -319,7 +319,7 @@ void AudioA2dpOffloadManager::UpdateA2dpOffloadFlag(const std::vector<Bluetooth:
         receiveOffloadFlag);
 
     if (receiveOffloadFlag == NO_A2DP_DEVICE) {
-        UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+        UpdateA2dpOffloadFlagForA2dpDeviceOut();
     } else if (receiveOffloadFlag != GetA2dpOffloadFlag()) {
         if (GetA2dpOffloadFlag() == A2DP_OFFLOAD) {
             HandleA2dpDeviceOutOffload(receiveOffloadFlag);

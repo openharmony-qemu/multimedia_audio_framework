@@ -79,7 +79,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-    UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
@@ -114,7 +114,7 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
     return selectedPipeInfoList;
 }
 
-void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
     if (streamDesc->newDeviceDescs_.empty() || streamPropInfo == nullptr || streamDesc->newDeviceDescs_.front() ==
@@ -321,7 +321,7 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
     }
 }
 
-void AudioPipeSelector::IncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
+void AudioPipeSelector::CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
     std::shared_ptr<AudioStreamDescriptor> cmpStream)
 {
     // normal, mmap or voipmmap can't concurrency, if concede existing must concede incoming
@@ -381,7 +381,7 @@ bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor
             break;
         case CONCEDE_EXISTING:
             // if concede existing, maybe need concede incomming
-            IncomingConcurrency(stream, cmpStream);
+            CheckAndHandleIncomingConcurrency(stream, cmpStream);
             isUpdate = true;
             newFlag = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
                 AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;

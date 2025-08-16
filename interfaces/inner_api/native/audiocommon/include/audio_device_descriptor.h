@@ -97,6 +97,8 @@ public:
 
     bool IsDistributedSpeaker() const;
 
+    bool IsRemote() const;
+
     DeviceType MapInternalToExternalDeviceType(int32_t apiVersion) const;
 
     DeviceStreamInfo GetDeviceStreamInfo(void) const;

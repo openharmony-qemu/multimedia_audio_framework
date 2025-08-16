@@ -79,7 +79,7 @@ public:
     void UpdateA2dpOffloadFlagForAllStream(std::unordered_map<uint32_t, bool> &sessionIDToSpatializationEnableMap,
         DeviceType deviceType = DEVICE_TYPE_NONE);
     int32_t UpdateA2dpOffloadFlagForAllStream(DeviceType deviceType = DEVICE_TYPE_NONE);
-    void UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+    void UpdateA2dpOffloadFlagForA2dpDeviceOut();
 
 private:
 #ifdef BLUETOOTH_ENABLE

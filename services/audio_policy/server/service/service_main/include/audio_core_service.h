@@ -444,8 +444,6 @@ private:
     void HandleCommonSourceOpened(std::shared_ptr<AudioPipeInfo> &pipeInfo);
     void DelayReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
     int32_t ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex, OffloadType type);
-    void CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo);
-    void ReConfigOffloadStatus(uint32_t sessionId, std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName);
     void PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,
         bool &isNeedTriggerCallback, std::string &oldSinkName, const AudioStreamDeviceChangeReasonExt reason);
     void MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
@@ -484,6 +482,11 @@ private:
     void UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInfo);
     void NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs);
     void ResetNearlinkDeviceState(const std::shared_ptr<AudioDeviceDescriptor> &deviceDesc);
+
+    // For offload
+    void CheckAndUpdateOffloadEnableForStream(
+        OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc);
+
     void WriteCapturerConcurrentEvent(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     void LogCapturerConcurrentResult(const std::unique_ptr<ConcurrentCaptureDfxResult> &result);
     bool WriteCapturerConcurrentMsg(std::shared_ptr<AudioStreamDescriptor> streamDesc,

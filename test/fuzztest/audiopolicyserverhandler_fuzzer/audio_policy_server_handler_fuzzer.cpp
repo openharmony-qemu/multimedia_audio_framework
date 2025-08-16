@@ -512,18 +512,6 @@ void HandleHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest()
     audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
     audioPolicyServerHandler_->HandleHeadTrackingEnabledChangeForAnyDeviceEvent(event);
 }
- 
-void HandlePipeStreamCleanEventFuzzTest()
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    if (audioPolicyServerHandler_ == nullptr) {
-        return;
-    }
-    AppExecFwk::InnerEvent::Pointer event =
-        AppExecFwk::InnerEvent::Get(AudioPolicyServerHandler::EventAudioServerCmd::NN_STATE_CHANGE, 0);
-    audioPolicyServerHandler_->SetClientCallbacksEnable(CallbackChange::CALLBACK_SET_MICROPHONE_BLOCKED, false);
-    audioPolicyServerHandler_->HandlePipeStreamCleanEvent(event);
-}
 
 void HandleAudioZoneEventFuzzTest()
 {
@@ -749,7 +737,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     HandleSpatializatonEnabledChangeForAnyDeviceEventFuzzTest,
     HandleSpatializatonEnabledChangeForCurrentDeviceEventFuzzTest,
     HandleHeadTrackingEnabledChangeForAnyDeviceEventFuzzTest,
-    HandlePipeStreamCleanEventFuzzTest,
     HandleAudioZoneEventFuzzTest,
     RemoveDistributedRoutingRoleChangeCbsMapFuzzTest,
     HandleAudioSessionDeactiveCallbackFuzzTest,

@@ -649,54 +649,6 @@ void UpdateRouteFuzzTest()
     audioDeviceCommon.UpdateRoute(rendererChangeInfo, outputDevices);
 }
 
-void ResetOffloadAndMchModeFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> outputDevices;
-    std::shared_ptr<AudioDeviceDescriptor> outputDevice = std::make_shared<AudioDeviceDescriptor>();
-    std::vector<std::string> networkIdList = {"", "LocalDevice"};
-    if (outputDevice == nullptr || DeviceTypeVec.size() == 0 || networkIdList.size() == 0) {
-        return;
-    }
-    uint32_t networkIdCount = GetData<uint32_t>() % networkIdList.size();
-    outputDevice->networkId_ = networkIdList[networkIdCount];
-    uint32_t deviceTypeCount = GetData<uint32_t>() % DeviceTypeVec.size();
-    outputDevice->deviceType_ = DeviceTypeVec[deviceTypeCount];
-    outputDevices.push_back(std::move(outputDevice));
-    audioDeviceCommon.ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
-}
-
-void JudgeIfLoadMchModuleFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    audioDeviceCommon.JudgeIfLoadMchModule();
-    AudioIOHandle moduleId = 0;
-    std::string moduleName = "MCH_Speaker";
-    audioDeviceCommon.audioIOHandleMap_.AddIOHandleInfo(moduleName, moduleId);
-    audioDeviceCommon.JudgeIfLoadMchModule();
-}
-
-void FetchStreamForA2dpMchStreamFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    descs.push_back(std::move(desc));
-    audioDeviceCommon.FetchStreamForA2dpMchStream(rendererChangeInfo, descs);
-}
-
-void FetchStreamForSpkMchStreamFuzzTest()
-{
-    AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
-    std::shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = std::make_shared<AudioRendererChangeInfo>();
-    vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
-    std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
-    descs.push_back(std::move(desc));
-    audioDeviceCommon.FetchStreamForSpkMchStream(rendererChangeInfo, descs);
-}
-
 void IsRingDualToneOnPrimarySpeakerFuzzTest()
 {
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
@@ -835,7 +787,6 @@ void CheckAndNotifyUserSelectedDeviceFuzzTest()
     AudioDeviceCommon& audioDeviceCommon = AudioDeviceCommon::GetInstance();
     std::shared_ptr<AudioDeviceDescriptor> desc = std::make_shared<AudioDeviceDescriptor>();
     audioDeviceCommon.CheckAndNotifyUserSelectedDevice(desc);
-    audioDeviceCommon.audioActiveDevice_.CheckActiveOutputDeviceSupportOffload();
 }
 
 void HasLowLatencyCapabilityFuzzTest()
@@ -1187,10 +1138,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     TriggerRecreateRendererStreamCallbackFuzzTest,
     IsDualStreamWhenRingDualFuzzTest,
     UpdateRouteFuzzTest,
-    ResetOffloadAndMchModeFuzzTest,
-    JudgeIfLoadMchModuleFuzzTest,
-    FetchStreamForA2dpMchStreamFuzzTest,
-    FetchStreamForSpkMchStreamFuzzTest,
     IsRingDualToneOnPrimarySpeakerFuzzTest,
     ClearRingMuteWhenCallStartFuzzTest,
     HandleDeviceChangeForFetchInputDeviceFuzzTest,

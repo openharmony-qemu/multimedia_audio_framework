@@ -180,9 +180,6 @@ void AudioPolicyServSendFuzzTest()
     audioPolicyServerHandler->SendHeadTrackingEnabledChangeEvent(false);
     audioPolicyServerHandler->SendHeadTrackingEnabledChangeForAnyDeviceEvent(selectedAudioDevice, true);
     audioPolicyServerHandler->SendHeadTrackingEnabledChangeForAnyDeviceEvent(selectedAudioDevice, false);
-
-    AudioPipeType pipeType = GetData<AudioPipeType>();
-    audioPolicyServerHandler->SendPipeStreamCleanEvent(pipeType);
 }
 
 void AudioPolicyServHandleFuzzTest()

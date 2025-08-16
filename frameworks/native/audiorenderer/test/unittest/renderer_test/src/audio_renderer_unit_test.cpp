@@ -4307,32 +4307,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
 }
 
 /**
- * @tc.name  : Test ContinueAfterConcede API.
- * @tc.number: Audio_Renderer_ContinueAfterConcede_001
- * @tc.desc  : Test ContinueAfterConcede interface.
- */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_ContinueAfterConcede_001, TestSize.Level2)
-{
-    AppInfo appInfo = {};
-    std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
-        std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
-
-    AudioStreamParams tempParams = {};
-    AudioStreamType audioStreamType = STREAM_MUSIC;
-    auto audioStream = IAudioStream::GetPlaybackStream(IAudioStream::PA_STREAM, tempParams, audioStreamType,
-        appInfo.appUid);
-    ASSERT_TRUE(audioStream != nullptr);
-    audioRendererPrivate->audioStream_ = audioStream;
-
-    RestoreInfo restoreInfo;
-    IAudioStream::StreamClass targetClass = IAudioStream::StreamClass::PA_STREAM;
-    restoreInfo.restoreReason = STREAM_CONCEDED;
-    auto ret = audioRendererPrivate->ContinueAfterConcede(targetClass, restoreInfo);
-    EXPECT_FALSE(ret);
-}
-
-/**
  * @tc.name  : Test HandleAudioInterruptWhenServerDied API.
  * @tc.number: Audio_Renderer_HandleAudioInterruptWhenServerDied_001
  * @tc.desc  : Test HandleAudioInterruptWhenServerDied interface.
