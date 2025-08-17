@@ -56,7 +56,7 @@ static constexpr int32_t VOLUME_SHIFT_NUMBER = 16; // 1 >> 16 = 65536, max volum
 static const int64_t DELAY_RESYNC_TIME = 10000000000; // 10s
 constexpr int32_t RETRY_WAIT_TIME_MS = 500; // 500ms
 constexpr int32_t MAX_RETRY_COUNT = 8;
-static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 5; // 5ms
+static constexpr int64_t FAST_WRITE_CACHE_TIMEOUT_IN_MS = 40; // 40ms
 static const uint32_t FAST_WAIT_FOR_NEXT_CB_US = 2500; // 2.5ms
 static const uint32_t VOIP_WAIT_FOR_NEXT_CB_US = 10000; // 10ms
 }
@@ -200,6 +200,8 @@ private:
     bool WaitIfBufferEmpty(const BufferDesc &bufDesc);
 
     void ExitStandByIfNeed();
+
+    bool IsRestoreNeeded();
 private:
     static constexpr int64_t MILLISECOND_PER_SECOND = 1000; // 1000ms
     static constexpr int64_t ONE_MILLISECOND_DURATION = 1000000; // 1ms
@@ -1224,6 +1226,8 @@ int32_t AudioProcessInClientInner::Pause(bool isFlush)
     startFadeout_.store(false);
     streamStatus_->store(StreamStatus::STREAM_PAUSED);
 
+    audioBuffer_->WakeFutex();
+
     lastPausedTime_ = ClockTime::GetCurNano();
 
     return SUCCESS;
@@ -1302,6 +1306,9 @@ int32_t AudioProcessInClientInner::Stop(AudioProcessStage stage)
     }
     startFadeout_.store(false);
     streamStatus_->store(StreamStatus::STREAM_STOPPED);
+
+    audioBuffer_->WakeFutex();
+
     AUDIO_INFO_LOG("Success stop proc client mode %{public}d form %{public}s.",
         processConfig_.audioMode, GetStatusInfo(oldStatus).c_str());
     return SUCCESS;
@@ -1315,6 +1322,7 @@ void AudioProcessInClientInner::JoinCallbackLoop()
         isCallbackLoopEnd_ = true; // change it with lock to break the loop
         threadStatusCV_.notify_all();
         lock.unlock(); // should call unlock before join
+        audioBuffer_->WakeFutex(IS_PRE_EXIT);
         callbackLoop_.join();
     }
 }
@@ -1345,6 +1353,9 @@ int32_t AudioProcessInClientInner::Release(bool isSwitchStream)
     }
 
     streamStatus_->store(StreamStatus::STREAM_RELEASED);
+
+    audioBuffer_->WakeFutex();
+
     AUDIO_INFO_LOG("Success release proc client mode %{public}d.", processConfig_.audioMode);
     isInited_ = false;
 
@@ -1629,10 +1640,28 @@ void AudioProcessInClientInner::DoFadeInOut(const BufferDesc &buffDesc)
     }
 }
 
+bool AudioProcessInClientInner::IsRestoreNeeded()
+{
+    RestoreStatus restoreStatus = audioBuffer_->GetRestoreStatus();
+    if (restoreStatus == NEED_RESTORE) {
+        return true;
+    }
+
+    if (restoreStatus == NEED_RESTORE_TO_NORMAL) {
+        return true;
+    }
+
+    return false;
+}
+
 bool AudioProcessInClientInner::CheckAndWaitBufferReadyForPlayback()
 {
     FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
+            return true;
+        }
+
+        if (IsRestoreNeeded()) {
             return true;
         }
 
@@ -1650,6 +1679,10 @@ bool AudioProcessInClientInner::CheckAndWaitBufferReadyForRecord()
 {
     FutexCode ret = audioBuffer_->WaitFor(FAST_WRITE_CACHE_TIMEOUT_IN_MS * AUDIO_US_PER_SECOND, [this] () {
         if (streamStatus_->load() != StreamStatus::STREAM_RUNNING) {
+            return true;
+        }
+
+        if (IsRestoreNeeded()) {
             return true;
         }
 
