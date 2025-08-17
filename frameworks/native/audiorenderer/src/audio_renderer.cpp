@@ -2261,7 +2261,7 @@ bool AudioRendererPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
             switchInfo.sessionId = switchInfo.params.originalSessionId;
             streamDesc->sessionId_ = switchInfo.params.originalSessionId;
         }
-        streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+        streamDesc->rendererInfo_.forceToNormal = true;
         streamDesc->routeFlag_ = AUDIO_FLAG_NONE;
         int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
             switchInfo.params.originalSessionId, networkId);
@@ -2932,12 +2932,12 @@ int32_t AudioRendererPrivate::HandleCreateFastStreamError(AudioStreamParams &aud
     AUDIO_INFO_LOG("Create fast Stream fail, play by normal stream.");
     IAudioStream::StreamClass streamClass = IAudioStream::PA_STREAM;
     isFastRenderer_ = false;
-    rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
 
     // Create stream desc and pipe
     std::shared_ptr<AudioStreamDescriptor> streamDesc = ConvertToStreamDescriptor(audioStreamParams);
     uint32_t flag = AUDIO_OUTPUT_FLAG_NORMAL;
     std::string networkId = LOCAL_NETWORK_ID;
+    streamDesc->rendererInfo_.forceToNormal = true;
     int32_t ret = AudioPolicyManager::GetInstance().CreateRendererClient(streamDesc, flag,
         audioStreamParams.originalSessionId, networkId);
     CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ERR_OPERATION_FAILED, "CreateRendererClient failed");

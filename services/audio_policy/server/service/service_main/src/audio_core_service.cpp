@@ -297,6 +297,13 @@ bool AudioCoreService::IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &st
 void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess)
 {
     CHECK_AND_RETURN_LOG(streamDesc, "Input param error");
+    
+    if (isCreateProcess && streamDesc->rendererInfo_.forceToNormal) {
+        AUDIO_INFO_LOG("client force create normal");
+        streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+        return;
+    }
+
     // fast/normal has done in audioRendererPrivate
     CHECK_AND_RETURN_LOG(IsForcedNormal(streamDesc) == false, "Forced normal cases");
 
