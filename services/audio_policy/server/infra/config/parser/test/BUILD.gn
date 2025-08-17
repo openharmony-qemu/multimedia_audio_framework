@@ -25,6 +25,7 @@ group("audio_policy_config_parser_unittest_packages") {
     ":audio_concurrency_parser_unit_test",
     ":audio_focus_parser_unit_test",
     ":audio_tone_parser_test",
+    ":audio_volume_parser_unit_test",
   ]
 }
 
@@ -132,6 +133,58 @@ ohos_unittest("audio_tone_parser_test") {
 
   include_dirs = [
     "./unittest/audio_tone_parser_unit_test/include",
+    "../../../../../../../interfaces/inner_api/native/audiomanager/include",
+  ]
+
+  use_exceptions = true
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-Wno-macro-redefined",
+    "-fno-access-control",
+  ]
+
+  cflags_cc = cflags
+  cflags_cc += [ "-fno-access-control" ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
+  external_deps = [
+    "bluetooth:btframework",
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "drivers_interface_audio:libaudio_proxy_5.0",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "init:libbegetutil",
+    "kv_store:distributeddata_inner",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  deps = [ "../../../../../../audio_policy:audio_policy_service_static" ]
+
+  defines = [ "FEATURE_DTMF_TONE" ]
+}
+
+ohos_unittest("audio_volume_parser_unit_test") {
+  module_out_path = module_output_path
+
+  sources = [ "./unittest/audio_volume_parser_unit_test/src/audio_volume_parser_unit_test.cpp" ]
+
+  include_dirs = [
+    "./unittest/audio_volume_parser_unit_test/include",
     "../../../../../../../interfaces/inner_api/native/audiomanager/include",
   ]
 
