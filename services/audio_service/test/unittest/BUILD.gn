@@ -1078,7 +1078,6 @@ ohos_unittest("capturer_in_server_unit_test") {
     "samgr:samgr_proxy",
     "frame_aware_sched:rtg_interface",
     "qos_manager:concurrent_task_client",
-    "googletest:gmock",
   ]
 
   defines = []

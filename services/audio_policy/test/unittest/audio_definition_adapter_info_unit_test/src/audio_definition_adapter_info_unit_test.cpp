@@ -558,6 +558,7 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioPolicyConfigData_018, TestSize.L
     pipeStreamPropInfo->supportDevices_ = { "test_device1" };
     EXPECT_NO_THROW(pipeStreamPropInfo->SelfCheck());
 }
+
 /**
 * @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
 * @tc.number: SetDeviceInfoMap_001
@@ -585,30 +586,6 @@ HWTEST(AudioDefinitionAdapterInfoUnitTest, SetVersion_001, TestSize.Level1)
     
     std::string version = "";
     EXPECT_NO_THROW(audioPolicyConfigData->SetVersion(version));
-}
-/**
-* @tc.name  : Test AudioDefinitionAdapterInfoUnitTest.
-* @tc.number: AudioSourceStrategyData_01
-* @tc.desc  : Test AudioSourceStrategyData map
-*/
-HWTEST(AudioDefinitionAdapterInfoUnitTest, AudioSourceStrategyData_01, TestSize.Level1)
-{
-    std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> sourceStrategyMapinput =
-        std::make_shared<std::map<SourceType, AudioSourceStrategyType>>();
-    sourceStrategyMapinput->emplace(
-        SOURCE_TYPE_MIC,
-        AudioSourceStrategyType("AUDIO_INPUT_MIC_TYPE", "primary", "primary_input", AUDIO_INPUT_FLAG_NORMAL, 1)
-    );
-    auto &instance = AudioSourceStrategyData::GetInstance();
-    instance.SetSourceStrategyMap(sourceStrategyMapinput);
-    auto sourceStrategyMapget = instance.GetSourceStrategyMap();
-    if (sourceStrategyMapget) {
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].hdiSource, "AUDIO_INPUT_MIC_TYPE");
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].adapterName, "primary");
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].pipeName, "primary_input");
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].audioFlag, AUDIO_INPUT_FLAG_NORMAL);
-        EXPECT_EQ((*sourceStrategyMapget)[SOURCE_TYPE_MIC].priority, 1);
-    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

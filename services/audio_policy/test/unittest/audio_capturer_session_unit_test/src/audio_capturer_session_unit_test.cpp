@@ -14,9 +14,7 @@
  */
 
 #include "audio_capturer_session_unit_test.h"
-#include "audio_capturer_session_mock_interface.h"
 
-using namespace testing;
 using namespace testing::ext;
 
 namespace OHOS {

@@ -14,16 +14,13 @@
  */
 
 #include "gtest/gtest.h"
-#include <gmock/gmock.h>
 #include "audio_errors.h"
 #include "audio_utils.h"
 #include "pa_capturer_stream_impl.h"
 #include "pa_adapter_manager.h"
 #include "capturer_in_server.h"
-#include "core_service_handler_mock_interface.h"
 
 using namespace testing::ext;
-using namespace testing;
 
 namespace OHOS {
 namespace AudioStandard {
@@ -412,8 +409,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_010, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_011, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t UID_MSDP_SA = 6699;
-    processConfig.callerUid = UID_MSDP_SA;
+    int32_t udimsdpsa = 6699;
+    processConfig.callerUid = udimsdpsa;
     std::weak_ptr<IStreamListener> streamListener;
 
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
@@ -469,8 +466,8 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_012, TestSize.Level1
 HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_013, TestSize.Level1)
 {
     AudioProcessConfig processConfig = GetInnerCapConfig();
-    int32_t UID_MSDP_SA = 6699;
-    processConfig.callerUid = UID_MSDP_SA;
+    int32_t udimsdpsa = 6699;
+    processConfig.callerUid = udimsdpsa;
     std::weak_ptr<IStreamListener> streamListener;
 
     PaAdapterManager *adapterManager = new PaAdapterManager(DUP_PLAYBACK);
