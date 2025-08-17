@@ -294,7 +294,7 @@ public:
 
     virtual bool GetSilentModeAndMixWithOthers() = 0;
 
-    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual FastStatus GetFastStatus() { return FASTSTATUS_NORMAL; };
 

@@ -91,7 +91,7 @@ public:
             SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT) override;
         int32_t ReloadCaptureSession(uint32_t sessionId, SessionOperation operation) override;
         int32_t SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionId,
-            const StreamUsage streamUsage, bool isRunning) override;
+            const StreamUsage streamUsage, bool isRunning, bool skipForce = false) override;
         std::string GetAdapterNameBySessionId(uint32_t sessionId) override;
         int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
             AudioStreamInfo &streamInfo, bool isReloadProcess = false) override;
@@ -203,7 +203,8 @@ private:
 
     // ICoreServiceProvider from EventEntry
     int32_t SetDefaultOutputDevice(
-        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
+        const DeviceType deviceType, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
+        bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo);

@@ -30,7 +30,7 @@ interface IAudioProcess {
     void Release([in] boolean isSwitchStream); // isSwitchStream = false
     void RegisterProcessCb([in] IRemoteObject object);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
-    void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
+    void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSilentModeAndMixWithOthers([in] boolean on);
     void SetSourceDuration([in] long duration);
     void SetUnderrunCount([in] unsigned int underrunCnt);

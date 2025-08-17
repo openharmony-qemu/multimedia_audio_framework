@@ -2094,10 +2094,10 @@ RestoreStatus RendererInServer::RestoreSession(RestoreInfo restoreInfo)
     return restoreStatus;
 }
 
-int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t RendererInServer::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(defaultOutputDevice, streamIndex_,
-        processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED);
+        processConfig_.rendererInfo.streamUsage, status_ == I_STATUS_STARTED, skipForce);
 }
 
 int32_t RendererInServer::SetSourceDuration(int64_t duration)
