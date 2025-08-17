@@ -75,7 +75,7 @@ public:
 
     int32_t Release(bool isSwitchStream) override;
 
-    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 

@@ -2040,7 +2040,7 @@ bool AudioRendererPrivate::SetSwitchInfo(IAudioStream::SwitchInfo info, std::sha
     audioStream->SetCapturerInfo(info.capturerInfo);
     int32_t res = audioStream->SetAudioStreamInfo(info.params, rendererProxyObj_);
     CHECK_AND_RETURN_RET_LOG(res == SUCCESS, false, "SetAudioStreamInfo failed");
-    audioStream->SetDefaultOutputDevice(info.defaultOutputDevice);
+    audioStream->SetDefaultOutputDevice(info.defaultOutputDevice, true);
     audioStream->SetRenderMode(info.renderMode);
     callbackLoopTid_ = audioStream->GetCallbackLoopTid();
     audioStream->SetAudioEffectMode(info.effectMode);

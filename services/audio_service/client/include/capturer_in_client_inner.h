@@ -197,7 +197,7 @@ public:
     bool GetOffloadEnable() override;
     bool GetSpatializationEnabled() override;
     bool GetHighResolutionEnabled() override;
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     DeviceType GetDefaultOutputDevice() override;
     FastStatus GetFastStatus() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;

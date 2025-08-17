@@ -69,10 +69,11 @@ int32_t CoreServiceHandler::ReloadCaptureSession(uint32_t sessionId, SessionOper
 }
 
 int32_t CoreServiceHandler::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(iCoreServiceProvider_ != nullptr, ERROR, "iCoreServiceProvider_ is nullptr!");
-    return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning);
+    return iCoreServiceProvider_->SetDefaultOutputDevice(defaultOutputDevice, sessionID, streamUsage, isRunning,
+        skipForce);
 }
 
 std::string CoreServiceHandler::GetAdapterNameBySessionId(uint32_t sessionId)

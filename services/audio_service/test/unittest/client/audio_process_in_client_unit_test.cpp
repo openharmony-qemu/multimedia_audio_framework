@@ -51,7 +51,7 @@ public:
     MOCK_METHOD(int32_t, RegisterThreadPriority,
         (int32_t tid, const std::string &bundleName, uint32_t method), (override));
 
-    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice), (override));
+    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice, bool skipForce), (override));
     MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
     MOCK_METHOD(int32_t, SetSourceDuration, (int64_t duration), (override));
     MOCK_METHOD(int32_t, SetUnderrunCount, (uint32_t underrunCnt), (override));

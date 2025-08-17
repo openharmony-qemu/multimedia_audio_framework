@@ -57,7 +57,7 @@ interface IIpcStream {
     void SetMute([in] boolean isMute);
     void SetDuckFactor([in] float duckFactor);
     void RegisterThreadPriority([in] int tid, [in] String bundleName, [in] unsigned int method); // BoostTriggerMethod method
-    void SetDefaultOutputDevice([in] int defaultOutputDevice); // DeviceType defaultOutputDevice
+    void SetDefaultOutputDevice([in] int defaultOutputDevice, [in] boolean skipForce); // DeviceType defaultOutputDevice
     void SetSourceDuration([in] long duration);
     void SetOffloadDataCallbackState([in] int state);
     void SetSpeed([in] float speed);

@@ -131,7 +131,7 @@ public:
     
     bool Init(const AudioProcessConfig &config, std::weak_ptr<FastAudioStream> weakStream);
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
 
     int32_t SetSilentModeAndMixWithOthers(bool on) override;
 
@@ -1732,10 +1732,10 @@ void AudioProcessInClientInner::CheckIfWakeUpTooLate(int64_t &curTime, int64_t &
     }
 }
 
-int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice)
+int32_t AudioProcessInClientInner::SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(processProxy_ != nullptr, ERR_OPERATION_FAILED, "set failed with null ipcProxy.");
-    return processProxy_->SetDefaultOutputDevice(defaultOutputDevice);
+    return processProxy_->SetDefaultOutputDevice(defaultOutputDevice, skipForce);
 }
 
 int32_t AudioProcessInClientInner::SetSilentModeAndMixWithOthers(bool on)
