@@ -20,7 +20,7 @@
 #include "audio_log.h"
 #include "audio_session_info.h"
 #include "audio_bundle_manager.h"
-#include "window_manager.h"
+#include "window_manager_lite.h"
 #include "audio_volume.h"
 #include "audio_interrupt_service.h"
 
@@ -160,7 +160,7 @@ bool StandaloneModeManager::CheckAppOnVirtualScreenByUid(const int32_t appUid)
     OHOS::Rosen::WindowInfoOption windowInfoOption = {};
     windowInfoOption.displayId = displayId_;
     std::vector<sptr<OHOS::Rosen::WindowInfo>> ogInfos = {};
-    auto ret = OHOS::Rosen::WindowManager::GetInstance().ListWindowInfo(windowInfoOption, ogInfos);
+    auto ret = OHOS::Rosen::WindowManagerLite::GetInstance().ListWindowInfo(windowInfoOption, ogInfos);
     AUDIO_INFO_LOG("ListWindowIfo size is %{public}d, ret = %{public}d",
         static_cast<int>(ogInfos.size()), ret);
     for (auto &iter : ogInfos) {

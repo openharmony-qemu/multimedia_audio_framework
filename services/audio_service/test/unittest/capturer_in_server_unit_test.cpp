@@ -694,6 +694,24 @@ HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_020, TestSize.Level1
 /**
  * @tc.name  : Test CapturerInServer.
  * @tc.type  : FUNC
+ * @tc.number: pdatePlaybackCaptureConfigInLegacy_021.
+ * @tc.desc  : Test pdatePlaybackCaptureConfigInLegacy interface.
+ */
+HWTEST_F(CapturerInServerUnitTest, UpdatePlaybackCaptureConfigInLegacy_001, TestSize.Level3)
+{
+    AudioProcessConfig processConfig;
+    std::weak_ptr<IStreamListener> streamListener;
+    AudioPlaybackCaptureConfig config;
+    processConfig.innerCapMode = MODERN_INNER_CAP;
+    processConfig.capturerInfo.sourceType = SOURCE_TYPE_PLAYBACK_CAPTURE;
+    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
+    int32_t result = capturerInServer_->UpdatePlaybackCaptureConfigInLegacy(config);
+    EXPECT_EQ(result, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test CapturerInServer.
+ * @tc.type  : FUNC
  * @tc.number: CapturerInServerUnitTest_021.
  * @tc.desc  : Test UpdatePlaybackCaptureConfig interface.
  */
@@ -1367,81 +1385,46 @@ HWTEST_F(CapturerInServerUnitTest, OnStatusUpdate_002, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test CapturerInServer.
+ * @tc.name  : Test OnStatusUpdate.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_043.
- * @tc.desc  : Test GetAudioTime interface.
+ * @tc.number: StopSession_001
+ * @tc.desc  : Test StopSession interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_043, TestSize.Level1)
+HWTEST_F(CapturerInServerUnitTest, StopSession_001, TestSize.Level3)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    ASSERT_TRUE(capturerInServer_ != nullptr);
-
-    BufferDesc dstBuffer = { nullptr, 1024 };
-    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_CALL, dstBuffer);
-    EXPECT_EQ(dstBuffer.buffer, nullptr);
+    uint32_t totalSizeInFrame = 10;
+    uint32_t spanSizeInFrame = 10;
+    uint32_t byteSizePerFrame = 10;
+ 
+    capturerInServer_->audioServerBuffer_ = std::make_shared<OHAudioBuffer>(AudioBufferHolder::AUDIO_CLIENT,
+        totalSizeInFrame, spanSizeInFrame, byteSizePerFrame);
+    auto result = capturerInServer_->StopSession();
+ 
+    EXPECT_EQ(result, SUCCESS);
 }
-
+ 
 /**
- * @tc.name  : Test CapturerInServer.
+ * @tc.name  : Test OnStatusUpdate.
  * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_044.
- * @tc.desc  : Test GetAudioTime interface.
+ * @tc.number: ResolveBufferBaseAndGetServerSpanSize_001
+ * @tc.desc  : Test ResolveBufferBaseAndGetServerSpanSize interface.
  */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_044, TestSize.Level1)
+HWTEST_F(CapturerInServerUnitTest, ResolveBufferBaseAndGetServerSpanSize_001, TestSize.Level3)
 {
     AudioProcessConfig processConfig;
     std::weak_ptr<IStreamListener> streamListener;
     auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    ASSERT_TRUE(capturerInServer_ != nullptr);
-
-    BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
-    memset_s(dstBuffer.buffer, 1024, 1, 1024);
-    auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
-    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceMuteState(100001, _))
-        .Times(1)
-        .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
-            muteState = true;
-            return SUCCESS;
-        }));
-    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
-    for (int32_t i = 0; i < 1024; i++) {
-        EXPECT_EQ(dstBuffer.buffer[i], 0);
-    }
-
-    delete[] dstBuffer.buffer;
-}
-
-/**
- * @tc.name  : Test CapturerInServer.
- * @tc.type  : FUNC
- * @tc.number: CapturerInServerUnitTest_045.
- * @tc.desc  : Test GetAudioTime interface.
- */
-HWTEST_F(CapturerInServerUnitTest, CapturerInServerUnitTest_045, TestSize.Level1)
-{
-    AudioProcessConfig processConfig;
-    std::weak_ptr<IStreamListener> streamListener;
-    auto capturerInServer_ = std::make_shared<CapturerInServer>(processConfig, streamListener);
-    ASSERT_TRUE(capturerInServer_ != nullptr);
-
-    BufferDesc dstBuffer = { new uint8_t[1024], 1024 };
-    memset_s(dstBuffer.buffer, 1024, 1, 1024);
-    auto mockCoreServiceHandler = std::make_shared<CoreServiceHandlerMockInterface>();
-    EXPECT_CALL(*(mockCoreServiceHandler), GetVoiceMuteState(100001, _))
-        .Times(1)
-        .WillOnce(Invoke([](uint32_t sessionId, bool &muteState) -> int32_t {
-            muteState = false;
-            return SUCCESS;
-        }));
-    capturerInServer_->MuteVoice(SOURCE_TYPE_VOICE_TRANSCRIPTION, dstBuffer);
-    for (int32_t i = 0; i < 1024; i++) {
-        EXPECT_EQ(dstBuffer.buffer[i], 1);
-    }
-
-    delete[] dstBuffer.buffer;
+    std::shared_ptr<OHAudioBufferBase> buffer;
+    uint32_t spanSizeInFrame = 1;
+    uint64_t engineTotalSizeInFrame = 1;
+ 
+    auto result = capturerInServer_->ResolveBufferBaseAndGetServerSpanSize(
+                    buffer, spanSizeInFrame, engineTotalSizeInFrame);
+ 
+    EXPECT_EQ(result, ERR_NOT_SUPPORTED);
 }
 } // namespace AudioStandard
 } // namespace OHOS

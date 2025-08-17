@@ -37,6 +37,8 @@ ohos_fuzztest("HpaeSinkInputNodeFuzzTest") {
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
     "-fno-access-control",
+    "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]

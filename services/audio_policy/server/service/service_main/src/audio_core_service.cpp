@@ -187,6 +187,8 @@ int32_t AudioCoreService::CreateRendererClient(
         return SUCCESS;
     }
 
+    ActivateOutputDevice(streamDesc);
+
     // Bluetooth may be inactive (paused ringtone stream at Speaker switches to A2dp)
     std::string encryptMacAddr = GetEncryptAddr(streamDesc->newDeviceDescs_.front()->macAddress_);
     int32_t bluetoothFetchResult = BluetoothDeviceFetchOutputHandle(streamDesc,

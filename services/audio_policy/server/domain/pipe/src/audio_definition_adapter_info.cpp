@@ -122,9 +122,6 @@ std::string AudioPolicyConfigData::GetVersion()
 std::shared_ptr<AdapterDeviceInfo> AudioPolicyConfigData::GetAdapterDeviceInfo(
     DeviceType type_, DeviceRole role_, const std::string &networkId_, uint32_t flags, int32_t a2dpOffloadFlag)
 {
-    AUDIO_INFO_LOG("type_:%{public}d, role_:%{public}d, networkId_:%{public}s, flags:%{public}u,"
-        "a2dpOffloadFlag: %{public}d", type_, role_, Hide(networkId_).c_str(), flags, a2dpOffloadFlag);
-
     // use primary to select device when in remote cast;
     DeviceType tempType = (type_ == DEVICE_TYPE_REMOTE_CAST ? DEVICE_TYPE_SPEAKER : type_);
     std::pair<DeviceType, DeviceRole> deviceMapKey = std::make_pair(tempType, role_);

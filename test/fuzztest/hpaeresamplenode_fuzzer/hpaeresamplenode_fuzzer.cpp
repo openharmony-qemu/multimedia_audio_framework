@@ -120,7 +120,7 @@ void HpaeResampleNodeSignalProcessFuzzTest02()
     GetTestDtsNodeInfo(dstNodeInfo);
     auto hpaeResampleNode = std::make_shared<HpaeResampleNode>(nodeInfo, dstNodeInfo);
     std::vector<HpaePcmBuffer *> inputs;
-    PcmBufferInfo pcmBufferInfo(MONO, TEST_FRAMELEN1, SAMPLE_RATE_44100);
+    PcmBufferInfo pcmBufferInfo(STEREO, TEST_FRAMELEN1, SAMPLE_RATE_48000);
     HpaePcmBuffer hpaePcmBuffer(pcmBufferInfo);
     inputs.emplace_back(&hpaePcmBuffer);
     hpaeResampleNode->SignalProcess(inputs);

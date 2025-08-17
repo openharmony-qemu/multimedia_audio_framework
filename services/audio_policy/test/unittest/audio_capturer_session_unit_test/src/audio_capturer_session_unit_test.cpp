@@ -590,270 +590,62 @@ HWTEST(AudioCapturerSessionTest, AudioCapturerSession_028, TestSize.Level1)
 
 /**
  * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_029
- * @tc.desc  : Test pipe valid
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_029, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::shared_ptr<AudioPipeInfo> incommingPipe = std::make_shared<AudioPipeInfo>();
-    incommingPipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    bool isinvalidpipe = audioCapturerSession->IsInvalidPipeRole(incommingPipe);
-    EXPECT_EQ(isinvalidpipe, true);
-
-    incommingPipe->pipeRole_ = PIPE_ROLE_NONE;
-    isinvalidpipe = audioCapturerSession->IsInvalidPipeRole(incommingPipe);
-    EXPECT_EQ(isinvalidpipe, true);
-
-    incommingPipe->pipeRole_ = PIPE_ROLE_INPUT;
-    isinvalidpipe = audioCapturerSession->IsInvalidPipeRole(incommingPipe);
-    EXPECT_EQ(isinvalidpipe, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_030
- * @tc.desc  : Test AI pipe/pipe role满足
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_030, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::shared_ptr<AudioPipeInfo> incommingPipe = std::make_shared<AudioPipeInfo>();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_AI;
-    pipeList.push_back(pipe);
-
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_031
- * @tc.desc  : Test AI pipe/pipe role不满足
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_031, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::shared_ptr<AudioPipeInfo> incommingPipe = std::make_shared<AudioPipeInfo>();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_AI;
-    pipeList.push_back(pipe);
-
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
  * @tc.number: AudioCapturerSession_032
- * @tc.desc  : Test AI pipe/管道为空
+ * @tc.desc  : Test ReloadCaptureSessionSoftLink
  */
 HWTEST(AudioCapturerSessionTest, AudioCapturerSession_032, TestSize.Level1)
 {
     auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
     EXPECT_NE(audioCapturerSession, nullptr);
+    auto pipeManager = AudioPipeManager::GetPipeManager();
+    EXPECT_NE(pipeManager, nullptr);
 
-    std::shared_ptr<AudioPipeInfo> incommingPipe = std::make_shared<AudioPipeInfo>();
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
+    auto pipeInfoOne = std::make_shared<AudioPipeInfo>();
+    pipeInfoOne->name_ = "test_output_one";
+    pipeInfoOne->adapterName_ = "test_one";
+    pipeManager->AddAudioPipeInfo(pipeInfoOne);
 
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleIndependentInputpipe(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-}
+    auto pipeInfoTwo = std::make_shared<AudioPipeInfo>();
+    pipeInfoTwo->name_ = "test_output_two";
+    pipeInfoTwo->adapterName_ = "test_two";
+    pipeInfoTwo->pipeRole_ = AudioPipeRole::PIPE_ROLE_OUTPUT;
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptor = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptor->sessionId_ = 0;
+    pipeInfoTwo->streamDescriptors_.push_back(streamDescriptor);
+    pipeManager->AddAudioPipeInfo(pipeInfoTwo);
 
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_033
- * @tc.desc  : Test pipe列表为空，函数返回false
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_033, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
+    auto pipeInfoThree = std::make_shared<AudioPipeInfo>();
+    pipeInfoThree->name_ = "test_input_three";
+    pipeInfoThree->adapterName_ = "primary";
+    pipeInfoThree->pipeRole_ = AudioPipeRole::PIPE_ROLE_INPUT;
+    pipeInfoThree->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorOne = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorOne->sessionId_ = 1;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorOne);
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorTwo = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorTwo->sessionId_ = 2;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorTwo);
+    std::shared_ptr<AudioStreamDescriptor> streamDescriptorThree = std::make_shared<AudioStreamDescriptor>();
+    streamDescriptorThree->sessionId_ = 3;
+    pipeInfoThree->streamDescriptors_.push_back(streamDescriptorThree);
+    pipeInfoThree->softLinkFlag_ = true;
+    pipeManager->AddAudioPipeInfo(pipeInfoThree);
 
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-}
+    SessionInfo sessionInfoTwo;
+    sessionInfoTwo.sourceType = SourceType::SOURCE_TYPE_WAKEUP;
+    SessionInfo sessionInfoTheee;
+    sessionInfoTheee.sourceType = SourceType::SOURCE_TYPE_VOICE_CALL;
+    audioCapturerSession->sessionWithNormalSourceType_[2] = sessionInfoTwo;
+    audioCapturerSession->sessionWithNormalSourceType_[3] = sessionInfoTheee;
 
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_034
- * @tc.desc  : Test pipe列表输出或者NONE，函数返回false
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_034, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
+    auto ret = audioCapturerSession->ReloadCaptureSessionSoftLink();
+    EXPECT_EQ(ret, SUCCESS);
 
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_OUTPUT;
-    pipeList.push_back(pipe);
-    
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
+    auto ioRet = AudioIOHandleMap::GetInstance().ClosePortAndEraseIOHandle("test");
+    EXPECT_EQ(ioRet, SUCCESS);
 
-    pipeList.clear();
-    auto pipenew = std::make_shared<AudioPipeInfo>();
-    pipenew->pipeRole_ = PIPE_ROLE_NONE;
-    pipeList.push_back(pipenew);
-    result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_035
- * @tc.desc  : Test routerflag是AI或者fast，函数返回false
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_035, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_AI;
-    pipeList.push_back(pipe);
-    
-    uint32_t sessionId = 1;
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-
-    pipeList.clear();
-    auto pipenew = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
-    pipeList.push_back(pipenew);
-    result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_036
- * @tc.desc  : Test sessionid相同时，函数返回false
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_036, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-
-    uint32_t sessionId = 1;
-    auto stream = std::make_shared<AudioStreamDescriptor>();
-    stream->sessionId_ = sessionId;
-    pipe->streamDescriptors_.push_back(stream);
-    pipeList.push_back(pipe);
-    
-    // sessionId相同
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_037
- * @tc.desc  : Test stream为空时，函数返回false
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_037, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-
-    uint32_t sessionId = 1;
-    auto stream = std::make_shared<AudioStreamDescriptor>();
-    stream->sessionId_ = 2;
-    pipe->streamDescriptors_.push_back(stream);
-    pipeList.push_back(pipe);
-    
-    // stream为空
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, false);
-    EXPECT_EQ(hasSession, false);
-}
-
-/**
- * @tc.name  : Test AudioCapturerSession.
- * @tc.number: AudioCapturerSession_038
- * @tc.desc  : Test IsStreamValid 打桩true
- */
-HWTEST(AudioCapturerSessionTest, AudioCapturerSession_038, TestSize.Level1)
-{
-    auto audioCapturerSession = std::make_shared<AudioCapturerSession>();
-    EXPECT_NE(audioCapturerSession, nullptr);
-
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeList;
-    auto pipe = std::make_shared<AudioPipeInfo>();
-    pipe->pipeRole_ = PIPE_ROLE_INPUT;
-    pipe->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-
-    uint32_t sessionId = 1;
-    auto stream = std::make_shared<AudioStreamDescriptor>();
-    stream->sessionId_ = 2;
-    pipe->streamDescriptors_.push_back(stream);
-    pipeList.push_back(pipe);
-    
-    // IsStreamValid 打桩成true
-    auto mockaudioCapturerSession = std::make_shared<AudioCapturerSessionMockInterface>();
-    EXPECT_CALL(*(mockaudioCapturerSession), IsStreamValid(_))
-        .Times(1)
-        .WillOnce(Return(true));
-
-    AudioStreamDescriptor runningSessionInfo = {};
-    bool hasSession = false;
-    bool result = audioCapturerSession->HandleNormalInputPipes(pipeList, sessionId, runningSessionInfo, hasSession);
-    EXPECT_EQ(result, true);
-    EXPECT_EQ(hasSession, true);
+    auto pipeRet = pipeManager->GetUnusedRecordPipe();
+    EXPECT_EQ(pipeRet.size(), 0);
 }
 } // namespace AudioStandard
 } // namespace OHOS

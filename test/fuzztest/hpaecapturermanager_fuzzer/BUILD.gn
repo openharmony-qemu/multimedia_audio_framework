@@ -41,6 +41,8 @@ ohos_fuzztest("HpaeCapturerManagerFuzzTest") {
     "-O0",
     "-Wno-unused-variable",
     "-fno-omit-frame-pointer",
+    "-DENABLE_HIDUMP_DFX",
+    "-DENABLE_HOOK_PCM",
   ]
 
   configs = [ "../../../services/audio_policy:audio_policy_public_config" ]

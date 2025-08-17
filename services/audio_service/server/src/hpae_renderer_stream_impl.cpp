@@ -446,22 +446,21 @@ int32_t HpaeRendererStreamImpl::OnStreamData(AudioCallBackStreamInfo &callBackSt
         auto writeCallback = writeCallback_.lock();
         if (callBackStreamInfo.needData && writeCallback) {
             writeCallback->GetAvailableSize(requestDataLen);
+            requestDataLen = std::min(requestDataLen, callBackStreamInfo.requestDataLen);
             if (callBackStreamInfo.requestDataLen > requestDataLen) {
                 int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
                 memset_s(callBackStreamInfo.inputData + requestDataLen,
                     callBackStreamInfo.requestDataLen - requestDataLen, chToFill,
                     callBackStreamInfo.requestDataLen - requestDataLen);
+                requestDataLen = callBackStreamInfo.forceData ? requestDataLen : 0;
             }
-            // offload latency < 40ms, force output remain data.
-            if (offloadEnable_ &&
-                callBackStreamInfo.requestDataLen > requestDataLen) {
-                requestDataLen = 0;
-            }
+            callBackStreamInfo.requestDataLen = requestDataLen;
             return writeCallback->OnWriteData(callBackStreamInfo.inputData,
-                std::min(requestDataLen, callBackStreamInfo.requestDataLen));
+                requestDataLen);
         }
     } else { // write buffer
-        return WriteDataFromRingBuffer(callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
+        return WriteDataFromRingBuffer(callBackStreamInfo.forceData,
+            callBackStreamInfo.inputData, callBackStreamInfo.requestDataLen);
     }
     return SUCCESS;
 }
@@ -703,16 +702,25 @@ void HpaeRendererStreamImpl::InitRingBuffer()
     DumpFileUtil::OpenDumpFile(DumpFileUtil::DUMP_SERVER_PARA, dumpEnqueueInFileName, &dumpEnqueueIn_);
 }
 
-int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(int8_t *inputData, size_t requestDataLen)
+int32_t HpaeRendererStreamImpl::WriteDataFromRingBuffer(bool forceData, int8_t *inputData, size_t &requestDataLen)
 {
+    CHECK_AND_RETURN_RET_LOG(inputData != nullptr, ERROR, "inputData is nullptr");
     CHECK_AND_RETURN_RET_LOG(ringBuffer_ != nullptr, ERROR, "RingBuffer is nullptr");
     OptResult result = ringBuffer_->GetReadableSize();
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR,
         "RingBuffer get readable size failed, size is:%{public}zu", result.size);
-    CHECK_AND_RETURN_RET_LOG((result.size != 0) && (result.size >= requestDataLen), ERROR,
+    CHECK_AND_RETURN_RET_LOG(result.size != 0, ERROR,
         "Readable size is invalid, result.size:%{public}zu, requestDataLen:%{public}zu, buffer underflow.",
         result.size, requestDataLen);
+    if (requestDataLen > result.size) {
+        CHECK_AND_RETURN_RET_LOG(forceData, ERROR, "not enough data");
+        int chToFill = (processConfig_.streamInfo.format == SAMPLE_U8) ? 0x7f : 0;
+        memset_s(inputData + result.size,
+            requestDataLen - result.size, chToFill,
+            requestDataLen - result.size);
+    }
     AUDIO_DEBUG_LOG("requestDataLen is:%{public}zu readSize is:%{public}zu", requestDataLen, result.size);
+    requestDataLen = std::min(requestDataLen, result.size);
     result = ringBuffer_->Dequeue({reinterpret_cast<uint8_t *>(inputData), requestDataLen});
     CHECK_AND_RETURN_RET_LOG(result.ret == OPERATION_SUCCESS, ERROR, "RingBuffer dequeue failed");
     return SUCCESS;

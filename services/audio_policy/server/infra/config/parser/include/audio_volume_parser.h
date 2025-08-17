@@ -50,6 +50,7 @@ private:
     void ParseVolumePoints(std::shared_ptr<AudioXmlNode> curNode, std::shared_ptr<DeviceVolumeInfo> &deviceVolInfo);
     int32_t ParseVolumeConfig(const char *path, StreamVolumeInfoMap &streamVolumeInfoMap);
     void WriteVolumeConfigErrorEvent();
+    int32_t UseVoiceAssistantFixedVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap);
 };
 } // namespace AudioStandard
 } // namespace OHOS

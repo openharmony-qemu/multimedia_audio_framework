@@ -2811,6 +2811,168 @@ HWTEST(AudioCoreServicePrivateTest, ActivateInputDevice_002, TestSize.Level4)
 
 /**
  * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_001
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test1
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t targetTime = 120000; //120ms
+    EXPECT_GE(duration, targetTime);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test2
+    std::shared_ptr<AudioDeviceDescriptor> newDesc3 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_EARPIECE, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc3);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_002
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_002, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test3
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_RINGTONE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::UNKNOWN);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test4
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+
+    reason = AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE;
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndSleepBeforeRingDualDeviceSet_003
+ * @tc.desc  : Test AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet()
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    ASSERT_NE(audioCoreService, nullptr);
+
+    // Test5
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_MOVIE;
+
+    AudioStreamDeviceChangeReasonExt reason(AudioStreamDeviceChangeReasonExt::ExtEnum::SET_AUDIO_SCENE);
+
+    std::shared_ptr<AudioDeviceDescriptor> newDesc1 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_USB_HEADSET, DeviceRole::OUTPUT_DEVICE);
+    std::shared_ptr<AudioDeviceDescriptor> newDesc2 = std::make_shared<AudioDeviceDescriptor>(
+        DeviceType::DEVICE_TYPE_SPEAKER, DeviceRole::OUTPUT_DEVICE);
+    streamDesc->newDeviceDescs_.push_back(newDesc1);
+    streamDesc->newDeviceDescs_.push_back(newDesc2);
+
+    auto info = std::make_shared<AudioRendererChangeInfo>();
+    info->rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    info->rendererState = RENDERER_RUNNING;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    auto start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    uint32_t deltaUs = 5000; // 5ms
+    EXPECT_LE(duration, deltaUs);
+    streamDesc->newDeviceDescs_.clear();
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+
+    // Test6
+    streamDesc->streamStatus_ == STREAM_STATUS_NEW;
+    streamDesc->rendererInfo_.streamUsage = STREAM_USAGE_ALARM;
+
+    info->rendererState = RENDERER_STOPPED;
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.push_back(info);
+
+    start = std::chrono::steady_clock::now();
+    audioCoreService->CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+    end = std::chrono::steady_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    EXPECT_LE(duration, deltaUs);
+    audioCoreService->streamCollector_.audioRendererChangeInfos_.clear();
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
  * @tc.number: SleepForSwitchDevice_001
  * @tc.desc  : Test AudioCoreService::SleepForSwitchDevice()
  */
@@ -2918,6 +3080,38 @@ HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
     audioCoreService->AddSessionId(sessionId);
     ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
     audioCoreService->DeleteSessionId(sessionId);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndUpdateHearingAidCall_001
+ * @tc.desc  : Test AudioCoreService::CheckAndUpdateHearingAidCall
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    auto pipeInfo = audioPipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
+    ASSERT_NE(pipeInfo, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: ActivateOutputDevice_001
+ * @tc.desc  : Test AudioCoreService::ActivateOutputDevice
+ */
+HWTEST(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
+    ASSERT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

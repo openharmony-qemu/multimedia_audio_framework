@@ -232,8 +232,10 @@ void RendererInServer::CheckAndWriterRenderStreamStandbySysEvent(bool standbyEna
 
 void RendererInServer::OnStatusUpdate(IOperation operation)
 {
-    AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
-        (standByEnable_ ? "true" : "false"));
+    if (operation != OPERATION_UNDERFLOW) {
+        AUDIO_INFO_LOG("%{public}u recv operation:%{public}d standByEnable_:%{public}s", streamIndex_, operation,
+            (standByEnable_ ? "true" : "false"));
+    }
     Trace trace(traceTag_ + " OnStatusUpdate:" + std::to_string(operation));
     CHECK_AND_RETURN_LOG(operation != OPERATION_RELEASED, "Stream already released!");
     std::shared_ptr<IStreamListener> stateListener = streamListener_.lock();

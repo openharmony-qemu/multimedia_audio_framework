@@ -464,22 +464,36 @@ int32_t RemoteOffloadAudioRenderSink::EstimateRenderPosition()
     int64_t durationNS = now > lastSystemTimeNS_ ? now - lastSystemTimeNS_ : 0;
     uint64_t durationUS = static_cast<uint64_t>(durationNS) / NANOSECOND_TO_MICROSECOND;
 
-    uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
+    // The underlying time recorded must be calculated because this time increments at a fixed rate
+    // regardless of whether it is played or not, or whether there is buffering or not
+    lastHdiTimeNS_ += durationNS;
+    lastHdiTimeSec_ = lastHdiTimeNS_ / AUDIO_NS_PER_SECOND;
+    lastHdiTimeNanoSec_ = lastHdiTimeNS_ % AUDIO_NS_PER_SECOND;
+    // The system time also needs to be updated because it is fixed as well
+    lastSystemTimeNS_ = now;
+
     uint64_t renderFrameUS = renderPos_ * SECOND_TO_MICROSECOND /
         (attr_.sampleRate * static_cast<uint32_t>(GetFormatByteSize(attr_.format)) * attr_.channel);
+    if (renderFrameUS <= lastHdiOriginFramesUS_) {
+        AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
+            ", lastHdiFramesUS_: %{public}" PRIu64 " no need to estimate", renderFrameUS, lastHdiOriginFramesUS_);
+        return SUCCESS;
+    }
+    
+    uint64_t originFrameUS = lastHdiOriginFramesUS_ + durationUS * speed_;
     if (originFrameUS > renderFrameUS) {
         AUDIO_INFO_LOG("RemoteOffloadAudioRenderSink::EstimateRenderPosition renderFrameUS: %{public}" PRIu64
-            ", originFrameUS: %{public}" PRIu64 " No need to estimate", renderFrameUS, originFrameUS);
+            ", originFrameUS: %{public}" PRIu64 " set to renderFrameUS", renderFrameUS, originFrameUS);
+        auto excess = (renderFrameUS - lastHdiOriginFramesUS_) / speed_;
+        lastHdiOriginFramesUS_ = renderFrameUS;
+        lastHdiFramesUS_ += excess;
+
+        AddHdiLatency(excess);
         return SUCCESS;
     }
 
     lastHdiFramesUS_ += durationUS;
     lastHdiOriginFramesUS_ += durationUS * speed_;
-    lastSystemTimeNS_ = now;
-    lastHdiTimeNS_ += durationNS;
-
-    lastHdiTimeSec_ = lastHdiTimeNS_ / AUDIO_NS_PER_SECOND;
-    lastHdiTimeNanoSec_ = lastHdiTimeNS_ % AUDIO_NS_PER_SECOND;
 
     AddHdiLatency(durationUS);
     return SUCCESS;

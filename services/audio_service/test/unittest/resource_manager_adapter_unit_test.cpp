@@ -184,5 +184,22 @@ HWTEST(ResourceManagerAdapterUnitTest, ResourceManagerAdapter_009, TestSize.Leve
     auto result = resourceManagerAdapter->GetSystemStringByName(name);
     EXPECT_EQ(result, "");
 }
+
+/**
+ * @tc.name  : Test ResourceManagerAdapter API
+ * @tc.type  : FUNC
+ * @tc.number: ResourceManagerAdapter_010
+ * @tc.desc  : Test GetSystemStringByName interface.
+ */
+HWTEST(ResourceManagerAdapterUnitTest, ResourceManagerAdapter_010, TestSize.Level1)
+{
+    auto resourceManagerAdapter = std::make_shared<ResourceManagerAdapter>();
+    ASSERT_TRUE(resourceManagerAdapter != nullptr);
+
+    std::string name = "test";
+    resourceManagerAdapter->resourceManager_ = nullptr;
+    auto result = resourceManagerAdapter->GetSystemStringByName(name);
+    EXPECT_EQ("", result);
+}
 }
 }

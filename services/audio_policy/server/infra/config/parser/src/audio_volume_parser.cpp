@@ -84,6 +84,45 @@ int32_t AudioVolumeParser::ParseVolumeConfig(const char *path, StreamVolumeInfoM
         }
     }
     curNode = nullptr;
+    int32_t result = UseVoiceAssistantFixedVolumeConfig(streamVolumeInfoMap);
+    AUDIO_INFO_LOG("The voice assistant uses a fixed volume configuration. Result: %{public}d", result);
+    return SUCCESS;
+}
+
+int32_t AudioVolumeParser::UseVoiceAssistantFixedVolumeConfig(StreamVolumeInfoMap &streamVolumeInfoMap)
+{
+    if (streamVolumeInfoMap.find(STREAM_VOICE_ASSISTANT) == streamVolumeInfoMap.end() ||
+        streamVolumeInfoMap[STREAM_VOICE_ASSISTANT] == nullptr) {
+        AUDIO_ERR_LOG("Failed to find the volume config of STREAM_VOICE_ASSISTANT!");
+        return ERROR;
+    }
+
+    // Allow to set voice assistant volume to 0.
+    streamVolumeInfoMap[STREAM_VOICE_ASSISTANT]->minLevel = 0;
+
+    // Modify the volume point index for volume level 0.
+    const std::vector<DeviceVolumeType> DEVICE_VOLUME_TYPE_LIST = {
+        EARPIECE_VOLUME_TYPE,
+        SPEAKER_VOLUME_TYPE,
+        HEADSET_VOLUME_TYPE,
+    };
+    DeviceVolumeInfoMap &deviceVolumeInfos = streamVolumeInfoMap[STREAM_VOICE_ASSISTANT]->deviceVolumeInfos;
+    for (auto device : DEVICE_VOLUME_TYPE_LIST) {
+        if (deviceVolumeInfos.find(device) == deviceVolumeInfos.end() ||
+            deviceVolumeInfos[device] == nullptr) {
+            AUDIO_ERR_LOG("Failed to find the device %{public}d in deviceVolumeInfos!", device);
+            continue;
+        }
+        deviceVolumeInfos[device]->minLevel = -1; // Ensure that the minLevel of this device is an invalid value.
+        std::vector<VolumePoint> &volumePoints = deviceVolumeInfos[device]->volumePoints;
+        if (volumePoints.empty()) {
+            AUDIO_ERR_LOG("The vector fo volumePoints is empty!");
+            continue;
+        }
+        if (volumePoints[0].index == 0) {
+            volumePoints[0].index = 1;
+        }
+    }
     return SUCCESS;
 }
 

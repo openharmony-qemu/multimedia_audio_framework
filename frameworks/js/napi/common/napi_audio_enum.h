@@ -156,6 +156,8 @@ public:
     static AudioScene GetJsAudioScene(AudioScene audioScene);
     static bool IsLegalCapturerState(int32_t state);
     static bool IsLegalInputArgumentAudioLoopbackMode(int32_t inputMode);
+    static bool IsLegalInputArgumentAudioLoopbackReverbPreset(int32_t preset);
+    static bool IsLegalInputArgumentAudioLoopbackEqualizerPreset(int32_t preset);
     static bool IsLegalInputArgumentSessionScene(int32_t scene);
 
 private:
@@ -241,6 +243,8 @@ private:
     static napi_ref reason_;
     static napi_ref audioLoopbackMode_;
     static napi_ref audioLoopbackStatus_;
+    static napi_ref audioLoopbackReverbPreset_;
+    static napi_ref audioLoopbackEqualizerPreset_;
     static napi_ref audioSessionScene_;
     static napi_ref audioSessionStateChangeHint_;
     static napi_ref outputDeviceChangeRecommendedAction_;
@@ -295,6 +299,8 @@ private:
     static const std::map<std::string, int32_t> reasonMap;
     static const std::map<std::string, int32_t> audioLoopbackModeMap;
     static const std::map<std::string, int32_t> audioLoopbackStatusMap;
+    static const std::map<std::string, int32_t> audioLoopbackReverbPresetMap;
+    static const std::map<std::string, int32_t> audioLoopbackEqualizerPresetMap;
     static const std::map<std::string, int32_t> audioSessionSceneMap;
     static const std::map<std::string, int32_t> audioSessionStateChangeHintMap;
     static const std::map<std::string, int32_t> outputDeviceChangeRecommendedActionMap;

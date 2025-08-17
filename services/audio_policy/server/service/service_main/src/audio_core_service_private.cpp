@@ -50,7 +50,6 @@ static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
 static const int64_t WAIT_MODEM_CALL_SET_VOLUME_TIME_US = 120000; // 120ms
 static const int64_t RING_DUAL_END_DELAY_US = 100000; // 100ms
-static const int64_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 100000; // 100ms
 static const int64_t OLD_DEVICE_UNAVALIABLE_MUTE_MS = 1000000; // 1s
 static const int64_t NEW_DEVICE_AVALIABLE_MUTE_MS = 400000; // 400ms
 static const int64_t NEW_DEVICE_AVALIABLE_OFFLOAD_MUTE_MS = 1000000; // 1s
@@ -64,6 +63,7 @@ static const uint32_t BASE_DEVICE_SWITCH_SLEEP_US = 80000; // 80ms
 static const uint32_t OLD_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 150000; // 150ms
 static const uint32_t DISTRIBUTED_DEVICE_UNAVAILABLE_EXTRA_SLEEP_US = 350000; // 350ms
 static const uint32_t HEADSET_TO_SPK_EP_EXTRA_SLEEP_US = 50000; // 50ms
+static const uint32_t MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US = 120000; // 120ms
 
 static const uint32_t BT_BUFFER_ADJUSTMENT_FACTOR = 50;
 static const int32_t WAIT_OFFLOAD_CLOSE_TIME_SEC = 10;
@@ -127,6 +127,9 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
             needUpdateActiveDevice = !isUpdateActiveDevice;
             sessionId = streamDesc->sessionId_;
         }
+
+        CheckAndSleepBeforeRingDualDeviceSet(streamDesc, reason);
+
         // started stream need to mute when switch device
         if (streamDesc->streamStatus_ == STREAM_STATUS_STARTED) {
             MuteSinkPortForSwitchDevice(streamDesc, reason);
@@ -300,6 +303,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
 
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
+    if (!pipeManager_->IsModemCommunicationIdExist()) {
+        return SUCCESS;
+    }
     CHECK_AND_RETURN_RET_LOG(descs.size() != 0, ERROR, "Update device route for voice modem communication failed");
     CHECK_AND_RETURN_RET_LOG(descs.front() != nullptr, ERROR, "Update modem route: desc is nullptr");
     if (audioSceneManager_.IsInPhoneCallScene()) {
@@ -2435,15 +2441,6 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
     const AudioStreamDeviceChangeReasonExt reason)
 {
     Trace trace("AudioCoreService::MuteSinkPortForSwitchDevice");
-    // After media playback is interrupted by the alarm,
-    // a delay is required before switching to dual output (e.g., speaker + headset).
-    // This ensures that the remaining audio buffer is drained,
-    // preventing any residual media sound from leaking through the speaker.
-    if (streamDesc != nullptr && streamDesc->newDeviceDescs_.size() > 1 && !IsDeviceSwitching(reason) &&
-        streamCollector_.IsMediaPlaying() && streamDesc->rendererInfo_.streamUsage == STREAM_USAGE_ALARM) {
-        usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
-        return;
-    }
     if (streamDesc->newDeviceDescs_.front()->IsSameDeviceDesc(streamDesc->oldDeviceDescs_.front())) {
         return;
     }
@@ -2456,6 +2453,23 @@ void AudioCoreService::MuteSinkPortForSwitchDevice(std::shared_ptr<AudioStreamDe
         streamDesc->sessionId_);
     AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
     MuteSinkPort(oldSinkName, newSinkName, reason);
+}
+
+// After media playback is interrupted by the alarm or ring,
+// a delay is required before switching to dual output (e.g., speaker + headset).
+// This ensures that the remaining audio buffer is drained,
+// preventing any residual media sound from leaking through the speaker.
+void AudioCoreService::CheckAndSleepBeforeRingDualDeviceSet(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+    const AudioStreamDeviceChangeReasonExt reason)
+{
+    CHECK_AND_RETURN_LOG(streamDesc != nullptr && !streamDesc->newDeviceDescs_.empty(), "Invalid streamDesc");
+    bool isRingOrAlarmStream = Util::IsRingerOrAlarmerStreamUsage(streamDesc->rendererInfo_.streamUsage);
+    DeviceType deviceType = streamDesc->newDeviceDescs_.front()->deviceType_;
+    if (streamDesc->streamStatus_ == STREAM_STATUS_NEW && reason.IsSetAudioScene() &&
+        streamDesc->newDeviceDescs_.size() > 1 && streamCollector_.IsMediaPlaying() &&
+        IsRingerOrAlarmerDualDevicesRange(deviceType) && isRingOrAlarmStream) {
+        usleep(MEDIA_PAUSE_TO_DOUBLE_RING_DELAY_US);
+    }
 }
 
 /**

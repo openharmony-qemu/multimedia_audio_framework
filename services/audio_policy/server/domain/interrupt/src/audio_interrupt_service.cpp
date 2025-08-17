@@ -1909,7 +1909,8 @@ bool AudioInterruptService::CheckWindowState(const int32_t pid)
         return false;
     }
     for (auto &windowState : windowStates) {
-        if (windowState.isVisible_) {
+        if (windowState.isVisible_ && (windowState.state_ == (int32_t) Rosen::SessionState::STATE_ACTIVE ||
+            windowState.state_ == (int32_t) Rosen::SessionState::STATE_FOREGROUND)) {
             AUDIO_INFO_LOG("AudioInterruptService app window front desk");
             return true;
         }
@@ -1974,6 +1975,9 @@ int32_t AudioInterruptService::ProcessFocusEntry(const int32_t zoneId, const Aud
     HandleIncomingState(zoneId, incomingState, interruptEvent, incomingInterrupt);
     AddToAudioFocusInfoList(itZone->second, zoneId, incomingInterrupt, incomingState);
     SendInterruptEventToIncomingStream(interruptEvent, incomingInterrupt);
+    if (IsGameAvoidCallbackCase(incomingInterrupt) && incomingState == PAUSE) {
+        return SUCCESS;
+    }
     return incomingState >= PAUSE ? ERR_FOCUS_DENIED : SUCCESS;
 }
 
