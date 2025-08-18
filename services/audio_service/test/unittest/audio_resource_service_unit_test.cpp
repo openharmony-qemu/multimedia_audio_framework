@@ -805,7 +805,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
  */
 HWTEST(AudioResourceServiceUnitTest, WorkgroupRendererMonitor_002, TestSize.Level0)
 {
-    int32_t testPid = 123;
+    int32_t testPid = 321;
     audioResourceService.audioWorkgroupMap_[testPid].permission = false;
     audioResourceService.WorkgroupRendererMonitor(testPid, true);
 
@@ -826,7 +826,7 @@ HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
 
     audioResourceService.audioWorkgroupMap_[10].groups[testRtgId] = {workGroup};
     audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
-    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[10].groups.count[testRtgId], 1);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[10].groups.count(testRtgId), 1);
 }
 
 /**
@@ -837,11 +837,11 @@ HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
 {
-    int32_t pid = 123;
+    int32_t pid = 4321;
     for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++) {
         audioResourceService.audioWorkgroupMap_[pid].groups[i] = nullptr;
     }
-    EXPECT_TRUE(audioResourceService.IsProcessInWorkGroup(pid));
+    EXPECT_TRUE(audioResourceService.IsProcessInWorkgroup(pid));
     EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
 
     pid = 532;
@@ -851,7 +851,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
     for (int i = 0; i <= AUDIO_MAX_PROCESS; i++) {
         audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
     }
-    EXPECT_FALSE(audioResourceService.IsProcessInWorkGroup(pid + 1));
+    EXPECT_FALSE(audioResourceService.IsProcessInWorkgroup(pid + 1));
     EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
 }
 
