@@ -46,6 +46,7 @@ ohos_fuzztest("AudioOffloadStreamFuzzTest") {
   external_deps = [
     "c_utils:utils",
     "data_share:datashare_consumer",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",

@@ -64,6 +64,7 @@ ohos_unittest("audio_offload_stream_unit_test") {
   external_deps = [
     "c_utils:utils",
     "data_share:datashare_consumer",
+    "eventhandler:libeventhandler",
     "hilog:libhilog",
     "kv_store:distributeddata_inner",
     "os_account:os_account_innerkits",
