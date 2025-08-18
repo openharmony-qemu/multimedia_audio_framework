@@ -132,11 +132,11 @@ HWTEST(IAudioStreamUnitTest, GetByteSizePerFrame_004, TestSize.Level1)
     int32_t ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 17};
+    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 17};
     ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, ERR_INVALID_PARAM);
 
-    AudioStreamParams params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 5};
+    params = {SAMPLE_RATE_48000, 100, SAMPLE_S32LE, 5};
     ret = IAudioStream::GetByteSizePerFrame(params, result);
     EXPECT_EQ(ret, SUCCESS);
 }
