@@ -363,7 +363,6 @@ void RendererInServer::OnStatusUpdateSub(IOperation operation)
 
 void RendererInServer::ReConfigDupStreamCallback()
 {
-    std::lock_guard<std::mutex> lock(dupMutex_);
     size_t dupTotalSizeInFrameTemp_ = 0;
 
     if (offloadEnable_ == true) {
@@ -831,8 +830,8 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("OtherStreamEnqueue running");
-        WriteDupBufferInner(bufferDesc, innerCapId);
     } else {
+        WriteDupBufferInner(bufferDesc, innerCapId);
         captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
     }
 }
@@ -843,7 +842,8 @@ void RendererInServer::InnerCaptureOtherStream(const BufferDesc &bufferDesc, Cap
     if (captureInfo.isInnerCapEnabled) {
         Trace traceDup("RendererInServer::WriteData DupSteam write");
         if (captureInfo.dupStream != nullptr) {
-            Trace trace("InnerCaptureOtherStream WriteData " + "sessionId: " + std::to_string(captureInfo.dupStream->GetStreamIndex()));
+            Trace trace("InnerCaptureOtherStream WriteData, sessionId: " +
+                std::to_string(captureInfo.dupStream->GetStreamIndex()));
             InnerCaptureEnqueueBuffer(bufferDesc, captureInfo, innerCapId);
         }
     }
