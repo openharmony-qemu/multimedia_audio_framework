@@ -637,16 +637,6 @@ bool AudioPolicyServerHandler::SendHeadTrackingEnabledChangeForAnyDeviceEvent(
     return ret;
 }
 
-bool AudioPolicyServerHandler::SendPipeStreamCleanEvent(AudioPipeType pipeType)
-{
-    auto eventContextObj = std::make_shared<int32_t>(pipeType);
-    lock_guard<mutex> runnerlock(runnerMutex_);
-    bool ret = SendEvent(AppExecFwk::InnerEvent::Get(EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT,
-        eventContextObj));
-    CHECK_AND_RETURN_RET_LOG(ret, ret, "Send PIPE_STREAM_CLEAN_EVENT event failed");
-    return ret;
-}
-
 bool AudioPolicyServerHandler::SendFormatUnsupportedErrorEvent(const AudioErrors &errorCode)
 {
     std::shared_ptr<EventContextObj> eventContextObj = std::make_shared<EventContextObj>();
@@ -1478,14 +1468,6 @@ void AudioPolicyServerHandler::HandleHeadTrackingEnabledChangeForAnyDeviceEvent(
     }
 }
 
-void AudioPolicyServerHandler::HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event)
-{
-    std::shared_ptr<int32_t> eventContextObj = event->GetSharedObject<int32_t>();
-    CHECK_AND_RETURN_LOG(eventContextObj != nullptr, "EventContextObj get nullptr");
-    AudioPipeType pipeType = static_cast<AudioPipeType>(*eventContextObj);
-    AudioPolicyService::GetAudioPolicyService().DynamicUnloadModule(pipeType);
-}
-
 void AudioPolicyServerHandler::HandleFormatUnsupportedErrorEvent(const AppExecFwk::InnerEvent::Pointer &event)
 {
     std::shared_ptr<EventContextObj> eventContextObj = event->GetSharedObject<EventContextObj>();
@@ -1546,9 +1528,6 @@ void AudioPolicyServerHandler::HandleServiceEvent(const uint32_t &eventId,
             break;
         case EventAudioServerCmd::RECREATE_CAPTURER_STREAM_EVENT:
             HandleSendRecreateCapturerStreamEvent(event);
-            break;
-        case EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT:
-            HandlePipeStreamCleanEvent(event);
             break;
         default:
             break;

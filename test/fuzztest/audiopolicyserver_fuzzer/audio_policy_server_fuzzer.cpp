@@ -961,20 +961,6 @@ void AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest()
     audioPolicyServer->UnsetAvailableDeviceChangeCallback(clientId, usageIn);
 }
 
-void AudioPolicyServerOffloadStopPlayingFuzzTest()
-{
-    auto audioPolicyServer = GetServerPtr();
-    CHECK_AND_RETURN(audioPolicyServer != nullptr);
-
-    StreamUsage streamUsage = GetData<StreamUsage>();
-    ContentType contentType = GetData<ContentType>();
-    AudioFocusType audioFocusType = GetData<AudioFocusType>();
-    uint32_t streamId = GetData<uint32_t>();
-    AudioInterrupt audioInterrupt(streamUsage, contentType, audioFocusType, streamId);
-
-    audioPolicyServer->OffloadStopPlaying(audioInterrupt);
-}
-
 void AudioPolicyServerCheckAudioSessionStrategyFuzzTest()
 {
     auto audioPolicyServer = GetServerPtr();
@@ -1680,15 +1666,6 @@ void AudioPolicyServerNotifyAccountsChangedFuzzTest()
     server->NotifyAccountsChanged(id);
 }
 
-void AudioPolicyServerMoveToNewPipeFuzzTest()
-{
-    uint32_t sessionId = GetData<uint32_t>();
-    int32_t pipeType = GetData<int32_t>();
-    auto server = GetServerPtr();
-    CHECK_AND_RETURN(server != nullptr);
-    server->MoveToNewPipe(sessionId, pipeType);
-}
-
 void AudioPolicyServerCheckHibernateStateFuzzTest()
 {
     auto server = GetServerPtr();
@@ -2182,7 +2159,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerGetAvailableDevicesFuzzTest,
     AudioPolicyServerSetAvailableDeviceChangeCallbackFuzzTest,
     AudioPolicyServerUnsetAvailableDeviceChangeCallbackFuzzTest,
-    AudioPolicyServerOffloadStopPlayingFuzzTest,
     AudioPolicyServerCheckAudioSessionStrategyFuzzTest,
     AudioPolicyServerSetAudioSessionSceneFuzzTest,
     AudioPolicyServerGetDefaultOutputDeviceFuzzTest,
@@ -2246,7 +2222,6 @@ TestFuncs g_testFuncs[] = {
     AudioPolicyServerUnsetAudioDeviceAnahsCallbackFuzzTest,
     AudioPolicyServerSendVolumeKeyEventToRssWhenAccountsChangedFuzzTest,
     AudioPolicyServerNotifyAccountsChangedFuzzTest,
-    AudioPolicyServerMoveToNewPipeFuzzTest,
     AudioPolicyServerCheckHibernateStateFuzzTest,
     AudioPolicyServerUpdateSafeVolumeByS4FuzzTest,
     AudioPolicyServerCheckConnectedDeviceFuzzTest,

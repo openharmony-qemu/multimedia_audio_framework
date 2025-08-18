@@ -818,7 +818,6 @@ void AudioDeviceCommon::MoveToNewOutputDevice(std::shared_ptr<AudioRendererChang
 
     streamCollector_.UpdateRendererDeviceInfo(rendererChangeInfo->clientUID, rendererChangeInfo->sessionId,
         rendererChangeInfo->outputDeviceInfo);
-    ResetOffloadAndMchMode(rendererChangeInfo, outputDevices);
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
@@ -954,98 +953,6 @@ void AudioDeviceCommon::UpdateRoute(std::shared_ptr<AudioRendererChangeInfo> &re
             audioActiveDevice_.UpdateActiveDeviceRoute(deviceType, DeviceFlag::OUTPUT_DEVICES_FLAG);
         }
         shouldUpdateDeviceDueToDualTone_ = false;
-    }
-}
-
-void AudioDeviceCommon::ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices)
-{
-    if (outputDevices.front()->networkId_ != LOCAL_NETWORK_ID
-        || outputDevices.front()->deviceType_ == DEVICE_TYPE_REMOTE_CAST) {
-        audioOffloadStream_.RemoteOffloadStreamRelease(rendererChangeInfo->sessionId);
-    } else {
-        FetchStreamForSpkMchStream(rendererChangeInfo, outputDevices);
-    }
-}
-
-void AudioDeviceCommon::JudgeIfLoadMchModule()
-{
-    bool isNeedLoadMchModule = false;
-    {
-        if (audioIOHandleMap_.CheckIOHandleExist(MCH_PRIMARY_SPEAKER) == false) {
-            isNeedLoadMchModule = true;
-        }
-    }
-    if (isNeedLoadMchModule) {
-        audioOffloadStream_.LoadMchModule();
-    }
-}
-
-void AudioDeviceCommon::FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        JudgeIfLoadMchModule();
-        audioActiveDevice_.UpdateActiveDeviceRoute(DEVICE_TYPE_BLUETOOTH_A2DP, DeviceFlag::OUTPUT_DEVICES_FLAG);
-        std::string portName = AudioPolicyUtils::GetInstance().GetSinkPortName(descs.front()->deviceType_,
-            PIPE_TYPE_MULTICHANNEL);
-        int32_t ret  = audioOffloadStream_.MoveToOutputDevice(rendererChangeInfo->sessionId, portName);
-        if (ret == SUCCESS) {
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_MULTICHANNEL);
-        }
-    } else {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-        streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
-        if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-            AudioIOHandle activateDeviceIOHandle;
-            CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
-                "Can not find port MCH_PRIMARY_SPEAKER in io map");
-            audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-            audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-            audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_NORMAL_OUT);
-        }
-        audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
-        std::vector<SinkInput> sinkInputs;
-        audioPolicyManager_.GetAllSinkInputs(sinkInputs);
-        MoveToNewOutputDevice(rendererChangeInfo, descs, sinkInputs);
-    }
-}
-
-void AudioDeviceCommon::FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-    vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
-{
-    if (audioOffloadStream_.CheckStreamMultichannelMode(rendererChangeInfo->sessionId)) {
-        JudgeIfLoadMchModule();
-        std::string oldSinkName = AudioPolicyUtils::GetInstance().GetSinkName(rendererChangeInfo->outputDeviceInfo,
-            rendererChangeInfo->sessionId);
-        std::string newSinkName = AudioPolicyUtils::GetInstance().GetSinkPortName(descs.front()->deviceType_,
-            PIPE_TYPE_MULTICHANNEL);
-        if (oldSinkName != newSinkName) {
-            AUDIO_INFO_LOG("mute sink old:[%{public}s] new:[%{public}s]", oldSinkName.c_str(), newSinkName.c_str());
-            MuteSinkPort(oldSinkName, newSinkName, AudioStreamDeviceChangeReason::OVERRODE);
-        }
-        int32_t ret  = audioOffloadStream_.MoveToOutputDevice(rendererChangeInfo->sessionId, newSinkName);
-        if (ret == SUCCESS) {
-            streamCollector_.UpdateRendererPipeInfo(rendererChangeInfo->sessionId, PIPE_TYPE_MULTICHANNEL);
-        }
-    } else {
-        AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-        streamCollector_.GetPipeType(rendererChangeInfo->sessionId, pipeType);
-        if (pipeType == PIPE_TYPE_MULTICHANNEL) {
-            {
-                AUDIO_INFO_LOG("unload multichannel module");
-                std::string currentActivePort = MCH_PRIMARY_SPEAKER;
-                AudioIOHandle activateDeviceIOHandle;
-                CHECK_AND_RETURN_LOG(audioIOHandleMap_.GetModuleIdByKey(currentActivePort, activateDeviceIOHandle),
-                    "Can not find port MCH_PRIMARY_SPEAKER in io map");
-                audioPolicyManager_.SuspendAudioDevice(currentActivePort, true);
-                audioPolicyManager_.CloseAudioPort(activateDeviceIOHandle);
-                audioIOHandleMap_.DelIOHandleInfo(currentActivePort);
-            }
-        }
-        audioOffloadStream_.ResetOffloadMode(rendererChangeInfo->sessionId);
     }
 }
 

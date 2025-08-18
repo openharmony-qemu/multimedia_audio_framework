@@ -32,8 +32,8 @@ public:
     // TearDown: Called after each test cases
     void TearDown(void);
 
-protected:
-    AudioOffloadStream *audioOffloadStream_;
+private:
+    std::shared_ptr<AudioOffloadStream> testOffloadModule_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

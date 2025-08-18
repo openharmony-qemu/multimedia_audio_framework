@@ -156,19 +156,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, CheckAudioSessionStrategy_001, TestSize.
 }
 
 /**
- * @tc.name  : Test HandleA2dpDeviceInOffload.
- * @tc.number: HandleA2dpDeviceInOffload_001
- * @tc.desc  : Test HandleA2dpDeviceInOffload interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, HandleA2dpDeviceInOffload_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    BluetoothOffloadState a2dpOffloadFlag = A2DP_NOT_OFFLOAD;
-    int32_t ret = server->audioPolicyService_.audioA2dpOffloadManager_->HandleA2dpDeviceInOffload(a2dpOffloadFlag);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test WriteAllDeviceSysEvents.
  * @tc.number: WriteAllDeviceSysEvents_001
  * @tc.desc  : Test WriteAllDeviceSysEvents interfaces.
@@ -955,44 +942,6 @@ HWTEST_F(AudioPolicyServiceExtUnitTest, TriggerAvailableDeviceChangedCallback_00
     isConnected = false;
     server->audioPolicyService_.audioDeviceStatus_.TriggerAvailableDeviceChangedCallback(desc, isConnected);
     EXPECT_NE(server->audioPolicyService_.audioPolicyServerHandler_, nullptr);
-}
-
-/**
- * @tc.name  : Test OffloadStartPlaying.
- * @tc.number: OffloadStartPlaying_001
- * @tc.desc  : Test OffloadStartPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStartPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStartPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
- * @tc.name  : Test OffloadStopPlaying.
- * @tc.number: OffloadStopPlaying_001
- * @tc.desc  : Test OffloadStopPlaying interfaces.
- */
-HWTEST_F(AudioPolicyServiceExtUnitTest, OffloadStopPlaying_001, TestSize.Level1)
-{
-    auto server = GetServerUtil::GetServerPtr();
-    std::vector<int32_t> sessionIds = {0};
-    int32_t ret;
-
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
-
-    sessionIds.clear();
-    ret = server->audioPolicyService_.OffloadStopPlaying(sessionIds);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**

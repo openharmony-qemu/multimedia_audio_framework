@@ -228,9 +228,6 @@ void AudioPolicyOtherFuzzTest(const uint8_t *rawData, size_t size)
     int32_t sessionId = *reinterpret_cast<const int32_t *>(rawData);
     GetServerPtr()->GetAudioCapturerMicrophoneDescriptors(sessionId);
 
-    AudioPipeType type = *reinterpret_cast<const AudioPipeType *>(rawData);
-    GetServerPtr()->MoveToNewPipe(sessionId, type);
-
     std::shared_ptr<AudioStandard::AudioDeviceDescriptor> deviceDescriptor =
         std::make_shared<AudioStandard::AudioDeviceDescriptor>();
     deviceDescriptor->deviceType_ = *reinterpret_cast<const DeviceType *>(rawData);

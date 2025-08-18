@@ -76,24 +76,26 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
         }
     }
 
+    // Generate pipeInfo by configuration for incoming stream
     streamDesc->streamAction_ = AUDIO_STREAM_ACTION_NEW;
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo = std::make_shared<PipeStreamPropInfo>();
     configManager_.GetStreamPropInfo(streamDesc, streamPropInfo);
-    UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
     std::shared_ptr<AdapterPipeInfo> pipeInfoPtr = streamPropInfo->pipeInfo_.lock();
     if (pipeInfoPtr == nullptr) {
         AUDIO_ERR_LOG("Pipe info is null");
         return selectedPipeInfoList;
     }
+
+    // Find whether any existing pipe matches
     for (auto &pipeInfo : selectedPipeInfoList) {
         std::shared_ptr<PolicyAdapterInfo> adapterInfoPtr = pipeInfoPtr->adapterInfo_.lock();
         if (adapterInfoPtr == nullptr) {
             AUDIO_ERR_LOG("Adapter info is null");
             continue;
         }
-        AUDIO_INFO_LOG("[Cur][XML]: {adapterName}[%{public}s][%{public}s], {routeFlag}[%{public}x][%{public}x]",
-            pipeInfo->adapterName_.c_str(), adapterInfoPtr->adapterName.c_str(),
-            pipeInfo->routeFlag_, streamDesc->routeFlag_);
+        AUDIO_INFO_LOG("action %{public}d adapter[%{public}s] pipeRoute[0x%{public}x] streamRoute[0x%{public}x]",
+            pipeInfo->GetAction(), pipeInfo->GetAdapterName().c_str(), pipeInfo->GetRoute(), streamDesc->GetRoute());
 
         if (pipeInfo->adapterName_ == adapterInfoPtr->adapterName &&
             pipeInfo->routeFlag_ == streamDesc->routeFlag_) {
@@ -105,16 +107,19 @@ std::vector<std::shared_ptr<AudioPipeInfo>> AudioPipeSelector::FetchPipeAndExecu
             return selectedPipeInfoList;
         }
     }
+
+    // Need to open a new pipe for incoming stream
     AudioPipeInfo info = {};
     ConvertStreamDescToPipeInfo(streamDesc, streamPropInfo, info);
     info.pipeAction_ = PIPE_ACTION_NEW;
     selectedPipeInfoList.push_back(std::make_shared<AudioPipeInfo>(info));
     AUDIO_INFO_LOG("[PipeFetchInfo] use new Pipe %{public}s for stream %{public}u",
         info.ToString().c_str(), streamDesc->sessionId_);
+
     return selectedPipeInfoList;
 }
 
-void AudioPipeSelector::UpdataDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
+void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc,
     std::shared_ptr<PipeStreamPropInfo> streamPropInfo)
 {
     if (streamDesc->newDeviceDescs_.empty() || streamPropInfo == nullptr || streamDesc->newDeviceDescs_.front() ==
@@ -141,12 +146,15 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
         return;
     }
 
+    // Do not need to move stream, because stream actions are all decided in DecidePipesAndStreamAction(),
+    // not in ProcessConcurrency().
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     SortStreamDescsByStartTime(streamDescs);
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
         streamDescs[cmpStreamIdx]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[cmpStreamIdx]);
         // calculate concurrency in time order
         for (size_t curStreamDescIdx = 0; curStreamDescIdx < cmpStreamIdx; ++curStreamDescIdx) {
-            ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx]);
+            ProcessConcurrency(streamDescs[curStreamDescIdx], streamDescs[cmpStreamIdx], streamsMoveToNormal);
         }
     }
 }
@@ -193,11 +201,12 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
                 AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
                 continue;
             }
-            streamDesc->streamAction_ = JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->sessionId_]);
+            streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
+            streamDesc->SetOldRoute(streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute());
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
-                "streamAction %{public}d", streamDesc->sessionId_,
-                streamDescToOldPipeInfo[streamDesc->sessionId_]->routeFlag_,
-                newPipeInfo->routeFlag_, streamDesc->streamAction_);
+                "streamAction %{public}d", streamDesc->GetSessionId(),
+                streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
+                newPipeInfo->GetRoute(), streamDesc->GetAction());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
@@ -273,14 +282,20 @@ void AudioPipeSelector::ScanPipeListForStreamDesc(std::vector<std::shared_ptr<Au
     streamDesc->routeFlag_ = GetRouteFlagByStreamDesc(streamDesc);
     AUDIO_INFO_LOG("Route flag: %{public}u", streamDesc->routeFlag_);
 
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
     for (auto &pipeInfo : pipeInfoList) {
         bool isUpdate = false;
         for (auto &streamDescInPipe : pipeInfo->streamDescriptors_) {
-            isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc);
+            isUpdate = ProcessConcurrency(streamDescInPipe, streamDesc, streamsMoveToNormal);
             AUDIO_INFO_LOG("isUpdate: %{public}d, action: %{public}d", isUpdate, streamDescInPipe->streamAction_);
         }
-        pipeInfo->pipeAction_ = isUpdate ? PIPE_ACTION_UPDATE : pipeInfo->pipeAction_;
+        if (isUpdate && pipeInfo->GetAction() != PIPE_ACTION_NEW) {
+            pipeInfo->SetAction(PIPE_ACTION_UPDATE);
+        }
     }
+    // Move concede existing streams to its corresponding normal pipe
+    MoveStreamsToNormalPipes(streamsMoveToNormal, pipeInfoList);
+
     AUDIO_INFO_LOG("Route flag after concurrency: %{public}u", streamDesc->routeFlag_);
 }
 
@@ -321,13 +336,14 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
     }
 }
 
-void AudioPipeSelector::IncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
-    std::shared_ptr<AudioStreamDescriptor> cmpStream)
+void AudioPipeSelector::CheckAndHandleIncomingConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream)
 {
-    // normal, mmap or voipmmap can't concurrency, if concede existing must concede incoming
-    if (cmpStream->audioMode_ == AUDIO_MODE_RECORD && stream->audioMode_ == AUDIO_MODE_RECORD) {
-        cmpStream->routeFlag_ = AUDIO_INPUT_FLAG_NORMAL;
-        AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u", cmpStream->sessionId_, stream->sessionId_);
+    // Normal, fast or voip-fast can not run concurrently, both stream need to be conceded
+    if (incomingStream->IsRecording() && existingStream->IsRecording()) {
+        AUDIO_INFO_LOG("capture in: %{public}u  old: %{public}u",
+            incomingStream->sessionId_, existingStream->sessionId_);
+        incomingStream->ResetToNormalRoute(false);
     }
 }
 
@@ -359,34 +375,45 @@ bool AudioPipeSelector::IsSameAdapter(std::shared_ptr<AudioStreamDescriptor> str
     return false;
 }
 
-bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> stream,
-    std::shared_ptr<AudioStreamDescriptor> cmpStream)
+bool AudioPipeSelector::ProcessConcurrency(std::shared_ptr<AudioStreamDescriptor> existingStream,
+    std::shared_ptr<AudioStreamDescriptor> incomingStream,
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove)
 {
+    ConcurrencyAction action = action = AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyAction(
+        GetPipeType(existingStream->routeFlag_, existingStream->audioMode_),
+        GetPipeType(incomingStream->routeFlag_, incomingStream->audioMode_));
+    action = IsSameAdapter(existingStream, incomingStream) ? action : PLAY_BOTH;
+    // No running offload can not concede incoming special pipe
+    if (action == CONCEDE_INCOMING && existingStream->IsNoRunningOffload()) {
+        action = CONCEDE_EXISTING;
+    }
+    AUDIO_INFO_LOG("Action: %{public}u "
+        "existingStream id: %{public}u, routeFlag: %{public}u; "
+        "incomingStream id: %{public}u, routeFlag: %{public}u",
+        action,
+        existingStream->GetSessionId(), existingStream->GetRoute(),
+        incomingStream->GetSessionId(), incomingStream->GetRoute());
+
     bool isUpdate = false;
-    std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction> ruleMap =
-        AudioStreamCollector::GetAudioStreamCollector().GetConcurrencyMap();
-    ConcurrencyAction action = ruleMap[std::make_pair(GetPipeType(stream->routeFlag_, stream->audioMode_),
-        GetPipeType(cmpStream->routeFlag_, cmpStream->audioMode_))];
-    action = IsSameAdapter(stream, cmpStream) ? action : PLAY_BOTH;
-    AUDIO_INFO_LOG("Action: %{public}u  %{public}u -- %{public}u", action, stream->sessionId_, cmpStream->sessionId_);
-    uint32_t newFlag;
     switch (action) {
         case PLAY_BOTH:
-            stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
             break;
         case CONCEDE_INCOMING:
-            stream->streamAction_ = AUDIO_STREAM_ACTION_DEFAULT;
-            cmpStream->routeFlag_ = cmpStream->audioMode_ == AUDIO_MODE_PLAYBACK ?
-                AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
+            incomingStream->ResetToNormalRoute(false);
             break;
         case CONCEDE_EXISTING:
-            // if concede existing, maybe need concede incomming
-            IncomingConcurrency(stream, cmpStream);
+            // If action is concede existing, maybe also need to concede incoming
+            CheckAndHandleIncomingConcurrency(existingStream, incomingStream);
             isUpdate = true;
-            newFlag = stream->audioMode_ == AUDIO_MODE_PLAYBACK ?
-                AUDIO_OUTPUT_FLAG_NORMAL : AUDIO_INPUT_FLAG_NORMAL;
-            stream->streamAction_ = AUDIO_STREAM_ACTION_RECREATE;
-            stream->routeFlag_ = newFlag;
+            if (existingStream->IsUseMoveToConcedeType()) {
+                existingStream->SetAction(AUDIO_STREAM_ACTION_MOVE);
+                // Do not move stream here, because it is still in for-each loop
+                streamsToMove.push_back(existingStream);
+            } else {
+                existingStream->SetAction(AUDIO_STREAM_ACTION_RECREATE);
+            }
+            // Set stream route flag to normal here so it will not affect later streams in loop
+            existingStream->ResetToNormalRoute(true);
             break;
         default:
             break;
@@ -522,6 +549,56 @@ void AudioPipeSelector::SortStreamDescsByStartTime(std::vector<std::shared_ptr<A
         const std::shared_ptr<AudioStreamDescriptor> &streamDesc2) {
             return streamDesc1->createTimeStamp_ < streamDesc2->createTimeStamp_;
         });
+}
+
+void AudioPipeSelector::MoveStreamsToNormalPipes(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamsToMove,
+    std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList)
+{
+    std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> streamToAdapter;
+    RemoveTargetStreams(streamsToMove, pipeInfoList, streamToAdapter);
+
+    // Put each stream to its according normal pipe
+    for (auto &stream : streamsToMove) {
+        for (auto &pipe : pipeInfoList) {
+            if (pipe->IsRouteNormal() && pipe->IsSameAdapter(streamToAdapter[stream])) {
+                AddStreamToPipeAndUpdateAction(stream, pipe);
+                break;
+            }
+        }
+    }
+}
+
+void AudioPipeSelector::AddStreamToPipeAndUpdateAction(
+    std::shared_ptr<AudioStreamDescriptor> &streamToAdd, std::shared_ptr<AudioPipeInfo> &pipe)
+{
+    AUDIO_INFO_LOG("Put stream %{public}u to pipe %{public}s",
+        streamToAdd->GetSessionId(), pipe->GetName().c_str());
+    pipe->AddStream(streamToAdd);
+    // When fetching, pipe action may already be PIPE_ACTION_NEW before,
+    // do not change it to PIPE_ACTION_UPDATE.
+    if (pipe->GetAction() != PIPE_ACTION_NEW) {
+        pipe->SetAction(PIPE_ACTION_UPDATE);
+    }
+}
+
+void AudioPipeSelector::RemoveTargetStreams(
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove,
+    std::vector<std::shared_ptr<AudioPipeInfo>> &pipeInfoList,
+    std::map<std::shared_ptr<AudioStreamDescriptor>, std::string> &streamToAdapter)
+{
+    // Remove streams from old pipes and record old pipe adapter which is used to find
+    // normal pipe in the same adapter.
+    for (auto &stream : streamsToMove) {
+        for (auto &pipe : pipeInfoList) {
+            if (pipe->ContainStream(stream->GetSessionId())) {
+                streamToAdapter[stream] = pipe->GetAdapterName();
+                pipe->RemoveStream(stream->GetSessionId());
+                // Should be only one matching pipe
+                break;
+            }
+        }
+    }
 }
 } // namespace AudioStandard
 } // namespace OHOS

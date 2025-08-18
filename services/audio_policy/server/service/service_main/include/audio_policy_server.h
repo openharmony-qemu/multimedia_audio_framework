@@ -539,8 +539,6 @@ public:
 
     int32_t UnsetAudioDeviceAnahsCallback() override;
 
-    int32_t MoveToNewPipe(uint32_t sessionId, int32_t pipeType) override;
-
     int32_t InjectInterruption(const std::string &networkId, const InterruptEvent &event) override;
 
     int32_t SetInputDevice(int32_t deviceType, uint32_t sessionID, int32_t sourceType, bool isRunning) override;
@@ -763,7 +761,6 @@ private:
     // Permission and privacy
     bool VerifyPermission(const std::string &permission, uint32_t tokenId = 0, bool isRecording = false);
     bool VerifyBluetoothPermission();
-    int32_t OffloadStopPlaying(const AudioInterrupt &audioInterrupt);
     int32_t SetAudioSceneInternal(AudioScene audioScene, const int32_t uid = INVALID_UID,
         const int32_t pid = INVALID_PID);
     bool VerifySessionId(uint32_t sessionId, uint32_t clientUid);

@@ -1,0 +1,124 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+audio_framework_root = "../../../../../../.."
+audio_policy_root = "../../../../.."
+module_output_path = "audio_framework/audio_framework_policy/audio_policy/pipe"
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+import("${audio_framework_root}/accessibility.gni")
+import("${audio_framework_root}/appgallery.gni")
+import("${audio_framework_root}/av_session.gni")
+import("${audio_framework_root}/bluetooth_part.gni")
+import("${audio_framework_root}/config.gni")
+
+group("pipe_domain_unit_test_group") {
+  testonly = true
+  deps = [
+    ":audio_offload_stream_unit_test",
+    ":audio_a2dp_offload_manager_unit_test",
+  ]
+}
+
+ohos_unittest("audio_offload_stream_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    ".",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
+  sources = [ "audio_offload_stream_unit_test.cpp" ]
+
+  configs = [ "${audio_policy_root}/:audio_policy_public_config" ]
+
+  deps = [
+    "${audio_policy_root}/:audio_policy_service_static",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_consumer",
+    "eventhandler:libeventhandler",
+    "hilog:libhilog",
+    "kv_store:distributeddata_inner",
+    "os_account:os_account_innerkits",
+    "power_manager:powermgr_client",
+  ]
+
+  defines = []
+
+  if (audio_framework_feature_support_os_account) {
+    defines += [ "SUPPORT_USER_ACCOUNT" ]
+  }
+}
+
+ohos_unittest("audio_a2dp_offload_manager_unit_test") {
+  module_out_path = module_output_path
+  include_dirs = [
+    ".",
+  ]
+
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fno-access-control",
+  ]
+
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    debug = false
+    integer_overflow = true
+    ubsan = true
+  }
+
+  sources = [ "audio_a2dp_offload_manager_unit_test.cpp" ]
+
+  deps = [
+    "${audio_policy_root}/:audio_policy_service_static",
+    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "googletest:gmock",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  defines = []
+  if (bluetooth_part_enable == true) {
+    defines += [ "BLUETOOTH_ENABLE" ]
+    deps +=
+        [ "${audio_framework_root}/frameworks/native/bluetoothclient:audio_bluetooth_client" ]
+    external_deps += [ "bluetooth:btframework" ]
+  }
+}

@@ -324,7 +324,6 @@ void AudioPolicyServiceTestII()
     GetServerPtr()->audioPolicyService_.OnReceiveUpdateDeviceNameEvent(
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "deviceName");
     GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();
-    GetServerPtr()->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     int32_t sessionId = GetData<int32_t>();
     GetServerPtr()->audioPolicyService_.audioA2dpOffloadManager_->IsA2dpOffloadConnecting(sessionId);
     std::vector<int32_t> playingStateVec = {

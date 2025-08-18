@@ -394,6 +394,8 @@ void AudioPipeManager::Dump(std::string &dumpString)
             pipe->Dump(dumpString);
         }
     }
+
+    dumpString += "PipeManager dump end\n";
 }
 
 bool AudioPipeManager::IsModemCommunicationIdExist()

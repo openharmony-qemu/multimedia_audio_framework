@@ -1,20 +1,20 @@
 /*
-* Copyright (c) 2025 Huawei Device Co., Ltd.
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-#include "audio_policy_utils.h"
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #include "audio_pipe_selector_unit_test.h"
-#include "audio_stream_descriptor.h"
+
+#include "audio_policy_utils.h"
 #include "audio_stream_descriptor.h"
 #include "audio_stream_enum.h"
 
@@ -22,6 +22,9 @@ using namespace testing::ext;
 
 namespace OHOS {
 namespace AudioStandard {
+
+static const uint32_t TEST_SESSION_ID_BASE = 100000;
+static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
 
 void AudioPipeSelectorUnitTest::SetUpTestCase(void) {}
 void AudioPipeSelectorUnitTest::TearDownTestCase(void) {}
@@ -404,12 +407,12 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipeAndExecute_001, TestSize.Level1)
 }
 
 /**
- * @tc.name: UpdataDeviceStreamInfo_001
- * @tc.desc: Test UpdataDeviceStreamInfo
+ * @tc.name: UpdateDeviceStreamInfo_001
+ * @tc.desc: Test UpdateDeviceStreamInfo
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
+HWTEST_F(AudioPipeSelectorUnitTest, UpdateDeviceStreamInfo_001, TestSize.Level1)
 {
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
 
@@ -418,24 +421,24 @@ HWTEST_F(AudioPipeSelectorUnitTest, UpdataDeviceStreamInfo_001, TestSize.Level1)
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
     // test empty
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     std::shared_ptr<AudioDeviceDescriptor> temp = nullptr;
     streamDesc->newDeviceDescs_.push_back(temp);
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     streamPropInfo = std::make_shared<PipeStreamPropInfo>();
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     streamDesc->newDeviceDescs_.front() = std::make_shared<AudioDeviceDescriptor>();
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     // test nullptr
     streamPropInfo->format_ = AudioSampleFormat::SAMPLE_S16LE;
     streamPropInfo->sampleRate_ = static_cast<uint32_t>(AudioSamplingRate::SAMPLE_RATE_48000);
     streamPropInfo->channels_ = AudioChannel::STEREO;
 
-    audioPipeSelector->UpdataDeviceStreamInfo(streamDesc, streamPropInfo);
+    audioPipeSelector->UpdateDeviceStreamInfo(streamDesc, streamPropInfo);
 
     EXPECT_EQ(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().format, streamPropInfo->format_);
     EXPECT_EQ(*(streamDesc->newDeviceDescs_.front()->audioStreamInfo_.front().samplingRate.rbegin()),
@@ -509,29 +512,29 @@ HWTEST_F(AudioPipeSelectorUnitTest, FetchPipesAndExecute_002, TestSize.Level4)
 }
 
 /**
- * @tc.name: IncomingConcurrency_001
- * @tc.desc: Test IncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
+ * @tc.name: CheckAndHandleIncomingConcurrency_001
+ * @tc.desc: Test CheckAndHandleIncomingConcurrency cmpStream->audioMode_ == AUDIO_MODE_RECORD
  *           && stream->audioMode_ == AUDIO_MODE_RECORD.
  * @tc.type: FUNC
  * @tc.require: #I5Y4MZ
  */
-HWTEST_F(AudioPipeSelectorUnitTest, IncomingConcurrency_001, TestSize.Level4)
+HWTEST_F(AudioPipeSelectorUnitTest, CheckAndHandleIncomingConcurrency_001, TestSize.Level4)
 {
     std::shared_ptr<AudioStreamDescriptor> stream = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioStreamDescriptor> cmpStream = std::make_shared<AudioStreamDescriptor>();
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
     stream->audioMode_ = AUDIO_MODE_PLAYBACK;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
     cmpStream->audioMode_ = AUDIO_MODE_PLAYBACK;
     stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
     stream->audioMode_ = AUDIO_MODE_RECORD;
-    audioPipeSelector->IncomingConcurrency(stream, cmpStream);
+    audioPipeSelector->CheckAndHandleIncomingConcurrency(stream, cmpStream);
     EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
 }
 
@@ -568,17 +571,79 @@ HWTEST_F(AudioPipeSelectorUnitTest, ProcessConcurrency_001, TestSize.Level4)
     cmpStream->sessionId_ = 1;
 
     auto audioPipeSelector = AudioPipeSelector::GetPipeSelector();
-    bool ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream);
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsToMove;
+    bool ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_EQ(stream->streamAction_, AUDIO_STREAM_ACTION_DEFAULT);
     EXPECT_FALSE(ret);
 
     cmpStream->audioMode_ = AUDIO_MODE_RECORD;
-    ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream);
+    ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_EQ(cmpStream->routeFlag_, AUDIO_INPUT_FLAG_NORMAL);
 
     stream->audioMode_ = AUDIO_MODE_RECORD;
-    ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream);
+    ret = audioPipeSelector->ProcessConcurrency(stream, cmpStream, streamsToMove);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name: AudioPipeSelectorUnitTest_MoveStreamsToNormalPipes_001
+ * @tc.number: MoveStreamsToNormalPipes_001
+ * @tc.desc: Test MoveStreamsToNormalPipes cases
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_001, TestSize.Level4)
+{
+    auto testSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> testStreamsToMove;
+    std::vector<std::shared_ptr<AudioPipeInfo>> testPipeInfoList;
+    // Make a normal pipe
+    auto normalPipe = std::make_shared<AudioPipeInfo>();
+    normalPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    testPipeInfoList.push_back(normalPipe);
+ 
+    // Make a offload pipe and add one remove stream
+    auto offloadPipe = std::make_shared<AudioPipeInfo>();
+    offloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    offloadPipe->AddStream(stream);
+    testStreamsToMove.push_back(stream);
+    testPipeInfoList.push_back(offloadPipe);
+ 
+    testSelector->MoveStreamsToNormalPipes(testStreamsToMove, testPipeInfoList);
+    EXPECT_EQ(true, normalPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
+    EXPECT_EQ(PIPE_ACTION_UPDATE, normalPipe->GetAction());
+    EXPECT_EQ(false, offloadPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
+}
+ 
+/**
+ * @tc.name: AudioPipeSelectorUnitTest_MoveStreamsToNormalPipes_002
+ * @tc.number: MoveStreamsToNormalPipes_002
+ * @tc.desc: Test MoveStreamsToNormalPipes cases
+ */
+HWTEST_F(AudioPipeSelectorUnitTest, MoveStreamsToNormalPipes_002, TestSize.Level4)
+{
+    auto testSelector = AudioPipeSelector::GetPipeSelector();
+    std::vector<std::shared_ptr<AudioStreamDescriptor>> testStreamsToMove;
+    std::vector<std::shared_ptr<AudioPipeInfo>> testPipeInfoList;
+    // Make a normal pipe
+    auto normalPipe = std::make_shared<AudioPipeInfo>();
+    normalPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_NORMAL;
+    normalPipe->SetAction(PIPE_ACTION_NEW);
+    testPipeInfoList.push_back(normalPipe);
+ 
+    // Make a offload pipe and add one remove stream
+    auto offloadPipe = std::make_shared<AudioPipeInfo>();
+    offloadPipe->routeFlag_ = AUDIO_OUTPUT_FLAG_LOWPOWER;
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    offloadPipe->AddStream(stream);
+    testStreamsToMove.push_back(stream);
+    testPipeInfoList.push_back(offloadPipe);
+ 
+    testSelector->MoveStreamsToNormalPipes(testStreamsToMove, testPipeInfoList);
+    EXPECT_EQ(true, normalPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
+    EXPECT_EQ(PIPE_ACTION_NEW, normalPipe->GetAction());
+    EXPECT_EQ(false, offloadPipe->ContainStream(TEST_STREAM_1_SESSION_ID));
 }
 
 /**

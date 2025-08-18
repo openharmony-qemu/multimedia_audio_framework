@@ -15,6 +15,7 @@
 
 #ifndef AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
 #define AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
+
 #include "gtest/gtest.h"
 #include "audio_a2dp_offload_manager.h"
 
@@ -31,6 +32,11 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+
+private:
+    void MakeStreamCollectorData(uint32_t runningStreamCnt, uint32_t stopStreamCnt);
+
+    std::shared_ptr<AudioA2dpOffloadManager> testManager_;
 };
 } // namespace AudioStandard
 } // namespace OHOS

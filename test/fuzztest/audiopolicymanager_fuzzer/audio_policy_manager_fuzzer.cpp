@@ -581,7 +581,6 @@ void AudioPolicyManagerDeviceTwoFuzzTest()
     AudioPolicyManager::GetInstance().SetPreferredDevice(preferredType, desc, uid);
     AudioPolicyManager::GetInstance().SetAudioDeviceAnahsCallback(audioDeviceAnahs);
     AudioPolicyManager::GetInstance().UnsetAudioDeviceAnahsCallback();
-    AudioPolicyManager::GetInstance().MoveToNewPipe(sessionId, pipeType);
     AudioPolicyManager::GetInstance().SetDeviceConnectionStatus(desc, isConnected);
     AudioPolicyManager::GetInstance().UpdateDeviceInfo(desc, command);
     AudioPolicyManager::GetInstance().SetSleAudioOperationCallback(sleAudioOperationCallback);

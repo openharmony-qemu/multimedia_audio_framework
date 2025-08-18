@@ -838,8 +838,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, HandleServiceEvent_001, TestSize.Level2
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     eventId = AudioPolicyServerHandler::EventAudioServerCmd::MICROPHONE_BLOCKED;
     audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
-    eventId = AudioPolicyServerHandler::EventAudioServerCmd::PIPE_STREAM_CLEAN_EVENT;
-    audioPolicyServerHandler_->HandleServiceEvent(eventId, event);
     EXPECT_EQ(audioPolicyServerHandler_->audioPolicyClientProxyAPSCbsMap_.size(), 1);
 }
 
@@ -1206,19 +1204,6 @@ HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_006, T
     EXPECT_NE(audioPolicyServerHandler_, nullptr);
     std::unordered_map<std::string, bool> changeInfo;
     bool ret = audioPolicyServerHandler_->SendHeadTrackingDeviceChangeEvent(changeInfo);
-    EXPECT_NE(ret, false);
-}
-/**
- * @tc.name  : AudioPolicyServerHandlerUnitTest_007
- * @tc.number: AudioPolicyServerHandlerUnitTest_007
- * @tc.desc  : Test HandleInterruptEventWithSessionId function when eventContextObj is nullptr.
- */
-HWTEST(AudioPolicyServerHandlerUnitTest, AudioPolicyServerHandlerUnitTest_007, TestSize.Level2)
-{
-    auto audioPolicyServerHandler_ = std::make_shared<AudioPolicyServerHandler>();
-    EXPECT_NE(audioPolicyServerHandler_, nullptr);
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    bool ret = audioPolicyServerHandler_->SendPipeStreamCleanEvent(PIPE_TYPE_UNKNOWN);
     EXPECT_NE(ret, false);
 }
 

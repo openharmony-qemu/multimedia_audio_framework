@@ -214,24 +214,8 @@ void AudioPolicyDump::GetMicrophoneDescriptorsDump(std::string &dumpString)
 void AudioPolicyDump::GetOffloadStatusDump(std::string &dumpString)
 {
     dumpString += "\nOffload status:";
-    DeviceType dev = audioActiveDevice_.GetCurrentOutputDeviceType();
-    if (dev != DEVICE_TYPE_SPEAKER && dev != DEVICE_TYPE_USB_HEADSET && dev != DEVICE_TYPE_BLUETOOTH_A2DP) {
-        AppendFormat(dumpString, " - current device do not supportted offload: %d\n", dev);
-    }
-    dumpString += "\nPrimary Offload\n";
-    if (dev == DEVICE_TYPE_SPEAKER || dev == DEVICE_TYPE_USB_HEADSET) {
-        AppendFormat(dumpString, " - primary deviceType : %d\n", dev);
-        AppendFormat(dumpString, " - primary offloadEnable : %d\n", audioOffloadStream_.GetOffloadAvailableFromXml());
-    } else {
-        AppendFormat(dumpString, " - current device is not primary\n");
-    }
     dumpString += "\nA2DP offload\n";
-    if (dev == DEVICE_TYPE_BLUETOOTH_A2DP) {
-        AppendFormat(dumpString, " - A2DP deviceType: %d\n", dev);
-        AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
-    } else {
-        AppendFormat(dumpString, " - current device is not A2DP\n");
-    }
+    AppendFormat(dumpString, " - A2DP offloadstatus : %d\n", audioA2dpOffloadFlag_.GetA2dpOffloadFlag());
     AppendFormat(dumpString, "\n");
 }
 

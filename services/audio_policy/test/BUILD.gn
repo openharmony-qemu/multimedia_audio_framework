@@ -25,7 +25,6 @@ group("audio_policy_unittest_packages") {
   testonly = true
   deps = [
     ":audio_a2dp_device_unit_test",
-    ":audio_a2dp_offload_manager_unit_test",
     ":audio_active_device_unit_test",
     ":audio_adapter_manager_unit_test",
     ":audio_affinity_manager_unit_test",
@@ -56,7 +55,6 @@ group("audio_policy_unittest_packages") {
     ":audio_interrupt_service_pro_unit_test",
     ":audio_interrupt_service_unit_test",
     ":audio_interrupt_service_second_unit_test",
-    ":audio_offload_stream_unit_test",
     ":audio_pipe_manager_unit_test",
     ":audio_pipe_selector_unit_test",
     ":audio_pnp_server_unit_test",
@@ -100,7 +98,8 @@ group("audio_policy_unittest_packages") {
     ":volume_data_maintainer_unit_test",
     ":audio_ipc_serialization_unit_test",
     ":audio_device_manager_unit_test",
-    ":user_select_router_unit_test"
+    ":user_select_router_unit_test",
+    "../server/domain/pipe/test/unittest:pipe_domain_unit_test_group"
   ]
 }
 
@@ -1900,148 +1899,6 @@ ohos_unittest("audio_socket_thread_unit_test") {
   }
 
   deps = [ "../../audio_policy:audio_policy_service_static" ]
-}
-
-ohos_unittest("audio_offload_stream_unit_test") {
-  module_out_path = module_output_path1
-  include_dirs = [
-    "./unittest/audio_offload_stream_unit_test/include",
-    "../../audio_policy/server/src/service/service",
-    "../../audio_policy/server/include/service/service",
-    "../../audio_policy/server/domain/device/include",
-    "../../audio_policy/server/domain/device/src/a2dp",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-  ]
-
-  cflags_cc = cflags
-  cflags_cc += [ "-fno-access-control" ]
-
-  sanitize = {
-    cfi = true
-    cfi_cross_dso = true
-    boundary_sanitize = true
-    debug = false
-    integer_overflow = true
-    ubsan = true
-  }
-
-  external_deps = [
-    "ability_base:want",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "ipc:ipc_single",
-    "kv_store:distributeddata_inner",
-    "os_account:os_account_innerkits",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-  ]
-
-  sources = [ "./unittest/audio_offload_stream_unit_test/src/audio_offload_stream_unit_test.cpp" ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-  ]
-
-  defines = []
-  if (audio_framework_feature_wired_audio) {
-    defines += [ "AUDIO_WIRED_DETECT" ]
-    #sources += [
-    #  "server/domain/device/src/pnp/audio_input_thread.cpp",
-    #  "server/domain/device/src/pnp/audio_pnp_server.cpp",
-    #  "server/domain/device/src/pnp/audio_socket_thread.cpp",
-    #]
-  }
-
-  if (build_variant == "user") {
-    defines += [ "AUDIO_BUILD_VARIANT_USER" ]
-  } else if (build_variant == "root") {
-    defines += [ "AUDIO_BUILD_VARIANT_ROOT" ]
-  }
-
-  if (use_libfuzzer || use_clang_coverage) {
-    defines += [ "TEST_COVERAGE" ]
-  }
-
-  if (audio_framework_feature_support_os_account) {
-    defines += [ "SUPPORT_USER_ACCOUNT" ]
-  }
-
-  if (audio_framework_feature_dtmf_tone) {
-    #sources += [ "server/infra/config/parser/src/audio_tone_parser.cpp" ]
-    defines += [ "FEATURE_DTMF_TONE" ]
-  }
-
-  if (is_emulator) {
-    defines += [ "IS_EMULATOR" ]
-  }
-
-  if (audio_framework_feature_inner_capturer) {
-    defines += [ "HAS_FEATURE_INNERCAPTURER" ]
-  }
-
-  configs = [ "../../../services/audio_policy:audio_policy_public_config" ]
-
-  public_external_deps = [ "ffrt:libffrt" ]
-
-  public_external_deps += [
-    "libxml2:libxml2",
-    "openssl:libcrypto_shared",
-  ]
-
-  if (audio_framework_feature_usb_audio) {
-    defines += [ "USB_ENABLE" ]
-    external_deps += [ "usb_manager:usbsrv_client" ]
-
-    #sources += [ "server/domain/device/src/pnp/audio_usb_manager.cpp" ]
-  }
-
-  if (audio_framework_feature_detect_soundbox) {
-    defines += [ "DETECT_SOUNDBOX" ]
-  }
-
-  if (audio_framework_config_policy_enable) {
-    defines += [ "USE_CONFIG_POLICY" ]
-    external_deps += [ "config_policy:configpolicy_util" ]
-  }
-
-  if (appgallery_part_enable == true) {
-    defines += [ "FEATURE_APPGALLERY" ]
-  }
-
-  if (bluetooth_part_enable == true) {
-    deps +=
-        [ "../../../frameworks/native/bluetoothclient:audio_bluetooth_client" ]
-    external_deps += [ "bluetooth:btframework" ]
-  }
-
-  if (audio_framework_feature_input) {
-    defines += [ "FEATURE_MULTIMODALINPUT_INPUT" ]
-    external_deps += [ "input:libmmi-client" ]
-  }
-
-  if (audio_framework_feature_device_manager) {
-    defines += [ "FEATURE_DEVICE_MANAGER" ]
-    external_deps += [ "device_manager:devicemanagersdk" ]
-  }
 }
 
 ohos_unittest("audio_policy_server_unit_test") {
@@ -4070,73 +3927,6 @@ ohos_unittest("audio_active_device_unit_test") {
   ]
 
   sources = [ "./unittest/audio_active_device_unit_test/src/audio_active_device_unit_test.cpp" ]
-
-  deps = [
-    "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",
-    "../../audio_policy:audio_policy_service_static",
-  ]
-}
-
-ohos_unittest("audio_a2dp_offload_manager_unit_test") {
-  module_out_path = module_output_path
-  include_dirs = [
-    "../server/include",
-    "./unittest/audio_a2dp_offload_manager_unit_test/include",
-  ]
-
-  use_exceptions = true
-
-  cflags = [
-    "-Wall",
-    "-Werror",
-    "-Wno-macro-redefined",
-    "-fno-access-control",
-  ]
-
-  defines = [ "BLUETOOTH_ENABLE" ]
-
-  external_deps = [
-    "ability_base:session_info",
-    "ability_base:want",
-    "ability_base:zuri",
-    "ability_runtime:ability_connect_callback_stub",
-    "ability_runtime:ability_context_native",
-    "ability_runtime:app_context",
-    "ability_runtime:dataobs_manager",
-    "ability_runtime:extension_manager",
-    "access_token:libaccesstoken_sdk",
-    "access_token:libprivacy_sdk",
-    "access_token:libtokenid_sdk",
-    "access_token:libtokensetproc_shared",
-    "bluetooth:btframework",
-    "bounds_checking_function:libsec_shared",
-    "bundle_framework:appexecfwk_base",
-    "bundle_framework:appexecfwk_core",
-    "c_utils:utils",
-    "data_share:datashare_common",
-    "data_share:datashare_consumer",
-    "drivers_interface_audio:libaudio_proxy_5.0",
-    "eventhandler:libeventhandler",
-    "googletest:gmock",
-    "hdf_core:libhdf_host",
-    "hdf_core:libhdf_ipc_adapter",
-    "hdf_core:libhdf_utils",
-    "hdf_core:libhdi",
-    "hdf_core:libpub_utils",
-    "hilog:libhilog",
-    "hisysevent:libhisysevent",
-    "init:libbegetutil",
-    "ipc:ipc_single",
-    "media_foundation:media_monitor_client",
-    "media_foundation:media_monitor_common",
-    "os_account:os_account_innerkits",
-    "power_manager:power_setting",
-    "power_manager:powermgr_client",
-    "safwk:system_ability_fwk",
-    "samgr:samgr_proxy",
-  ]
-
-  sources = [ "./unittest/audio_a2dp_offload_manager_unit_test/src/audio_a2dp_offload_manager_unit_test.cpp" ]
 
   deps = [
     "${audio_framework_root}/services/audio_service/idl:audio_framework_interface",

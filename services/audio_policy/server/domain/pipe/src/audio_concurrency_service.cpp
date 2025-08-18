@@ -33,9 +33,16 @@ void AudioConcurrencyService::Init()
     CHECK_AND_RETURN_LOG(!parser->LoadConfig(concurrencyCfgMap_), "Load audioConcurrency cfgMap failed!");
 }
 
-std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioConcurrencyService::GetConcurrencyMap()
+ConcurrencyAction AudioConcurrencyService::GetConcurrencyAction(
+    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
-    return concurrencyCfgMap_;
+    auto target = std::make_pair(existingPipe, commingPipe);
+    if (concurrencyCfgMap_.find(target) == concurrencyCfgMap_.end()) {
+        AUDIO_ERR_LOG("Can not find matching action for existingPipe %{public}d and commingPipe %{public}d",
+            existingPipe, commingPipe);
+        return PLAY_BOTH;
+    }
+    return concurrencyCfgMap_[target];
 }
 } // namespace AudioStandard
 } // namespace OHOS

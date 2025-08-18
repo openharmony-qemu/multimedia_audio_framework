@@ -251,7 +251,7 @@ void AudioRecoveryDevice::HandleFetchDeviceChange(const AudioStreamDeviceChangeR
         currentOutputDevice, caller);
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
-        audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
@@ -473,7 +473,7 @@ int32_t AudioRecoveryDevice::ExcludeOutputDevices(AudioDeviceUsage audioDevUsage
         currentInputDevice, currentOutputDevice, "ExcludeOutputDevices");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
-        audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }
@@ -500,7 +500,7 @@ int32_t AudioRecoveryDevice::UnexcludeOutputDevices(AudioDeviceUsage audioDevUsa
         currentInputDevice, currentOutputDevice, "UnexcludeOutputDevices");
     if ((currentOutputDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) ||
         (currentOutputDevice.networkId_ != LOCAL_NETWORK_ID)) {
-        audioA2dpOffloadManager_->UpdateOffloadWhenActiveDeviceSwitchFromA2dp();
+        audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForA2dpDeviceOut();
     } else {
         audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream(currentOutputDevice.deviceType_);
     }

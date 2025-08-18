@@ -241,21 +241,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
 }
 
 /**
-* @tc.name  : Test CheckSpatializationAndEffectState.
-* @tc.number: CheckSpatializationAndEffectState_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckSpatializationAndEffectState_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest CheckSpatializationAndEffectState_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    bool ret = server->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
-    EXPECT_FALSE(ret);
-}
-
-/**
 * @tc.name  : Test UpdateRoute.
 * @tc.number: UpdateRoute_001
 * @tc.desc  : Test AudioPolicyServic interfaces.

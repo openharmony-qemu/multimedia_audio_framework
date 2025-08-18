@@ -219,7 +219,6 @@ interface IAudioPolicy {
     void SetAudioDeviceRefinerCallback([in] IRemoteObject object);
     void UnsetAudioDeviceRefinerCallback();
     void TriggerFetchDevice([in] AudioStreamDeviceChangeReasonExt reason);
-    void MoveToNewPipe([in] unsigned int sessionId, [in] int pipeType);
     void DisableSafeMediaVolume();
     void GetDevicesInner([in] int deviceFlag, [out] List<sharedptr<AudioDeviceDescriptor>> retDevicesList);
     void SetMicrophoneMutePersistent([in] boolean isMute, [in] int type);

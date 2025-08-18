@@ -127,5 +127,31 @@ std::string AudioPipeInfo::ToString()
     return out;
 }
 
+bool AudioPipeInfo::ContainStream(uint32_t sessionId) const
+{
+    return (streamDescMap_.find(sessionId) != streamDescMap_.end());
+}
+ 
+void AudioPipeInfo::AddStream(std::shared_ptr<AudioStreamDescriptor> stream)
+{
+    streamDescriptors_.push_back(stream);
+    streamDescMap_[stream->GetSessionId()] = stream;
+}
+ 
+void AudioPipeInfo::RemoveStream(uint32_t sessionId)
+{
+    if (!ContainStream(sessionId)) {
+        return;
+    }
+ 
+    // Both streamdesc data need remove
+    streamDescMap_.erase(sessionId);
+    streamDescriptors_.erase(std::remove_if(streamDescriptors_.begin(), streamDescriptors_.end(),
+        [&sessionId] (const std::shared_ptr<AudioStreamDescriptor> &stream) {
+            return stream->GetSessionId() == sessionId;
+        }),
+        streamDescriptors_.end());
+}
+
 } // AudioStandard
 } // namespace OHOS

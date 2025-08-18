@@ -146,6 +146,8 @@ void AudioCoreService::DumpPipeManager(std::string &dumpString)
     if (pipeManager_ != nullptr) {
         pipeManager_->Dump(dumpString);
     }
+
+    audioOffloadStream_.Dump(dumpString);
 }
 
 int32_t AudioCoreService::CreateRendererClient(
@@ -462,6 +464,11 @@ int32_t AudioCoreService::StartClient(uint32_t sessionId)
     }
 
     CHECK_AND_RETURN_RET_LOG(!streamDesc->newDeviceDescs_.empty(), ERR_INVALID_PARAM, "newDeviceDescs_ is empty");
+
+    // Update a2dp offload flag for update active route, if a2dp offload flag is not true, audioserver
+    // will reset a2dp device to none.
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForStartStream(static_cast<int32_t>(sessionId));
+
     if (streamDesc->audioMode_ == AUDIO_MODE_PLAYBACK) {
         int32_t outputRet = ActivateOutputDevice(streamDesc);
         CHECK_AND_RETURN_RET_LOG(outputRet == SUCCESS, outputRet, "Activate output device failed");
@@ -509,7 +516,7 @@ int32_t AudioCoreService::ReleaseClient(uint32_t sessionId, SessionOperationMsg 
         return SUCCESS;
     }
     pipeManager_->RemoveClient(sessionId);
-    audioOffloadStream_.ResetOffloadStatus(sessionId);
+    audioOffloadStream_.UnsetOffloadStatus(sessionId);
     RemoveUnusedPipe();
     if (opMsg == SESSION_OP_MSG_REMOVE_PIPE) {
         RemoveUnusedRecordPipe();
@@ -959,7 +966,9 @@ int32_t AudioCoreService::UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &
     SendA2dpConnectedWhileRunning(rendererState, streamChangeInfo.audioRendererChangeInfo.sessionId);
 
     if (mode == AUDIO_MODE_PLAYBACK) {
-        CheckOffloadStream(streamChangeInfo);
+        audioOffloadStream_.UpdateOffloadStatusFromUpdateTracker(
+            streamChangeInfo.audioRendererChangeInfo.sessionId,
+            streamChangeInfo.audioRendererChangeInfo.rendererState);
     }
     return ret;
 }
