@@ -1889,11 +1889,9 @@ HWTEST_F(AudioEndpointPlusUnitTest, ProcessToDupStream_001, TestSize.Level1)
     AudioProcessConfig clientConfig = {};
     auto audioEndpointnIner = std::make_shared<AudioEndpointInner>(type, id, clientConfig);
     ASSERT_NE(audioEndpointInner, nullptr);
-
     CaptureInfo captureInfo;
-
-    EXPECT_EQ(audioEndpointnIner->HandleDisableFastCap(captureInfo), SUCCESS);
     
+    EXPECT_EQ(audioEndpointnIner->HandleDisableFastCap(captureInfo), SUCCESS);
 }
 
 /*
