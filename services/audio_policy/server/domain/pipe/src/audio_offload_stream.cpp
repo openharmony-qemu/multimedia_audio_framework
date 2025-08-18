@@ -40,7 +40,7 @@ void AudioOffloadStream::SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_
 
     for (auto &iter : offloadSessionIdMap_) {
         if (iter.second == sessionId) {
-            // Find target sessionId, means offload status is already been set or the stream is moved from 
+            // Find target sessionId, means offload status is already been set or the stream is moved from
             // one offload pipe to another offload pipe, map record should be reset.
             iter.second = NO_OFFLOAD_STREAM_SESSIONID;
         }
