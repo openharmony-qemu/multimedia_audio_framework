@@ -96,6 +96,37 @@ TEST_F(HpaeAudioServerHpaeDumpTest, HpaeAudioServerHpaeDumpTest_002)
     audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
     EXPECT_EQ(dumpString.empty(), false);
 }
+
+TEST_F(HpaeAudioServerHpaeDumpTest, ArgDataDump_001)
+{
+    bool isTrue = audioServerHpaeDump_->GetDevicesInfo();
+    EXPECT_EQ(isTrue, true);
+    std::string dumpString;
+
+    std::queue<std::u16string> argQue
+    argQue.push(u"-h");
+    dumpString = "";
+    audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    argQue.pop();
+    argQue.push(u"-p");
+    dumpString = "";
+    audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    argQue.pop();
+    argQue.push(u"-f");
+    dumpString = "";
+    audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
+    EXPECT_EQ(dumpString.empty(), false);
+
+    argQue.pop();
+    argQue.push(u"-m");
+    dumpString = "";
+    audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
+    EXPECT_EQ(dumpString.empty(), false);
+}
 }  // namespace HPAE
 }  // namespace AudioStandard
 }  // namespace OHOS

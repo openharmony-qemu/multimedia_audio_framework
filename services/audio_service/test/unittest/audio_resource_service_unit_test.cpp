@@ -56,6 +56,7 @@ AudioResourceService::AudioWorkgroupDeathRecipient deathRecipient;
 AudioResourceService audioResourceService;
 const int32_t testRtgId = 2;
 static constexpr int32_t AUDIO_MAX_PROCESS = 2;
+static constexpr int32_t AUDIO_MAX_GRP_PER_PROCESS = 4;
 
 class RemoteObjectTestStub : public IRemoteObject {
 public:
@@ -682,5 +683,62 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_004, TestSize.Level0)
     EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), SUCCESS);
 }
 
+/**
+ * @tc.name  : Test WorkgroupRendererMonitor
+ * @tc.type  : FUNC
+ * @tc.number: WorkgroupRendererMonitor
+ * @tc.desc  : Test WorkgroupRendererMonitor when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, WorkgroupRendererMonitor_002, TestSize.Level0)
+{
+    int32_t testPid = 123;
+    audioResourceService.audioWorkgroupMap_[testPid].permission = false;
+    audioResourceService.WorkgroupRendererMonitor(testPid, true);
+
+    EXPECT_TRUE(audioResourceService.audioWorkgroupMap_[testPid].permission);
+}
+
+/**
+ * @tc.name  : Test deathRecipient
+ * @tc.type  : FUNC
+ * @tc.number: OnWorkgroupRemoteDied_001
+ * @tc.desc  : Test OnWorkgroupRemoteDied when called
+ */
+HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
+{
+    std::shared_ptr<AudioWorkgroup> workgroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    std::shared_ptr<AudioWorkgroup> workGroup = std::make_shared<AudioWorkgroup>(testRtgId);
+    sptr<IRemoteObject> remoteObj = nullptr;
+
+    audioResourceService.audioWorkgroupMap_[10].groups[testRtgId] = {workGroup};
+    audioResourceService.OnWorkgroupRemoteDied(workgroup, remoteObj);
+    EXPECT_EQ(audioResourceService.audioWorkgroupMap_[10].groups.count[testRtgId], 1);
+}
+
+/**
+ * @tc.name  : Test AudioWorkgroupCheck
+ * @tc.type  : FUNC
+ * @tc.number: AudioWorkgroupCheck
+ * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ */
+HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_005, TestSize.Level0)
+{
+    int32_t pid = 123;
+    for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++){
+        audioResourceService.audioWorkgroupMap_[pid].groups[i] = nullptr;
+    }
+    EXPECT_TRUE(audioResourceService.IsProcessInWorkGroup(pid));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid), ERR_NOT_SUPPORTED);
+
+    pid = 532;
+    audioResourceService.audioWorkgroupMap_[pid].groups[pid] = nullptr;
+    audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
+
+    for (int i = 0; i <= AUDIO_MAX_PROCESS; i++){
+        audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
+    }
+    EXPECT_FALSE(audioResourceService.IsProcessInWorkGroup(pid + 1));
+    EXPECT_EQ(audioResourceService.AudioWorkgroupCheck(pid + 1), ERR_NOT_SUPPORTED);
+}
 } // namespace AudioStandard
 } // namespace OHOS

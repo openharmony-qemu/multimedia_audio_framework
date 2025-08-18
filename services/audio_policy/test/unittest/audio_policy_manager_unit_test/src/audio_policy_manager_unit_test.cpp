@@ -809,5 +809,24 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
     auto result = audioPolicyManager_->SetNearlinkDeviceVolume(macAddress, volumeType, volume, updateUi);
     EXPECT_EQ(result, ERROR);
 }
+
+/**
+* @tc.name  : Test AudioPolicyManager.
+* @tc.number: SelectOutputDevice_001.
+* @tc.desc  : Test SetNearlinkDeviceVolume.
+*/
+HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
+{
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+    sptr<AudioRendererFilter> audioRendererFilter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors01;
+    auto ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors01);
+    EXPECT_EQ(ret, -1);
+    
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
+    ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
+    EXPECT_EQ(ret, -1);
+}
 } // namespace AudioStandard
 } // namespace OHOS
