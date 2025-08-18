@@ -56,6 +56,7 @@ private:
     std::map<std::pair<int32_t, int32_t>, DataTransferMonitorParam> registerInfo_;
     std::map<uint32_t, std::shared_ptr<AudioStreamChecker>> audioStreamCheckers_;
     std::mutex regStatusMutex_;
+    std::mutex callbackMutex_;
     DataTransferStateChangeCallbackForMonitor *audioServer_ = nullptr;
 };
 }
