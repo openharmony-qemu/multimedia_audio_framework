@@ -17,6 +17,7 @@
 #endif
 #include <cstring>
 #include "audio_collaborative_service.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -80,7 +81,7 @@ void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor 
     }
     // current device is A2DP and is reserved state, which comes back from other type like SCO, should be opened
     if ((selectedAudioDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) &&
-        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end() &&
+        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end() &&
         addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_RESERVED) {
         addressToCollaborativeEnabledMap_[curDeviceAddress_] = COLLABORATIVE_OPENED;
         WriteCollaborativeStateSysEvents(curDeviceAddress_, addressToCollaborativeEnabledMap_[curDeviceAddress_]);
@@ -154,14 +155,14 @@ void AudioCollaborativeService::WriteCollaborativeStateSysEvents(std::string mac
     std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
         Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_DEVICE_COLLABORATIVE_STATE,
         Media::MediaMonitor::BEHAVIOR_EVENT);
-    bean->Add("ADDRESS", curOutputDeviceDesc.macAddress_);
-    bean->Add("COLLABORATIVE_STATE", state);
+    bean->Add("ADDRESS", macAddress_);
+    bean->Add("COLLABORATIVE_STATE", static_cast<int32_t>(state));
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
 void AudioCollaborativeService::RecoverCollaborativeState()
 {
-    std::map<std::string, Media::MediaMonitor::CollaborativeState>> storedCollaborativeState;
+    std::map<std::string, uint32_t> storedCollaborativeState;
     Media::MediaMonitor::MediaMonitorManager::GetInstance().GetCollaborativeDeviceState(storedCollaborativeState);
     for (auto p: storedCollaborativeState) {
         addressToCollaborativeEnabledMap_[p.first] = static_cast<CollaborativeState>(p.second);
