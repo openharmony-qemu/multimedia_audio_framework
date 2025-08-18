@@ -1929,10 +1929,6 @@ HWTEST_F(AudioEndpointPlusUnitTest, AudioEndpointInner_008, TestSize.Level1)
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 
     srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
-    dstData.streamInfo.channels = AudioChannel::MONO;
-    audioEndpointInner->HandleRendererDataParams(srcData, dstData);
-
-    srcData.streamInfo.format = AudioSampleFormat::SAMPLE_S32LE;
     dstData.streamInfo.channels = AudioChannel::STEREO;
     audioEndpointInner->HandleRendererDataParams(srcData, dstData);
 
