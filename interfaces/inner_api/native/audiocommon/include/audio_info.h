@@ -598,6 +598,7 @@ enum AudioLoopbackEqualizerPreset {
 struct AudioRendererInfo : public Parcelable {
     ContentType contentType = CONTENT_TYPE_UNKNOWN;
     StreamUsage streamUsage = STREAM_USAGE_UNKNOWN;
+    bool forceToNormal = false;
     int32_t rendererFlags = AUDIO_FLAG_NORMAL;
     AudioVolumeMode volumeMode = AUDIOSTREAM_VOLUMEMODE_SYSTEM_GLOBAL;
     std::string sceneType = "";
@@ -637,6 +638,7 @@ struct AudioRendererInfo : public Parcelable {
     {
         return parcel.WriteInt32(static_cast<int32_t>(contentType))
             && parcel.WriteInt32(static_cast<int32_t>(streamUsage))
+            && parcel.WriteBool(forceToNormal)
             && parcel.WriteInt32(rendererFlags)
             && parcel.WriteInt32(originalFlag)
             && parcel.WriteString(sceneType)
@@ -661,6 +663,7 @@ struct AudioRendererInfo : public Parcelable {
     {
         contentType = static_cast<ContentType>(parcel.ReadInt32());
         streamUsage = static_cast<StreamUsage>(parcel.ReadInt32());
+        forceToNormal = parcel.ReadBool();
         rendererFlags = parcel.ReadInt32();
         originalFlag = parcel.ReadInt32();
         sceneType = parcel.ReadString();

@@ -819,6 +819,34 @@ HWTEST_F(AudioCoreServiceUnitTest, IsStreamSupportMultiChannel_002, TestSize.Lev
 
 /**
  * @tc.name   : Test AudioCoreServiceUnit
+ * @tc.number : UpdatePlaybackStreamFlag_001
+ * @tc.desc   : Test UpdatePlaybackStreamFlag interface - when streamDesc is null, return flag normal.
+ */
+HWTEST_F(AudioCoreServiceUnitTest, UpdatePlaybackStreamFlag_001, TestSize.Level1)
+{
+    ASSERT_NE(nullptr, GetServerPtr());
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->rendererInfo_.rendererFlags = AUDIO_FLAG_FORCED_NORMAL;
+
+    bool isCreateProcess = true;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    streamDesc->rendererInfo_.forceToNormal = true;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    isCreateProcess = false;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+
+    streamDesc->rendererInfo_.forceToNormal = false;
+    GetServerPtr()->coreService_->UpdatePlaybackStreamFlag(streamDesc, isCreateProcess);
+    EXPECT_EQ(streamDesc->audioFlag_, AUDIO_OUTPUT_FLAG_NORMAL);
+}
+
+/**
+ * @tc.name   : Test AudioCoreServiceUnit
  * @tc.number : SetFlagForSpecialStream_001
  * @tc.desc   : Test SetFlagForSpecialStream interface - when streamDesc is null, return flag normal.
  */
