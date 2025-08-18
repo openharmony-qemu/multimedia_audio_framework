@@ -1656,33 +1656,33 @@ HWTEST_F(AudioVolumeUnitTest, GetVolume_006, TestSize.Level1)
     StreamVolumeParams streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
 
-    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, false);
+    SystemVolume systemVolume(STREAM_MUSIC, "speaker", 0.5f, 5, true);
     AudioVolume::GetInstance()->SetSystemVolume(systemVolume);
 
     struct VolumeValues volumes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     float volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
     EXPECT_EQ(volume, 0.0f);
 
-    streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, false, mode, isVKB };
+    streamVolumeParams = { sessionId, streamType, streamUsage, uid, pid, true, mode, isVKB };
     AudioVolume::GetInstance()->AddStreamVolume(streamVolumeParams);
     volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-    EXPECT_EQ(volume.volumeStream, 1.0f);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_SYSTEM;
     volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-    EXPECT_EQ(volume.volumeStream, 1.0f);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_VOICE_CALL;
     volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-    EXPECT_EQ(volume.volumeStream, 1.0f);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumeType = STREAM_VOICE_COMMUNICATION;
     volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-    EXPECT_EQ(volume.volumeStream, 1.0f);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
 
     volumes = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
     volume = AudioVolume::GetInstance()->GetVolume(sessionId, volumeType, deviceClass, &volumes);
-    EXPECT_EQ(volume.volumeStream, 1.0f);
+    EXPECT_EQ(volumes.volumeStream, 1.0f);
 }
 
 /**
