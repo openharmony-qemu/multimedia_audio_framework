@@ -253,6 +253,7 @@ enum AudioPipeType {
     PIPE_TYPE_SPATIALIZATION = 12,
     PIPE_TYPE_DIRECT_MUSIC = 13,
     PIPE_TYPE_DIRECT_VOIP = 14,
+    PIPE_TYPE_NORMAL_IN_AI = 15,
 };
 
 enum AudioPreloadType {

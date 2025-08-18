@@ -49,7 +49,7 @@ public:
 
     virtual void WriteDumpFile(void *buffer, size_t bufferSize) = 0;
 
-    virtual int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice) = 0;
+    virtual int32_t SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce = false) = 0;
 
     virtual int32_t SetSilentModeAndMixWithOthers(bool on) = 0;
 

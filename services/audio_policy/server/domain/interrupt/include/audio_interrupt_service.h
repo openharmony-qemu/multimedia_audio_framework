@@ -330,6 +330,9 @@ private:
         std::list<std::pair<AudioInterrupt, AudioFocuState>>::iterator &activeInterrupt);
     void ReportRecordGetFocusFail(const AudioInterrupt &incomingInterrupt,
         const AudioInterrupt &activeInterrupt, int32_t reason);
+    void HandleVoiceCallAndTranscriptionFocus(
+        std::map<std::pair<AudioFocusType, AudioFocusType>, AudioFocusEntry> &focusMap,
+        const AudioInterrupt &currentInterrupt, const AudioInterrupt &newInterrupt);
 
     // interrupt members
     sptr<AudioPolicyServer> policyServer_;

@@ -39,12 +39,15 @@ public:
     int32_t UpdateSessionOperation(uint32_t sessionId, SessionOperation operation,
         SessionOperationMsg opMsg = SESSION_OP_MSG_DEFAULT);
     int32_t SetDefaultOutputDevice(
-        const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning);
+        const DeviceType defaultOutputDevice, const uint32_t sessionID, const StreamUsage streamUsage, bool isRunning,
+        bool skipForce = false);
     std::string GetAdapterNameBySessionId(uint32_t sessionId);
     int32_t GetProcessDeviceInfoBySessionId(uint32_t sessionId, AudioDeviceDescriptor &deviceInfo,
         AudioStreamInfo &streamInfo, bool isReloadProcess);
     uint32_t GenerateSessionId();
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config);
+    int32_t GetVoiceMuteState(uint32_t sessionId, bool &muteState);
+    int32_t RemoveVoiceMuteState(uint32_t sessionId);
 private:
     CoreServiceHandler();
     sptr<ICoreServiceProviderIpc> iCoreServiceProvider_ = nullptr;

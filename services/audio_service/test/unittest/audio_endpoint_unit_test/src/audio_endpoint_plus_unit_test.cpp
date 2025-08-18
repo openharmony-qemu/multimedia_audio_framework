@@ -53,7 +53,7 @@ public:
     MOCK_METHOD(AudioProcessConfig, GetAudioProcessConfig, (), (override));
     MOCK_METHOD(void, WriteDumpFile, (void* buffer, size_t bufferSize), (override));
 
-    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice), (override));
+    MOCK_METHOD(int32_t, SetDefaultOutputDevice, (int32_t defaultOutputDevice, bool skipForce), (override));
     MOCK_METHOD(int32_t, SetSilentModeAndMixWithOthers, (bool on), (override));
 
     MOCK_METHOD(uint32_t, GetSpanSizeInFrame, (), (override));

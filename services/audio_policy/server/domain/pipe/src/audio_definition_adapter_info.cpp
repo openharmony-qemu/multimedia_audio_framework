@@ -380,5 +380,24 @@ void PipeStreamPropInfo::SelfCheck()
     }
 }
 
+AudioSourceStrategyData& AudioSourceStrategyData::GetInstance()
+{
+    static AudioSourceStrategyData instance;
+    return instance;
+}
+
+void AudioSourceStrategyData::SetSourceStrategyMap(std::shared_ptr<std::map<SourceType,
+    AudioSourceStrategyType>> newMap)
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    sourceStrategyMap_ = newMap;
+}
+
+std::shared_ptr<std::map<SourceType, AudioSourceStrategyType>> AudioSourceStrategyData::GetSourceStrategyMap() const
+{
+    std::lock_guard<std::mutex> lock(mutex_);
+    return sourceStrategyMap_;
+}
+
 }
 }

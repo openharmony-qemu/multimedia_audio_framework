@@ -738,11 +738,11 @@ void AudioProcessInServer::WriteDumpFile(void *buffer, size_t bufferSize)
     }
 }
 
-int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice)
+int32_t AudioProcessInServer::SetDefaultOutputDevice(int32_t defaultOutputDevice, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(streamStatus_ != nullptr, ERROR, "streamStatus_ is nullptr");
     return CoreServiceHandler::GetInstance().SetDefaultOutputDevice(static_cast<DeviceType>(defaultOutputDevice),
-        sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING);
+        sessionId_, processConfig_.rendererInfo.streamUsage, streamStatus_->load() == STREAM_RUNNING, skipForce);
 }
 
 int32_t AudioProcessInServer::SetSilentModeAndMixWithOthers(bool on)
@@ -841,6 +841,7 @@ RestoreStatus AudioProcessInServer::RestoreSession(RestoreInfo restoreInfo)
         }
 
         processBuffer_->SetRestoreInfo(restoreInfo);
+        processBuffer_->WakeFutex();
     }
     return restoreStatus;
 }
