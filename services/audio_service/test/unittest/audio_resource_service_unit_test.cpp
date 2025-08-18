@@ -265,7 +265,7 @@ HWTEST(AudioResourceServiceUnitTest, RestoreAudioWorkgroupPrio_002, TestSize.Lev
  * @tc.name  : Test AudioWorkgroupCheck
  * @tc.type  : FUNC
  * @tc.number: AudioWorkgroupCheck
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test AudioWorkgroupCheck method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
 {
@@ -282,7 +282,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_001, TestSize.Level0)
  * @tc.name  : Test ReleaseAudioWorkgroup
  * @tc.type  : FUNC
  * @tc.number: ReleaseAudioWorkgroup
- * @tc.desc  : Test ReleaseWorkgroupDeathRecipient when find workgroup
+ * @tc.desc  : Test ReleaseAudioWorkgroup method with invalid and valid pid
  */
 HWTEST(AudioResourceServiceUnitTest, ReleaseAudioWorkgroup_001, TestSize.Level0)
 {
