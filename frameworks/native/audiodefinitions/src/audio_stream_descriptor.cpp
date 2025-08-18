@@ -59,6 +59,28 @@ AudioStreamDescriptor::AudioStreamDescriptor(
 {
 }
 
+void AudioStreamDescriptor::CopyToStruct(AudioStreamDescriptor &streamDesc)
+{
+    streamDesc.streamInfo_ = streamInfo_;
+    streamDesc.audioMode_ = audioMode_;
+    streamDesc.audioFlag_ = audioFlag_;
+    streamDesc.routeFlag_ = routeFlag_;
+    streamDesc.oldRouteFlag_ = oldRouteFlag_;
+    streamDesc.createTimeStamp_ = createTimeStamp_;
+    streamDesc.startTimeStamp_ = startTimeStamp_;
+    streamDesc.rendererInfo_ = rendererInfo_;
+    streamDesc.capturerInfo_ = capturerInfo_;
+    streamDesc.appInfo_ = appInfo_;
+    streamDesc.sessionId_ = sessionId_;
+    streamDesc.callerUid_ = callerUid_;
+    streamDesc.callerPid_ = callerPid_;
+    streamDesc.streamStatus_ = streamStatus_;
+    streamDesc.streamAction_ = streamAction_;
+    streamDesc.oldDeviceDescs_ = oldDeviceDescs_;
+    streamDesc.newDeviceDescs_ = newDeviceDescs_;
+    streamDesc.bundleName_ = bundleName_;
+}
+
 bool AudioStreamDescriptor::Marshalling(Parcel &parcel) const
 {
     return streamInfo_.Marshalling(parcel) &&

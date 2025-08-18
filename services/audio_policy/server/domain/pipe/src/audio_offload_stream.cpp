@@ -38,10 +38,12 @@ void AudioOffloadStream::SetOffloadStatus(OffloadAdapter offloadAdapter, uint32_
 {
     std::lock_guard<std::mutex> lock(offloadMutex_);
 
-    if (offloadSessionIdMap_[offloadAdapter] != NO_OFFLOAD_STREAM_SESSIONID) {
-        AUDIO_WARNING_LOG("Offload stream %{public}u not unset before, should check problem", sessionId);
-        uint32_t sessionToUnset = offloadSessionIdMap_[offloadAdapter];
-        UnsetOffloadStatusInternal(sessionToUnset);
+    for (auto &iter : offloadSessionIdMap_) {
+        if (iter.second == sessionId) {
+            // Find target sessionId, means offload status is already been set or the stream is moved from 
+            // one offload pipe to another offload pipe, map record should be reset.
+            iter.second = NO_OFFLOAD_STREAM_SESSIONID;
+        }
     }
 
     AUDIO_INFO_LOG("Set offload session: %{public}u", sessionId);
@@ -55,7 +57,7 @@ void AudioOffloadStream::UnsetOffloadStatus(uint32_t sessionId)
 
     for (auto &iter : offloadSessionIdMap_) {
         if (iter.second == sessionId) {
-            iter.second = 0;
+            iter.second = NO_OFFLOAD_STREAM_SESSIONID;
             UnsetOffloadStatusInternal(sessionId);
         }
     }

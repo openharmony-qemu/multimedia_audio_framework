@@ -177,8 +177,9 @@ HWTEST_F(AudioOffloadStreamTest, SetOffloadStatus_002, TestSize.Level3)
 {
     testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
     EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
-    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_PRIMARY, TEST_OFFLOAD_IN_PRIMARY_2_SESSION_ID);
-    EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_2_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+    testOffloadModule_->SetOffloadStatus(OFFLOAD_IN_REMOTE, TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID);
+    EXPECT_EQ(NO_OFFLOAD_STREAM_SESSIONID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+    EXPECT_EQ(TEST_OFFLOAD_IN_PRIMARY_1_SESSION_ID, testOffloadModule_->GetOffloadSessionId(OFFLOAD_IN_REMOTE));
 }
 
 /**

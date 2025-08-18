@@ -59,6 +59,9 @@ public:
     AudioStreamDescriptor(AudioStreamInfo streamInfo, AudioCapturerInfo rendererInfo, AppInfo appInfo);
     virtual ~AudioStreamDescriptor() = default;
 
+    // Need to delete later
+    void CopyToStruct(AudioStreamDescriptor &streamDesc);
+
     bool Marshalling(Parcel &parcel) const override;
     static AudioStreamDescriptor *Unmarshalling(Parcel &parcel);
 

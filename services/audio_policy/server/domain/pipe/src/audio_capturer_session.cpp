@@ -213,7 +213,7 @@ bool AudioCapturerSession::CompareIndependentxmlPriority(const std::shared_ptr<A
 
         if (strategyIt->second.priority > maxPriority) {
             maxPriority = strategyIt->second.priority;
-            runningSessionInfo = *stream;
+            stream->CopyToStruct(runningSessionInfo);
             hasSession = true;
         }
     }
@@ -256,7 +256,7 @@ bool AudioCapturerSession::HandleNormalInputPipes(const std::vector<std::shared_
             SourceType tmpSource = sessionWithNormalSourceType_[stream->sessionId_].sourceType;
             if (IsHigherPrioritySourceType(tmpSource, runningSessionInfo.capturerInfo_.sourceType)) {
                 hasSession = true;
-                runningSessionInfo = *stream;
+                stream->CopyToStruct(runningSessionInfo);
             }
         }
     }
