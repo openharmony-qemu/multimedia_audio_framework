@@ -324,6 +324,8 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
+            streamDesc->audioFlag_ = AUDIO_OUTPUT_FLAG_FAST;
+            CHECK_AND_RETURN(streamDesc->newDeviceDescs_.front()->deviceType_!= DEVICE_TYPE_BLUETOOTH_A2DP);
             streamDesc->audioFlag_ =
                 IsFastAllowed(streamDesc->bundleName_) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
             return;
