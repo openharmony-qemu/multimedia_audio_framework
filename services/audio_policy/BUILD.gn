@@ -625,6 +625,8 @@ group("audio_policy_test_packages") {
     "server/domain/device:audio_device_common_unit_next_test",
     "server/domain/device/test:audio_device_status_extended_test",
     "server/domain/effect/test:audio_spatialization_service_extended_test",
+    "server/domain/pipe/test:audio_capturer_session_ext_unit_test",
+    "server/domain/volume/test:audio_volume_unittest_packages",
     "server/service/service_main/test:audio_policy_dump_unit_test",
     "server/service/service_main/test:audio_policy_server_extended_test",
     "server/service/service_main/test:audio_policy_service_ext_unit_test",
