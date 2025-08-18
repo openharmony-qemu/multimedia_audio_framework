@@ -824,7 +824,7 @@ HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
     auto ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors01);
     EXPECT_EQ(ret, -1);
     
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21); // SelectOutputDevice接口中存在直接使用魔鬼数字20作为if的判断条件
     ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
     EXPECT_EQ(ret, -1);
 }
