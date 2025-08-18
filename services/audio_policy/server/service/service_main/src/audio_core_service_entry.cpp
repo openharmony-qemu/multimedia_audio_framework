@@ -373,7 +373,8 @@ vector<sptr<MicrophoneDescriptor>> AudioCoreService::EventEntry::GetAudioCapture
     return coreService_->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::string macAddress,
+    const std::string deviceName)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     coreService_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
