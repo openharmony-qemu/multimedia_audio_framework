@@ -25,6 +25,7 @@ namespace ANI::Audio {
 AudioSpatializationManagerImpl::AudioSpatializationManagerImpl() : audioSpatializationMngr_(nullptr) {}
 
 AudioSpatializationManagerImpl::AudioSpatializationManagerImpl(std::shared_ptr<AudioSpatializationManagerImpl> obj)
+    : audioSpatializationMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioSpatializationMngr_ = obj->audioSpatializationMngr_;

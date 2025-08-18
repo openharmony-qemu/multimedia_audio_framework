@@ -40,9 +40,13 @@ void TaiheAudioCapturerStateCallback::SaveCallbackReference(const std::string &c
     std::shared_ptr<AutoRef> cb = std::make_shared<AutoRef>(callback);
     CHECK_AND_RETURN_LOG(cb != nullptr, "Memory allocation failed!!");
     capturerStateCallback_ = cb;
-    std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
-    CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
-    mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    if (!mainHandler_) {
+        std::shared_ptr<OHOS::AppExecFwk::EventRunner> runner = OHOS::AppExecFwk::EventRunner::GetMainEventRunner();
+        CHECK_AND_RETURN_LOG(runner != nullptr, "runner is null");
+        mainHandler_ = std::make_shared<OHOS::AppExecFwk::EventHandler>(runner);
+    } else {
+        AUDIO_DEBUG_LOG("mainHandler_ is not nullptr");
+    }
 }
 
 void TaiheAudioCapturerStateCallback::RemoveCallbackReference(std::shared_ptr<uintptr_t> callback)
