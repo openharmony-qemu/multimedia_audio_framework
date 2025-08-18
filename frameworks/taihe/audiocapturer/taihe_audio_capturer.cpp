@@ -121,6 +121,7 @@ AudioCapturerImpl::AudioCapturerImpl()
     : audioCapturer_(nullptr), sourceType_(OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC) {}
 
 AudioCapturerImpl::AudioCapturerImpl(std::shared_ptr<AudioCapturerImpl> obj)
+    : audioCapturer_(nullptr), sourceType_(OHOS::AudioStandard::SourceType::SOURCE_TYPE_MIC)
 {
     if (obj != nullptr) {
         audioCapturer_ = obj->audioCapturer_;
@@ -345,7 +346,11 @@ void AudioCapturerImpl::StartSync()
         return;
     }
     bool ret = audioCapturer_->Start();
-    CHECK_AND_RETURN_LOG(ret, "StartSync failure!");
+    if (!ret) {
+        AUDIO_ERR_LOG("StartSync failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
 }
 
 void AudioCapturerImpl::StopSync()
@@ -355,7 +360,11 @@ void AudioCapturerImpl::StopSync()
         return;
     }
     bool ret = audioCapturer_->Stop();
-    CHECK_AND_RETURN_LOG(ret, "StopSync failure!");
+    if (!ret) {
+        AUDIO_ERR_LOG("StopSync failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
 }
 
 void AudioCapturerImpl::ReleaseSync()
@@ -365,7 +374,11 @@ void AudioCapturerImpl::ReleaseSync()
         return;
     }
     bool ret = audioCapturer_->Release();
-    CHECK_AND_RETURN_LOG(ret, "ReleaseSync failure!");
+    if (!ret) {
+        AUDIO_ERR_LOG("ReleaseSync failure!");
+        TaiheAudioError::ThrowErrorAndReturn(TAIHE_ERR_SYSTEM);
+        return;
+    }
 }
 
 int64_t AudioCapturerImpl::GetBufferSizeSync()

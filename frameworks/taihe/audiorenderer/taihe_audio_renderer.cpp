@@ -67,6 +67,8 @@ AudioRendererImpl::AudioRendererImpl()
     streamUsage_(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MEDIA) {}
 
 AudioRendererImpl::AudioRendererImpl(std::shared_ptr<AudioRendererImpl> obj)
+    : audioRenderer_(nullptr), contentType_(OHOS::AudioStandard::ContentType::CONTENT_TYPE_MUSIC),
+    streamUsage_(OHOS::AudioStandard::StreamUsage::STREAM_USAGE_MEDIA)
 {
     if (obj != nullptr) {
         audioRenderer_ = obj->audioRenderer_;

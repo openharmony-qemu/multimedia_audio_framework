@@ -100,6 +100,7 @@ AsrProcessingControllerImpl::AsrProcessingControllerImpl()
     : audioMngr_(nullptr) {}
 
 AsrProcessingControllerImpl::AsrProcessingControllerImpl(std::shared_ptr<AsrProcessingControllerImpl> obj)
+    : audioMngr_(nullptr)
 {
     if (obj != nullptr) {
         audioMngr_ = obj->audioMngr_;
