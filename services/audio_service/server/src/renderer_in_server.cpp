@@ -830,8 +830,8 @@ void RendererInServer::InnerCaptureEnqueueBuffer(const BufferDesc &bufferDesc, C
     }
     if (engineFlag == 1) {
         AUDIO_DEBUG_LOG("OtherStreamEnqueue running");
-    } else {
         WriteDupBufferInner(bufferDesc, innerCapId);
+    } else {
         captureInfo.dupStream->EnqueueBuffer(bufferDesc); // what if enqueue fail?
     }
 }
