@@ -141,6 +141,7 @@ void AudioPipeSelector::UpdateDeviceStreamInfo(std::shared_ptr<AudioStreamDescri
 void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     CHECK_AND_RETURN_LOG(streamDescs.size() != 0, "streamDescs is empty!");
+    SortStreamDescsByStartTime(streamDescs);
     streamDescs[0]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[0]);
     if (streamDescs.size() == 1) {
         return;
@@ -149,7 +150,6 @@ void AudioPipeSelector::DecideFinalRouteFlag(std::vector<std::shared_ptr<AudioSt
     // Do not need to move stream, because stream actions are all decided in DecidePipesAndStreamAction(),
     // not in ProcessConcurrency().
     std::vector<std::shared_ptr<AudioStreamDescriptor>> streamsMoveToNormal;
-    SortStreamDescsByStartTime(streamDescs);
     for (size_t cmpStreamIdx = 1; cmpStreamIdx < streamDescs.size(); ++cmpStreamIdx) {
         streamDescs[cmpStreamIdx]->routeFlag_ = GetRouteFlagByStreamDesc(streamDescs[cmpStreamIdx]);
         // calculate concurrency in time order
