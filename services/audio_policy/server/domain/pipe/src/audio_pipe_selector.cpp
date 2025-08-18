@@ -201,11 +201,12 @@ void AudioPipeSelector::DecidePipesAndStreamAction(std::vector<std::shared_ptr<A
                 AUDIO_WARNING_LOG("[PipeFetchInfo] cannot find %{public}d in OldPipeList!", streamDesc->sessionId_);
                 continue;
             }
-            streamDesc->streamAction_ = JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->sessionId_]);
+            streamDesc->SetAction(JudgeStreamAction(newPipeInfo, streamDescToOldPipeInfo[streamDesc->GetSessionId()]));
+            streamDesc->SetOldRoute(streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute());
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] SessionId %{public}d, PipeRouteFlag %{public}d --> %{public}d, "
-                "streamAction %{public}d", streamDesc->sessionId_,
-                streamDescToOldPipeInfo[streamDesc->sessionId_]->routeFlag_,
-                newPipeInfo->routeFlag_, streamDesc->streamAction_);
+                "streamAction %{public}d", streamDesc->GetSessionId(),
+                streamDescToOldPipeInfo[streamDesc->GetSessionId()]->GetRoute(),
+                newPipeInfo->GetRoute(), streamDesc->GetAction());
         }
         if (newPipeInfo->streamDescriptors_.size() == 0) {
             AUDIO_INFO_LOG("    |--[PipeFetchInfo] Empty");
