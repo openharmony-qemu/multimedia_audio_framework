@@ -39,7 +39,8 @@ HpaeAdapterManager::HpaeAdapterManager(ManagerType type)
     managerType_ = type;
 }
 
-int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream)
+int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::shared_ptr<IRendererStream> &stream,
+    std::optional<std::string_view> originDeviceName)
 {
     AUDIO_DEBUG_LOG("Create renderer start");
     uint32_t sessionId = 0;
@@ -60,6 +61,7 @@ int32_t HpaeAdapterManager::CreateRender(AudioProcessConfig processConfig, std::
         AUDIO_INFO_LOG("sink name is null");
         deviceName = "Speaker";
     }
+    deviceName = originDeviceName.has_value() ? std::string(originDeviceName.value()) : deviceName;
     // HpaeAdapterManager is solely responsible for creating paStream objects
     std::shared_ptr<IRendererStream> rendererStream = CreateRendererStream(processConfig, deviceName);
     CHECK_AND_RETURN_RET_LOG(rendererStream != nullptr, ERR_DEVICE_INIT, "Failed to init pa stream!");

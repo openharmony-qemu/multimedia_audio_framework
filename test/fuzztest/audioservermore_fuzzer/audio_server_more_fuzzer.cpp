@@ -502,9 +502,9 @@ void AudioRendererInServerTestSecond(std::shared_ptr<RendererInServer> renderer)
     renderer->EnableInnerCap(1);
     renderer->DisableInnerCap(1);
     renderer->InitDupStream(1);
-    renderer->EnableDualTone();
+    renderer->EnableDualTone("Speaker");
     renderer->DisableDualTone();
-    renderer->InitDualToneStream();
+    renderer->InitDualToneStream("Speaker");
     renderer->GetStreamManagerType();
     renderer->SetSilentModeAndMixWithOthers(isAppBack);
     renderer->SetClientVolume();
