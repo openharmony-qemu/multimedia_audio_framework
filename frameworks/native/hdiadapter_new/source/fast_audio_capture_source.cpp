@@ -55,7 +55,7 @@ void FastAudioCaptureSource::DeInit(void)
         isCheckPositionSuccess_.load());
     std::lock_guard<std::mutex> lock(statusMutex_);
     if (started_ || !isCheckPositionSuccess_) {
-        Stop();
+        StopInner();
         started_ = false;
     }
     sourceInited_ = false;
@@ -116,6 +116,12 @@ ERR_RET:
 int32_t FastAudioCaptureSource::Stop(void)
 {
     std::lock_guard<std::mutex> lock(statusMutex_);
+    return StopInner();
+}
+
+
+int32_t FastAudioCaptureSource::StopInner()
+{
     AUDIO_INFO_LOG("in, isCheckPositionSuccess: %{public}d", isCheckPositionSuccess_.load());
 
 #ifdef FEATURE_POWER_MANAGER
