@@ -41,6 +41,7 @@ enum AudioFlag : uint32_t {
     AUDIO_INPUT_FLAG_VOIP = 0x4000, // select
     AUDIO_INPUT_FLAG_VOIP_FAST = 0x8000, // select, route
     AUDIO_INPUT_FLAG_WAKEUP = 0x10000, // select, route
+    AUDIO_INPUT_FLAG_AI = 0x20000, // select, route
     AUDIO_FLAG_MAX,
 };
 

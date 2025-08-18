@@ -224,7 +224,7 @@ int32_t AudioCoreService::CreateCapturerClient(
     AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d",
         streamDesc->GetNewDevicesTypeString().c_str(), sessionId);
 
-    UpdateRecordStreamFlag(streamDesc);
+    UpdateRecordStreamInfo(streamDesc);
     AUDIO_INFO_LOG("Target audioFlag 0x%{public}x for stream %{public}d",
         streamDesc->audioFlag_, sessionId);
 
@@ -356,8 +356,19 @@ AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamD
     return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
-void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescriptor> streamDesc)
+void AudioCoreService::UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
 {
+    auto sourceStrategyMap = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMap != nullptr) {
+        auto strategyIt = sourceStrategyMap->find(streamDesc->capturerInfo_.sourceType);
+        if (strategyIt != sourceStrategyMap->end()) {
+            streamDesc->audioFlag_ = strategyIt->second.audioFlag;
+            AUDIO_INFO_LOG("sourceType: %{public}d, use audioFlag: %{public}u",
+                streamDesc->capturerInfo_.sourceType, strategyIt->second.audioFlag);
+            return;
+        }
+    }
+
     if (streamDesc->capturerInfo_.originalFlag == AUDIO_FLAG_FORCED_NORMAL ||
         streamDesc->capturerInfo_.capturerFlags == AUDIO_FLAG_FORCED_NORMAL) {
         streamDesc->audioFlag_ = AUDIO_INPUT_FLAG_NORMAL;
@@ -391,8 +402,9 @@ void AudioCoreService::UpdateRecordStreamFlag(std::shared_ptr<AudioStreamDescrip
         default:
             break;
     }
-    // In plan: streamDesc to audioFlag;
+
     streamDesc->audioFlag_ = AUDIO_FLAG_NONE;
+    return;
 }
 
 void AudioCoreService::CheckAndSetCurrentOutputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, int32_t sessionId)
@@ -1272,7 +1284,7 @@ int32_t AudioCoreService::FetchInputDeviceAndRoute(std::string caller)
         AUDIO_INFO_LOG("[DeviceFetchInfo] device %{public}s for stream %{public}d with status %{public}u",
             streamDesc->GetNewDevicesTypeString().c_str(), streamDesc->sessionId_, streamDesc->streamStatus_);
 
-        UpdateRecordStreamFlag(streamDesc);
+        UpdateRecordStreamInfo(streamDesc);
         if (!HandleInputStreamInRunning(streamDesc)) {
             continue;
         }

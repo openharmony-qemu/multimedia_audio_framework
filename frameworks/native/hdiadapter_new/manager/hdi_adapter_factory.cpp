@@ -115,6 +115,7 @@ std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreateCaptureSource(uint
     switch (type) {
         case HDI_ID_TYPE_PRIMARY:
         case HDI_ID_TYPE_ACCESSORY:
+        case HDI_ID_TYPE_AI:
             source = CreatePrimaryCaptureSource(captureId, info);
             break;
         case HDI_ID_TYPE_BLUETOOTH:
@@ -210,6 +211,7 @@ std::shared_ptr<IAudioRenderSink> HdiAdapterFactory::CreateRemoteOffloadRenderSi
 std::shared_ptr<IAudioCaptureSource> HdiAdapterFactory::CreatePrimaryCaptureSource(const uint32_t captureId,
     const std::string &info)
 {
+    AUDIO_INFO_LOG("info: %{public}s", info.c_str());
     if (info == HDI_ID_INFO_USB || info == HDI_ID_INFO_ACCESSORY) {
         return std::make_shared<AudioCaptureSource>(captureId, info);
     }

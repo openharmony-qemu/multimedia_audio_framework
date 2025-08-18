@@ -1538,6 +1538,9 @@ void AudioAdapterManager::GetSourceIdInfoAndIdType(
                 idInfo = HDI_ID_INFO_VOIP;
             }
         }
+        if (pipeInfo->routeFlag_ & AUDIO_INPUT_FLAG_AI) {
+            idType = HDI_ID_TYPE_AI;
+        }
     }
 }
 
@@ -1997,6 +2000,19 @@ IAudioSinkAttr AudioAdapterManager::GetAudioSinkAttr(const AudioModuleInfo &audi
     return attr;
 }
 
+void AudioAdapterManager::GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const
+{
+    auto sourceStrategyMapget = AudioSourceStrategyData::GetInstance().GetSourceStrategyMap();
+    if (sourceStrategyMapget == nullptr) {
+        return;
+    }
+    auto sampIt = sourceStrategyMapget->find((SourceType)sourceType);
+    if (sampIt == sourceStrategyMapget->end()) {
+        return;
+    }
+    attr.hdiSourceType = sampIt->second.hdiSource;
+}
+
 IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &audioModuleInfo) const
 {
     IAudioSourceAttr attr;
@@ -2038,6 +2054,7 @@ IAudioSourceAttr AudioAdapterManager::GetAudioSourceAttr(const AudioModuleInfo &
             attr.channelEc = static_cast<uint32_t>(std::stoul(audioModuleInfo.ecChannels));
         }
     }
+    GetHdiSourceTypeToAudioSourceAttr(attr, attr.sourceType);
     return attr;
 }
 

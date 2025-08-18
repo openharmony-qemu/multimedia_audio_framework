@@ -415,7 +415,6 @@ private:
     AudioDeviceLock& audioDeviceLock_;
     AudioDeviceStatus& audioDeviceStatus_;
     SleAudioDeviceManager& sleAudioDeviceManager_;
-
 };
 
 class SafeVolumeEventSubscriber : public EventFwk::CommonEventSubscriber {

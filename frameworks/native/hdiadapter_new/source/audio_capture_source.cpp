@@ -606,8 +606,42 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
     return channelLayout;
 }
 
-enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType)
+const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioInputTypeMap_ = {
+    {"AUDIO_INPUT_MIC_TYPE", AUDIO_INPUT_MIC_TYPE},
+    {"AUDIO_INPUT_SPEECH_WAKEUP_TYPE", AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
+    {"AUDIO_INPUT_VOICE_COMMUNICATION_TYPE", AUDIO_INPUT_VOICE_COMMUNICATION_TYPE},
+    {"AUDIO_INPUT_VOICE_RECOGNITION_TYPE", AUDIO_INPUT_VOICE_RECOGNITION_TYPE},
+    {"AUDIO_INPUT_VOICE_UPLINK_TYPE", AUDIO_INPUT_VOICE_UPLINK_TYPE},
+    {"AUDIO_INPUT_VOICE_DOWNLINK_TYPE", AUDIO_INPUT_VOICE_DOWNLINK_TYPE},
+    {"AUDIO_INPUT_VOICE_CALL_TYPE", AUDIO_INPUT_VOICE_CALL_TYPE},
+    {"AUDIO_INPUT_EC_TYPE", AUDIO_INPUT_EC_TYPE},
+    {"AUDIO_INPUT_NOISE_REDUCTION_TYPE", AUDIO_INPUT_NOISE_REDUCTION_TYPE},
+    {"AUDIO_INPUT_RAW_TYPE", AUDIO_INPUT_RAW_TYPE},
+    {"AUDIO_INPUT_LIVE_TYPE", AUDIO_INPUT_LIVE_TYPE},
+    {"AUDIO_INPUT_VOICE_TRANSCRIPTION", AUDIO_INPUT_VOICE_TRANSCRIPTION}
+};
+
+AudioInputType AudioCaptureSource::MappingAudioInputType(std::string hdiSourceType)
 {
+    if (hdiSourceType != "AUDIO_INPUT_DEFAULT_TYPE") {
+        AUDIO_INFO_LOG("find hdisourceType: %{public}s", hdiSourceType.c_str());
+        auto it = audioInputTypeMap_.find(hdiSourceType);
+        if (it != audioInputTypeMap_.end()) {
+            return it->second;
+        } else {
+            return AUDIO_INPUT_MIC_TYPE;
+        }
+    }
+    return AUDIO_INPUT_DEFAULT_TYPE;
+}
+
+enum AudioInputType AudioCaptureSource::ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType)
+{
+    AudioInputType hdiSource = MappingAudioInputType(hdiSourceType);
+    if (hdiSource != AUDIO_INPUT_DEFAULT_TYPE) {
+        return hdiSource;
+    }
+
     enum AudioInputType hdiAudioInputType;
     switch (sourceType) {
         case SOURCE_TYPE_INVALID:
@@ -757,6 +791,8 @@ uint32_t AudioCaptureSource::GetUniqueIdBySourceType(void) const
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_MIC_REF);
         case SOURCE_TYPE_WAKEUP:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_WAKEUP);
+        case SOURCE_TYPE_VOICE_TRANSCRIPTION:
+            return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION);
         default:
             return GenerateUniqueID(AUDIO_HDI_CAPTURE_ID_BASE, HDI_CAPTURE_OFFSET_PRIMARY);
     }
@@ -814,7 +850,7 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     if (param.frameSize != 0) {
         param.startThreshold = DEEP_BUFFER_CAPTURE_PERIOD_SIZE / (param.frameSize);
     }
-    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    param.sourceType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType, attr_.hdiSourceType));
     CheckAcousticEchoCancelerSupported(attr_.sourceType, param.sourceType);
 
     if ((attr_.hasEcConfig || attr_.sourceType == SOURCE_TYPE_EC) && attr_.channelEc != 0) {
@@ -934,7 +970,7 @@ int32_t AudioCaptureSource::DoSetInputRoute(DeviceType inputDevice)
     std::shared_ptr<IDeviceManager> deviceManager = manager.GetDeviceManager(HDI_DEVICE_MANAGER_TYPE_LOCAL);
     CHECK_AND_RETURN_RET(deviceManager != nullptr, ERR_INVALID_HANDLE);
     int32_t streamId = static_cast<int32_t>(GetUniqueIdBySourceType());
-    int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType));
+    int32_t inputType = static_cast<int32_t>(ConvertToHDIAudioInputType(attr_.sourceType, attr_.hdiSourceType));
     CheckAcousticEchoCancelerSupported(attr_.sourceType, inputType);
     AUDIO_INFO_LOG("adapterName: %{public}s, inputDevice: %{public}d, streamId: %{public}d, inputType: %{public}d",
         attr_.adapterName.c_str(), inputDevice, streamId, inputType);
@@ -1166,7 +1202,7 @@ int32_t AudioCaptureSource::SetAccessoryDeviceState(bool state)
 
 int32_t AudioCaptureSource::DoStop(void)
 {
-    AUDIO_INFO_LOG("halName: %{public}s", halName_.c_str());
+    AUDIO_INFO_LOG("halName: %{public}s, sourcetype: %{public}d", halName_.c_str(), attr_.sourceType);
     Trace trace("AudioCaptureSource::DoStop");
 
     if (IsNonblockingSource(adapterNameCase_)) {

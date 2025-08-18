@@ -36,6 +36,8 @@ public:
     int32_t GenerateSessionId(uint32_t &sessionId) override;
 
     int32_t SetWakeUpAudioCapturerFromAudioServer(const AudioProcessConfig &config, int32_t &ret) override;
+    int32_t GetVoiceMuteState(uint32_t sessionId, bool &muteState) override;
+    int32_t RemoveVoiceMuteState(uint32_t sessionId) override;
 private:
     ICoreServiceProvider *coreServiceWorker_;
 };

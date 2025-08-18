@@ -305,7 +305,6 @@ public:
     void RegisterDoNotDisturbStatusWhiteList();
     int32_t SetQueryDeviceVolumeBehaviorCallback(const sptr<IRemoteObject> &object);
     void HandleDistributedDeviceVolume();
-
     void SetSleVoiceStatusFlag(bool isSleVoiceStatus);
 
     int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree);
@@ -414,6 +413,7 @@ private:
     static void UpdateSinkArgs(const AudioModuleInfo &audioModuleInfo, std::string &args);
     void UpdateVolumeForLowLatency();
     bool IsDistributedVolumeType(AudioStreamType streamType);
+    void GetHdiSourceTypeToAudioSourceAttr(IAudioSourceAttr &attr, int32_t sourceType) const;
 
     template<typename T>
     std::vector<uint8_t> TransferTypeToByteArray(const T &t)
