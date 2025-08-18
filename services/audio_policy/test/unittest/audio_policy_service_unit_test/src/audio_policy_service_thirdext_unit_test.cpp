@@ -139,13 +139,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadHdiEffectModel_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test OnReceiveBluetoothEvent.
-* @tc.number: OnReceiveBluetoothEvent_001
+* @tc.name  : Test OnReceiveUpdateDeviceNameEvent.
+* @tc.number: OnReceiveUpdateDeviceNameEvent_001
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveUpdateDeviceNameEvent_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveBluetoothEvent_001 start");
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveUpdateDeviceNameEvent_001 start");
     ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
     const std::string macAddress = "11-11-11-11-11-11";

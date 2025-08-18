@@ -992,9 +992,9 @@ bool AudioCoreService::ConnectServiceAdapter()
     return audioPolicyManager_.ConnectServiceAdapter();
 }
 
-void AudioCoreService::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName)
 {
-    audioDeviceManager_.OnReceiveBluetoothEvent(macAddress, deviceName);
+    audioDeviceManager_.OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     audioConnectedDevice_.SetDisplayName(macAddress, deviceName);
 }
 

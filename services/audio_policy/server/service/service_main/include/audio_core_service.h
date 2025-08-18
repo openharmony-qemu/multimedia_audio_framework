@@ -128,7 +128,7 @@ public:
         int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
         void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
         bool ConnectServiceAdapter();
-        void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+        void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
         int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
             std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
         int32_t SelectInputDevice(sptr<AudioCapturerFilter> audioCapturerFilter,
@@ -243,7 +243,7 @@ private:
     int32_t UpdateTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo);
     void RegisteredTrackerClientDied(pid_t uid, pid_t pid);
     bool ConnectServiceAdapter();
-    void OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName);
+    void OnReceiveUpdateDeviceNameEvent(const std::string macAddress, const std::string deviceName);
     int32_t SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> selectedDesc);
     void NotifyDistributedOutputChange(const AudioDeviceDescriptor &deviceDesc);
