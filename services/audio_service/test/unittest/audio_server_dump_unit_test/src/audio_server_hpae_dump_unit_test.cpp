@@ -103,7 +103,7 @@ TEST_F(HpaeAudioServerHpaeDumpTest, ArgDataDump_001)
     EXPECT_EQ(isTrue, true);
     std::string dumpString;
 
-    std::queue<std::u16string> argQue
+    std::queue<std::u16string> argQue;
     argQue.push(u"-h");
     dumpString.clear();
     audioServerHpaeDump_->ArgDataDump(dumpString, argQue);
