@@ -307,6 +307,13 @@ int32_t AudioCoreService::EventEntry::FetchOutputDeviceAndRoute(std::string call
     return coreService_->FetchOutputDeviceAndRoute(caller, reason);
 }
 
+int32_t AudioCoreService::EventEntry::FetchInputDeviceAndRoute(std::string caller)
+{
+    CHECK_AND_RETURN_RET(coreService_ != nullptr, ERR_UNKNOWN);
+    std::lock_guard<std::shared_mutex> lock(eventMutex_);
+    return coreService_->FetchInputDeviceAndRoute(caller);
+}
+
 std::shared_ptr<AudioDeviceDescriptor> AudioCoreService::EventEntry::GetActiveBluetoothDevice()
 {
     std::shared_lock<std::shared_mutex> lock(eventMutex_);
