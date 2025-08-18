@@ -838,7 +838,7 @@ HWTEST(AudioResourceServiceUnitTest, OnWorkgroupRemoteDied_001, TestSize.Level0)
 HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
 {
     int32_t pid = 123;
-    for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++){
+    for (int i = 0; i <= AUDIO_MAX_GRP_PER_PROCESS; i++) {
         audioResourceService.audioWorkgroupMap_[pid].groups[i] = nullptr;
     }
     EXPECT_TRUE(audioResourceService.IsProcessInWorkGroup(pid));
@@ -848,7 +848,7 @@ HWTEST(AudioResourceServiceUnitTest, AudioWorkgroupCheck_008, TestSize.Level0)
     audioResourceService.audioWorkgroupMap_[pid].groups[pid] = nullptr;
     audioResourceService.audioWorkgroupMap_[pid].hasSystemPermission = false;
 
-    for (int i = 0; i <= AUDIO_MAX_PROCESS; i++){
+    for (int i = 0; i <= AUDIO_MAX_PROCESS; i++) {
         audioResourceService.audioWorkgroupMap_[i].groups[i] = nullptr;
     }
     EXPECT_FALSE(audioResourceService.IsProcessInWorkGroup(pid + 1));
