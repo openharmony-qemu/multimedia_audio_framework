@@ -137,6 +137,7 @@ private:
     int32_t HandleSyncId(uint32_t sessionId, int32_t syncId);
     int32_t DeleteProcessCluster(HpaeProcessorType sceneType);
     void RefreshProcessClusterByDeviceInner(const std::shared_ptr<HpaeSinkInputNode> &node);
+    void TriggerStreamState(uint32_t sessionId, const std::shared_ptr<HpaeSinkInputNode> &node);
 
 private:
     std::unordered_map<uint32_t, HpaeRenderSessionInfo> sessionNodeMap_;

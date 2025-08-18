@@ -321,7 +321,7 @@ void AudioPolicyServiceTestII()
         capturerChangeInfo->capturerInfo.sourceType = SOURCE_TYPE_VIRTUAL_CAPTURE;
         capturerChangeInfo->capturerState = CAPTURER_PREPARED;
     }
-    GetServerPtr()->audioPolicyService_.OnReceiveBluetoothEvent(
+    GetServerPtr()->audioPolicyService_.OnReceiveUpdateDeviceNameEvent(
         GetServerPtr()->audioPolicyService_.audioActiveDevice_.activeBTDevice_, "deviceName");
     GetServerPtr()->audioPolicyService_.GetAudioEffectOffloadFlag();
     GetServerPtr()->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();

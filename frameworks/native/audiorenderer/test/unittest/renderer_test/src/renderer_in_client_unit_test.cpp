@@ -128,7 +128,10 @@ public:
         return 0;
     }
 
-    virtual int32_t SetDefaultOutputDevice(const int32_t defaultOuputDevice) override { return 0; }
+    virtual int32_t SetDefaultOutputDevice(const int32_t defaultOuputDevice, bool skipForce = false) override
+    {
+        return 0;
+    }
 
     virtual int32_t SetSourceDuration(int64_t duration) override { return 0; }
 

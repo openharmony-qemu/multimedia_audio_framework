@@ -86,7 +86,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
     std::string(FILE_SOURCE),
-    std::string(ACCESSORY_SOURCE)
+    std::string(ACCESSORY_SOURCE),
+    std::string(PRIMARY_AI_MIC)
 };
 
 std::string AudioCoreService::GetEncryptAddr(const std::string &addr)
@@ -302,6 +303,9 @@ void AudioCoreService::CheckModemScene(std::vector<std::shared_ptr<AudioDeviceDe
 
 int32_t AudioCoreService::UpdateModemRoute(std::vector<std::shared_ptr<AudioDeviceDescriptor>> &descs)
 {
+    if (!pipeManager_->IsModemCommunicationIdExist()) {
+        return SUCCESS;
+    }
     CHECK_AND_RETURN_RET_LOG(descs.size() != 0, ERROR, "Update device route for voice modem communication failed");
     CHECK_AND_RETURN_RET_LOG(descs.front() != nullptr, ERROR, "Update modem route: desc is nullptr");
     if (audioSceneManager_.IsInPhoneCallScene()) {
@@ -1022,6 +1026,35 @@ uint32_t AudioCoreService::GenerateSessionId()
     return AudioStreamIdAllocator::GetAudioStreamIdAllocator().GenerateStreamId();
 }
 
+void AudioCoreService::SetVoiceMuteState(uint32_t sessionId, bool isMute)
+{
+    std::unique_lock<std::shared_mutex> lock(muteMutex_);
+    voiceMuteStateMap_[sessionId] = isMute;
+    AUDIO_INFO_LOG("set mute state for session %{public}u to %{public}s", sessionId, isMute ? "muted" : "unmuted");
+}
+
+void AudioCoreService::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
+{
+    std::shared_lock<std::shared_mutex> lock(muteMutex_);
+    auto it = voiceMuteStateMap_.find(sessionId);
+    if (it != voiceMuteStateMap_.end()) {
+        muteState = it->second;
+        return;
+    }
+
+    muteState = false;
+}
+
+void AudioCoreService::RemoveVoiceMuteState(uint32_t sessionId)
+{
+    std::unique_lock<std::shared_mutex> lock(muteMutex_);
+    auto it = voiceMuteStateMap_.find(sessionId);
+    if (it != voiceMuteStateMap_.end()) {
+        AUDIO_INFO_LOG("remove mute state for session %{public}u", sessionId);
+        voiceMuteStateMap_.erase(it);
+    }
+}
+
 void AudioCoreService::AddSessionId(const uint32_t sessionId)
 {
     uid_t callingUid = static_cast<uid_t>(IPCSkeleton::GetCallingUid());
@@ -1300,7 +1333,7 @@ void AudioCoreService::MoveStreamSource(std::shared_ptr<AudioStreamDescriptor> s
 
     // MoveSourceOuputByIndexName
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
-        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
+        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front(), streamDesc->routeFlag_)
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
@@ -1326,7 +1359,7 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 
     // MoveSourceOuputByIndexName
     auto ret = (streamDesc->newDeviceDescs_.front()->networkId_ == LOCAL_NETWORK_ID)
-        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front())
+        ? MoveToLocalInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front(), streamDesc->routeFlag_)
         : MoveToRemoteInputDevice(targetSourceOutputs, streamDesc->newDeviceDescs_.front());
     CHECK_AND_RETURN_LOG((ret == SUCCESS), "Move source output %{public}d to device %{public}d failed!",
         streamDesc->sessionId_, streamDesc->newDeviceDescs_.front()->deviceType_);
@@ -1343,13 +1376,14 @@ void AudioCoreService::MoveToNewInputDevice(std::shared_ptr<AudioStreamDescripto
 }
 
 int32_t AudioCoreService::MoveToLocalInputDevice(std::vector<SourceOutput> sourceOutputs,
-    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor)
+    std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor, uint32_t routeFlag)
 {
     CHECK_AND_RETURN_RET_LOG(LOCAL_NETWORK_ID == localDeviceDescriptor->networkId_, ERR_INVALID_OPERATION,
         "failed: not a local device.");
 
     uint32_t sourceId = -1; // invalid source id, use source name instead.
-    std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_);
+    std::string sourceName = AudioPolicyUtils::GetInstance().GetSourcePortName(localDeviceDescriptor->deviceType_,
+        routeFlag);
     for (size_t i = 0; i < sourceOutputs.size(); i++) {
         int32_t ret = audioPolicyManager_.MoveSourceOutputByIndexOrName(sourceOutputs[i].paStreamId,
             sourceId, sourceName);
@@ -1785,8 +1819,10 @@ uint32_t AudioCoreService::OpenNewAudioPortAndRoute(std::shared_ptr<AudioPipeInf
         HandleCommonSourceOpened(pipeInfo);
         id = audioPolicyManager_.OpenAudioPort(pipeInfo, paIndex);
 
-        if (audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
-            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) {
+        AUDIO_INFO_LOG("routeFlag:%{public}d", pipeInfo->routeFlag_);
+        if ((audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_MIC ||
+            audioActiveDevice_.GetCurrentInputDeviceType() == DEVICE_TYPE_ACCESSORY) &&
+            (pipeInfo->routeFlag_ != AUDIO_INPUT_FLAG_AI)) {
             audioPolicyManager_.SetDeviceActive(audioActiveDevice_.GetCurrentInputDeviceType(),
                 pipeInfo->moduleInfo_.name, true, INPUT_DEVICES_FLAG);
         }
@@ -2033,7 +2069,7 @@ bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescri
 }
 
 int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
     CHECK_AND_RETURN_RET_LOG(policyConfigMananger_.GetHasEarpiece(), ERR_NOT_SUPPORTED, "the device has no earpiece");
     CHECK_AND_RETURN_RET_LOG(pipeManager_->GetStreamDescById(sessionID) != nullptr, ERR_NOT_SUPPORTED,
@@ -2051,6 +2087,7 @@ int32_t AudioCoreService::SetDefaultOutputDevice(const DeviceType deviceType, co
     bool forceFetch = false;
     for (auto &changeInfo : audioRendererChangeInfos) {
         if (changeInfo->sessionId == static_cast<int32_t>(sessionID)) {
+            CHECK_AND_CONTINUE(!skipForce);
             AudioPolicyUtils::GetInstance().SetPreferredDevice(AUDIO_CALL_RENDER,
                 std::make_shared<AudioDeviceDescriptor>(), changeInfo->clientUID, "SetDefaultOutputDevice");
             forceFetch = true;

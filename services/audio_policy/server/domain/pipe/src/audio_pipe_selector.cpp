@@ -313,6 +313,8 @@ AudioPipeType AudioPipeSelector::GetPipeType(uint32_t flag, AudioMode audioMode)
             } else {
                 return PIPE_TYPE_LOWLATENCY_IN;
             }
+        } else if (flag & AUDIO_INPUT_FLAG_AI) {
+            return PIPE_TYPE_NORMAL_IN_AI;
         } else {
             return PIPE_TYPE_NORMAL_IN;
         }

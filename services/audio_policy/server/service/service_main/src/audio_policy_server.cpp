@@ -830,6 +830,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
+    SubscribeCommonEvent("usual.event.nearlink.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
@@ -887,10 +888,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         AudioServerProxy::GetInstance().SetRotationToEffectProxy(rotate);
-    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE") {
+    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE" ||
+        action == "usual.event.nearlink.remotedevice.NAME_UPDATE") {
         std::string deviceName  = want.GetStringParam("remoteName");
         std::string macAddress = want.GetStringParam("deviceAddr");
-        eventEntry_->OnReceiveBluetoothEvent(macAddress, deviceName);
+        eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
         audioDeviceCommon_.SetFirstScreenOn();
@@ -5146,6 +5148,12 @@ int32_t AudioPolicyServer::CallRingtoneLibrary()
     CHECK_AND_RETURN_RET_LOG(dataShareHelper != nullptr, ERROR, "Create dataShare failed, datashare or library error.");
     dataShareHelper->Release();
     return SUCCESS;
+}
+
+void AudioPolicyServer::SetVoiceMuteState(uint32_t sessionId, bool isMute)
+{
+    CHECK_AND_RETURN_LOG(coreService_ != nullptr, "coreService_ is nullptr");
+    return coreService_->SetVoiceMuteState(sessionId, isMute);
 }
 
 int32_t AudioPolicyServer::SetSystemVolumeDegree(int32_t streamTypeIn, int32_t volumeDegree, int32_t volumeFlag,

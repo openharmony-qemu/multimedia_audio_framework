@@ -43,7 +43,6 @@ constexpr int32_t DEFAULT_STREAM_ID = 10;
 static std::unique_ptr<NoneMixEngine> playbackEngine_ = nullptr;
 static std::unique_ptr<AudioPlaybackEngine> audioPlaybackEngine_ = nullptr;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 constexpr int32_t REQUEST_DATA_LEN = 3;
 
 typedef void (*TestFuncs)();
@@ -1086,10 +1085,6 @@ vector<TestFuncs> g_testFuncs = {
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
-        return 0;
-    }
-
     OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

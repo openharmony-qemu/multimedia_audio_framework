@@ -200,7 +200,7 @@ public:
     bool RestoreAudioStream(bool needStoreState = true) override;
     void JoinCallbackLoop() override;
 
-    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice) override;
+    int32_t SetDefaultOutputDevice(const DeviceType defaultOutputDevice, bool skipForce = false) override;
     FastStatus GetFastStatus() override;
     DeviceType GetDefaultOutputDevice() override;
     int32_t GetAudioTimestampInfo(Timestamp &timestamp, Timestamp::Timestampbase base) override;

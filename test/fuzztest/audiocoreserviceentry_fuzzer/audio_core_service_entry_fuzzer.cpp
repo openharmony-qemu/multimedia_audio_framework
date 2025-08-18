@@ -42,7 +42,7 @@ static const uint8_t* RAW_DATA = nullptr;
 static size_t g_dataSize = 0;
 static size_t g_pos;
 const size_t THRESHOLD = 10;
-const uint8_t TESTSIZE = 49;
+const uint8_t TESTSIZE = 51;
 static int32_t NUM_2 = 2;
 
 typedef void (*TestFuncs)();
@@ -429,13 +429,13 @@ void AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest()
     eventEntry->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest()
+void AudioCoreServiceEventEntryOnReceiveUpdateDeviceNameEventFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     std::string macAddress = "11-22-33-44-55-66";
     std::string deviceName = "deviceName";
-    eventEntry->OnReceiveBluetoothEvent(macAddress, deviceName);
+    eventEntry->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 void AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest()
@@ -627,6 +627,23 @@ void AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest()
     eventEntry->GetPreferredInputStreamType(capturerInfo);
 }
 
+void AudioCoreServiceEventEntryGetMuteStateFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    uint32_t sessionId = 0;
+    bool muteState = false;
+    eventEntry->GetVoiceMuteState(sessionId, muteState);
+}
+
+void AudioCoreServiceEventEntryRemoveMuteStateFuzzTest()
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
+    uint32_t sessionId = 0;
+    eventEntry->RemoveVoiceMuteState(sessionId);
+}
+
 TestFuncs g_testFuncs[TESTSIZE] = {
     UpdateSessionOperationFuzzTest,
     OnServiceConnectedFuzzTest,
@@ -659,7 +676,7 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest,
     AudioCoreServiceEventEntryGetAvailableMicrophonesFuzzTest,
     AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest,
-    AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest,
+    AudioCoreServiceEventEntryOnReceiveUpdateDeviceNameEventFuzzTest,
     AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest,
     AudioCoreServiceEventEntrySelectInputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetCurrentRendererChangeInfosFuzzTest,
@@ -677,6 +694,8 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServiceEventEntrySetSessionDefaultOutputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetSessionDefaultOutputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetPreferredInputStreamTypeFuzzTest,
+    AudioCoreServiceEventEntryGetMuteStateFuzzTest,
+    AudioCoreServiceEventEntryRemoveMuteStateFuzzTest,
 };
 
 bool FuzzTest(const uint8_t* rawData, size_t size)

@@ -25,7 +25,6 @@ namespace AudioStandard {
 using namespace std;
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
 
@@ -135,10 +134,6 @@ vector<TestFuncs> g_testFuncs = {
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
-        return 0;
-    }
-
     OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }

@@ -2499,7 +2499,6 @@ HWTEST(AudioCoreServicePrivateTest, LoadSplitModule_004, TestSize.Level1)
     EXPECT_EQ(ret, 0);
 }
 
-
 /**
  * @tc.name  : Test AudioCoreService.
  * @tc.number: AudioCoreServicePrivate_124
@@ -3080,6 +3079,38 @@ HWTEST(AudioCoreServicePrivateTest, AddSessionId_001, TestSize.Level1)
     audioCoreService->AddSessionId(sessionId);
     ASSERT_EQ(audioCoreService->sessionIdMap_.count(sessionId), 0);
     audioCoreService->DeleteSessionId(sessionId);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: CheckAndUpdateHearingAidCall_001
+ * @tc.desc  : Test AudioCoreService::CheckAndUpdateHearingAidCall
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateHearingAidCall_001, TestSize.Level1)
+{
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    audioCoreService->audioSceneManager_.audioScene_ = AUDIO_SCENE_PHONE_CALL;
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_HEARING_AID);
+    audioCoreService->CheckAndUpdateHearingAidCall(DeviceType::DEVICE_TYPE_EARPIECE);
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    auto pipeInfo = audioPipeManager->GetPipeinfoByNameAndFlag("primary", AUDIO_INPUT_FLAG_NORMAL);
+    ASSERT_NE(pipeInfo, nullptr);
+}
+
+/**
+ * @tc.name  : Test AudioCoreService.
+ * @tc.number: ActivateOutputDevice_001
+ * @tc.desc  : Test AudioCoreService::ActivateOutputDevice
+ */
+HWTEST(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
+{
+    std::shared_ptr<AudioDeviceDescriptor> newDeviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    newDeviceDesc->deviceType_ = DEVICE_TYPE_HEARING_AID;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    streamDesc->newDeviceDescs_.push_back(newDeviceDesc);
+    auto audioCoreService = std::make_shared<AudioCoreService>();
+    int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
+    ASSERT_EQ(ret, SUCCESS);
 }
 } // namespace AudioStandard
 } // namespace OHOS

@@ -200,6 +200,7 @@ audio_ohos_library("audio_policy_service") {
     "server/infra/config/parser/src/audio_policy_config_parser.cpp",
     "server/infra/config/parser/src/audio_policy_global_parser.cpp",
     "server/infra/config/parser/src/audio_strategy_router_parser.cpp",
+    "server/infra/config/parser/src/audio_source_strategy_parser.cpp",
     "server/infra/config/parser/src/audio_usage_strategy_parser.cpp",
     "server/infra/config/parser/src/audio_volume_parser.cpp",
     "server/infra/datashare/src/audio_policy_utils.cpp",
@@ -379,7 +380,7 @@ audio_ohos_library("audio_policy_service") {
     "safwk:system_ability_fwk",
     "samgr:samgr_proxy",
     "window_manager:session_manager_lite",
-    "window_manager:libwm",
+    "window_manager:libwm_lite",
   ]
 
   public_external_deps = [ "ffrt:libffrt" ]

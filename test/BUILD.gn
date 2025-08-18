@@ -110,6 +110,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:audio_spatial_channel_converter_unit_test",
     "../services/audio_service/test/unittest:audio_thread_task_unit_test",
     "../services/audio_service/test/unittest:capturer_in_client_unit_test",
+    "../services/audio_service/test/unittest:capturer_in_server_unit_test",
     "../services/audio_service/test/unittest:format_converter_unit_test",
     "../services/audio_service/test/unittest:futex_tool_unit_test",
     "../services/audio_service/test/unittest:hpae_capturer_stream_impl_unit_test",
@@ -174,7 +175,6 @@ group("audio_unit_test") {
     if (!audio_framework_feature_new_engine_flag) {
     deps += [
       "../frameworks/native/audioadapter/test/unittest:pulse_audio_service_adapter_impl_unit_test",
-      "../services/audio_service/test/unittest:capturer_in_server_unit_test",
       "../services/audio_service/test/unittest:pa_capturer_stream_impl_unit_test",
       "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test",
       "../services/audio_service/test/unittest:pa_renderer_stream_impl_unit_test_p2",
@@ -280,6 +280,7 @@ group("audio_fuzz_test") {
     "fuzztest/audiozoneservice_fuzzer:fuzztest",
     "fuzztest/audiozoneclientmanager_fuzzer:fuzztest",
     "fuzztest/bluetoothdevicemanager_fuzzer:fuzztest",
+    "fuzztest/bluetoothscomanager_fuzzer:fuzztest",
     "fuzztest/captureclockmanager_fuzzer:fuzztest",
     "fuzztest/capturermanager_fuzzer:fuzztest",
     "fuzztest/channelconverter_fuzzer:fuzztest",

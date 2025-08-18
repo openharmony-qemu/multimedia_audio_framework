@@ -88,7 +88,8 @@ static const std::vector<std::string> SourceNames = {
     std::string(BLUETOOTH_MIC),
     std::string(USB_MIC),
     std::string(PRIMARY_WAKEUP),
-    std::string(FILE_SOURCE)
+    std::string(FILE_SOURCE),
+    std::string(PRIMARY_AI_MIC)
 };
 
 static bool IsDistributedOutput(const AudioDeviceDescriptor &desc)
@@ -207,6 +208,7 @@ std::vector<std::shared_ptr<AudioDeviceDescriptor>> AudioDeviceCommon::GetPrefer
 
     if (networkId == LOCAL_NETWORK_ID) {
         std::shared_ptr<AudioDeviceDescriptor> desc = audioRouterCenter_.FetchInputDevice(captureInfo.sourceType, -1);
+        CHECK_AND_RETURN_RET_LOG(desc != nullptr, deviceList, "desc is nullptr.");
         if (desc->deviceType_ == DEVICE_TYPE_NONE && (captureInfo.sourceType == SOURCE_TYPE_PLAYBACK_CAPTURE ||
             captureInfo.sourceType == SOURCE_TYPE_REMOTE_CAST)) {
             desc->deviceType_ = DEVICE_TYPE_INVALID;

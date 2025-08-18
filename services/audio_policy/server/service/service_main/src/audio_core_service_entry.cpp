@@ -137,13 +137,23 @@ uint32_t AudioCoreService::EventEntry::GenerateSessionId()
     return coreService_->GenerateSessionId();
 }
 
+void AudioCoreService::EventEntry::GetVoiceMuteState(uint32_t sessionId, bool &muteState)
+{
+    return coreService_->GetVoiceMuteState(sessionId, muteState);
+}
+
+void AudioCoreService::EventEntry::RemoveVoiceMuteState(uint32_t sessionId)
+{
+    return coreService_->RemoveVoiceMuteState(sessionId);
+}
+
 int32_t AudioCoreService::EventEntry::SetDefaultOutputDevice(const DeviceType deviceType, const uint32_t sessionID,
-    const StreamUsage streamUsage, bool isRunning)
+    const StreamUsage streamUsage, bool isRunning, bool skipForce)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
     AUDIO_INFO_LOG("withlock device %{public}d, sessionId %{public}u, streamUsage %{public}d, running %{public}d",
         deviceType, sessionID, streamUsage, isRunning);
-    int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning);
+    int32_t ret = coreService_->SetDefaultOutputDevice(deviceType, sessionID, streamUsage, isRunning, skipForce);
     return ret;
 }
 
@@ -373,10 +383,11 @@ vector<sptr<MicrophoneDescriptor>> AudioCoreService::EventEntry::GetAudioCapture
     return coreService_->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreService::EventEntry::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::string macAddress,
+    const std::string deviceName)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnReceiveBluetoothEvent(macAddress, deviceName);
+    coreService_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,
