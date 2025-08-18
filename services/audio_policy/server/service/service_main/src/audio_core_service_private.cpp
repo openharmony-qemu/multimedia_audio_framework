@@ -115,6 +115,7 @@ void AudioCoreService::UpdateActiveDeviceAndVolumeBeforeMoveSession(
     for (std::shared_ptr<AudioStreamDescriptor> streamDesc : streamDescs) {
         //  if streamDesc select bluetooth or headset, active it
         if (!HandleOutputStreamInRunning(streamDesc, reason)) {
+            UpdatePlaybackStreamFlag(streamDesc, false);
             continue;
         }
         int32_t outputRet = ActivateOutputDevice(streamDesc, reason);
@@ -156,6 +157,23 @@ void AudioCoreService::UpdateOffloadState(std::shared_ptr<AudioPipeInfo> pipeInf
     offloadCloseCondition_[type].notify_all();
 }
 
+void AudioCoreService::CheckAndUpdateOffloadEnableForStream(
+    OffloadAction action, std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (action == OFFLOAD_NEW || action == OFFLOAD_MOVE_IN) {
+        // Check stream is offload and then set
+        if (streamDesc->IsRouteOffload()) {
+            OffloadAdapter adapter = (streamDesc->IsDeviceRemote() ? OFFLOAD_IN_REMOTE : OFFLOAD_IN_PRIMARY);
+            audioOffloadStream_.SetOffloadStatus(adapter, streamDesc->GetSessionId());
+        }
+    } else {
+        // Check stream is moved from offload and then unset
+        if (streamDesc->IsRouteNormal() && (streamDesc->IsOldRouteOffload())) {
+            audioOffloadStream_.UnsetOffloadStatus(streamDesc->GetSessionId());
+        }
+    }
+}
+
 void AudioCoreService::NotifyRouteUpdate(const std::vector<std::shared_ptr<AudioStreamDescriptor>> &streamDescs)
 {
     for (auto &streamDesc : streamDescs) {
@@ -178,6 +196,10 @@ int32_t AudioCoreService::FetchRendererPipesAndExecute(
     AUDIO_INFO_LOG("[PipeFetchStart] all %{public}zu output streams", streamDescs.size());
     UpdateActiveDeviceAndVolumeBeforeMoveSession(streamDescs, reason);
     std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = audioPipeSelector_->FetchPipesAndExecute(streamDescs);
+
+    // Update a2dp offload flag here because UpdateActiveRoute() need actual flag.
+    audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
+
     uint32_t audioFlag;
     for (auto &pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
@@ -830,14 +852,17 @@ void AudioCoreService::ProcessOutputPipeNew(std::shared_ptr<AudioPipeInfo> pipeI
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_MOVE:
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
                 }
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc, reason);
@@ -858,15 +883,18 @@ void AudioCoreService::ProcessOutputPipeUpdate(std::shared_ptr<AudioPipeInfo> pi
             desc->sessionId_, desc->streamAction_, pipeInfo->name_.c_str());
         switch (desc->streamAction_) {
             case AUDIO_STREAM_ACTION_NEW:
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, desc);
                 flag = desc->routeFlag_;
                 break;
             case AUDIO_STREAM_ACTION_DEFAULT:
             case AUDIO_STREAM_ACTION_MOVE:
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, desc);
                 if (desc->streamStatus_ != STREAM_STATUS_STARTED) {
                     MoveStreamSink(desc, pipeInfo, reason);
                 } else {
                     MoveToNewOutputDevice(desc, pipeInfo, reason);
                 }
+                CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, desc);
                 break;
             case AUDIO_STREAM_ACTION_RECREATE:
                 TriggerRecreateRendererStreamCallback(desc, reason);
@@ -1237,7 +1265,6 @@ void AudioCoreService::MoveToNewOutputDevice(std::shared_ptr<AudioStreamDescript
     }
 
     streamCollector_.UpdateRendererDeviceInfo(newDeviceDesc);
-    ReConfigOffloadStatus(streamDesc->sessionId_, pipeInfo, oldSinkName);
     audioIOHandleMap_.NotifyUnmutePort();
 }
 
@@ -2015,10 +2042,6 @@ float AudioCoreService::GetSystemVolumeInDb(AudioVolumeType volumeType, int32_t 
 bool AudioCoreService::IsStreamSupportLowpower(std::shared_ptr<AudioStreamDescriptor> streamDesc)
 {
     Trace trace("IsStreamSupportLowpower");
-    if (pipeManager_->PcmOffloadSessionCount() > 0) {
-        AUDIO_INFO_LOG("PIPE_TYPE_OFFLOAD already exist.");
-        return false;
-    }
     if (!streamDesc->rendererInfo_.isOffloadAllowed) {
         AUDIO_INFO_LOG("normal stream because renderInfo not support offload.");
         return false;
@@ -2389,35 +2412,6 @@ int32_t AudioCoreService::ReleaseOffloadPipe(AudioIOHandle id, uint32_t paIndex,
 
     CHECK_AND_RETURN_RET_LOG(GetEventEntry(), ERR_INVALID_PARAM, "GetEventEntry() return nullptr");
     return GetEventEntry()->ReleaseOffloadPipe(id, paIndex, type);
-}
-
-void AudioCoreService::CheckOffloadStream(AudioStreamChangeInfo &streamChangeInfo)
-{
-    std::string adapterName = GetAdapterNameBySessionId(streamChangeInfo.audioRendererChangeInfo.sessionId);
-    AUDIO_INFO_LOG("session: %{public}u, adapter name: %{public}s",
-        streamChangeInfo.audioRendererChangeInfo.sessionId, adapterName.c_str());
-    CHECK_AND_RETURN(adapterName == OFFLOAD_PRIMARY_SPEAKER || adapterName.find("_out_offload") != std::string::npos);
-
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_PAUSED ||
-        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_STOPPED ||
-        streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RELEASED) {
-        audioOffloadStream_.ResetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
-    }
-    if (streamChangeInfo.audioRendererChangeInfo.rendererState == RENDERER_RUNNING) {
-        audioOffloadStream_.SetOffloadStatus(streamChangeInfo.audioRendererChangeInfo.sessionId);
-    }
-}
-
-void AudioCoreService::ReConfigOffloadStatus(uint32_t sessionId,
-    std::shared_ptr<AudioPipeInfo> &pipeInfo, std::string &oldSinkName)
-{
-    AUDIO_INFO_LOG("new sink: %{public}s, old sink: %{public}s, sessionId: %{public}u",
-        pipeInfo->moduleInfo_.name.c_str(), oldSinkName.c_str(), sessionId);
-    if (pipeInfo->moduleInfo_.name == OFFLOAD_PRIMARY_SPEAKER || pipeInfo->moduleInfo_.className == "remote_offload") {
-        audioOffloadStream_.SetOffloadStatus(sessionId);
-    } else if (oldSinkName == OFFLOAD_PRIMARY_SPEAKER) {
-        audioOffloadStream_.ResetOffloadStatus(sessionId);
-    }
 }
 
 void AudioCoreService::PrepareMoveAttrs(std::shared_ptr<AudioStreamDescriptor> &streamDesc, DeviceType &oldDeviceType,

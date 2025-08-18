@@ -383,10 +383,11 @@ vector<sptr<MicrophoneDescriptor>> AudioCoreService::EventEntry::GetAudioCapture
     return coreService_->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreService::EventEntry::OnReceiveBluetoothEvent(const std::string macAddress, const std::string deviceName)
+void AudioCoreService::EventEntry::OnReceiveUpdateDeviceNameEvent(const std::string macAddress,
+    const std::string deviceName)
 {
     std::lock_guard<std::shared_mutex> lock(eventMutex_);
-    coreService_->OnReceiveBluetoothEvent(macAddress, deviceName);
+    coreService_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 int32_t AudioCoreService::EventEntry::SelectOutputDevice(sptr<AudioRendererFilter> audioRendererFilter,

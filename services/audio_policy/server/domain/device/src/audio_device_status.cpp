@@ -740,9 +740,15 @@ void AudioDeviceStatus::OnDeviceConfigurationChanged(DeviceType deviceType, cons
         "macAddress:[%{public}s], activeBTDevice:[%{public}s]",
         deviceType, audioActiveDevice_.GetCurrentOutputDeviceType(),
         GetEncryptAddr(macAddress).c_str(), GetEncryptAddr(btDevice).c_str());
-    // only for the active a2dp device.
+
+    // Bt configuration changed cases:
+    // 1) To another stream info: Reload pipe by new stream info.
+    // 2) To another bt device: Reload pipe by new stream info.
+    // 3) To SBC/L2HC codec: Re-fetch pipes for all streams, may change from a2dp to a2dp offload.
     if ((deviceType == DEVICE_TYPE_BLUETOOTH_A2DP) && !macAddress.compare(btDevice)) {
-        int32_t activeSessionsSize = 0;
+        AudioCoreService::GetCoreService()->FetchOutputDeviceAndRoute("BtConfigurationChanged");
+        AudioCoreService::GetCoreService()->FetchInputDeviceAndRoute("BtConfigurationChanged");
+        uint32_t activeSessionsSize = 0;
         BluetoothOffloadState state = NO_A2DP_DEVICE;
         if (audioA2dpOffloadManager_) {
             activeSessionsSize = audioA2dpOffloadManager_->UpdateA2dpOffloadFlagForAllStream();
@@ -1072,7 +1078,6 @@ int32_t AudioDeviceStatus::OnServiceConnected(AudioServiceIndex serviceIndex)
             if (OpenPortAndAddDeviceOnServiceConnected(moduleInfo)) {
                 result = SUCCESS;
             }
-            audioOffloadStream_.SetOffloadAvailableFromXML(moduleInfo);
         }
     }
 

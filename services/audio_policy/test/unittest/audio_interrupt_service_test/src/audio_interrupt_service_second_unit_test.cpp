@@ -186,6 +186,12 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_004, TestSize.
     int32_t fakePid = 123;
     auto ret = audioInterruptService->IsSessionNeedToFetchOutputDevice(fakePid);
     EXPECT_EQ(false, ret);
+
+    audioInterruptService->sessionService_ = AudioSessionService::GetAudioSessionService();
+    ret = audioInterruptService->IsSessionNeedToFetchOutputDevice(fakePid);
+    EXPECT_EQ(false, ret);
+
+    audioInterruptService->sessionService_ = nullptr;
     ret = audioInterruptService->SetAudioSessionScene(fakePid, AudioSessionScene::MEDIA);
     EXPECT_EQ(true, ret);
 
@@ -1340,5 +1346,148 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_GetAudioSessio
     EXPECT_EQ(ret.at(0), 1000);
 }
 
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_046
+* @tc.desc  : Test CanMixForSession
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_046, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    AudioInterrupt incomingInterrupt, activeInterrupt;
+    AudioFocusEntry focusEntry;
+    focusEntry.isReject = false;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    auto ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    focusEntry.isReject = true;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    focusEntry.isReject = false;
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_MIC;
+    activeInterrupt.audioFocusType.streamType = STREAM_VOICE_CALL;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    incomingInterrupt.audioFocusType.sourceType = SOURCE_TYPE_INVALID;
+    incomingInterrupt.audioFocusType.streamType = STREAM_INTERNAL_FORCE_STOP;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+    
+    incomingInterrupt.audioFocusType.streamType = STREAM_GAME;
+    activeInterrupt.audioFocusType.streamType == STREAM_INTERNAL_FORCE_STOP;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    incomingInterrupt.audioFocusType.streamType = STREAM_INTERNAL_FORCE_STOP;
+    ret = audioInterruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_047
+* @tc.desc  : Test CanMixForIncomingSession
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_047, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    AudioInterrupt incomingInterrupt, activeInterrupt;
+    AudioFocusEntry focusEntry;
+    incomingInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+    auto ret = audioInterruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(true, ret);
+    incomingInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    ret = audioInterruptService->CanMixForIncomingSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_048
+* @tc.desc  : Test CanMixForActiveSession
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_048, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+    int32_t pid = 123;
+    AudioInterrupt incomingInterrupt, activeInterrupt;
+    AudioFocusEntry focusEntry;
+    activeInterrupt.pid = pid;
+    audioInterruptService->sessionService_ = AudioSessionService::GetAudioSessionService();
+    audioInterruptService->SetAudioSessionScene(pid, AudioSessionScene::MEDIA);
+    focusEntry.actionOn = CURRENT;
+    focusEntry.hintType = INTERRUPT_HINT_PAUSE;
+    auto ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(false, ret);
+
+    audioInterruptService->sessionService_ = nullptr;
+    activeInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::SILENT;
+    ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(true, ret);
+    activeInterrupt.sessionStrategy.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
+    ret = audioInterruptService->CanMixForActiveSession(incomingInterrupt, activeInterrupt, focusEntry);
+    EXPECT_EQ(true, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_049
+* @tc.desc  : Test SetAudioManagerInterruptCallback_001
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_049, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+   
+    auto object = new RemoteObjectTestStub();
+    auto ret = audioInterruptService->SetAudioManagerInterruptCallback(object);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_050
+* @tc.desc  : Test SetAudioManagerInterruptCallback_002
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_050, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+   
+    auto object = new RemoteObjectTestStub();
+    audioInterruptService->handler_ = make_shared<AudioPolicyServerHandler>();
+    auto ret = audioInterruptService->SetAudioManagerInterruptCallback(object);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_051
+* @tc.desc  : Test SetAudioInterruptCallback
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_051, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+   
+    int32_t zoneId = 123;
+    int32_t streamId = 123;
+    int32_t uid = 123;
+    auto object = new RemoteObjectTestStub();
+    auto ret = audioInterruptService->SetAudioInterruptCallback(zoneId, streamId, object, uid);
+    EXPECT_EQ(SUCCESS, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS

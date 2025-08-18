@@ -91,7 +91,6 @@ constexpr uid_t UID_NEARLINK_SA = 7030;
 constexpr uid_t UID_PENCIL_PROCESS_SA = 7555;
 constexpr uid_t UID_RESOURCE_SCHEDULE_SERVICE = 1096;
 constexpr uid_t UID_AVSESSION_SERVICE = 6700;
-constexpr int64_t OFFLOAD_NO_SESSION_ID = -1;
 const char* MANAGE_SYSTEM_AUDIO_EFFECTS = "ohos.permission.MANAGE_SYSTEM_AUDIO_EFFECTS";
 const char* MANAGE_AUDIO_CONFIG = "ohos.permission.MANAGE_AUDIO_CONFIG";
 const char* USE_BLUETOOTH_PERMISSION = "ohos.permission.USE_BLUETOOTH";
@@ -830,6 +829,7 @@ void AudioPolicyServer::SubscribeCommonEventExecute()
     SubscribeCommonEvent("usual.event.DATA_SHARE_READY");
     SubscribeCommonEvent("usual.event.dms.rotation_changed");
     SubscribeCommonEvent("usual.event.bluetooth.remotedevice.NAME_UPDATE");
+    SubscribeCommonEvent("usual.event.nearlink.remotedevice.NAME_UPDATE");
     SubscribeCommonEvent("usual.event.SCREEN_ON");
     SubscribeCommonEvent("usual.event.SCREEN_OFF");
     SubscribeCommonEvent("usual.event.SCREEN_LOCKED");
@@ -887,10 +887,11 @@ void AudioPolicyServer::OnReceiveEvent(const EventFwk::CommonEventData &eventDat
         uint32_t rotate = static_cast<uint32_t>(want.GetIntParam("rotation", 0));
         AUDIO_INFO_LOG("Set rotation to audioeffectchainmanager is %{public}d", rotate);
         AudioServerProxy::GetInstance().SetRotationToEffectProxy(rotate);
-    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE") {
+    } else if (action == "usual.event.bluetooth.remotedevice.NAME_UPDATE" ||
+        action == "usual.event.nearlink.remotedevice.NAME_UPDATE") {
         std::string deviceName  = want.GetStringParam("remoteName");
         std::string macAddress = want.GetStringParam("deviceAddr");
-        eventEntry_->OnReceiveBluetoothEvent(macAddress, deviceName);
+        eventEntry_->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
     } else if (action == "usual.event.SCREEN_ON") {
         AUDIO_INFO_LOG("receive SCREEN_ON action, control audio focus if need");
         audioDeviceCommon_.SetFirstScreenOn();
@@ -3670,11 +3671,6 @@ int32_t AudioPolicyServer::UnsetAvailableDeviceChangeCallback(int32_t /*clientId
     return SUCCESS;
 }
 
-int32_t AudioPolicyServer::OffloadStopPlaying(const AudioInterrupt &audioInterrupt)
-{
-    return audioPolicyService_.OffloadStopPlaying(std::vector<int32_t>(1, audioInterrupt.streamId));
-}
-
 // LCOV_EXCL_START
 int32_t AudioPolicyServer::ConfigDistributedRoutingRole(
     const std::shared_ptr<AudioDeviceDescriptor> &descriptor, int32_t typeIn)
@@ -4488,11 +4484,6 @@ void AudioPolicyServer::NotifyAccountsChanged(const int &id)
     audioPolicyService_.NotifyAccountsChanged(id);
     SendVolumeKeyEventToRssWhenAccountsChanged();
     RegisterDefaultVolumeTypeListener();
-}
-
-int32_t AudioPolicyServer::MoveToNewPipe(uint32_t sessionId, int32_t pipeType)
-{
-    return audioOffloadStream_.MoveToNewPipe(sessionId, static_cast<AudioPipeType>(pipeType));
 }
 
 void AudioPolicyServer::CheckHibernateState(bool hibernate)

@@ -139,13 +139,13 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, LoadHdiEffectModel_001, TestSize.Leve
 }
 
 /**
-* @tc.name  : Test OnReceiveBluetoothEvent.
-* @tc.number: OnReceiveBluetoothEvent_001
+* @tc.name  : Test OnReceiveUpdateDeviceNameEvent.
+* @tc.number: OnReceiveUpdateDeviceNameEvent_001
 * @tc.desc  : Test AudioPolicyService interfaces.
 */
-HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveBluetoothEvent_001, TestSize.Level1)
+HWTEST_F(AudioPolicyServiceFourthUnitTest, OnReceiveUpdateDeviceNameEvent_001, TestSize.Level1)
 {
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveBluetoothEvent_001 start");
+    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest OnReceiveUpdateDeviceNameEvent_001 start");
     ASSERT_NE(nullptr, GetServerUtil::GetServerPtr());
 
     const std::string macAddress = "11-11-11-11-11-11";
@@ -237,21 +237,6 @@ HWTEST_F(AudioPolicyServiceFourthUnitTest, IsA2dpOffloadConnecting_003, TestSize
     audioA2dpOffloadManager_.connectionTriggerSessionIds_ = {0};
 
     bool ret = audioA2dpOffloadManager_.IsA2dpOffloadConnecting(0);
-    EXPECT_FALSE(ret);
-}
-
-/**
-* @tc.name  : Test CheckSpatializationAndEffectState.
-* @tc.number: CheckSpatializationAndEffectState_001
-* @tc.desc  : Test AudioPolicyServic interfaces.
-*/
-HWTEST_F(AudioPolicyServiceFourthUnitTest, CheckSpatializationAndEffectState_001, TestSize.Level1)
-{
-    AUDIO_INFO_LOG("AudioPolicyServiceFourthUnitTest CheckSpatializationAndEffectState_001 start");
-    auto server = GetServerUtil::GetServerPtr();
-    EXPECT_NE(nullptr, server);
-
-    bool ret = server->audioPolicyService_.audioOffloadStream_.CheckSpatializationAndEffectState();
     EXPECT_FALSE(ret);
 }
 

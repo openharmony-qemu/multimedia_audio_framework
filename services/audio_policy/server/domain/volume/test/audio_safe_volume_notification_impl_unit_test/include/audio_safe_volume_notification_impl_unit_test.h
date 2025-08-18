@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,15 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
-#define AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
+#ifndef AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_UNIT_TEST_H
+#define AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_UNIT_TEST_H
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "audio_offload_stream.h"
+#include "audio_safe_volume_notification_impl.h"
+#include "notification_request.h"
+#include "resource_manager_adapter.h"
 
 namespace OHOS {
 namespace AudioStandard {
-class AudioOffloadStreamTest : public testing::Test {
+
+class AudioSafeVolumeNotificationImplUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -31,10 +35,7 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
-
-protected:
-    AudioOffloadStream *audioOffloadStream_;
 };
 } // namespace AudioStandard
 } // namespace OHOS
-#endif // AUDIO_OFFLOAD_STREAM_UNIT_TEST_H
+#endif //AUDIO_SAFE_VOLUME_NOTIFICATION_IMPL_UNIT_TEST_H

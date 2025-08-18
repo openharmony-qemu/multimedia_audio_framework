@@ -640,7 +640,9 @@ void AudioPolicyConfigManager::GetStreamPropInfo(std::shared_ptr<AudioStreamDesc
     CHECK_AND_RETURN_LOG(deviceInfo != nullptr, "Find device failed, none streamProp");
 
     auto pipeIt = deviceInfo->supportPipeMap_.find(desc->routeFlag_);
-    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(), "Find pipeInfo failed;none streamProp");
+    CHECK_AND_RETURN_LOG(pipeIt != deviceInfo->supportPipeMap_.end(),
+        "Find no support pipe for stream %{public}u, route %{public}u",
+        desc->GetSessionId(), desc->GetRoute());
 
     AudioStreamInfo temp = desc->streamInfo_;
     UpdateBasicStreamInfo(desc, pipeIt->second, temp);

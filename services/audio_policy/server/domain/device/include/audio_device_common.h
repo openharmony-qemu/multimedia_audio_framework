@@ -98,8 +98,6 @@ public:
         std::vector<std::shared_ptr<AudioRendererChangeInfo>> &rendererChangeInfos,
         const AudioStreamDeviceChangeReasonExt reason = AudioStreamDeviceChangeReason::UNKNOWN);
     bool IsRendererStreamRunning(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
-    void FetchStreamForA2dpMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
 
     int32_t MoveToLocalOutputDevice(std::vector<SinkInput> sinkInputIds,
         std::shared_ptr<AudioDeviceDescriptor> localDeviceDescriptor);
@@ -147,10 +145,6 @@ private:
 
     void UpdateRoute(shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         std::vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices);
-    void FetchStreamForSpkMchStream(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        vector<std::shared_ptr<AudioDeviceDescriptor>> &descs);
-    void ResetOffloadAndMchMode(std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
-        vector<std::shared_ptr<AudioDeviceDescriptor>> &outputDevices);
     bool SelectRingerOrAlarmDevices(const vector<std::shared_ptr<AudioDeviceDescriptor>> &descs,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo);
     bool IsSameDevice(std::shared_ptr<AudioDeviceDescriptor> &desc, AudioDeviceDescriptor &deviceInfo);
@@ -159,7 +153,6 @@ private:
     bool IsDeviceConnected(std::shared_ptr<AudioDeviceDescriptor> &audioDeviceDescriptors) const;
     int32_t HandleDeviceChangeForFetchInputDevice(std::shared_ptr<AudioDeviceDescriptor> &desc,
         std::shared_ptr<AudioCapturerChangeInfo> &capturerChangeInfo);
-    void JudgeIfLoadMchModule();
     bool IsFastFromA2dpToA2dp(const std::shared_ptr<AudioDeviceDescriptor> &desc,
         const std::shared_ptr<AudioRendererChangeInfo> &rendererChangeInfo,
         const AudioStreamDeviceChangeReasonExt reason);

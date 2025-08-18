@@ -27,6 +27,20 @@ void AudioPolicyManagerUnitTest::TearDownTestCase(void) {}
 void AudioPolicyManagerUnitTest::SetUp(void) {}
 void AudioPolicyManagerUnitTest::TearDown(void) {}
 
+class AudioManagerDeviceChangeCallbackStub : public AudioManagerDeviceChangeCallback {
+public:
+    ~AudioManagerDeviceChangeCallbackStub() {}
+
+    void OnDeviceChange(const DeviceChangeAction &deviceChangeAction) override {}
+};
+
+class AudioPreferredOutputDeviceChangeCallbackStub : public AudioPreferredOutputDeviceChangeCallback {
+public:
+    ~AudioPreferredOutputDeviceChangeCallbackStub() {}
+
+    void OnPreferredInputDeviceUpdated(const std::vector<std::shared_ptr<AudioDeviceDescriptor>> &desc) {}
+};
+
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: AudioPolicyManagerUnitTest_001.

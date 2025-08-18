@@ -72,7 +72,6 @@ public:
         SPATIALIZATION_ENABLED_CHANGE_FOR_ANY_DEVICE,
         HEAD_TRACKING_ENABLED_CHANGE,
         HEAD_TRACKING_ENABLED_CHANGE_FOR_ANY_DEVICE,
-        PIPE_STREAM_CLEAN_EVENT,
         AUDIO_SESSION_DEACTIVE_EVENT,
         MICROPHONE_BLOCKED,
         NN_STATE_CHANGE,
@@ -199,7 +198,6 @@ public:
     bool SendHeadTrackingEnabledChangeEvent(const bool &enabled);
     bool SendHeadTrackingEnabledChangeForAnyDeviceEvent(
         const std::shared_ptr<AudioDeviceDescriptor> &selectedAudioDevice, const bool &enabled);
-    bool SendPipeStreamCleanEvent(AudioPipeType pipeType);
     int32_t SetClientCallbacksEnable(const CallbackChange &callbackchange, const bool &enable);
     int32_t SetCallbackRendererInfo(const AudioRendererInfo &rendererInfo);
     int32_t SetCallbackCapturerInfo(const AudioCapturerInfo &capturerInfo);
@@ -248,7 +246,6 @@ private:
     void HandleSpatializatonEnabledChangeForCurrentDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleHeadTrackingEnabledChangeForAnyDeviceEvent(const AppExecFwk::InnerEvent::Pointer &event);
-    void HandlePipeStreamCleanEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSessionDeactiveCallback(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleNnStateChangeEvent(const AppExecFwk::InnerEvent::Pointer &event);
     void HandleAudioSceneChange(const AppExecFwk::InnerEvent::Pointer &event);

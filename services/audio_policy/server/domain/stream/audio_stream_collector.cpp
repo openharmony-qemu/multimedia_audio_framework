@@ -1453,9 +1453,10 @@ int32_t AudioStreamCollector::UpdateCapturerInfoMuteStatus(int32_t uid, bool mut
     return SUCCESS;
 }
 
-std::map<std::pair<AudioPipeType, AudioPipeType>, ConcurrencyAction>& AudioStreamCollector::GetConcurrencyMap()
+ConcurrencyAction AudioStreamCollector::GetConcurrencyAction(
+    const AudioPipeType existingPipe, const AudioPipeType commingPipe)
 {
-    return audioConcurrencyService_->GetConcurrencyMap();
+    return audioConcurrencyService_->GetConcurrencyAction(existingPipe, commingPipe);
 }
 
 void AudioStreamCollector::WriterStreamChangeSysEvent(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo)

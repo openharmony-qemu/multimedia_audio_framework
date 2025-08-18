@@ -429,13 +429,13 @@ void AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest()
     eventEntry->GetAudioCapturerMicrophoneDescriptors(sessionId);
 }
 
-void AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest()
+void AudioCoreServiceEventEntryOnReceiveUpdateDeviceNameEventFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
     auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
     std::string macAddress = "11-22-33-44-55-66";
     std::string deviceName = "deviceName";
-    eventEntry->OnReceiveBluetoothEvent(macAddress, deviceName);
+    eventEntry->OnReceiveUpdateDeviceNameEvent(macAddress, deviceName);
 }
 
 void AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest()
@@ -676,7 +676,7 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest,
     AudioCoreServiceEventEntryGetAvailableMicrophonesFuzzTest,
     AudioCoreServiceEventEntryGetAudioCapturerMicrophoneDescriptorsFuzzTest,
-    AudioCoreServiceEventEntryOnReceiveBluetoothEventFuzzTest,
+    AudioCoreServiceEventEntryOnReceiveUpdateDeviceNameEventFuzzTest,
     AudioCoreServiceEventEntrySelectOutputDeviceFuzzTest,
     AudioCoreServiceEventEntrySelectInputDeviceFuzzTest,
     AudioCoreServiceEventEntryGetCurrentRendererChangeInfosFuzzTest,

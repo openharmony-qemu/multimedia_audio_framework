@@ -1378,45 +1378,6 @@ HWTEST_F(AudioPolicyServiceThirdUnitTest, InitSharedVolume_001, TestSize.Level1)
 }
 
 /**
- * @tc.name  : Test MoveToNewPipe.
- * @tc.number: MoveToNewPipe_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, MoveToNewPipe_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    uint32_t sessionId = 0;
-    AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
-    int32_t ret = server->audioOffloadStream_.MoveToNewPipe(sessionId, pipeType);
-    EXPECT_NE(ret, 0);
-}
-
-/**
- * @tc.name  : Test DynamicUnloadModule.
- * @tc.number: DynamicUnloadModule_001
- * @tc.desc  : Test AudioPolicyService interfaces.
- */
-HWTEST_F(AudioPolicyServiceThirdUnitTest, DynamicUnloadModule_001, TestSize.Level1)
-{
-    auto server = GetServerPtr();
-    ASSERT_NE(nullptr, server);
-
-    AudioPipeType pipeType = PIPE_TYPE_OFFLOAD;
-    int32_t ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
-    EXPECT_EQ(ret, SUCCESS);
-
-    pipeType = PIPE_TYPE_MULTICHANNEL;
-    ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
-    EXPECT_NE(ret, SUCCESS);
-
-    pipeType = PIPE_TYPE_DIRECT_VOIP;
-    ret = server->audioPolicyService_.DynamicUnloadModule(pipeType);
-    EXPECT_EQ(ret, SUCCESS);
-}
-
-/**
  * @tc.name  : Test GetMaxRendererInstances.
  * @tc.number: GetMaxRendererInstances_001
  * @tc.desc  : Test AudioPolicyService interfaces.

@@ -1575,25 +1575,6 @@ bool AudioCapturerPrivate::GenerateNewStream(IAudioStream::StreamClass targetCla
     return true;
 }
 
-bool AudioCapturerPrivate::ContinueAfterConcede(IAudioStream::StreamClass &targetClass, RestoreInfo restoreInfo)
-{
-    CHECK_AND_RETURN_RET(restoreInfo.restoreReason == STREAM_CONCEDED, true);
-    targetClass = IAudioStream::PA_STREAM;
-    if (audioStream_->GetStreamClass() == IAudioStream::PA_STREAM) {
-        AUDIO_WARNING_LOG("Already pa stream, no need for concede");
-        audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-        return false;
-    }
-    AudioPipeType pipeType = PIPE_TYPE_NORMAL_IN;
-    audioStream_->GetAudioPipeType(pipeType);
-    AUDIO_INFO_LOG("session %{public}u concede from pipeType %{public}d", sessionID_, capturerInfo_.pipeType);
-    if (pipeType == PIPE_TYPE_LOWLATENCY_IN || pipeType == PIPE_TYPE_CALL_IN) {
-        return true;
-    }
-    audioStream_->SetRestoreStatus(NO_NEED_FOR_RESTORE);
-    return false;
-}
-
 bool AudioCapturerPrivate::ContinueAfterSplit(RestoreInfo restoreInfo)
 {
     CHECK_AND_RETURN_RET(restoreInfo.restoreReason == STREAM_SPLIT, true);
@@ -1614,8 +1595,6 @@ bool AudioCapturerPrivate::SwitchToTargetStream(IAudioStream::StreamClass target
         restoreInfo.restoreReason, restoreInfo.deviceChangeReason, restoreInfo.targetStreamFlag);
 
     // Check if continue to switch after some concede operation.
-    CHECK_AND_RETURN_RET_LOG(ContinueAfterConcede(targetClass, restoreInfo),
-        true, "No need for switch");
     CHECK_AND_RETURN_RET(ContinueAfterSplit(restoreInfo), true, "Stream split");
 
     isSwitching_ = true;

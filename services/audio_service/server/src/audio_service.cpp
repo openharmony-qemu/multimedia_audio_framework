@@ -1238,6 +1238,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         }
         renderer->SetNonInterruptMute(muteFlag);
         AUDIO_INFO_LOG("allRendererMap_ has sessionId");
+        UpdateSessionMuteStatus(sessionId, muteFlag);
         rendererLock.unlock();
         return;
     }
@@ -1251,6 +1252,7 @@ void AudioService::SetNonInterruptMute(const uint32_t sessionId, const bool mute
         }
         capturer->SetNonInterruptMute(muteFlag);
         AUDIO_INFO_LOG("allCapturerMap_ has sessionId");
+        UpdateSessionMuteStatus(sessionId, muteFlag);
         return;
     }
     capturerLock.unlock();
@@ -1286,6 +1288,11 @@ void AudioService::SetNonInterruptMuteForProcess(const uint32_t sessionId, const
     // this sessionid will not add into mutedSessions_
     // so need save it temporarily, when new stream create, check if new stream need mute
     // if set muteflag 0 again before new stream create, do not mute it
+    UpdateSessionMuteStatus(sessionId, muteFlag);
+}
+
+void AudioService::UpdateSessionMuteStatus(const uint32_t sessionId, const bool muteFlag)
+{
     std::lock_guard<std::mutex> muteSwitchStreamLock(muteSwitchStreamSetMutex_);
     if (muteFlag) {
         muteSwitchStreams_.insert(sessionId);

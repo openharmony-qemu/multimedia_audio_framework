@@ -13,15 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
-#define AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
+#ifndef AUDIO_CLIENT_TRACKER_CALLBACK_LISTENER_UNIT_TEST_H
+#define AUDIO_CLIENT_TRACKER_CALLBACK_LISTENER_UNIT_TEST_H
+
+#include "audio_client_tracker_callback_listener.h"
+#include "audio_client_tracker_callback_service.h"
 #include "gtest/gtest.h"
-#include "audio_a2dp_offload_manager.h"
+#include "gmock/gmock.h"
 
 namespace OHOS {
 namespace AudioStandard {
 
-class AudioA2dpOffloadManagerUnitTest : public testing::Test {
+using namespace testing::ext;
+
+class AudioClientTrackerCallbackListenerUnitTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
     static void SetUpTestCase(void);
@@ -31,7 +36,13 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+
+private:
+    sptr<IStandardClientTracker> listener_;
+    StreamSetStateEventInternal streamSetStateEventInternal_;
+    std::shared_ptr<AudioClientTracker> clientTracker_;
 };
+
 } // namespace AudioStandard
 } // namespace OHOS
-#endif //AUDIO_A2DP_OFFLOAD_MANAGER_UNIT_TEST_H
+#endif //AUDIO_CLIENT_TRACKER_CALLBACK_LISTENER_UNIT_TEST_H

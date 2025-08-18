@@ -630,6 +630,8 @@ struct AudioRendererInfo : public Parcelable {
         int32_t rendererFlagsIn, AudioVolumeMode volumeModeIn)
         : contentType(contentTypeIn), streamUsage(streamUsageIn),
         rendererFlags(rendererFlagsIn), volumeMode(volumeModeIn) {}
+    AudioRendererInfo(ContentType contentTypeIn, StreamUsage streamUsageIn)
+        : contentType(contentTypeIn), streamUsage(streamUsageIn) {}
 
     bool Marshalling(Parcel &parcel) const override
     {

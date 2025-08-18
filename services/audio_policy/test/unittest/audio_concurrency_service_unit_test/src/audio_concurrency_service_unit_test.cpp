@@ -27,17 +27,5 @@ void AudioConcurrencyServiceUnitTest::SetUpTestCase(void) {}
 void AudioConcurrencyServiceUnitTest::TearDownTestCase(void) {}
 void AudioConcurrencyServiceUnitTest::SetUp(void) {}
 void AudioConcurrencyServiceUnitTest::TearDown(void) {}
-
-/**
-* @tc.name  : Test AudioInputThread.
-* @tc.number: AudioConcurrencyService_016.
-* @tc.desc  : Test ActivateAudioConcurrency.
-*/
-HWTEST_F(AudioConcurrencyServiceUnitTest, AudioConcurrencyService_001, TestSize.Level1)
-{
-    auto audioConcurrencyService = std::make_shared<AudioConcurrencyService>();
-    auto result = audioConcurrencyService->GetConcurrencyMap();
-    EXPECT_EQ(result.size(), 0);
-}
 } // namespace AudioStandard
 } // namespace OHOS

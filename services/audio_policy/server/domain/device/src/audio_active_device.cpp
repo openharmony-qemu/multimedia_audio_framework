@@ -88,18 +88,6 @@ bool AudioActiveDevice::IsDirectSupportedDevice()
     return dev == DEVICE_TYPE_WIRED_HEADSET || dev == DEVICE_TYPE_USB_HEADSET;
 }
 
-bool AudioActiveDevice::CheckActiveOutputDeviceSupportOffload()
-{
-    DeviceType dev = GetCurrentOutputDeviceType();
-    if (GetCurrentOutputDeviceNetworkId() != LOCAL_NETWORK_ID || dev == DEVICE_TYPE_REMOTE_CAST) {
-        return false;
-    }
-
-    return dev == DEVICE_TYPE_SPEAKER ||
-        (dev == DEVICE_TYPE_BLUETOOTH_A2DP && audioA2dpOffloadFlag_.GetA2dpOffloadFlag() == A2DP_OFFLOAD) ||
-        dev == DEVICE_TYPE_USB_HEADSET;
-}
-
 void AudioActiveDevice::SetCurrentInputDevice(const AudioDeviceDescriptor &desc)
 {
     std::lock_guard<std::mutex> lock(curInputDevice_);

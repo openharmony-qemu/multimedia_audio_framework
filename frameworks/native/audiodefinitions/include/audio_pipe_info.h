@@ -47,8 +47,8 @@ public:
     std::string adapterName_ = "";
 
     AudioModuleInfo moduleInfo_ = {};
+
     AudioStreamInfo audioStreamInfo_ = {};
-    void InitAudioStreamInfo();
 
     AudioPipeAction pipeAction_ = PIPE_ACTION_DEFAULT;
 
@@ -64,16 +64,65 @@ public:
 
     AudioPipeInfo(const std::shared_ptr<AudioPipeInfo> pipeInfo);
 
-    void Dump(std::string &dumpString);
+    uint32_t GetId() const
+    {
+        return id_;
+    }
 
-    std::string ToString();
-
-private:
-    bool IsOutput()
+    bool IsOutput() const
     {
         return pipeRole_ == PIPE_ROLE_OUTPUT;
     }
 
+    std::string GetName() const
+    {
+        return name_;
+    }
+
+    std::string GetAdapterName() const
+    {
+        return adapterName_;
+    }
+
+    AudioPipeAction GetAction() const
+    {
+        return pipeAction_;
+    }
+
+    uint32_t GetRoute() const
+    {
+        return routeFlag_;
+    }
+
+    bool IsRouteNormal() const
+    {
+        return IsOutput() ?
+            (routeFlag_ == AUDIO_OUTPUT_FLAG_NORMAL) : (routeFlag_ == AUDIO_INPUT_FLAG_NORMAL);
+    }
+
+    bool IsSameAdapter(const std::string &targetAdapterName) const
+    {
+        return adapterName_ == targetAdapterName;
+    }
+
+    void SetAction(AudioPipeAction action)
+    {
+        pipeAction_ = action;
+    }
+
+    void Dump(std::string &dumpString);
+
+    std::string ToString();
+
+    bool ContainStream(uint32_t sessionId) const;
+
+    void AddStream(std::shared_ptr<AudioStreamDescriptor> stream);
+
+    void RemoveStream(uint32_t sessionId);
+
+    void InitAudioStreamInfo();
+
+private:
     void DumpCommonAttrs(std::string &dumpString);
 
     void DumpOutputAttrs(std::string &dumpString);

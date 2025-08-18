@@ -80,14 +80,16 @@ ohos_unittest("audio_definitions_unit_test") {
   ]
 
   include_dirs = [
-    "./include",
+    "./test/unittest",
     "../../../frameworks/native/audioutils/include",
     "../../../interfaces/inner_api/native/audiocommon/include",
     "../../../services/audio_policy/common/include",
   ]
 
   sources = [
+    "test/unittest/audio_definitions_unit_test_utils.cpp",
     "test/unittest/audio_stream_descriptor_unit_test.cpp",
+    "test/unittest/audio_pipe_info_unit_test.cpp",
   ]
 
   deps = [ 
