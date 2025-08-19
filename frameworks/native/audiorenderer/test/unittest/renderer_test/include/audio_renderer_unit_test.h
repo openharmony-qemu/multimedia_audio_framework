@@ -121,7 +121,7 @@ public:
         const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
     void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
     float GetDuckVolume() override { return RenderUT::DUCK_VOLUME; }
-    int32_t GetDuckVolume(float volume) override { return SUCCESS; };
+    int32_t SetDuckVolume(float volume) override { return SUCCESS; };
 
     State state_ = State::RUNNING;
     RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;
