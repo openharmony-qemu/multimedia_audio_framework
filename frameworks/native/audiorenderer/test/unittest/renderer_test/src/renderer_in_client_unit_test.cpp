@@ -2633,7 +2633,7 @@ HWTEST(RendererInClientInnerUnitTest, SetOffloadDataCallbackState_002, TestSize.
  * @tc.number: RecordDropPosition_001
  * @tc.desc  : Test RendererInClientInner::RecordDropPosition
  */
-HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_084, TestSize.Level1)
+HWTEST(RendererInClientInnerUnitTest, RecordDropPosition_001, TestSize.Level1)
 {
     auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
     AudioProcessConfig config = {};
