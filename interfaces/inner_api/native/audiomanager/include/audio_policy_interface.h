@@ -38,7 +38,7 @@ struct DeviceChangeAction : public Parcelable {
     std::vector<std::shared_ptr<AudioDeviceDescriptor>> deviceDescriptors;
     static constexpr int32_t DEVICE_CHANGE_VALID_SIZE = 128;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    void SetClientInfo(const AudioDeviceDescriptor::ClientInfo &clientInfo) const
     {
         for (auto &des : deviceDescriptors) {
             if (des != nullptr) {

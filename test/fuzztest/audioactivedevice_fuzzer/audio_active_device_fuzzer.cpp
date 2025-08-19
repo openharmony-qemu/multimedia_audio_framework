@@ -361,8 +361,7 @@ void AudioActiveDeviceIsDeviceInVectorFuzzTest()
 void AudioDeviceDescriptorSetClientInfoFuzzTest()
 {
     AudioDeviceDescriptor deviceDescriptor;
-    std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo =
-        std::make_shared<AudioDeviceDescriptor::ClientInfo>();
+    AudioDeviceDescriptor::ClientInfo clientInfo;
     deviceDescriptor.GetDeviceCategory();
     deviceDescriptor.SetClientInfo(clientInfo);
 }

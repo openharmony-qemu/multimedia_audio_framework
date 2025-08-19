@@ -36,7 +36,7 @@ public:
     bool prerunningState = false;
     bool backMute = false;
     int32_t appVolume;
-    mutable std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo_ = nullptr;
+    mutable std::optional<AudioDeviceDescriptor::ClientInfo> clientInfo_ = std::nullopt;
 
     AudioRendererChangeInfo(const AudioRendererChangeInfo &audioRendererChangeInfo)
     {
@@ -45,7 +45,7 @@ public:
     AudioRendererChangeInfo() = default;
     ~AudioRendererChangeInfo() = default;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    void SetClientInfo(const AudioDeviceDescriptor::ClientInfo &clientInfo) const
     {
         clientInfo_ = clientInfo;
         outputDeviceInfo.SetClientInfo(clientInfo);
@@ -55,10 +55,10 @@ public:
     {
         int32_t clientUIDTemp = clientUID;
         RendererState rendererStateTemp = rendererState;
-        if (clientInfo_ != nullptr) {
-            clientUIDTemp = clientInfo_->hasSystemPermission_ ? clientUID : EMPTY_UID;
-            rendererStateTemp = clientInfo_->hasSystemPermission_ ? rendererState : RENDERER_INVALID;
-            clientInfo_ = nullptr;
+        if (clientInfo_) {
+            clientUIDTemp =  clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
+            rendererStateTemp =  clientInfo_.value().hasSystemPermission_ ? rendererState : RENDERER_INVALID;
+            clientInfo_ = std::nullopt;
         }
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUIDTemp)
@@ -127,7 +127,7 @@ public:
     bool prerunningState = false;
     bool muted;
     uint32_t appTokenId;
-    mutable std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo_ = nullptr;
+    mutable std::optional<AudioDeviceDescriptor::ClientInfo> clientInfo_ = std::nullopt;
 
     AudioCapturerChangeInfo(const AudioCapturerChangeInfo &audioCapturerChangeInfo)
     {
@@ -136,7 +136,7 @@ public:
     AudioCapturerChangeInfo() = default;
     ~AudioCapturerChangeInfo() = default;
 
-    void SetClientInfo(std::shared_ptr<AudioDeviceDescriptor::ClientInfo> clientInfo) const
+    void SetClientInfo(const AudioDeviceDescriptor::ClientInfo &clientInfo) const
     {
         clientInfo_ = clientInfo;
         inputDeviceInfo.SetClientInfo(clientInfo);
@@ -146,10 +146,10 @@ public:
     {
         int32_t clientUIDTemp = clientUID;
         CapturerState capturerStateTemp = capturerState;
-        if (clientInfo_ != nullptr) {
-            clientUIDTemp = clientInfo_->hasSystemPermission_ ? clientUID : EMPTY_UID;
-            capturerStateTemp = clientInfo_->hasSystemPermission_ ? capturerState : CAPTURER_INVALID;
-            clientInfo_ = nullptr;
+        if (clientInfo_) {
+            clientUIDTemp =  clientInfo_.value().hasSystemPermission_ ? clientUID : EMPTY_UID;
+            capturerStateTemp =  clientInfo_.value().hasSystemPermission_ ? capturerState : CAPTURER_INVALID;
+            clientInfo_ = std::nullopt;
         }
         return parcel.WriteInt32(createrUID)
             && parcel.WriteInt32(clientUIDTemp)
