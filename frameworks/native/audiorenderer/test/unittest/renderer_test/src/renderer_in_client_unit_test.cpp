@@ -2626,5 +2626,31 @@ HWTEST(RendererInClientInnerUnitTest, SetOffloadDataCallbackState_002, TestSize.
     int cbState = 1;
     EXPECT_EQ(ptrRendererInClientInner->SetOffloadDataCallbackState(cbState), SUCCESS);
 }
+
+/**
+ * @tc.name  : Test RecordDropPosition API
+ * @tc.type  : FUNC
+ * @tc.number: RecordDropPosition_001
+ * @tc.desc  : Test RendererInClientInner::RecordDropPosition
+ */
+HWTEST(RendererInClientInnerUnitTest, RendererInClientInner_084, TestSize.Level1)
+{
+    auto ptrRendererInClientInner = std::make_shared<RendererInClientInner>(AudioStreamType::STREAM_DEFAULT, getpid());
+    AudioProcessConfig config = {};
+    config.streamInfo.channels = AudioChannel::STEREO;
+    config.streamInfo.format = AudioSampleFormat::SAMPLE_S24LE;
+    ptrRendererInClientInner->clientConfig_ = config;
+
+    ptrRendererInClientInner->isHdiSpeed_.store(false);
+    ptrRendererInClientInner->RecordDropPosition(60);
+    EXPECT_EQ(ptrRendererInClientInner->dropPosition_, 0);
+    EXPECT_EQ(ptrRendererInClientInner->dropHdiPosition_, 0);
+
+    ptrRendererInClientInner->isHdiSpeed_.store(true);
+    ptrRendererInClientInner->realSpeed_ = 2.0f;
+    ptrRendererInClientInner->RecordDropPosition(60);
+    EXPECT_EQ(ptrRendererInClientInner->dropPosition_, 10);
+    EXPECT_EQ(ptrRendererInClientInner->dropHdiPosition_, 5);
+}
 } // namespace AudioStandard
 } // namespace OHOS

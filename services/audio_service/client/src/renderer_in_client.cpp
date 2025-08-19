@@ -343,6 +343,17 @@ bool RendererInClientInner::WaitForRunning()
     return true;
 }
 
+void RendererInClientInner::RecordDropPosition(size_t bufLength)
+{
+    CHECK_AND_RETURN_LOG(isHdiSpeed_.load(), "record drop position only when is hdi speed ");
+    uint32_t channels = clientConfig_.streamInfo.channels;
+    uint32_t samplePerFrame = Util::GetSamplePerFrame(clientConfig_.streamInfo.format);
+    // calculate samples by dropped buffer size
+    uint32_t dropPostion = bufLength / (channels * samplePerFrame);
+    dropPosition_ += dropPostion;
+    dropHdiPosition_ += dropPostion / GetSpeed();
+}
+
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
 {
     int32_t result = 0; // Ensure result with default value.
@@ -370,6 +381,7 @@ int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
     }
     if (result < 0) {
         AUDIO_WARNING_LOG("Call write fail, result:%{public}d, bufLength:%{public}zu", result, bufferDesc.bufLength);
+        RecordDropPosition(bufferDesc.bufLength);
     }
     return result;
 }
@@ -703,6 +715,8 @@ void RendererInClientInner::ResetFramePosition()
         lastFramePosAndTimePairWithSpeed_[base].first = 0;
         lastSwitchPosition_[base] = 0;
     }
+    dropPosition_ = 0;
+    dropHdiPosition_ = 0;
     unprocessedFramesBytes_ = 0;
     totalBytesWrittenAfterFlush_ = 0;
     writtenAtSpeedChange_.store(WrittenFramesWithSpeed{0, speed_});

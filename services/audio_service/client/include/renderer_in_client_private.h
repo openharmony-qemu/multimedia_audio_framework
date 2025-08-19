@@ -295,6 +295,7 @@ private:
     bool CheckBufferValid(const BufferDesc &bufDesc);
 
     bool IsRestoreNeeded();
+    void RecordDropPosition(size_t dataLength);
 private:
     AudioStreamType eStreamType_ = AudioStreamType::STREAM_DEFAULT;
     int32_t appUid_ = 0;
@@ -441,6 +442,8 @@ private:
     };
     std::vector<uint64_t> lastSwitchPosition_ = {0, 0};
     std::vector<uint64_t> lastSwitchPositionWithSpeed_ = {0, 0};
+    std::atomic<uint64_t> dropPosition_ = 0;
+    std::atomic<uint64_t> dropHdiPosition_ = 0;
 
     struct WrittenFramesWithSpeed {
         uint64_t writtenFrames = 0;
