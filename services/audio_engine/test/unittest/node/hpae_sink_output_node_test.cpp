@@ -119,7 +119,7 @@ public:
     int32_t UnLockOffloadRunningLock() override { return -1; }
 
     int32_t SplitRenderFrame(char & /* data */, uint64_t /* len */, uint64_t & /* writeLen */,
-        const char * /* streamType */) override { return -1; }
+        const char * /* streamType */, const char * /* audioType */) override { return -1; }
 
     int32_t UpdatePrimaryConnectionState(uint32_t /* operation */) override { return -1; }
 

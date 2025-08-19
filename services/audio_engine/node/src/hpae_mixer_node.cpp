@@ -39,6 +39,7 @@ HpaeMixerNode::HpaeMixerNode(HpaeNodeInfo &nodeInfo)
     mixedOutput_(pcmBufferInfo_), tmpOutput_(pcmBufferInfo_)
 {
     mixedOutput_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
+    mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
 #ifdef ENABLE_HIDUMP_DFX
     SetNodeName("hpaeMixerNode");
 #endif
@@ -55,6 +56,14 @@ HpaeMixerNode::~HpaeMixerNode()
 bool HpaeMixerNode::Reset()
 {
     return HpaePluginNode::Reset();
+}
+
+void HpaeMixerNode::SetNodeInfo(HpaeNodeInfo& nodeInfo)
+{
+    mixedOutput_.SetAudioStreamType(nodeInfo.streamType);
+    tmpOutput_.SetAudioStreamType(nodeInfo.streamType);
+    silenceData_.SetAudioStreamType(nodeInfo.streamType);
+    HpaeNode::SetNodeInfo(nodeInfo);
 }
 
 int32_t HpaeMixerNode::SetupAudioLimiter()

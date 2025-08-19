@@ -28,6 +28,7 @@ HpaePluginNode::HpaePluginNode(HpaeNodeInfo& nodeInfo)
     silenceData_.SetBufferValid(false);
     silenceData_.SetBufferSilence(true);
     silenceData_.SetSplitStreamType(nodeInfo.GetSplitStreamType());
+    silenceData_.SetAudioStreamType(nodeInfo.streamType);
 }
 
 void HpaePluginNode::DoProcess()
