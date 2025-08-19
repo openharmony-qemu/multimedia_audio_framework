@@ -4264,10 +4264,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    EXPECT_TRUE(audioRendererPrivate != nullptr);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
 
     std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
-    EXPECT_TRUE(audioStream != nullptr);
+    ASSERT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
     RestoreInfo restoreInfo;
@@ -4289,10 +4289,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    EXPECT_TRUE(audioRendererPrivate != nullptr);
+    ASSERT_TRUE(audioRendererPrivate != nullptr);
 
     std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
-    EXPECT_TRUE(audioStream != nullptr);
+    ASSERT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
     RestoreInfo restoreInfo;
