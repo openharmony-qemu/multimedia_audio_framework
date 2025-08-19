@@ -88,10 +88,10 @@ int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &aud
 
 void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rendererOptions)
 {
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
+    rendererOptions.streamInfo.channels = AudioChannel::MONO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
     rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
@@ -734,8 +734,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_001, TestSize.Level1)
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
-    rendererOptions.streamInfo.customSampleRate = 44220;
-    rendererOptions.rendererInfo.customSampleRate = 44220;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);
