@@ -352,6 +352,8 @@ void RendererInClientInner::RecordDropPosition(size_t bufLength)
     uint32_t dropPostion = bufLength / (channels * samplePerFrame);
     dropPosition_ += dropPostion;
     dropHdiPosition_ += dropPostion / GetSpeed();
+    AUDIO_WARNING_LOG("RendererInClientInner::RecordDropPosition dropPosition_:%{public}" PRIu64
+        ",dropHdiPosition_:%{public}" PRIu64, dropPosition_, dropHdiPosition_);
 }
 
 int32_t RendererInClientInner::ProcessWriteInner(BufferDesc &bufferDesc)
