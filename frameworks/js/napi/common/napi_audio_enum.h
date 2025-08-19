@@ -304,6 +304,7 @@ private:
     static const std::map<std::string, int32_t> audioSessionSceneMap;
     static const std::map<std::string, int32_t> audioSessionStateChangeHintMap;
     static const std::map<std::string, int32_t> outputDeviceChangeRecommendedActionMap;
+    static const std::map<std::string, int32_t> effectFlagMap;
     static std::unique_ptr<AudioParameters> sAudioParameters_;
 
     std::unique_ptr<AudioParameters> audioParameters_;

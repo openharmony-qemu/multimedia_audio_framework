@@ -21,6 +21,18 @@ namespace AudioStandard {
 
 static const int32_t BLUETOOTH_FETCH_RESULT_CONTINUE = 1;
 static const int32_t BLUETOOTH_FETCH_RESULT_ERROR = 2;
+static const uint32_t TEST_STREAM_1_SESSION_ID = 100001;
+
+void AudioCoreServicePrivateTest::SetUp(void)
+{
+    testCoreService_ = std::make_shared<AudioCoreService>();
+    testCoreService_->Init();
+}
+
+void AudioCoreServicePrivateTest::TearDown(void)
+{
+    testCoreService_ = nullptr;
+}
 
 /**
  * @tc.name  : Test AudioCoreService.
@@ -3052,5 +3064,108 @@ HWTEST(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
     int32_t ret = audioCoreService->ActivateOutputDevice(streamDesc);
     ASSERT_EQ(ret, SUCCESS);
 }
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_001
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_001
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload new case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_NEW, stream);
+    EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_002
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_002
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    EXPECT_EQ(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_003
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_003
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, TestSize.Level4)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_IN, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_004
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_004
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_005
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_005
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_006
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_006
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_NORMAL);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
+/**
+ * @tc.name   : AudioCoreServicePrivateTest_CheckAndUpdateOffloadEnableForStream_007
+ * @tc.number : CheckAndUpdateOffloadEnableForStream_007
+ * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
+ */
+HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, TestSize.Level3)
+{
+    auto stream = std::make_shared<AudioStreamDescriptor>();
+    stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
+    stream->SetRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    stream->SetOldRoute(AUDIO_OUTPUT_FLAG_LOWPOWER);
+    testCoreService_->CheckAndUpdateOffloadEnableForStream(OFFLOAD_MOVE_OUT, stream);
+    EXPECT_NE(TEST_STREAM_1_SESSION_ID, testCoreService_->audioOffloadStream_.GetOffloadSessionId(OFFLOAD_IN_PRIMARY));
+}
+
 } // namespace AudioStandard
 } // namespace OHOS

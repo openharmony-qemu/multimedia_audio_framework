@@ -547,6 +547,11 @@ const std::map<std::string, int32_t> NapiAudioEnum::outputDeviceChangeRecommende
     {"DEVICE_CHANGE_RECOMMEND_TO_STOP", static_cast<int32_t>(OutputDeviceChangeRecommendedAction::RECOMMEND_TO_STOP)},
 };
 
+const std::map<std::string, int32_t> NapiAudioEnum::effectFlagMap = {
+    {"RENDER_EFFECT_FLAG", RENDER_EFFECT_FLAG},
+    {"CAPTURE_EFFECT_FLAG", CAPTURE_EFFECT_FLAG},
+};
+
 NapiAudioEnum::NapiAudioEnum()
     : env_(nullptr) {
 }
@@ -714,6 +719,7 @@ napi_status NapiAudioEnum::InitAudioEnum(napi_env env, napi_value exports)
             CreateEnumObject(env, audioSessionStateChangeHintMap)),
         DECLARE_NAPI_PROPERTY("OutputDeviceChangeRecommendedAction",
             CreateEnumObject(env, outputDeviceChangeRecommendedActionMap)),
+        DECLARE_NAPI_PROPERTY("EffectFlag", CreateEnumObject(env, effectFlagMap)),
     };
     return napi_define_properties(env, exports, sizeof(static_prop) / sizeof(static_prop[0]), static_prop);
 }

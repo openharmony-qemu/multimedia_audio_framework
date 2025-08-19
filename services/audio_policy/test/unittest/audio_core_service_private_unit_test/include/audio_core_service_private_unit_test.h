@@ -32,6 +32,9 @@ public:
     void SetUp(void);
     // TearDown: Called after each test cases
     void TearDown(void);
+
+private:
+    std::shared_ptr<AudioCoreService> testCoreService_ = nullptr;
 };
 
 } // namespace AudioStandard

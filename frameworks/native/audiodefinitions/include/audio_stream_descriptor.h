@@ -22,7 +22,6 @@
 #include "audio_device_descriptor.h"
 #include "audio_stream_enum.h"
 #include "audio_info.h"
-#include "audio_common_log.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -189,7 +188,9 @@ public:
 
     void AddNewDevice(std::shared_ptr<AudioDeviceDescriptor> device)
     {
-        CHECK_AND_RETURN(device != nullptr);
+        if (device == nullptr) {
+            return;
+        }
         std::lock_guard<std::mutex> lock(lock_);
         newDeviceDescs_.push_back(device);
     }

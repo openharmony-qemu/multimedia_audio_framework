@@ -305,7 +305,7 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
         AUDIO_ERR_LOG("pipes invalid");
         return ERR_INVALID_OPERATION;
     }
-    std::shared_ptr<AudioStreamDescriptor> targetStream = nullptr;
+    AudioStreamDescriptor targetStream;
     for (auto pipe : pipes) {
         if (pipe == nullptr || pipe->streamDescriptors_.empty()) {
             AUDIO_WARNING_LOG("pipe invalid");
@@ -328,18 +328,18 @@ int32_t AudioCapturerSession::ReloadCaptureSessionSoftLink()
                 specialSourceTypeSet_.count(higherSourceType) != 0) {
                 continue;
             }
-            if (IsHigherPrioritySourceType(higherSourceType, targetStream->capturerInfo_.sourceType)) {
+            if (IsHigherPrioritySourceType(higherSourceType, targetStream.capturerInfo_.sourceType)) {
                 hasSession = true;
-                targetStream = streamDescriptor;
+                streamDescriptor->CopyToStruct(targetStream);
             }
         }
     }
 
-    CHECK_AND_RETURN_RET_LOG(hasSession && targetStream != nullptr, SUCCESS, "no need to reload session");
-    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream->GetSessionId());
+    CHECK_AND_RETURN_RET_LOG(hasSession, SUCCESS, "no need to reload session");
+    AUDIO_INFO_LOG("start reload session: %{public}u", targetStream.sessionId_);
 
-    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream->GetSessionId()]);
-    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream->GetSessionId());
+    audioEcManager_.ReloadSourceForSession(sessionWithNormalSourceType_[targetStream.sessionId_]);
+    audioEcManager_.SetOpenedNormalSourceSessionId(targetStream.sessionId_);
     return SUCCESS;
 }
 
