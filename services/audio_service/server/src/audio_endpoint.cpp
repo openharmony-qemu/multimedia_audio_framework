@@ -2305,7 +2305,7 @@ int32_t AudioEndpointInner::CreateDupBufferInner(int32_t innerCapId)
         "innerCapIdToDupStreamCallbackMap_ is no find innerCapId: %{public}d", innerCapId);
     CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId] != nullptr,
         SUCCESS, "innerCapIdToDupStreamCallbackMap_ is null, innerCapId: %{public}d", innerCapId);
-    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() != nullptr,
+    CHECK_AND_RETURN_RET_LOG(innerCapIdToDupStreamCallbackMap_[innerCapId]->GetDupRingBuffer() == nullptr,
         SUCCESS, "DupRingBuffe is null, innerCapId: %{public}d", innerCapId);
 
     auto &capInfo = fastCaptureInfos_[innerCapId];
