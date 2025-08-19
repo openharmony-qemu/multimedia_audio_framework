@@ -386,7 +386,7 @@ bool AudioService::RemoveResumeInterruptEventMap(const uint32_t sessionId)
  
 bool AudioService::IsStreamInterruptResume(const uint32_t sessionId)
 {
-    InterruptEventInternal interruptEvent;    
+    InterruptEventInternal interruptEvent;
     std::lock_guard<std::mutex> lock(resumeInterruptEventMutex_);
     auto iter = resumeInterruptEventMap_.find(sessionId);
     if (iter == resumeInterruptEventMap_.end()) {
@@ -433,7 +433,7 @@ bool AudioService::RemovePauseInterruptEventMap(const uint32_t sessionId)
 }
  
 bool AudioService::IsStreamInterruptPause(const uint32_t sessionId)
-{ 
+{
     std::lock_guard<std::mutex> lock(pauseInterruptEventMutex_);
     auto iter = pauseInterruptEventMap_.find(sessionId);
     if (iter == pauseInterruptEventMap_.end()) {
@@ -509,14 +509,10 @@ bool AudioService::UpdateBackgroundCaptureMap(uint32_t sessionId, bool res)
     auto iter = backgroundCaptureMap_.find(sessionId);
     if (iter == backgroundCaptureMap_.end()) {
         backgroundCaptureMap_[sessionId] = res;
-        AUDIO_WARNING_LOG("Inserted stream:%{public}u, CheckResult:%{public}s",
-            sessionId, res ? "allowed" : "denied");
+        AUDIO_WARNING_LOG("Inserted stream:%{public}u", sessionId);
         return true;
     }
     iter->second = res;
-    AUDIO_INFO_LOG("Updated stream:%{public}u, CheckResult:%{public}s",
-            sessionId, res ? "allowed" : "denied");
-
     return true;
 }
  
@@ -525,8 +521,7 @@ void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
     std::lock_guard<std::mutex> lock(backgroundCaptureMutex_);
     auto iter = backgroundCaptureMap_.find(sessionId);
     if (iter != backgroundCaptureMap_.end()) {
-        AUDIO_INFO_LOG("Removed stream:%{public}u, CheckResult:%{public}s",
-            sessionId, iter->second ? "allowed" : "denied");
+        AUDIO_INFO_LOG("Removed stream:%{public}u", sessionId);
         audioSwitchStreamMap_.erase(sessionId);
     } else {
         AUDIO_WARNING_LOG("Stream:%{public}u not found", sessionId);
