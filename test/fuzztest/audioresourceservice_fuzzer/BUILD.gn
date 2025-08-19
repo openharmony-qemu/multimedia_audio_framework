@@ -1,0 +1,85 @@
+# Copyright (c) 2025 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/config/features.gni")
+import("//build/test.gni")
+import("../../../config.gni")
+
+ohos_fuzztest("AudioResourceServiceFuzzTest") {
+  module_out_path = "audio_framework/audio_framework_route"
+  fuzz_config_file = "../audioresourceservice_fuzzer"
+
+  include_dirs = [
+    "../../../frameworks/native/audioinnercall/include",
+    "../../../frameworks/native/hdiadapter_new/include",
+    "../../../services/audio_service/server/include",
+    "../../../services/audio_service/client/include",
+    "../../../services/audio_policy/client/include",
+    "../../../services/audio_service/common/include",
+  ]
+
+  cflags = [
+    "-g",
+    "-O0",
+    "-Wno-unused-variable",
+    "-fno-omit-frame-pointer",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_resource_service_fuzzer.cpp" ]
+
+  configs = [ "../../../services/audio_service:audio_service_config" ]
+  cflags_cc = [ "-std=c++20" ]
+
+  deps = [
+    "../../../frameworks/native/hdiadapter_new:hdiadapter_new",
+    "../../../services/audio_policy:audio_policy_client",
+    "../../../services/audio_service:audio_client",
+    "../../../services/audio_service:audio_common",
+    "../../../services/audio_service:audio_process_service_static",
+    "../../../services/audio_service:audio_service_static",
+  ]
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "bounds_checking_function:libsec_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "eventhandler:libeventhandler",
+    "hdf_core:libhdi",
+    "hdf_core:libpub_utils",
+    "hilog:libhilog",
+    "hisysevent:libhisysevent",
+    "init:libbegetutil",
+    "ipc:ipc_single",
+    "media_foundation:media_monitor_client",
+    "media_foundation:media_monitor_common",
+    "safwk:system_ability_fwk",
+    "samgr:samgr_proxy",
+    "qos_manager:concurrent_task_client",
+  ]
+
+  defines = []
+  if (audio_framework_feature_low_latency) {
+    defines += [ "SUPPORT_LOW_LATENCY" ]
+  }
+}
+
+group("fuzztest") {
+  testonly = true
+  deps = []
+  if (audio_framework_feature_low_latency) {
+    deps += [ ":AudioResourceServiceFuzzTest" ]
+  }
+}
