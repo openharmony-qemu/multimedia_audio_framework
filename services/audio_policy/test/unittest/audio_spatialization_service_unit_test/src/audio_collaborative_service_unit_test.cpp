@@ -22,7 +22,7 @@ using namespace testing;
 namespace OHOS {
 namespace AudioStandard {
 static std::unique_ptr<AudioCollaborativeService> audioCollaborativeServicePtr_ = nullptr;
-void AudioCollaborativeServiceUnitTest::SetUpTestCase(void){}
+void AudioCollaborativeServiceUnitTest::SetUpTestCase(void) {}
 void AudioCollaborativeServiceUnitTest::TearDownTestCase(void) {}
 void AudioCollaborativeServiceUnitTest::SetUp(void)
 {
@@ -107,8 +107,8 @@ HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_003, TestS
 /**
 * @tc.name  : Test Su.
 * @tc.number: AudioSpatializationService_004
-* @tc.desc  : Test UpdateCurrentDevice 
-*             isCollaborativeStateEnabled_ should be updated when collaborative state for current device is changed
+* @tc.desc  : Test UpdateCurrentDevice.
+*             isCollaborativeStateEnabled_ should be updated when collaborative state for current device is changed.
 */
 HWTEST_F(AudioCollaborativeServiceUnitTest, AudioCollaborativeService_004, TestSize.Level0)
 {

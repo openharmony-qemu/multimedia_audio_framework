@@ -53,13 +53,12 @@ void AudioCollaborativeServiceUpdateCurrentDeviceFuzzTest()
     bool isEnabled = g_fuzzUtils.GetData<bool>();
     if (isEnabled) {
         audioCollaborativeService.addressToCollaborativeEnabledMap_.insert(
-            std::make_pair(selectedAudioDevice.macAddress_, g_fuzzUtils.GetData<bool>()));
+            std::make_pair(selectedAudioDevice.macAddress_, g_fuzzUtils.GetData<CollaborativeState>()));
     } else {
-        audioCollaborativeService.curDeviceAddress_ = "";
         audioCollaborativeService.addressToCollaborativeEnabledMap_.clear();
-        audioCollaborativeService.addressToCollaborativeMemoryMap_.insert(
-            std::make_pair(selectedAudioDevice.macAddress_, g_fuzzUtils.GetData<bool>()));
     }
+    audioCollaborativeService.UpdateCurrentDevice(selectedAudioDevice);
+    selectedAudioDevice.deviceType_ = g_fuzzUtils.GetData<DeviceType>();
     audioCollaborativeService.UpdateCurrentDevice(selectedAudioDevice);
 }
 
@@ -83,7 +82,7 @@ void AudioCollaborativeServiceIsCollaborativePlaybackEnabledForDeviceFuzzTest()
     bool isEnabled = g_fuzzUtils.GetData<bool>();
     if (isEnabled) {
         audioCollaborativeService.addressToCollaborativeEnabledMap_.insert(
-            std::make_pair(selectedAudioDevice->macAddress_, g_fuzzUtils.GetData<bool>()));
+            std::make_pair(selectedAudioDevice->macAddress_, g_fuzzUtils.GetData<CollaborativeState>()));
     } else {
         audioCollaborativeService.addressToCollaborativeEnabledMap_.clear();
     }
@@ -99,7 +98,7 @@ void AudioCollaborativeServiceUpdateCollaborativeStateRealFuzzTest()
     bool isEnabled = g_fuzzUtils.GetData<bool>();
     if (isEnabled) {
         audioCollaborativeService.addressToCollaborativeEnabledMap_.insert(
-            std::make_pair(audioCollaborativeService.curDeviceAddress_, g_fuzzUtils.GetData<bool>()));
+            std::make_pair(audioCollaborativeService.curDeviceAddress_, g_fuzzUtils.GetData<CollaborativeState>()));
     } else {
         audioCollaborativeService.addressToCollaborativeEnabledMap_.clear();
     }
