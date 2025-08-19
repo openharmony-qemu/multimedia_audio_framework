@@ -1102,5 +1102,45 @@ HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_044, TestSize.Leve
     EXPECT_EQ(ret, false);
     EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), false);
 }
+
+/**
+ * @tc.name  : Test WriteAppStateChangeSysEvent API
+ * @tc.type  : FUNC
+ * @tc.number: AudioBackgroundManager_045
+ * @tc.desc  : Test WriteAppStateChangeSysEvent
+ */
+HWTEST(AudioBackgroundManagerUnitTest, AudioBackgroundManager_045, TestSize.Level1)
+{
+    AudioBackgroundManager* audioBackgroundManagerTest_ = nullptr;
+    audioBackgroundManagerTest_ = &AudioBackgroundManager::GetInstance();
+    ASSERT_TRUE(audioBackgroundManagerTest_ != nullptr);
+
+    int32_t pid = 0;
+    AppState appState;
+    appState.isFreeze = 1;
+    appState.isBack = 1;
+    appState.hasSession = 1;
+    appState.hasBackTask = 1;
+    appState.isBinder = 1;
+
+    audioBackgroundManagerTest_->appStatesMap_.clear();
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.empty(), true);
+
+    audioBackgroundManagerTest_->WriteAppStateChangeSysEvent(pid, appState, 1);
+    sleep(1000);
+
+    audioBackgroundManagerTest_->RecoryAppState();
+    EXPECT_EQ(audioBackgroundManagerTest_->appStatesMap_.size(), 1);
+
+    auto it = audioBackgroundManagerTest_->appStatesMap_.find(pid);
+    EXPECT_EQ(it != audioBackgroundManagerTest_->appStatesMap_.end(), true);
+
+    AppState recoryState = it->second;
+    EXPECT_EQ(appState.isFreeze, recoryState.isFreeze);
+    EXPECT_EQ(appState.isBack, recoryState.isBack);
+    EXPECT_EQ(appState.hasSession, recoryState.hasSession);
+    EXPECT_EQ(appState.hasBackTask, recoryState.hasBackTask);
+    EXPECT_EQ(appState.isBinder, recoryState.isBinder);
+}
 } // namespace AudioStandard
 } // namespace OHOS
