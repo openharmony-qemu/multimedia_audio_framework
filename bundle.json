@@ -38,8 +38,7 @@
           "audio_framework_feature_distributed_audio",
           "audio_framework_feature_file_io",
           "audio_framework_feature_inner_capturer",
-          "audio_framework_feature_low_latency",
-          "audio_framework_feature_new_engine_flag"
+          "audio_framework_feature_low_latency"
         ],
         "adapted_system_type": [ "standard" ],
         "rom": "4500KB",
