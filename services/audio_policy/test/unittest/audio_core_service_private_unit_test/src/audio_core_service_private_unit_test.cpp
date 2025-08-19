@@ -2947,7 +2947,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndSleepBeforeRingDualDeviceSet_003, Te
 HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -2977,7 +2977,7 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_001, TestSize.Level1)
 HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
@@ -3009,7 +3009,7 @@ HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_002, TestSize.Level1)
 HWTEST(AudioCoreServicePrivateTest, SleepForSwitchDevice_003, TestSize.Level1)
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
-    EXPECT_NE(audioCoreService, nullptr);
+    ASSERT_NE(audioCoreService, nullptr);
 
     std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
     std::shared_ptr<AudioDeviceDescriptor> oldDesc = std::make_shared<AudioDeviceDescriptor>(
