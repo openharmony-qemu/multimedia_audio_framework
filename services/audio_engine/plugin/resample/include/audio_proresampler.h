@@ -45,9 +45,13 @@ private:
         uint32_t outFrameSize);
     int32_t ProcessOtherSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
         uint32_t outFrameSize);
+    int32_t ProResampler::Process10HzSampleRate(const float *inBuffer, uint32_t inFrameSize, float *outBuffer,
+        uint32_t outFrameSize)
     std::string ErrCodeToString(int32_t errCode);
     std::vector<float> buf11025_;
+    std::vector<float> bufFor100ms_;
     uint32_t buf11025Index_ = 0;
+    uint32_t bufFor100msIndex_ = 0;
     uint32_t inRate_;
     uint32_t outRate_;
     uint32_t channels_;

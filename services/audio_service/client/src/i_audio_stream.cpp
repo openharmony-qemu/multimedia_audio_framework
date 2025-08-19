@@ -282,9 +282,10 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
     return isValidSamplingRate;
 }
 
-bool IAudioStream::IscustomSampleRateValid(uint32_t customSampleRate)
+bool IAudioStream::IsCustomSampleRateValid(uint32_t customSampleRate)
 {
-    return customSampleRate >= 8000 && customSampleRate <= 384000 && customSampleRate % 10 == 0;
+    return customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 && 
+        customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0;
 }
 
 bool IAudioStream::IsRendererChannelLayoutValid(uint64_t channelLayout)

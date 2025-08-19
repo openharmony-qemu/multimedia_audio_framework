@@ -734,6 +734,8 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Write_001, TestSize.Level1)
     ASSERT_NE(nullptr, wavFile);
 
     AudioRendererOptions rendererOptions;
+    rendererOptions.streamInfo.customSampleRate = 44220;
+    rendererOptions.rendererInfo.customSampleRate = 44220;
     AudioRendererUnitTest::InitializeRendererOptions(rendererOptions);
     unique_ptr<AudioRenderer> audioRenderer = AudioRenderer::Create(rendererOptions);
     ASSERT_NE(nullptr, audioRenderer);

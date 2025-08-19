@@ -35,8 +35,9 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
     converterOutput_.SetSplitStreamType(preNodeInfo.GetSplitStreamType());
     UpdateTmpOutPcmBufferInfo(pcmBufferInfo_);
     // use ProResamppler as default
-    resampler_ = std::make_unique<ProResampler>(preNodeInfo_.samplingRate, nodeInfo.samplingRate,
-        std::min(preNodeInfo_.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
+    resampler_ = std::make_unique<ProResampler>(preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
+        preNodeInfo.customSampleRate, nodeInfo.samplingRate,
+        std::min(preNodeInfo.channels, nodeInfo.channels), REASAMPLE_QUAILTY);
     
     AudioChannelInfo inChannelInfo = {
         .channelLayout = preNodeInfo.channelLayout,
@@ -53,7 +54,8 @@ HpaeAudioFormatConverterNode::HpaeAudioFormatConverterNode(HpaeNodeInfo preNodeI
         "input: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d, channels %{public}d,"
         "channelLayout %{public}" PRIu64 ", output: bitformat %{public}d, frameLen %{public}d, sample rate %{public}d,"
         "channels %{public}d, channelLayout %{public}" PRIu64 "", GetNodeId(), GetSessionId(),
-        preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.samplingRate, inChannelInfo.numChannels,
+        preNodeInfo.format, preNodeInfo.frameLen, preNodeInfo.customSampleRate == 0 ? preNodeInfo.samplingRate :
+        preNodeInfo.customSampleRate, inChannelInfo.numChannels,
         inChannelInfo.channelLayout, nodeInfo.format, nodeInfo.frameLen, nodeInfo.samplingRate,
         outChannelInfo.numChannels, outChannelInfo.channelLayout);
 #ifdef ENABLE_HOOK_PCM
@@ -264,7 +266,9 @@ bool HpaeAudioFormatConverterNode::CheckUpdateInInfo(HpaePcmBuffer *input)
     }
     // special case for 11025, frameLen is 441, 0, 441, 0... alternating
     // do not influence isInfoUpdated flag, which is used for update tmp data length
-    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+    // for 8010, frameLen is 801, 0, 0, 0, 0, 801, 0...
+    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         preNodeInfo_.frameLen = input->GetFrameLen();
     }
     return isInfoUpdated;
@@ -304,7 +308,8 @@ void HpaeAudioFormatConverterNode::CheckAndUpdateInfo(HpaePcmBuffer *input)
     outPcmBufferInfo.frameLen = preNodeInfo_.frameLen * resampler_->GetOutRate() / resampler_->GetInRate();
     outPcmBufferInfo.channelLayout = outChannelInfo.channelLayout;
 
-    if (preNodeInfo_.samplingRate == SAMPLE_RATE_11025) {
+    if ((preNodeInfo_.customSampleRate == 0 && preNodeInfo_.samplingRate == SAMPLE_RATE_11025) ||
+        (preNodeInfo_.customSampleRate != 0 && preNodeInfo_.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES != 0)) {
         // for 11025, fix out frameLen based on output sample rate and fixed frameLen 20ms
         outPcmBufferInfo.frameLen = resampler_->GetOutRate() * FRAME_LEN_20MS / MS_IN_SECOND;
     }

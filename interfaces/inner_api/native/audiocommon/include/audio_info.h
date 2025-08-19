@@ -605,7 +605,7 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
-            && parcel.WriteInt32(static_cast<int32_t>(customSampleRate))
+            && parcel.WriteUint32(customSampleRate)
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteInt32(format)
@@ -630,7 +630,7 @@ struct AudioRendererInfo : public Parcelable {
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
+        customSampleRate = parcel.ReadUint32();
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
@@ -1245,7 +1245,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         parcel.WriteInt32(streamInfo.samplingRate);
-        parcel.WriteInt32(streamInfo.customSampleRate);
+        parcel.WriteUint32(streamInfo.customSampleRate);
         parcel.WriteInt32(streamInfo.encoding);
         parcel.WriteInt32(streamInfo.format);
         parcel.WriteInt32(streamInfo.channels);
@@ -1315,7 +1315,7 @@ struct AudioProcessConfig : public Parcelable {
 
         // AudioStreamInfo
         config->streamInfo.samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        config->streamInfo.customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
+        config->streamInfo.customSampleRate = parcel.ReadUint32();
         config->streamInfo.encoding = static_cast<AudioEncodingType>(parcel.ReadInt32());
         config->streamInfo.format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         config->streamInfo.channels = static_cast<AudioChannel>(parcel.ReadInt32());

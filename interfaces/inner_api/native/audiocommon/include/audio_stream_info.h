@@ -38,6 +38,8 @@ const uint64_t CH_MODE_MASK = ((1ULL << 4) - 1ULL) << CH_MODE_OFFSET;
 const uint64_t CH_HOA_ORDNUM_MASK = ((1ULL << 8) - 1ULL) << CH_HOA_ORDNUM_OFFSET;
 const uint64_t CH_HOA_COMORD_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_COMORD_OFFSET;
 const uint64_t CH_HOA_NOR_MASK = ((1ULL << 4) - 1ULL) << CH_HOA_NOR_OFFSET;
+const uint32_t SAMPLE_RATE_384000 = 384000;
+const uint32_t SAMPLE_RATE_RESOLUTION_10 = 10;
 
 enum AudioStreamType {
     /**
@@ -566,9 +568,9 @@ public:
     uint32_t customSampleRate = 0;
 
     AudioStreamInfo(AudioSamplingRate samplingRate_, AudioEncodingType encoding_, AudioSampleFormat format_,
-    AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN, uint32_t customSampleRate_ = 0)
+        AudioChannel channels_, AudioChannelLayout channelLayout_ = AudioChannelLayout::CH_LAYOUT_UNKNOWN)
         : samplingRate(samplingRate_), encoding(encoding_), format(format_),
-        channels(channels_), channelLayout(channelLayout_), customSampleRate(customSampleRate_)
+        channels(channels_), channelLayout(channelLayout_)
     {}
     AudioStreamInfo() = default;
     bool Marshalling(Parcel &parcel) const override
@@ -578,7 +580,7 @@ public:
             && parcel.WriteInt32(static_cast<int32_t>(format))
             && parcel.WriteInt32(static_cast<int32_t>(channels))
             && parcel.WriteInt64(static_cast<int64_t>(channelLayout))
-            && parcel.WriteInt32(static_cast<int32_t>(customSampleRate));
+            && parcel.WriteUint32(customSampleRate);
     }
 
     void UnmarshallingSelf(Parcel &parcel)
@@ -588,7 +590,7 @@ public:
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());
         channels = static_cast<AudioChannel>(parcel.ReadInt32());
         channelLayout = static_cast<AudioChannelLayout>(parcel.ReadInt64());
-        customSampleRate = static_cast<uint32_t>(parcel.ReadInt32());
+        customSampleRate = parcel.ReadUint32();
     }
 
     static AudioStreamInfo *Unmarshalling(Parcel &parcel)
