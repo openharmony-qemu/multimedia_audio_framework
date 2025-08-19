@@ -4291,7 +4291,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
     EXPECT_TRUE(audioRendererPrivate != nullptr);
 
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>()
+    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
     EXPECT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
