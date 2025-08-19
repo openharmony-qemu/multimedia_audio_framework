@@ -447,6 +447,7 @@ bool AudioService::IsInSwitchStreamMap(uint32_t sessionId, SwitchState &switchSt
     switchState = SWITCH_STATE_FINISHED;
     auto iter = audioSwitchStreamMap_.find(sessionId);
     CHECK_AND_RETURN_RET_LOG(iter != audioSwitchStreamMap_.end(), false,
+        "can not find switchStream:%{public}u", sessionId);
     switchState = iter->second;
     return true;
 }
@@ -469,7 +470,7 @@ void AudioService::RemoveSwitchStreamMap(uint32_t sessionId)
     auto iter = audioSwitchStreamMap_.find(sessionId);
     if (iter != audioSwitchStreamMap_.end()) {
         audioSwitchStreamMap_.erase(sessionId);
-    } 
+    }
 }
  
 bool AudioService::IsBackgroundCaptureAllowed(uint32_t sessionId)
@@ -504,7 +505,7 @@ void AudioService::RemoveBackgroundCaptureMap(uint32_t sessionId)
     auto iter = backgroundCaptureMap_.find(sessionId);
     if (iter != backgroundCaptureMap_.end()) {
         audioSwitchStreamMap_.erase(sessionId);
-    } 
+    }
 }
  
 bool AudioService::NeedRemoveBackgroundCaptureMap(uint32_t sessionId)
