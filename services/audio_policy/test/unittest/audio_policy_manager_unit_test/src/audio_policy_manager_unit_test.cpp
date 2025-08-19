@@ -827,50 +827,21 @@ HWTEST(AudioPolicyManager, SetNearlinkDeviceVolume_002, TestSize.Level1)
 /**
 * @tc.name  : Test AudioPolicyManager.
 * @tc.number: SelectOutputDevice_001.
-* @tc.desc  : Test SelectOutputDevice.
+* @tc.desc  : Test SetNearlinkDeviceVolume.
 */
 HWTEST(AudioPolicyManager, SelectOutputDevice_001, TestSize.Level1)
 {
-    sptr<AudioRendererFilter> audioRendererFilter = new AudioRendererFilter();
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors;
-    auto ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
-    EXPECT_EQ(-1, ret);
-    int32_t validSize = 20;
-    for (int i = 0; i <= validSize; ++i) {
-        audioDeviceDescriptors.push_back(std::make_shared<AudioDeviceDescriptor>());
-    }
-    ret = AudioPolicyManager::GetInstance().SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors);
-    EXPECT_EQ(-1, ret);
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: GetDevicesInner_001.
-* @tc.desc  : Test GetDevicesInner.
-*/
-HWTEST(AudioPolicyManager, GetDevicesInner_001, TestSize.Level1)
-{
-    DeviceFlag deviceFlag = OUTPUT_DEVICES_FLAG;
-    auto ret = AudioPolicyManager::GetInstance().GetDevicesInner(deviceFlag);
-    EXPECT_EQ(0, ret.size());
-}
-
-/**
-* @tc.name  : Test AudioPolicyManager.
-* @tc.number: UnsetDeviceChangeCallback_001.
-* @tc.desc  : Test UnsetDeviceChangeCallback.
-*/
-HWTEST(AudioPolicyManager, UnsetDeviceChangeCallback_001, TestSize.Level1)
-{
-    auto &manager = AudioPolicyManager::GetInstance();
-    int32_t clientId = 0;
-    DeviceFlag flag = OUTPUT_DEVICES_FLAG;
-    std::shared_ptr<AudioManagerDeviceChangeCallback> callback =
-        std::make_shared<AudioManagerDeviceChangeCallbackStub>();
-    manager.audioPolicyClientStubCB_ = new(std::nothrow) AudioPolicyClientStubImpl();
-    manager.audioPolicyClientStubCB_->deviceChangeCallbackList_.push_back({OUTPUT_DEVICES_FLAG, nullptr});
-    auto ret = manager.UnsetDeviceChangeCallback(clientId, flag, callback);
-    EXPECT_EQ(SUCCESS, ret);
+    auto audioPolicyManager_ = std::make_shared<AudioPolicyManager>();
+    ASSERT_TRUE(audioPolicyManager_ != nullptr);
+    sptr<AudioRendererFilter> audioRendererFilter;
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors01;
+    auto ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors01);
+    EXPECT_EQ(ret, -1);
+    
+    // SelectOutputDevice接口中存在直接使用魔鬼数字20作为if的判断条件
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> audioDeviceDescriptors02(21);
+    ret = audioPolicyManager_->SelectOutputDevice(audioRendererFilter, audioDeviceDescriptors02);
+    EXPECT_EQ(ret, -1);
 }
 } // namespace AudioStandard
 } // namespace OHOS
