@@ -267,6 +267,8 @@ public:
     void OnMuteStateChange(const int32_t &pid, const int32_t &callbackId,
         const int32_t &uid, const uint32_t &sessionId, const bool &isMuted) override;
     int32_t SetBtHdiInvalidState() override;
+    int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
+        const InterruptEventInternal &interruptEvent) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 
