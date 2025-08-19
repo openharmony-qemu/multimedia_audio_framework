@@ -2331,7 +2331,6 @@ int32_t AudioServer::SendInterruptEventToAudioServer(uint32_t sessionId, const I
     return SUCCESS;
 }
 
-
 int32_t AudioServer::SetRenderWhitelist(const std::vector<std::string> &list)
 {
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
