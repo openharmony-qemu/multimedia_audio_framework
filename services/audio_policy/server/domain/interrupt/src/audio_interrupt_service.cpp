@@ -952,15 +952,18 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
 {
     // The log printed by this function is critical, so please do not modify it.
+    std::string bundleName = (AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid)).name;
+
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
-    std::pair<AudioFocusType, AudioFocusType> focusPair =
-        std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
+    std::pair<AudioFocusType, AudioFocusType> focusPair = std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
     CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
     AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
     if (focusEntry.actionOn != CURRENT) {
         AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
-            "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+            "actionOn: %{public}d. Caller info: pid [%{public}d], uid [%{public}d], bundleName [%{public}s].",
+            focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn,
+            audioInterrupt.pid, audioInterrupt.uid, bundleName.c_str());
         return;
     }
     // Update focus strategy by audio session.
@@ -976,23 +979,18 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
     switch (concurrencyMode) {
         case AudioConcurrencyMode::MIX_WITH_OTHERS:
         case AudioConcurrencyMode::SILENT:
-            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
-                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
+            if (focusEntry.hintType == INTERRUPT_HINT_DUCK || focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
                 focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_NONE;
             }
             break;
-
         case AudioConcurrencyMode::DUCK_OTHERS:
-            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
-                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
-                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            if (focusEntry.hintType == INTERRUPT_HINT_PAUSE || focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_DUCK;
             }
             break;
         case AudioConcurrencyMode::PAUSE_OTHERS:
-            if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
-                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            if (focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
             break;
@@ -1000,7 +998,9 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
             break;
     }
     AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
-        "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+        "actionOn: %{public}d. Caller info: pid [%{public}d], uid [%{public}d], bundleName [%{public}s].",
+        focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn,
+        audioInterrupt.pid, audioInterrupt.uid, bundleName.c_str());
     return;
 }
 
