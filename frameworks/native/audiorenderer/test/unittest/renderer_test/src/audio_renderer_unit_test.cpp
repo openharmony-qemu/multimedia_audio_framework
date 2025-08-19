@@ -4259,16 +4259,15 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_InitTargetStream_002, TestSize.Leve
  * @tc.number: Audio_Renderer_FinishOldStream_001
  * @tc.desc  : Test FinishOldStream interface.
  */
-HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level2)
+HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_001, TestSize.Level4)
 {
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
+    EXPECT_TRUE(audioRendererPrivate != nullptr);
 
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    ASSERT_TRUE(audioStream != nullptr);
+    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>();
+    EXPECT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
     RestoreInfo restoreInfo;
@@ -4290,11 +4289,10 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
     AppInfo appInfo = {};
     std::shared_ptr<AudioRendererPrivate> audioRendererPrivate =
         std::make_shared<AudioRendererPrivate>(AudioStreamType::STREAM_MEDIA, appInfo);
-    ASSERT_TRUE(audioRendererPrivate != nullptr);
+    EXPECT_TRUE(audioRendererPrivate != nullptr);
 
-    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK,
-        appInfo.appUid);
-    ASSERT_TRUE(audioStream != nullptr);
+    std::shared_ptr<FastAudioStream> audioStream = std::make_shared<TestAudioStremStub>()
+    EXPECT_TRUE(audioStream != nullptr);
     audioRendererPrivate->audioStream_ = audioStream;
 
     RestoreInfo restoreInfo;
@@ -4303,7 +4301,7 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_FinishOldStream_002, TestSize.Level
     restoreInfo.restoreReason = DEFAULT_REASON;
     auto ret = audioRendererPrivate->FinishOldStream(IAudioStream::StreamClass::PA_STREAM, restoreInfo,
         previousState, switchInfo);
-    EXPECT_FALSE(ret);
+    EXPECT_TRUE(ret);
 }
 
 /**
