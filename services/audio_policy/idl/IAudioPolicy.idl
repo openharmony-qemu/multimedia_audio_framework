@@ -187,7 +187,6 @@ interface IAudioPolicy {
     void ReleaseAudioZone([in] int zoneId);
     void GetAllAudioZone([out] List<sharedptr<AudioZoneDescriptor>> retZoneDesc);
     void GetAudioZone([in] int zoneId, [out] sharedptr<AudioZoneDescriptor> desc);
-    void GetAudioZoneByName([in] String name, [out] int zoneId);
     void BindDeviceToAudioZone([in] int zoneId, [in] List<sharedptr<AudioDeviceDescriptor>> devices);
     void UnBindDeviceToAudioZone([in] int zoneId, [in] List<sharedptr<AudioDeviceDescriptor>> devices);
     void EnableAudioZoneReport([in] boolean enable);
@@ -195,9 +194,7 @@ interface IAudioPolicy {
     void AddUidToAudioZone([in] int zoneId, [in]  int uid);
     void RemoveUidFromAudioZone([in] int zoneId, [in] int uid);
     void AddStreamToAudioZone([in] int zoneId, [in] AudioZoneStream stream);
-    void AddStreamsToAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
     void RemoveStreamFromAudioZone([in] int zoneId, [in] AudioZoneStream stream);
-    void RemoveStreamsFromAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
     void SetZoneDeviceVisible([in] boolean visible);
     void EnableSystemVolumeProxy([in] int zoneId, [in] boolean enable);
     void GetAudioInterruptForZone([in] int zoneId, [out] List<OrderedMap<AudioInterrupt, int>> interrupts);
@@ -299,5 +296,8 @@ interface IAudioPolicy {
     void GetMinVolumeDegree([in] int volumeType, [out] int volumeDegree);
 
     // WARNING: above functions correspond with AudioPolicyInterfaceCode
+    void GetAudioZoneByName([in] String name, [out] int zoneId);
+    void AddStreamsToAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
+    void RemoveStreamsFromAudioZone([in] int zoneId, [in] List<AudioZoneStream> streams);
 }
 
