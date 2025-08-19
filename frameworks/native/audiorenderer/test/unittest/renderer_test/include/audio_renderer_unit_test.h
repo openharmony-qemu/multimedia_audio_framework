@@ -120,8 +120,8 @@ public:
         const std::shared_ptr<AudioClientTracker> &proxyObj,
         const AudioPlaybackCaptureConfig &config = AudioPlaybackCaptureConfig()) override { return SUCCESS; }
     void GetRestoreInfo(RestoreInfo &restoreInfo) override {};
-    float GetDuckVolume() override { return RenderUT::DUCK_VOLUME };
-    int32_t GetDuckVolume(float volume) override { return SUCCESS };
+    float GetDuckVolume() override { return RenderUT::DUCK_VOLUME; }
+    int32_t GetDuckVolume(float volume) override { return SUCCESS; };
 
     State state_ = State::RUNNING;
     RestoreStatus restoreStatus_ = NO_NEED_FOR_RESTORE;
