@@ -33,6 +33,7 @@
 #include "istandard_audio_service.h"
 #include "session_manager_lite.h"
 #include "audio_zone_service.h"
+#include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
 
 namespace OHOS {
@@ -2501,6 +2502,49 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     iterActive->second = newState;
 }
 
+bool AudioInterruptService::ShouldAudioServerProcessInruptEvent(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    //only process capture interruptEvent
+    CHECK_AND_RETURN_RET_LOG(!audioInterrupt.audioFocusType.isPlay, false,
+        "audioServer need not process playback interruptEvent");
+ 
+#ifdef FEATURE_APPGALLERY
+    //CLIENT_TYPE_GAME will be muted or unmuted, need not process in FEATURE_APPGALLERY
+    auto it = interruptClients_.find(audioInterrupt.streamId);
+    if (it != interruptClients_.end() && it->second != nullptr) {
+        uint32_t uid = interruptClients_[audioInterrupt.streamId]->GetCallingUid();
+        ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
+        CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");
+    }
+#endif
+    //only process INTERRUPT_HINT_PAUSE INTERRUPT_HINT_STOP INTERRUPT_HINT_RESUME
+    auto hintType = interruptEvent.hintType;
+    return hintType == INTERRUPT_HINT_PAUSE ||
+           hintType == INTERRUPT_HINT_RESUME;
+}
+ 
+void AudioInterruptService::SendInterruptEventToAudioServer(
+    const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_LOG(ShouldAudioServerProcessInruptEvent(interruptEvent, audioInterrupt),
+        "need not send audioInterrupt to audioServer");
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        AUDIO_INFO_LOG("is audioSession interrupt");
+        // record stream may use audioSession in the future，only playback stream use audioSession now
+        CHECK_AND_RETURN_LOG(sessionService_ != nullptr, "sessionService_ is nullptr");
+        const auto &audioInterrupts = sessionService_->GetStreams(audioInterrupt.pid);
+        for (auto &it : audioInterrupts) {
+            AudioServerProxy::GetInstance().SendInterruptEventToAudioServerProxy(
+                interruptEvent, it.streamId);
+        }
+    } else {
+        //send interruptEvent to audioServer , deal with recording in background
+        AudioServerProxy::GetInstance().SendInterruptEventToAudioServerProxy(
+            interruptEvent, audioInterrupt.streamId);
+    }
+}
+
 void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
@@ -2522,7 +2566,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         AUDIO_ERR_LOG("AudioPolicyServerHandler is nullptr");
         return;
     }
-
+    SendInterruptEventToAudioServer(interruptEvent, audioInterrupt);
     if (audioInterrupt.isAudioSessionInterrupt) {
         SendAudioSessionInterruptEventCallback(interruptEvent, audioInterrupt);
     } else {
