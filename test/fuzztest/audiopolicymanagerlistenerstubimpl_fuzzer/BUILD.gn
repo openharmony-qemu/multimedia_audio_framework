@@ -37,7 +37,7 @@ ohos_fuzztest("AudioPolicyManagerListenerStubImplFuzzTest") {
   ]
 
   sources = [
-    "audio_policy_manager_listener_stub_impl.cpp",
+    "audio_policy_manager_listener_stub_impl_fuzzer.cpp",
     ]
 
   configs = [ "../../../services/audio_service:audio_service_config" ]

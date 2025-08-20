@@ -23,7 +23,6 @@ namespace OHOS {
 namespace AudioStandard {
 using namespace std;
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
-const size_t FUZZ_INPUT_SIZE_THRESHOLD = 10;
 
 typedef void (*TestFuncs)();
 
@@ -130,7 +129,9 @@ void SetInterruptCallbackFuzzTest()
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::weak_ptr<AudioInterruptCallback> callback = std::make_shared<AudioInterruptCallbackFuzzTest>();
+    std::shared_ptr<AudioInterruptCallbackFuzzTest> sharedCallback =
+        std::make_shared<AudioInterruptCallbackFuzzTest>();
+    std::weak_ptr callback(sharedCallback);
     policyListenerStub->SetInterruptCallback(callback);
 }
 
@@ -162,8 +163,9 @@ void SetQueryDeviceVolumeBehaviorCallbackFuzzTest()
 {
     auto policyListenerStub = std::make_shared<AudioPolicyManagerListenerStubImpl>();
     CHECK_AND_RETURN(policyListenerStub != nullptr);
-    std::weak_ptr<AudioQueryDeviceVolumeBehaviorCallback> callback =
+    std::shared_ptr<AudioQueryDeviceVolumeBehaviorCallbackFuzzTest> sharedCallback =
         std::make_shared<AudioQueryDeviceVolumeBehaviorCallbackFuzzTest>();
+    std::weak_ptr callback(sharedCallback);
     policyListenerStub->SetQueryDeviceVolumeBehaviorCallback(callback);
 }
 
@@ -188,10 +190,6 @@ vector<TestFuncs> g_testFuncs = {
 /* Fuzzer entry point */
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
 {
-    if (size < OHOS::AudioStandard::FUZZ_INPUT_SIZE_THRESHOLD) {
-        return 0;
-    }
-
     OHOS::AudioStandard::g_fuzzUtils.fuzzTest(data, size, OHOS::AudioStandard::g_testFuncs);
     return 0;
 }
