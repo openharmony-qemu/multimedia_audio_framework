@@ -17,4 +17,5 @@ persist.multimedia.audio.safevolume = 15
 persist.multimedia.audio.safevolume.timeout = 1140
 persist.multimedia.audio.firstboot = 1
 const.multimedia.audio.proaudioEnable = 0
-const.multimedia.audio.anco_focus_control = 1
+persist.multimedia.audio.anco_focus_control = 1
+persist.multimedia.audio.anco_capture_focus_control = 1
