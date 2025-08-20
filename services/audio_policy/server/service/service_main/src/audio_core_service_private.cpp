@@ -511,7 +511,11 @@ int32_t AudioCoreService::BluetoothDeviceFetchOutputHandle(shared_ptr<AudioStrea
     std::shared_ptr<AudioDeviceDescriptor> desc = streamDesc->newDeviceDescs_.front();
     CHECK_AND_RETURN_RET_LOG(desc != nullptr, BLUETOOTH_FETCH_RESULT_CONTINUE, "Device desc is nullptr");
 
+    ResetNearlinkDeviceState(desc);
+
     if (desc->deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        std::string sinkPort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
+        audioPolicyManager_.SuspendAudioDevice(sinkPort, false);
         int32_t ret = ActivateA2dpDeviceWhenDescEnabled(desc, reason);
         if (ret != SUCCESS) {
             AUDIO_ERR_LOG("Activate a2dp [%{public}s] failed", encryptMacAddr.c_str());
@@ -1002,7 +1006,8 @@ void AudioCoreService::ProcessInputPipeUpdate(std::shared_ptr<AudioPipeInfo> pip
 
 void AudioCoreService::RemoveUnusedPipe()
 {
-    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe();
+    DeviceType curOutputDeviceType = audioActiveDevice_.GetCurrentOutputDeviceType();
+    std::vector<std::shared_ptr<AudioPipeInfo>> pipeInfos = pipeManager_->GetUnusedPipe(curOutputDeviceType);
     for (auto pipeInfo : pipeInfos) {
         CHECK_AND_CONTINUE_LOG(pipeInfo != nullptr, "pipeInfo is nullptr");
         AUDIO_INFO_LOG("[PipeExecInfo] Remove and close Pipe %{public}s", pipeInfo->ToString().c_str());
@@ -2775,7 +2780,7 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
 
     auto currentOutputDevice = audioActiveDevice_.GetCurrentOutputDevice();
     auto currentInputDevice = audioActiveDevice_.GetCurrentInputDevice();
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK && currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK) {
+    if (deviceDesc->deviceRole_ == OUTPUT_DEVICE && currentOutputDevice.deviceType_ == DEVICE_TYPE_NEARLINK) {
         if (!deviceDesc->IsSameDeviceDesc(currentOutputDevice)) {
             AUDIO_INFO_LOG("Reset nearlink output device state, macAddress: %{public}s",
                 AudioPolicyUtils::GetInstance().GetEncryptAddr(currentOutputDevice.macAddress_).c_str());
@@ -2783,8 +2788,7 @@ void AudioCoreService::ResetNearlinkDeviceState(const std::shared_ptr<AudioDevic
                 std::make_shared<AudioDeviceDescriptor>(currentOutputDevice));
         }
     }
-    if (deviceDesc->deviceType_ == DEVICE_TYPE_NEARLINK_IN &&
-        currentInputDevice.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
+    if (deviceDesc->deviceRole_ == INPUT_DEVICE && currentInputDevice.deviceType_ == DEVICE_TYPE_NEARLINK_IN) {
         if (!deviceDesc->IsSameDeviceDesc(currentInputDevice)) {
             AUDIO_INFO_LOG("Reset nearlink input device state, macAddress: %{public}s",
                 AudioPolicyUtils::GetInstance().GetEncryptAddr(currentInputDevice.macAddress_).c_str());
@@ -2820,7 +2824,12 @@ int32_t AudioCoreService::ActivateNearlinkDevice(const std::shared_ptr<AudioStre
         if (isRecognitionSource) {
             AudioServerProxy::GetInstance().SetDmDeviceTypeProxy(DM_DEVICE_TYPE_NEARLINK_SCO, DEVICE_TYPE_NEARLINK_IN);
         }
+
         ResetNearlinkDeviceState(deviceDesc);
+
+        std::string sinkPort = AudioPolicyUtils::GetInstance().GetSinkPortName(DEVICE_TYPE_BLUETOOTH_A2DP);
+        audioPolicyManager_.SuspendAudioDevice(sinkPort, true);
+
         int32_t result = std::visit(runDeviceActivationFlow, audioStreamConfig);
         if (result != SUCCESS) {
             AUDIO_ERR_LOG("Nearlink device activation failed, macAddress: %{public}s",
