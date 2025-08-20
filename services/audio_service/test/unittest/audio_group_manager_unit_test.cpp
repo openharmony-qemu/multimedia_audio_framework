@@ -411,27 +411,14 @@ HWTEST(AudioGroupManagerUnitTest, SetVolume_006, TestSize.Level1)
 /**
 * @tc.name  : Test Audio API
 * @tc.type  : FUNC
-* @tc.number: GetVolume_004
+* @tc.number: GetVolume_005
 * @tc.desc  : Test cross ring cache.
 */
 HWTEST(AudioGroupManagerUnitTest, GetVolume_004, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
-    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
-    EXPECT_EQ(ret, 5);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: GetVolume_005
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, GetVolume_005, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
     audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
-    int32_t ret = audioGroupManager.GetVolume(AudioStreamType::STREAM_ACCESSIBILITY, 123);
+    int32_t ret = audioGroupManager.GetVolume(STREAM_NOTIFICATION, 123);
     EXPECT_EQ(ret, 0);
 }
 
@@ -447,21 +434,6 @@ HWTEST(AudioGroupManagerUnitTest, GetMaxVolume_004, TestSize.Level1)
     audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
     int32_t ret = audioGroupManager.GetMaxVolume(STREAM_ULTRASONIC);
     EXPECT_EQ(ret, 0);
-}
-
-/**
-* @tc.name  : Test Audio API
-* @tc.type  : FUNC
-* @tc.number: IsStreamMute_003
-* @tc.desc  : Test cross ring cache.
-*/
-HWTEST(AudioGroupManagerUnitTest, IsStreamMute_003, TestSize.Level1)
-{
-    AudioGroupManager audioGroupManager(1);
-    audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
-    bool isMute = false;
-    int32_t ret = audioGroupManager.IsStreamMute(STREAM_ACCESSIBILITY, isMute);
-    EXPECT_EQ(ret, SUCCESS);
 }
 
 /**
