@@ -28,9 +28,6 @@ const int32_t UID_DAUDIO = 3055;
 
 uint32_t AudioOffloadStream::GetOffloadSessionId(OffloadAdapter offloadAdapter)
 {
-    if (offloadSessionIdMap_.count(offloadAdapter) == 0) {
-        return NO_OFFLOAD_STREAM_SESSIONID;
-    }
     return offloadSessionIdMap_[offloadAdapter];
 }
 

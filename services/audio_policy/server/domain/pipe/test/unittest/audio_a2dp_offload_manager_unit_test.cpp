@@ -441,6 +441,37 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForAllStream_001,
 }
 
 /**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_UpdateA2dpOffloadFlagForAllStream_002
+ * @tc.number : UpdateA2dpOffloadFlagForAllStream_002
+ * @tc.desc   : Test UpdateA2dpOffloadFlagForAllStream()
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForAllStream_002, TestSize.Level4)
+{
+    uint32_t runningStreamCnt = 2;
+    uint32_t stopStreamCnt = 2;
+    MakeStreamCollectorData(runningStreamCnt, stopStreamCnt);
+
+    testManager_->UpdateA2dpOffloadFlagForAllStream(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_NE(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
+}
+
+/**
+ * @tc.name   : AudioA2dpOffloadManagerUnitTest_UpdateA2dpOffloadFlagForAllStream_003
+ * @tc.number : UpdateA2dpOffloadFlagForAllStream_003
+ * @tc.desc   : Test UpdateA2dpOffloadFlagForAllStream()
+ */
+HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForAllStream_003, TestSize.Level4)
+{
+    uint32_t runningStreamCnt = 2;
+    uint32_t stopStreamCnt = 2;
+    MakeStreamCollectorData(runningStreamCnt, stopStreamCnt);
+
+    testManager_->SetA2dpOffloadFlag(A2DP_OFFLOAD);
+    testManager_->UpdateA2dpOffloadFlagForAllStream(DEVICE_TYPE_BLUETOOTH_A2DP);
+    EXPECT_NE(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
+}
+
+/**
  * @tc.name   : AudioA2dpOffloadManagerUnitTest_GetSpatialAudio_001
  * @tc.number : GetSpatialAudio_001
  * @tc.desc   : Test GetSpatialAudio() for different cases
