@@ -118,7 +118,11 @@ void HpaeInnerCapturerManager::MoveAllStreamToNewSinkInner(const std::string &si
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to sink name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    } else {
+        TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    }
 }
 
 int32_t HpaeInnerCapturerManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,

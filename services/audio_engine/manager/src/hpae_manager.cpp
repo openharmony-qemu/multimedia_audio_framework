@@ -888,6 +888,16 @@ void HpaeManager::Invoke(HpaeMsgCode cmdID, const std::any &args)
     AUDIO_ERR_LOG("HpaeManager::Invoke cmdID %{public}d not found", (int32_t)cmdID);
 }
 
+void HpaeManager::InvokeSync(HpaeMsgCode cmdID, const std::any &args)
+{
+    auto it = handlers_.find(cmdID);
+    if (it != handlers_.end()) {
+        it->second(args);
+        return;
+    };
+    AUDIO_ERR_LOG("HpaeManager::InvokeSync cmdID %{public}d not found", (int32_t)cmdID);
+}
+
 template <typename... Args>
 void HpaeManager::RegisterHandler(HpaeMsgCode cmdID, void (HpaeManager::*func)(Args...))
 {

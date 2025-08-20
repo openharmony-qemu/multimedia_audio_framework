@@ -298,7 +298,11 @@ void HpaeOffloadRendererManager::MoveAllStreamToNewSink(const std::string &sinkN
     if (sinkInputs.size() == 0) {
         AUDIO_WARNING_LOG("sink count is 0,no need move session");
     }
-    TriggerCallback(MOVE_ALL_SINK_INPUT, sinkInputs, name, moveType);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SINK_INPUT, moveInfos, name);
+    } else {
+        TriggerCallback(MOVE_ALL_SINK_INPUT, moveInfos, name);
+    }
 }
 
 int32_t HpaeOffloadRendererManager::MoveAllStream(const std::string &sinkName, const std::vector<uint32_t>& sessionIds,

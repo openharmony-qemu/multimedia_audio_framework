@@ -909,7 +909,11 @@ void HpaeCapturerManager::MoveAllStreamToNewSource(const std::string &sourceName
     }
     AUDIO_INFO_LOG("[StartMove] session:%{public}s to source name:%{public}s, move type:%{public}d",
         idStr.c_str(), name.c_str(), moveType);
-    TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    if (moveType == MOVE_ALL) {
+        TriggerSyncCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    } else {
+        TriggerCallback(MOVE_ALL_SOURCE_OUTPUT, moveInfos, name);
+    }
 }
 
 int32_t HpaeCapturerManager::MoveStream(uint32_t sessionId, const std::string& sourceName)
