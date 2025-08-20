@@ -27,19 +27,6 @@ namespace AudioStandard {
 static const char *ENCODING_EAC3_NAME = "eac3";
 static const char *FAST_DISTRIBUTE_TAG = "fast_distributed";
 
-static bool IsNumber(const std::string& str)
-{
-    if (str.empty()) {
-        return false;
-    }
-    for (auto c : str) {
-        if (!isdigit(c)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 // LCOV_EXCL_START
 bool AudioPolicyConfigParser::LoadConfiguration()
 {
@@ -309,8 +296,11 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         pipeInfo->preloadAttr_ = AudioDefinitionPolicyUtils::preloadStrToEnum[attributeInfo.value_];
     } else if (attributeInfo.name_ == "suspend_idle_timeout") {
         std::string value = attributeInfo.value_;
-        pipeInfo->suspendIdleTimeout_ =
-            IsNumber(value) ? static_cast<uint32_t>(stoi(value)) : DEFAULT_SUSPEND_TIME_IN_MS;
+        int timeout = 0;
+        auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), timeout);
+        if (ec == std::errc{} && ptr == value.data() + value.size()) {
+            pipeInfo->suspendIdleTimeout_ = static_cast<uint32_t>(timeout);
+        }
     }
 }
 
