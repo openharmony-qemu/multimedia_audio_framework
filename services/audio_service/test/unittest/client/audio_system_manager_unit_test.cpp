@@ -1752,6 +1752,19 @@ HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.L
 
 /**
  * @tc.name   : Test SetVolumeWithDevice API
+ * @tc.number : SetVolumeWithDevice_002
+ * @tc.desc   : Test SetVolumeWithDevice interface
+ */
+HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
+{
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    AudioSystemManager audioSystemManager;
+    int32_t volumeLevel = 5;
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType), ERR_PERMISSION_DENIED);
+}
+
+/**
+ * @tc.name   : Test SetVolumeWithDevice API
  * @tc.number : SetVolumeWithDevice_003
  * @tc.desc   : Test SetVolumeWithDevice interface
  */
