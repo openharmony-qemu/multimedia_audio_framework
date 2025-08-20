@@ -318,7 +318,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_014, TestSize.Level1)
     InitPrimarySource();
     attr_.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
     EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
-    uint32_t streamId = 94;
+    uint32 streamId = AUDIO_HDI_CAPTURE_ID_BASE + HDI_CAPTURE_OFFSET_VOICE_TRANSCRIPTION * UNIQUE_ID_INTERVAL;
     EXPECT_EQ(primarySource_->GetUniqueIdBySourceType(), streamId);
     DeInitPrimarySource();
 }
