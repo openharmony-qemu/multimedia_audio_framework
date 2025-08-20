@@ -80,6 +80,7 @@ public:
 private:
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
     static uint64_t GetChannelLayoutByChannelCount(uint32_t channelCount);
+    static uint64_t GetChannelCountByChannelLayout(uint64_t channelLayout);
     static enum AudioInputType ConvertToHDIAudioInputType(int32_t sourceType, std::string hdiSourceType);
     static AudioSampleFormat ParseAudioFormat(const std::string &format);
     static AudioCategory GetAudioCategory(AudioScene audioScene);

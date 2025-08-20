@@ -19,7 +19,6 @@
 
 using namespace testing::ext;
 using namespace std;
-
 namespace OHOS {
 namespace AudioStandard {
 

@@ -227,6 +227,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
         moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
         moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
         moduleInfo.sourceType = std::to_string(sourceType);
+        moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
     } else {
         shared_ptr<AudioDeviceDescriptor> inputDesc = audioRouterCenter_.FetchInputDevice(sourceType, -1);
         if (inputDesc != nullptr && inputDesc->deviceType_ == DEVICE_TYPE_USB_ARM_HEADSET) {
@@ -240,6 +241,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             moduleInfo.bufferSize = std::to_string(targetInfo.bufferSize_);
             moduleInfo.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
             moduleInfo.sourceType = std::to_string(sourceType);
+            moduleInfo.channelLayout = std::to_string(targetInfo.channelLayout_);
             if (inputDesc != nullptr) {
                 moduleInfo.deviceType = std::to_string(static_cast<int32_t>(inputDesc->deviceType_));
             }
@@ -247,6 +249,7 @@ void AudioEcManager::UpdateStreamCommonInfo(AudioModuleInfo &moduleInfo, PipeStr
             primaryMicModuleInfo_.channels = std::to_string(targetInfo.channels_);
             primaryMicModuleInfo_.rate = std::to_string(targetInfo.sampleRate_);
             primaryMicModuleInfo_.format = AudioDefinitionPolicyUtils::enumToFormatStr[targetInfo.format_];
+            primaryMicModuleInfo_.channelLayout = std::to_string(targetInfo.channelLayout_);
         }
     }
 }

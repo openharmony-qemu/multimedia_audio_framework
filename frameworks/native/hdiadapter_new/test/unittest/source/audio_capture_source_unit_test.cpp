@@ -19,6 +19,7 @@
 #include "audio_utils.h"
 #include "common/hdi_adapter_info.h"
 #include "manager/hdi_adapter_manager.h"
+#include "source/audio_capture_source.h"
 
 using namespace testing::ext;
 
@@ -73,7 +74,7 @@ void AudioCaptureSourceUnitTest::InitPrimarySource()
     attr_.sampleRate = 48000; // 48000: sample rate
     attr_.channel = 2; // 2: channel
     attr_.format = SAMPLE_S16LE;
-    attr_.channelLayout = 3; // 3: channel layout
+    attr_.channelLayout = CH_LAYOUT_UNKNOWN;
     attr_.deviceType = DEVICE_TYPE_MIC;
     attr_.openMicSpeaker = 1;
     primarySource_->Init(attr_);
@@ -403,6 +404,109 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
     ret = usbSource_->Stop();
     EXPECT_EQ(ret, SUCCESS);
     DeInitUsbSource();
+}
+
+/**
+* @tc.name   : Test GetChannelCountByChannelLayout API
+* @tc.number : GetChannelCountByChannelLayout_001
+* @tc.desc   : Test GetChannelCountByChannelLayout API
+*/
+HWTEST_F(AudioCaptureSourceUnitTest, GetChannelCountByChannelLayout_001, TestSize.Level1)
+{
+    uint64_t channelCount = 0;
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_UNKNOWN);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_UNKNOWN);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_MONO);
+    EXPECT_EQ(channelCount, AudioChannel::MONO);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_STEREO);
+    EXPECT_EQ(channelCount, AudioChannel::STEREO);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX);
+    EXPECT_EQ(channelCount, AudioChannel::STEREO);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_2POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_3);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_3POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_3);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_SURROUND);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_3);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_3POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_4POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_QUAD_SIDE);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_QUAD);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_2POINT0POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_4);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_4POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_5);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_5);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT0_BACK);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_5);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_2POINT1POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_5);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_3POINT0POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_5);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT1_BACK);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_6POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_HEXAGONAL);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_3POINT1POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_6);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_6POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_7);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_6POINT1_BACK);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_7);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_7);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT0);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_7);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_7);
+
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT1);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_8);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_OCTAGONAL);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_8);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT1POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_8);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_8);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_8);
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_5POINT1POINT4);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_10);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT1POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_10);
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_7POINT1POINT4);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_12);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_10POINT2);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_12);
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_9POINT1POINT4);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_14);
+    
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_9POINT1POINT6);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_16);
+    channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_16);
 }
 
 } // namespace AudioStandard

@@ -606,6 +606,79 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
     return channelLayout;
 }
 
+uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
+{
+    AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
+    switch (layout) {
+        case AudioChannelLayout::CH_LAYOUT_MONO:
+            channel = AudioChannel::MONO;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_STEREO:
+        case AudioChannelLayout::CH_LAYOUT_STEREO_DOWNMIX:
+            channel = AudioChannel::STEREO;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_2POINT1:
+        case AudioChannelLayout::CH_LAYOUT_3POINT0:
+        case AudioChannelLayout::CH_LAYOUT_SURROUND:
+            channel = AudioChannel::CHANNEL_3;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_3POINT1:
+        case AudioChannelLayout::CH_LAYOUT_4POINT0:
+        case AudioChannelLayout::CH_LAYOUT_QUAD_SIDE:
+        case AudioChannelLayout::CH_LAYOUT_QUAD:
+        case AudioChannelLayout::CH_LAYOUT_2POINT0POINT2:
+            channel = AudioChannel::CHANNEL_4;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_4POINT1:
+        case AudioChannelLayout::CH_LAYOUT_5POINT0:
+        case AudioChannelLayout::CH_LAYOUT_5POINT0_BACK:
+        case AudioChannelLayout::CH_LAYOUT_2POINT1POINT2:
+        case AudioChannelLayout::CH_LAYOUT_3POINT0POINT2:
+            channel = AudioChannel::CHANNEL_5;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_5POINT1:
+        case AudioChannelLayout::CH_LAYOUT_5POINT1_BACK:
+        case AudioChannelLayout::CH_LAYOUT_6POINT0:
+        case AudioChannelLayout::CH_LAYOUT_HEXAGONAL:
+        case AudioChannelLayout::CH_LAYOUT_3POINT1POINT2:
+        case AudioChannelLayout::CH_LAYOUT_6POINT0_FRONT:
+            channel = AudioChannel::CHANNEL_6;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_6POINT1:
+        case AudioChannelLayout::CH_LAYOUT_6POINT1_BACK:
+        case AudioChannelLayout::CH_LAYOUT_6POINT1_FRONT:
+        case AudioChannelLayout::CH_LAYOUT_7POINT0:
+        case AudioChannelLayout::CH_LAYOUT_7POINT0_FRONT:
+            channel = AudioChannel::CHANNEL_7;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT1:
+        case AudioChannelLayout::CH_LAYOUT_OCTAGONAL:
+        case AudioChannelLayout::CH_LAYOUT_5POINT1POINT2:
+        case AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE:
+        case AudioChannelLayout::CH_LAYOUT_7POINT1_WIDE_BACK:
+            channel = AudioChannel::CHANNEL_8;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_5POINT1POINT4:
+        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT2:
+            channel = AudioChannel::CHANNEL_10;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_7POINT1POINT4:
+        case AudioChannelLayout::CH_LAYOUT_10POINT2:
+            channel = AudioChannel::CHANNEL_12;
+            break;
+        case AudioChannelLayout::CH_LAYOUT_9POINT1POINT4:
+            channel = AudioChannel::CHANNEL_14;
+        case AudioChannelLayout::CH_LAYOUT_9POINT1POINT6:
+        case AudioChannelLayout::CH_LAYOUT_HEXADECAGONAL:
+            channel = AudioChannel::CHANNEL_16;
+            break;
+        default:
+            channel = AudioChannel::CHANNEL_UNKNOW;
+            break;
+    }
+    return static_cast<uint64_t>(channel);
+}
+
 const std::unordered_map<std::string, AudioInputType> AudioCaptureSource::audioInputTypeMap_ = {
     {"AUDIO_INPUT_MIC_TYPE", AUDIO_INPUT_MIC_TYPE},
     {"AUDIO_INPUT_SPEECH_WAKEUP_TYPE", AUDIO_INPUT_SPEECH_WAKEUP_TYPE},
@@ -842,7 +915,8 @@ void AudioCaptureSource::InitAudioSampleAttr(struct AudioSampleAttributes &param
     param.isBigEndian = attr_.isBigEndian;
     param.channelCount = attr_.channel;
     param.channelLayout = attr_.channelLayout;
-    if (param.channelLayout == CH_LAYOUT_UNKNOWN) {
+    if (GetChannelCountByChannelLayout(param.channelLayout) != param.channelCount) {
+        AUDIO_INFO_LOG("channelLayout is ot suitable for channelCount, convert channel to channelLayout");
         param.channelLayout = GetChannelLayoutByChannelCount(attr_.channel);
     }
     param.silenceThreshold = attr_.bufferSize;
