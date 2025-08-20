@@ -131,6 +131,7 @@ void AudioPolicyService::CreateRecoveryThread()
     RecoveryDevicesThread_ = std::make_unique<std::thread>([this] {
         audioRecoveryDevice_.RecoverExcludedOutputDevices();
         audioRecoveryDevice_.RecoveryPreferredDevices();
+        audioBackgroundManager_.RecoryAppState();
     });
     pthread_setname_np(RecoveryDevicesThread_->native_handle(), "APSRecovery");
 }
