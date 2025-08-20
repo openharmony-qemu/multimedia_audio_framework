@@ -1355,5 +1355,62 @@ HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_024, TestSize.Level4)
     EXPECT_EQ(ret, true);
 }
 
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_025
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_025, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 9000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 1;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, true);
+}
+
+/**
+ * @tc.name  : Test TonePlayerImpl API
+ * @tc.type  : FUNC
+ * @tc.number: TonePlayerImpl_026
+ * @tc.desc  : Test CheckToneStopped interface.
+ */
+HWTEST(AudioToneplayerUnitTest, TonePlayerImpl_026, TestSize.Level4)
+{
+    AudioRendererInfo rendererInfo = {};
+    rendererInfo.contentType = ContentType::CONTENT_TYPE_MUSIC;
+    rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_DTMF;
+    rendererInfo.rendererFlags = 0;
+
+    std::shared_ptr<TonePlayerImpl> toneplayer = std::make_shared<TonePlayerImpl>("", rendererInfo);
+    EXPECT_NE(toneplayer, nullptr);
+
+    toneplayer->toneInfo_ = std::make_shared<ToneInfo>();
+    EXPECT_NE(toneplayer->toneInfo_, nullptr);
+
+    toneplayer->toneState_ = TonePlayerImpl::TONE_STARTING;
+    toneplayer->currSegment_ = 0;
+    toneplayer->totalSample_ = 8000;
+    toneplayer->maxSample_ = 8000;
+    toneplayer->toneInfo_->segments[1].duration = 0;
+
+    bool ret = toneplayer->CheckToneStopped();
+    EXPECT_EQ(ret, true);
+}
 } // namespace AudioStandard
 } // namespace OHOS
