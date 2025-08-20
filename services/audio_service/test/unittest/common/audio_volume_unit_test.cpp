@@ -1727,5 +1727,18 @@ HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_004, TestSize.Level1)
     uint32_t result = AudioVolume::GetInstance()->GetStopFadeoutState(streamIndex);
     EXPECT_EQ(result, 1);
 }
+
+/**
+ * @tc.name  : Test IsSameVolume API
+ * @tc.type  : FUNC
+ * @tc.number: IsSameVolume_001
+ * @tc.desc  : Test IsSameVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level4)
+{
+    float x = 0.0f;
+    float y = 0.0f;
+    EXPECT_TRUE(AudioVolume::GetInstance()->IsSameVolume(x, y));;
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
