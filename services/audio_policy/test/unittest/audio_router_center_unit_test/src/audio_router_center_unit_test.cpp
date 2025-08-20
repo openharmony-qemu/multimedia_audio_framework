@@ -23,6 +23,9 @@
 #include <vector>
 using namespace testing::ext;
 
+static constexpr int32_t CLIENT_UID_TYPE_NONE = 1;
+static constexpr int32_t CLIENT_UID_TYPE_EARPIECE = 2;
+
 namespace OHOS {
 namespace AudioStandard {
 
@@ -217,10 +220,20 @@ public:
         return callCaptureRet_;
     }
 
-    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t) override
+    std::vector<std::shared_ptr<AudioDeviceDescriptor>> GetRingRenderDevices(StreamUsage, int32_t clientUID) override
     {
-        static const std::vector<std::shared_ptr<AudioDeviceDescriptor>> emptyVector;
-        return emptyVector;
+        std::vector<std::shared_ptr<AudioDeviceDescriptor>> descs;
+        auto desc = std::make_shared<AudioDeviceDescriptor>();
+
+        if (clientUID == CLIENT_UID_TYPE_NONE) {
+            desc->deviceType_ = DEVICE_TYPE_NONE;
+            descs.push_back(desc);
+        } else if (clientUID == CLIENT_UID_TYPE_EARPIECE) {
+            desc->deviceType_ = DEVICE_TYPE_EARPIECE;
+            descs.push_back(desc);
+        }
+
+        return descs;
     }
 
     std::shared_ptr<AudioDeviceDescriptor> GetRecordCaptureDevice(SourceType, int32_t, const uint32_t) override

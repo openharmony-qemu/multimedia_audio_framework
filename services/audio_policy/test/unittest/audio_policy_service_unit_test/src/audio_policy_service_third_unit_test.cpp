@@ -55,6 +55,119 @@ public:
 
 /**
  * @tc.name  : Test AudioPolicyService.
+ * @tc.number: GetAudioEnhanceProperty_002
+ * @tc.desc  : Test GetAudioEnhanceProperty interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_002, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 effectProperty;
+    effectProperty.flag = CAPTURE_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    
+    int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
+    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+}
+
+/**
+ * @tc.name  : Test AudioPolicyService.
+ * @tc.number: GetAudioEnhanceProperty_003
+ * @tc.desc  : Test GetAudioEnhanceProperty interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetAudioEnhanceProperty_003, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioEffectPropertyArrayV3 propertyArray;
+    AudioEffectPropertyV3 effectProperty;
+    effectProperty.flag = RENDER_EFFECT_FLAG;
+    propertyArray.property.push_back(effectProperty);
+    
+    int32_t ret = server->audioPolicyService_.GetAudioEnhanceProperty(propertyArray);
+    EXPECT_NE(ret, AudioServerProxy::GetInstance().GetAudioEffectPropertyProxy(propertyArray));
+}
+
+/**
+ * @tc.name  : Test AudioPolicyService.
+ * @tc.number: GetProcessDeviceInfo_001
+ * @tc.desc  : Test GetProcessDeviceInfo interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, GetProcessDeviceInfo_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    AudioProcessConfig config;
+    config.audioMode = AUDIO_MODE_PLAYBACK;
+    AudioDeviceDescriptor deviceInfo;
+    bool lockFlag = false;
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_VOICE_COMMUNICATION;
+    int32_t ret = server->audioPolicyService_.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
+    EXPECT_EQ(deviceInfo.deviceRole_, OUTPUT_DEVICE);
+    EXPECT_EQ(ret, ERROR);
+
+    config.rendererInfo.streamUsage = STREAM_USAGE_MUSIC;
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
+    EXPECT_EQ(deviceInfo.deviceRole_, OUTPUT_DEVICE);
+    EXPECT_EQ(ret, SUCCESS);
+
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_COMMUNICATION;
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
+    EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
+    EXPECT_EQ(ret, ERROR);
+
+    config.audioMode = AUDIO_MODE_RECORD;
+    config.capturerInfo.sourceType = SOURCE_TYPE_VOICE_CALL;
+    ret = server->audioPolicyService_.GetProcessDeviceInfo(config, lockFlag, deviceInfo);
+    EXPECT_EQ(deviceInfo.deviceRole_, INPUT_DEVICE);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyService.
+ * @tc.number: UpdateCapturerInfoWhenNoPermission_001
+ * @tc.desc  : Test UpdateCapturerInfoWhenNoPermission interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, UpdateCapturerInfoWhenNoPermission_001, TestSize.Level1)
+{
+    shared_ptr<AudioCapturerChangeInfo> audioCapturerChangeInfos = make_shared<AudioCapturerChangeInfo>();
+    bool hasSystemPermission = true;
+    audioCapturerChangeInfos->clientUID = 1;
+    audioCapturerChangeInfos->capturerState = CAPTURER_NEW;
+
+    AudioCoreService::UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos, hasSystemPermission);
+    EXPECT_NE(audioCapturerChangeInfos->clientUID, 0);
+    EXPECT_NE(audioCapturerChangeInfos->capturerState, CAPTURER_INVALID);
+
+    hasSystemPermission = false;
+    AudioCoreService::UpdateCapturerInfoWhenNoPermission(audioCapturerChangeInfos, hasSystemPermission);
+    EXPECT_EQ(audioCapturerChangeInfos->clientUID, 0);
+    EXPECT_EQ(audioCapturerChangeInfos->capturerState, CAPTURER_INVALID);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyService.
+ * @tc.number: SetQueryClientTypeCallback_001
+ * @tc.desc  : Test SetQueryClientTypeCallback interfaces.
+ */
+HWTEST_F(AudioPolicyServiceThirdUnitTest, SetQueryClientTypeCallback_001, TestSize.Level1)
+{
+    auto server = GetServerPtr();
+    ASSERT_NE(nullptr, server);
+
+    sptr<IRemoteObject> object = nullptr;
+    int32_t ret = server->audioPolicyService_.SetQueryClientTypeCallback(object);
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test AudioPolicyService.
  * @tc.number: GetOffloadStatusDump_001
  * @tc.desc  : Test GetOffloadStatusDump interfaces.
  */
