@@ -419,7 +419,7 @@ HWTEST(VolumeToolsUnitTest, CountVolumeLevel_008, TestSize.Level1)
  * @tc.name  : Test IsVolumeValid API
  * @tc.type  : FUNC
  * @tc.number: IsVolumeValid_006
- * @tc.desc  : Test IsVolumeValid interface. 
+ * @tc.desc  : Test IsVolumeValid interface.
  */
 HWTEST(VolumeToolsUnitTest, IsVolumeValid_006, TestSize.Level4)
 {
