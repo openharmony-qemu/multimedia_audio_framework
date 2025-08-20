@@ -528,7 +528,24 @@ int32_t AudioRenderSink::UpdateActiveDevice(std::vector<DeviceType> &outputDevic
     currentActiveDevice_ = outputDevices[0];
     currentDevicesSize_ = static_cast<int32_t>(outputDevices.size());
     SetAudioRouteInfoForEnhanceChain();
+    bool value = false;
+    if (currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_SCO || currentActiveDevice_ == DEVICE_TYPE_BLUETOOTH_A2DP) {
+        value = true;
+    }
+    HandleDeviceCallback(value);
     return DoSetOutputRoute(outputDevices);
+}
+
+void AudioRenderSink::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    deviceCallback_ = callback;
+}
+
+void AudioRenderSink::HandleDeviceCallback(const bool value)
+{
+    if (deviceCallback_ != nullptr) {
+        deviceCallback_(value);
+    }
 }
 
 void AudioRenderSink::RegistCallback(uint32_t type, IAudioSinkCallback *callback)

@@ -137,6 +137,7 @@ struct AudioModuleInfo {
     std::string micRefRate;
     std::string micRefFormat;
     std::string micRefChannels;
+    uint32_t suspendIdleTimeout = DEFAULT_SUSPEND_TIME_IN_MS;
 
     std::list<AudioModuleInfo> ports;
     std::string extra;

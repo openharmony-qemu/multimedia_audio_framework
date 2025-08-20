@@ -304,9 +304,12 @@ int32_t TransModuleInfoToHpaeSinkInfo(const AudioModuleInfo &audioModuleInfo, Hp
     }
     sinkInfo.deviceNetId = audioModuleInfo.networkId;
     sinkInfo.deviceClass = audioModuleInfo.className;
-    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %{public}s, deviceClass: %{public}s",
+    sinkInfo.suspendTime = audioModuleInfo.suspendIdleTimeout;
+    AUDIO_INFO_LOG("HpaeManager::deviceNetId: %{public}s, deviceClass: %{public}s, suspend_time: %{public}u",
         sinkInfo.deviceNetId.c_str(),
         sinkInfo.deviceClass.c_str());
+        sinkInfo.deviceClass.c_str(),
+        sinkInfo.suspendTime);
     sinkInfo.adapterName = audioModuleInfo.adapterName;
     sinkInfo.lib = audioModuleInfo.lib;
     sinkInfo.splitMode = audioModuleInfo.extra;

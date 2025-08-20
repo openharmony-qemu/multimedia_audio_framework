@@ -86,6 +86,9 @@ public:
 
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
+    void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
+    void HandleDeviceCallback(const bool value);
+
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);
     static AudioFormat ConvertToHdiFormat(AudioSampleFormat format);
@@ -195,6 +198,7 @@ private:
     std::mutex dataConnectionMutex_;
     bool isDataLinkConnected_ = false;
     std::condition_variable dataConnectionCV_;
+    std::function<void(bool)> deviceCallback_ = nullptr;
 };
 
 } // namespace AudioStandard
