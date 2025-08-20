@@ -1760,7 +1760,8 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_002, TestSize.Level4)
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioSystemManager audioSystemManager;
     int32_t volumeLevel = 5;
-    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType), ERR_PERMISSION_DENIED);
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_ULTRASONIC, volumeLevel, deviceType),
+        ERR_PERMISSION_DENIED);
 }
 
 /**
@@ -1773,7 +1774,8 @@ HWTEST(AudioSystemManagerUnitTest, SetVolumeWithDevice_003, TestSize.Level4)
     DeviceType deviceType = DEVICE_TYPE_SPEAKER;
     AudioSystemManager audioSystemManager;
     int32_t volumeLevel = 5;
-    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType), ERR_NOT_SUPPORTED);
+    EXPECT_EQ(audioSystemManager.SetVolumeWithDevice(STREAM_INTERNAL_FORCE_STOP, volumeLevel, deviceType),
+        ERR_NOT_SUPPORTED);
 }
 
 /**
@@ -1802,7 +1804,7 @@ HWTEST(AudioSystemManagerUnitTest, StartGroup_002, TestSize.Level4)
     int32_t startTimeMs = 500;
     int32_t endTimeMs = 1000;
     std::unordered_map<int32_t, bool> threads = {
-        {101, true}, 
+        {101, true},
         {102, true}
     };
     int32_t result = manager.StartGroup(testWorkgroupid, startTimeMs, endTimeMs, threads, needUpdatePrio);
