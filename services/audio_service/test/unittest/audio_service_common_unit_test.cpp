@@ -1781,5 +1781,90 @@ HWTEST(AudioServiceCommonUnitTest, OHAudioBufferBase_GetDuckFactor_002, TestSize
     float result = ohAudioBuffer->GetDuckFactor();
     EXPECT_FLOAT_EQ(result, MIN_FLOAT_VOLUME);
 }
+
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_001
+* @tc.desc  : Test GetTimeOfPos interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_001, TestSize.Level1)
+{
+    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
+
+    uint64_t posInFrame = 20;
+    int64_t invalidTime = -1;
+    g_linearPosTimeModel->stampFrame_ = 0;
+    g_linearPosTimeModel->sampleRate_ = 0;
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
+    EXPECT_EQ(invalidTime, retPos);
+}
+
+/**
+* @tc.name  : Test GetTimeOfPos API
+* @tc.type  : FUNC
+* @tc.number: GetTimeOfPos_002
+* @tc.desc  : Test GetTimeOfPos interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, GetTimeOfPos_002, TestSize.Level1)
+{
+    g_linearPosTimeModel = std::make_unique<LinearPosTimeModel>();
+
+    uint64_t posInFrame = 1;
+    int64_t invalidTime = -1;
+    g_linearPosTimeModel->stampFrame_ = 10;
+    g_linearPosTimeModel->sampleRate_ = 0;
+    int64_t retPos = g_linearPosTimeModel->GetTimeOfPos(posInFrame);
+    EXPECT_EQ(invalidTime, retPos);
+}
+
+/**
+* @tc.name  : Test Init API
+* @tc.type  : FUNC
+* @tc.number: Init_001
+* @tc.desc  : Test Init interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Init_001, TestSize.Level1)
+{
+    const size_t testMaxSize = 16 * 1024 * 1024 + 1;
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    ringCache->cacheTotalSize_ = testMaxSize;
+    bool result = ringCache->Init();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test Init API
+* @tc.type  : FUNC
+* @tc.number: Init_002
+* @tc.desc  : Test Init interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Init_002, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    ringCache->cacheTotalSize_ = -1;
+    bool result = ringCache->Init();
+    EXPECT_EQ(result, false);
+}
+
+/**
+* @tc.name  : Test Create API
+* @tc.type  : FUNC
+* @tc.number: Create_001
+* @tc.desc  : Test Create interface.
+*/
+HWTEST(AudioServiceCommonUnitTest, Create_001, TestSize.Level1)
+{
+    size_t testSize = 3840;
+    size_t cacheSize = 16 * 1024 * 1024 + 1;
+    std::unique_ptr<AudioRingCache> ringCache = AudioRingCache::Create(testSize);
+    EXPECT_NE(nullptr, ringCache);
+    std::unique_ptr<AudioRingCache> result = ringCache->Create(cacheSize);
+    EXPECT_EQ(result, nullptr);
+}
 } // namespace AudioStandard
 } // namespace OHOS
