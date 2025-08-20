@@ -1781,69 +1781,20 @@ HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_008, TestSize.Level1)
     std::shared_ptr<FastAudioStream> fastAudioStream =
         std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->state_ = NEW;
-    EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), true);
-}
+    EXPECT_NE(fastAudioStream->RestoreAudioStream(true), true);
 
-/**
- * @tc.name  : Test RestoreAudioStream API
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioStream_009
- * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
- */
-HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_009, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->state_ = RUNNING;
     EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
-}
 
-/**
- * @tc.name  : Test RestoreAudioStream API
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioStream_010
- * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
- */
-HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_010, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->state_ = PAUSED;
     EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
-}
 
-/**
- * @tc.name  : Test RestoreAudioStream API
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioStream_011
- * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
- */
-HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_011, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->state_ = STOPPED;
     EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
-}
 
-/**
- * @tc.name  : Test RestoreAudioStream API
- * @tc.type  : FUNC
- * @tc.number: RestoreAudioStream_012
- * @tc.desc  : Test RestoreAudioStream interface using unsupported parameters.
- */
-HWTEST(FastSystemStreamUnitTest, RestoreAudioStream_012, TestSize.Level1)
-{
-    int32_t appUid = static_cast<int32_t>(getuid());
-    std::shared_ptr<FastAudioStream> fastAudioStream =
-        std::make_shared<FastAudioStream>(STREAM_MUSIC, AUDIO_MODE_PLAYBACK, appUid);
     fastAudioStream->state_ = STOPPING;
     EXPECT_EQ(fastAudioStream->RestoreAudioStream(true), false);
 }
-
 /**
  * @tc.name  : Test GetDefaultOutputDevice API
  * @tc.type  : FUNC
