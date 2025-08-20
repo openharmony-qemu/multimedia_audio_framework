@@ -1734,7 +1734,7 @@ HWTEST_F(AudioVolumeUnitTest, GetStopFadeoutState_004, TestSize.Level1)
  * @tc.number: IsSameVolume_001
  * @tc.desc  : Test IsSameVolume interface.
  */
-HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level1)
+HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level4)
 {
     float x = 0.0f;
     float y = 0.0f;
@@ -1747,7 +1747,7 @@ HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level1)
  * @tc.number: IsSameVolume_002
  * @tc.desc  : Test IsSameVolume interface.
  */
-HWTEST_F(AudioVolumeUnitTest, IsSameVolume_002, TestSize.Level1)
+HWTEST_F(AudioVolumeUnitTest, IsSameVolume_002, TestSize.Level4)
 {
     float x = 0.0f;
     float y = 0.0f;
