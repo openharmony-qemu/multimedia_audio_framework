@@ -118,6 +118,7 @@ group("audio_unit_test") {
     "../services/audio_service/test/unittest:ipc_stream_in_server_unit_test",
     "../services/audio_service/test/unittest:offline_stream_in_server_unit_test",
     "../services/audio_service/test/unittest/hpae_adapter_manager_unit_test:hpae_adapter_manager_unit_test",
+    "../services/audio_service/test/unittest:audio_ring_cache_unit_test",
 
     "../services/audio_service/test/unittest:policy_handler_unit_test",
     "../services/audio_service/test/unittest:resource_manager_adapter_unit_test",
