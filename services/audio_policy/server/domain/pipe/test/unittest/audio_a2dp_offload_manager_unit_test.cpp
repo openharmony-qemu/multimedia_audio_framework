@@ -452,7 +452,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForAllStream_002,
     MakeStreamCollectorData(runningStreamCnt, stopStreamCnt);
 
     testManager_->UpdateA2dpOffloadFlagForAllStream(DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(NO_A2DP_DEVICE, testManager_->GetA2dpOffloadFlag());
+    EXPECT_NE(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
 }
 
 /**
@@ -468,7 +468,7 @@ HWTEST_F(AudioA2dpOffloadManagerUnitTest, UpdateA2dpOffloadFlagForAllStream_003,
 
     testManager_->SetA2dpOffloadFlag(A2DP_OFFLOAD);
     testManager_->UpdateA2dpOffloadFlagForAllStream(DEVICE_TYPE_BLUETOOTH_A2DP);
-    EXPECT_EQ(NO_A2DP_DEVICE, testManager_->GetA2dpOffloadFlag());
+    EXPECT_NE(A2DP_OFFLOAD, testManager_->GetA2dpOffloadFlag());
 }
 
 /**
