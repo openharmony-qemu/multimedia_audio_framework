@@ -910,6 +910,8 @@ int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string
     } else if (key == "mute_call") {
         deviceManager->SetAudioParameter("primary", parmKey, "", key + "=" + value);
         return SUCCESS;
+    } else if (key == "LOUD_VOLUMN_MODE") {
+        parmKey = AudioParamKey::NONE;
     } else {
         AUDIO_ERR_LOG("key %{public}s is invalid for hdi interface", key.c_str());
         return SUCCESS;

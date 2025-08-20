@@ -252,6 +252,7 @@ public:
     virtual int32_t SetSystemVolumeDegree(AudioStreamType streamType, int32_t volumeDegree) = 0;
     virtual int32_t GetSystemVolumeDegree(AudioStreamType streamType) = 0;
     virtual int32_t GetMinVolumeDegree(AudioVolumeType volumeType) = 0;
+    virtual void SendLoudVolumeModeToDsp(FunctionHoldType funcHoldType, bool state) = 0;
 };
 } // namespace AudioStandard
 } // namespace OHOS
