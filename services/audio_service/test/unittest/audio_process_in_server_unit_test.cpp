@@ -1122,7 +1122,7 @@ HWTEST(AudioProcessInServerUnitTest, GetInnerCapState_002, TestSize.Level2)
  * @tc.name  : Test CheckBGCapturer API
  * @tc.type  : FUNC
  * @tc.number: CheckBGCapturer_001
- * @tc.desc  : Test CheckBGCapturer interface.
+ * @tc.desc  : Test CheckBGCapturer interface. 
  */
 HWTEST(AudioProcessInServerUnitTest, CheckBGCapturer_001, TestSize.Level4)
 {

@@ -1741,7 +1741,7 @@ HWTEST(AudioSystemManagerUnitTest, OnWorkgroupChange_004, TestSize.Level4)
 /**
  * @tc.name   : Test RemoveWorkgroupChangeCallback API
  * @tc.number : RemoveWorkgroupChangeCallback_001
- * @tc.desc   : Test RemoveWorkgroupChangeCallback interface
+ * @tc.desc   : Test RemoveWorkgroupChangeCallback interface 
  */
 HWTEST(AudioSystemManagerUnitTest, RemoveWorkgroupChangeCallback_001, TestSize.Level4)
 {
