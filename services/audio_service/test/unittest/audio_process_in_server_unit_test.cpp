@@ -1156,7 +1156,7 @@ HWTEST(AudioProcessInServerUnitTest, GetByteSizePerFrame_001, TestSize.Level4)
  * @tc.number: RequestHandleInfoAsync_001
  * @tc.desc  : Test RequestHandleInfoAsync interface.
  */
-HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level1)
+HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level4)
 {
     AudioProcessConfig configRet = InitProcessConfig();
     AudioService *releaseCallbackRet = AudioService::GetInstance();
