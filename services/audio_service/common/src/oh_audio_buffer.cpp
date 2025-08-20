@@ -539,5 +539,10 @@ FutexCode OHAudioBuffer::WaitFor(int64_t timeoutInNs, const OnIndexChange &pred)
 {
     return ohAudioBufferBase_.WaitFor(timeoutInNs, pred);
 }
+
+void OHAudioBuffer::WakeFutex(uint32_t wakeVal)
+{
+    ohAudioBufferBase_.WakeFutex(wakeVal);
+}
 } // namespace AudioStandard
 } // namespace OHOS

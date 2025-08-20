@@ -246,6 +246,7 @@ private:
     int32_t UnregisterCapturerInClientPolicyServerDiedCb();
     void ResetCallbackLoopTid();
     bool GetAudioTimeInner(Timestamp &timestamp, Timestamp::Timestampbase base, int64_t latency);
+
 private:
     AudioStreamType eStreamType_;
     int32_t appUid_;
@@ -306,10 +307,6 @@ private:
 
     Operation notifiedOperation_ = MAX_OPERATION_CODE;
     int64_t notifiedResult_ = 0;
-
-    // read data
-    std::mutex readDataMutex_;
-    std::condition_variable readDataCV_;
 
     uint32_t overflowCount_ = 0;
     // ipc stream related
