@@ -1132,5 +1132,60 @@ HWTEST(AudioProcessInServerUnitTest, CheckBGCapturer_001, TestSize.Level4)
 
     EXPECT_FALSE(audioProcessInServerRet.CheckBGCapturer());
 }
+
+/**
+ * @tc.name  : Test GetByteSizePerFrame API
+ * @tc.type  : FUNC
+ * @tc.number: GetByteSizePerFrame_001
+ * @tc.desc  : Test GetByteSizePerFrame interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetByteSizePerFrame_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.byteSizePerFrame_ = 10;
+
+    uint32_t ret = audioProcessInServerRet.GetByteSizePerFrame();
+    EXPECT_EQ(ret, audioProcessInServerRet.byteSizePerFrame_);
+}
+
+/**
+ * @tc.name  : Test RequestHandleInfoAsync API
+ * @tc.type  : FUNC
+ * @tc.number: RequestHandleInfoAsync_001
+ * @tc.desc  : Test RequestHandleInfoAsync interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, RequestHandleInfoAsync_001, TestSize.Level1)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.isInited_ = true;
+    AudioBufferHolder bufferHolder = AudioBufferHolder::AUDIO_SERVER_SHARED;
+    uint32_t byteSizePerFrame = 1000;
+    audioProcessInServerRet.processBuffer_ = std::make_shared<OHAudioBufferBase>(bufferHolder,
+        TOTAL_SIZE_IN_FRAME, byteSizePerFrame);
+    EXPECT_NE(audioProcessInServerRet.processBuffer_, nullptr);
+    auto ret = audioProcessInServerRet.RequestHandleInfoAsync();
+    EXPECT_EQ(ret, SUCCESS);
+}
+
+/**
+ * @tc.name  : Test GetSpanSizeInFrame API
+ * @tc.type  : FUNC
+ * @tc.number: GetSpanSizeInFrame_001
+ * @tc.desc  : Test GetSpanSizeInFrame interface.
+ */
+HWTEST(AudioProcessInServerUnitTest, GetSpanSizeInFrame_001, TestSize.Level4)
+{
+    AudioProcessConfig configRet = InitProcessConfig();
+    AudioService *releaseCallbackRet = AudioService::GetInstance();
+    AudioProcessInServer audioProcessInServerRet(configRet, releaseCallbackRet);
+    audioProcessInServerRet.spanSizeInframe_ = 10;
+
+    uint32_t ret = audioProcessInServerRet.GetSpanSizeInFrame();
+    EXPECT_EQ(ret, audioProcessInServerRet.spanSizeInframe_);
+}
 } // namespace AudioStandard
 } // namespace OHOS
