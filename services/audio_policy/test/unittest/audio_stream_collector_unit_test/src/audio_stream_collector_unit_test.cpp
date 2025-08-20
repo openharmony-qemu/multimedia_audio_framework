@@ -44,6 +44,105 @@ void AudioStreamCollectorUnitTest::TearDown(void) {}
 
 /**
 * @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleKaraokeAppToBack_001
+* @tc.desc  : Test HandleKaraokeAppToBack.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 3001;
+    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->rendererInfo.isLoopback = true;
+    rendererChangeInfo->clientPid = 3001;
+    rendererChangeInfo->sessionId = 2001;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+
+    sptr<IRemoteObject> object;
+    sptr<IStandardClientTracker> listener = iface_cast<IStandardClientTracker>(object);
+    std::shared_ptr<AudioClientTracker> callback = std::make_shared<ClientTrackerCallbackListener>(listener);
+    collector.clientTracker_[rendererChangeInfo->sessionId] = callback;
+
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+    EXPECT_NE(collector.clientTracker_[rendererChangeInfo->sessionId], nullptr);
+
+    collector.clientTracker_[rendererChangeInfo->sessionId] = nullptr;
+
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+    EXPECT_EQ(collector.clientTracker_[rendererChangeInfo->sessionId], nullptr);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: HandleKaraokeAppToBack_002
+* @tc.desc  : Test HandleKaraokeAppToBack.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, HandleKaraokeAppToBack_002, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    int32_t uid = 1001;
+    int32_t pid = 3001;
+    StreamUsage callStreamUsage = collector.GetLastestRunningCallStreamUsage();
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = nullptr;
+    collector.audioRendererChangeInfos_.push_back(rendererChangeInfo);
+
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0], nullptr);
+
+    collector.audioRendererChangeInfos_[0] = make_shared<AudioRendererChangeInfo>();
+    collector.audioRendererChangeInfos_[0]->clientUID = 1002;
+    collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback = true;
+    collector.audioRendererChangeInfos_[0]->clientPid = 3001;
+    collector.audioRendererChangeInfos_[0]->sessionId = 2001;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_EQ(collector.audioRendererChangeInfos_[0]->clientPid, pid);
+    EXPECT_NE(collector.audioRendererChangeInfos_[0]->clientUID, uid);
+
+    collector.audioRendererChangeInfos_[0]->clientUID = 1001;
+    collector.audioRendererChangeInfos_[0]->clientPid = 3002;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_NE(collector.audioRendererChangeInfos_[0]->clientPid, pid);
+
+    collector.audioRendererChangeInfos_[0]->clientPid = 3001;
+    collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback = false;
+    EXPECT_NO_THROW(collector.HandleKaraokeAppToBack(uid, pid));
+    EXPECT_FALSE(collector.audioRendererChangeInfos_[0]->rendererInfo.isLoopback);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: UpdateCapturerStreamInternal_001
+* @tc.desc  : Test UpdateCapturerStreamInternal.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, UpdateCapturerStreamInternal_001, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamChangeInfo streamChangeInfo;
+    streamChangeInfo.audioCapturerChangeInfo.clientUID = 1001;
+    streamChangeInfo.audioCapturerChangeInfo.sessionId = 2001;
+    streamChangeInfo.audioCapturerChangeInfo.capturerState = CapturerState::CAPTURER_RUNNING;
+    shared_ptr<AudioCapturerChangeInfo> capturerChangeInfo = make_shared<AudioCapturerChangeInfo>();
+
+    int32_t ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(ERROR, ret);
+
+    capturerChangeInfo->clientUID = 1001;
+    capturerChangeInfo->createrUID = 1001;
+    capturerChangeInfo->sessionId = 2001;
+    capturerChangeInfo->capturerInfo.pipeType = PIPE_TYPE_MULTICHANNEL;
+    collector.audioCapturerChangeInfos_.push_back(move(capturerChangeInfo));
+
+    ret = collector.UpdateCapturerStreamInternal(streamChangeInfo);
+    EXPECT_EQ(SUCCESS, ret);
+}
+
+/**
+* @tc.name  : Test AudioStreamCollector.
 * @tc.number: AudioStreamCollector_001
 * @tc.desc  : Test CheckRendererStateInfoChanged.
 */
