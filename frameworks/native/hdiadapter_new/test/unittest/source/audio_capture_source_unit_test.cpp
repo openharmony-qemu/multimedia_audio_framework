@@ -309,6 +309,21 @@ HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_013, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test PrimarySource API
+ * @tc.number : PrimarySourceUnitTest_014
+ * @tc.desc   : Test primary source GetUniqueIdBySourceType
+ */
+HWTEST_F(AudioCaptureSourceUnitTest, PrimarySourceUnitTest_014, TestSize.Level1)
+{
+    InitPrimarySource();
+    attr_.sourceType = SOURCE_TYPE_VOICE_TRANSCRIPTION;
+    EXPECT_TRUE(primarySource_ && primarySource_->IsInited());
+    uint32_t streamId = 94;
+    EXPECT_EQ(primarySource_->GetUniqueIdBySourceType(), streamId);
+    DeInitPrimarySource();
+}
+
+/**
  * @tc.name   : Test SetDmDeviceType API
  * @tc.number : SetDmDeviceType_001
  * @tc.desc   : Test SetDmDeviceType
