@@ -251,7 +251,36 @@ public:
         return routerType_;
     }
 };
- 
+
+/**
+ * @tc.name  : Test FetchRingRenderDevices.
+ * @tc.number: FetchRingRenderDevices_002
+ * @tc.desc  : Test FetchRingRenderDevices interface.
+ */
+HWTEST(AudioRouterCenterUnitTest, FetchRingRenderDevices_002, TestSize.Level1)
+{
+    AudioRouterCenter center;
+    auto invalidDesc = std::make_shared<AudioDeviceDescriptor>();
+    invalidDesc->deviceType_ = DEVICE_TYPE_NONE;
+    center.ringRenderRouters_.emplace_back(
+        std::make_unique<MockRouter>(ROUTER_TYPE_DEFAULT, nullptr, nullptr, invalidDesc));
+    
+    StreamUsage streamUsage = STREAM_USAGE_RINGTONE;
+    int32_t clientUID = 0;
+    RouterType routerType;
+    auto result = center.FetchRingRenderDevices(streamUsage, clientUID, routerType);
+    EXPECT_EQ(result.front()->deviceType_, DEVICE_TYPE_NONE);
+
+    clientUID = 1;
+    result = center.FetchRingRenderDevices(streamUsage, clientUID, routerType);
+    EXPECT_EQ(result.front()->deviceType_, DEVICE_TYPE_NONE);
+
+    clientUID = 2;
+    result = center.FetchRingRenderDevices(streamUsage, clientUID, routerType);
+    EXPECT_NE(result.front(), nullptr);
+    EXPECT_EQ(result.front()->deviceType_, DEVICE_TYPE_EARPIECE);
+}
+
 /**
  * @tc.name  : Test FetchMediaRenderDevice.
  * @tc.number: FetchMediaRenderDevice_001
