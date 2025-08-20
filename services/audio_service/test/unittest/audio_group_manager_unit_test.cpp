@@ -431,7 +431,7 @@ HWTEST(AudioGroupManagerUnitTest, GetVolume_005, TestSize.Level1)
 {
     AudioGroupManager audioGroupManager(1);
     audioGroupManager.connectType_ = CONNECT_TYPE_DISTRIBUTED;
-    int32_t ret = audioGroupManager.GetVolume(STREAM_ACCESSIBILITY, 123);
+    int32_t ret = audioGroupManager.GetVolume(AudioStreamType::STREAM_ACCESSIBILITY, 123);
     EXPECT_EQ(ret, 0);
 }
 
@@ -460,7 +460,7 @@ HWTEST(AudioGroupManagerUnitTest, IsStreamMute_003, TestSize.Level1)
     AudioGroupManager audioGroupManager(1);
     audioGroupManager.connectType_ = ConnectType::CONNECT_TYPE_LOCAL;
     bool isMute = false;
-    int32_t ret = audioGroupManager.IsStreamMute(AudioStreamType::STREAM_ACCESSIBILITY, isMute);
+    int32_t ret = audioGroupManager.IsStreamMute(STREAM_ACCESSIBILITY, isMute);
     EXPECT_EQ(ret, SUCCESS);
 }
 
