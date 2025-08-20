@@ -163,5 +163,34 @@ HWTEST_F(AudioLimiterUnitTest, GetLatency_001, TestSize.Level1)
     EXPECT_EQ(ret, BUFFER_SIZE_20MS_2CH_48000HZ_FLOAT * AUDIO_MS_PER_S /
         (SAMPLE_F32LE * SAMPLE_RATE_48000 * STEREO * PROC_COUNT));
 }
+
+/**
+ * @tc.name  : Test Process API
+ * @tc.type  : FUNC
+ * @tc.number: Process_004
+ * @tc.desc  : Test Process interface when framelen is vaild.
+ */
+HWTEST_F(AudioLimiterUnitTest, Process_004, TestSize.Level1)
+{
+    EXPECT_NE(limiter, nullptr);
+
+    int32_t ret = limiter->SetConfig(BUFFER_SIZE_20MS_2CH_44100HZ_16_BIT, SAMPLE_S16LE + 1, SAMPLE_RATE_44100, STEREO);
+    EXPECT_EQ(ret, SUCCESS);
+    int32_t frameLen = BUFFER_SIZE_20MS_2CH_44100HZ_16_BIT / (SAMPLE_S16LE + 1);
+    std::vector<float> inBufferVector(frameLen, 0);
+    std::vector<float> outBufferVector(frameLen, 0);
+    float *inBuffer = inBufferVector.data();
+    float *outBuffer = outBufferVector.data();
+
+    limiter->dumpFileInput_  = fopen("text", "w+");
+    ret = limiter->Process(frameLen, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
+    fclose(limiter->dumpFileInput_);
+
+    limiter->dumpFileOutput_  = fopen("text", "w+");
+    ret = limiter->Process(frameLen, inBuffer, outBuffer);
+    EXPECT_EQ(ret, SUCCESS);
+    fclose(limiter->dumpFileOutput_);
+}
 } // namespace AudioStandard
 } // namespace OHOS

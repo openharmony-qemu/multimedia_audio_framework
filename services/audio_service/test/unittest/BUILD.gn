@@ -202,6 +202,39 @@ ohos_unittest("audio_thread_task_unit_test") {
   ]
 }
 
+ohos_unittest("audio_ring_cache_unit_test") {
+  module_out_path = module_output_path
+
+  install_enable = false
+
+  include_dirs = [
+    "../../../../frameworks/native/audioutils/include",
+    "../../../../interfaces/inner_api/native/audiocommon/include",
+    "../../../../services/audio_service/common/include",
+    "../../../../services/audio_service/server/include",
+  ]
+
+  cflags = [
+    "-DDEBUG_DIRECT_USE_HDI",
+    "-fno-access-control",
+  ]
+
+  sources = [ "audio_ring_cache_unit_test.cpp" ]
+
+  configs = [ ":module_private_config" ]
+
+  deps = [
+    "../../../../frameworks/native/audioutils:audio_utils",
+    "../../../../services/audio_service:audio_client",
+    "../../../../services/audio_service:audio_common",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
+}
+
 ohos_unittest("audio_stream_checker_unit_test") {
   module_out_path = module_output_path
 
