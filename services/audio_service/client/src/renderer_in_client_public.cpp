@@ -388,7 +388,7 @@ void RendererInClientInner::SetSwitchInfoTimestamp(
         uint64_t durationWithSpeedNS =
             timestampNS > lastTimeWithSpeedNS && lastTimeWithSpeedNS > 0 ? timestampNS - lastTimeWithSpeedNS : 0;
         uint64_t durationWithSpeedUS = durationWithSpeedNS / AUDIO_US_PER_MS;
-        float speed = realSpeed_.has_value() ? realSpeed_.value() : 1;
+        float speed = GetSpeed();
         uint64_t newPositionWithSpeedUS = lastFramePosAndTimePairWithSpeed[base].first +
             durationWithSpeedUS * curStreamParams_.samplingRate * speed / AUDIO_US_PER_S;
         lastSwitchPositionWithSpeed_[base] = newPositionWithSpeedUS;
@@ -410,6 +410,7 @@ bool RendererInClientInner::GetAudioPosition(Timestamp &timestamp, Timestamp::Ti
 
     uint64_t framePosition = readIdx > lastSpeedFlushReadIndex_ ? readIdx - lastSpeedFlushReadIndex_ : 0;
     framePosition = framePosition > latency ? framePosition - latency : 0;
+    framePosition += dropHdiPosition_.load();
     framePosition += lastSwitchPosition_[base];
 
     // reset the timestamp
@@ -1869,6 +1870,7 @@ int32_t RendererInClientInner::GetAudioTimestampInfo(Timestamp &timestamp, Times
     frameLatency += SONIC_LATENCY_IN_MS * curStreamParams_.samplingRate / AUDIO_MS_PER_SECOND;
     // real frameposition
     uint64_t framePosition = unprocessSamples > frameLatency ? unprocessSamples - frameLatency : 0;
+    framePosition += dropPosition_.load();
     framePosition += lastSwitchPositionWithSpeed_[base];
 
     // reset the timestamp

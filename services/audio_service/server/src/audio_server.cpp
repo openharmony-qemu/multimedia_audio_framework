@@ -2294,8 +2294,8 @@ bool AudioServer::HandleCheckRecorderBackgroundCapture(const AudioProcessConfig 
         CAPTURER_PREPARED,
     };
     if (SwitchStreamUtil::IsSwitchStreamSwitching(info, SWITCH_STATE_CREATED)) {
-        AUDIO_INFO_LOG("Recreating stream for callerUid:%{public}d need not VerifyBackgroundCapture",
-            config.callerUid);
+        AUDIO_INFO_LOG("switchStream is recreating, callerUid:%{public}d", config.callerUid);
+        AudioService::GetInstance()->UpdateSwitchStreamMap(config.originalSessionId, SWITCH_STATE_CREATED);
         SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_CREATED);
         return true;
     }
@@ -2319,6 +2319,15 @@ int32_t AudioServer::SetForegroundList(const std::vector<std::string> &list)
     CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_NOT_SUPPORTED, "refused for %{public}d",
         IPCSkeleton::GetCallingUid());
     AudioService::GetInstance()->SaveForegroundList(list);
+    return SUCCESS;
+}
+
+int32_t AudioServer::SendInterruptEventToAudioServer(uint32_t sessionId, const InterruptEventInternal &interruptEvent)
+{
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    CHECK_AND_RETURN_RET_LOG(PermissionUtil::VerifyIsAudio(), ERR_PERMISSION_DENIED,
+        "Refused for %{public}d", callingUid);
+    AudioService::GetInstance()->SendInterruptEventToAudioService(sessionId, interruptEvent);
     return SUCCESS;
 }
 

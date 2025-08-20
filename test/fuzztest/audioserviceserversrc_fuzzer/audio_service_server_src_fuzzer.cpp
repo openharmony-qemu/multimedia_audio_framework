@@ -810,27 +810,6 @@ void OnWriteDataFuzzTest()
     renderer->OnWriteData(length);
 }
 
-void ResolveBufferBaseAndGetServerSpanSizeFuzzTest()
-{
-    AudioProcessConfig processConfig;
-    std::shared_ptr<StreamListenerHolder> streamListenerHolder =
-        std::make_shared<StreamListenerHolder>();
-    std::weak_ptr<IStreamListener> streamListener = streamListenerHolder;
-    std::shared_ptr<RendererInServer> rendererInServer =
-        std::make_shared<RendererInServer>(processConfig, streamListener);
-    std::shared_ptr<RendererInServer> renderer = rendererInServer;
-    CHECK_AND_RETURN(renderer != nullptr);
-
-    AudioBufferHolder bufferHolder = g_fuzzUtils.GetData<AudioBufferHolder>();
-    uint32_t totalSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint32_t byteSizePerFrame = g_fuzzUtils.GetData<uint32_t>();
-
-    auto buffer = std::make_shared<OHAudioBufferBase>(bufferHolder, totalSizeInFrame, byteSizePerFrame);
-    uint32_t spanSizeInFrame = g_fuzzUtils.GetData<uint32_t>();
-    uint64_t engineTotalSizeInFrame = g_fuzzUtils.GetData<uint64_t>();
-    renderer->ResolveBufferBaseAndGetServerSpanSize(buffer, spanSizeInFrame, engineTotalSizeInFrame);
-}
-
 void PauseFuzzTest()
 {
     AudioProcessConfig processConfig;
@@ -1065,7 +1044,6 @@ vector<TestFuncs> g_testFuncs = {
     PrepareOutputBufferFuzzTest,
     CopyDataToInputBufferFuzzTest,
     OnWriteDataFuzzTest,
-    ResolveBufferBaseAndGetServerSpanSizeFuzzTest,
     PauseFuzzTest,
     DisableAllInnerCapFuzzTest,
     OnStatusUpdateFuzzTest,

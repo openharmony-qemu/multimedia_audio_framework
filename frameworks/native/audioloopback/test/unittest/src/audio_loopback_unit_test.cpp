@@ -73,7 +73,7 @@ void AudioLoopbackUnitTest::TearDown(void) {}
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_001, TestSize.Level0)
 {
-#ifdef TEMP_DISABLED
+#ifdef TEMP_DISABLE
     auto audioLoopback = AudioLoopback::CreateAudioLoopback(LOOPBACK_HARDWARE, AppInfo());
     EXPECT_NE(audioLoopback, nullptr);
 #endif
@@ -90,7 +90,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_002, TestSize
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_003, TestSize.Level1)
 {
-#ifdef TEMP_DISABLED
+#ifdef TEMP_DISABLE
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
@@ -122,7 +122,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_005, TestSize
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize.Level1)
 {
-#ifdef TEMP_DISABLED
+#ifdef TEMP_DISABLE
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->isRendererUsb_ = true;
     audioLoopback->isCapturerUsb_ = true;
@@ -140,7 +140,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_006, TestSize
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_007, TestSize.Level1)
 {
-#ifdef TEMP_DISABLED
+#ifdef TEMP_DISABLE
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);
@@ -153,7 +153,7 @@ HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_007, TestSize
 
 HWTEST_F(AudioLoopbackUnitTest, Audio_Loopback_CreateAudioLoopback_008, TestSize.Level1)
 {
-#ifdef TEMP_DISABLED
+#ifdef TEMP_DISABLE
     auto audioLoopback = std::make_shared<AudioLoopbackPrivate>(LOOPBACK_HARDWARE, AppInfo());
     audioLoopback->CreateAudioLoopback();
     EXPECT_EQ(audioLoopback->capturerState_, CAPTURER_RUNNING);

@@ -17,6 +17,7 @@
 #endif
 #include <cstring>
 #include "audio_collaborative_service.h"
+#include "media_monitor_manager.h"
 
 namespace OHOS {
 namespace AudioStandard {
@@ -51,6 +52,8 @@ void AudioCollaborativeService::Init(const std::vector<EffectChain> &effectChain
             isCollaborativePlaybackSupported_ = true;
         }
     }
+    RecoverCollaborativeState();
+    UpdateCollaborativeStateReal();
 }
 
 bool AudioCollaborativeService::IsCollaborativePlaybackSupported()
@@ -68,19 +71,20 @@ void AudioCollaborativeService::UpdateCurrentDevice(const AudioDeviceDescriptor 
         AUDIO_INFO_LOG("Update current device macAddress %{public}s for AudioCollaborativeSerivce",
             GetEncryptAddr(curDeviceAddress_).c_str());
     }
-    // current device is not A2DP but already in map. May change from A2DP to SCO
-    // remember enable state for the address temporarily in memory map
+    // current device is not A2DP but already in map and opened. May change from A2DP to SCO
+    // collaborative closed when SCO but reserved, will recover to opened later
     if ((selectedAudioDevice.deviceType_ != DEVICE_TYPE_BLUETOOTH_A2DP) &&
-        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end()) {
-        addressToCollaborativeMemoryMap_[curDeviceAddress_] = addressToCollaborativeEnabledMap_[curDeviceAddress_];
-        addressToCollaborativeEnabledMap_.erase(curDeviceAddress_);
+        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end() &&
+        addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED) {
+        addressToCollaborativeEnabledMap_[curDeviceAddress_] = COLLABORATIVE_RESERVED;
+        WriteCollaborativeStateSysEvents(curDeviceAddress_, addressToCollaborativeEnabledMap_[curDeviceAddress_]);
     }
-    // current device is A2DP but not in map, may be remembered in memory map, put it back to enable map
+    // current device is A2DP and is reserved state, which comes back from other type like SCO, should be opened
     if ((selectedAudioDevice.deviceType_ == DEVICE_TYPE_BLUETOOTH_A2DP) &&
-        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) == addressToCollaborativeEnabledMap_.end() &&
-        addressToCollaborativeMemoryMap_.find(curDeviceAddress_) != addressToCollaborativeMemoryMap_.end()) {
-        addressToCollaborativeEnabledMap_[curDeviceAddress_] = addressToCollaborativeMemoryMap_[curDeviceAddress_];
-        addressToCollaborativeMemoryMap_.erase(curDeviceAddress_);
+        addressToCollaborativeEnabledMap_.find(curDeviceAddress_) != addressToCollaborativeEnabledMap_.end() &&
+        addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_RESERVED) {
+        addressToCollaborativeEnabledMap_[curDeviceAddress_] = COLLABORATIVE_OPENED;
+        WriteCollaborativeStateSysEvents(curDeviceAddress_, addressToCollaborativeEnabledMap_[curDeviceAddress_]);
     }
     UpdateCollaborativeStateReal();
 }
@@ -92,7 +96,8 @@ int32_t AudioCollaborativeService::SetCollaborativePlaybackEnabledForDevice(
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     std::string deviceAddress = selectedAudioDevice->macAddress_;
     AUDIO_INFO_LOG("Device Collaborative Enabled should be set to: %{public}d", enabled);
-    addressToCollaborativeEnabledMap_[deviceAddress] = enabled;
+    addressToCollaborativeEnabledMap_[deviceAddress] = enabled ? COLLABORATIVE_OPENED : COLLABORATIVE_CLOSED;
+    WriteCollaborativeStateSysEvents(deviceAddress, addressToCollaborativeEnabledMap_[deviceAddress]);
     return UpdateCollaborativeStateReal();
 }
 
@@ -106,7 +111,7 @@ bool AudioCollaborativeService::IsCollaborativePlaybackEnabledForDevice(
         AUDIO_INFO_LOG("selected device address %{public}s is in addressToCollaborativeEnabledMap_, state %{public}d",
             GetEncryptAddr(selectedAudioDevice->macAddress_).c_str(),
             addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_]);
-        return addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_];
+        return addressToCollaborativeEnabledMap_[selectedAudioDevice->macAddress_] == COLLABORATIVE_OPENED;
     }
     AUDIO_INFO_LOG("address %{public}s is not in map", selectedAudioDevice->macAddress_.c_str());
     return false;
@@ -127,8 +132,9 @@ int32_t AudioCollaborativeService::UpdateCollaborativeStateReal()
         }
         return SUCCESS;
     }
-    if (addressToCollaborativeEnabledMap_[curDeviceAddress_] != isCollaborativeStateEnabled_) {
-        isCollaborativeStateEnabled_ = addressToCollaborativeEnabledMap_[curDeviceAddress_];
+    bool isCurrentCollaborativeEnabled = (addressToCollaborativeEnabledMap_[curDeviceAddress_] == COLLABORATIVE_OPENED);
+    if (isCollaborativeStateEnabled_ != isCurrentCollaborativeEnabled) {
+        isCollaborativeStateEnabled_ = isCurrentCollaborativeEnabled;
         AUDIO_INFO_LOG("current collaborative enabled state changed to %{public}d for Mac address %{public}s",
             isCollaborativeStateEnabled_, GetEncryptAddr(curDeviceAddress_).c_str());
         return audioPolicyManager_.UpdateCollaborativeState(isCollaborativeStateEnabled_); // send to HpaeManager
@@ -142,6 +148,25 @@ bool AudioCollaborativeService::GetRealCollaborativeState()
     AUDIO_INFO_LOG("GetRealCollaborativeState Entered!");
     std::lock_guard<std::mutex> lock(collaborativeServiceMutex_);
     return isCollaborativeStateEnabled_;
+}
+
+void AudioCollaborativeService::WriteCollaborativeStateSysEvents(std::string macAddress_, CollaborativeState state)
+{
+    std::shared_ptr<Media::MediaMonitor::EventBean> bean = std::make_shared<Media::MediaMonitor::EventBean>(
+        Media::MediaMonitor::AUDIO, Media::MediaMonitor::SET_DEVICE_COLLABORATIVE_STATE,
+        Media::MediaMonitor::BEHAVIOR_EVENT);
+    bean->Add("ADDRESS", macAddress_);
+    bean->Add("COLLABORATIVE_STATE", static_cast<int32_t>(state));
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
+}
+
+void AudioCollaborativeService::RecoverCollaborativeState()
+{
+    std::map<std::string, uint32_t> storedCollaborativeState;
+    Media::MediaMonitor::MediaMonitorManager::GetInstance().GetCollaborativeDeviceState(storedCollaborativeState);
+    for (auto p: storedCollaborativeState) {
+        addressToCollaborativeEnabledMap_[p.first] = static_cast<CollaborativeState>(p.second);
+    }
 }
 
 AudioCollaborativeService::~AudioCollaborativeService()

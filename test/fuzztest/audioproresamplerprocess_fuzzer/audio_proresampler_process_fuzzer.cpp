@@ -29,25 +29,30 @@ namespace OHOS {
 namespace AudioStandard {
 
 FuzzUtils &g_fuzzUtils = FuzzUtils::GetInstance();
+const int32_t NUM_1 = 1;
+const int32_t NUM_2 = 2;
+const int32_t NUM_3 = 3;
+const int32_t NUM_5 = 5;
+const int32_t NUM_11 = 11;
 
 void GetMultiplyFilterFunFuzzTest()
 {
     int32_t err = RESAMPLER_ERR_SUCCESS;
 
-    uint32_t k = g_fuzzUtils.GetData<uint32_t>() % 5 + 1;
+    uint32_t k = g_fuzzUtils.GetData<uint32_t>() % NUM_5 + NUM_1;
     uint32_t interpolateFactor = TWO_STEPS * k;
 
-    uint32_t decimateFactor = interpolateFactor + 1; 
+    uint32_t decimateFactor = interpolateFactor + NUM_1;
     if (decimateFactor > MAX_RATIO_INTEGRAL_METHOD) {
         decimateFactor = MAX_RATIO_INTEGRAL_METHOD;
-        interpolateFactor = decimateFactor - 1;
+        interpolateFactor = decimateFactor - NUM_1;
         interpolateFactor = (interpolateFactor / TWO_STEPS) * TWO_STEPS;
         if (interpolateFactor == 0) {
             return;
         }
     }
-    uint32_t numChannels = (g_fuzzUtils.GetData<uint32_t>() % 2) + 1;
-    int32_t quality = g_fuzzUtils.GetData<int32_t>() % 11;
+    uint32_t numChannels = (g_fuzzUtils.GetData<uint32_t>() % NUM_2) + NUM_1;
+    int32_t quality = g_fuzzUtils.GetData<int32_t>() % NUM_11;
     SingleStagePolyphaseResamplerInit(numChannels, decimateFactor, interpolateFactor, quality, &err);
 }
 
@@ -55,10 +60,10 @@ void SetResamplerFunctionCoarseFuzzTest()
 {
     int32_t err = RESAMPLER_ERR_SUCCESS;
 
-    uint32_t interpolateFactor = 1;
+    uint32_t interpolateFactor = NUM_1;
     uint32_t decimateFactor = THREE_STEPS * interpolateFactor;
-    uint32_t numChannels = g_fuzzUtils.GetData<uint32_t>() % 3 + 1;
-    int32_t quality = g_fuzzUtils.GetData<int32_t>() % 11;
+    uint32_t numChannels = g_fuzzUtils.GetData<uint32_t>() % NUM_3 + NUM_1;
+    int32_t quality = g_fuzzUtils.GetData<int32_t>() % NUM_11;
 
     SingleStagePolyphaseResamplerInit(numChannels, decimateFactor, interpolateFactor, quality, &err);
 }

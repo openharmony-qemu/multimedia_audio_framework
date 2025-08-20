@@ -33,6 +33,7 @@
 #include "istandard_audio_service.h"
 #include "session_manager_lite.h"
 #include "audio_zone_service.h"
+#include "audio_server_proxy.h"
 #include "standalone_mode_manager.h"
 
 namespace OHOS {
@@ -952,15 +953,18 @@ int32_t AudioInterruptService::ActivateAudioInterruptInternal(const int32_t zone
 void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterrupt &audioInterrupt)
 {
     // The log printed by this function is critical, so please do not modify it.
+    std::string bundleName = (AudioBundleManager::GetBundleInfoFromUid(audioInterrupt.uid)).name;
+
     AudioFocusType audioFocusType;
     audioFocusType.streamType = AudioStreamType::STREAM_MUSIC;
-    std::pair<AudioFocusType, AudioFocusType> focusPair =
-        std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
+    std::pair<AudioFocusType, AudioFocusType> focusPair = std::make_pair(audioFocusType, audioInterrupt.audioFocusType);
     CHECK_AND_RETURN_LOG(focusCfgMap_.find(focusPair) != focusCfgMap_.end(), "no focus cfg");
     AudioFocusEntry focusEntry = focusCfgMap_[focusPair];
     if (focusEntry.actionOn != CURRENT) {
         AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
-            "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+            "actionOn: %{public}d. Caller info: pid [%{public}d], uid [%{public}d], bundleName [%{public}s].",
+            focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn,
+            audioInterrupt.pid, audioInterrupt.uid, bundleName.c_str());
         return;
     }
     // Update focus strategy by audio session.
@@ -976,23 +980,18 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
     switch (concurrencyMode) {
         case AudioConcurrencyMode::MIX_WITH_OTHERS:
         case AudioConcurrencyMode::SILENT:
-            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
-                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
+            if (focusEntry.hintType == INTERRUPT_HINT_DUCK || focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
                 focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_NONE;
             }
             break;
-
         case AudioConcurrencyMode::DUCK_OTHERS:
-            if (focusEntry.hintType == INTERRUPT_HINT_DUCK ||
-                focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
-                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            if (focusEntry.hintType == INTERRUPT_HINT_PAUSE || focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_DUCK;
             }
             break;
         case AudioConcurrencyMode::PAUSE_OTHERS:
-            if (focusEntry.hintType == INTERRUPT_HINT_PAUSE ||
-                focusEntry.hintType == INTERRUPT_HINT_STOP) {
+            if (focusEntry.hintType == INTERRUPT_HINT_STOP) {
                 focusEntry.hintType = INTERRUPT_HINT_PAUSE;
             }
             break;
@@ -1000,7 +999,9 @@ void AudioInterruptService::PrintLogsOfFocusStrategyBaseMusic(const AudioInterru
             break;
     }
     AUDIO_WARNING_LOG("The audio focus strategy based on music: forceType: %{public}d, hintType: %{public}d, " \
-        "actionOn: %{public}d", focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn);
+        "actionOn: %{public}d. Caller info: pid [%{public}d], uid [%{public}d], bundleName [%{public}s].",
+        focusEntry.forceType, focusEntry.hintType, focusEntry.actionOn,
+        audioInterrupt.pid, audioInterrupt.uid, bundleName.c_str());
     return;
 }
 
@@ -2501,6 +2502,43 @@ void AudioInterruptService::SendInterruptEvent(AudioFocuState oldState, AudioFoc
     iterActive->second = newState;
 }
 
+bool AudioInterruptService::ShouldAudioServerProcessInruptEvent(const InterruptEventInternal &interruptEvent,
+    const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_RET_LOG(!audioInterrupt.audioFocusType.isPlay, false,
+        "audioServer need not process playback interruptEvent");
+ 
+#ifdef FEATURE_APPGALLERY
+    auto it = interruptClients_.find(audioInterrupt.streamId);
+    if (it != interruptClients_.end() && it->second != nullptr) {
+        uint32_t uid = interruptClients_[audioInterrupt.streamId]->GetCallingUid();
+        ClientType clientType = ClientTypeManager::GetInstance()->GetClientTypeByUid(uid);
+        CHECK_AND_RETURN_RET_LOG(clientType != CLIENT_TYPE_GAME, false, "clientType is Game");
+    }
+#endif
+    auto hintType = interruptEvent.hintType;
+    return hintType == INTERRUPT_HINT_PAUSE || hintType == INTERRUPT_HINT_RESUME;
+}
+ 
+void AudioInterruptService::SendInterruptEventToAudioServer(
+    const InterruptEventInternal &interruptEvent, const AudioInterrupt &audioInterrupt)
+{
+    CHECK_AND_RETURN_LOG(ShouldAudioServerProcessInruptEvent(interruptEvent, audioInterrupt),
+        "need not send audioInterrupt to audioServer");
+    if (audioInterrupt.isAudioSessionInterrupt) {
+        AUDIO_INFO_LOG("is audioSession interrupt");
+        CHECK_AND_RETURN_LOG(sessionService_ != nullptr, "sessionService_ is nullptr");
+        const auto &audioInterrupts = sessionService_->GetStreams(audioInterrupt.pid);
+        for (auto &it : audioInterrupts) {
+            AudioServerProxy::GetInstance().SendInterruptEventToAudioServerProxy(
+                interruptEvent, it.streamId);
+        }
+    } else {
+        AudioServerProxy::GetInstance().SendInterruptEventToAudioServerProxy(
+            interruptEvent, audioInterrupt.streamId);
+    }
+}
+
 void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInternal &interruptEvent,
     const uint32_t &streamId, const AudioInterrupt &audioInterrupt)
 {
@@ -2522,7 +2560,7 @@ void AudioInterruptService::SendInterruptEventCallback(const InterruptEventInter
         AUDIO_ERR_LOG("AudioPolicyServerHandler is nullptr");
         return;
     }
-
+    SendInterruptEventToAudioServer(interruptEvent, audioInterrupt);
     if (audioInterrupt.isAudioSessionInterrupt) {
         SendAudioSessionInterruptEventCallback(interruptEvent, audioInterrupt);
     } else {
