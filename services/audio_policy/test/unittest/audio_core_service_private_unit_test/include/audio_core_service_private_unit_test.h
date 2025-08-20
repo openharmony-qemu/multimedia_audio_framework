@@ -25,9 +25,9 @@ namespace AudioStandard {
 class AudioCoreServicePrivateTest : public testing::Test {
 public:
     // SetUpTestCase: Called before all test cases
-    static void SetUpTestCase(void);
+    static void SetUpTestCase(void) {};
     // TearDownTestCase: Called after all test case
-    static void TearDownTestCase(void);
+    static void TearDownTestCase(void) {};
     // SetUp: Called before each test cases
     void SetUp(void);
     // TearDown: Called after each test cases

@@ -172,7 +172,7 @@ void AudioStreamDescriptor::SetBunduleName(std::string &bundleName)
 
 void AudioStreamDescriptor::Dump(std::string &dumpString)
 {
-    AppendFormat(dumpString, "  Stream %d:\n", sessionId_);
+    AppendFormat(dumpString, "  Stream %u:\n", sessionId_);
 
     DumpCommonAttrs(dumpString);
 

@@ -14,6 +14,7 @@
  */
 
 #include "audio_core_service_private_unit_test.h"
+
 using namespace testing::ext;
 
 namespace OHOS {
@@ -3070,7 +3071,7 @@ HWTEST(AudioCoreServicePrivateTest, ActivateOutputDevice_001, TestSize.Level1)
  * @tc.number : CheckAndUpdateOffloadEnableForStream_001
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload new case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3084,7 +3085,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_001, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_002
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3098,7 +3099,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_002, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_003
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move in case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, TestSize.Level4)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, TestSize.Level4)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3112,7 +3113,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_003, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_004
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3127,7 +3128,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_004, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_005
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3142,7 +3143,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_005, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_006
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
@@ -3157,7 +3158,7 @@ HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_006, Te
  * @tc.number : CheckAndUpdateOffloadEnableForStream_007
  * @tc.desc   : Test CheckAndUpdateOffloadEnableForStream() for offload move out case
  */
-HWTEST(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, TestSize.Level3)
+HWTEST_F(AudioCoreServicePrivateTest, CheckAndUpdateOffloadEnableForStream_007, TestSize.Level3)
 {
     auto stream = std::make_shared<AudioStreamDescriptor>();
     stream->sessionId_ = TEST_STREAM_1_SESSION_ID;
