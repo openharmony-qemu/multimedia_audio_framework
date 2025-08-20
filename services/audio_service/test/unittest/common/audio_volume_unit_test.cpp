@@ -1740,18 +1740,5 @@ HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level4)
     float y = 0.0f;
     EXPECT_TRUE(AudioVolume::GetInstance()->IsSameVolume(x, y));;
 }
-
-/**
- * @tc.name  : Test IsSameVolume API
- * @tc.type  : FUNC
- * @tc.number: IsSameVolume_002
- * @tc.desc  : Test IsSameVolume interface.
- */
-HWTEST_F(AudioVolumeUnitTest, IsSameVolume_002, TestSize.Level4)
-{
-    float x = 0.0f;
-    float y = 0.0f;
-    EXPECT_TRUE(AudioVolume::GetInstance()->IsSameVolume(x, y));;
-}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS
