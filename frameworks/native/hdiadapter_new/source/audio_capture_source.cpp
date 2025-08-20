@@ -609,7 +609,7 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
 uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
 {
     AudioChannel channel = AudioChannel::CHANNEL_UNKNOW;
-    switch (layout) {
+    switch (channelLayout) {
         case AudioChannelLayout::CH_LAYOUT_MONO:
             channel = AudioChannel::MONO;
             break;
