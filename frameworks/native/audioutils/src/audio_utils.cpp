@@ -714,7 +714,8 @@ bool SwitchStreamUtil::UpdateSwitchStreamRecord(SwitchStreamInfo &info, SwitchSt
             break;
     }
     iter = g_switchStreamRecordMap.find(info);
-    if (iter != g_switchStreamRecordMap.end() && iter->first.nextState == info.nextState) {
+    CHECK_AND_RETURN_RET_LOG(iter != g_switchStreamRecordMap.end(), false, "SwitchStream has been removed!");
+    if (iter->first.nextState == info.nextState) {
         g_switchStreamRecordMap[info] = SWITCH_STATE_FINISHED;
         g_switchStreamRecordMap.erase(info);
         AUDIO_INFO_LOG("SwitchStream will finish!Remove Record for stream:%{public}u uid:%{public}d ",
