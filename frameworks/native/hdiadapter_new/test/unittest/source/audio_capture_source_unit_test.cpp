@@ -407,16 +407,16 @@ HWTEST_F(AudioCaptureSourceUnitTest, UsbSourceUnitTest_004, TestSize.Level1)
 }
 
 /**
-* @tc.name   : Test GetChannelCountByChannelLayout API
-* @tc.number : GetChannelCountByChannelLayout_001
-* @tc.desc   : Test GetChannelCountByChannelLayout API
-*/
+ * @tc.name   : Test GetChannelCountByChannelLayout API
+ * @tc.number : GetChannelCountByChannelLayout_001
+ * @tc.desc   : Test GetChannelCountByChannelLayout API
+ */
 HWTEST_F(AudioCaptureSourceUnitTest, GetChannelCountByChannelLayout_001, TestSize.Level1)
 {
     uint64_t channelCount = 0;
     
     channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    EXPECT_EQ(channelCount, AudioChannel::STEREO);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_UNKNOWN);
 
     channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_MONO);
     EXPECT_EQ(channelCount, AudioChannel::MONO);

@@ -650,7 +650,7 @@ uint64_t AudioCaptureSource::GetChannelLayoutByChannelCount(uint32_t channelCoun
 
 uint64_t AudioCaptureSource::GetChannelCountByChannelLayout(uint64_t channelLayout)
 {
-    AudioChannel channel = AudioChannel::STEREO;
+    AudioChannel channel = AudioChannel::CHANNEL_UNKNOWN;
     AudioChannelLayout layout = static_cast<AudioChannelLayout>(channelLayout);
     if (MAP_LAYOUT_TO_CHANNEL.find(layout) != MAP_LAYOUT_TO_CHANNEL.end()) {
         return static_cast<uint64_t>(MAP_LAYOUT_TO_CHANNEL.at(layout));
