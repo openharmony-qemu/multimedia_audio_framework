@@ -340,12 +340,6 @@ int32_t AudioCoreService::EventEntry::SetCallDeviceActive(
     return SUCCESS;
 }
 
-std::vector<shared_ptr<AudioDeviceDescriptor>> AudioCoreService::EventEntry::GetAvailableDevices(AudioDeviceUsage usage)
-{
-    std::shared_lock<std::shared_mutex> lock(eventMutex_);
-    return coreService_->GetAvailableDevices(usage);
-}
-
 int32_t AudioCoreService::EventEntry::RegisterTracker(AudioMode &mode, AudioStreamChangeInfo &streamChangeInfo,
     const sptr<IRemoteObject> &object, const int32_t apiVersion)
 {
