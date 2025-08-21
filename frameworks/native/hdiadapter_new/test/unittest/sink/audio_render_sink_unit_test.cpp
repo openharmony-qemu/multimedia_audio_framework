@@ -315,6 +315,23 @@ HWTEST_F(AudioRenderSinkUnitTest, SetDmDeviceType_001, TestSize.Level1)
 }
 
 /**
+ * @tc.name   : Test RegisterCurrentDeviceType API
+ * @tc.number : RegisterCurrentDeviceType_001
+ * @tc.desc   : Test RegisterCurrentDeviceType
+ */
+HWTEST_F(AudioRenderSinkUnitTest, RegisterCurrentDeviceType_001, TestSize.Level1)
+{
+    InitPrimarySink();
+    EXPECT_TRUE(primarySink_ && primarySink_->IsInited());
+    std::function<void(bool)> HandleDeviceCallback;
+    HandleDeviceCallback(true);
+    primarySink_->RegisterCurrentDeviceCallback(HandleDeviceCallback);
+    HandleDeviceCallback(false);
+    primarySink_->RegisterCurrentDeviceCallback(HandleDeviceCallback);
+    DeInitPrimarySink();
+}
+
+/**
  * @tc.name   : Test UsbSink API
  * @tc.number : UsbSinkUnitTest_001
  * @tc.desc   : Test usb sink create

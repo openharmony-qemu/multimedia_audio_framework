@@ -52,6 +52,18 @@ HpaeOutputCluster::~HpaeOutputCluster()
 #endif
 }
 
+void HpaeOutputCluster::RegisterCurrentDeviceCallback()
+{
+    std::function<void(bool)> callback = [=](bool isA2dp) {
+        if (isA2dp) {
+            timeoutThdFramesForDevice_ = TIME_OUT_STOP_THD_DEFAULT_FRAME;
+        } else {
+            timeoutThdFramesForDevice_ = timeoutThdFrames_;
+        }
+    };
+    hpaeSinkOutputNode_->RegisterCurrentDeviceCallback(callback);
+}
+
 void HpaeOutputCluster::DoProcess()
 {
     Trace trace("HpaeOutputCluster::DoProcess");
@@ -61,7 +73,7 @@ void HpaeOutputCluster::DoProcess()
     } else {
         timeoutStopCount_ = 0;
     }
-    if (timeoutStopCount_ > timeoutThdFrames_) {
+    if (timeoutStopCount_ > timeoutThdFramesForDevice_) {
         int32_t ret = hpaeSinkOutputNode_->RenderSinkStop();
         timeoutStopCount_ = 0;
         AUDIO_INFO_LOG("HpaeOutputCluster timeout RenderSinkStop ret :%{public}d", ret);
@@ -145,6 +157,7 @@ int32_t HpaeOutputCluster::GetInstance(const std::string &deviceClass, const std
 
 int32_t HpaeOutputCluster::Init(IAudioSinkAttr &attr)
 {
+    RegisterCurrentDeviceCallback();
     return hpaeSinkOutputNode_->RenderSinkInit(attr);
 }
 
@@ -203,6 +216,7 @@ int32_t HpaeOutputCluster::SetTimeoutStopThd(uint32_t timeoutThdMs)
     if (frameLenMs_ != 0) {
         timeoutThdFrames_ = timeoutThdMs / frameLenMs_;
     }
+    timeoutThdFramesForDevice_ = timeoutThdFrames_;
     AUDIO_INFO_LOG(
         "SetTimeoutStopThd: timeoutThdFrames_:%{public}u, timeoutThdMs :%{public}u", timeoutThdFrames_, timeoutThdMs);
     return SUCCESS;

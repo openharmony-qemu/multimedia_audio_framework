@@ -143,6 +143,7 @@ public:
 
     AudioPreloadType preloadAttr_ = PRELOAD_TYPE_UNKNOWN;
     uint32_t supportFlags_ = AUDIO_FLAG_NONE;
+    uint32_t suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t audioUsage_ = AUDIO_USAGE_NORMAL;
     bool supportEncodingEac3_ = false;
 

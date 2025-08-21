@@ -33,7 +33,6 @@ namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
 namespace {
-constexpr uint32_t DEFAULT_SUSPEND_TIME_IN_MS = 3000;  // 3s to stop hdi
 static inline const std::unordered_set<SourceType> INNER_SOURCE_TYPE_SET = {
     SOURCE_TYPE_PLAYBACK_CAPTURE, SOURCE_TYPE_REMOTE_CAST};
 }  // namespace
@@ -238,7 +237,6 @@ int32_t HpaeManager::ReloadRenderManager(const AudioModuleInfo &audioModuleInfo,
 {
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkNameSinkIdMap_[audioModuleInfo.name];
-    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);
@@ -262,7 +260,6 @@ int32_t HpaeManager::CreateRendererManager(const AudioModuleInfo &audioModuleInf
     sinkSourceIndex_.fetch_add(1);
     HpaeSinkInfo sinkInfo;
     sinkInfo.sinkId = sinkSourceIndex;
-    sinkInfo.suspendTime = DEFAULT_SUSPEND_TIME_IN_MS;
     int32_t ret = TransModuleInfoToHpaeSinkInfo(audioModuleInfo, sinkInfo);
     if (ret != SUCCESS) {
         OnCallbackOpenOrReloadFailed(isReload);

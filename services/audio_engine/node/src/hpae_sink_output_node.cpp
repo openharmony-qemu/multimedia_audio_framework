@@ -123,6 +123,13 @@ const char *HpaeSinkOutputNode::GetRenderFrameData(void)
     return renderFrameData_.data();
 }
 
+void HpaeSinkOutputNode::RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback)
+{
+    CHECK_AND_RETURN_LOG(audioRendererSink_ != nullptr, "audioRendererSink_ is nullptr");
+    CHECK_AND_RETURN_LOG(callback != nullptr, "callback is nullptr");
+    audioRendererSink_->RegisterCurrentDeviceCallback(callback);
+}
+
 bool HpaeSinkOutputNode::Reset()
 {
     const auto preOutputMap = inputStream_.GetPreOutputMap();
