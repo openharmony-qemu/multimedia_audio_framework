@@ -87,7 +87,7 @@ public:
     void SetDmDeviceType(uint16_t dmDeviceType, DeviceType deviceType) override;
 
     void RegisterCurrentDeviceCallback(const std::function<void(bool)> &callback) override;
-    void HandleDeviceCallback(const bool value);
+    void HandleDeviceCallback(const bool state);
 
 private:
     static uint32_t PcmFormatToBit(AudioSampleFormat format);

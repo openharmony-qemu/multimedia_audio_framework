@@ -208,13 +208,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNode, TestSize.Level0)
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
-    std::function<void(bool)> callback = [](bool state) {
-        if (state) {
-            EXPECT_TRUE(state);
-        } else {
-            EXPECT_FALSE(state);
-        }
-    };
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
@@ -262,13 +256,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutConnectNodeRemote, TestSize.Leve
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
-    std::function<void(bool)> callback = [](bool state) {
-        if (state) {
-            EXPECT_TRUE(state);
-        } else {
-            EXPECT_FALSE(state);
-        }
-    };
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
@@ -315,13 +303,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandlePaPower, TestSize.Level0)
     hpaeSinkOutputNode->isOpenPaPower_ = false;
     hpaeSinkOutputNode->silenceDataUs_ = 500000000; // 500000000 us, long silence time
     hpaeSinkOutputNode->HandlePaPower(outputData);
-    std::function<void(bool)> callback = [](bool state) {
-        if (state) {
-            EXPECT_TRUE(state);
-        } else {
-            EXPECT_FALSE(state);
-        }
-    };
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
@@ -387,13 +369,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testDoProcessAfterResetPcmDumper, TestSize.Leve
     hpaeSinkOutputNode->RenderSinkInit(attr);
     hpaeSinkOutputNode->RenderSinkStart();
     hpaeSinkOutputNode->DoProcess();
-    std::function<void(bool)> callback = [](bool state) {
-        if (state) {
-            EXPECT_TRUE(state);
-        } else {
-            EXPECT_FALSE(state);
-        }
-    };
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }
@@ -442,13 +418,7 @@ HWTEST_F(HpaeSinkOutputNodeTest, testHpaeSinkOutHandleHapticParam, TestSize.Leve
     EXPECT_EQ(hpaeSinkInputNode.use_count(), usedCount);
     hpaeSinkOutputNode->DisConnect(hpaeSinkInputNode);
     EXPECT_EQ(hpaeSinkInputNode.use_count(), 1);
-    std::function<void(bool)> callback = [](bool state) {
-        if (state) {
-            EXPECT_TRUE(state);
-        } else {
-            EXPECT_FALSE(state);
-        }
-    };
+    std::function<void(bool)> callback = [](bool state) { EXPECT_FALSE(state); };
     hpaeSinkOutputNode->RegisterCurrentDeviceCallback(callback);
     hpaeSinkOutputNode->RenderSinkDeInit();
 }

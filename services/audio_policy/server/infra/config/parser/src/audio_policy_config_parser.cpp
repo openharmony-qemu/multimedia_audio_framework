@@ -300,6 +300,8 @@ void AudioPolicyConfigParser::ParseAttributeByName(AttributeInfo &attributeInfo,
         auto [ptr, ec] = std::from_chars(value.data(), value.data() + value.size(), timeout);
         if (ec == std::errc{} && ptr == value.data() + value.size()) {
             pipeInfo->suspendIdleTimeout_ = static_cast<uint32_t>(timeout);
+        } else {
+            pipeInfo->suspendIdleTimeout_ = DEFAULT_SUSPEND_TIME_IN_MS;
         }
     }
 }
