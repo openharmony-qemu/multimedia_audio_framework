@@ -139,6 +139,7 @@ interface IStandardAudioService {
     [oneway] void ImproveAudioWorkgroupPrio([in] int pid, [in] Map<int, boolean> threads);
     void RestoreAudioWorkgroupPrio([in] int pid, [in] Map<int, int> threads);
     void SetRenderWhitelist([in] List<String> list);
+    void GetVolumeBySessionId([in] unsigned int sessionId, [out] float volume);
     // WARNING: above functions correspond with AudioServerInterfaceCode
 
     // undefined in AudioServerInterfaceCode

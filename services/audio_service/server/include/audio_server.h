@@ -269,6 +269,7 @@ public:
     int32_t SetBtHdiInvalidState() override;
     int32_t SendInterruptEventToAudioServer(uint32_t sessionId,
         const InterruptEventInternal &interruptEvent) override;
+    int32_t GetVolumeBySessionId(uint32_t sessionId, float &volume) override;
 protected:
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
 

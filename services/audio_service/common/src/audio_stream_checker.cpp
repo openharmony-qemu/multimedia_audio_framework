@@ -424,5 +424,11 @@ void AudioStreamChecker::SetVolume(float volume)
         streamConfig_.originalSessionId, curVolume_, volume);
     curVolume_ = volume;
 }
+
+float AudioStreamChecker::GetVolume()
+{
+    std::lock_guard<std::mutex> lock(volumeLock_);
+    return curVolume_;
+}
 }
 }

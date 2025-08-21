@@ -2351,6 +2351,13 @@ int32_t AudioServer::SetRenderWhitelist(const std::vector<std::string> &list)
     return SUCCESS;
 }
 
+int32_t AudioServer::GetVolumeBySessionId(uint32_t sessionId, float &volume)
+{
+    bool result = PermissionUtil::VerifySystemPermission();
+    CHECK_AND_RETURN_RET_LOG(result, ERR_SYSTEM_PERMISSION_DENIED, "No system permission");
+    return AudioStreamMonitor::GetInstance().GetVolumeBySessionId(sessionId, volume);
+}
+
 bool AudioServer::CheckVoiceCallRecorderPermission(Security::AccessToken::AccessTokenID tokenId)
 {
     bool hasRecordVoiceCallPermission = VerifyClientPermission(RECORD_VOICE_CALL_PERMISSION, tokenId);

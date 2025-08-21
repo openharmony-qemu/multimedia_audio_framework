@@ -196,5 +196,16 @@ void AudioStreamMonitor::UpdateMonitorVolume(const uint32_t &sessionId, const fl
         iter->second->SetVolume(volume);
     }
 }
+
+int32_t AudioStreamMonitor::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
+{
+    std::lock_guard<std::mutex> lock(regStatusMutex_);
+    auto iter = audioStreamCheckers_.find(sessionId);
+    if (iter != audioStreamCheckers_.end()) {
+        volume = iter->second->GetVolume();
+        return SUCCESS;
+    }
+    return ERR_UNKNOWN;
+}
 }
 }

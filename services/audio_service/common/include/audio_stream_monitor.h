@@ -49,6 +49,7 @@ public:
     void OnCallbackAppDied(const int32_t pid);
     void NotifyAppStateChange(const int32_t uid, bool isBackground);
     void UpdateMonitorVolume(const uint32_t &sessionId, const float &volume);
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
 private:
     AudioStreamMonitor() {}
     ~AudioStreamMonitor() {}

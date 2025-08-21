@@ -63,6 +63,7 @@ public:
     void RecordStandbyTime(bool isStart);
     void UpdateAppState(bool isBackground);
     void SetVolume(float volume);
+    float GetVolume();
 private:
     bool IsMonitorMuteFrame(const CheckerParam &para);
     bool IsMonitorNoDataFrame(const CheckerParam &para);

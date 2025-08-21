@@ -2598,5 +2598,16 @@ std::shared_ptr<AudioSystemManager::WorkgroupPrioRecorder> AudioSystemManager::G
     }
     return nullptr;
 }
+
+int32_t AudioSystemManager::GetVolumeBySessionId(const uint32_t &sessionId, float &volume)
+{
+    const sptr<IStandardAudioService> gasp = GetAudioSystemManagerProxy();
+    CHECK_AND_RETURN_RET_LOG(gasp != nullptr, ERR_INVALID_PARAM, "Audio service unavailable.");
+    std::string identity = IPCSkeleton::ResetCallingIdentity();
+    int32_t ret = gasp->GetVolumeBySessionId(sessionId, volume);
+    IPCSkeleton::SetCallingIdentity(identity);
+    CHECK_AND_RETURN_RET_LOG(ret == SUCCESS, ret, "failed: %{public}d", ret);
+    return ret;
+}
 } // namespace AudioStandard
 } // namespace OHOS
