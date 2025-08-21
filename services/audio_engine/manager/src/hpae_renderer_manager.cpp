@@ -426,6 +426,7 @@ int32_t HpaeRendererManager::DeleteProcessCluster(uint32_t sessionId)
         }
     }
     DeleteProcessClusterInner(sceneType);
+    return SUCCESS;
 }
 
 bool HpaeRendererManager::isSplitProcessorType(HpaeProcessorType sceneType)
