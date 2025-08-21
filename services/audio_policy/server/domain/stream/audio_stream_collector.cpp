@@ -1246,6 +1246,13 @@ bool AudioStreamCollector::IsStreamActive(AudioStreamType volumeType)
         }
         AudioVolumeType rendererVolumeType = GetVolumeTypeFromContentUsage((changeInfo->rendererInfo).contentType,
             (changeInfo->rendererInfo).streamUsage);
+        if (rendererVolumeType == STREAM_VOICE_ASSISTANT) {
+            if (!CheckoutSystemAppUtil::CheckoutSystemApp(changeInfo->clientUID)) {
+                AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
+                    changeInfo->clientUID, changeInfo->sessionId);
+                rendererVolumeType = STREAM_MUSIC;
+            }
+        }
         if (rendererVolumeType == volumeType) {
             // An active stream has been found, return true directly.
             AUDIO_INFO_LOG("matched clientUid: %{public}d id: %{public}d",
