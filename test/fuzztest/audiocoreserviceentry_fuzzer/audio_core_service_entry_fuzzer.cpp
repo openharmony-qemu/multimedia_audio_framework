@@ -377,14 +377,6 @@ void AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest()
     eventEntry->SetCallDeviceActive(deviceType, active, address, uid);
 }
 
-void AudioCoreServiceEventEntryGetAvailableDevicesFuzzTest()
-{
-    auto audioCoreService = std::make_shared<AudioCoreService>();
-    auto eventEntry = std::make_shared<AudioCoreService::EventEntry>(audioCoreService);
-    AudioDeviceUsage usage = MEDIA_OUTPUT_DEVICES;
-    eventEntry->GetAvailableDevices(usage);
-}
-
 void AudioCoreServiceEventEntryRegisterTrackerFuzzTest()
 {
     auto audioCoreService = std::make_shared<AudioCoreService>();
@@ -670,7 +662,6 @@ TestFuncs g_testFuncs[TESTSIZE] = {
     AudioCoreServiceEventEntryGetPreferredInputDeviceDescriptorsFuzzTest,
     AudioCoreServiceEventEntryGetActiveBluetoothDeviceFuzzTest,
     AudioCoreServiceEventEntrySetCallDeviceActiveFuzzTest,
-    AudioCoreServiceEventEntryGetAvailableDevicesFuzzTest,
     AudioCoreServiceEventEntryRegisterTrackerFuzzTest,
     AudioCoreServiceEventEntryUpdateTrackerFuzzTest,
     AudioCoreServiceEventEntryRegisteredTrackerClientDiedFuzzTest,

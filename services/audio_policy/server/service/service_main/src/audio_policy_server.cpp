@@ -3795,7 +3795,7 @@ int32_t AudioPolicyServer::GetAvailableDevices(int32_t usageIn,
             return ERR_INVALID_PARAM;
     }
 
-    descs = eventEntry_->GetAvailableDevices(usage);
+    descs = coreService_->GetAvailableDevices(usage);
 
     if (!hasSystemPermission) {
         for (auto &desc : descs) {
