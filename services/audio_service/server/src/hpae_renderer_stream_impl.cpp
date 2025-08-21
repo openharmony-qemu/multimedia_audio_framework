@@ -43,20 +43,20 @@ static constexpr int32_t MIN_BUFFER_SIZE = 2;
 static constexpr uint64_t FRAME_LEN_10MS = 10;
 static constexpr uint64_t FRAME_LEN_20MS = 20;
 static constexpr uint64_t FRAME_LEN_40MS = 40;
-static constexpr uint64_t FRAME_LEN_100MS = 100;
+static constexpr uint32_t FRAME_LEN_100MS = 100;
 // to judge whether customSampleRate is multiples of 50
-static constexpr uint64_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 static const std::string DEVICE_CLASS_OFFLOAD = "offload";
 static const std::string DEVICE_CLASS_REMOTE_OFFLOAD = "remote_offload";
 static std::shared_ptr<IAudioRenderSink> GetRenderSinkInstance(std::string deviceClass, std::string deviceNetId);
 static inline FadeType GetFadeType(uint64_t expectedPlaybackDurationMs);
 HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig, bool isMoveAble, bool isCallbackMode)
 {
-    processConfig_ = processConfig; 
+    processConfig_ = processConfig;
     if (processConfig.streamInfo.customSampleRate == 0) {
         spanSizeInFrame_ = processConfig.streamInfo.samplingRate == SAMPLE_RATE_11025 ?
             FRAME_LEN_40MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S :
-            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;  
+            FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.samplingRate) / AUDIO_MS_PER_S;
     } else {
         spanSizeInFrame_ = processConfig.streamInfo.customSampleRate % CUSTOM_SAMPLE_RATE_MULTIPLES == 0 ?
             FRAME_LEN_20MS * static_cast<uint32_t>(processConfig.streamInfo.customSampleRate) / AUDIO_MS_PER_S :
@@ -65,14 +65,14 @@ HpaeRendererStreamImpl::HpaeRendererStreamImpl(AudioProcessConfig processConfig,
     byteSizePerFrame_ = (processConfig.streamInfo.channels *
         static_cast<size_t>(GetSizeFromFormat(processConfig.streamInfo.format)));
     minBufferSize_ = MIN_BUFFER_SIZE * byteSizePerFrame_ * spanSizeInFrame_;
-    if (byteSizePerFrame_ == 0 || 
+    if (byteSizePerFrame_ == 0 ||
         (processConfig.streamInfo.samplingRate == 0 && processConfig.streamInfo.customSampleRate == 0)) {
         expectedPlaybackDurationMs_ = 0;
     } else {
         expectedPlaybackDurationMs_ =
             (processConfig.rendererInfo.expectedPlaybackDurationBytes * AUDIO_MS_PER_S / byteSizePerFrame_) /
-                processConfig.streamInfo.customSampleRate == 0 ?
-                processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate;
+                (processConfig.streamInfo.customSampleRate == 0 ?
+                processConfig.streamInfo.samplingRate : processConfig.streamInfo.customSampleRate);
     }
     isCallbackMode_ = isCallbackMode;
     isMoveAble_ = isMoveAble;
@@ -121,7 +121,7 @@ int32_t HpaeRendererStreamImpl::InitParams(const std::string &deviceName)
     streamInfo.privacyType = processConfig_.privacyType;
     AUDIO_INFO_LOG("InitParams channels %{public}u  end", streamInfo.channels);
     AUDIO_INFO_LOG("InitParams channelLayout %{public}" PRIu64 " end", streamInfo.channelLayout);
-    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.customSampleRate == 0 ? 
+    AUDIO_INFO_LOG("InitParams samplingRate %{public}u  end", streamInfo.customSampleRate == 0 ?
                     streamInfo.samplingRate : streamInfo.customSampleRate);
     AUDIO_INFO_LOG("InitParams format %{public}u  end", streamInfo.format);
     AUDIO_INFO_LOG("InitParams frameLen %{public}zu  end", streamInfo.frameLen);

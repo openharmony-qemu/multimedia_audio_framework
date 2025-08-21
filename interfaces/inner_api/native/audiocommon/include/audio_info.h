@@ -567,8 +567,6 @@ struct AudioRendererInfo : public Parcelable {
     int32_t originalFlag = AUDIO_FLAG_NORMAL;
     AudioPipeType pipeType = PIPE_TYPE_UNKNOWN;
     AudioSamplingRate samplingRate = SAMPLE_RATE_8000;
-    // Add customSampleRate
-    uint32_t customSampleRate = 0;
     uint8_t encodingType = 0;
     uint64_t channelLayout = 0ULL;
     AudioSampleFormat format = SAMPLE_S16LE;
@@ -605,7 +603,6 @@ struct AudioRendererInfo : public Parcelable {
             && parcel.WriteBool(headTrackingEnabled)
             && parcel.WriteInt32(static_cast<int32_t>(pipeType))
             && parcel.WriteInt32(static_cast<int32_t>(samplingRate))
-            && parcel.WriteUint32(customSampleRate)
             && parcel.WriteUint8(encodingType)
             && parcel.WriteUint64(channelLayout)
             && parcel.WriteInt32(format)
@@ -630,7 +627,6 @@ struct AudioRendererInfo : public Parcelable {
         headTrackingEnabled = parcel.ReadBool();
         pipeType = static_cast<AudioPipeType>(parcel.ReadInt32());
         samplingRate = static_cast<AudioSamplingRate>(parcel.ReadInt32());
-        customSampleRate = parcel.ReadUint32();
         encodingType = parcel.ReadUint8();
         channelLayout = parcel.ReadUint64();
         format = static_cast<AudioSampleFormat>(parcel.ReadInt32());

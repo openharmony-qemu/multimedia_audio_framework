@@ -30,6 +30,7 @@ namespace AudioStandard {
 namespace HPAE {
 static constexpr uint32_t EXPAND_SIZE_2 = 2;
 static constexpr uint32_t EXPAND_SIZE_5 = 5;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 HpaeProcessCluster::HpaeProcessCluster(HpaeNodeInfo nodeInfo, HpaeSinkInfo &sinkInfo)
     : HpaeNode(nodeInfo), sinkInfo_(sinkInfo)
 {

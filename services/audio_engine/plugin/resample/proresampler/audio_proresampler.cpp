@@ -29,6 +29,7 @@ constexpr uint32_t SAMPLE_RATE_11025 = 11025;
 constexpr uint32_t FRAME_LEN_20MS = 20;
 constexpr uint32_t MS_PER_SECOND = 1000;
 constexpr uint32_t ADD_SIZE = 100;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 // for now ProResampler accept input 20ms for other sample rates, 40ms input for 11025hz
 // 100ms input for 10Hz resolution rates that are not multiples of 50, eg. 8010, 8020, 8030, 8040... 
 // however 8050, 8100, 8150... are for 20ms

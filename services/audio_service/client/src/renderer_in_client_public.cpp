@@ -270,8 +270,8 @@ int32_t RendererInClientInner::SetAudioStreamInfo(const AudioStreamParams info,
     state_ = PREPARED;
 
     // eg: 100005_44100_2_1_client_out.pcm
-    dumpOutFile_ = std::to_string(sessionId_) + "_" + 
-        std::to_string(curStreamParams_.customSampleRate == 0 ? 
+    dumpOutFile_ = std::to_string(sessionId_) + "_" +
+        std::to_string(curStreamParams_.customSampleRate == 0 ?
         curStreamParams_.samplingRate : curStreamParams_.customSampleRate) + "_" +
         std::to_string(curStreamParams_.channels) + "_" + std::to_string(curStreamParams_.format) + "_client_out.pcm";
 

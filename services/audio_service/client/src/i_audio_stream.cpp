@@ -284,7 +284,7 @@ bool IAudioStream::IsSamplingRateValid(uint32_t samplingRate)
 
 bool IAudioStream::IsCustomSampleRateValid(uint32_t customSampleRate)
 {
-    return customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 && 
+    return customSampleRate >= SAMPLE_RATE_8000 && customSampleRate <= SAMPLE_RATE_384000 &&
         customSampleRate % SAMPLE_RATE_RESOLUTION_10 == 0;
 }
 

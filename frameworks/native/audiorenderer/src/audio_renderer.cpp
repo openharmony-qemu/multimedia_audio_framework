@@ -327,7 +327,6 @@ void AudioRendererPrivate::HandleSetRendererInfoByOptions(const AudioRendererOpt
     rendererInfo_.expectedPlaybackDurationBytes
         = rendererOptions.rendererInfo.expectedPlaybackDurationBytes;
     rendererInfo_.samplingRate = rendererOptions.streamInfo.samplingRate;
-    rendererInfo_.customSampleRate = rendererOptions.streamInfo.customSampleRate;
     rendererInfo_.volumeMode = rendererOptions.rendererInfo.volumeMode;
     rendererInfo_.isLoopback = rendererOptions.rendererInfo.isLoopback;
     rendererInfo_.loopbackMode = rendererOptions.rendererInfo.loopbackMode;

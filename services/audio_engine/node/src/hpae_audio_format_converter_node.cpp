@@ -24,6 +24,7 @@
 static constexpr uint32_t FRAME_LEN_20MS = 20;
 static constexpr uint32_t MS_IN_SECOND = 1000;
 static constexpr uint32_t REASAMPLE_QUAILTY = 1;
+static constexpr uint32_t CUSTOM_SAMPLE_RATE_MULTIPLES = 50;
 namespace OHOS {
 namespace AudioStandard {
 namespace HPAE {
