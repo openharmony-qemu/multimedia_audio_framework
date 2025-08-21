@@ -1752,7 +1752,7 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_001, TestSize.Level1)
     uint32_t streamIndex = 1;
     int32_t offloadEnable = 1;
     AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
-   int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+    int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
     EXPECT_EQ(getOffloadType, offloadEnable);
 }
 
@@ -1766,7 +1766,7 @@ HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_002, TestSize.Level1)
 {
     uint32_t streamIndex = 1;
     AudioVolume::GetInstance()->offloadEnable_.clear();
-    uint32_t ret = AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+    uint32_t ret = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
     EXPECT_EQ(ret, 0);
 }
 }  // namespace OHOS::AudioStandard
