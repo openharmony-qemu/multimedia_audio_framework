@@ -24,6 +24,7 @@ const uint64_t TEST_LATENCY = 123456;
 const uint64_t TEST_FRAMEPOS = 123456;
 const uint64_t TEST_TIMESTAMP = 111111;
 const float IN_VOLUME_RANGE = 0.5f;
+const uint32_t TEST_BUFLENGTH = 10;
 
 static std::shared_ptr<IStreamListener> stateListener;
 static std::shared_ptr<StreamListenerHolder> streamListenerHolder = std::make_shared<StreamListenerHolder>();
@@ -184,8 +185,8 @@ HWTEST_F(RendererInServerThirdUnitTest, RendererInServerWriteMuteDataSysEvent_00
     EXPECT_NE(nullptr, rendererInServer);
 
     rendererInServer->isInSilentState_ = 1;
-    uint8_t buffer[10] = {0};
-    size_t bufferSize = 10;
+    uint8_t buffer[TEST_BUFLENGTH] = {0};
+    size_t bufferSize = TEST_BUFLENGTH;
     bufferDesc.buffer = buffer;
     bufferDesc.bufLength = bufferSize;
     rendererInServer->WriteMuteDataSysEvent(bufferDesc);
