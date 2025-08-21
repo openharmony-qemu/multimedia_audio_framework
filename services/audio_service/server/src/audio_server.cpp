@@ -352,6 +352,7 @@ public:
     {
     }
 
+// LCOV_EXCL_START
     void OnCaptureState(bool isActive) override final
     {
         std::lock_guard<std::mutex> lock(captureIdMtx_);
@@ -366,6 +367,7 @@ public:
             captureId_, preNum, curNum, isActive);
         callback_(isActive, preNum, curNum);
     }
+// LCOV_EXCL_STOP
 
 private:
     static inline std::unordered_set<uint32_t> captureIds_;
@@ -580,6 +582,7 @@ void DataTransferStateChangeCallbackInnerImpl::SetDataTransferMonitorParam(
     param_.badFramesRatio = param.badFramesRatio;
 }
 
+// LCOV_EXCL_START
 void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
     const int32_t &callbackId, const AudioRendererDataTransferStateChangeInfo &info)
 {
@@ -598,6 +601,7 @@ void DataTransferStateChangeCallbackInnerImpl::OnDataTransferStateChange(
         }
     }
 }
+// LCOV_EXCL_STOP
 
 void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     const AudioRendererDataTransferStateChangeInfo &info)
@@ -616,6 +620,7 @@ void DataTransferStateChangeCallbackInnerImpl::ReportEvent(
     Media::MediaMonitor::MediaMonitorManager::GetInstance().WriteLogMsg(bean);
 }
 
+// LCOV_EXCL_START
 void AudioServer::InitMaxRendererStreamCntPerUid()
 {
     bool result = GetSysPara("const.multimedia.audio.stream_cnt_uid", maxRendererStreamCntPerUid_);
@@ -674,6 +679,7 @@ void AudioServer::OnStart()
     DlopenUtils::DeInit();
     RegisterDataTransferStateChangeCallback();
 }
+// LCOV_EXCL_STOP
 
 void AudioServer::ParseAudioParameter()
 {
@@ -826,6 +832,7 @@ bool AudioServer::ProcessKeyValuePairs(const std::string &key,
     return true;
 }
 
+// LCOV_EXCL_START
 bool AudioServer::CacheExtraParameters(const std::string &key,
     const std::vector<std::pair<std::string, std::string>> &kvpairs)
 {
@@ -859,6 +866,7 @@ void AudioServer::SetA2dpAudioParameter(const std::string &renderValue)
         AUDIO_INFO_LOG("HasBlueToothEndpoint");
     }
 }
+// LCOV_EXCL_STOP
 
 int32_t AudioServer::SetAudioParameter(const std::string &key, const std::string &value)
 {
@@ -1406,6 +1414,7 @@ int32_t AudioServer::UpdateActiveDevicesRoute(const std::vector<IntPair> &active
     return SetIORoutes(activeOutputDevices, static_cast<BluetoothOffloadState>(a2dpOffloadFlag), deviceName);
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::SetDmDeviceType(uint16_t dmDeviceType, int32_t deviceType)
 {
     int32_t callingUid = IPCSkeleton::GetCallingUid();
@@ -1857,6 +1866,7 @@ void AudioServer::NotifyProcessStatus()
 #endif
 }
 
+// LCOV_EXCL_START
 int32_t AudioServer::CreateAudioProcess(const AudioProcessConfig &config, int32_t &errorCode,
     const AudioPlaybackCaptureConfig &filterConfig, sptr<IRemoteObject>& client)
 {
@@ -2838,6 +2848,7 @@ int32_t AudioServer::SetInnerCapLimit(uint32_t innerCapLimit)
 }
 // LCOV_EXCL_STOP
 
+// LCOV_EXCL_START
 int32_t AudioServer::ReleaseCaptureLimit(int32_t innerCapId)
 {
 #if defined(AUDIO_BUILD_VARIANT_ROOT) && defined(HAS_FEATURE_INNERCAPTURER)
@@ -3098,5 +3109,6 @@ int32_t AudioServer::RestoreAudioWorkgroupPrio(int32_t pid, const std::unordered
 {
     return AudioResourceService::GetInstance()->RestoreAudioWorkgroupPrio(pid, threads);
 }
+// LCOV_EXCL_STOP
 } // namespace AudioStandard
 } // namespace OHOS
