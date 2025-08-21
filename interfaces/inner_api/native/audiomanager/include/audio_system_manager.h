@@ -1497,6 +1497,16 @@ public:
     */
     int32_t ForceVolumeKeyControlType(AudioVolumeType volumeType, int32_t duration);
 
+    /**
+    * @brief set stream volume by sessionId.
+    *
+    * @param sessionId stream sessionId.
+    * @param volume return stream volume.
+    * @return Returns {@link SUCCESS} if the operation is successfully.
+    * @test
+    */
+    int32_t GetVolumeBySessionId(const uint32_t &sessionId, float &volume);
+
     class WorkgroupPrioRecorder {
     public:
         WorkgroupPrioRecorder(int32_t grpId);
