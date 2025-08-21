@@ -792,9 +792,9 @@ int32_t GetOffloadType(uint32_t streamIndex)
     return AudioVolume::GetInstance()->GetOffloadType(streamIndex);
 }
 
-void SetOffloadEnable(uint32_t streamIndex, int32_t offloadType)
+void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable)
 {
-    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadType);
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
 }
 
 int32_t GetOffloadEnable(uint32_t streamIndex)
