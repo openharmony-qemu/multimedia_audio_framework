@@ -29,7 +29,7 @@ namespace OHOS {
 namespace AudioStandard {
 
 namespace RenderUT {
-const std::string AUDIORENDER_TEST_FILE_PATH = "/data/female1.wav";
+const std::string AUDIORENDER_TEST_FILE_PATH = "/data/test_44100_2.wav";
 const std::string AUDIORENDER_TEST_PCMFILE_PATH = "/data/avs3_16.wav";
 const std::string AUDIORENDER_TEST_METAFILE_PATH = "/data/avs3_bitstream.bin";
 constexpr int32_t VALUE_NEGATIVE = -1;

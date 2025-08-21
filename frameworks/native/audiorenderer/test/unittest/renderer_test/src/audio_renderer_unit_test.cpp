@@ -88,10 +88,10 @@ int32_t AudioRendererUnitTest::InitializeRenderer(unique_ptr<AudioRenderer> &aud
 
 void AudioRendererUnitTest::InitializeRendererOptions(AudioRendererOptions &rendererOptions)
 {
-    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_48000;
+    rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_44100;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_S16LE;
-    rendererOptions.streamInfo.channels = AudioChannel::MONO;
+    rendererOptions.streamInfo.channels = AudioChannel::STEREO;
     rendererOptions.rendererInfo.contentType = ContentType::CONTENT_TYPE_MOVIE;
     rendererOptions.rendererInfo.streamUsage = StreamUsage::STREAM_USAGE_MOVIE;
     rendererOptions.rendererInfo.rendererFlags = RenderUT::RENDERER_FLAG;
@@ -231,7 +231,6 @@ HWTEST(AudioRendererUnitTest, Audio_Renderer_Create_008, TestSize.Level0)
 {
     AudioRendererOptions rendererOptions;
     rendererOptions.streamInfo.samplingRate = AudioSamplingRate::SAMPLE_RATE_96000;
-    rendererOptions.streamInfo.customSampleRate = 96010;
     rendererOptions.streamInfo.encoding = AudioEncodingType::ENCODING_PCM;
     rendererOptions.streamInfo.format = AudioSampleFormat::SAMPLE_U8;
     rendererOptions.streamInfo.channels = AudioChannel::MONO;
