@@ -331,8 +331,7 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
     HandlePlaybackStreamInA2dp(streamDesc, isCreateProcess);
     switch (streamDesc->rendererInfo_.originalFlag) {
         case AUDIO_FLAG_MMAP:
-            streamDesc->audioFlag_ =
-                IsFastAllowed(streamDesc->bundleName_) ? AUDIO_OUTPUT_FLAG_FAST : AUDIO_OUTPUT_FLAG_NORMAL;
+            streamDesc->audioFlag_ = SetFlagForMmapStream(streamDesc);
             return;
         case AUDIO_FLAG_VOIP_FAST:
             streamDesc->audioFlag_ =
@@ -345,6 +344,15 @@ void AudioCoreService::UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescr
             break;
     }
     streamDesc->audioFlag_ = SetFlagForSpecialStream(streamDesc, isCreateProcess);
+}
+
+AudioFlag AudioCoreService::SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc)
+{
+    if (streamDesc->GetMainNewDeviceType() == DEVICE_TYPE_BLUETOOTH_A2DP ||
+        IsFastAllowed(streamDesc->bundleName_)) {
+        return AUDIO_OUTPUT_FLAG_FAST;
+    }
+    return AUDIO_OUTPUT_FLAG_NORMAL;
 }
 
 AudioFlag AudioCoreService::SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc,

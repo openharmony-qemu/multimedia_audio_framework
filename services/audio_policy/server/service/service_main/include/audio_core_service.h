@@ -399,6 +399,7 @@ private:
     void UpdateTrackerDeviceChange(const vector<std::shared_ptr<AudioDeviceDescriptor>> &desc);
     bool IsForcedNormal(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     void UpdatePlaybackStreamFlag(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
+    AudioFlag SetFlagForMmapStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     AudioFlag SetFlagForSpecialStream(std::shared_ptr<AudioStreamDescriptor> &streamDesc, bool isCreateProcess);
     void UpdateRecordStreamInfo(std::shared_ptr<AudioStreamDescriptor> &streamDesc);
     std::vector<SourceOutput> FilterSourceOutputs(int32_t sessionId);

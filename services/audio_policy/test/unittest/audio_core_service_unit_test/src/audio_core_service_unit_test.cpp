@@ -1333,5 +1333,28 @@ HWTEST_F(AudioCoreServiceUnitTest, SetAudioScene_006, TestSize.Level1)
     audioCoreService->audioVolumeManager_.SetAppRingMuted(appUid, false);
     audioVolume->streamVolume_.clear();
 }
+
+/**
+* @tc.name  : Test AudioCoreService
+* @tc.number: SetFlagForMmapStream_001
+* @tc.desc  : Test SetFlagForMmapStream() when device type is DEVICE_TYPE_BLUETOOTH_A2DP
+*/
+HWTEST_F(AudioCoreServiceUnitTest, SetFlagForMmapStream_001, TestSize.Level4)
+{
+    AUDIO_INFO_LOG("AudioCoreServiceUnitTest CreateRenderClient_001 start");
+
+    ASSERT_NE(nullptr, GetServerPtr());
+    auto coreService_ = GetServerPtr()->coreService_;
+    std::shared_ptr<AudioStreamDescriptor> streamDesc = std::make_shared<AudioStreamDescriptor>();
+    ASSERT_NE(nullptr, streamDesc);
+    std::shared_ptr<AudioDeviceDescriptor> deviceDesc = std::make_shared<AudioDeviceDescriptor>();
+    ASSERT_NE(nullptr, deviceDesc);
+
+    deviceDesc->deviceType_ = DEVICE_TYPE_BLUETOOTH_A2DP;
+    streamDesc->newDeviceDescs_.push_back(deviceDesc);
+
+    auto ret = coreService_->SetFlagForMmapStream(streamDesc);
+    EXPECT_EQ(AUDIO_OUTPUT_FLAG_FAST, ret);
+}
 } // namespace AudioStandard
 } // namespace OHOS
