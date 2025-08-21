@@ -416,7 +416,7 @@ HWTEST_F(AudioCaptureSourceUnitTest, GetChannelCountByChannelLayout_001, TestSiz
     uint64_t channelCount = 0;
     
     channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_UNKNOWN);
-    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_UNKNOWN);
+    EXPECT_EQ(channelCount, AudioChannel::CHANNEL_UNKNOW);
 
     channelCount = AudioCaptureSource::GetChannelCountByChannelLayout(AudioChannelLayout::CH_LAYOUT_MONO);
     EXPECT_EQ(channelCount, AudioChannel::MONO);
