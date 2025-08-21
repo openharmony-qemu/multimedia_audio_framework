@@ -1740,5 +1740,34 @@ HWTEST_F(AudioVolumeUnitTest, IsSameVolume_001, TestSize.Level4)
     float y = 0.0f;
     EXPECT_TRUE(AudioVolume::GetInstance()->IsSameVolume(x, y));;
 }
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadEnable_001
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_001, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    int32_t offloadEnable = 1;
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
+    int32_t getOffloadType = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+    EXPECT_EQ(getOffloadType, offloadEnable);
+}
+
+/**
+ * @tc.name  : Test AudioVolume API
+ * @tc.type  : FUNC
+ * @tc.number: SetOffloadEnable_002
+ * @tc.desc  : Test AudioVolume interface.
+ */
+HWTEST_F(AudioVolumeUnitTest, SetOffloadEnable_002, TestSize.Level1)
+{
+    uint32_t streamIndex = 1;
+    AudioVolume::GetInstance()->offloadEnable_.clear();
+    uint32_t ret = AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
+    EXPECT_EQ(ret, 0);
+}
 }  // namespace OHOS::AudioStandard
 }  // namespace OHOS

@@ -676,6 +676,21 @@ int32_t AudioVolume::GetOffloadType(uint32_t streamIndex)
     AUDIO_WARNING_LOG("No such streamIndex in map!");
     return OFFLOAD_DEFAULT;
 }
+
+void AudioVolume::SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable)
+{
+    std::unique_lock<std::shared_mutex> lock(fadeoutMutex_);
+    offloadEnable_.insert_or_assign(streamIndex, offloadEnable);
+}
+
+int32_t AudioVolume::GetOffloadEnable(uint32_t streamIndex)
+{
+    std::shared_lock<std::shared_mutex> lock(fadeoutMutex_);
+    auto it = offloadEnable_.find(streamIndex);
+    if (it != offloadEnable_.end()) { return it->second; }
+    AUDIO_WARNING_LOG("No such streamIndex in map!");
+    return 0;
+}
 } // namespace AudioStandard
 } // namespace OHOS
 
@@ -775,6 +790,16 @@ void SetOffloadType(uint32_t streamIndex, int32_t offloadType)
 int32_t GetOffloadType(uint32_t streamIndex)
 {
     return AudioVolume::GetInstance()->GetOffloadType(streamIndex);
+}
+
+void SetOffloadEnable(uint32_t streamIndex, int32_t offloadEnable)
+{
+    AudioVolume::GetInstance()->SetOffloadEnable(streamIndex, offloadEnable);
+}
+
+int32_t GetOffloadEnable(uint32_t streamIndex)
+{
+    return AudioVolume::GetInstance()->GetOffloadEnable(streamIndex);
 }
 #ifdef __cplusplus
 }

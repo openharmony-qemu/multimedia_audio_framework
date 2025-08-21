@@ -1176,11 +1176,7 @@ int32_t PaRendererStreamImpl::OffloadUpdatePolicy(AudioOffloadType statePolicy, 
         }
         pa_proplist *propList = pa_proplist_new();
         CHECK_AND_RETURN_RET_LOG(propList != nullptr, ERR_OPERATION_FAILED, "pa_proplist_new failed");
-        if (offloadEnable_) {
-            pa_proplist_sets(propList, "stream.offload.enable", "1");
-        } else {
-            pa_proplist_sets(propList, "stream.offload.enable", "0");
-        }
+        AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, offloadEnable_);
         AudioVolume::GetInstance()->SetOffloadType(sinkInputIndex_, statePolicy);
 
         pa_operation *updatePropOperation =
