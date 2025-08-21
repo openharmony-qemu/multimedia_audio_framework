@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
-import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 

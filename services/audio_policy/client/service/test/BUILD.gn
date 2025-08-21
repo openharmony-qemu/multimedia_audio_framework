@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("../../../../../accessibility.gni")
 import("../../../../../appgallery.gni")
-import("../../../../../av_session.gni")
 import("../../../../../bluetooth_part.gni")
 import("../../../../../config.gni")
 
@@ -64,6 +63,7 @@ ohos_unittest("audio_policy_manager_device_unit_test") {
     "ability_runtime:app_context",
     "ability_runtime:dataobs_manager",
     "ability_runtime:extension_manager",
+    "ability_runtime:wantagent_innerkits",
     "access_token:libaccesstoken_sdk",
     "access_token:libnativetoken_shared",
     "access_token:libprivacy_sdk",

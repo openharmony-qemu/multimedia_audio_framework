@@ -19,7 +19,6 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 import("${audio_framework_root}/accessibility.gni")
 import("${audio_framework_root}/appgallery.gni")
-import("${audio_framework_root}/av_session.gni")
 import("${audio_framework_root}/bluetooth_part.gni")
 import("${audio_framework_root}/config.gni")
 

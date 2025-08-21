@@ -15,7 +15,6 @@ import("//build/config/features.gni")
 import("//build/test.gni")
 import("../../../accessibility.gni")
 import("../../../appgallery.gni")
-import("../../../av_session.gni")
 import("../../../bluetooth_part.gni")
 import("../../../config.gni")
 
@@ -106,15 +105,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     ]
   }
 
-  if (avsession_part_enable == true) {
-    external_deps += [
-      "ability_base:want",
-      "ability_runtime:wantagent_innerkits",
-      "av_session:avsession_client",
-      "input:libmmi-client",
-    ]
-  }
-
   defines = []
 
   if (audio_framework_feature_usb_audio) {
@@ -180,9 +170,6 @@ ohos_fuzztest("AudioPolicyServiceEnhanceFuzzTest") {
     cflags += [ "-DBLUETOOTH_ENABLE" ]
   }
 
-  if (avsession_part_enable == true) {
-    cflags += [ "-DAVSESSION_ENABLE" ]
-  }
 }
 
 group("fuzztest") {
