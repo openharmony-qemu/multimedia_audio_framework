@@ -340,6 +340,7 @@ group("audio_fuzz_test") {
     "fuzztest/resourcemanageradapter_fuzzer:fuzztest",
     "fuzztest/simdutils_fuzzer:fuzztest",
     "fuzztest/sleaudiodevicemanager_fuzzer:fuzztest",
+    "fuzztest/standalonemodemanager_fuzzer:fuzztest",
     "fuzztest/volumedatamaintainer_fuzzer:fuzztest",
     "fuzztest/rendererinserver_fuzzer:fuzztest",
   ]

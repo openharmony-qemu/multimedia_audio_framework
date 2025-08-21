@@ -1348,6 +1348,30 @@ HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_GetAudioSessio
 
 /**
 * @tc.name  : Test AudioInterruptService
+* @tc.number: AudioInterruptService_045
+* @tc.desc  : Test AudioInterruptService_045
+*/
+HWTEST(AudioInterruptServiceSecondUnitTest, AudioInterruptService_045, TestSize.Level1)
+{
+    auto audioInterruptService = std::make_shared<AudioInterruptService>();
+    ASSERT_NE(audioInterruptService, nullptr);
+
+    int32_t fakePid = 123;
+    AudioInterrupt incomingInterrupt;
+    incomingInterrupt.pid = fakePid;
+    incomingInterrupt.audioFocusType.streamType = STREAM_MUSIC;
+    AudioSessionStrategy audioSessionStrategy;
+    InterruptEventInternal interruptEvent;
+    audioSessionStrategy.concurrencyMode = AudioConcurrencyMode::DEFAULT;
+    audioInterruptService->sessionService_ = AudioSessionService::GetAudioSessionService();
+    audioInterruptService->sessionService_->sessionMap_[fakePid] = nullptr;
+    auto ret = audioInterruptService->ActivateAudioSession(1, fakePid, audioSessionStrategy, true);
+    audioInterruptService->ResumeFocusByStreamId(fakePid, interruptEvent);
+    EXPECT_EQ(ERROR, ret);
+}
+
+/**
+* @tc.name  : Test AudioInterruptService
 * @tc.number: AudioInterruptService_046
 * @tc.desc  : Test CanMixForSession
 */

@@ -422,6 +422,7 @@ HWTEST(AudioPolicyUnitTest, AudioPolicyServer_009, TestSize.Level1)
 
     AudioInterrupt audioInterrupt;
     int32_t zoneID = 456;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
     int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
     EXPECT_EQ(result, ERR_UNKNOWN);
 }

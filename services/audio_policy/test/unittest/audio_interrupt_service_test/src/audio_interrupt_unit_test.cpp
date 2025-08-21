@@ -965,6 +965,47 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_001, TestSi
 }
 
 /**
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_RemoveExistingFocus_001
+ * @tc.desc  : Test RemoveExistingFocus.
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_RemoveExistingFocus_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    interruptServiceTest->zonesMap_.clear();
+    int32_t appUid = 1;
+    auto audioInterruptZone = std::make_shared<AudioInterruptZone>();
+    AudioInterrupt audioInterrupt1;
+    audioInterrupt1.streamId = 100;
+    audioInterrupt1.uid = 1;
+    std::unordered_set<int32_t> uidActivedSessions;
+    audioInterruptZone->audioFocusInfoList.clear();
+    audioInterruptZone->audioFocusInfoList.emplace_back(audioInterrupt1, AudioFocuState{PAUSE});
+    EXPECT_EQ(interruptServiceTest->zonesMap_.find(0), interruptServiceTest->zonesMap_.end());
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->zonesMap_[1] = audioInterruptZone;
+    interruptServiceTest->zonesMap_[2] = std::make_shared<AudioInterruptZone>();
+    interruptServiceTest->RemoveExistingFocus(appUid, uidActivedSessions);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptService.
+ * @tc.number: AudioInterruptService_ResumeFocusByStreamId_001
+ * @tc.desc  : Test ResumeFocusByStreamId.
+ */
+HWTEST(AudioInterruptUnitTest, AudioInterruptService_ResumeFocusByStreamId_001, TestSize.Level1)
+{
+    auto interruptServiceTest = GetTnterruptServiceTest();
+    InterruptEventInternal interruptEvent;
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
+    interruptServiceTest->zonesMap_[0] = std::make_shared<AudioInterruptZone>();
+    auto retStatus = interruptServiceTest->SetAudioInterruptCallback(0, 0,
+        sptr<RemoteObjectTestStub>::MakeSptr(), 0);
+    EXPECT_EQ(retStatus, SUCCESS);
+    interruptServiceTest->ResumeFocusByStreamId(0, interruptEvent);
+}
+
+/**
 * @tc.name  : Test AudioInterruptService.
 * @tc.number: AudioInterruptServiceCanMixForSession_002
 * @tc.desc  : Test CanMixForSession.
@@ -983,7 +1024,8 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_002, TestSi
     strategyTest.concurrencyMode = AudioConcurrencyMode::MIX_WITH_OTHERS;
     int32_t ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest);
     EXPECT_EQ(SUCCESS, ret);
-
+    ret = interruptService->ActivateAudioSession(0, incomingInterrupt.pid, strategyTest, true);
+    EXPECT_EQ(SUCCESS, ret);
     ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_TRUE(ret);
 }
@@ -1013,6 +1055,67 @@ HWTEST(AudioInterruptUnitTest, AudioInterruptServiceCanMixForSession_003, TestSi
 
     ret = interruptService->CanMixForSession(incomingInterrupt, activeInterrupt, focusEntry);
     EXPECT_TRUE(ret);
+}
+
+/**
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppConcurrencyMode_001
+ * @tc.desc  : Test SetAppConcurrencyMode.
+ */
+HWTEST(AudioInterruptUnitTest, SetAppConcurrencyMode_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t uid = 0;
+    int32_t mode = 0;
+    auto ret = server->SetAppConcurrencyMode(uid, mode);
+    EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppConcurrencyMode(uid, mode);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+ 
+/**
+ * @tc.name  : Test AudioInterruptUnitTest.
+ * @tc.number: SetAppSilentOnDisplay_001
+ * @tc.desc  : Test SetAppSilentOnDisplay.
+ */
+HWTEST(AudioInterruptUnitTest, SetAppSilentOnDisplay_001, TestSize.Level1)
+{
+    sptr<AudioPolicyServer> server = GetPolicyServerTest();
+    ASSERT_TRUE(server != nullptr);
+    int32_t displayId = 1;
+    auto ret = server->SetAppSilentOnDisplay(displayId);
+    EXPECT_EQ(ret, SUCCESS);
+    server->interruptService_ = nullptr;
+    ret = server->SetAppSilentOnDisplay(displayId);
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    EXPECT_EQ(ret, ERR_UNKNOWN);
+}
+ 
+/**
+* @tc.name  : Test AudioInterruptUnitTest.
+* @tc.number: AudioPolicyServer_009
+* @tc.desc  : Test DeactivateAudioInterrupt.
+*/
+HWTEST(AudioInterruptUnitTest, AudioPolicyServer_001, TestSize.Level1)
+{
+    auto policyServerTest = GetPolicyServerTest();
+    int32_t systemAbilityId = 3009;
+    bool runOnCreate = false;
+    sptr<AudioPolicyServer> server = sptr<AudioPolicyServer>::MakeSptr(systemAbilityId, runOnCreate);
+ 
+    AudioInterrupt audioInterrupt;
+    int32_t zoneID = 456;
+    pid_t pid = 1;
+    pid_t uid = 1;
+    int32_t strategy = 0;
+    server->interruptService_ = std::make_shared<AudioInterruptService>();
+    int32_t result = server->DeactivateAudioInterrupt(audioInterrupt, zoneID);
+    EXPECT_EQ(result, ERR_UNKNOWN);
+    EXPECT_EQ(policyServerTest->ActivateAudioSession(strategy), SUCCESS);
+    server->RegisteredStreamListenerClientDied(pid, uid);
 }
 
 /**
