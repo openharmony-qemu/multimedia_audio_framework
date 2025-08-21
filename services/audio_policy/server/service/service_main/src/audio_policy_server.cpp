@@ -2011,9 +2011,9 @@ int32_t AudioPolicyServer::GetExcludedDevices(int32_t audioDevUsageIn,
     device = audioDeviceLock_.GetExcludedDevices(audioDevUsage);
 
     int32_t apiVersion = HasUsbDevice(device) ? GetApiTargetVersion() : 0;
+    AudioDeviceDescriptor::ClientInfo clientInfo { apiVersion };
     for (auto &desc : device) {
         CHECK_AND_RETURN_RET_LOG(desc, ERR_MEMORY_ALLOC_FAILED, "nullptr");
-        auto clientInfo = std::make_shared<AudioDeviceDescriptor::ClientInfo>(apiVersion);
         desc->SetClientInfo(clientInfo);
     }
     return SUCCESS;

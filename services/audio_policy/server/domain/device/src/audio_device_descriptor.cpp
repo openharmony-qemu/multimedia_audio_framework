@@ -267,7 +267,7 @@ bool AudioDeviceDescriptor::IsAudioDeviceDescriptor() const
     return descriptorType_ == AUDIO_DEVICE_DESCRIPTOR;
 }
 
-void AudioDeviceDescriptor::SetClientInfo(std::shared_ptr<ClientInfo> clientInfo) const
+void AudioDeviceDescriptor::SetClientInfo(const ClientInfo &clientInfo) const
 {
     clientInfo_ = clientInfo;
 }
@@ -275,22 +275,20 @@ void AudioDeviceDescriptor::SetClientInfo(std::shared_ptr<ClientInfo> clientInfo
 bool AudioDeviceDescriptor::Marshalling(Parcel &parcel) const
 {
     bool ret = MarshallingInner(parcel);
-    if (clientInfo_) {
-        clientInfo_ = nullptr;
-    }
+    clientInfo_ = std::nullopt;
     return ret;
 }
 
 bool AudioDeviceDescriptor::MarshallingInner(Parcel &parcel) const
 {
     if (clientInfo_ && !IsAudioDeviceDescriptor()) {
-        return MarshallingToDeviceInfo(parcel, clientInfo_->hasBTPermission_,
-            clientInfo_->hasSystemPermission_, clientInfo_->apiVersion_);
+        return MarshallingToDeviceInfo(parcel, clientInfo_.value().hasBTPermission_,
+            clientInfo_.value().hasSystemPermission_, clientInfo_.value().apiVersion_);
     }
 
     int32_t devType = deviceType_;
     if (IsAudioDeviceDescriptor()) {
-        devType = MapInternalToExternalDeviceType(clientInfo_ ? clientInfo_->apiVersion_ : 0);
+        devType = MapInternalToExternalDeviceType(clientInfo_ ? clientInfo_.value().apiVersion_ : 0);
     }
 
     return  parcel.WriteInt32(devType) &&
