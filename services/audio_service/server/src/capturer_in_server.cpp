@@ -569,7 +569,7 @@ bool CapturerInServer::TurnOffMicIndicator(CapturerState capturerState)
     };
     SwitchStreamUtil::UpdateSwitchStreamRecord(info, SWITCH_STATE_FINISHED);
 
-    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_)) {
+    if (AudioService::GetInstance()->NeedRemoveBackgroundCaptureMap(streamIndex_, capturerState)) {
         AudioService::GetInstance()->RemoveBackgroundCaptureMap(streamIndex_);
     }
     if (isMicIndicatorOn_) {

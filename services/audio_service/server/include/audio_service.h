@@ -158,7 +158,7 @@ public:
     bool IsBackgroundCaptureAllowed(uint32_t sessionId);
     bool UpdateBackgroundCaptureMap(uint32_t sessionId, bool res);
     void RemoveBackgroundCaptureMap(uint32_t sessionId);
-    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId);
+    bool NeedRemoveBackgroundCaptureMap(uint32_t sessionId, CapturerState capturerState);
     
 private:
     AudioService();
