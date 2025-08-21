@@ -104,6 +104,7 @@ public:
     int32_t GetMsgCount();
 
     void Invoke(HpaeMsgCode cmdID, const std::any &args) override;
+    void InvokeSync(HpaeMsgCode cmdID, const std::any &args) override;
     // play and record stream interface
     int32_t CreateStream(const HpaeStreamInfo &streamInfo) override;
     int32_t DestroyStream(HpaeStreamClassType streamClassType, uint32_t sessionId) override;
