@@ -18,6 +18,7 @@ config("capturer_config") {
   visibility = [ ":*" ]
 
   include_dirs = [
+    "../hdi/",
     "../../../../../interfaces/inner_api/native/audiocommon/include",
     "../../../../../services/audio_service/common/include",
     "../../../audioschedule/include",

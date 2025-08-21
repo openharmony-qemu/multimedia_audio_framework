@@ -17,13 +17,16 @@
 #endif
 
 #include "renderer_in_server.h"
+#include <chrono>
 #include <cinttypes>
 #include "securec.h"
+#include <format>
 #include "audio_errors.h"
 #include "audio_renderer_log.h"
 #include "audio_utils.h"
 #include "audio_service.h"
 #include "futex_tool.h"
+#include "xperf_adapter.h"
 #include "i_stream_manager.h"
 #ifdef RESSCHE_ENABLE
 #include "res_type.h"
@@ -969,6 +972,11 @@ int32_t RendererInServer::Start()
     if (ret == SUCCESS) {
         StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, true);
     }
+
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_START,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
+
     return ret;
 }
 
@@ -1112,6 +1120,8 @@ int32_t RendererInServer::Pause()
     audioStreamChecker_->MonitorOnAllCallback(AUDIO_STREAM_PAUSE, isStandbyTmp);
     StreamDfxManager::GetInstance().CheckStreamOccupancy(streamIndex_, processConfig_, false);
     AudioPerformanceMonitor::GetInstance().PauseSilenceMonitor(streamIndex_);
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP, processConfig_.rendererInfo.streamUsage,
+        streamIndex_, processConfig_.appInfo.appPid, processConfig_.appInfo.appUid);
     return SUCCESS;
 }
 
@@ -1240,7 +1250,11 @@ int32_t RendererInServer::Stop()
         }
         status_ = I_STATUS_STOPPING;
     }
-    return StopInner();
+    int32_t ret = StopInner();
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_STOP,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
+    return ret;
 }
 
 int32_t RendererInServer::StopInner()
@@ -1331,6 +1345,9 @@ int32_t RendererInServer::Release(bool isSwitchStream)
     if (isDualToneEnabled_) {
         DisableDualTone();
     }
+    XperfAdapter::GetInstance().ReportStateChangeEventIfNeed(XPERF_EVENT_RELEASE,
+        processConfig_.rendererInfo.streamUsage, streamIndex_, processConfig_.appInfo.appPid,
+        processConfig_.appInfo.appUid);
     return SUCCESS;
 }
 

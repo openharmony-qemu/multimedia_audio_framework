@@ -18,6 +18,7 @@
 
 #include "audio_performance_monitor.h"
 #include "audio_performance_monitor_c.h"
+#include "xperf_adapter.h"
 #include <memory>
 #include <string>
 #include "audio_errors.h"
@@ -211,11 +212,17 @@ std::string AudioPerformanceMonitor::GetRunningHapNames(AdapterType adapterType)
     return hapNames.str();
 }
 
+void AudioPerformanceMonitor::NotifyXperf(int32_t faultcode, uint32_t uid, uint32_t sessionId)
+{
+    XperfAdapter::GetInstance().ReportFaultEvent(faultcode, uid, sessionId);
+}
+
 void AudioPerformanceMonitor::ReportEvent(DetectEvent reasonCode, int32_t periodMs, AudioPipeType pipeType,
-    AdapterType adapterType, uint32_t uid)
+    AdapterType adapterType, uint32_t uid, uint32_t sessionId)
 {
     int64_t curRealTime = ClockTime::GetRealNano();
     std::string hapNames = "";
+    NotifyXperf(reasonCode, uid, sessionId);
     switch (reasonCode) {
         case SILENCE_EVENT:
             CHECK_AND_RETURN_LOG(curRealTime - silenceLastReportTime_ >= MIN_REPORT_INTERVAL_MS * AUDIO_NS_PER_MS,
