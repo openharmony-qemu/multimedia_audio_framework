@@ -384,6 +384,9 @@ void SleAudioDeviceManager::ResetSleStreamTypeCount(const std::shared_ptr<AudioD
         StopPlaying(deviceDesc->macAddress_, streamType);
     }
 
+    auto ret = SetActiveSinkDevice(deviceDesc->macAddress_, SLE_AUDIO_STREAM_NONE);
+    CHECK_AND_RETURN_LOG(ret == SUCCESS, "set active device failed, ret: %{public}d", ret);
+
     startedSleStreamType_.erase(it);
 }
 

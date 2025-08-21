@@ -279,7 +279,8 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_001, TestSize.Level1)
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
 
-    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
     EXPECT_EQ(unusedPipes.size(), 1);
     EXPECT_EQ(unusedPipes[0]->routeFlag_, AUDIO_OUTPUT_FLAG_FAST);
 }
@@ -299,7 +300,8 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_002, TestSize.Level1)
     pipe1->routeFlag_ = AUDIO_OUTPUT_FLAG_FAST;
     pipe1->streamDescriptors_.push_back(std::make_shared<AudioStreamDescriptor>());
     audioPipeManager->AddAudioPipeInfo(pipe1);
-    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
     EXPECT_EQ(unusedPipes.size(), 0);
 }
 
@@ -318,7 +320,50 @@ HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_003, TestSize.Level1)
     pipe1->routeFlag_ = 0;
     pipe1->streamDescriptors_.clear();
     audioPipeManager->AddAudioPipeInfo(pipe1);
-    auto unusedPipes = audioPipeManager->GetUnusedPipe();
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
+    EXPECT_EQ(unusedPipes.size(), 0);
+}
+
+/**
+ * @tc.name: GetUnusedPipe_004
+ * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty, routeFlag is not special but a2dp is unused.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_004, TestSize.Level4)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "a2dp";
+    pipe1->routeFlag_ = 0;
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    DeviceType deviceType = DEVICE_TYPE_SPEAKER;
+    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
+    EXPECT_EQ(unusedPipes.size(), 1);
+}
+
+/**
+ * @tc.name: GetUnusedPipe_005
+ * @tc.desc: Test GetUnusedPipe when pipe meets streamDescriptors empty, routeFlag is not special nut a2dp is used.
+ * @tc.type: FUNC
+ * @tc.require: #I5Y4MZ
+ */
+HWTEST_F(AudioPipeManagerUnitTest, GetUnusedPipe_005, TestSize.Level4)
+{
+    auto audioPipeManager = AudioPipeManager::GetPipeManager();
+    audioPipeManager->curPipeList_.clear();
+
+    std::shared_ptr<AudioPipeInfo> pipe1 = std::make_shared<AudioPipeInfo>();
+    pipe1->adapterName_ = "a2dp";
+    pipe1->routeFlag_ = 0;
+    pipe1->streamDescriptors_.clear();
+    audioPipeManager->AddAudioPipeInfo(pipe1);
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    auto unusedPipes = audioPipeManager->GetUnusedPipe(deviceType);
     EXPECT_EQ(unusedPipes.size(), 0);
 }
 

@@ -2388,7 +2388,8 @@ HWTEST_F(AudioCoreServicePrivateTest, AudioCoreServicePrivate_123, TestSize.Leve
     audioCoreService->pipeManager_->AddAudioPipeInfo(pipe2);
 
     audioCoreService->RemoveUnusedPipe();
-    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe().size(), 2); // 2: unused pipe size
+    DeviceType deviceType = DEVICE_TYPE_BLUETOOTH_A2DP;
+    EXPECT_EQ(audioCoreService->pipeManager_->GetUnusedPipe(deviceType).size(), 2); // 2: unused pipe size
 }
 
 /**
@@ -2586,6 +2587,8 @@ HWTEST_F(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_001, TestSize.Lev
     deviceDesc2->deviceType_ = DEVICE_TYPE_NEARLINK;
     deviceDesc1->macAddress_ = mac1;
     deviceDesc2->macAddress_ = mac2;
+    deviceDesc1->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
+    deviceDesc2->deviceRole_ = DeviceRole::OUTPUT_DEVICE;
 
     audioCoreService->audioActiveDevice_.SetCurrentOutputDevice(*deviceDesc1);
 
@@ -2627,6 +2630,8 @@ HWTEST_F(AudioCoreServicePrivateTest, ResetNearlinkDeviceState_002, TestSize.Lev
     deviceDesc2->deviceType_ = DEVICE_TYPE_NEARLINK_IN;
     deviceDesc1->macAddress_ = mac1;
     deviceDesc2->macAddress_ = mac2;
+    deviceDesc1->deviceRole_ = DeviceRole::INPUT_DEVICE;
+    deviceDesc2->deviceRole_ = DeviceRole::INPUT_DEVICE;
 
     audioCoreService->audioActiveDevice_.SetCurrentInputDevice(*deviceDesc1);
 
