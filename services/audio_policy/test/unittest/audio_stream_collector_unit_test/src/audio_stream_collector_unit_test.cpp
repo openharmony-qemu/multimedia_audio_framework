@@ -1233,6 +1233,28 @@ HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_040, TestSize.Level1
     EXPECT_TRUE(ret);
 }
 
+
+/**
+* @tc.name  : Test AudioStreamCollector.
+* @tc.number: AudioStreamCollector_041
+* @tc.desc  : Test IsStreamActive.
+*/
+HWTEST_F(AudioStreamCollectorUnitTest, AudioStreamCollector_041, TestSize.Level1)
+{
+    AudioStreamCollector collector;
+    AudioStreamType volumeType = STREAM_VOICE_ASSISTANT;
+    shared_ptr<AudioRendererChangeInfo> rendererChangeInfo = make_shared<AudioRendererChangeInfo>();
+
+    rendererChangeInfo->createrUID = 1001;
+    rendererChangeInfo->clientUID = 1001;
+    rendererChangeInfo->sessionId = 2001;
+    rendererChangeInfo->rendererState = RENDERER_RUNNING;
+    collector.audioRendererChangeInfos_.push_back(move(rendererChangeInfo));
+
+    bool ret = collector.IsStreamActive(volumeType);
+    EXPECT_FALSE(ret);
+}
+
 /**
 * @tc.name  : Test AudioStreamCollector.
 * @tc.number: AudioStreamCollector_042
